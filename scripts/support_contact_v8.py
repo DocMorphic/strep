@@ -46,7 +46,14 @@ def finger_rotation_budgets(names):
     return result
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False):
+def bounded_edit_rotations(parameters,limits,body_count,physical_fingers=False):
+    if physical_fingers:
+        parameters=torch.cat([parameters[:,:body_count],parameters[:,body_count:]/limits[:,body_count:]],dim=1)
+    return bounded_rotation(parameters,limits)
+
+
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False):
+    if physical_finger_parameters and not finger_edits:raise ValueError('Physical finger parameters require finger controls')
     torch.set_num_threads(2)
     names,parents,_=skeleton_metadata(77); surface=Surface(skin)
     contacts=infer_support(base,skin)
@@ -66,6 +73,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     primitive_records=context_primitives(context)
     def tensor(x):return torch.as_tensor(np.asarray(x),dtype=dtype)
     rotation_limits=tensor(np.deg2rad(limits))[None,:,None] if finger_edits else np.deg2rad(CONFIG['max_rotation_degrees'])
+    def bounded_edits(values):return bounded_edit_rotations(values,rotation_limits,body_count,physical_finger_parameters)
     offsets=np.zeros_like(base['posed_joints'],dtype=float)
     for j,p in enumerate(parents):
         if p>=0:offsets[:,j]=np.einsum('fji,fj->fi',base['global_rot_mats'][:,p],base['posed_joints'][:,j]-base['posed_joints'][:,p])
@@ -79,7 +87,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     lookup={j:i for i,j in enumerate(editable)}
     reference=tensor((base if raw is None else raw)['posed_joints'])
     def fk():
-        change=rodrigues(bounded_rotation(smooth_delta(),rotation_limits));r=[];p=[];locals=[]
+        change=rodrigues(bounded_edits(smooth_delta()));r=[];p=[];locals=[]
         lift=bounded_lift(lift_parameters,CONFIG['max_root_lift_m'])
         for j,parent in enumerate(parents):
             local=initial[:,j] if j not in lookup else initial[:,j]@change[:,lookup[j]]
@@ -164,12 +172,12 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         terms=dict(collision=torch.relu(CONFIG['clearance_m']-v[:,:,1]).square().amax(1).mean()*CONFIG['collision_weight'],
             contact=inferred_loss*CONFIG['contact_weight'],
             authored_contact=point_loss,authored_fade=fade_loss*CONFIG['fade_contact_weight'],authored_slide=moving_loss*CONFIG['authored_slide_weight'],
-            pose=bounded_rotation(smooth_delta(),rotation_limits)[:,:body_count].square().mean()*CONFIG['pose_weight'],
+            pose=bounded_edits(smooth_delta())[:,:body_count].square().mean()*CONFIG['pose_weight'],
             temporal=torch.diff(displacement,n=2,dim=0).square().sum(-1).mean()*CONFIG['temporal_weight'],
             velocity=torch.relu(velocity-1.2).square().amax()*CONFIG['velocity_weight'],
             slide=(torch.relu(slide-original_slide-.02).square()*(cw[:-1]*(~explicit_mask))).sum()/(cw[:-1]*(~explicit_mask)).sum().clamp_min(1)*CONFIG['slide_weight'])
         if finger_edits:
-            terms['finger_pose']=bounded_rotation(smooth_delta(),rotation_limits)[:,body_count:].square().mean()*CONFIG['pose_weight']
+            terms['finger_pose']=bounded_edits(smooth_delta())[:,body_count:].square().mean()*CONFIG['pose_weight']
         if normal_constraints:
             normal_loss=[];tangent_loss=[]
             for ni,(triangles,desired,weight) in enumerate(normal_constraints):
@@ -218,7 +226,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     with torch.no_grad():
         _,_,local=fk()
         lift=bounded_lift(lift_parameters,CONFIG['max_root_lift_m'])
-        actual_delta=bounded_rotation(smooth_delta(),rotation_limits)
+        actual_delta=bounded_edits(smooth_delta())
     shifted={k:v.copy() for k,v in base.items()};shifted['root_positions'][:,1]+=lift.detach().numpy()
     result=reconstruct(shifted,local.detach().numpy().copy(),parents);result.pop('smooth_root_pos',None)
     recipe=dict(config=CONFIG,correction_knots=knots.tolist(),parameterization='Cubic edit controls with hand tangents and frozen partner clearance cuts; v8',partner_cut_count=len(cuts),stage_records=stage_records,applied=True,evaluations=calls,objective=last,selected_vertices=len(selected),
@@ -229,6 +237,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         scope='Hard root/rotation budgets with augmented-Lagrangian contact inequalities (not guaranteed feasible); candidate only until full-mesh and regression checks pass. Sampled primitive clearance and oriented surface points only; frozen partner cuts are local approximations, not self/partner collision, anatomy or dynamics certification.')
     if finger_edits:
         recipe['finger_edits']=dict(budgets_degrees={names[j]:v for j,v in fingers.items()},
+            parameter_units='physical_radians_before_smooth_bound' if physical_finger_parameters else 'dimensionless_bound_fraction',
             measured_max_degrees={names[j]:float(torch.linalg.vector_norm(actual_delta[:,editable.index(j)],dim=-1).max()*180/torch.pi) for j in fingers},
             scope='Reuses earlier native finger-edit budgets. No anatomical axes/ranges or self-collision constraint; requires independent geometry and temporal review.')
     return result,recipe

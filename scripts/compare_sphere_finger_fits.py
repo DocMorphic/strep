@@ -43,9 +43,22 @@ def export_budget(study):
 def compare(control,candidate,output):
     control=Path(control).resolve();candidate=Path(candidate).resolve();output=Path(output).resolve()
     protocols=[read(p/'protocol.json') for p in [control,candidate]]
-    if [p['solver_version'] for p in protocols]!=[8,9]:raise ValueError('Expected paired V8/V9 fits')
+    versions=[p['solver_version'] for p in protocols]
+    if versions not in [[8,9],[9,10]]:raise ValueError('Expected paired V8/V9 or V9/V10 fits')
     sources=[read(p/'source.json')['scene'] for p in [control,candidate]]
     if sources[0]!=sources[1]:raise ValueError('Fits do not share the exact source scene')
+    if versions==[9,10]:
+        folders=[]
+        for study in [control,candidate]:
+            trial=read(study/'fit/summary.json')['trials'][0]['id'];folders.append(study/'fit/assets'/trial/'A')
+        for filename in ['limb-motion.npz','previous-motion.npz']:
+            a=dict(np.load(folders[0]/filename,allow_pickle=False));b=dict(np.load(folders[1]/filename,allow_pickle=False))
+            if set(a)!=set(b) or any(not np.array_equal(a[k],b[k]) for k in a):raise ValueError('Preprocessed input differs: '+filename)
+        for filename in ['contact-spec.json','scene-context.json']:
+            if read(folders[0]/filename)!=read(folders[1]/filename):raise ValueError('Fit constraints differ: '+filename)
+        configs=[read(folder/'recipe.json')['contact']['config'].copy() for folder in folders]
+        configs[1].pop('finger_parameter_units')
+        if configs[0]!=configs[1]:raise ValueError('Scaling comparison changes objective or budget settings')
     output.mkdir(parents=True,exist_ok=False);rows=[]
     for study,protocol in zip([control,candidate],protocols):
         if read(study/'pipeline.json')['status']!='complete':raise ValueError('Fit incomplete')
@@ -74,8 +87,9 @@ def compare(control,candidate,output):
         if a['id']!=b['id']:raise ValueError('Contact comparison order differs')
         changes['contacts'].append(dict(id=a['id'],maximum_error_m=b['maximum_error_m']-a['maximum_error_m'],
             peak_release_palm_speed_m_s=b['boundary']['release']['peak_palm_speed_m_s']-a['boundary']['release']['peak_palm_speed_m_s']))
-    save(output/'comparison.json',dict(at=now(),rows=rows,v9_minus_v8=changes,exact_source_scene_matched=True,quality_approved=False,
-        scope='One paired development scene with floor-valid object placement. Added finger degrees of freedom and their separate pose regularizer; no new semantic coverage, training, held-out or animator approval. Temporal measurements remain descriptive and must not be hidden by numerical contact passes.',method_sha256=sha256(__file__)))
+    factor='Finger degrees of freedom and separate pose regularizer' if versions==[8,9] else 'Finger parameter scaling only, with the same objective and reachable edits'
+    save(output/'comparison.json',dict(at=now(),rows=rows,candidate_minus_control=changes,changed_factor=factor,exact_source_scene_matched=True,preprocessing_and_constraints_matched=versions==[9,10],quality_approved=False,
+        scope='One paired development scene with floor-valid object placement; no new semantic coverage, training, held-out or animator approval. Temporal measurements remain descriptive and must not be hidden by numerical contact passes.',method_sha256=sha256(__file__)))
     print([dict(solver=r['solver_version'],failed=r['failed_screens'],grip_mm=[c['maximum_error_m']*1000 for c in r['dense_candidate']['contacts']],depth_mm=max(o['maximum_skin_vertex_depth_m'] for o in r['dense_candidate']['objects'].values())*1000) for r in rows],flush=True)
 
 

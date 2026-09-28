@@ -27,6 +27,8 @@ Both candidates pass the provisional 30 mm scene contact and 15-degree palm-orie
 
 All declared finger edit budgets pass independent export checks, including preservation of the ten unedited fingertip rotations. The largest v9 finger correction is only 0.806 degrees, on `RightHandPinky2`, well below its 12-degree allowance. Finger freedom alone did not improve clearance under this objective and optimization budget. This does not prove that the allowed poses are infeasible. Parameter scaling, contact/collision formulation and the solver's use of those degrees of freedom need investigation before expanding edit limits.
 
+The subsequent [parameter-scaling experiment](finger-parameter-scaling-v1.md) changes only finger optimizer coordinates. It improves clearance and control usage while retaining strict contact and penetration failures.
+
 Actual Godot imports pass 720 actor-frame observations across the two input/candidate pairs, checking all 77 bones at every frame. This count includes the same input clip twice and does not imply four independent motions. Maximum position error is below 0.36 micrometres. Object physics, rendered skin, self-collision and human naturalness are not certified by these checks.
 
 ## Reproduction and retained failure

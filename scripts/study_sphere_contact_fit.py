@@ -29,14 +29,14 @@ def study(output,source_path=SOURCE,solver_version=8):
     output=Path(output).resolve()
     if not output.is_relative_to(ROOT/'reports'):raise ValueError('Study output must be under reports')
     source_path=Path(source_path).resolve()
-    if not source_path.is_relative_to(ROOT) or solver_version not in [8,9]:raise ValueError('Local scene and supported solver required')
+    if not source_path.is_relative_to(ROOT) or solver_version not in [8,9,10]:raise ValueError('Local scene and supported solver required')
     output.mkdir(parents=True,exist_ok=False)
     source=read(source_path);shutil.copyfile(source_path,output/'source.json')
-    files=[source_path,output/'source.json',Path(__file__),ROOT/'scripts/run_scene_fit.py',ROOT/'scripts/support_contact_v8.py',ROOT/'scripts/support_contact_v9.py']
+    files=[source_path,output/'source.json',Path(__file__),ROOT/'scripts/run_scene_fit.py',ROOT/'scripts/support_contact_v8.py',ROOT/'scripts/support_contact_v9.py',ROOT/'scripts/support_contact_v10.py']
     for entry in source['scene']['actors'].values():files.extend([ROOT/entry['motion'],source_path.parent/entry['preview_glb']])
     save(output/'protocol.json',dict(at=now(),inputs={p.relative_to(ROOT).as_posix():sha256(p) for p in files},
         solver_version=solver_version,resource_limits=LIMITS,source_scene=source_path.relative_to(ROOT).as_posix(),preview_base=source_path.parent.relative_to(ROOT).as_posix(),
-        comparison='Frozen supplied actor, object tracks and contact targets; full floor/body preprocessing. V9 adds bounded finger articulation and a separate finger-pose regularizer; body objective normalization and sampled geometry remain unchanged.',
+        comparison='Frozen supplied actor, object tracks and contact targets; full floor/body preprocessing. V9 adds bounded finger articulation and a separate finger-pose regularizer. V10 changes only the finger parameter scale to physical radians; reachable edits, objective, samples and iteration budget remain unchanged.',
         screens=dict(scene_contact_m=.03,solver_contact_m=.005,normal_degrees=15,skin_object_depth_m=.01),
         quality_approved=False,scope='One existing development motion; no held-out evidence, new generation or model training. Full mesh and temporal checks remain separate from objective.'))
     snapshot=output/'driver-snapshot';snapshot.mkdir()
@@ -69,6 +69,6 @@ def study(output,source_path=SOURCE,solver_version=8):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('output',type=Path);parser.add_argument('--worker',action='store_true');parser.add_argument('--source',type=Path,default=SOURCE);parser.add_argument('--solver-version',type=int,choices=[8,9],default=8);args=parser.parse_args()
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('output',type=Path);parser.add_argument('--worker',action='store_true');parser.add_argument('--source',type=Path,default=SOURCE);parser.add_argument('--solver-version',type=int,choices=[8,9,10],default=8);args=parser.parse_args()
     if args.worker:worker(args.output.resolve())
     else:sys.exit(study(args.output,args.source,args.solver_version))
