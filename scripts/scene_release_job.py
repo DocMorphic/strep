@@ -13,6 +13,8 @@ from strep import ROOT,read,save,sha256,now
 from scene_constraints import sample_object,pose
 from object_release import release_request,simulate,bake
 from action_worker_lock import worker_lock
+from object_geometry import scene_geometry
+from release_geometry import body_geometry,geometry_fields,primitive_gap,floor_gaps
 
 JOBS=ROOT/'reports/scene-release-jobs'
 
@@ -39,7 +41,7 @@ def source_metadata(url):
         if manifest.exists() and any((parent/value).resolve()==path.resolve() for s in read(manifest).get('scenes',[]) for value in s.get('variants',{}).values()):base=parent;break
     if base is None:raise ValueError('Scene is not registered in its saved collection')
     if not isinstance(scene.get('actors'),dict) or not 1<=len(scene['actors'])<=4:raise ValueError('Scene needs one to four native actors')
-    if not isinstance(scene.get('objects'),dict) or not 1<=len(scene['objects'])<=8:raise ValueError('Scene needs one to eight boxes')
+    if not isinstance(scene.get('objects'),dict) or not 1<=len(scene['objects'])<=8:raise ValueError('Scene needs one to eight primitive objects')
     files={path:sha256(path)}
     for name,entry in scene['actors'].items():
         name_check(name);pose(entry['transform'])
@@ -49,10 +51,9 @@ def source_metadata(url):
         with np.load(motion,allow_pickle=False) as arrays:
             if arrays['posed_joints'].shape!=(frames,77,3) or arrays['global_rot_mats'].shape!=(frames,77,3,3):raise ValueError('Release currently requires native 77-joint scene actors')
     for name,obj in scene['objects'].items():
-        if 'geometry' in obj or obj.get('shape')!='box':
-            raise ValueError('Physics release currently requires legacy box objects; versioned primitive release is not implemented')
         name_check(name);sample_object(obj,frames)
-        if min(obj['size_m'])<.01 or max(obj['size_m'])>10:raise ValueError('Box dimensions must be 0.01–10 metres')
+        geometry=scene_geometry(obj);dimensions=np.array(geometry.dimensions)*(2 if geometry.shape=='sphere' else 1)
+        if min(dimensions)<.01 or max(dimensions)>10:raise ValueError('Primitive dimensions/diameter must be 0.01–10 metres')
     license_path=base/'SOMA-preview-LICENSE.txt'
     if not license_path.exists():license_path=ROOT/'vendor/kimodo/LICENSE'
     for asset in [path.parent/'events.json',license_path]:
@@ -65,7 +66,7 @@ def metadata(url):
     source=source_metadata(url);scene=source['bundle']['scene']
     return dict(source_url=url,revision=source['revision'],frames=scene['frame_count'],objects=list(scene['objects']),
         earliest_release={name:max([2]+[c['end_frame']+1 for c in scene['contacts'] if c.get('target',{}).get('space')=='object' and c['target'].get('object')==name]) for name in scene['objects']},
-        supported='Saved native humanoid scenes; floor-only, static scene boxes, or prescribed moving scene boxes (Jolt). Actors are not simulated colliders; moving boxes retain authored motion and do not react to impacts.')
+        supported='Saved native humanoid scenes; box/sphere release against floor, static primitives or prescribed moving primitives (Jolt). Prescribed objects retain authored motion and do not react to impacts. Optional actor proxies do not produce actor response.')
 
 
 def validate(payload):
@@ -79,35 +80,38 @@ def validate(payload):
     source=source_metadata(payload['source_url'])
     if payload['revision']!=source['revision']:raise ValueError('Saved scene or assets changed; reload before release')
     scene=source['bundle']['scene'];name=payload['object']
-    if not isinstance(name,str) or name not in scene['objects']:raise ValueError('Select a saved box')
+    if not isinstance(name,str) or name not in scene['objects']:raise ValueError('Select a saved primitive object')
     if type(payload['mass_kg']) not in (int,float) or not .05<=payload['mass_kg']<=2000:raise ValueError('Mass must be 0.05–2000 kg')
     release=payload['release_frame']
     if type(release)!=int or not 2<=release<scene['frame_count']-1:raise ValueError('Release needs two incoming frames and an output tail')
     if any(c.get('target',{}).get('space')=='object' and c['target'].get('object')==name and c['end_frame']>=release for c in scene['contacts']):raise ValueError('Release conflicts with a saved contact window; choose a frame after its end')
     p,r=sample_object(scene['objects'][name],scene['frame_count'])
-    track=dict(fps=30,object=name,size_m=scene['objects'][name]['size_m'],positions_m=p.tolist(),rotations_xyzw=Rotation.from_matrix(r).as_quat().tolist())
+    track=dict(fps=30,object=name,**geometry_fields(scene['objects'][name]),positions_m=p.tolist(),rotations_xyzw=Rotation.from_matrix(r).as_quat().tolist())
+    geometry=body_geometry(track)
     request=release_request(track,release,mass_kg=payload['mass_kg'],friction=payload['friction'],restitution=payload['restitution'])
     if mode=='static_scene':
         from release_colliders import compile_colliders,box_separation
         request['static_colliders']=compile_colliders(scene,name,release,friction=payload['friction'],restitution=payload['restitution'])
         for collider in request['static_colliders']:
-            if box_separation(p[release],r[release],track['size_m'],collider['position_m'],Rotation.from_quat(collider['rotation_xyzw']).as_matrix(),collider['size_m']) < -.001:
-                raise ValueError('Released box overlaps static collider '+collider['id']+' at release; choose a clear pose')
+            if primitive_gap(geometry,p[release],r[release],body_geometry(collider),collider['position_m'],Rotation.from_quat(collider['rotation_xyzw']).as_matrix()) < -.001:
+                raise ValueError('Released object overlaps static collider '+collider['id']+' at release; choose a clear pose')
     if mode=='moving_scene':
         from moving_release_colliders import compile_moving
         from release_colliders import box_separation
         request['backend']='Jolt Physics'
         request['moving_colliders']=compile_moving(scene,name,release,physics_fps=request['physics_fps'],friction=payload['friction'],restitution=payload['restitution'])
         for collider in request['moving_colliders']:
-            if box_separation(p[release],r[release],track['size_m'],collider['positions_m'][1],Rotation.from_quat(collider['rotations_xyzw'][1]).as_matrix(),collider['size_m']) < -.001:
-                raise ValueError('Released box overlaps moving collider '+collider['id']+' at release; choose a clear pose')
+            if primitive_gap(geometry,p[release],r[release],body_geometry(collider),collider['positions_m'][1],Rotation.from_quat(collider['rotations_xyzw'][1]).as_matrix()) < -.001:
+                raise ValueError('Released object overlaps moving collider '+collider['id']+' at release; choose a clear pose')
     if actor_mode=='convex_skin':
         from actor_collision_proxies import compile_actor_proxies
-        from convex_colliders import ConvexBoxTest
+        from convex_colliders import ConvexBoxTest,ConvexSphereTest
         proxies,calibration=compile_actor_proxies(scene,source['base'],release,physics_fps=request['physics_fps'],friction=payload['friction'],restitution=payload['restitution'])
         for collider in proxies:
-            if ConvexBoxTest(collider['points_m']).gap(p[release],r[release],track['size_m'],np.array(collider['positions_m'][1]),Rotation.from_quat(collider['rotations_xyzw'][1]).as_matrix()) < -.001:
-                raise ValueError('Released box overlaps body proxy '+collider['id']+' at release; retain or revise the authored pose')
+            center=np.array(collider['positions_m'][1]);rotation=Rotation.from_quat(collider['rotations_xyzw'][1]).as_matrix()
+            gap=ConvexBoxTest(collider['points_m']).gap(p[release],r[release],geometry.dimensions,center,rotation) if geometry.shape=='box' else ConvexSphereTest(collider['points_m']).gap(p[release],geometry.dimensions[0],center,rotation)
+            if gap < -.001:
+                raise ValueError('Released object overlaps body proxy '+collider['id']+' at release; retain or revise the authored pose')
         request['backend']='Jolt Physics';request['moving_colliders']=request.get('moving_colliders',[])+proxies
         source['actor_proxy_calibration']=calibration
     return source,track,request
@@ -140,7 +144,7 @@ def prepare(payload,folder):
     snapshot=folder/'source/implementation';snapshot.mkdir()
     for name in ['scene_release_job.py','scene_object_export.py','object_geometry_mesh.py','object_release.py','godot_object_release.gd','scene_constraints.py','object_geometry.py','audit_scene_orientation.py',
                  'strep.py','object_dynamics.py','gltf_tools.py','package_generated_scenes.py','inspect_motion.py','floor_contact.py','palm_contacts.py','build_soma_preview.py','release_colliders.py','moving_release_colliders.py',
-                 'convex_colliders.py','actor_collision_proxies.py','rig_asset.py','rig_clip_import.py','scene_runtime.py','godot_scene_clock.gd']:
+                 'convex_colliders.py','actor_collision_proxies.py','rig_asset.py','rig_clip_import.py','scene_runtime.py','godot_scene_clock.gd','release_geometry.py']:
         shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
     files={p.relative_to(folder).as_posix():sha256(p) for p in (folder/'source').rglob('*') if p.is_file()}
     save(folder/'request.json',dict(authored=payload,physics=physics,files=files,created_at=now()))
@@ -182,12 +186,12 @@ def run(folder):
             save(folder/'events.json',events)
             export_objects(original['scene'],folder/'input-objects.glb');export_objects(scene,folder/'objects.glb')
             obs=simulation['observations'];p=np.array([o['position_m'] for o in obs]);r=Rotation.from_quat([o['rotation_xyzw'] for o in obs]).as_matrix()
-            bottom=p[:,1]-np.abs(r[:,1,:])@(np.array(track['size_m'])/2);contacts=[o['tick'] for o in obs if 'floor' in o['contact_colliders']]
+            bottom=floor_gaps(body_geometry(track),p,r);contacts=[o['tick'] for o in obs if 'floor' in o['contact_colliders']]
             floor_depth=float(max(0.,-bottom.min()));gap=float(abs(bottom[-1]));speed=float(np.linalg.norm(obs[-1]['linear_velocity_m_s']))
             release_audit=dict(release_frame=release,simulated_floor_depth_max_m=floor_depth,final_floor_gap_m=gap,final_speed_m_s=speed,
                 first_floor_contact_source_frame=release+contacts[0]*30/request['physics']['physics_fps'] if contacts else None,
                 floor_screens_passed=floor_depth<=.01 and gap<=.01 and speed<=.1,physics_approval=None,
-                scope='Floor proximity screens only; a box resting on a scene surface may correctly remain above the floor. Inspect separate scene-collision screens. No actor or animator approval.')
+                scope='Floor proximity/settling screens only; a primitive resting on a scene surface may correctly remain above the floor. Rolling or bouncing actions need different acceptance criteria. Inspect separate scene-collision screens. No actor or animator approval.')
             from release_colliders import audit_collisions
             release_audit['scene_collisions']=audit_collisions(request['physics'],obs,release)
             release_audit['collision_mode']=payload.get('collision_mode','floor_only')
@@ -209,10 +213,10 @@ def run(folder):
             paths=[p for p in folder.rglob('*') if p.is_file() and p.suffix.lower() in ('.json','.glb','.npz','.txt','.md','.gd','.py') and p.name not in ['worker.json','pipeline.json','manifest.json'] and 'project' not in p.parts]
             with zipfile.ZipFile(folder/'scene-animation.zip','w',zipfile.ZIP_DEFLATED) as archive:
                 for path in paths:archive.write(path,path.relative_to(folder).as_posix())
-                archive.writestr('README.txt','GODOT-SCENES.md describes the included shared-clock loader, scene-runtime.json and godot_scene_clock.gd. It owns all actor/object animation tracks and their authored event notifications. Load objects.glb and each source/actors/<id>/actor.glb on the same 30fps clock; apply actor placements from portable-scene.json once. Object tracks already use scene coordinates. Preserve constant scale tracks (disable remove immutable tracks in Godot import) to avoid quaternion-to-Euler fallback. This is a baked animation, with no runtime physics required; do not also drive baked objects with live physics. See request.json for explicit backend, floor/static/prescribed-box colliders and material assumptions. No actor response, human balance or animator approval.\n')
+                archive.writestr('README.txt','GODOT-SCENES.md describes the included shared-clock loader, scene-runtime.json and godot_scene_clock.gd. It owns all actor/object animation tracks and their authored event notifications. Load objects.glb and each source/actors/<id>/actor.glb on the same 30fps clock; apply actor placements from portable-scene.json once. Object tracks already use scene coordinates. Preserve constant scale tracks (disable remove immutable tracks in Godot import) to avoid quaternion-to-Euler fallback. This is a baked animation, with no runtime physics required; do not also drive baked objects with live physics. See request.json for explicit backend, floor/static/prescribed-primitive colliders and material assumptions. No actor response, human balance or animator approval.\n')
             with zipfile.ZipFile(folder/'scene-animation.zip') as archive:
                 assert archive.testzip() is None
-            save(folder/'result.json',dict(status='ready_for_review',collection='scene-release-jobs/'+folder.name,quality_approved=False,package_sha256=sha256(folder/'scene-animation.zip')))
+            save(folder/'result.json',dict(status='ready_for_review',collection=folder.relative_to(ROOT/'reports').as_posix(),quality_approved=False,package_sha256=sha256(folder/'scene-animation.zip')))
             save(folder/'pipeline.json',dict(status='complete',stage='Ready for review',finished_at=now()))
     except Exception as exc:
         save(folder/'pipeline.json',dict(status='failed',error=str(exc),finished_at=now()));raise

@@ -22,7 +22,7 @@ def prepare():
     save(out/'source.json',bundle);shutil.copyfile(source.parent/'events.json',out/'events.json');shutil.copyfile(source.parent.parent/'SOMA-preview-LICENSE.txt',out/'SOMA-preview-LICENSE.txt')
     save(out/'manifest.json',dict(scenes=[dict(id='source',label='Release above a static platform · Source',variants=dict(palm='source.json'),review_note=scene['review_note'])]))
     save(out/'pipeline.json',dict(status='complete',scope='Authored source fixture ready; does not mean release study or quality is complete'))
-    scripts=['object_release.py','godot_object_release.gd','release_colliders.py','scene_release_job.py']
+    scripts=['object_release.py','release_geometry.py','object_geometry.py','godot_object_release.gd','release_colliders.py','scene_release_job.py']
     save(out/'protocol.json',dict(at=now(),original_source=str(source.relative_to(ROOT)),original_sha256=sha256(source),fixture_sha256=sha256(out/'source.json'),implementation={s:sha256(ROOT/'scripts'/s) for s in scripts},
         comparison=dict(source_url='/files/static-collider-v1/source.json',object='box',release_frame=121,mass_kg=3.,friction=.4,restitution=.2,modes=['floor_only','static_scene']),
         screens=dict(max_penetration_m=.01,final_linear_speed_m_s=.1,final_angular_speed_rad_s=.1),

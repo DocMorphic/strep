@@ -61,3 +61,20 @@ class ConvexBoxTest:
         projected=self.points@axes.T;lo=projected.min(axis=0);hi=projected.max(axis=0)
         middle=axes@center;radius=np.abs(axes@rel)@(np.asarray(size)/2)
         return float(np.maximum(lo-(middle+radius),(middle-radius)-hi).max())
+
+
+class ConvexSphereTest:
+    """Euclidean sphere/polyhedron gap, including face/edge/vertex proximity."""
+    def __init__(self,points):
+        self.points=validate_points(points);hull=ConvexHull(self.points)
+        self.triangles=self.points[hull.simplices];self.planes=hull.equations
+
+    def gap(self,center,radius,convex_p,convex_r):
+        from trimesh.triangles import closest_point
+        center=(np.asarray(center)-convex_p)@convex_r
+        signed=self.planes[:,:3]@center+self.planes[:,3]
+        if signed.max()<=0:distance=float(signed.max())
+        else:
+            nearest=closest_point(self.triangles,np.broadcast_to(center,(len(self.triangles),3)))
+            distance=float(np.linalg.norm(nearest-center,axis=1).min())
+        return distance-radius

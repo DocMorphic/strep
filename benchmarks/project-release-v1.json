@@ -800,7 +800,9 @@
         "docs/moving-object-geometry-gap-v1.md",
         "docs/object-geometry-core-v1.md",
         "reports/object-geometry-core-v1/verification.json",
-        "docs/primitive-scenes-v1.md"
+        "docs/primitive-scenes-v1.md",
+        "docs/sphere-release-v1.md",
+        "reports/sphere-release-integration-v1/verification.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -810,7 +812,7 @@
         "General scene authoring and correction jobs in Studio",
         "Feasible constraint-aware model inference",
         "Held-out actions, rigs, objects, partners and independent animator validation",
-        "Non-box moving props consistently across scene authoring, collision/contact evaluation, inertia/release and mesh export; current shared object path remains box-only"
+        "Measured spherical grasp fitting and broader prop geometry beyond boxes/spheres; shared primitive release is integrated but grasp/body contact and settling failures remain"
       ]
     },
     {

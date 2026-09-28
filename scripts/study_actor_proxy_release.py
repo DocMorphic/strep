@@ -33,7 +33,7 @@ def setup():
         changed_factor='Actor proxy colliders only; actor and object input, engine, floor, material, clock unchanged.',
         screens=dict(skin_depth_m=.01,proxy_depth_m=.01,proxy_surface_distance_m=.01),
         scope='Exploratory component experiment after proxy fit diagnostic; not held-out release validation.',
-        implementation={n:sha256(ROOT/'scripts'/n) for n in ['scene_release_job.py','object_release.py','godot_object_release.gd','actor_collision_proxies.py','moving_release_colliders.py','convex_colliders.py','release_colliders.py']}))
+        implementation={n:sha256(ROOT/'scripts'/n) for n in ['scene_release_job.py','object_release.py','release_geometry.py','object_geometry.py','godot_object_release.gd','actor_collision_proxies.py','moving_release_colliders.py','convex_colliders.py','release_colliders.py']}))
 
 
 def execute():

@@ -21,7 +21,7 @@ def payload():
         mass_kg=3.,friction=.4,restitution=.1,label='Authored release test')
 
 
-def test_versioned_sphere_release_fails_explicitly_before_simulation(work):
+def test_versioned_sphere_release_retains_geometry_in_request(work):
     source=read(ROOT/'reports/object-release-v2/seed-11-original/palm.json')
     folder=work/'sphere-collection';folder.mkdir()
     actor=source['scene']['actors']['A']
@@ -31,7 +31,10 @@ def test_versioned_sphere_release_fails_explicitly_before_simulation(work):
     obj['geometry']=dict(schema='strep-object-geometry-v1',shape='sphere',radius_m=.25)
     save(folder/'palm.json',source);save(folder/'manifest.json',dict(scenes=[dict(variants=dict(palm='palm.json'))]))
     url='/files/'+folder.relative_to(ROOT/'reports').as_posix()+'/palm.json'
-    with pytest.raises(ValueError,match='versioned primitive release is not implemented'):metadata(url)
+    data=payload();data.update(source_url=url,revision=metadata(url)['revision'])
+    _,track,request=validate(data)
+    assert track['geometry']==obj['geometry']==request['geometry']
+    assert 'size_m' not in request
 
 
 @pytest.fixture
@@ -73,7 +76,8 @@ def test_dependency_change_during_snapshot_is_rejected(work,monkeypatch,filename
 
 
 @pytest.mark.parametrize('mode',['static_scene','moving_scene'])
-def test_real_worker_generic_objects_multiple_actors_portable_tracks_and_events(work,mode):
+@pytest.mark.parametrize('shape',['box','sphere'])
+def test_real_worker_generic_objects_multiple_actors_portable_tracks_and_events(work,mode,shape):
     source=read(ROOT/'reports/object-release-v2/seed-11-original/palm.json')
     folder=work/'collection';folder.mkdir();(folder/'actors').mkdir()
     glb=ROOT/'reports/object-release-v2'/source['scene']['actors']['A']['preview_glb']
@@ -85,6 +89,12 @@ def test_real_worker_generic_objects_multiple_actors_portable_tracks_and_events(
     source['scene']['objects']['shelf']=dict(shape='box',size_m=[.3,.4,.5],keyframes=[dict(frame=0,translation_m=[5,1,0],rotation_xyzw=[0,0,0,1])])
     if mode=='moving_scene':
         source['scene']['objects']['shelf']['keyframes'].append(dict(frame=179,translation_m=[5.1,1.1,.1],rotation_xyzw=[0,0,0,1]))
+    if shape=='sphere':
+        for obj in source['scene']['objects'].values():
+            obj.pop('shape');obj.pop('size_m')
+            obj['geometry']=dict(schema='strep-object-geometry-v1',shape='sphere',radius_m=.25)
+        for contact in source['scene']['contacts']:
+            point=np.array(contact['target']['point_m']);contact['target']['point_m']=(point*.25/np.linalg.norm(point)).tolist()
     save(folder/'palm.json',source);save(folder/'manifest.json',dict(scenes=[dict(variants=dict(palm='palm.json'))]))
     url='/files/'+folder.relative_to(ROOT/'reports').as_posix()+'/palm.json'
     p=payload();p.update(source_url=url,revision=metadata(url)['revision'],object='crate',collision_mode=mode)
@@ -95,6 +105,9 @@ def test_real_worker_generic_objects_multiple_actors_portable_tracks_and_events(
     assert [c['id'] for c in audit['scene_collisions']['colliders']]==['object:shelf']
     assert after['scene']['objects']['shelf']==before['scene']['objects']['shelf']
     original=read(job/'source/object-track.json');candidate=read(job/'object-track.json')
+    if shape=='sphere':
+        assert candidate['geometry']==original['geometry']
+        assert read(job/'simulation/engine-output.json')['released_geometry']['shape']=='sphere'
     assert candidate['positions_m'][:122]==original['positions_m'][:122]
     assert candidate['positions_m'][-1]!=original['positions_m'][-1]
     assert after['scene']['contacts']==before['scene']['contacts']

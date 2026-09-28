@@ -72,6 +72,21 @@ func moving_states() -> Array:
 func vector(values: Array) -> Vector3:
 	return Vector3(values[0],values[1],values[2])
 
+func primitive_shape(item: Dictionary) -> Shape3D:
+	var descriptor: Dictionary = item.get("geometry", {"shape":"box","size_m":item.get("size_m",[])})
+	if descriptor.shape == "sphere":
+		var sphere := SphereShape3D.new()
+		sphere.radius = descriptor.radius_m
+		return sphere
+	var box := BoxShape3D.new()
+	box.size = vector(descriptor.size_m)
+	return box
+
+func geometry_record(shape: Shape3D) -> Dictionary:
+	if shape is SphereShape3D:
+		return {"schema":"strep-object-geometry-v1","shape":"sphere","radius_m":shape.radius}
+	return {"schema":"strep-object-geometry-v1","shape":"box","size_m":vec(shape.size)}
+
 func _initialize() -> void:
 	call_deferred("start_recording")
 
@@ -101,8 +116,7 @@ func start_recording() -> void:
 		var body := StaticBody3D.new()
 		body.set_meta("strep_collider_id",item.id)
 		var shape := CollisionShape3D.new()
-		var geometry := BoxShape3D.new()
-		geometry.size = vector(item.size_m)
+		var geometry := primitive_shape(item)
 		shape.shape = geometry
 		body.add_child(shape)
 		var surface := PhysicsMaterial.new()
@@ -125,8 +139,7 @@ func start_recording() -> void:
 				points.append(vector(point))
 			geometry.points = points
 		else:
-			geometry = BoxShape3D.new()
-			geometry.size = vector(item.size_m)
+			geometry = primitive_shape(item)
 		shape.shape = geometry
 		body.add_child(shape)
 		var surface := PhysicsMaterial.new()
@@ -153,9 +166,7 @@ func start_recording() -> void:
 	recorder.angular_damp = 0
 	recorder.physics_material_override = material
 	var collision := CollisionShape3D.new()
-	var box := BoxShape3D.new()
-	box.size = vector(request.size_m)
-	collision.shape = box
+	collision.shape = primitive_shape(request)
 	recorder.add_child(collision)
 	# Set the initial placement before activation, then reset it once in the
 	# first callback. Subsequent ticks are advanced solely by the engine.
@@ -175,15 +186,23 @@ func finish_recording() -> void:
 			entry.shape = "convex"
 			entry.points_m = points
 		else:
-			entry.size_m = vec(geometry.size)
+			if request.moving_colliders[moving_geometry.size()].has("geometry"):
+				entry.geometry = geometry_record(geometry)
+			else:
+				entry.size_m = vec(geometry.size)
 		moving_geometry.append(entry)
 	var colliders: Array = []
 	for body in static_bodies:
 		var p: Vector3 = body.position
 		var q: Quaternion = body.quaternion
-		var size: Vector3 = body.get_child(0).shape.size
-		colliders.append({"id":str(body.get_meta("strep_collider_id")),"position_m":[p.x,p.y,p.z],"rotation_xyzw":[q.x,q.y,q.z,q.w],"size_m":[size.x,size.y,size.z],"friction":body.physics_material_override.friction,"restitution":body.physics_material_override.bounce})
+		var entry := {"id":str(body.get_meta("strep_collider_id")),"position_m":[p.x,p.y,p.z],"rotation_xyzw":[q.x,q.y,q.z,q.w],"friction":body.physics_material_override.friction,"restitution":body.physics_material_override.bounce}
+		if request.static_colliders[colliders.size()].has("geometry"):
+			entry.geometry = geometry_record(body.get_child(0).shape)
+		else:
+			entry.size_m = vec(body.get_child(0).shape.size)
+		colliders.append(entry)
 	var report := {"engine":Engine.get_version_info(),
+		"released_geometry":geometry_record(recorder.get_child(0).shape),
 		"moving_colliders":moving_geometry,
 		"direct_state_class":PhysicsServer3D.body_get_direct_state(recorder.get_rid()).get_class(),
 		"collision_margin_fraction":ProjectSettings.get_setting("physics/jolt_physics_3d/collisions/collision_margin_fraction"),

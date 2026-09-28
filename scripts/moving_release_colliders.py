@@ -4,6 +4,7 @@ from scipy.spatial.transform import Rotation, Slerp
 from object_dynamics import finite_array
 from release_colliders import validate_colliders
 from scene_constraints import sample_object
+from release_geometry import geometry_fields,body_geometry,check_installed_geometry
 
 
 def validate_moving(values, steps, static=()):
@@ -12,21 +13,21 @@ def validate_moving(values, steps, static=()):
     result=[];seen={x['id'] for x in static}
     for item in values:
         convex=isinstance(item,dict) and item.get('shape')=='convex'
-        geometry={'shape','points_m'} if convex else {'size_m'}
+        geometry={'shape','points_m'} if convex else ({'geometry'} if isinstance(item,dict) and 'geometry' in item else {'size_m'})
         if not isinstance(item,dict) or set(item)!={'id','friction','restitution','positions_m','rotations_xyzw'}|geometry:
             raise ValueError('Invalid moving collider fields')
         if not isinstance(item['id'],str) or item['id'] in seen:raise ValueError('Duplicate collider ID')
         if convex:
             from convex_colliders import validate_points
             points=validate_points(item['points_m']);size=np.ptp(points,axis=0).tolist()
-        else:size=item['size_m']
         p=finite_array(item['positions_m'],(steps+2,3),'moving positions')
         q=finite_array(item['rotations_xyzw'],(steps+2,4),'moving rotations')
         if not np.allclose(np.linalg.norm(q,axis=1),1,atol=1e-6,rtol=0):
             raise ValueError('Moving rotations must be unit quaternions')
         delta=Rotation.from_quat(q[1:])*Rotation.from_quat(q[:-1]).inv()
         if np.any(delta.magnitude()>=np.pi-1e-6):raise ValueError('Ambiguous collider rotation step')
-        validate_colliders([dict(id=item['id'],size_m=size,friction=item['friction'],restitution=item['restitution'],
+        dimensions=dict(size_m=size) if convex else geometry_fields(item)
+        validate_colliders([dict(id=item['id'],**dimensions,friction=item['friction'],restitution=item['restitution'],
             position_m=p[1].tolist(),rotation_xyzw=q[1].tolist())])
         seen.add(item['id'])
         entry=dict(item,positions_m=p.tolist(),rotations_xyzw=q.tolist())
@@ -52,7 +53,7 @@ def compile_moving(scene, released, release_frame, *, physics_fps, friction, res
         p,r=sample_object(obj,count)
         positions=np.stack([np.interp(times,np.arange(count),p[:,axis]) for axis in range(3)],axis=1)
         rotations=Slerp(np.arange(count),Rotation.from_matrix(r))(times).as_quat()
-        result.append(dict(id='object:'+name,size_m=obj['size_m'],positions_m=positions.tolist(),rotations_xyzw=rotations.tolist(),friction=friction,restitution=restitution))
+        result.append(dict(id='object:'+name,**geometry_fields(obj),positions_m=positions.tolist(),rotations_xyzw=rotations.tolist(),friction=friction,restitution=restitution))
     return validate_moving(result,steps)
 
 
@@ -63,7 +64,8 @@ def audit_moving(request, observations, installed):
         if a['id']!=b['id']:raise ValueError('Moving collider identity mismatch')
         convex=b.get('shape')=='convex'
         if a.get('shape','box')!=b.get('shape','box'):raise ValueError('Moving collider shape mismatch')
-        for field in ['points_m' if convex else 'size_m','friction','restitution']:
+        if not convex and 'geometry' in b:check_installed_geometry(body_geometry(b),a['geometry'])
+        for field in (['points_m'] if convex else ([] if 'geometry' in b else ['size_m']))+['friction','restitution']:
             np.testing.assert_allclose(a[field],b[field],atol=1e-6,rtol=0)
     for o in observations:
         if [x['id'] for x in o.get('moving_colliders',[])]!=[x['id'] for x in expected]:

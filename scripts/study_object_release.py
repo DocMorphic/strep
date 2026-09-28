@@ -23,7 +23,7 @@ def prepare():
             motion=source.relative_to(ROOT).as_posix(),motion_sha256=sha256(source),
             actor_glb=asset.relative_to(ROOT).as_posix(),actor_glb_sha256=sha256(asset),request=request))
     implementation={}
-    for name in ['object_release.py','godot_object_release.gd','study_object_release.py','scene_constraints.py','object_geometry.py','audit_scene_orientation.py','export_attached_scene.py']:
+    for name in ['object_release.py','release_geometry.py','object_geometry.py','godot_object_release.gd','study_object_release.py','scene_constraints.py','audit_scene_orientation.py','export_attached_scene.py']:
         dest=OUT/'source-snapshot'/name;dest.parent.mkdir(parents=True,exist_ok=True)
         shutil.copyfile(ROOT/'scripts'/name,dest);implementation[name]=sha256(dest)
     save(OUT/'protocol.json',dict(at=now(),cases=cases,implementation=implementation,engine_sha256=sha256(ENGINE),

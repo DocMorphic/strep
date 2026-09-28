@@ -6,14 +6,16 @@ from pathlib import Path
 import numpy as np
 from scipy.spatial.transform import Rotation
 from strep import ROOT,read,save,sha256,now
-from object_dynamics import finite_array,uniform_box_inertia
+from object_dynamics import finite_array
+from release_geometry import body_geometry,geometry_fields,check_installed_geometry
 
 ENGINE=ROOT/'.cache/godot/4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe'
 
 
 def validate(request):
     required={'position_m','rotation_xyzw','linear_velocity_m_s','angular_velocity_rad_s',
-        'size_m','mass_kg','physics_fps','steps','friction','restitution','floor_enabled','floor_height_m'}
+        'mass_kg','physics_fps','steps','friction','restitution','floor_enabled','floor_height_m'}
+    if isinstance(request,dict):required|={'geometry'} if 'geometry' in request else {'size_m'}
     if not isinstance(request,dict) or not required<=set(request) or set(request)-required-{'contact_max_allowed_penetration_m','static_colliders','moving_colliders','backend'}:raise ValueError('Invalid release request fields')
     result=copy.deepcopy(request)
     from release_colliders import validate_colliders
@@ -21,16 +23,17 @@ def validate(request):
     tolerance=request.get('contact_max_allowed_penetration_m',.01)
     if type(tolerance) not in (int,float) or not np.isfinite(tolerance) or not 0<tolerance<=.01:raise ValueError('Invalid contact solver tolerance')
     result['contact_max_allowed_penetration_m']=tolerance
-    for name in ['position_m','linear_velocity_m_s','angular_velocity_rad_s','size_m']:
+    geometry=body_geometry(request)
+    for name in ['position_m','linear_velocity_m_s','angular_velocity_rad_s']:
         result[name]=finite_array(request[name],(3,),name).tolist()
     q=finite_array(request['rotation_xyzw'],(4,),'rotation')
     if abs(np.linalg.norm(q)-1)>1e-6:raise ValueError('Release rotation must be unit length')
     result['rotation_xyzw']=q.tolist()
-    inertia=uniform_box_inertia(request['mass_kg'],request['size_m'])
+    inertia=geometry.uniform_inertia(request['mass_kg'])
     result['inertia_diagonal_kg_m2']=np.diag(inertia).tolist()
     if type(request['physics_fps'])!=int or request['physics_fps'] not in (120,240,480):raise ValueError('Unsupported simulation clock')
     if type(request['steps'])!=int or not 1<=request['steps']<=14400:raise ValueError('Invalid simulation length')
-    backend=request.get('backend','GodotPhysics3D')
+    backend=request.get('backend','Jolt Physics' if geometry.shape=='sphere' else 'GodotPhysics3D')
     if backend not in ['GodotPhysics3D','Jolt Physics']:raise ValueError('Unsupported physics backend')
     result['backend']=backend
     from moving_release_colliders import validate_moving
@@ -54,8 +57,8 @@ def simulate(request,output):
     script=ROOT/'scripts/godot_object_release.gd';shutil.copyfile(script,project/'release.gd')
     save(output/'request.json',request)
     save(output/'provenance.json',dict(at=now(),engine_sha256=sha256(ENGINE),script_sha256=sha256(script),
-        driver_sha256=sha256(__file__),gravity_m_s2=[0,-9.81,0],
-        backend=request['backend'],assumptions='Uniform solid box with centered COM; optional Y-up floor and explicit static or prescribed kinematic boxes. Moving boxes have infinite effective mass and do not react to impact. Optional actor-derived convex envelopes are approximations; no actor response. Hypothetical mass/material parameters. Zero damping, sleeping disabled, CCD enabled.',static_colliders=request['static_colliders'],moving_collider_ids=[x['id'] for x in request['moving_colliders']]))
+        driver_sha256=sha256(__file__),geometry_driver_sha256=sha256(ROOT/'scripts/release_geometry.py'),geometry=body_geometry(request).record(),gravity_m_s2=[0,-9.81,0],
+        backend=request['backend'],assumptions='Uniform solid primitive with centered COM; optional Y-up floor and explicit static or prescribed kinematic primitives. Prescribed props have infinite effective mass and do not react to impact. Optional actor-derived convex envelopes are approximations; no actor response. Hypothetical mass/material parameters. Zero damping, sleeping disabled, CCD enabled.',static_colliders=request['static_colliders'],moving_collider_ids=[x['id'] for x in request['moving_colliders']]))
     save(output/'pipeline.json',dict(status='running'))
     with (output/'engine.log').open('w',encoding='utf-8') as log:
         try:
@@ -75,11 +78,15 @@ def simulate(request,output):
 
 def audit_simulation(request,report):
     observations=report['observations']
+    if 'released_geometry' in report:check_installed_geometry(body_geometry(request),report['released_geometry'])
+    elif 'geometry' in request:raise ValueError('Missing installed released primitive geometry')
     expected=request.get('static_colliders',[]);actual=report.get('static_colliders',[])
     if len(actual)!=len(expected):raise ValueError('Missing or unexpected static colliders')
     for a,b in zip(actual,expected):
         if a['id']!=b['id']:raise ValueError('Collider identity mismatch')
-        for field in ['position_m','size_m','friction','restitution']:np.testing.assert_allclose(a[field],b[field],atol=1e-6,rtol=0)
+        for field in ['position_m','friction','restitution']:np.testing.assert_allclose(a[field],b[field],atol=1e-6,rtol=0)
+        if 'geometry' in b:check_installed_geometry(body_geometry(b),a['geometry'])
+        else:np.testing.assert_allclose(a['size_m'],b['size_m'],atol=1e-6,rtol=0)
         np.testing.assert_allclose(Rotation.from_quat(a['rotation_xyzw']).as_matrix(),Rotation.from_quat(b['rotation_xyzw']).as_matrix(),atol=1e-6,rtol=0)
     from moving_release_colliders import audit_moving
     audit_moving(request,observations,report.get('moving_colliders',[]))
@@ -125,9 +132,12 @@ def release_request(track,release_frame,*,mass_kg=5.,physics_fps=240,friction=.6
     angular=(3*delta[1]-delta[0])*fps/2
     request=dict(position_m=p[release_frame].tolist(),rotation_xyzw=q[release_frame].tolist(),
         linear_velocity_m_s=velocity.tolist(),angular_velocity_rad_s=angular.tolist(),
-        size_m=track['size_m'],mass_kg=mass_kg,physics_fps=physics_fps,
+        **geometry_fields(track),mass_kg=mass_kg,physics_fps=physics_fps,
         steps=(len(p)-1-release_frame)*(physics_fps//fps),friction=friction,restitution=restitution,
         floor_enabled=True,floor_height_m=0.,contact_max_allowed_penetration_m=contact_max_allowed_penetration_m)
+    # The matched drop study retained a >10mm GodotPhysics3D/240Hz sphere
+    # impact failure. Jolt/240Hz passed unchanged geometry/contact screens.
+    if body_geometry(track).shape=='sphere':request['backend']='Jolt Physics'
     validate(request)
     return request
 
@@ -138,6 +148,7 @@ def bake(track,release_frame,request,report):
     if track['fps']!=30 or type(release_frame)!=int or not 2<=release_frame<len(track['positions_m'])-1:raise ValueError('Invalid bake clock/window')
     np.testing.assert_allclose(request['position_m'],track['positions_m'][release_frame],atol=1e-10,rtol=0)
     np.testing.assert_allclose(Rotation.from_quat(request['rotation_xyzw']).as_matrix(),Rotation.from_quat(track['rotations_xyzw'][release_frame]).as_matrix(),atol=1e-10,rtol=0)
+    if body_geometry(request)!=body_geometry(track):raise ValueError('Baked body geometry differs from input track')
     tail=observations[::stride]
     if len(tail)!=len(track['positions_m'])-release_frame:raise ValueError('Baked clock mismatch')
     result=copy.deepcopy(track)
@@ -145,5 +156,5 @@ def bake(track,release_frame,request,report):
     # engine roundoff changing the user's retained prefix.
     result['positions_m'][release_frame+1:]=[o['position_m'] for o in tail[1:]]
     result['rotations_xyzw'][release_frame+1:]=[o['rotation_xyzw'] for o in tail[1:]]
-    result['provenance']='Authored through release, then offline '+expected['backend']+' rigid-box bake with optional floor and explicit static/prescribed geometry; no actor response or grip/balance approval.'
+    result['provenance']='Authored through release, then offline '+expected['backend']+' rigid-'+body_geometry(track).shape+' bake with optional floor and explicit static/prescribed geometry; no actor response or grip/balance approval.'
     return result
