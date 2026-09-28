@@ -823,7 +823,11 @@
         "reports/grasp-finger-clearance-certificate-v1/certificate.json",
         "docs/grasp-pose-restoration-v1.md",
         "reports/grasp-pose-restoration-v1-audit-final/verification.json",
-        "reports/grasp-pose-restoration-v2-audit/verification.json"
+        "reports/grasp-pose-restoration-v2-audit/verification.json",
+        "docs/grasp-physical-descent-v1.md",
+        "reports/grasp-physical-descent-v1-audit/verification.json",
+        "reports/grasp-physical-refinement-v1-audit/verification.json",
+        "reports/grasp-local-sensitivity-v1/result.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",

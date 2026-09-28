@@ -54,6 +54,9 @@ def violation(audit, config):
 def run(report, seed_report, output):
     report, seed_report, output = map(lambda x: Path(x).resolve(), (report, seed_report, output))
     protocol, result = read(report/'protocol.json'), read(report/'result.json')
+    mode = protocol.get('coordinate_mode', 'bounded')
+    if mode not in ('bounded', 'physical'):
+        raise ValueError('Unknown coordinate mode')
     for path, digest in [(report/'protocol.json', result['protocol_sha256']),
                          (report/'pose.npz', result['pose_sha256']),
                          (seed_report/'result.json', protocol['seed_result_sha256']),
@@ -82,19 +85,20 @@ def run(report, seed_report, output):
         if stage['stage'] != stage_index:
             raise ValueError('Stage order changed')
         compare_record(current, stage['before'])
-        anchor = coordinates(parameters, p.limits)
+        anchor = coordinates(parameters, p.limits) if mode == 'bounded' else parameters.copy()
         accepted = False
         for attempt_index, attempt in enumerate(stage['attempts']):
             if attempt['trust_degrees'] != protocol['limits']['trust_degrees'][attempt_index]:
                 raise ValueError('Trust schedule changed')
-            proposal = coordinates(attempt['proposal_parameters'], p.limits)
+            proposal = coordinates(attempt['proposal_parameters'], p.limits) if mode == 'bounded' else np.array(attempt['proposal_parameters'])
             radius = np.r_[np.full(p.dim-1, np.deg2rad(attempt['trust_degrees'])), protocol['limits']['root_trust_m']]
             if np.any(np.abs(proposal-anchor) > radius+1e-9):
                 raise ValueError('Proposal exceeds declared trust region')
             for backtrack_index, item in enumerate(attempt['backtracks']):
                 if item['fraction'] != .5**backtrack_index:
                     raise ValueError('Backtrack schedule changed')
-                candidate = mapped(anchor + item['fraction'] * (proposal-anchor), p.limits)
+                interpolated = anchor + item['fraction'] * (proposal-anchor)
+                candidate = mapped(interpolated, p.limits) if mode == 'bounded' else interpolated
                 audit, _ = p.independent(candidate)
                 compare_record(audit, item['audit'])
                 improvement = violation(current, p.config) - violation(audit, p.config)
@@ -126,9 +130,9 @@ def run(report, seed_report, output):
     output.mkdir(parents=True, exist_ok=False)
     save(output/'verification.json', dict(at=now(), report=report.relative_to(ROOT).as_posix(),
          result_sha256=sha256(report/'result.json'), protocol_sha256=sha256(report/'protocol.json'),
-         auditor_sha256=sha256(Path(__file__)), replayed_decisions=decisions, accepted_stages=accepted_stages,
+         auditor_sha256=sha256(Path(__file__)), coordinate_mode=mode, replayed_decisions=decisions, accepted_stages=accepted_stages,
          saved_pose_arrays_exact=True, candidate=final, quality_approved=False,
-         scope='Independent NumPy bound-map replay; SciPy/NumPy full-skin geometry shared with pose audit. Verifies decisions and exported single pose, not motion quality.'))
+         scope='NumPy replay in the declared coordinate space; SciPy/NumPy full-skin geometry shared with pose audit. Verifies decisions and exported single pose, not motion quality.'))
     print(dict(replayed_decisions=decisions, accepted_stages=accepted_stages, pose_witness_passed=final['pose_witness_passed']))
 
 
