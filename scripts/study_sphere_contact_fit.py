@@ -20,21 +20,23 @@ def worker(output):
     for name,digest in protocol['inputs'].items():
         if sha256(ROOT/name)!=digest:raise ValueError('Frozen study input changed: '+name)
     save(output/'worker.json',dict(pid=os.getpid(),created=psutil.Process().create_time(),at=now()))
-    run([output/'source.json'],output/'fit',solver_version=8,preview_base=SOURCE.parent)
+    run([output/'source.json'],output/'fit',solver_version=protocol['solver_version'],preview_base=ROOT/protocol['preview_base'])
     for name,digest in protocol['inputs'].items():
         if sha256(ROOT/name)!=digest:raise ValueError('Study input changed during fitting: '+name)
 
 
-def study(output):
+def study(output,source_path=SOURCE,solver_version=8):
     output=Path(output).resolve()
     if not output.is_relative_to(ROOT/'reports'):raise ValueError('Study output must be under reports')
+    source_path=Path(source_path).resolve()
+    if not source_path.is_relative_to(ROOT) or solver_version not in [8,9]:raise ValueError('Local scene and supported solver required')
     output.mkdir(parents=True,exist_ok=False)
-    source=read(SOURCE);shutil.copyfile(SOURCE,output/'source.json')
-    files=[SOURCE,output/'source.json',Path(__file__),ROOT/'scripts/run_scene_fit.py']
-    for entry in source['scene']['actors'].values():files.extend([ROOT/entry['motion'],SOURCE.parent/entry['preview_glb']])
+    source=read(source_path);shutil.copyfile(source_path,output/'source.json')
+    files=[source_path,output/'source.json',Path(__file__),ROOT/'scripts/run_scene_fit.py',ROOT/'scripts/support_contact_v8.py',ROOT/'scripts/support_contact_v9.py']
+    for entry in source['scene']['actors'].values():files.extend([ROOT/entry['motion'],source_path.parent/entry['preview_glb']])
     save(output/'protocol.json',dict(at=now(),inputs={p.relative_to(ROOT).as_posix():sha256(p) for p in files},
-        solver_version=8,resource_limits=LIMITS,source_scene=SOURCE.relative_to(ROOT).as_posix(),
-        comparison='Same actor input, object tracks and contact targets as the sphere release fixture; full floor/body preprocessing and v8 contact fit. No parameter tuning.',
+        solver_version=solver_version,resource_limits=LIMITS,source_scene=source_path.relative_to(ROOT).as_posix(),preview_base=source_path.parent.relative_to(ROOT).as_posix(),
+        comparison='Frozen supplied actor, object tracks and contact targets; full floor/body preprocessing. V9 adds bounded finger articulation and a separate finger-pose regularizer; body objective normalization and sampled geometry remain unchanged.',
         screens=dict(scene_contact_m=.03,solver_contact_m=.005,normal_degrees=15,skin_object_depth_m=.01),
         quality_approved=False,scope='One existing development motion; no held-out evidence, new generation or model training. Full mesh and temporal checks remain separate from objective.'))
     snapshot=output/'driver-snapshot';snapshot.mkdir()
@@ -67,6 +69,6 @@ def study(output):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('output',type=Path);parser.add_argument('--worker',action='store_true');args=parser.parse_args()
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('output',type=Path);parser.add_argument('--worker',action='store_true');parser.add_argument('--source',type=Path,default=SOURCE);parser.add_argument('--solver-version',type=int,choices=[8,9],default=8);args=parser.parse_args()
     if args.worker:worker(args.output.resolve())
-    else:sys.exit(study(args.output))
+    else:sys.exit(study(args.output,args.source,args.solver_version))

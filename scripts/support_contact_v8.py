@@ -35,7 +35,18 @@ def torch_primitive_depth(points,position,rotation,geometry,clearance=0.):
     return torch.relu(geometry.dimensions[0]+clearance-torch.linalg.vector_norm(points-position[:,None,:],dim=-1))
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None):
+def finger_rotation_budgets(names):
+    result={}
+    for side in ['Left','Right']:
+        for finger in ['Thumb','Index','Middle','Ring','Pinky']:
+            for joint in range(1,4 if finger=='Thumb' else 5):
+                name=side+'Hand'+finger+str(joint)
+                if name not in names:raise ValueError('Native finger chain is missing')
+                result[names.index(name)]=float((8 if finger=='Thumb' else 5) if joint==1 else 12)
+    return result
+
+
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False):
     torch.set_num_threads(2)
     names,parents,_=skeleton_metadata(77); surface=Surface(skin)
     contacts=infer_support(base,skin)
@@ -46,11 +57,15 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     editable=[names.index(n) for n in ['Spine1','Spine2','Chest','Neck1','Neck2','Head',
         'LeftShoulder','LeftArm','LeftForeArm','LeftHand','RightShoulder','RightArm','RightForeArm','RightHand',
         'LeftLeg','LeftShin','LeftFoot','RightLeg','RightShin','RightFoot']]
+    body_count=len(editable);fingers=finger_rotation_budgets(names) if finger_edits else {}
+    editable.extend(fingers)
+    limits=[CONFIG['max_rotation_degrees']]*body_count+list(fingers.values())
     T=len(base['root_positions']); dtype=torch.float64
     context=scene_context or dict(frame_count=T,boxes=[],normals=[])
     if context['frame_count']!=T:raise ValueError('Scene context clock mismatch')
     primitive_records=context_primitives(context)
     def tensor(x):return torch.as_tensor(np.asarray(x),dtype=dtype)
+    rotation_limits=tensor(np.deg2rad(limits))[None,:,None] if finger_edits else np.deg2rad(CONFIG['max_rotation_degrees'])
     offsets=np.zeros_like(base['posed_joints'],dtype=float)
     for j,p in enumerate(parents):
         if p>=0:offsets[:,j]=np.einsum('fji,fj->fi',base['global_rot_mats'][:,p],base['posed_joints'][:,j]-base['posed_joints'][:,p])
@@ -64,7 +79,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     lookup={j:i for i,j in enumerate(editable)}
     reference=tensor((base if raw is None else raw)['posed_joints'])
     def fk():
-        change=rodrigues(bounded_rotation(smooth_delta(),np.deg2rad(CONFIG['max_rotation_degrees'])));r=[];p=[];locals=[]
+        change=rodrigues(bounded_rotation(smooth_delta(),rotation_limits));r=[];p=[];locals=[]
         lift=bounded_lift(lift_parameters,CONFIG['max_root_lift_m'])
         for j,parent in enumerate(parents):
             local=initial[:,j] if j not in lookup else initial[:,j]@change[:,lookup[j]]
@@ -149,10 +164,12 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         terms=dict(collision=torch.relu(CONFIG['clearance_m']-v[:,:,1]).square().amax(1).mean()*CONFIG['collision_weight'],
             contact=inferred_loss*CONFIG['contact_weight'],
             authored_contact=point_loss,authored_fade=fade_loss*CONFIG['fade_contact_weight'],authored_slide=moving_loss*CONFIG['authored_slide_weight'],
-            pose=bounded_rotation(smooth_delta(),np.deg2rad(CONFIG['max_rotation_degrees'])).square().mean()*CONFIG['pose_weight'],
+            pose=bounded_rotation(smooth_delta(),rotation_limits)[:,:body_count].square().mean()*CONFIG['pose_weight'],
             temporal=torch.diff(displacement,n=2,dim=0).square().sum(-1).mean()*CONFIG['temporal_weight'],
             velocity=torch.relu(velocity-1.2).square().amax()*CONFIG['velocity_weight'],
             slide=(torch.relu(slide-original_slide-.02).square()*(cw[:-1]*(~explicit_mask))).sum()/(cw[:-1]*(~explicit_mask)).sum().clamp_min(1)*CONFIG['slide_weight'])
+        if finger_edits:
+            terms['finger_pose']=bounded_rotation(smooth_delta(),rotation_limits)[:,body_count:].square().mean()*CONFIG['pose_weight']
         if normal_constraints:
             normal_loss=[];tangent_loss=[]
             for ni,(triangles,desired,weight) in enumerate(normal_constraints):
@@ -201,7 +218,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     with torch.no_grad():
         _,_,local=fk()
         lift=bounded_lift(lift_parameters,CONFIG['max_root_lift_m'])
-        actual_delta=bounded_rotation(smooth_delta(),np.deg2rad(CONFIG['max_rotation_degrees']))
+        actual_delta=bounded_rotation(smooth_delta(),rotation_limits)
     shifted={k:v.copy() for k,v in base.items()};shifted['root_positions'][:,1]+=lift.detach().numpy()
     result=reconstruct(shifted,local.detach().numpy().copy(),parents);result.pop('smooth_root_pos',None)
     recipe=dict(config=CONFIG,correction_knots=knots.tolist(),parameterization='Cubic edit controls with hand tangents and frozen partner clearance cuts; v8',partner_cut_count=len(cuts),stage_records=stage_records,applied=True,evaluations=calls,objective=last,selected_vertices=len(selected),
@@ -210,4 +227,8 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         contact_normalization='Per explicit region, independently of inferred support duration; v3',
         support={k:dict(spans=c['spans'],active_frames=int(c['active'].sum()),provenance=c.get('provenance','inferred')) for k,c in contacts.items()},
         scope='Hard root/rotation budgets with augmented-Lagrangian contact inequalities (not guaranteed feasible); candidate only until full-mesh and regression checks pass. Sampled primitive clearance and oriented surface points only; frozen partner cuts are local approximations, not self/partner collision, anatomy or dynamics certification.')
+    if finger_edits:
+        recipe['finger_edits']=dict(budgets_degrees={names[j]:v for j,v in fingers.items()},
+            measured_max_degrees={names[j]:float(torch.linalg.vector_norm(actual_delta[:,editable.index(j)],dim=-1).max()*180/torch.pi) for j in fingers},
+            scope='Reuses earlier native finger-edit budgets. No anatomical axes/ranges or self-collision constraint; requires independent geometry and temporal review.')
     return result,recipe

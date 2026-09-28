@@ -803,6 +803,9 @@
         "docs/primitive-scenes-v1.md",
         "docs/sphere-release-v1.md",
         "docs/sphere-contact-fit-v1.md",
+        "docs/object-floor-placement-v1.md",
+        "docs/sphere-finger-fit-v1.md",
+        "reports/sphere-finger-comparison-v2/comparison.json",
         "reports/sphere-contact-fit-audit-v1/verification.json",
         "reports/sphere-contact-fit-engine-v1/verification.json",
         "reports/sphere-release-integration-v1/verification.json"

@@ -34,7 +34,7 @@ At the candidate's worst collision sample, frame 66, penetration above 10 mm is 
 
 The copied object trajectory also places the 0.25 m sphere up to 50 mm below the floor, for 264 dense samples above the 10 mm depth screen. Both variants retain this input defect. An actor-only fit cannot correct a frozen object path; the prior release study checked floor behavior after release and did not establish valid pre-release placement.
 
-Next work should distinguish input feasibility from correction: author a floor-valid object track as a separately named treatment; evaluate bounded finger articulation and full hand geometry; and constrain entry, the entire release interval, and temporal regressions. Keep the present outputs and thresholds unchanged. Passing static poses alone will not establish usable animation.
+The subsequent [floor-valid sphere and finger comparison](sphere-finger-fit-v1.md) isolates the authored object placement and measures bounded finger articulation. It retains the strict-contact and full-hand collision failures. Entry, the entire release interval, and temporal regressions still need stronger constraints. Keep the present outputs and thresholds unchanged. Passing static poses alone will not establish usable animation.
 
 ## Evidence and remaining scope
 

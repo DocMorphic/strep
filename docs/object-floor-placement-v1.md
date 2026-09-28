@@ -1,0 +1,11 @@
+# Explicit primitive placement above the floor
+
+`scripts/object_floor_placement.py` provides a deliberate authoring edit for box and sphere trajectories: shift every object key upward by the same amount until the whole trajectory clears a specified horizontal floor. It returns a copied object plus a recipe; it never overwrites the supplied object or changes actor motion. Rotations, local material grips, timing, translational velocity and acceleration are preserved. World grip targets move with the object and must be fitted again.
+
+For a sphere, the minimum floor gap is the minimum keyed center height minus its radius: linear interpolation cannot dip below the endpoints. A constant-orientation box also has an exact endpoint minimum. For a rotating box, the implementation samples each segment and subtracts a conservative between-sample bound. For segment vertical displacement `dy`, shortest SLERP rotation angle `theta`, bounding radius `r`, and `N` intervals, that bound is `(abs(dy) + r * theta) / (2 * N)`. It bounds how far any box point can move vertically from its nearest sample. The result is conservative, not necessarily the smallest possible translation.
+
+The requested clearance and maximum vertical shift are explicit. A correction beyond the shift budget is rejected. The returned recipe records each segment's lower bound before and after the edit. This certifies only separation from the specified floor under the declared linear/SLERP interpolation; it does not resolve other objects, actors, physical support, attachment or dynamics.
+
+The first sphere fixture inherited a box trajectory with a center height of 0.2 m and was assigned a 0.25 m radius. Its 50 mm floor intersection is retained as an input failure. `scripts/prepare_sphere_floor_trial.py` creates a separate treatment with a 52.000004 mm upward translation and a 2 mm floor lower bound. Both actor entries and local contact definitions remain unchanged. The original failed fixture is preserved.
+
+Tests cover exact sphere translation and preserved velocity, rejection beyond the edit budget, and a rotating box whose deepest sweep lies between its endpoint poses. The corrected box is additionally checked at 2,001 dense poses. The helper is currently a Python authoring operation and study preparation tool; Studio does not yet expose this placement edit.
