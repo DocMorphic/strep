@@ -829,7 +829,9 @@
         "reports/grasp-physical-refinement-v1-audit/verification.json",
         "reports/grasp-local-sensitivity-v1/result.json",
         "docs/grasp-twist-seeds-v1.md",
-        "reports/grasp-twist-seeds-v1-audit-final/verification.json"
+        "reports/grasp-twist-seeds-v1-audit-final/verification.json",
+        "docs/grasp-shape-search-v1.md",
+        "reports/grasp-shape-search-v1-audit/verification.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
