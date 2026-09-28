@@ -52,14 +52,19 @@ def bounded_edit_rotations(parameters,limits,body_count,physical_fingers=False):
     return bounded_rotation(parameters,limits)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False):
     if physical_finger_parameters and not finger_edits:raise ValueError('Physical finger parameters require finger controls')
     torch.set_num_threads(2)
     names,parents,_=skeleton_metadata(77); surface=Surface(skin)
     contacts=infer_support(base,skin)
+    guards=[];effective_spec=contact_spec
+    if release_endpoint_guards:
+        from scene_release_guards import extend_solver_spec
+        if contact_spec is None or scene_context is None or 'release_guards' not in scene_context:raise ValueError('Compiled release guards required')
+        guards=scene_context['release_guards'];effective_spec=extend_solver_spec(contact_spec,guards)
     if contact_spec is not None:
         from contact_spec import apply_overrides
-        contacts=apply_overrides(contacts,base,skin,contact_spec,CONFIG['fade_frames'],CONFIG['clearance_m'])
+        contacts=apply_overrides(contacts,base,skin,effective_spec,CONFIG['fade_frames'],CONFIG['clearance_m'])
     # Small body set; facial, finger and toe articulation remain unchanged.
     editable=[names.index(n) for n in ['Spine1','Spine2','Chest','Neck1','Neck2','Head',
         'LeftShoulder','LeftArm','LeftForeArm','LeftHand','RightShoulder','RightArm','RightForeArm','RightHand',
@@ -123,6 +128,8 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     for c,faces in zip(context['normals'],normal_faces):
         indices=torch.tensor([[mapping[int(i)] for i in face] for face in faces])
         mask=np.zeros(T);mask[c['start_frame']:c['end_frame']+1]=1
+        for guard in guards:
+            if guard['contact_id']==c['id']:mask[guard['frame']]=1
         normal_constraints.append((indices,tensor(c['directions']),tensor(mask)))
     objects=[(tensor(b['positions_m']),tensor(b['rotations']),geometry) for geometry,b in primitive_records]
 
@@ -240,4 +247,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             parameter_units='physical_radians_before_smooth_bound' if physical_finger_parameters else 'dimensionless_bound_fraction',
             measured_max_degrees={names[j]:float(torch.linalg.vector_norm(actual_delta[:,editable.index(j)],dim=-1).max()*180/torch.pi) for j in fingers},
             scope='Reuses earlier native finger-edit budgets. No anatomical axes/ranges or self-collision constraint; requires independent geometry and temporal review.')
+    if release_endpoint_guards:
+        recipe['release_endpoint_guards']=dict(guards=guards,solver_contact_spec=effective_spec,
+            scope='Target and surface frame enforced at the release boundary as an additional solver key; authored scene contacts/events unchanged. This is not a continuous-time constraint guarantee.')
     return result,recipe

@@ -13,7 +13,7 @@ def context_primitives(context):
     return [(Geometry('box',tuple(item['size_m'])),item) for item in context.get('boxes',[])]
 
 
-def compile_context(scene,actor_id,contact_ids,skin):
+def compile_context(scene,actor_id,contact_ids,skin,*,release_endpoint_guards=False):
     origin,rotation=pose(scene['actors'][actor_id]['transform']);frames=scene['frame_count']
     if abs(origin[1])>1e-7 or not np.allclose(rotation@[0.,1.,0.],[0.,1.,0.],atol=1e-7):raise ValueError('Solver requires yaw-only actor placement on ground')
     boxes=[];primitives=[];sampled={}
@@ -65,6 +65,9 @@ def compile_context(scene,actor_id,contact_ids,skin):
     if scene.get('partner_cut_file'):
         from partner_surface_cuts import load_cuts
         result['partner_cuts'],result['partner_cut_provenance']=load_cuts(scene,actor_id,skin)
+    if release_endpoint_guards:
+        from scene_release_guards import compile_release_guards
+        result['release_guards']=compile_release_guards(scene,actor_id,contact_ids)
     return result
 
 
