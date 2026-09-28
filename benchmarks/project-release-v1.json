@@ -815,7 +815,9 @@
         "reports/sphere-release-guard-comparison-v1/comparison.json",
         "docs/object-clearance-inequalities-v1.md",
         "reports/sphere-object-inequality-comparison-v1/comparison.json",
-        "reports/sphere-collision-samples-v12/diagnosis.json"
+        "reports/sphere-collision-samples-v12/diagnosis.json",
+        "docs/contact-convergence-v1.md",
+        "reports/sphere-convergence-comparison-v1/comparison.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -2566,6 +2568,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-28T21:14:14.690860+00:00",
-  "last_progress": "V12 sampled object inequalities reduce full-skin penetration20.910->5.113mm but worsen grip25.582/31.208mm (right scene contact now fails). Frozen sample omissions localized; no release approval."
+  "last_progress_at": "2026-09-28T21:26:26.370851+00:00",
+  "last_progress": "Six-stage V13 reproduces first3 control stages and passes current30mm point/10mm penetration screens on one sphere clip, but both strict5mm contacts fail; left release speed and joint acceleration regress. No release approval."
 }

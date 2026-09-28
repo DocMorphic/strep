@@ -16,7 +16,7 @@ from rig_clip_import import AnimationSampler
 
 
 def selected_vertices(base,previous,skin,recipe):
-    """Replay V8-V12 selection from saved preprocessing, never candidate geometry."""
+    """Replay V8-V13 selection from saved preprocessing, never candidate geometry."""
     surface=Surface(skin);config=recipe['config'];context=recipe['scene_context']
     spec=recipe.get('release_endpoint_guards',{}).get('solver_contact_spec',recipe['contact_spec'])
     contacts=infer_support(base,skin)
@@ -51,7 +51,7 @@ def inflated_depth(points,position,rotation,geometry,clearance):
 def run(study,output):
     study=Path(study).resolve();output=Path(output).resolve();fit=study/'fit'
     summary=read(fit/'summary.json');audit=read(Path(str(study)+'-audit')/'verification.json')
-    if summary['solver_version'] not in [8,9,10,11,12] or len(summary['trials'])!=1:raise ValueError('Expected one V8-V12 development scene')
+    if summary['solver_version'] not in [8,9,10,11,12,13] or len(summary['trials'])!=1:raise ValueError('Expected one V8-V13 development scene')
     if read(study/'pipeline.json')['status']!='complete':raise ValueError('Incomplete fit')
     if audit['fit_summary_sha256']!=sha256(fit/'summary.json'):raise ValueError('Audit binding mismatch')
     for name,digest in summary['implementation'].items():
@@ -97,7 +97,7 @@ def run(study,output):
     max_violation=float(np.sqrt(max(max(row['objective_per_key']) for row in rows.values())))
     if not fixed_penalty and abs(max_violation-recipe['stage_records'][-1]['max_sampled_object_clearance_violation_m'])>2e-6:raise ValueError('Sampled final constraint mismatch')
     output.mkdir(parents=True,exist_ok=False);shutil.copyfile(__file__,output/'method.py')
-    save(output/'diagnosis.json',dict(at=now(),study=study.relative_to(ROOT).as_posix(),fit_summary_sha256=sha256(fit/'summary.json'),audit_sha256=sha256(Path(str(study)+'-audit')/'verification.json'),dense_candidate_sha256=sha256(Path(str(study)+'-audit')/'candidate.json'),glb_sha256=sha256(asset),mesh_sha256=sha256(ASSET),method_sha256=sha256(__file__),selected_vertices=selected.tolist(),frames=frames.tolist(),objects=rows,reconstructed_fixed_penalty=objective,fixed_penalty_equivalence_checked=fixed_penalty,maximum_sampled_key_clearance_violation_m=max_violation,recorded_objective=recipe['objective']['object_collision'],quality_approved=False,scope='Exact current/snapshot implementation binding and reconstructed frozen selection, independently decoded exported skin. For V12 the squared penalty is a diagnostic proxy, not its AL merit; final sampled constraint magnitude is checked instead. Attribution of failure to omission versus sampled constraint violation; not feasibility, anatomy, self-collision or naturalness proof.'))
+    save(output/'diagnosis.json',dict(at=now(),study=study.relative_to(ROOT).as_posix(),fit_summary_sha256=sha256(fit/'summary.json'),audit_sha256=sha256(Path(str(study)+'-audit')/'verification.json'),dense_candidate_sha256=sha256(Path(str(study)+'-audit')/'candidate.json'),glb_sha256=sha256(asset),mesh_sha256=sha256(ASSET),method_sha256=sha256(__file__),selected_vertices=selected.tolist(),frames=frames.tolist(),objects=rows,reconstructed_fixed_penalty=objective,fixed_penalty_equivalence_checked=fixed_penalty,maximum_sampled_key_clearance_violation_m=max_violation,recorded_objective=recipe['objective']['object_collision'],quality_approved=False,scope='Exact current/snapshot implementation binding and reconstructed frozen selection, independently decoded exported skin. For V12+ the squared penalty is a diagnostic proxy, not its AL merit; final sampled constraint magnitude is checked instead. Attribution of failure to omission versus sampled constraint violation; not feasibility, anatomy, self-collision or naturalness proof.'))
     print(dict(selected=len(selected),objects={n:{k:v for k,v in r.items() if not isinstance(v,list)} for n,r in rows.items()},objective=objective),flush=True)
 
 

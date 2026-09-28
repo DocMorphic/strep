@@ -44,10 +44,10 @@ def compare(control,candidate,output):
     control=Path(control).resolve();candidate=Path(candidate).resolve();output=Path(output).resolve()
     protocols=[read(p/'protocol.json') for p in [control,candidate]]
     versions=[p['solver_version'] for p in protocols]
-    if versions not in [[8,9],[9,10],[10,11],[11,12]]:raise ValueError('Expected adjacent V8 through V12 fits')
+    if versions not in [[8,9],[9,10],[10,11],[11,12],[12,13]]:raise ValueError('Expected adjacent V8 through V13 fits')
     sources=[read(p/'source.json')['scene'] for p in [control,candidate]]
     if sources[0]!=sources[1]:raise ValueError('Fits do not share the exact source scene')
-    if versions in [[9,10],[10,11],[11,12]]:
+    if versions in [[9,10],[10,11],[11,12],[12,13]]:
         folders=[]
         for study in [control,candidate]:
             trial=read(study/'fit/summary.json')['trials'][0]['id'];folders.append(study/'fit/assets'/trial/'A')
@@ -69,7 +69,20 @@ def compare(control,candidate,output):
             guard_recipe=recipes[1]['release_endpoint_guards']
             if guard_recipe['guards']!=expected or guard_recipe['solver_contact_spec']!=extend_solver_spec(specs[1],expected):raise ValueError('Effective solver track mismatch')
         else:
-            if configs[1].pop('object_collision_mode')!='per_frame_max_inequality':raise ValueError('Expected signed object inequalities')
+            if versions==[11,12]:
+                if configs[1].pop('object_collision_mode')!='per_frame_max_inequality':raise ValueError('Expected signed object inequalities')
+            else:
+                if configs[0]['outer_stages']!=3 or configs[1]['outer_stages']!=6:raise ValueError('Expected three versus six stages')
+                configs[1]['outer_stages']=3
+                if len(recipes[0]['stage_records'])!=3 or len(recipes[1]['stage_records'])!=6:raise ValueError('Stage execution count differs')
+                pairs=list(zip(recipes[0]['stage_records'],recipes[1]['stage_records'][:3]))
+                while pairs:
+                    a,b=pairs.pop()
+                    if isinstance(a,dict):
+                        if set(a)!=set(b):raise ValueError('Stage record fields differ')
+                        pairs.extend((a[k],b[k]) for k in a)
+                    elif not np.isclose(a,b,rtol=1e-10,atol=1e-10):raise ValueError('First three stages did not reproduce the control')
+                if recipes[0]['object_inequalities']!=recipes[1]['object_inequalities']:raise ValueError('Object constraint settings differ')
             for field in ['selected_vertices','release_endpoint_guards','finger_edits']:
                 a=recipes[0][field];b=recipes[1][field]
                 if field=='finger_edits':
@@ -105,8 +118,8 @@ def compare(control,candidate,output):
         if a['id']!=b['id']:raise ValueError('Contact comparison order differs')
         changes['contacts'].append(dict(id=a['id'],maximum_error_m=b['maximum_error_m']-a['maximum_error_m'],
             peak_release_palm_speed_m_s=b['boundary']['release']['peak_palm_speed_m_s']-a['boundary']['release']['peak_palm_speed_m_s']))
-    factor={(8,9):'Finger degrees of freedom and separate pose regularizer',(9,10):'Finger parameter scaling only, with the same objective and reachable edits',(10,11):'Additional solver point and surface-frame key at release; fade follows the extended track. Authored events and edit budgets unchanged.',(11,12):'Sampled object clearance uses per-frame signed max-vertex inequalities and multiplier updates; initial merit equals V11 fixed penalty.'}[tuple(versions)]
-    save(output/'comparison.json',dict(at=now(),rows=rows,candidate_minus_control=changes,changed_factor=factor,exact_source_scene_matched=True,preprocessing_and_constraints_matched=versions in [[9,10],[11,12]],preprocessing_and_authored_constraints_matched=versions in [[9,10],[10,11],[11,12]],quality_approved=False,
+    factor={(8,9):'Finger degrees of freedom and separate pose regularizer',(9,10):'Finger parameter scaling only, with the same objective and reachable edits',(10,11):'Additional solver point and surface-frame key at release; fade follows the extended track. Authored events and edit budgets unchanged.',(11,12):'Sampled object clearance uses per-frame signed max-vertex inequalities and multiplier updates; initial merit equals V11 fixed penalty.',(12,13):'Six outer stages instead of three; same controls, samples, inequalities, penalty schedule and per-stage budget.'}[tuple(versions)]
+    save(output/'comparison.json',dict(at=now(),rows=rows,candidate_minus_control=changes,changed_factor=factor,exact_source_scene_matched=True,preprocessing_and_constraints_matched=versions in [[9,10],[11,12],[12,13]],preprocessing_and_authored_constraints_matched=versions in [[9,10],[10,11],[11,12],[12,13]],quality_approved=False,
         scope='One paired development scene with floor-valid object placement; no new semantic coverage, training, held-out or animator approval. Temporal measurements remain descriptive and must not be hidden by numerical contact passes.',method_sha256=sha256(__file__)))
     print([dict(solver=r['solver_version'],failed=r['failed_screens'],grip_mm=[c['maximum_error_m']*1000 for c in r['dense_candidate']['contacts']],depth_mm=max(o['maximum_skin_vertex_depth_m'] for o in r['dense_candidate']['objects'].values())*1000) for r in rows],flush=True)
 

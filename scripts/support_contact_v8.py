@@ -61,7 +61,14 @@ def bounded_edit_rotations(parameters,limits,body_count,physical_fingers=False):
     return bounded_rotation(parameters,limits)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False):
+def solver_stage_count(requested):
+    count=CONFIG['outer_stages'] if requested is None else requested
+    if type(count)!=int or not 1<=count<=12:raise ValueError('Outer stage count must be an integer from 1 to 12')
+    return count
+
+
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None):
+    stage_count=solver_stage_count(outer_stage_count)
     if physical_finger_parameters and not finger_edits:raise ValueError('Physical finger parameters require finger controls')
     torch.set_num_threads(2)
     names,parents,_=skeleton_metadata(77); surface=Surface(skin)
@@ -232,7 +239,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         last={k:float(v.detach()) for k,v in terms.items()}
         if progress and calls%20==0:progress(dict(evaluations=calls,loss=float(loss.detach()),terms=last))
         return loss
-    for stage in range(CONFIG['outer_stages']):
+    for stage in range(stage_count):
         optimizer=torch.optim.LBFGS([delta,lift_parameters],lr=.8,max_iter=CONFIG['iterations'],history_size=12,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11)
         optimizer.step(closure)
         closure() # Recompute at accepted parameters before multiplier updates.
@@ -242,7 +249,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             max_active_normal_chord_violation=max([float(torch.relu(g)[c[2].bool()].max()) for g,c in zip(last_normals,normal_constraints)]+[0.])))
         if object_inequalities:
             stage_records[-1].update(object_penalty=object_penalty,max_sampled_object_clearance_violation_m=max([float(torch.relu(g).max()) for g in last_objects]+[0.]))
-        if stage+1<CONFIG['outer_stages']:
+        if stage+1<stage_count:
             point_multiplier=torch.relu(point_multiplier+point_penalty*last_point)*active
             normal_multiplier=[torch.relu(m+normal_penalty*g)*c[2] for m,g,c in zip(normal_multiplier,last_normals,normal_constraints)]
             tangent_multiplier=[torch.relu(m+normal_penalty*g)*c[2] for m,g,c in zip(tangent_multiplier,last_tangents,normal_constraints)]
@@ -257,7 +264,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         actual_delta=bounded_edits(smooth_delta())
     shifted={k:v.copy() for k,v in base.items()};shifted['root_positions'][:,1]+=lift.detach().numpy()
     result=reconstruct(shifted,local.detach().numpy().copy(),parents);result.pop('smooth_root_pos',None)
-    recipe=dict(config=CONFIG,correction_knots=knots.tolist(),parameterization='Cubic edit controls with hand tangents and frozen partner clearance cuts; v8',partner_cut_count=len(cuts),stage_records=stage_records,applied=True,evaluations=calls,objective=last,selected_vertices=len(selected),
+    recipe=dict(config={**CONFIG,'outer_stages':stage_count},correction_knots=knots.tolist(),parameterization='Cubic edit controls with hand tangents and frozen partner clearance cuts; v8',partner_cut_count=len(cuts),stage_records=stage_records,applied=True,evaluations=calls,objective=last,selected_vertices=len(selected),
         root_lift_m=lift.detach().tolist(), max_rotation_delta_degrees=float(torch.linalg.vector_norm(actual_delta,dim=-1).max()*180/torch.pi),
         contact_spec=contact_spec,scene_context=scene_context,hard_bounds=True,normal_constraints=len(normal_constraints),object_constraints=len(objects),
         contact_normalization='Per explicit region, independently of inferred support duration; v3',
