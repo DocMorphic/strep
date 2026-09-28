@@ -9,6 +9,7 @@ from grasp_pose_witness import PoseProblem
 from grasp_orientation import hand_frame, align_direction, unit, angular_error
 from rigid_grasp_bound import clearance_upper_bound
 from audit_grasp_restoration import compare_record
+from grasp_contact_binding import apply_contact_binding
 
 
 def run(shapes, placements, joint, seed_report, output):
@@ -64,6 +65,13 @@ def run(shapes, placements, joint, seed_report, output):
         placement_rows.append(dict(shape=row['shape'], start=row['start'], minimum_clearance_m=minimum))
     joint_protocol, joint_summary = read(joint/'protocol.json'), read(joint/'summary.json')
     if joint_protocol['shapes_protocol_sha256'] != sha256(shapes/'protocol.json') or joint_protocol['placements_result_sha256'] != sha256(placements/'result.json') or joint_protocol['seed_result_sha256'] != sha256(seed_report/'result.json') or joint_protocol['implementation_sha256'] != sha256(ROOT/'scripts/study_joint_grasp_patch.py') or joint_protocol['placement_source_sha256'] != sha256(ROOT/'scripts/study_grasp_placements.py'): raise ValueError('Joint binding changed')
+    for name, digest in joint_protocol.get('implementation', {}).items():
+        if sha256(ROOT/'scripts'/name) != digest or sha256(joint/'implementation'/name) != digest: raise ValueError('Joint implementation changed')
+    binding = joint_protocol.get('contact_binding')
+    if binding is not None:
+        applied = apply_contact_binding(p, binding['hand'], binding['vertex']); compare_record(applied, binding)
+        contact = next(c for c in p.contacts if c['region'] == 'LeftHand')
+        _, faces, target_n = next(n for n in p.normals if n[0] == 'left-grip')
     joint_rows = []
     for row in joint_summary['rows']:
         folder = ROOT/row['folder']; result = read(folder/'result.json')
@@ -77,7 +85,7 @@ def run(shapes, placements, joint, seed_report, output):
     output.mkdir(parents=True, exist_ok=False)
     save(output/'verification.json', dict(at=now(), shapes=shape_rows, placements=placement_rows, joint=joint_rows,
          summary_sha256=sha256(shapes/'summary.json'), placements_result_sha256=sha256(placements/'result.json'), joint_summary_sha256=sha256(joint/'summary.json'),
-         auditor_sha256=sha256(Path(__file__)), original_edit_and_target_limits_verified=True, frozen_parameters_exact=True, saved_pose_arrays_exact=True,
+         auditor_sha256=sha256(Path(__file__)), contact_binding=binding, original_edit_and_target_limits_verified=True, frozen_parameters_exact=True, saved_pose_arrays_exact=True,
          scope='Independent NumPy/SciPy reconstruction of recorded bound, shape and rigid-patch placement results. Necessary-bound passes do not substitute for actual patch clearance; no actual projected skeleton pose or animation approval.', quality_approved=False))
     print(dict(shapes=len(shape_rows), placements=len(placement_rows), joint=len(joint_rows), any_joint_patch_pass=any(r['rigid_patch_passed'] for r in joint_rows)))
 

@@ -1,6 +1,7 @@
 """Joint finger-shape and rigid hand-placement search with original limits."""
 import argparse
 import time
+import shutil
 from pathlib import Path
 import numpy as np
 import torch
@@ -11,6 +12,7 @@ from build_soma_preview import ASSET
 from grasp_pose_witness import PoseProblem
 from grasp_orientation import unit, hand_frame, align_direction, angular_error
 from study_grasp_placements import placement
+from grasp_contact_binding import apply_contact_binding
 
 
 def differentiable_alignment(source, target):
@@ -19,13 +21,14 @@ def differentiable_alignment(source, target):
     return torch.eye(3, dtype=source.dtype, device=source.device)+k+k@k/(1+source@target)
 
 
-def run(shapes, placements, seed_report, output):
+def run(shapes, placements, seed_report, output, left_contact_vertex=None):
     torch.set_num_threads(2); shapes, placements, seed_report, output = [Path(s).resolve() for s in (shapes, placements, seed_report, output)]
     protocol = read(shapes/'protocol.json'); placed = read(placements/'result.json'); fit = ROOT/protocol['study']/'fit'; summary = read(fit/'summary.json')
     if sha256(fit/'summary.json') != protocol['fit_summary_sha256'] or sha256(ASSET) != summary['mesh_sha256'] or sha256(seed_report/'result.json') != protocol['seed_result_sha256']: raise ValueError('Inputs changed')
     for n, digest in protocol['inputs'].items():
         if sha256(ROOT/n) != digest: raise ValueError('Source input changed')
     p = PoseProblem(fit/'assets'/summary['trials'][0]['id']/'A', dict(np.load(ASSET, allow_pickle=False)), protocol['frame'])
+    binding = apply_contact_binding(p, 'LeftHand', left_contact_vertex) if left_contact_vertex is not None else None
     seed = np.array(read(seed_report/'result.json')['parameters']); contact = next(c for c in p.contacts if c['region'] == 'LeftHand')
     _, faces, target_n = next(n for n in p.normals if n[0] == 'left-grip'); sphere, _, center, _ = p.objects[0]
     if sphere.shape != 'sphere' or abs(unit(np.array(contact['target'])-center.numpy()[0])@target_n.numpy()+1) > 1e-10: raise ValueError('Radial sphere required')
@@ -44,11 +47,17 @@ def run(shapes, placements, seed_report, output):
               ('searched_shape_placed', np.r_[encode(optimized_shape[columns]), optimized['raw']]),
               ('reference_shape_centered', np.zeros(len(columns)+5))]
     output.mkdir(parents=True, exist_ok=False)
+    (output/'implementation').mkdir()
+    methods = ['study_joint_grasp_patch.py', 'grasp_contact_binding.py', 'study_grasp_placements.py', 'grasp_pose_witness.py',
+               'grasp_orientation.py', 'support_contact_v8.py', 'support_contact_v5.py', 'floor_contact.py', 'scene_solver_context.py', 'object_geometry.py']
+    implementation = {name: sha256(ROOT/'scripts'/name) for name in methods}
+    for name in methods: shutil.copyfile(ROOT/'scripts'/name, output/'implementation'/name)
     settings = dict(starts=[n for n, _ in starts], maximum_iterations=250, maximum_evaluations=400, seconds_per_trial=80,
                     point_limit_m=point_limit, angle_limit_radians=angle_limit, smooth_min_temperature_m=.00005)
     save(output/'protocol.json', dict(at=now(), shapes_protocol_sha256=sha256(shapes/'protocol.json'), placements_result_sha256=sha256(placements/'result.json'),
          seed_result_sha256=sha256(seed_report/'result.json'), inputs=protocol['inputs'], settings=settings,
          implementation_sha256=sha256(Path(__file__)), placement_source_sha256=sha256(ROOT/'scripts/study_grasp_placements.py'),
+         implementation=implementation, contact_binding=binding,
          scope='Joint left-finger shapes and actual rigid-patch placement, original finger norm/point/normal limits. Final target still needs arm IK and full-body collision validation. Saved shape pose has NOT had the desired rigid placement applied to its skeleton.', quality_approved=False))
     rows = []
     for name, initial in starts:
@@ -100,9 +109,14 @@ def run(shapes, placements, seed_report, output):
                       unprojected_pose_sha256=sha256(folder/'unprojected-shape.npz'), quality_approved=False)
         save(folder/'result.json', result); rows.append(dict(folder=folder.relative_to(ROOT).as_posix(), start=name, minimum_clearance_m=result['minimum_clearance_m'], rigid_patch_clearance_passed=result['rigid_patch_clearance_passed'], result_sha256=sha256(folder/'result.json')))
         print(rows[-1], flush=True)
-    save(output/'summary.json', dict(at=now(), rows=rows, best_index=int(np.argmax([r['minimum_clearance_m'] for r in rows])), quality_approved=False))
+    for name, digest in implementation.items():
+        if sha256(ROOT/'scripts'/name) != digest: raise ValueError('Implementation changed')
+    for name, digest in protocol['inputs'].items():
+        if sha256(ROOT/name) != digest: raise ValueError('Source input changed')
+    save(output/'summary.json', dict(at=now(), rows=rows, best_index=int(np.argmax([r['minimum_clearance_m'] for r in rows])), contact_binding=binding, quality_approved=False))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__); parser.add_argument('shapes', type=Path); parser.add_argument('placements', type=Path); parser.add_argument('seed_report', type=Path); parser.add_argument('output', type=Path)
-    args = parser.parse_args(); run(args.shapes, args.placements, args.seed_report, args.output)
+    parser.add_argument('--left-contact-vertex', type=int, help='Explicit alternate surface binding; does not modify the original fixture')
+    args = parser.parse_args(); run(args.shapes, args.placements, args.seed_report, args.output, args.left_contact_vertex)
