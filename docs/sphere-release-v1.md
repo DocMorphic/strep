@@ -38,4 +38,4 @@ Seventy targeted Python tests pass, including actual Godot/Jolt free flight and 
 
 Local evidence is retained under `reports/sphere-release-backend-v1`, `reports/scene-release-jobs/sphere-development-v1`, and `reports/sphere-release-integration-v1`; generated outputs are excluded from the public source repository. The backend comparison binds simulation reports by hash, and the saved job retains implementation snapshots.
 
-No complete sphere grasp fit, new checkpoint training, held-out release trial, or human approval occurred in this study. Arbitrary prop meshes, responsive actors/partners, and reliable generated interactions remain open. All project release capabilities remain unapproved.
+No complete sphere grasp fit, new checkpoint training, held-out release trial, or human approval occurred in this study. A subsequent [measured sphere grasp fit](sphere-contact-fit-v1.md) retains contact, finger-penetration and temporal failures and identifies pre-release object/floor intersection in the copied trajectory. Arbitrary prop meshes, responsive actors/partners, and reliable generated interactions remain open. All project release capabilities remain unapproved.

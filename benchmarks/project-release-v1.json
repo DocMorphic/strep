@@ -802,6 +802,9 @@
         "reports/object-geometry-core-v1/verification.json",
         "docs/primitive-scenes-v1.md",
         "docs/sphere-release-v1.md",
+        "docs/sphere-contact-fit-v1.md",
+        "reports/sphere-contact-fit-audit-v1/verification.json",
+        "reports/sphere-contact-fit-engine-v1/verification.json",
         "reports/sphere-release-integration-v1/verification.json"
       ],
       "remaining": [
@@ -812,7 +815,7 @@
         "General scene authoring and correction jobs in Studio",
         "Feasible constraint-aware model inference",
         "Held-out actions, rigs, objects, partners and independent animator validation",
-        "Measured spherical grasp fitting and broader prop geometry beyond boxes/spheres; shared primitive release is integrated but grasp/body contact and settling failures remain"
+        "Reliable spherical grasp fitting with finger geometry, floor-valid authored object paths, full contact-window and temporal constraints; first measured fit improves penetration but fails contact/clearance and regresses hand speed. Broader prop geometry beyond boxes/spheres and release settling remain open"
       ]
     },
     {

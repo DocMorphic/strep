@@ -35,7 +35,16 @@ def bundle(scene,motions,assessment):
     return dict(scene=scene,evaluation=assessment,native_contact_tracks=native)
 
 
-def run(scene_paths,output,solver_version=2):
+def preview_asset(entry,preview_base=None):
+    base=Path(preview_base).resolve() if preview_base is not None else ROOT/'reports/scene-preview-v1'
+    path=(base/entry['preview_glb']).resolve()
+    if preview_base is not None and not path.is_relative_to(base):
+        raise ValueError('Actor preview escapes the supplied collection')
+    if path.suffix.lower()!='.glb' or not path.is_file():raise ValueError('Actor preview GLB missing')
+    return path
+
+
+def run(scene_paths,output,solver_version=2,preview_base=None):
     global refine,CONFIG
     if solver_version in [3,4,5,6,7,8]:
         import importlib
@@ -72,7 +81,7 @@ def run(scene_paths,output,solver_version=2):
                     source=ROOT/entry['motion'];digest=sha256(source);raw=dict(np.load(source));raw_motions[name]=raw
                     path=out/'assets'/scene_id/name;path.mkdir(parents=True)
                     shutil.copyfile(source,path/'raw-motion.npz');save(path/'contact-spec.json',spec);save(path/'compilation.json',compilation)
-                    raw_glb=ROOT/'reports/scene-preview-v1'/entry['preview_glb'];shutil.copyfile(raw_glb,path/'raw.glb')
+                    raw_glb=preview_asset(entry,preview_base);shutil.copyfile(raw_glb,path/'raw.glb')
                     original['actors'][name].update(preview_glb=(path/'raw.glb').relative_to(out).as_posix())
                     start=time.perf_counter();base,limb_recipe=floor_correct(raw,skin);previous,body_recipe=body_refine(base,skin)
                     context_args={}
@@ -128,4 +137,5 @@ def run(scene_paths,output,solver_version=2):
 if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('scenes',nargs='+',type=Path);parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--solver-version',type=int,choices=[2,3,4,5,6,7,8],default=2)
-    args=parser.parse_args();run(args.scenes,args.output,args.solver_version)
+    parser.add_argument('--preview-base',type=Path,help='Explicit saved collection root for relative actor GLBs')
+    args=parser.parse_args();run(args.scenes,args.output,args.solver_version,args.preview_base)
