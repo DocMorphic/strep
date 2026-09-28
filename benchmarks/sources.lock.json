@@ -1,0 +1,31 @@
+{
+  "inspected_at": "2026-09-24T11:37:30.1387675+02:00",
+  "kimodo_git_commit": "58e781898b3d7e328a676a75d3e338c45dce3ad9",
+  "models": [
+    {
+      "repo_id": "nvidia/Kimodo-SOMA-RP-v1.1",
+      "revision": "6c9233af1180b8151e3c4703477104af5dce9dd5",
+      "gated": false,
+      "weights_downloaded": true
+    },
+    {
+      "repo_id": "meta-llama/Meta-Llama-3-8B-Instruct",
+      "revision": "8afb486c1db24fe5011ec46dfbe5b5dccdb575c2",
+      "gated": "manual",
+      "weights_downloaded": false
+    },
+    {
+      "repo_id": "McGill-NLP/LLM2Vec-Meta-Llama-3-8B-Instruct-mntp",
+      "revision": "31474e395ada192e8ed1586db6be79fb3b70c9c0",
+      "gated": false,
+      "weights_downloaded": false
+    },
+    {
+      "repo_id": "McGill-NLP/LLM2Vec-Meta-Llama-3-8B-Instruct-mntp-supervised",
+      "revision": "baa8ebf04a1c2500e61288e7dad65e8ae42601a7",
+      "gated": false,
+      "weights_downloaded": false
+    }
+  ],
+  "environment_lock_status": "installed; benchmarks/environment.windows.txt; native MotionCorrection absent"
+}

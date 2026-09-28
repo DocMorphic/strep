@@ -1,0 +1,14 @@
+<div id="rigJoinPanel" hidden>
+ <div class="rig-toolbar"><strong>Join clips</strong><button class="btn" id="rigJoinClose">Back to mapping</button></div>
+ <p class="small" id="rigJoinBinding"></p>
+ <label>Name<input id="rigJoinName" aria-label="Joined clip name" maxlength="160"></label>
+ <div class="rig-offsets"><label>First clip start<input id="rigJoinAStart" aria-label="First clip start frame" type="number" min="0"></label><label>Last frame<input id="rigJoinAEnd" aria-label="First clip last frame" type="number" min="1"></label></div>
+ <label>Next clip<select id="rigJoinB" aria-label="Next clip"></select></label>
+ <label>Version<select id="rigJoinBVariant" aria-label="Next clip version"></select></label>
+ <div class="rig-offsets"><label>Next clip start<input id="rigJoinBStart" aria-label="Next clip start frame" type="number" min="0"></label><label>Last frame<input id="rigJoinBEnd" aria-label="Next clip last frame" type="number" min="1"></label></div>
+ <div class="rig-offsets"><label>Blend frames<input id="rigJoinBlend" aria-label="Transition blend frames" type="number" min="3" value="10"></label><label>Turn next clip (°)<input id="rigJoinYaw" aria-label="Next clip heading degrees" type="number" min="-180" max="180" value="0"></label></div>
+ <p class="small" id="rigJoinClock"></p>
+ <p class="small">The next clip moves horizontally to the first clip's overlap start. Height stays unchanged. The heading adjustment is explicit; no facing direction is guessed.</p>
+ <p class="small">Source contact targets stay in the review file. Blending may break support or change the action; inspect the join before using it. This creates a finite clip, not a certified loop.</p>
+ <button class="btn primary" id="rigJoinApply">Create joined clip</button>
+</div>

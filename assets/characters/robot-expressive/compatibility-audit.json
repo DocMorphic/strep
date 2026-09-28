@@ -1,0 +1,149 @@
+{
+  "source_sha256": "047f5e5fb3bb6d378bd1df16ca6137f2a596c99b3a1b5690b4020c05aaf6f319",
+  "first_import_error": "Rig import v1 requires unit scale and proper rigid node transforms",
+  "node_count": 74,
+  "skin_joint_counts": [
+    43,
+    43
+  ],
+  "morph_target_meshes": [
+    {
+      "index": 2,
+      "name": "Head",
+      "targets": 3
+    }
+  ],
+  "animated_scale_nodes": [],
+  "root_and_leg_nodes": [
+    {
+      "index": 1,
+      "name": "RobotArmature",
+      "parent": 0,
+      "children": [
+        2
+      ],
+      "scale": [
+        100,
+        100,
+        100
+      ]
+    },
+    {
+      "index": 2,
+      "name": "Bone",
+      "parent": 1,
+      "children": [
+        3,
+        6,
+        65,
+        67,
+        70
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "index": 3,
+      "name": "Foot.L",
+      "parent": 2,
+      "children": [
+        4,
+        5
+      ],
+      "scale": [
+        1,
+        0.999999821186066,
+        1
+      ]
+    },
+    {
+      "index": 4,
+      "name": "Foot.L",
+      "parent": 3,
+      "children": [],
+      "scale": [
+        1,
+        1.00000011920929,
+        1.00000011920929
+      ]
+    },
+    {
+      "index": 8,
+      "name": "Hips",
+      "parent": 6,
+      "children": [
+        9
+      ],
+      "scale": [
+        1,
+        1,
+        0.999999940395355
+      ]
+    },
+    {
+      "index": 55,
+      "name": "UpperLeg.L",
+      "parent": 6,
+      "children": [
+        56,
+        57
+      ],
+      "scale": [
+        1,
+        1.00000178813934,
+        1.00001561641693
+      ]
+    },
+    {
+      "index": 56,
+      "name": "Leg.L",
+      "parent": 55,
+      "children": [],
+      "scale": [
+        0.999999940395355,
+        0.999993026256561,
+        1.00000023841858
+      ]
+    },
+    {
+      "index": 57,
+      "name": "LowerLeg.L",
+      "parent": 55,
+      "children": [
+        58,
+        59
+      ],
+      "scale": [
+        1.00000011920929,
+        0.999999582767487,
+        1.00000143051147
+      ]
+    },
+    {
+      "index": 58,
+      "name": "LowerLeg.L",
+      "parent": 57,
+      "children": [],
+      "scale": [
+        0.999999940395355,
+        0.999992728233337,
+        1.00000023841858
+      ]
+    }
+  ],
+  "status": "unsupported_preserved",
+  "scope": "Original asset retained unchanged. Static multi-skin/morph preservation and scaled/disconnected-chain transfer need separate implementation; no stripped or distorted substitute is counted as success.",
+  "khronos_validation": {
+    "errors": 752,
+    "warnings": 4,
+    "issue_counts": {
+      "NODE_SKINNED_MESH_NON_ROOT": 2,
+      "NODE_SKINNED_MESH_LOCAL_TRANSFORMS": 2,
+      "ACCESSOR_WEIGHTS_NON_NORMALIZED": 752
+    },
+    "evidence": "reports/rig-diversity-v1/export-validation.json"
+  }
+}

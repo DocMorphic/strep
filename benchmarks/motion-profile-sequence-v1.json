@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "requests": [
+    {
+      "id": "plain-sequence",
+      "label": "Plain - balance and bow",
+      "segments": [
+        {
+          "prompt": "A person balances on one leg with their arms stretched out, then lowers the foot and relaxes.",
+          "duration_s": 4
+        },
+        {
+          "prompt": "The person bows to the audience, straightens up and waves goodbye.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        44
+      ],
+      "scene_requirements": []
+    },
+    {
+      "id": "profile-sequence",
+      "label": "Parkour profile - balance and bow",
+      "segments": [
+        {
+          "prompt": "A person balances on one leg with their arms stretched out, then lowers the foot and relaxes.",
+          "duration_s": 4
+        },
+        {
+          "prompt": "The person bows to the audience, straightens up and waves goodbye.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        44
+      ],
+      "scene_requirements": [],
+      "motion_profile": {
+        "schema": "strep-motion-profile-v1",
+        "name": "Parkour test character",
+        "policy_name": "Editable game-style examples v1",
+        "style": "Compact, precise movement",
+        "training": "Parkour",
+        "state": "Fresh, uninjured",
+        "stats": [
+          {
+            "id": "agility",
+            "label": "Agility",
+            "value": 100,
+            "levels": [
+              "Careful, unhurried changes of direction.",
+              "Controlled changes of direction.",
+              "Quick, precise changes of direction."
+            ]
+          },
+          {
+            "id": "strength",
+            "label": "Strength",
+            "value": 50,
+            "levels": [
+              "Gentle, low-force-looking movements.",
+              "Moderately forceful movements.",
+              "Powerful, forceful-looking movements."
+            ]
+          },
+          {
+            "id": "balance",
+            "label": "Balance",
+            "value": 100,
+            "levels": [
+              "Cautious, visibly tentative balance.",
+              "Steady balance.",
+              "Steady, well-controlled balance."
+            ]
+          },
+          {
+            "id": "mobility",
+            "label": "Mobility",
+            "value": 50,
+            "levels": [
+              "Compact movements within a limited comfortable range.",
+              "A comfortable movement range.",
+              "Wide, supple movement range."
+            ]
+          },
+          {
+            "id": "coordination",
+            "label": "Coordination",
+            "value": 50,
+            "levels": [
+              "Hesitant, less fluid coordination.",
+              "Coordinated movements.",
+              "Fluid, precise coordination."
+            ]
+          },
+          {
+            "id": "endurance",
+            "label": "Endurance",
+            "value": 50,
+            "levels": null
+          }
+        ]
+      }
+    }
+  ]
+}

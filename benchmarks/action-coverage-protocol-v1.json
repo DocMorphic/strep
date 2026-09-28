@@ -1,0 +1,13 @@
+{
+  "id": "action-coverage-v1",
+  "request_file": "benchmarks/action-coverage-v1.json",
+  "scope": "Seven illustrative requests across locomotion, aerial, floor, expressive and combat motions; two seeds each. Not a finite action whitelist or universal coverage claim.",
+  "postprocessing": false,
+  "diffusion_steps": 100,
+  "fps": 30,
+  "num_transition_frames": 5,
+  "diagnostic_thresholds": {"joint_penetration_m": 0.01, "predicted_contact_foot_speed_p95_m_s": 0.15},
+  "quality_policy": "All clips remain unreviewed. These provisional flags are not action correctness, mesh collision, physical realism, scene contact or animator acceptance.",
+  "review_questions": ["Does each requested action occur?", "Does the requested order occur?", "Are intended contacts credible?", "Is the final pose usable?", "Are there visible snaps, skating, penetrations or balance failures?"],
+  "future_coverage": ["object manipulation", "human-human interactions", "scene traversal", "style and emotion", "injury and fatigue", "sports", "tools", "transitions", "rough-clip editing", "rig transfer"]
+}

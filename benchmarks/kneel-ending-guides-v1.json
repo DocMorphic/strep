@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "requests": [
+    {
+      "id": "kneel-final-frame",
+      "label": "Timed phases / upright start / final-frame",
+      "segments": [
+        {
+          "prompt": "A person starts standing and lowers onto both knees.",
+          "duration_s": 2
+        },
+        {
+          "prompt": "A person pauses upright on both knees.",
+          "duration_s": 1
+        },
+        {
+          "prompt": "A person steps one foot forward from kneeling and rises to standing.",
+          "duration_s": 3
+        }
+      ],
+      "seeds": [
+        1301,
+        2089,
+        3253,
+        4099
+      ],
+      "scene_requirements": [],
+      "generation_constraints": [
+        {
+          "type": "fullbody",
+          "motion": "reports/action-jobs/breadth-v2-round-01-a/takes/ground_and_recovery-kneel-rise-a-seed-1301/motion.npz",
+          "sha256": "29139dc3fa959adfb6aaba9886daca8cd44e5cf9f226e5811cb0b8e883030244",
+          "source_frames": [
+            179,
+            179
+          ],
+          "frame_indices": [
+            0,
+            179
+          ]
+        }
+      ],
+      "guide_origin": "start_pose"
+    },
+    {
+      "id": "kneel-held-ending",
+      "label": "Timed phases / upright start / held-ending",
+      "segments": [
+        {
+          "prompt": "A person starts standing and lowers onto both knees.",
+          "duration_s": 2
+        },
+        {
+          "prompt": "A person pauses upright on both knees.",
+          "duration_s": 1
+        },
+        {
+          "prompt": "A person steps one foot forward from kneeling and rises to standing.",
+          "duration_s": 3
+        }
+      ],
+      "seeds": [
+        1301,
+        2089,
+        3253,
+        4099
+      ],
+      "scene_requirements": [],
+      "generation_constraints": [
+        {
+          "type": "fullbody",
+          "motion": "reports/action-jobs/breadth-v2-round-01-a/takes/ground_and_recovery-kneel-rise-a-seed-1301/motion.npz",
+          "sha256": "29139dc3fa959adfb6aaba9886daca8cd44e5cf9f226e5811cb0b8e883030244",
+          "source_frames": [
+            179,
+            179,
+            179,
+            179,
+            179,
+            179,
+            179,
+            179,
+            179,
+            179,
+            179
+          ],
+          "frame_indices": [
+            0,
+            170,
+            171,
+            172,
+            173,
+            174,
+            175,
+            176,
+            177,
+            178,
+            179
+          ]
+        }
+      ],
+      "guide_origin": "start_pose"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "profile-pilot-v1",
+  "mapping_version": "explicit-descriptors-v1",
+  "fps": 30,
+  "duration_s": 4,
+  "speed_m_s": 3,
+  "seeds": [11,22,33],
+  "diffusion_steps": 100,
+  "cfg_type": "separated",
+  "cfg_weight": [2,2],
+  "speed_relative_tolerance": 0.05,
+  "pelvis_path_p95_tolerance_m": 0.10,
+  "stat_status": "Numeric capability fields are stored design intent, not validated conditioning inputs. Only explicit movement descriptions and path/time constraints drive this pilot.",
+  "profiles": [
+    {"id":"neutral","label":"Neutral runner","style":"neutral","state":"fresh","capabilities":{"agility":50,"strength":50,"endurance":50},"prompt":"A person runs forward steadily with a relaxed upright torso and natural arm swings."},
+    {"id":"parkour","label":"Parkour-trained","style":"parkour","state":"fresh","capabilities":{"agility":90,"strength":60,"endurance":80},"prompt":"A person runs forward with quick light steps, compact arm swings and a slight forward lean, moving like a trained parkour athlete."},
+    {"id":"sprinter","label":"Sprint technique","style":"sprint","state":"fresh","capabilities":{"agility":75,"strength":85,"endurance":60},"prompt":"A person runs forward with high knee drive, vigorous backward and forward arm swings and a forward leaning torso, using a trained sprinter's technique."},
+    {"id":"loaded","label":"Backpack running","style":"loaded","state":"carrying a backpack","load_kg":10,"capabilities":{"agility":50,"strength":50,"endurance":50},"prompt":"A person runs forward while carrying a heavy backpack, leaning forward with restrained arm swings and deliberate steps."},
+    {"id":"fatigued","label":"Fatigued parkour runner","style":"parkour","state":"fatigued","capabilities":{"agility":90,"strength":60,"endurance":80},"prompt":"A person runs forward with tired heavy steps, slumped shoulders and reduced arm swings while struggling to keep a steady pace."}
+  ]
+}

@@ -1,0 +1,377 @@
+{
+  "schema_version": 1,
+  "requests": [
+    {
+      "id": "wave-plain",
+      "label": "Wave / mobility plain",
+      "segments": [
+        {
+          "prompt": "A person raises their right arm, waves hello, then lowers the arm.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        301,
+        302,
+        303
+      ],
+      "scene_requirements": []
+    },
+    {
+      "id": "wave-low",
+      "label": "Wave / mobility low",
+      "segments": [
+        {
+          "prompt": "A person raises their right arm, waves hello, then lowers the arm.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        301,
+        302,
+        303
+      ],
+      "scene_requirements": [],
+      "motion_profile": {
+        "schema": "strep-motion-profile-v1",
+        "name": "Single mobility rule",
+        "policy_name": "Editable game-style examples v1",
+        "style": "",
+        "training": "",
+        "state": "",
+        "stats": [
+          {
+            "id": "mobility",
+            "label": "Mobility",
+            "value": 0,
+            "levels": [
+              "Compact movements within a limited comfortable range.",
+              "A comfortable movement range.",
+              "Wide, supple movement range."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "wave-middle",
+      "label": "Wave / mobility middle",
+      "segments": [
+        {
+          "prompt": "A person raises their right arm, waves hello, then lowers the arm.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        301,
+        302,
+        303
+      ],
+      "scene_requirements": [],
+      "motion_profile": {
+        "schema": "strep-motion-profile-v1",
+        "name": "Single mobility rule",
+        "policy_name": "Editable game-style examples v1",
+        "style": "",
+        "training": "",
+        "state": "",
+        "stats": [
+          {
+            "id": "mobility",
+            "label": "Mobility",
+            "value": 50,
+            "levels": [
+              "Compact movements within a limited comfortable range.",
+              "A comfortable movement range.",
+              "Wide, supple movement range."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "wave-high",
+      "label": "Wave / mobility high",
+      "segments": [
+        {
+          "prompt": "A person raises their right arm, waves hello, then lowers the arm.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        301,
+        302,
+        303
+      ],
+      "scene_requirements": [],
+      "motion_profile": {
+        "schema": "strep-motion-profile-v1",
+        "name": "Single mobility rule",
+        "policy_name": "Editable game-style examples v1",
+        "style": "",
+        "training": "",
+        "state": "",
+        "stats": [
+          {
+            "id": "mobility",
+            "label": "Mobility",
+            "value": 100,
+            "levels": [
+              "Compact movements within a limited comfortable range.",
+              "A comfortable movement range.",
+              "Wide, supple movement range."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "squat-plain",
+      "label": "Squat / mobility plain",
+      "segments": [
+        {
+          "prompt": "A person squats down, then stands upright again.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        301,
+        302,
+        303
+      ],
+      "scene_requirements": []
+    },
+    {
+      "id": "squat-low",
+      "label": "Squat / mobility low",
+      "segments": [
+        {
+          "prompt": "A person squats down, then stands upright again.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        301,
+        302,
+        303
+      ],
+      "scene_requirements": [],
+      "motion_profile": {
+        "schema": "strep-motion-profile-v1",
+        "name": "Single mobility rule",
+        "policy_name": "Editable game-style examples v1",
+        "style": "",
+        "training": "",
+        "state": "",
+        "stats": [
+          {
+            "id": "mobility",
+            "label": "Mobility",
+            "value": 0,
+            "levels": [
+              "Compact movements within a limited comfortable range.",
+              "A comfortable movement range.",
+              "Wide, supple movement range."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "squat-middle",
+      "label": "Squat / mobility middle",
+      "segments": [
+        {
+          "prompt": "A person squats down, then stands upright again.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        301,
+        302,
+        303
+      ],
+      "scene_requirements": [],
+      "motion_profile": {
+        "schema": "strep-motion-profile-v1",
+        "name": "Single mobility rule",
+        "policy_name": "Editable game-style examples v1",
+        "style": "",
+        "training": "",
+        "state": "",
+        "stats": [
+          {
+            "id": "mobility",
+            "label": "Mobility",
+            "value": 50,
+            "levels": [
+              "Compact movements within a limited comfortable range.",
+              "A comfortable movement range.",
+              "Wide, supple movement range."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "squat-high",
+      "label": "Squat / mobility high",
+      "segments": [
+        {
+          "prompt": "A person squats down, then stands upright again.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        301,
+        302,
+        303
+      ],
+      "scene_requirements": [],
+      "motion_profile": {
+        "schema": "strep-motion-profile-v1",
+        "name": "Single mobility rule",
+        "policy_name": "Editable game-style examples v1",
+        "style": "",
+        "training": "",
+        "state": "",
+        "stats": [
+          {
+            "id": "mobility",
+            "label": "Mobility",
+            "value": 100,
+            "levels": [
+              "Compact movements within a limited comfortable range.",
+              "A comfortable movement range.",
+              "Wide, supple movement range."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "kick-plain",
+      "label": "Kick / mobility plain",
+      "segments": [
+        {
+          "prompt": "A person performs a forward kick with the right leg, then returns to standing.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        301,
+        302,
+        303
+      ],
+      "scene_requirements": []
+    },
+    {
+      "id": "kick-low",
+      "label": "Kick / mobility low",
+      "segments": [
+        {
+          "prompt": "A person performs a forward kick with the right leg, then returns to standing.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        301,
+        302,
+        303
+      ],
+      "scene_requirements": [],
+      "motion_profile": {
+        "schema": "strep-motion-profile-v1",
+        "name": "Single mobility rule",
+        "policy_name": "Editable game-style examples v1",
+        "style": "",
+        "training": "",
+        "state": "",
+        "stats": [
+          {
+            "id": "mobility",
+            "label": "Mobility",
+            "value": 0,
+            "levels": [
+              "Compact movements within a limited comfortable range.",
+              "A comfortable movement range.",
+              "Wide, supple movement range."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "kick-middle",
+      "label": "Kick / mobility middle",
+      "segments": [
+        {
+          "prompt": "A person performs a forward kick with the right leg, then returns to standing.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        301,
+        302,
+        303
+      ],
+      "scene_requirements": [],
+      "motion_profile": {
+        "schema": "strep-motion-profile-v1",
+        "name": "Single mobility rule",
+        "policy_name": "Editable game-style examples v1",
+        "style": "",
+        "training": "",
+        "state": "",
+        "stats": [
+          {
+            "id": "mobility",
+            "label": "Mobility",
+            "value": 50,
+            "levels": [
+              "Compact movements within a limited comfortable range.",
+              "A comfortable movement range.",
+              "Wide, supple movement range."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "kick-high",
+      "label": "Kick / mobility high",
+      "segments": [
+        {
+          "prompt": "A person performs a forward kick with the right leg, then returns to standing.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        301,
+        302,
+        303
+      ],
+      "scene_requirements": [],
+      "motion_profile": {
+        "schema": "strep-motion-profile-v1",
+        "name": "Single mobility rule",
+        "policy_name": "Editable game-style examples v1",
+        "style": "",
+        "training": "",
+        "state": "",
+        "stats": [
+          {
+            "id": "mobility",
+            "label": "Mobility",
+            "value": 100,
+            "levels": [
+              "Compact movements within a limited comfortable range.",
+              "A comfortable movement range.",
+              "Wide, supple movement range."
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

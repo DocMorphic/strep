@@ -1,0 +1,325 @@
+{
+  "schema_version": 1,
+  "requests": [
+    {
+      "id": "jump-land-free",
+      "label": "jump-land / target free",
+      "segments": [
+        {
+          "prompt": "A person bends their knees, jumps forward with both feet, lands on both feet and regains balance.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        501,
+        502,
+        503
+      ],
+      "scene_requirements": []
+    },
+    {
+      "id": "jump-land-captured",
+      "label": "jump-land / target captured",
+      "segments": [
+        {
+          "prompt": "A person bends their knees, jumps forward with both feet, lands on both feet and regains balance.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        501,
+        502,
+        503
+      ],
+      "scene_requirements": [],
+      "generation_constraints": [
+        {
+          "type": "end-effector",
+          "joint_names": [
+            "RightFoot"
+          ],
+          "motion": "reports/pose-response-v1/targets/jump-land/original.npz",
+          "sha256": "2338aaaddecf8ae594d420e0366bdd82047cbb068ea28744227af1eab42bd069",
+          "source_frames": [
+            0
+          ],
+          "frame_indices": [
+            45
+          ]
+        }
+      ]
+    },
+    {
+      "id": "jump-land-offset",
+      "label": "jump-land / target offset",
+      "segments": [
+        {
+          "prompt": "A person bends their knees, jumps forward with both feet, lands on both feet and regains balance.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        501,
+        502,
+        503
+      ],
+      "scene_requirements": [],
+      "generation_constraints": [
+        {
+          "type": "end-effector",
+          "joint_names": [
+            "RightFoot"
+          ],
+          "motion": "reports/pose-response-v1/targets/jump-land/candidate.npz",
+          "sha256": "e021cbbb6ad490c8d8608897ee8e986f2100cd429aa86e80cf07c04e368284a5",
+          "source_frames": [
+            0
+          ],
+          "frame_indices": [
+            45
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crawl-free",
+      "label": "crawl / target free",
+      "segments": [
+        {
+          "prompt": "A person crawls forward slowly on their hands and knees.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        501,
+        502,
+        503
+      ],
+      "scene_requirements": []
+    },
+    {
+      "id": "crawl-captured",
+      "label": "crawl / target captured",
+      "segments": [
+        {
+          "prompt": "A person crawls forward slowly on their hands and knees.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        501,
+        502,
+        503
+      ],
+      "scene_requirements": [],
+      "generation_constraints": [
+        {
+          "type": "end-effector",
+          "joint_names": [
+            "LeftHand"
+          ],
+          "motion": "reports/pose-response-v1/targets/crawl/original.npz",
+          "sha256": "3942dd7fd9dc9ef1facfcf64690e54729a0c5b89dc877b17e03484076612899b",
+          "source_frames": [
+            0
+          ],
+          "frame_indices": [
+            60
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crawl-offset",
+      "label": "crawl / target offset",
+      "segments": [
+        {
+          "prompt": "A person crawls forward slowly on their hands and knees.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        501,
+        502,
+        503
+      ],
+      "scene_requirements": [],
+      "generation_constraints": [
+        {
+          "type": "end-effector",
+          "joint_names": [
+            "LeftHand"
+          ],
+          "motion": "reports/pose-response-v1/targets/crawl/candidate.npz",
+          "sha256": "5079a78ff1d017f210ea50f6d6ff0dd994ce3fec1ff455ba99069cf720cb28ef",
+          "source_frames": [
+            0
+          ],
+          "frame_indices": [
+            60
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dance-free",
+      "label": "dance / target free",
+      "segments": [
+        {
+          "prompt": "A person dances with rhythmic side steps, swinging their arms and turning around.",
+          "duration_s": 5
+        }
+      ],
+      "seeds": [
+        501,
+        502,
+        503
+      ],
+      "scene_requirements": []
+    },
+    {
+      "id": "dance-captured",
+      "label": "dance / target captured",
+      "segments": [
+        {
+          "prompt": "A person dances with rhythmic side steps, swinging their arms and turning around.",
+          "duration_s": 5
+        }
+      ],
+      "seeds": [
+        501,
+        502,
+        503
+      ],
+      "scene_requirements": [],
+      "generation_constraints": [
+        {
+          "type": "end-effector",
+          "joint_names": [
+            "RightHand"
+          ],
+          "motion": "reports/pose-response-v1/targets/dance/original.npz",
+          "sha256": "fde7335b0229d4851ef3820d60f863ac6b5b3c4d4e3eeef7be57c9a108358b3b",
+          "source_frames": [
+            0
+          ],
+          "frame_indices": [
+            75
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dance-offset",
+      "label": "dance / target offset",
+      "segments": [
+        {
+          "prompt": "A person dances with rhythmic side steps, swinging their arms and turning around.",
+          "duration_s": 5
+        }
+      ],
+      "seeds": [
+        501,
+        502,
+        503
+      ],
+      "scene_requirements": [],
+      "generation_constraints": [
+        {
+          "type": "end-effector",
+          "joint_names": [
+            "RightHand"
+          ],
+          "motion": "reports/pose-response-v1/targets/dance/candidate.npz",
+          "sha256": "6fb2279bc3bcd284c2e07419dc93f18303e1e138a4e42da765f83afea0be6af9",
+          "source_frames": [
+            0
+          ],
+          "frame_indices": [
+            75
+          ]
+        }
+      ]
+    },
+    {
+      "id": "get-up-free",
+      "label": "get-up / target free",
+      "segments": [
+        {
+          "prompt": "A person lies on their back on the floor, rolls onto their side and pushes up to stand.",
+          "duration_s": 6
+        }
+      ],
+      "seeds": [
+        501,
+        502,
+        503
+      ],
+      "scene_requirements": []
+    },
+    {
+      "id": "get-up-captured",
+      "label": "get-up / target captured",
+      "segments": [
+        {
+          "prompt": "A person lies on their back on the floor, rolls onto their side and pushes up to stand.",
+          "duration_s": 6
+        }
+      ],
+      "seeds": [
+        501,
+        502,
+        503
+      ],
+      "scene_requirements": [],
+      "generation_constraints": [
+        {
+          "type": "end-effector",
+          "joint_names": [
+            "LeftFoot"
+          ],
+          "motion": "reports/pose-response-v1/targets/get-up/original.npz",
+          "sha256": "c9b071686f1f30d4fc32b970d714f81b40de2ca31d1e13c53ce91666090ddb83",
+          "source_frames": [
+            0
+          ],
+          "frame_indices": [
+            90
+          ]
+        }
+      ]
+    },
+    {
+      "id": "get-up-offset",
+      "label": "get-up / target offset",
+      "segments": [
+        {
+          "prompt": "A person lies on their back on the floor, rolls onto their side and pushes up to stand.",
+          "duration_s": 6
+        }
+      ],
+      "seeds": [
+        501,
+        502,
+        503
+      ],
+      "scene_requirements": [],
+      "generation_constraints": [
+        {
+          "type": "end-effector",
+          "joint_names": [
+            "LeftFoot"
+          ],
+          "motion": "reports/pose-response-v1/targets/get-up/candidate.npz",
+          "sha256": "90e1e923a7fd469bdb9326b273aa05f5638231c7f03e07c42bdb2feec858baf7",
+          "source_frames": [
+            0
+          ],
+          "frame_indices": [
+            90
+          ]
+        }
+      ]
+    }
+  ]
+}

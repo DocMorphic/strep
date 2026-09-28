@@ -1,0 +1,32 @@
+{
+  "schema": "strep-rig-profile-v1",
+  "character_sha256": "b7001eaeea8254bd44773bcd247e78696d94169388fbb2a1800fc69434e777d9",
+  "reference_pose": "default_nodes",
+  "mapping": {
+    "Hips": "Skeleton_torso_joint_1",
+    "Spine2": "Skeleton_torso_joint_2",
+    "Chest": "torso_joint_3",
+    "Neck1": "Skeleton_neck_joint_1",
+    "Head": "Skeleton_neck_joint_2",
+    "LeftArm": "Skeleton_arm_joint_L__4_",
+    "LeftForeArm": "Skeleton_arm_joint_L__3_",
+    "LeftHand": "Skeleton_arm_joint_L__2_",
+    "RightArm": "Skeleton_arm_joint_R",
+    "RightForeArm": "Skeleton_arm_joint_R__2_",
+    "RightHand": "Skeleton_arm_joint_R__3_",
+    "LeftLeg": "leg_joint_L_1",
+    "LeftShin": "leg_joint_L_2",
+    "LeftFoot": "leg_joint_L_3",
+    "LeftToeBase": "leg_joint_L_5",
+    "RightLeg": "leg_joint_R_1",
+    "RightShin": "leg_joint_R_2",
+    "RightFoot": "leg_joint_R_3",
+    "RightToeBase": "leg_joint_R_5"
+  },
+  "world_offset_m": [
+    0,
+    0,
+    0
+  ],
+  "notes": "Explicit CesiumMan anatomical mapping; original default-node reference. No floor compensation, twist distribution or contact IK."
+}

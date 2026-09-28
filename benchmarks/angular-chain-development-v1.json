@@ -1,0 +1,11 @@
+{
+  "max_blocks": 8,
+  "scope": "Selected known development sources to verify bounded workflow integration. These are not new independent or held-out motions. Rig02 contact failure and already-passing dance are explicit control cases.",
+  "cases": [
+    {"id": "dance-rig01", "source": "reports/block-release-dance-v3", "audit": "reports/angular-source-dance-v1/completion.json"},
+    {"id": "backpedal-rig01", "source": "reports/release-restore-v1", "audit": "reports/angular-source-backpedal-v1/completion.json"},
+    {"id": "backpedal-rig03", "source": "reports/edit-buffer-conic-foot-rig03-v1", "audit": "reports/edit-buffer-conic-foot-rig03-audit-v1/completion.json"},
+    {"id": "backpedal-rig02-contact-failure", "source": "reports/edit-buffer-conic-foot-rig02-v1", "audit": "reports/edit-buffer-conic-foot-rig02-audit-v1/completion.json"},
+    {"id": "dance-rig01-already-passed", "source": "reports/angular-dance-rig01-v2", "audit": "reports/angular-dance-rig01-audit-v2/completion.json"}
+  ]
+}

@@ -1,0 +1,20 @@
+# Beyond joint accuracy: interaction and dynamics
+
+Checked 2026-09-27 while the target-preserving refinement study was running. This is a research decision note, not implementation or release evidence. No checkpoint, dataset, simulator, or paid service was acquired.
+
+## Primary sources
+
+- [Kimodo constraint documentation](https://research.nvidia.com/labs/sil/projects/kimodo/docs/key_concepts/constraints.html) describes wrist/heel orientation and end-effector position guidance, and optimization after generation. Its [best practices](https://research.nvidia.com/labs/sil/projects/kimodo/docs/key_concepts/limitations.html) recommend sparse constraints and focused prompts, and acknowledge sliding and missed constraints. Our current joint-target results therefore test one documented failure mode; they cannot certify object dynamics.
+- [OMOMO, SIGGRAPH Asia 2023](https://arxiv.org/abs/2309.16237) conditions motion on an object's trajectory and separates hand-trajectory prediction from whole-body synthesis. Its reported dataset contains about ten hours over fifteen objects. This is precedent for explicitly representing object motion and hand contacts, not evidence that prompt-only generation solves arbitrary manipulation. No code, weights, or data license was verified in this review.
+- [InterPhys, CVPR 2026 paper](https://arxiv.org/html/2605.01036v1) takes object motion and scene geometry as inputs, models reciprocal object/body dynamics and surface-normal-aware contact forces, and uses a two-stage diffusion pipeline. It reports experiments on OMOMO and TRUMANS. Its soft dynamics losses motivate measuring force/torque consistency separately from geometric contact. This review does not establish a reusable checkpoint, local hardware fit, commercial asset rights, or universal physical validity. The paper's publication license is not a model/data license.
+- [NVIDIA ProtoMotions repository](https://github.com/NVlabs/ProtoMotions) documents simulated motion imitation, a Kimodo conversion path, and separate simulator backends. This suggests an offline simulation-and-bake experiment as another possible approach. It is not a drop-in kinematic editor. Backend installation, character inertias/collision shapes, policy availability, hardware costs, export fidelity, and each asset's rights need inspection before adoption. The linked installation and Kimodo preparation pages failed to load in this research pass; their contents were not verified.
+
+## Decision for Strep
+
+Keep the current model and raw motion as the unchanged baseline. Finish the present two-case refiner audit; do not turn a tiny decrease in its internal quality cost into a claim of visible improvement. The retained get-up failure and failed object/partner studies remain part of the evidence.
+
+The next product integration should let an animator author sparse joint targets in an existing clip, preserve the selected context, and inspect target error, floor/support changes, and any failed request. It should expose whether the original window and limits were sufficient; it must not silently enlarge them. The bounded solver can be offered experimentally without claiming it fixes the whole action.
+
+For the broader model decision, compare scene-aware synthesis and offline physics refinement against the actual interaction failures. Freeze a small diagnostic set covering an unsupported reach, a weighted lift, sitting/standing, a partner touch, and a dynamic landing. Supply geometry and contact phases; record what mass, inertia and friction are known versus assumed. Include both target attainment and unwanted body/object penetration, contact timing, motion retention, and animator cleanup. A force residual computed with assumed body parameters is a diagnostic under those assumptions, not a physical certification.
+
+Do not train on raw BONES-SEED under the current project restriction. Dataset suitability and rights, local feasibility, and a measurable improvement over the retained baseline must be established before a training run. The full release matrix still requires held-out action families, rigs, objects, partners, and independent reviewers.

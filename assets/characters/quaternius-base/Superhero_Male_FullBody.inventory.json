@@ -1,0 +1,786 @@
+{
+  "nodes": [
+    {
+      "index": 0,
+      "name": "Head",
+      "parent": 1,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.0,
+        1.5997999834092933,
+        -0.01740007412631845
+      ]
+    },
+    {
+      "index": 1,
+      "name": "neck_01",
+      "parent": 50,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.0,
+        1.5204998549349398,
+        -0.04140010134746453
+      ]
+    },
+    {
+      "index": 2,
+      "name": "index_04_leaf_l",
+      "parent": 3,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.9084519777679931,
+        1.4451056457939786,
+        -0.026019389062428136
+      ]
+    },
+    {
+      "index": 3,
+      "name": "index_03_l",
+      "parent": 4,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.884362479630013,
+        1.4460271184938354,
+        -0.025643383942925438
+      ]
+    },
+    {
+      "index": 4,
+      "name": "index_02_l",
+      "parent": 5,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.8564747784921034,
+        1.4470939758038897,
+        -0.02521845847481513
+      ]
+    },
+    {
+      "index": 5,
+      "name": "index_01_l",
+      "parent": 22,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.8238894675265711,
+        1.4483405465329398,
+        -0.024756727110432503
+      ]
+    },
+    {
+      "index": 6,
+      "name": "middle_04_leaf_l",
+      "parent": 7,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.9199918876836874,
+        1.4470659728055348,
+        -0.052467792076163804
+      ]
+    },
+    {
+      "index": 7,
+      "name": "middle_03_l",
+      "parent": 8,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.8895023480777706,
+        1.4482325054682919,
+        -0.051777844377863765
+      ]
+    },
+    {
+      "index": 8,
+      "name": "middle_02_l",
+      "parent": 9,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.8594136166148255,
+        1.4493834041573719,
+        -0.05118251220615058
+      ]
+    },
+    {
+      "index": 9,
+      "name": "middle_01_l",
+      "parent": 22,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.8219256778410571,
+        1.4508174741794908,
+        -0.05028668559439817
+      ]
+    },
+    {
+      "index": 10,
+      "name": "pinky_04_leaf_l",
+      "parent": 11,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.8855119831973985,
+        1.446383519214454,
+        -0.10263509558891519
+      ]
+    },
+    {
+      "index": 11,
+      "name": "pinky_03_l",
+      "parent": 12,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.8640161486444102,
+        1.4472059042474759,
+        -0.1019241734454745
+      ]
+    },
+    {
+      "index": 12,
+      "name": "pinky_02_l",
+      "parent": 13,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.8366211983767173,
+        1.4482540506493906,
+        -0.10099258036361475
+      ]
+    },
+    {
+      "index": 13,
+      "name": "pinky_01_l",
+      "parent": 22,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.8050283152586445,
+        1.4494622979798948,
+        -0.1000174322211067
+      ]
+    },
+    {
+      "index": 14,
+      "name": "ring_04_leaf_l",
+      "parent": 15,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.9092202140550361,
+        1.4471779144204617,
+        -0.07721476622633512
+      ]
+    },
+    {
+      "index": 15,
+      "name": "ring_03_l",
+      "parent": 16,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.8801399983139223,
+        1.4482903852117588,
+        -0.0773059423569744
+      ]
+    },
+    {
+      "index": 16,
+      "name": "ring_02_l",
+      "parent": 17,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.8518619132046017,
+        1.449372022646309,
+        -0.07758632985775493
+      ]
+    },
+    {
+      "index": 17,
+      "name": "ring_01_l",
+      "parent": 22,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.8158874958275639,
+        1.450748211024967,
+        -0.07777022597889918
+      ]
+    },
+    {
+      "index": 18,
+      "name": "thumb_04_leaf_l",
+      "parent": 19,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.8265434254201913,
+        1.3747777467601683,
+        0.017291229751319637
+      ]
+    },
+    {
+      "index": 19,
+      "name": "thumb_03_l",
+      "parent": 20,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.7993423715286085,
+        1.3915699965839448,
+        0.004161713013100978
+      ]
+    },
+    {
+      "index": 20,
+      "name": "thumb_02_l",
+      "parent": 21,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.7714070214130678,
+        1.4088153255815365,
+        -0.009322289822542624
+      ]
+    },
+    {
+      "index": 21,
+      "name": "thumb_01_l",
+      "parent": 22,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.7403005039054644,
+        1.4280187010158978,
+        -0.024336948465994407
+      ]
+    },
+    {
+      "index": 22,
+      "name": "hand_l",
+      "parent": 23,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.7064869665389285,
+        1.4555000187079636,
+        -0.06540005942194847
+      ]
+    },
+    {
+      "index": 23,
+      "name": "lowerarm_l",
+      "parent": 24,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.46301147751747235,
+        1.4554998563253643,
+        -0.07300007522659333
+      ]
+    },
+    {
+      "index": 24,
+      "name": "upperarm_l",
+      "parent": 25,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.21201158657310237,
+        1.4554998837173978,
+        -0.06540008267035441
+      ]
+    },
+    {
+      "index": 25,
+      "name": "clavicle_l",
+      "parent": 50,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.03139999881386755,
+        1.4952999007266774,
+        0.03349990801495475
+      ]
+    },
+    {
+      "index": 26,
+      "name": "index_04_leaf_r",
+      "parent": 27,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.9084520191941873,
+        1.4451056327716676,
+        -0.02601940323253163
+      ]
+    },
+    {
+      "index": 27,
+      "name": "index_03_r",
+      "parent": 28,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.8843625061717998,
+        1.4460271059185403,
+        -0.025643397320807573
+      ]
+    },
+    {
+      "index": 28,
+      "name": "index_02_r",
+      "parent": 29,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.8564747828498676,
+        1.4470939676811472,
+        -0.02521847078113986
+      ]
+    },
+    {
+      "index": 29,
+      "name": "index_01_r",
+      "parent": 46,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.8238894533937742,
+        1.4483405422087574,
+        -0.024756738988476336
+      ]
+    },
+    {
+      "index": 30,
+      "name": "middle_04_leaf_r",
+      "parent": 31,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.91999182109374,
+        1.4470659779816786,
+        -0.052467801573342736
+      ]
+    },
+    {
+      "index": 31,
+      "name": "middle_03_r",
+      "parent": 32,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.8895022554176548,
+        1.4482325107260487,
+        -0.05177785257317921
+      ]
+    },
+    {
+      "index": 32,
+      "name": "middle_02_r",
+      "parent": 33,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.8594135574649573,
+        1.449383407244913,
+        -0.05118251865291138
+      ]
+    },
+    {
+      "index": 33,
+      "name": "middle_01_r",
+      "parent": 46,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.8219256632423909,
+        1.4508174725656078,
+        -0.05028669278811226
+      ]
+    },
+    {
+      "index": 34,
+      "name": "pinky_04_leaf_r",
+      "parent": 35,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.8855119298766697,
+        1.4463834163245433,
+        -0.1026351065239534
+      ]
+    },
+    {
+      "index": 35,
+      "name": "pinky_03_r",
+      "parent": 36,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.8640160801885027,
+        1.4472057961496154,
+        -0.10192418485601552
+      ]
+    },
+    {
+      "index": 36,
+      "name": "pinky_02_r",
+      "parent": 37,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.8366211746460555,
+        1.4482539388199545,
+        -0.10099258865685944
+      ]
+    },
+    {
+      "index": 37,
+      "name": "pinky_01_r",
+      "parent": 46,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.8050282921524871,
+        1.4494623025726987,
+        -0.10001744371648852
+      ]
+    },
+    {
+      "index": 38,
+      "name": "ring_04_leaf_r",
+      "parent": 39,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.909220133101356,
+        1.4471779016317914,
+        -0.07721477801310195
+      ]
+    },
+    {
+      "index": 39,
+      "name": "ring_03_r",
+      "parent": 40,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.8801399570927029,
+        1.448290388113177,
+        -0.07730595029056439
+      ]
+    },
+    {
+      "index": 40,
+      "name": "ring_02_r",
+      "parent": 41,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.851861853316803,
+        1.449372025033969,
+        -0.07758633719006172
+      ]
+    },
+    {
+      "index": 41,
+      "name": "ring_01_r",
+      "parent": 46,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.8158874806612306,
+        1.4507482126755242,
+        -0.07777023584187505
+      ]
+    },
+    {
+      "index": 42,
+      "name": "thumb_04_leaf_r",
+      "parent": 43,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.8265435019370091,
+        1.3747779646283769,
+        0.017291221060165993
+      ]
+    },
+    {
+      "index": 43,
+      "name": "thumb_03_r",
+      "parent": 44,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.799342406228321,
+        1.3915701390622497,
+        0.004161685768511543
+      ]
+    },
+    {
+      "index": 44,
+      "name": "thumb_02_r",
+      "parent": 45,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.7714071246989017,
+        1.4088154189042508,
+        -0.009322236344542795
+      ]
+    },
+    {
+      "index": 45,
+      "name": "thumb_01_r",
+      "parent": 46,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.7403004892899466,
+        1.4280186973180031,
+        -0.024336958518223754
+      ]
+    },
+    {
+      "index": 46,
+      "name": "hand_r",
+      "parent": 47,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.7064869368410878,
+        1.4555000137540615,
+        -0.06540006891900134
+      ]
+    },
+    {
+      "index": 47,
+      "name": "lowerarm_r",
+      "parent": 48,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.46301147743008564,
+        1.455499858126499,
+        -0.07300007811261851
+      ]
+    },
+    {
+      "index": 48,
+      "name": "upperarm_r",
+      "parent": 49,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.21201158657310237,
+        1.4554998837173978,
+        -0.06540008267035441
+      ]
+    },
+    {
+      "index": 49,
+      "name": "clavicle_r",
+      "parent": 50,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.03139999881386755,
+        1.4952999007266774,
+        0.03349990801495475
+      ]
+    },
+    {
+      "index": 50,
+      "name": "spine_03",
+      "parent": 51,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.0,
+        1.3108998411595811,
+        0.00689991219457873
+      ]
+    },
+    {
+      "index": 51,
+      "name": "spine_02",
+      "parent": 52,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.0,
+        1.177799966140802,
+        0.003899925298709566
+      ]
+    },
+    {
+      "index": 52,
+      "name": "spine_01",
+      "parent": 63,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.0,
+        1.0720000210534353,
+        -0.006900058390004342
+      ]
+    },
+    {
+      "index": 53,
+      "name": "ball_leaf_l",
+      "parent": 54,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.11430512828443966,
+        0.015200085945648034,
+        0.13359977057606032
+      ]
+    },
+    {
+      "index": 54,
+      "name": "ball_l",
+      "parent": 55,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.1143051269556103,
+        0.01520006374915038,
+        0.054699763245011995
+      ]
+    },
+    {
+      "index": 55,
+      "name": "foot_l",
+      "parent": 56,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.11430513113737104,
+        0.08649997305652901,
+        -0.08750025588527921
+      ]
+    },
+    {
+      "index": 56,
+      "name": "calf_l",
+      "parent": 57,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.11430513113737104,
+        0.5423999944271303,
+        -0.036100140404187485
+      ]
+    },
+    {
+      "index": 57,
+      "name": "thigh_l",
+      "parent": 63,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.11430513858795163,
+        0.971199999379708,
+        -0.03600001787842905
+      ]
+    },
+    {
+      "index": 58,
+      "name": "ball_leaf_r",
+      "parent": 59,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.11430512828443966,
+        0.015200085945648034,
+        0.13359977057606032
+      ]
+    },
+    {
+      "index": 59,
+      "name": "ball_r",
+      "parent": 60,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.1143051269556103,
+        0.01520006374915038,
+        0.054699763245011995
+      ]
+    },
+    {
+      "index": 60,
+      "name": "foot_r",
+      "parent": 61,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.11430513113737104,
+        0.08649997305652901,
+        -0.08750025588527921
+      ]
+    },
+    {
+      "index": 61,
+      "name": "calf_r",
+      "parent": 62,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.11430513113737104,
+        0.5423999944271303,
+        -0.036100140404187485
+      ]
+    },
+    {
+      "index": 62,
+      "name": "thigh_r",
+      "parent": 63,
+      "skin_joint": true,
+      "reference_position_m": [
+        -0.11430513858795163,
+        0.971199999379708,
+        -0.03600001787842905
+      ]
+    },
+    {
+      "index": 63,
+      "name": "pelvis",
+      "parent": 64,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.0,
+        0.9491000175476072,
+        -0.0429999828338623
+      ]
+    },
+    {
+      "index": 64,
+      "name": "root",
+      "parent": 68,
+      "skin_joint": true,
+      "reference_position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "index": 65,
+      "name": "Eyebrows",
+      "parent": 68,
+      "skin_joint": false,
+      "reference_position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "index": 66,
+      "name": "Eyes",
+      "parent": 68,
+      "skin_joint": false,
+      "reference_position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "index": 67,
+      "name": "SuperHero_Male",
+      "parent": 68,
+      "skin_joint": false,
+      "reference_position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "index": 68,
+      "name": "Armature",
+      "parent": -1,
+      "skin_joint": false,
+      "reference_position_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "primitives": [
+    {
+      "node": 65,
+      "primitive": 0,
+      "vertices": 646,
+      "influences": 4
+    },
+    {
+      "node": 66,
+      "primitive": 0,
+      "vertices": 556,
+      "influences": 4
+    },
+    {
+      "node": 67,
+      "primitive": 0,
+      "vertices": 7281,
+      "influences": 4
+    }
+  ],
+  "original_animations": [],
+  "reference_pose": "Default node transforms; inverse binds are preserved, not assumed to be the reference pose",
+  "reference_mesh_min_y_m": -0.009509608291079137
+}

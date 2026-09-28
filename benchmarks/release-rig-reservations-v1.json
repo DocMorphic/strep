@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "status": "reserved_constructed_not_motion_evaluated",
+  "at": "2026-09-28T18:55:49.085329+00:00",
+  "rigs": [
+    {
+      "id": "rig-held-01",
+      "character": "reports\\release-rig-reservations-v1\\rigs\\rig-held-01\\character.glb",
+      "character_sha256": "5fc9c4503f0571a665e3b424fca3fc328d60aeab24c8253e094e0aacb174d3d9",
+      "profile": "reports\\release-rig-reservations-v1\\rigs\\rig-held-01\\rig-profile.json",
+      "profile_sha256": "700b8a1d04ec581b2d29dfa752467c4a288fdb6fa4a49ee482e827fb354e0fc5",
+      "scale_xyz": [
+        0.9,
+        1.1,
+        0.95
+      ],
+      "source_sha256": "6af075944be5d9d1881e8eb6722f275dbe4ea2ad46c71b0aa7d99b96b32e6523",
+      "rig_family": "Quaternius Universal Base Characters",
+      "dimension_under_test": "proportions",
+      "motion_trial_executed": false
+    },
+    {
+      "id": "rig-held-02",
+      "character": "reports\\release-rig-reservations-v1\\rigs\\rig-held-02\\character.glb",
+      "character_sha256": "b0f20d597d8fe2023cb28e92b2201b8c88e8c56e2823460676634e2776820f5a",
+      "profile": "reports\\release-rig-reservations-v1\\rigs\\rig-held-02\\rig-profile.json",
+      "profile_sha256": "4dc04c081bcdacf4d3e15dc066458b1bbff3eff05b47662834b6abe74ff75b8a",
+      "scale_xyz": [
+        1.12,
+        0.9,
+        1.08
+      ],
+      "source_sha256": "ee75d0a941ff0998dd29f9b7bfaf88d6f318999cb01197d49b368ba3765ae1c5",
+      "rig_family": "Quaternius Universal Base Characters",
+      "dimension_under_test": "proportions",
+      "motion_trial_executed": false
+    },
+    {
+      "id": "rig-held-03",
+      "character": "reports\\release-rig-reservations-v1\\rigs\\rig-held-03\\character.glb",
+      "character_sha256": "e4729152edb849b66240a9adbffe62015d4c96da15ce7fc43036cf1de440d214",
+      "profile": "reports\\release-rig-reservations-v1\\rigs\\rig-held-03\\rig-profile.json",
+      "profile_sha256": "7284d2ea2f331090a96f39c9278dd214c260a7273a5440ab704996151c1fac2e",
+      "scale_xyz": [
+        1.15,
+        1.0,
+        1.0
+      ],
+      "source_sha256": "6af075944be5d9d1881e8eb6722f275dbe4ea2ad46c71b0aa7d99b96b32e6523",
+      "rig_family": "Quaternius Universal Base Characters",
+      "dimension_under_test": "proportions",
+      "motion_trial_executed": false
+    }
+  ],
+  "partner_pairings": [
+    {
+      "id": "pair-held-01",
+      "actor_a": "rig-held-01",
+      "actor_b": "rig-held-02"
+    },
+    {
+      "id": "pair-held-02",
+      "actor_a": "rig-held-02",
+      "actor_b": "rig-held-03"
+    },
+    {
+      "id": "pair-held-03",
+      "actor_a": "rig-held-03",
+      "actor_b": "rig-held-01"
+    }
+  ],
+  "scene_placements_bound": false,
+  "construction_verification": "reports\\release-rig-reservations-v1\\verification.json",
+  "construction_verification_sha256": "388748bd587dd9e14f0213349fbc410b08e7bd966de41083c36ebe83cc6f6fa0",
+  "use_policy": "Reserve for frozen evaluation. Do not use to tune correction/transfer; if motion outcomes inform development, record exposure and retire/version reservations.",
+  "limitations": [
+    "One known topology/skinning family, two source meshes",
+    "Synthetic global-axis proportion variations, not independent artist rigs",
+    "Only static construction/import checked",
+    "Partner placements and contact/scene targets not bound"
+  ],
+  "release_approved": false
+}

@@ -1,0 +1,16 @@
+function createRigTransitionEditor({C,post,status,getContext,closeEditors,pause,onJob}){
+ let binding=null;
+ const safe=fn=>async()=>{try{await fn();}catch(e){status(e.message);}};
+ function next(){return getContext().jobs.find(j=>j.id===C('rigJoinB').value);}
+ function version(){return next()?.result.variants[C('rigJoinBVariant').value];}
+ function clock(){const a=Number(C('rigJoinAEnd').value)-Number(C('rigJoinAStart').value)+1,b=Number(C('rigJoinBEnd').value)-Number(C('rigJoinBStart').value)+1,k=Number(C('rigJoinBlend').value);C('rigJoinClock').textContent=k>=3&&k<Math.min(a,b)?`${a+b-k} frames · ${((a+b-k-1)/30).toFixed(2)} seconds. Overlap frames ${a-k}–${a-1}.`:'Blend must be shorter than both selected ranges and at least 3 frames.';}
+ function nextVersion(){C('rigJoinBStart').value=0;C('rigJoinBEnd').value=(version()?.frames??next()?.result.frames??2)-1;clock();}
+ function nextClip(){const j=next();C('rigJoinBVariant').replaceChildren(...Object.entries(j.result.variants).map(([k,v])=>new Option(v.label,k)));C('rigJoinBVariant').value=j.result.variants.corrected?'corrected':'transfer';nextVersion();}
+ function hide(){C('rigJoinPanel').hidden=true;C('rigMappingPanel').hidden=false;}
+ function reset(){binding=null;hide();C('rigJoin').disabled=true;}
+ C('rigJoin').onclick=safe(()=>{const c=getContext();if(!c.result||c.result.kind==='neutral')throw Error('Choose a motion first');pause();closeEditors();binding={job:c.job.id,variant:c.variant,glb_sha256:c.job.result.variants[c.variant].sha256};C('rigJoinName').value=('Join · '+c.job.label).slice(0,160);C('rigJoinAStart').value=0;C('rigJoinAEnd').value=c.result.frames-1;C('rigJoinBinding').textContent='First clip: '+c.job.label+' · '+c.variant;const list=c.jobs.filter(j=>j.status==='complete'&&j.result&&j.result.kind!=='neutral');C('rigJoinB').replaceChildren(...list.map(j=>new Option(j.label,j.id)));C('rigJoinB').value=c.job.id;nextClip();C('rigLoopPanel').hidden=true;C('rigEventPanel').hidden=true;C('rigMappingPanel').hidden=true;C('rigJoinPanel').hidden=false;});
+ C('rigJoinClose').onclick=hide;C('rigJoinB').onchange=nextClip;C('rigJoinBVariant').onchange=nextVersion;
+ for(const id of ['rigJoinAStart','rigJoinAEnd','rigJoinBStart','rigJoinBEnd','rigJoinBlend'])C(id).oninput=clock;
+ C('rigJoinApply').onclick=safe(async()=>{const c=getContext();if(!binding||binding.job!==c.job?.id||binding.variant!==c.variant)throw Error('Reopen Join clips for the displayed version');const b=next(),v=version();const recipe={schema:'strep-rig-transition-v1',label:C('rigJoinName').value,blend_frames:Number(C('rigJoinBlend').value),yaw_degrees:Number(C('rigJoinYaw').value),clips:[{...binding,first_frame:Number(C('rigJoinAStart').value),last_frame:Number(C('rigJoinAEnd').value)},{job:b.id,variant:C('rigJoinBVariant').value,glb_sha256:v.sha256,first_frame:Number(C('rigJoinBStart').value),last_frame:Number(C('rigJoinBEnd').value)}]};const job=await post('/api/rig-transitions',recipe);onJob(job);status('Joining the selected clips. Both inputs and their contact timelines are saved.');});
+ return {hide,reset,ready:()=>C('rigJoin').disabled=!getContext().result||getContext().result.kind==='neutral'||getContext().variant==='repeated',setBusy:value=>C('rigJoinApply').disabled=value};
+}

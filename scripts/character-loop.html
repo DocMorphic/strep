@@ -1,0 +1,21 @@
+<div id="rigLoopPanel" hidden>
+ <div class="rig-toolbar"><strong>Make a loop</strong><button class="btn" id="rigLoopClose">Back to mapping</button></div>
+ <p class="small" id="rigLoopBinding"></p>
+ <label>Name<input id="rigLoopName" aria-label="Loop name" maxlength="160"></label>
+ <label>Root motion<select id="rigLoopRoot" aria-label="Loop root motion"><option value="travel">Accumulate source travel</option><option value="in_place">Stay in place each cycle</option></select></label>
+ <div class="rig-offsets"><label>Start frame<input id="rigLoopStart" aria-label="Loop start frame" type="number" min="0"></label><label>Cycle frames<input id="rigLoopPeriod" aria-label="Loop cycle frames" type="number" min="5"></label></div>
+ <div class="rig-offsets"><label>Blend frames<input id="rigLoopBlend" aria-label="Loop blend frames" type="number" min="4" value="8"></label><label>Turn per cycle (°)<input id="rigLoopTurn" aria-label="Loop turn degrees" type="number" min="-180" max="180" value="0"></label></div>
+ <p class="small" id="rigLoopClock"></p>
+ <details><summary>Find candidate cycles</summary>
+  <p class="small">Search a frame grid using the root mode, blend and turn above. Results compare movement continuity; review the action itself before choosing.</p>
+  <div class="rig-offsets"><label>First start<input id="rigLoopSearchStartMin" aria-label="Cycle search first start" type="number" min="0"></label><label>Last start<input id="rigLoopSearchStartMax" aria-label="Cycle search last start" type="number" min="0"></label></div>
+  <div class="rig-offsets"><label>Shortest cycle<input id="rigLoopSearchPeriodMin" aria-label="Cycle search shortest period" type="number" min="5"></label><label>Longest cycle<input id="rigLoopSearchPeriodMax" aria-label="Cycle search longest period" type="number" min="5"></label></div>
+  <label>Frame stride<input id="rigLoopSearchStride" aria-label="Cycle search frame stride" type="number" min="1" max="120" value="5"></label>
+  <button class="btn" id="rigLoopSearch">Find candidates</button>
+  <p class="small" id="rigLoopSearchStatus" role="status"></p>
+  <div id="rigLoopCandidates"></div>
+ </details>
+ <p class="small">Choose a repeating action and leave blend frames after the cycle. The cycle begins with the source's ending continuation, then blends back into the selected motion. The first two samples preserve the original seam movement.</p>
+ <p class="small">Travel mode accumulates source displacement; in-place mode removes net cycle travel. The explicit turn still accumulates. Review three cycles for foot sliding, ground penetration and abrupt changes; a closed seam alone does not establish a natural loop.</p>
+ <button class="btn primary" id="rigLoopApply">Create loop</button>
+</div>

@@ -1,0 +1,15 @@
+# Relocated hand editing: second local installation
+
+The fresh personal installation at `C:\wassup\Strep Offline Test v2` includes the current mapped-hand editor. This extends the earlier portable-install experiment with import, timed finger editing and export. It is a separate folder on the same laptop, not second-machine qualification or a new model-inference test.
+
+The builder completed without replacing the first installation. All 34,705 inventoried files passed verification. The bundled isolated Python resolved Strep, Kimodo, NumPy, SciPy and PyTorch inside this installation. CUDA was available on the laptop's RTX 3070 Ti. The Python external-network guard rejected the probe; this is not an operating-system firewall certificate. The workflow subprocesses used only `C:\Windows\System32` on PATH and removed inherited Python path/home overrides.
+
+`verify_offline_hand_posture.py` imports an explicitly supplied, previously generated wave GLB with its retained mapping and license/provenance files. It captures the left index joint at frame 40, authors a ten-degree local Z change, and blends that target over frames 10–90 with a full-strength interval 30–60. The input and edited clip remain separate. The selected rig has 65 skin bones; this demonstrates mapped finger editing on that rig, not learned hand motion, an anatomical preset or validated grasp.
+
+Both 120-frame exports passed actual Godot import and every-frame world-transform comparisons: 240 frame samples total, maximum position error 4.27e-7m and maximum rotation-matrix element error 6.96e-7. Every non-README ZIP member matches its source file. Seven HTTP artifact downloads, including GLB, package, recipe, verification, root motion and posture intents, match the installed files. The existing 8.5mm floor-depth warning and missing support annotations remain visible; structural success does not approve motion quality.
+
+The installation's Studio runs at `http://127.0.0.1:8772/studio` using its own runtime. Browser verification found both saved jobs, loaded the authored candidate, opened Hand posture, and captured the displayed fingers. The grey character remained visible, and the browser reported no warnings or errors. The screenshot is `reports/offline-install-v2-check-02/editor.png`. No additional candidate was submitted through the browser in this check.
+
+Evidence is in `reports/offline-install-v2-check-02/` and the installation's `reports/offline-hand-posture-v1/`. The driver was copied into the installation's reports directory after the build; its hash is recorded separately and it is not misrepresented as an inventoried core file. The first verification helper attempt is retained in `reports/offline-install-v2/`: PowerShell rounded an unquoted process creation timestamp, causing a false owner-identity rejection while the builder remained live. The builder was not restarted. The successful attempt supplied the exact timestamp as a quoted string.
+
+No release gate is approved. Independent animation review, cleanup-time measurements, broad interaction quality and held-out system evaluation remain open under the same full-project goal.

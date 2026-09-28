@@ -1,0 +1,33 @@
+{
+  "created_at": "2026-09-26T12:37:56.978761+00:00",
+  "config": {
+    "fps": 30,
+    "contact_height_m": 0.025,
+    "contact_speed_m_s": 0.2,
+    "minimum_contact_intervals": 3,
+    "fade_frames": 2,
+    "iterations": 120,
+    "clearance_m": 0.002,
+    "max_root_lift_m": 0.22,
+    "max_rotation_degrees": 40,
+    "collision_weight": 10000.0,
+    "contact_weight": 300.0,
+    "pose_weight": 0.1,
+    "temporal_weight": 200.0,
+    "velocity_weight": 10.0,
+    "slide_weight": 10.0
+  },
+  "implementation_hashes": {
+    "support_contact.py": "e2f5ef5fd275dee4eeb26a2bc6102ce99343732e33e124747ab06030db6b54e9",
+    "evaluate_body_contact.py": "84dda7b790d5beb4745ce68017adc561ce1fd576faf9b4d1850216280af58361",
+    "evaluate_floor_contact.py": "d59853f2d0ad0ecf9a9e14bf0f573b2a84fc191eb2a45e0534b98878aabf529f",
+    "run_support_contact.py": "6888ba8b4347686c089825cef08bbcbbdd218492d27533678da4e4aa4254305f"
+  },
+  "development_seeds": [
+    11,
+    22,
+    55,
+    77
+  ],
+  "selection": "Existing body support gap or added speed flags; other clips untouched."
+}

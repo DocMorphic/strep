@@ -1,0 +1,9 @@
+# Rigid primitive geometry foundation
+
+The experimental `scripts/object_geometry.py` defines a strict, versioned geometry descriptor for boxes and spheres. It supplies signed distance, outward gradient, smooth grip normal, world bounds, and uniform solid inertia from the same dimensions. Invalid dimensions and ambiguous surface normals fail explicitly. The sphere center has no unique distance gradient; that ambiguity is returned rather than hidden.
+
+`scripts/object_geometry_mesh.py` generates outward, closed triangle previews. The sphere mesh is inscribed: collision queries must use the analytic sphere. The exporter can retain the reported radial inset bound to distinguish rendering approximation from contact error. A 0.3 m radius sphere with a requested 1 mm bound produced 8,192 triangles with a conservative 0.293 mm maximum inset. Resource limits fail explicitly when the requested tolerance cannot be met.
+
+Thirteen tests passed in 7.13 seconds. They compare legacy box distances and inertia, finite-difference gradients, sphere free-flight wrench, invalid descriptors, outward triangle winding, closed edges, and sampled mesh/analytic disagreement. Source snapshots and the exact test command are in `reports/object-geometry-core-v1/verification.json`.
+
+This is not production sphere support. Moving scene sampling, contact solving, preview/export, and object-release simulation still require consistent integration. The next implementation should preserve legacy box files, carry the canonical geometry descriptor through scene records, derive contact normals from that geometry, export the matching mesh, and choose matching engine collision shapes and inertia. Every job's implementation snapshot must include the new dependencies. Test a saved moving sphere through actual engine import and contact/release audits before claiming that path works. Arbitrary meshes, handles, articulated objects, and deformable objects remain separate gaps.

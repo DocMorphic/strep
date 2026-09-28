@@ -1,0 +1,23 @@
+{
+  "source": "C:\\wassup\\strep\\assets\\characters\\quaternius-base\\original\\Universal Base Characters[Standard]\\Base Characters\\Godot - UE\\Superhero_Female_FullBody.gltf",
+  "source_sha256": "adedf28000a0716f689b009a70314506fc62f827498f77ba852acb5610f3f3f4",
+  "resources": {
+    "Superhero_Female_FullBody.gltf": "adedf28000a0716f689b009a70314506fc62f827498f77ba852acb5610f3f3f4",
+    "Superhero_Female_FullBody.bin": "3a8220a485b33d05d879115a50697728b45a151781106033afb8b8c243fca208",
+    "T_Hair_2_Normal.png": "172f230aae0d4366c3cfc0402b2e6d1811b11f8487344bff28605eeacac1558d",
+    "T_Hair_2_BaseColor.png": "f9f4f2fb3eeeefb0b6f0fdef38b0770fd6607640c1c680b8139dd76697e9f9b3",
+    "T_Eye_Normal.png": "9ed61f7726a54fe346a78b9e5a18905d8e2b88f86235d97f53cd207a26f3f8c7",
+    "T_Eye_Brown.png": "d08e3356a83211bc6ca21fe3a8e39f4b5c1a3b8f85457fc2c0fb57be09935025",
+    "T_Superhero_Female_Normal.png": "cf922460b43ccd31e983e34db05514c9d451dd2f9cdd01a843978e797719f859",
+    "T_Superhero_Female_Dark_BaseColor.png": "d366843ee7d9e9f37ec87a0e1c98c7f2e45573c08eeb80a51a6d9344e68cf288",
+    "T_Superhero_Female_Roughness.png": "d2beabf2bd0313e32c68dcdbb80dca371a6e994fabf96efa97128bf9f14fa57b"
+  },
+  "glb_sha256": "6af075944be5d9d1881e8eb6722f275dbe4ea2ad46c71b0aa7d99b96b32e6523",
+  "buffer_views_verified": 36,
+  "images_embedded": 7,
+  "resource_overrides": {
+    "T_Eye_Normal_png.png": "T_Eye_Normal.png"
+  },
+  "implementation_sha256": "50f09a560bf43131170e6029c2f9d5c029c0e296c59463fc7d531e6ea599d16d",
+  "scope": "Container packing only; rig, mesh, skin, material and animation definitions/data unchanged."
+}

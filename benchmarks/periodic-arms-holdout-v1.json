@@ -1,0 +1,54 @@
+{
+  "id": "periodic-arms-holdout-v1",
+  "mapping_version": "explicit-angle-targets-v1",
+  "fps": 30,
+  "duration_s": 4,
+  "speed_m_s": 3,
+  "seeds": [
+    101
+  ],
+  "diffusion_steps": 100,
+  "cfg_type": "separated",
+  "cfg_weight": [
+    2,
+    2
+  ],
+  "speed_relative_tolerance": 0.05,
+  "pelvis_path_p95_tolerance_m": 0.1,
+  "stat_status": "Numeric capability fields are stored design intent, not validated conditioning inputs. Only explicit movement descriptions and path/time constraints drive this pilot.",
+  "profiles": [
+    {
+      "id": "neutral",
+      "label": "Neutral control",
+      "control": "neutral",
+      "level": "baseline",
+      "style": "running",
+      "state": "fresh",
+      "capabilities": {},
+      "prompt": "A person runs forward steadily with a relaxed upright torso and natural arm swings."
+    }
+  ],
+  "calibration_seeds": [],
+  "held_out_seeds": [
+    101
+  ],
+  "calibration_protocol": {
+    "control_target_space": "SOMA source descriptors; target rig absolute angles reported separately, preservation judged against matched baseline deltas.",
+    "source_error_degrees": {
+      "arm": 2,
+      "lean": 1
+    },
+    "minimum_ordered_step_degrees": {
+      "arm": 10,
+      "lean": 5
+    },
+    "maximum_target_delta_error_degrees": 5,
+    "maximum_unrelated_angle_change_degrees": 3,
+    "unchanged_root_and_lower_body_tolerance_m": 1e-05,
+    "maximum_local_edit_degrees": 35,
+    "text_target_status": "Adjectives are ordinal requests; degree targets are engineering comparisons, not numerical model conditioning.",
+    "deterministic_order": "Apply upper-body edits after frozen stance cleanup, on the neutral take; separately apply to full raw motion for diagnostics. No rerun of loop selection after edit.",
+    "release_rule": "Each enabled level must pass source control accuracy, unchanged-lower-body and inherited quality gates on both calibration seeds and held-out seed 55. Control must be ordered at all seeds and preserve ordering/deltas on target. Failed levels remain experimental; no claim of realism or unseen-rig reliability."
+  },
+  "scope": "One newly reserved neutral take, generated after periodic-editor freeze. Reuse the exact verified neutral prompt embedding; no encoder changes."
+}

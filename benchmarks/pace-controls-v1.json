@@ -1,0 +1,14 @@
+{
+  "id": "pace-controls-v1",
+  "speeds_m_s": [2.4, 3.0, 3.6],
+  "seeds": [11, 22, 55, 101],
+  "arm_targets_degrees": [10, 20, 30, 45],
+  "lean_targets_degrees": [0, 10, 20],
+  "timing_speed_tolerance_m_s": 0.00001,
+  "mesh_foot_penetration_warning_m": 0.01,
+  "near_floor_height_m": 0.03,
+  "lowest_patch_band_m": 0.005,
+  "predicted_support_patch_speed_warning_m_s": 0.05,
+  "maximum_patch_speed_increase_m_s": 0.02,
+  "scope": "Uniform retiming of existing screened poses. Speed and cadence are coupled, stride unchanged. No independent cadence, new generation, held-out test or physical validation. Contact masks are model predictions and geometry heuristics, not independent stance annotations. Timing and contact screens reported separately. Recipes preserve all flags."
+}

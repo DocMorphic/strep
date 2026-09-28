@@ -1,0 +1,26 @@
+{
+  "A": {
+    "segments": [
+      {
+        "prompt": "A person faces a partner and raises the right hand to give a high five then reacts with a small arm recoil and returns to relaxed standing.",
+        "duration_s": 4
+      }
+    ],
+    "seeds": [
+      77,
+      101
+    ]
+  },
+  "B": {
+    "segments": [
+      {
+        "prompt": "A person faces a partner and raises the right hand to give a high five then reacts with a small arm recoil and returns to relaxed standing.",
+        "duration_s": 4
+      }
+    ],
+    "seeds": [
+      88,
+      202
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+# Support-preservation objective comparison
+
+The original contact correction has completed under its unchanged protocol. The following coverage snapshot was taken before completion. The read-only `reports/support-coverage-v1` snapshot independently reproduces foot speeds for nine completed candidates out of ten, then partitions the predicted-support steps by the actual solver weight.
+
+All five completed rig-01 candidates have zero steps above 0.05 m/s in fully weighted support interiors. All four completed rig-02 candidates have such failures even at full support weight. No evaluated predicted-support step is excluded by the draft in this snapshot. Thus faded boundaries alone cannot explain the rig-02 failures. Pose/root edit maxima are recorded separately; these global maxima do not prove per-frame feasibility.
+
+Code inspection identifies a conflicting objective. `ClearanceFitter` preserves every foot vertex's original horizontal position with a 30/sqrt(vertex-count) residual weight. `SupportClearanceFitter` simultaneously anchors the patch centroid with weight 40 during full drafted support. In a translation-only example with no other terms, the optimum retains 30²/(30²+40²) = 36% of the original displacement from the anchor. That calculation is an illustrative objective conflict, not a prediction of the full nonlinear solver's outcome.
+
+`support_reference_fit.py` keeps the original horizontal reference term outside drafted support and multiplies it by sqrt(1-support_weight) through the fade. At full support its contribution is zero, while the anchor term remains. Height targets, regularization, all joint/root/adjacent limits, original support drafts and six-sweep budget remain unchanged.
+
+`reports/support-reference-v1` freezes all ten original inputs: five jab-cross-retreat seeds on each of two rigs. Every attempt will be retained. Each candidate requires decoded preservation/bound checks, complete and half-frame floor metrics, predicted-support speed/hover metrics, and an actual two-clip Godot import group. Compare against the original correction only after complete, source-matched evidence exists. This is one action's development comparison, not held-out cross-family validation.
+
+Two focused tests pass (3.96 s). One demonstrates the original translation-only compromise and verifies that full-support weighting can reach the anchor. The other checks fade derivatives and unchanged unplanted weighting. Initial test collection caught a Python 3.10-incompatible starred subscription; it was replaced with concatenate before the study launch. No full-suite or completed-motion success is claimed.
+
+The complete matched comparison is now in `reports/support-reference-final-v1/comparison/summary.json` and `summary.md`: all ten revised candidates reduce predicted-support p95 sliding, but all ten increase maximum root acceleration. Nine revised candidates meet the proposed floor/p95-slide/hover proxy screens, compared with five original candidates. Motion-008-rig-02 still fails p95 sliding at 0.069756 m/s. The revised candidates pass declared decoded bounds and 3,000 actual engine actor-frame checks; these establish export integrity, not motion quality. Root acceleration is a regression diagnostic, not a force/balance certificate.
+
+The complete endpoint comparison removes final-step spikes but preserves these earlier root-acceleration extrema. The combined decision and figure are retained in `reports/support-endpoint-summary-v1`. No whole-motion quality approval follows from either result.

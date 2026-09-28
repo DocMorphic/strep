@@ -1,0 +1,48 @@
+<div id="rigClipPanel" hidden>
+ <div class="rig-toolbar"><strong>Clip edits</strong><button class="btn" id="rigClipClose">Back to mapping</button></div>
+ <p class="small" id="rigClipBinding"></p>
+ <label class="small">Edited clip name<input id="rigClipName" aria-label="Edited clip name" maxlength="160"></label>
+ <div class="rig-contact-interval"><label>First source frame<input id="rigClipStart" aria-label="Trim first frame" type="number" min="0"></label><label>Last source frame<input id="rigClipEnd" aria-label="Trim last frame" type="number" min="1"></label></div>
+ <div class="rig-toolbar"><button class="btn" id="rigClipIn">Use current frame as start</button><button class="btn" id="rigClipOut">Use current frame as end</button></div>
+ <label class="small">Speed multiplier<input id="rigClipSpeed" aria-label="Clip speed multiplier" type="number" min="0.25" max="4" step="0.05" value="1"></label>
+ <p class="small" id="rigClipClock"></p>
+ <details open><summary>Local pose adjustments</summary>
+ <p class="small">Rotate a bone around a source frame, with a smooth return to the original pose. Preview shows the source until you apply the edit.</p>
+ <label class="small">Bone<select id="rigPoseBone" aria-label="Pose adjustment bone"></select></label>
+ <div class="rig-offsets"><label>Start<input id="rigPoseStart" aria-label="Pose start frame" type="number" min="0"></label><label>Peak<input id="rigPosePeak" aria-label="Pose peak frame" type="number" min="1"></label><label>End<input id="rigPoseEnd" aria-label="Pose end frame" type="number" min="2"></label></div>
+ <div class="rig-offsets"><label>Local X (°)<input id="rigPoseX" aria-label="Pose local X degrees" type="number" min="-90" max="90" value="0"></label><label>Y (°)<input id="rigPoseY" aria-label="Pose local Y degrees" type="number" min="-90" max="90" value="0"></label><label>Z (°)<input id="rigPoseZ" aria-label="Pose local Z degrees" type="number" min="-90" max="90" value="0"></label></div>
+ <button class="btn" id="rigPoseAdd">Add pose adjustment</button><div id="rigPoseList" class="rig-contact-list"></div>
+ </details>
+ <p class="small">Source stays saved. Contact intervals follow the new clock; world targets stay in place. Speed and pose edits can change support and physical plausibility—inspect the result before use.</p>
+ <button class="btn primary" id="rigClipApply">Apply clip edit</button>
+ <details><summary>Mirror motion · swap sides</summary>
+ <p class="small">Mirror the whole clip on this character with its original proportions. Timing stays the same. Trim and pose edits above are separate operations.</p>
+ <button class="btn" id="rigMirrorPrepare">Prepare side swap</button>
+ <p class="small" id="rigMirrorNote">Prepare the mirror to inspect the bone pairs and reflection plane.</p>
+ <div id="rigMirrorFields" hidden>
+ <label class="small">Mirrored clip name<input id="rigMirrorName" aria-label="Mirrored clip name" maxlength="160"></label>
+ <label class="small">Plane normal heading (°)<input id="rigMirrorHeading" aria-label="Mirror plane normal heading" type="number" step="1" min="-180" max="180"></label>
+ <p class="small" id="rigMirrorPlane"></p>
+ <details><summary>Bone pairs</summary><div id="rigMirrorPairs" class="small"></div></details>
+ <p class="small">Review floor clearance and action after mirroring. Scene targets need re-authoring and gameplay markers need review. Existing loop playback is exported as a finite clip.</p>
+ <button class="btn primary" id="rigMirrorApply" disabled>Create mirrored clip</button>
+ </div>
+ </details>
+ <details><summary>World-space joint targets</summary>
+ <p class="small">Move a hand, foot or another joint toward an exact world pose. This creates a separate candidate while keeping the clip's timing.</p>
+ <label class="small">Joint<select id="rigJointBone" aria-label="Joint target bone"></select></label>
+ <div class="rig-offsets"><label>Target frame<input id="rigJointFrame" aria-label="Joint target frame" type="number" min="0"></label></div>
+ <button class="btn" id="rigJointSample">Use current frame and pose</button>
+ <div class="rig-offsets"><label>World X (m)<input id="rigJointX" aria-label="Joint target world X" type="number" step="0.01"></label><label>Y (m)<input id="rigJointY" aria-label="Joint target world Y" type="number" step="0.01"></label><label>Z (m)<input id="rigJointZ" aria-label="Joint target world Z" type="number" step="0.01"></label></div>
+ <div class="rig-offsets"><label>World X rotation (°)<input id="rigJointRX" aria-label="Joint target world rotation X" type="number" step="1"></label><label>Y rotation (°)<input id="rigJointRY" aria-label="Joint target world rotation Y" type="number" step="1"></label><label>Z rotation (°)<input id="rigJointRZ" aria-label="Joint target world rotation Z" type="number" step="1"></label></div>
+ <button class="btn" id="rigJointAdd">Add joint target</button><div id="rigJointList" class="rig-contact-list"></div>
+ <p class="small" id="rigJointNote"></p><button class="btn primary" id="rigJointApply" disabled>Fit joint targets</button>
+ </details>
+ <details><summary>Regenerate a section from a description</summary>
+ <p class="small">Use the first and last source frames above. Describe the replacement action for that section. This keeps the clip's duration and surrounding motion; speed and local pose adjustments are separate edits.</p>
+ <label class="small">Replacement description<textarea id="rigPromptText" aria-label="Replacement action description" maxlength="1000" rows="3"></textarea></label>
+ <div class="rig-contact-interval"><label>Blend frames at each edge<input id="rigPromptBlend" aria-label="Regeneration blend frames" type="number" min="4" value="8"></label><label>Seed<input id="rigPromptSeed" aria-label="Regeneration seed" type="number" min="0" max="4294967295" value="77"></label></div>
+ <p class="small" id="rigPromptNote"></p>
+ <button class="btn primary" id="rigPromptApply">Regenerate selected range</button>
+ </details>
+</div>

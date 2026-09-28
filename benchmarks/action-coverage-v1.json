@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "requests": [
+    {
+      "id": "jump-land",
+      "label": "Jump and land",
+      "segments": [
+        {
+          "prompt": "A person bends their knees, jumps forward with both feet, lands on both feet and regains balance.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        11,
+        22
+      ],
+      "scene_requirements": []
+    },
+    {
+      "id": "crawl",
+      "label": "Crawl on hands and knees",
+      "segments": [
+        {
+          "prompt": "A person crawls forward slowly on their hands and knees.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        11,
+        22
+      ],
+      "scene_requirements": []
+    },
+    {
+      "id": "dance",
+      "label": "Dance and turn",
+      "segments": [
+        {
+          "prompt": "A person dances with rhythmic side steps, swinging their arms and turning around.",
+          "duration_s": 5
+        }
+      ],
+      "seeds": [
+        11,
+        22
+      ],
+      "scene_requirements": []
+    },
+    {
+      "id": "wave",
+      "label": "Wave hello",
+      "segments": [
+        {
+          "prompt": "A person stands relaxed and waves hello with their right hand before lowering the arm.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        11,
+        22
+      ],
+      "scene_requirements": []
+    },
+    {
+      "id": "kick",
+      "label": "Kick and recover",
+      "segments": [
+        {
+          "prompt": "A person takes a fighting stance, performs one high side kick and returns to a balanced guard stance.",
+          "duration_s": 4
+        }
+      ],
+      "seeds": [
+        11,
+        22
+      ],
+      "scene_requirements": []
+    },
+    {
+      "id": "get-up",
+      "label": "Get up from the floor",
+      "segments": [
+        {
+          "prompt": "A person lies on their back on the floor, rolls onto their side and pushes up to stand.",
+          "duration_s": 6
+        }
+      ],
+      "seeds": [
+        11,
+        22
+      ],
+      "scene_requirements": []
+    },
+    {
+      "id": "run-roll-stand",
+      "label": "Run \u2192 roll \u2192 stand",
+      "segments": [
+        {
+          "prompt": "A person runs forward in a straight line.",
+          "duration_s": 2
+        },
+        {
+          "prompt": "A person continues forward into a tucked forward roll over the shoulders then rises to their feet.",
+          "duration_s": 3
+        },
+        {
+          "prompt": "A person slows to a stop and stands upright in a relaxed balanced pose.",
+          "duration_s": 2
+        }
+      ],
+      "seeds": [
+        11,
+        22
+      ],
+      "scene_requirements": []
+    }
+  ]
+}

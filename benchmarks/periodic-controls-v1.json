@@ -1,0 +1,45 @@
+{
+  "id": "periodic-controls-v1",
+  "arm_targets_degrees": [
+    10,
+    20,
+    30,
+    45,
+    60,
+    70
+  ],
+  "lean_targets_degrees": [
+    0,
+    10,
+    20
+  ],
+  "seeds": [
+    11,
+    22,
+    55,
+    101
+  ],
+  "source_study": "control-calibration-v1/text",
+  "application_order": [
+    "lean",
+    "arm"
+  ],
+  "target_error_degrees": {
+    "arm": 2,
+    "lean": 1
+  },
+  "root_and_lower_body_tolerance_m": 1e-05,
+  "maximum_local_edit_degrees": 35,
+  "loop_thresholds": "benchmarks/acceptance-v0.json",
+  "release_rule": "A pair is enabled for screened recipe export only if all three takes pass target accuracy, unchanged root/lower body/contact, inherited baseline acceptance, edit budget and existing loop screens.",
+  "scope": "Wider-arm cyclic smoothing; three observed development seeds and one newly reserved seed, not broad generalization. Lower ranges unchanged. Upper-body world rotations smoothed by two circular [1/4,1/2,1/4] passes and SO(3) projection before re-fitting angles. No changed quality thresholds, physics or stat mapping.",
+  "development_seeds": [
+    11,
+    22,
+    55
+  ],
+  "held_out_seeds": [
+    101
+  ],
+  "maximum_dynamics_ratio": 1.1
+}

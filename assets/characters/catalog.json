@@ -1,0 +1,39 @@
+{
+  "schema": "strep-bundled-character-catalog-v1",
+  "characters": [
+    {
+      "file": "assets/characters/cesium-man/CesiumMan.glb",
+      "sha256": "b7001eaeea8254bd44773bcd247e78696d94169388fbb2a1800fc69434e777d9",
+      "profile": "assets/characters/cesium-man/rig-profile-v2.json",
+      "license_metadata": "Cesium CC BY 4.0 and logo terms retained",
+      "attachments": {
+        "LICENSE.md": "assets/characters/cesium-man/LICENSE.md",
+        "Cesium-logo-terms.txt": "assets/characters/cesium-man/Cesium-logo-terms.txt",
+        "UPSTREAM-README.md": "assets/characters/cesium-man/UPSTREAM-README.md",
+        "provenance.json": "assets/characters/cesium-man/provenance.json"
+      }
+    },
+    {
+      "file": "assets/characters/quaternius-base/Superhero_Female_FullBody.glb",
+      "sha256": "6af075944be5d9d1881e8eb6722f275dbe4ea2ad46c71b0aa7d99b96b32e6523",
+      "profile": "assets/characters/quaternius-base/Superhero_Female_FullBody.profile-v2.json",
+      "license_metadata": "Quaternius Universal Base Characters Standard, CC0 1.0. Original pack and explicit resource substitutions recorded.",
+      "attachments": {
+        "LICENSE.md": "assets/characters/quaternius-base/original/Universal Base Characters[Standard]/License_Standard.txt",
+        "provenance.json": "assets/characters/quaternius-base/provenance.json",
+        "packing.json": "assets/characters/quaternius-base/Superhero_Female_FullBody.packing.json"
+      }
+    },
+    {
+      "file": "assets/characters/quaternius-base/Superhero_Male_FullBody.glb",
+      "sha256": "ee75d0a941ff0998dd29f9b7bfaf88d6f318999cb01197d49b368ba3765ae1c5",
+      "profile": "assets/characters/quaternius-base/Superhero_Male_FullBody.profile-v2.json",
+      "license_metadata": "Quaternius Universal Base Characters Standard, CC0 1.0. Original pack and explicit resource substitutions recorded.",
+      "attachments": {
+        "LICENSE.md": "assets/characters/quaternius-base/original/Universal Base Characters[Standard]/License_Standard.txt",
+        "provenance.json": "assets/characters/quaternius-base/provenance.json",
+        "packing.json": "assets/characters/quaternius-base/Superhero_Male_FullBody.packing.json"
+      }
+    }
+  ]
+}

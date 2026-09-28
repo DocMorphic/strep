@@ -1,0 +1,39 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>strep · character transfer review</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#101821;color:#ecf3f7;font:16px system-ui}main{max-width:1440px;margin:auto;padding:24px}h1{font-size:28px;margin:0}p{color:#b7c9d6;line-height:1.55}.controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap}button,select{font:inherit;background:#263e50;border:1px solid #577086;color:white;padding:8px 13px;border-radius:6px}input{flex:1;min-width:200px}canvas{display:block;width:100%;height:430px;border:1px solid #395162;border-radius:10px}.panels{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}h2{font-size:18px;margin:0 0 10px}.metric{color:#87dfc5}a{color:#88dcc8}#status{color:#ffd19b}.small{font-size:13px}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;border-bottom:1px solid #344654}@media(max-width:750px){.panels{grid-template-columns:1fr}canvas{height:360px}}</style>
+<main><h1>strep / motion on the character</h1><p>Seed <span id="seed"></span> · CesiumMan · before and after stance correction, using the same rig transfer. Four cycles accumulate forward travel. The cameras follow the character; playback stops at the end.</p>
+<div class="controls"><button id="play" disabled>Play</button><button id="restart" disabled>Restart</button><label>View <select id="view"><option value="three">Three-quarter</option><option value="side">Side</option><option value="front">Front</option></select></label><label>Speed <select id="speed"><option value="1">1×</option><option value="0.5">0.5×</option><option value="0.25">0.25×</option></select></label><input id="frame" aria-label="Frame" type="range" min="0" max="1" value="0"><output id="time">Loading</output></div>
+<p id="status">Loading local character and animations…</p>
+<div class="panels"><section><h2>Before stance correction</h2><canvas id="before" aria-label="Character before stance correction"></canvas><p class="metric" id="beforeMetric"></p></section><section><h2>After stance correction</h2><canvas id="after" aria-label="Character after stance correction"></canvas><p class="metric" id="afterMetric"></p></section></div>
+<p id="detail"></p><p id="contactIssues"></p><p class="small">The source skeleton passed loop and sliding-regression screens. Character transfer is assessed separately: different proportions can reintroduce foot sliding. Contact labels are inherited predictions; mesh-floor checks do not assess self-collision or naturalness. This is a technical review, with animator and engine acceptance pending.</p>
+<p><a href="cesium-run-comparison.glb">Download animated GLB</a> · <a href="report.json">Transfer measurements</a> · <a href="contacts.json">Contact sidecar</a> · <a href="../stance-correction-v1/comparison.html">All five source comparisons</a></p>
+<p class="small">CesiumMan © 2017 Cesium, CC BY 4.0. Modified animation and retargeting by strep. <a href="LICENSE.md">Asset license</a> · <a href="Cesium-logo-terms.txt">Logo terms</a>. Viewer: Three.js, MIT, bundled locally.</p></main>
+<script type="importmap">{"imports":{"three":"../../assets/viewer/node_modules/three/build/three.module.js","three/addons/":"../../assets/viewer/node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const report=__CHARACTER_REPORT__,panels=[],slider=document.querySelector('#frame'),play=document.querySelector('#play'),restart=document.querySelector('#restart');
+document.querySelector('#seed').textContent=report.seed;
+const total=report.frames_per_cycle*report.repeats,duration=total/report.fps;
+if(report.quality){const q=report.quality.conditions.after,heights=q.support_foot_lowest_vertex_height;document.querySelector('#contactIssues').textContent=`Remaining contact issues: lowest foot vertices rise up to ${(Math.max(heights.left.max_m,heights.right.max_m)*100).toFixed(1)} cm during predicted support; sampled floor penetration reaches ${(q.sampled_mesh_max_ground_penetration_m*1000).toFixed(1)} mm between keyframes.`;}
+let frame=0,running=false,last=performance.now(),clock=0;
+slider.max=total;
+function setup(label,gltf,index){
+ const canvas=document.getElementById(label),renderer=new THREE.WebGLRenderer({canvas,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setClearColor(0x182632);renderer.outputColorSpace=THREE.SRGBColorSpace;
+ const scene=new THREE.Scene();scene.add(new THREE.HemisphereLight(0xdff3ff,0x4d555a,2.4));const light=new THREE.DirectionalLight(0xffffff,2.6);light.position.set(3,5,2);scene.add(light);
+ const grid=new THREE.GridHelper(24,48,0x74868c,0x344b5b);scene.add(grid);
+ const model=gltf.scene;scene.add(model);const mixer=new THREE.AnimationMixer(model),action=mixer.clipAction(gltf.animations[index]);action.setLoop(THREE.LoopOnce,1);action.clampWhenFinished=true;action.play();
+ const root=model.getObjectByName('Skeleton_torso_joint_1');if(!root)throw Error('Pelvis node missing');
+ const camera=new THREE.PerspectiveCamera(38,1,.01,100);panels.push({label,renderer,scene,camera,mixer,action,root,model});
+ document.getElementById(label+'Metric').textContent=`Transferred ankle/toe contact-speed p95: ${(report.conditions[label].predicted_contact_ankle_toebase_speed_p95_m_s*100).toFixed(1)} cm/s`;
+}
+function render(){
+ for(const p of panels){p.action.enabled=true;p.action.paused=false;p.mixer.setTime(frame/report.fps);p.model.updateMatrixWorld(true);const root=new THREE.Vector3();p.root.getWorldPosition(root);const target=new THREE.Vector3(root.x,.67,root.z),view=document.querySelector('#view').value;
+ const offset=view==='side'?new THREE.Vector3(2.8,.25,0):view==='front'?new THREE.Vector3(0,.25,2.8):new THREE.Vector3(2.3,.65,2.6);p.camera.position.copy(target).add(offset);p.camera.lookAt(target);
+ const w=p.renderer.domElement.clientWidth,h=p.renderer.domElement.clientHeight;p.renderer.setSize(w,h,false);p.camera.aspect=w/h;p.camera.updateProjectionMatrix();p.renderer.render(p.scene,p.camera);
+ }
+ slider.value=frame;document.querySelector('#time').textContent=`Frame ${frame}/${total} · ${(frame/report.fps).toFixed(2)} s`;
+}
+function tick(t){if(running){clock+=Math.min((t-last)/1000,.1)*Number(document.querySelector('#speed').value);frame=Math.min(total,Math.floor(clock*report.fps));if(frame===total){running=false;play.textContent='Play';}render();}last=t;requestAnimationFrame(tick);}
+play.onclick=()=>{if(frame===total){frame=0;clock=0;}running=!running;play.textContent=running?'Pause':'Play';};restart.onclick=()=>{frame=0;clock=0;running=true;play.textContent='Pause';render();};slider.oninput=()=>{frame=Number(slider.value);clock=frame/report.fps;running=false;play.textContent='Play';render();};document.querySelector('#view').onchange=render;window.onresize=render;
+try{const loader=new GLTFLoader();const [a,b]=await Promise.all([loader.loadAsync('cesium-run-comparison.glb'),loader.loadAsync('cesium-run-comparison.glb')]);setup('before',a,0);setup('after',b,1);play.disabled=false;restart.disabled=false;document.querySelector('#status').textContent='GLB loaded and animated. Review foot planting, limb bends, and repeat boundaries; numerical source acceptance is not character realism approval.';document.querySelector('#detail').textContent=`Source-to-character scale ${report.scale_from_mean_leg_length_ratio.toFixed(3)} · Common floor lift ${(report.common_mesh_ground_lift_m*100).toFixed(2)} cm · Cycle travel ${report.cycle_displacement_target_m[2].toFixed(2)} m`;render();requestAnimationFrame(tick);}catch(error){document.querySelector('#status').textContent='Viewer failed: '+error.message;console.error(error);}
+</script></html>

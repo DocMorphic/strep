@@ -1,0 +1,4 @@
+{
+  "status": "unsupported",
+  "reason": "Rig import v1 requires unit scale and proper rigid node transforms"
+}

@@ -1,0 +1,68 @@
+<section class="window" data-app="character" aria-label="Characters window" hidden>
+ <header class="titlebar"><h1>Characters</h1></header>
+ <div class="window-content character-content">
+  <div class="rig-toolbar"><label>Character<select id="rigAsset" aria-label="Character" disabled></select></label><button class="btn" id="rigImport">Import GLB…</button><button class="btn" id="rigSample">Use sample</button><input id="rigFile" type="file" accept=".glb,model/gltf-binary" aria-label="Import rigged character file" hidden></div>
+  <p id="rigAssetInfo" class="small">Import a rigged humanoid. Local GLB files up to 32 MiB; one skin, unit scale, no morphs. FBX is not supported yet.</p>
+  __CORRECTION_REVIEW__
+  <div class="rig-grid">
+   <div class="rig-visual">
+    <div class="rig-stage"><canvas id="rigCanvas" aria-label="Imported character preview"></canvas><span id="rigViewLabel" class="rig-stage-label">Imported reference</span></div>
+    <div class="rig-toolbar"><button class="btn" id="rigReset" disabled>Reset view</button><button class="btn" id="rigLoop" disabled>Make a loop</button><button class="btn" id="rigJoin" disabled>Join clips</button><button class="btn" id="rigEditClip" disabled>Edit timing and pose</button><button class="btn" id="rigPosture" disabled>Hand posture</button><button class="btn" id="rigEvents" disabled>Gameplay markers</button><button class="btn" id="rigEditContacts" disabled>Edit mesh contacts</button><button class="btn" id="rigRootCleanup" disabled title="Reduce root-motion acceleration while preserving saved contact targets and patch dynamics">Smooth root motion</button><label class="small"><input id="rigBones" type="checkbox"> Show bones</label><span id="rigFocus" class="small"></span></div>
+    <div class="rig-toolbar"><label>Result<select id="rigResult" aria-label="Character result"><option value="">Imported reference</option></select></label><select id="rigVariant" aria-label="Character result version" disabled></select></div>
+    <p id="rigSelectionNote" class="small" role="status" hidden></p>
+    <div class="rig-transport"><button class="btn" id="rigPlay" disabled>Play</button><input id="rigFrame" type="range" min="0" max="1" value="0" aria-label="Character animation frame" disabled><output id="rigTime">Reference pose</output></div>
+    <div class="rig-toolbar"><button class="btn" id="rigWorstFloor" disabled>Worst floor</button><button class="btn" id="rigWorstHover" disabled>Worst foot hover</button></div>
+    <p id="rigGroundNote" class="small"></p>
+    <p id="rigResultNote" class="small">Orbit by dragging the preview. Grey material is a review override; the original file is preserved.</p>
+    <p id="rigClockMap" class="small"></p>
+    <div class="rig-toolbar" id="rigJoinNavigation" hidden><button class="btn" id="rigJoinStart">Transition start</button><button class="btn" id="rigJoinEnd">Transition end</button></div>
+    <div id="rigLinks" class="rig-links"></div>
+   </div>
+   <div class="rig-configuration">
+    <section id="rigPosturePanel" class="rig-panel" hidden>
+     <div class="rig-toolbar"><strong>Hand posture</strong><button class="btn" id="rigPostureClose">Close</button></div>
+     <p class="small">Blend finger rotations into a clip with timed fades. Hands and body keep their existing motion. No grip or partner contact is inferred.</p>
+     <label class="small">Candidate name <input id="rigPostureName" value="Authored hand posture" maxlength="160"></label>
+     <div class="rig-toolbar"><label class="small">Hand <select id="rigPostureHand" aria-label="Posture hand"></select></label><button class="btn" id="rigPostureReference">Use rig reference</button><button class="btn" id="rigPostureCapture">Capture current fingers</button></div>
+     <div class="rig-offsets">
+      <label>Start frame<input id="rigPostureStart" aria-label="Posture start frame" type="number" min="0" step="1"></label>
+      <label>Full start<input id="rigPostureFullStart" aria-label="Posture full start frame" type="number" min="1" step="1"></label>
+      <label>Full end<input id="rigPostureFullEnd" aria-label="Posture full end frame" type="number" min="1" step="1"></label>
+      <label>End frame<input id="rigPostureEnd" aria-label="Posture end frame" type="number" min="2" step="1"></label>
+      <label>Strength %<input id="rigPostureStrength" aria-label="Posture strength percent" type="number" min="0" max="100" value="100"></label>
+     </div>
+     <details><summary>Finger rotations · local XYZ degrees</summary><div id="rigPostureJoints"></div></details>
+     <p id="rigPostureNote" class="small" role="status"></p>
+     <button class="btn" id="rigPostureAdd">Add interval</button>
+     <div id="rigPostureIntervals"></div>
+     <p class="small">Edits are limited to 90° total and 5° of correction change per frame. If rejected, lower strength or lengthen the fades. These are edit limits, not anatomical limits.</p>
+     <button class="btn" id="rigPostureApply" disabled>Create posture candidate</button>
+    </section>
+
+   <div id="rigMappingPanel">
+    <div class="rig-toolbar"><strong>Bone mapping</strong><span id="rigProfileState" class="small">No character</span></div>
+    <p class="small">Choose the matching bone for each role. Required roles are marked *. Alignment can follow the bone, preserve the rest orientation, or use custom XYZ angles.</p>
+    <div id="rigMapping" class="rig-map-list"></div>
+    <div class="rig-toolbar"><button class="btn primary" id="rigSave" disabled>Save mapping</button><button class="btn" id="rigNeutral" disabled>Preview alignment</button></div>
+    <details><summary>Placement offset</summary><div class="rig-offsets"><label>X (m)<input id="rigOffsetX" type="number" step="0.01" value="0"></label><label>Y (m)<input id="rigOffsetY" type="number" step="0.01" value="0"></label><label>Z (m)<input id="rigOffsetZ" type="number" step="0.01" value="0"></label></div><p class="small">Explicit world offset. Floor contact is measured separately.</p></details>
+    <div class="divider"></div><strong>Motion to transfer</strong>
+    <p id="rigSource" class="small">Choose a motion in Preview, then use it here.</p>
+    <div class="rig-toolbar"><button class="btn" id="rigUseClip">Use Preview clip</button><button class="btn" data-open="preview">Open Preview</button></div>
+    <label class="small rig-check"><input id="rigCorrect" type="checkbox"> Also try bounded foot/floor correction</label><p class="small">Experimental. Infeasible requests keep the uncorrected transfer. Rejected candidates stay visible.</p>
+    <button class="btn primary" id="rigTransfer" disabled>Transfer motion</button>
+    <div class="divider"></div><strong>Edit an existing animation</strong>
+    <label class="small">Clip in this GLB<select id="rigOriginal" aria-label="Existing character animation"></select></label>
+    <p class="small" id="rigOriginalNote">Import an animated GLB to clean up an existing clip.</p>
+    <button class="btn" id="rigPrepareClip" disabled>Prepare existing clip</button>
+   </div>
+   __CHARACTER_CONTACTS__
+   __CHARACTER_CLIP_EDIT__
+   __CHARACTER_EVENTS__
+   __CHARACTER_TRANSITION__
+   __CHARACTER_LOOP__
+   </div>
+  </div>
+    <details id="rigGenerationHistory" class="generation-history" hidden><summary>Source generation history</summary><div class="generation-history-body" aria-live="polite"></div></details>
+  <p id="rigStatus" class="rig-status small" role="status">Ready to import a character.</p>
+ </div><footer class="window-footer">Local character files · Explicit mapping · Review before use</footer>
+</section>

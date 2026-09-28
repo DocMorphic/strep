@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "requests": [
+    {
+      "id": "kneel-baseline",
+      "label": "Kneel phase diagnosis / baseline",
+      "segments": [
+        {
+          "prompt": "A person lowers onto both knees, pauses upright on their knees, steps one foot forward and rises to standing.",
+          "duration_s": 6
+        }
+      ],
+      "seeds": [
+        1301,
+        2089,
+        3253,
+        4099
+      ],
+      "scene_requirements": []
+    },
+    {
+      "id": "kneel-upright-start",
+      "label": "Kneel phase diagnosis / upright-start",
+      "segments": [
+        {
+          "prompt": "A person lowers onto both knees, pauses upright on their knees, steps one foot forward and rises to standing.",
+          "duration_s": 6
+        }
+      ],
+      "seeds": [
+        1301,
+        2089,
+        3253,
+        4099
+      ],
+      "scene_requirements": [],
+      "generation_constraints": [
+        {
+          "type": "fullbody",
+          "motion": "reports/kneel-start-guides-plan-v2/canonical-guide-source.npz",
+          "sha256": "3c5cf97567159b977e2ed7eea468083c9187abfc9ecf7b9ac96dbe5926ae76dd",
+          "source_frames": [
+            179
+          ],
+          "frame_indices": [
+            0
+          ]
+        }
+      ]
+    }
+  ]
+}

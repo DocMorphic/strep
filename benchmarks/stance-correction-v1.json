@@ -1,0 +1,13 @@
+{
+  "id": "periodic-foot-translation-two-bone-ik-v1",
+  "fps": 30,
+  "velocity_weights": [1, 10, 100],
+  "smoothness_weights": [0.1, 1, 10],
+  "strengths": [0.25, 0.5, 1.0],
+  "offset_regularization": 0.02,
+  "max_joint_displacement_m": 0.06,
+  "max_local_rotation_change_degrees": 20,
+  "max_extra_ground_lift_m": 0.001,
+  "minimum_relative_improvement": 0.01,
+  "policy": "Unchanged predicted contact labels; periodic horizontal foot offsets, two-bone IK preserving ankle world orientation, fixed root trajectory except reported constant ground lift. Existing loop and regression limits remain frozen. Additional displacement and rotation limits constrain distortion; no human realism claim."
+}

@@ -1,0 +1,11 @@
+<div id="rigEventPanel" hidden>
+ <div class="rig-toolbar"><strong>Gameplay markers</strong><button class="btn" id="rigEventsClose">Back to mapping</button></div>
+ <p class="small" id="rigEventsBinding"></p>
+ <p class="small">Markers describe your intended game timing. They do not prove a foot plant, hit or grasp. Blended events need explicit timing review before the runtime emits them.</p>
+ <label>Result name<input id="rigEventsLabel" aria-label="Marked clip name" maxlength="160"></label>
+ <div class="rig-offsets"><label>Event name<input id="rigEventName" aria-label="Gameplay event name" maxlength="64" placeholder="e.g. footstep_left"></label><label>Frame<input id="rigEventFrame" aria-label="Gameplay event frame" type="number" min="0" value="0"></label></div>
+ <div class="rig-toolbar"><button class="btn" id="rigEventCurrent">Use current frame</button><button class="btn" id="rigEventAdd">Add marker</button></div>
+ <div id="rigEventsList" class="rig-contact-list"></div>
+ <p class="small" id="rigEventsStructural"></p>
+ <button class="btn primary" id="rigEventsApply">Save markers</button>
+</div>

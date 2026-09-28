@@ -1,0 +1,28 @@
+<details id="correctionReview" class="correction-review">
+ <summary>Review corrected motions <span class="small">Developer comparison</span></summary>
+ <div class="correction-review-body">
+  <div class="rig-toolbar"><label>Study<select id="correctionStudy" aria-label="Correction review study"><option value="iterations">Further correction · 24 cases · 4 versions</option><option value="midpoint_full">Earlier full comparison · 24 cases</option><option value="midpoint">Earlier between-frame correction · 19 cases</option><option value="support">Earlier support correction · 19 cases</option><option value="angular">Earlier angular study · 5 cases</option></select></label><label>Review case<select id="correctionCase" aria-label="Correction review case" disabled></select></label><label>Version<select id="correctionVersion" aria-label="Correction review version" disabled></select></label></div>
+  <p id="correctionStatus" role="status" class="small">Open to load the completed correction study.</p>
+  <div class="correction-review-grid">
+   <div><div class="rig-stage"><canvas id="correctionCanvas" aria-label="Correction comparison preview"></canvas><span id="correctionViewLabel" class="rig-stage-label"></span></div>
+    <div class="rig-transport"><button class="btn" id="correctionPlay" disabled>Play</button><input id="correctionFrame" type="range" min="0" max="0" step="0.25" value="0" aria-label="Correction comparison frame" disabled><output id="correctionTime">0.00s</output><button class="btn" id="correctionReset" disabled>Frame character</button></div>
+    <div id="correctionLandmarks" class="rig-toolbar" aria-label="Measured frame shortcuts"></div>
+   </div>
+   <div><p id="correctionPrompt" class="small"></p><p id="correctionMetrics" class="small"></p><p id="correctionFailures" class="small"></p>
+    <p class="small">Versions share the same frame and camera. Raw transfer precedes these corrections; input includes earlier contact and root edits.</p>
+    <p class="small">Numerical checks are not animator approval. Penetration may remain, and smaller rotation peaks do not guarantee more natural motion. Review the action and contacts before using an export.</p>
+    <p class="small">For developer feedback, include the case, version, frame range, and what looks wrong. Compare at normal speed first, then scrub the same frames. No review scores are prefilled.</p>
+    <div id="correctionLinks" class="rig-links"></div>
+    <details class="correction-feedback"><summary>Your review notes</summary>
+     <fieldset id="correctionFeedbackFields" disabled>
+      <label>Name or alias<input id="correctionReviewer" maxlength="120" autocomplete="off"></label>
+      <div class="rig-toolbar"><label>From frame<input id="correctionNoteStart" type="number" min="0" step="1"></label><label>Through frame<input id="correctionNoteEnd" type="number" min="0" step="1"></label><button id="correctionNoteHere" type="button" class="btn">Use current frame</button></div>
+      <label>What do you notice?<textarea id="correctionNote" rows="4" maxlength="4000" placeholder="Describe the action, contact, timing or other issue you see."></textarea></label>
+      <button id="correctionExportFeedback" type="button" class="btn" disabled>Export feedback</button>
+     </fieldset>
+     <p id="correctionFeedbackStatus" class="small" role="status">Load a verified motion to add feedback.</p>
+    </details>
+   </div>
+  </div>
+ </div>
+</details>

@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "benchmark_id": "strep-v0",
+  "status": "planned_not_executed",
+  "model": "Kimodo-SOMA-RP-v1.1",
+  "fps": 30,
+  "seeds": [11, 22, 33, 44, 55],
+  "diffusion_steps": 100,
+  "num_samples": 1,
+  "num_transition_frames": 5,
+  "target_engine": null,
+  "character": "assets/characters/cesium-man/CesiumMan.glb",
+  "coordinates": {"units": "metres", "up": "+Y", "forward": "+Z", "handedness": "right"},
+  "scene_status": "provisional_reach_and_scale_calibration_required_before_scoring",
+  "conditions": [
+    {"id": "unprocessed", "postprocess": false},
+    {"id": "upstream_cleanup", "postprocess": true}
+  ],
+  "cases": [
+    {
+      "id": "run_loop",
+      "tracks": [{"actor": "A", "prompt": "A person runs steadily forward in a straight line at a constant pace with a repeating running gait.", "durations_s": [4], "constraints": null}],
+      "evaluation_targets": {"loop": true, "stable_heading": true, "root_motion": "forward travel retained; normalize displacement only when measuring seam"},
+      "required_metrics": ["foot_slide", "ground_penetration", "loop_seam", "heading_drift", "action_correctness", "rig_transfer", "import", "cleanup_minutes"]
+    },
+    {
+      "id": "run_to_roll",
+      "tracks": [{"actor": "A", "prompt": "A person runs forward in a straight line. The person continues forward into a tucked forward roll over the shoulders then rises into a stable standing pose.", "durations_s": [3, 4], "constraints": null}],
+      "evaluation_targets": {"requested_join_s": 3, "actual_join": "derive from upstream output and overlap metadata", "end_pose": "standing", "external_run_clip_splice": "not implemented"},
+      "required_metrics": ["foot_slide", "ground_penetration", "transition_discontinuity", "action_correctness", "rig_transfer", "import", "cleanup_minutes"]
+    },
+    {
+      "id": "lift_box",
+      "tracks": [{"actor": "A", "prompt": "A person bends at the knees and hips to grasp both sides of a box on the floor in front of them with both hands then lifts it to waist height and stands holding it steadily.", "durations_s": [6], "constraints": null}],
+      "evaluation_targets": {
+        "actor_origin_m": [0, 0, 0],
+        "box": {"dimensions_xyz_m": [0.4, 0.4, 0.4], "initial_center_m": [0, 0.2, 0.55], "rotation_xyz_degrees": [0, 0, 0]},
+        "grips_world_m": [[-0.2, 0.3, 0.55], [0.2, 0.3, 0.55]],
+        "grasp_time_s": 2,
+        "attachment": "absent in unchanged baseline; evaluate missing object motion as unsupported, never fabricate it"
+      },
+      "required_metrics": ["foot_slide", "ground_penetration", "object_penetration", "grip_position_error", "contact_timing_error", "box_attachment", "action_correctness", "rig_transfer", "import", "cleanup_minutes"]
+    },
+    {
+      "id": "high_five",
+      "tracks": [
+        {"actor": "A", "prompt": "A person faces a partner and raises the right hand to give a high five then reacts with a small arm recoil and returns to relaxed standing.", "durations_s": [4], "constraints": null},
+        {"actor": "B", "prompt": "A person faces a partner and raises the right hand to give a high five then reacts with a small arm recoil and returns to relaxed standing.", "durations_s": [4], "constraints": null}
+      ],
+      "evaluation_targets": {
+        "generation_mode": "independent single-character tracks, same seed, shared clock; not joint inference",
+        "actor_A": {"origin_m": [0, 0, -0.55], "yaw_degrees": 0},
+        "actor_B": {"origin_m": [0, 0, 0.55], "yaw_degrees": 180},
+        "meeting_point_world_m": [0, 1.5, 0],
+        "contact_time_s": 2,
+        "hand": "right; calibrated wrist-to-palm proxy required"
+      },
+      "required_metrics": ["foot_slide", "ground_penetration", "partner_penetration", "hand_position_error", "contact_timing_error", "action_correctness", "rig_transfer", "import", "cleanup_minutes"]
+    }
+  ]
+}

@@ -1,0 +1,1241 @@
+{
+  "schema_version": 1,
+  "status": "reserved_prompts_not_release_ready",
+  "purpose": "Reserve future application-development holdout compositions and seeds. Not an action whitelist.",
+  "model_training_overlap": "Unknown; no claim these actions were excluded from checkpoint training.",
+  "selection_policy": "Six predeclared compositions per existing action family. Do not use these prompts or seeds for solver tuning. If used during development, retire the affected reservation and version the set before release trials.",
+  "validation_prerequisites": [
+    "Freeze concrete rig/object/partner assets and scene contacts",
+    "Freeze remaining acceptance gates",
+    "Freeze method/checkpoint and baseline",
+    "Refresh development overlap audit",
+    "Arrange human evaluation; developer-first review does not replace independent animator evidence"
+  ],
+  "cases": [
+    {
+      "id": "release-reserved-figure-eight-walk",
+      "family": "locomotion",
+      "slot": 1,
+      "prompt": "A person walks a figure-eight path, crossing the center twice, and stops with both feet together.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-diagonal-backtrack",
+      "family": "locomotion",
+      "slot": 2,
+      "prompt": "A person takes two diagonal forward steps, retraces those steps backward, and turns a quarter turn left.",
+      "duration_s": 6,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-jog-corner-brake",
+      "family": "locomotion",
+      "slot": 3,
+      "prompt": "A person jogs forward, rounds a right-angle corner to the left, and decelerates to a stationary crouch.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-heel-toe-retreat",
+      "family": "locomotion",
+      "slot": 4,
+      "prompt": "A person takes four careful backward tiptoe steps with both hands held behind their back, then stands normally.",
+      "duration_s": 6,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-side-step-pivot",
+      "family": "locomotion",
+      "slot": 5,
+      "prompt": "A person takes two wide side steps right, pivots to face right, then walks three short steps forward.",
+      "duration_s": 6,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-walk-step-over-turn",
+      "family": "locomotion",
+      "slot": 6,
+      "prompt": "A person walks forward, raises the left knee for one deliberately high step, turns left, and resumes ordinary walking.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-reverse-vault",
+      "family": "parkour",
+      "slot": 1,
+      "prompt": "A person approaches a low solid barrier, plants the right hand, turns their back over the barrier, and lands on the far side.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_obstacle_geometry_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-precision-gap-turn",
+      "family": "parkour",
+      "slot": 2,
+      "prompt": "A person jumps across a narrow gap from a standing start, lands with both feet on a small platform, holds a crouch, then turns around.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_obstacle_geometry_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-cat-leap-ledge",
+      "family": "parkour",
+      "slot": 3,
+      "prompt": "A person leaps toward a raised ledge, catches its edge with both hands while their feet contact the wall, and settles into a supported hang.",
+      "duration_s": 6,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_obstacle_geometry_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-tic-tac-corner",
+      "family": "parkour",
+      "slot": 4,
+      "prompt": "A person runs toward a wall corner, plants their left foot on one wall, pushes toward the adjacent wall, and lands on the floor.",
+      "duration_s": 6,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_obstacle_geometry_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-low-vault-roll",
+      "family": "parkour",
+      "slot": 5,
+      "prompt": "A person passes feet-first over a low rail with one hand supporting them, lands, and continues into a left shoulder roll.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_obstacle_geometry_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-drop-landing-recover",
+      "family": "parkour",
+      "slot": 6,
+      "prompt": "A person steps backward off a low platform, lands below with bent knees, touches the ground with the right hand, and rises.",
+      "duration_s": 6,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_obstacle_geometry_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-backward-roll-rise",
+      "family": "ground_and_recovery",
+      "slot": 1,
+      "prompt": "A person sits down, tucks into a backward roll over one shoulder, places both feet down, and rises without a jump.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-prone-side-sit",
+      "family": "ground_and_recovery",
+      "slot": 2,
+      "prompt": "A person begins lying face down, pushes onto their hands, rotates their hips to sit sideways, and brings both legs forward.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-knee-slide-rise",
+      "family": "ground_and_recovery",
+      "slot": 3,
+      "prompt": "A person takes two quick steps, slides a short distance on both knees, stops upright, then stands leading with the left foot.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-seated-hip-switch",
+      "family": "ground_and_recovery",
+      "slot": 4,
+      "prompt": "A seated person supports themselves on both palms, lifts their hips, swings both bent legs from the left side to the right, and sits again.",
+      "duration_s": 6,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-supine-bridge-turn",
+      "family": "ground_and_recovery",
+      "slot": 5,
+      "prompt": "A person lies on their back, lifts their hips into a short bridge, lowers, rolls onto the left side, and gets onto hands and knees.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-crouched-roll-reverse",
+      "family": "ground_and_recovery",
+      "slot": 6,
+      "prompt": "A crouching person rolls sideways to the left, returns to a crouch, then takes one backward step to steady themselves.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-parry-body-jab",
+      "family": "combat",
+      "slot": 1,
+      "prompt": "A person in guard deflects a high incoming strike outward with the left forearm, makes a short right body punch, and recovers their guard.",
+      "duration_s": 5,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-retreat-pivot-kick",
+      "family": "combat",
+      "slot": 2,
+      "prompt": "A person retreats two steps in a fighting stance, pivots a quarter turn right, makes a left front kick, and returns to guard.",
+      "duration_s": 6,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-double-feint-advance",
+      "family": "combat",
+      "slot": 3,
+      "prompt": "A person advances in guard, makes a brief left-hand feint followed by a right-hand feint, then stops without throwing a full punch.",
+      "duration_s": 6,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-slip-knee-strike",
+      "family": "combat",
+      "slot": 4,
+      "prompt": "A person slips their upper body to the left, steps in with a controlled right knee strike, lowers the foot, and steps back.",
+      "duration_s": 6,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-overhead-cut-recover",
+      "family": "combat",
+      "slot": 5,
+      "prompt": "A person grips a practice sword in both hands, raises it overhead, delivers one downward cut, then recovers into a low guard.",
+      "duration_s": 6,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-spinning-back-kick",
+      "family": "combat",
+      "slot": 6,
+      "prompt": "A person turns to look over the right shoulder, performs one controlled spinning back kick, places the kicking foot down, and faces forward again.",
+      "duration_s": 6,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-stop-point-down",
+      "family": "gestures_and_expression",
+      "slot": 1,
+      "prompt": "A person raises both open palms to signal stop, holds briefly, then points at the ground to their left with the left hand.",
+      "duration_s": 6,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-wrist-time-nod",
+      "family": "gestures_and_expression",
+      "slot": 2,
+      "prompt": "A person looks at their left wrist, taps it twice with the right index finger, looks toward a partner, and nods once.",
+      "duration_s": 6,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-clap-beckon-left",
+      "family": "gestures_and_expression",
+      "slot": 3,
+      "prompt": "A person claps once to get attention, turns slightly right, then beckons toward themselves with the left hand.",
+      "duration_s": 5,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-salute-relax",
+      "family": "gestures_and_expression",
+      "slot": 4,
+      "prompt": "A person stands straight, brings the right hand to their brow in a brief salute, lowers it, and relaxes their shoulders.",
+      "duration_s": 5,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-apologetic-open-hands",
+      "family": "gestures_and_expression",
+      "slot": 5,
+      "prompt": "A person takes a small step forward, brings their palms together at chest height, bows their head slightly, then opens their hands toward the viewer.",
+      "duration_s": 6,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-count-and-indicate",
+      "family": "gestures_and_expression",
+      "slot": 6,
+      "prompt": "A person counts three items on the fingers of their left hand using their right index finger, then indicates the third item to their right.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-salsa-quarter-turn",
+      "family": "dance_and_performance",
+      "slot": 1,
+      "prompt": "A person dances a forward-and-back salsa basic, turns a quarter turn left, and repeats the basic in the new direction.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-reverse-box-step",
+      "family": "dance_and_performance",
+      "slot": 2,
+      "prompt": "A person dances a slow box step backward first, closes their feet, then repeats the box step forward.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-moonwalk-freeze",
+      "family": "dance_and_performance",
+      "slot": 3,
+      "prompt": "A person performs four backward gliding moonwalk steps, raises the right arm diagonally, and freezes in a balanced pose.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-cross-jump-clap",
+      "family": "dance_and_performance",
+      "slot": 4,
+      "prompt": "A person alternates two small crossed-foot jumps with two open-foot jumps, claps twice overhead, and lands with feet together.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-kneeling-dance-rise",
+      "family": "dance_and_performance",
+      "slot": 5,
+      "prompt": "A person kneels on the left knee, sweeps both arms in a broad circle, extends through the torso, and spirals upward to standing.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-polka-arc",
+      "family": "dance_and_performance",
+      "slot": 6,
+      "prompt": "A person performs three light polka skip steps around a half circle and finishes with a small bow.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "floor_or_action_specific_prop_to_bind",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-paint-three-strokes",
+      "family": "everyday_tasks",
+      "slot": 1,
+      "prompt": "A person holds a short paint roller in the right hand, makes three vertical strokes on a wall, then lowers the roller and steps back.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_task_objects_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-stool-cross-leg",
+      "family": "everyday_tasks",
+      "slot": 2,
+      "prompt": "A person sits on a backless stool, crosses the right ankle over the left knee, uncrosses their legs, and stands.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_task_objects_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-pitcher-pour",
+      "family": "everyday_tasks",
+      "slot": 3,
+      "prompt": "A person grasps a pitcher handle, lifts the pitcher, tilts its spout over a cup, straightens it, and returns it to the table.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_task_objects_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-keyboard-look-reach",
+      "family": "everyday_tasks",
+      "slot": 4,
+      "prompt": "A seated person types on a keyboard, turns to look right, reaches for a mug beside the keyboard, and brings it near their chest.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_task_objects_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-chest-open-close",
+      "family": "everyday_tasks",
+      "slot": 5,
+      "prompt": "A person crouches in front of a low chest, raises its hinged lid with both hands, looks inside, then lowers the lid gently.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_task_objects_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-screwdriver-turns",
+      "family": "everyday_tasks",
+      "slot": 6,
+      "prompt": "A person steadies a small panel with the left hand, makes three screwdriver turns with the right hand, and puts the tool down.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_task_objects_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-plate-carry-turn",
+      "family": "object_manipulation",
+      "slot": 1,
+      "prompt": "A person carries a wide plate level in both hands, makes a half turn, and lowers the plate onto a waist-high table.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_object_grips_and_motion_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-drawer-open-return",
+      "family": "object_manipulation",
+      "slot": 2,
+      "prompt": "A person pulls a low drawer open by its handle, pauses while looking inside, and pushes it closed with the same hand.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_object_grips_and_motion_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-stack-two-blocks",
+      "family": "object_manipulation",
+      "slot": 3,
+      "prompt": "A person picks up a small block with both hands, places it squarely on a larger block, and releases both hands together.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_object_grips_and_motion_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-suitcase-hand-switch",
+      "family": "object_manipulation",
+      "slot": 4,
+      "prompt": "A person lifts a suitcase by its handle with the right hand, transfers the handle to the left hand in front of their body, and takes two steps.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_object_grips_and_motion_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-underhand-toss-catch",
+      "family": "object_manipulation",
+      "slot": 5,
+      "prompt": "A person tosses a small ball gently from the right hand in an arc and catches it with the left hand at chest height.",
+      "duration_s": 6,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_object_grips_and_motion_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-crate-tip-upright",
+      "family": "object_manipulation",
+      "slot": 6,
+      "prompt": "A person grips the upper edges of a tilted crate, rocks it onto its base, and releases it after it is upright and stable.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_object_grips_and_motion_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-double-fist-bump",
+      "family": "partner_interaction",
+      "slot": 1,
+      "prompt": "Two facing people extend both fists, touch matching fists at chest height, retract their arms, then take one step apart.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "paired_actor_placements_and_contacts_required",
+      "actor_count": 2,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-paired-half-turn",
+      "family": "partner_interaction",
+      "slot": 2,
+      "prompt": "Two people stand side by side, clasp adjacent hands, make a coordinated half turn around their joined hands, and release.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "paired_actor_placements_and_contacts_required",
+      "actor_count": 2,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-small-object-handover",
+      "family": "partner_interaction",
+      "slot": 3,
+      "prompt": "One person offers a small object on an open left palm; a facing partner takes it with the right hand, and both withdraw their hands.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "paired_actor_placements_and_contacts_required",
+      "actor_count": 2,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-back-to-back-rise",
+      "family": "partner_interaction",
+      "slot": 4,
+      "prompt": "Two people begin seated back to back with bent knees, press their backs together, rise cooperatively, and step apart once standing.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "paired_actor_placements_and_contacts_required",
+      "actor_count": 2,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-steady-partner",
+      "family": "partner_interaction",
+      "slot": 5,
+      "prompt": "A standing person wobbles briefly on the left foot; their partner steadies their right forearm until both feet are planted, then lets go.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "paired_actor_placements_and_contacts_required",
+      "actor_count": 2,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-cooperative-wide-carry",
+      "family": "partner_interaction",
+      "slot": 6,
+      "prompt": "Two people each grasp one end of a wide box, lift together, take two coordinated sideways steps, and set the box down together.",
+      "duration_s": 9,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "paired_actor_placements_and_contacts_required",
+      "actor_count": 2,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-stairs-landing-turn",
+      "family": "environment_traversal",
+      "slot": 1,
+      "prompt": "A person climbs two steps, turns left on the landing, and descends two steps while keeping their feet clear of the edges.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_support_surfaces_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-side-crawl-arch",
+      "family": "environment_traversal",
+      "slot": 2,
+      "prompt": "A person lowers onto hands and knees, crawls sideways beneath a low arch, clears the arch, and rises.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_support_surfaces_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-crawl-up-platform",
+      "family": "environment_traversal",
+      "slot": 3,
+      "prompt": "A person on hands and knees places both palms on a low platform, draws one knee onto it, and crawls fully onto the platform.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_support_surfaces_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-slope-side-descent",
+      "family": "environment_traversal",
+      "slot": 4,
+      "prompt": "A person traverses down a slope sideways with the right side leading, pauses to regain balance, and continues for two steps.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_support_surfaces_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-ledge-shimmy-right",
+      "family": "environment_traversal",
+      "slot": 5,
+      "prompt": "A person hangs from a ledge with both hands, shifts one hand at a time to shimmy right, and stops with arms evenly spaced.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_support_surfaces_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-beam-turn-return",
+      "family": "environment_traversal",
+      "slot": 6,
+      "prompt": "A person walks heel-to-toe along a narrow beam, makes a careful half turn without stepping off, and takes two steps back.",
+      "duration_s": 9,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "authored_support_surfaces_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-backstroke-cycles",
+      "family": "aerial_and_nonwalking",
+      "slot": 1,
+      "prompt": "A person floats horizontally face up and performs two coordinated backstroke arm cycles with flutter kicks.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "water_or_hanging_support_context_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-sidestroke-glide",
+      "family": "aerial_and_nonwalking",
+      "slot": 2,
+      "prompt": "A person swims on their right side, performs a coordinated sidestroke pull and scissor kick, and glides before repeating.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "water_or_hanging_support_context_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-pool-edge-kick",
+      "family": "aerial_and_nonwalking",
+      "slot": 3,
+      "prompt": "A person holds a pool edge with both hands, extends their body horizontally behind them, and performs steady flutter kicks.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "water_or_hanging_support_context_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-monkey-bar-transfer",
+      "family": "aerial_and_nonwalking",
+      "slot": 4,
+      "prompt": "A person hangs from an overhead bar, swings slightly, transfers the right hand to the next bar, then brings the left hand alongside.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "water_or_hanging_support_context_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-rope-turn-reach",
+      "family": "aerial_and_nonwalking",
+      "slot": 5,
+      "prompt": "A person hangs from a rope with both hands and hooked feet, turns their body half a turn, and moves the upper hand higher.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "water_or_hanging_support_context_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-one-arm-hang-recover",
+      "family": "aerial_and_nonwalking",
+      "slot": 6,
+      "prompt": "A person hangs with both hands from a fixed bar, briefly releases the left hand, restores the grip, and settles the swinging legs.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "water_or_hanging_support_context_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-fatigue-stair-step",
+      "family": "stylized_and_capability",
+      "slot": 1,
+      "prompt": "A person steps onto a low block, pauses, steps down backward, and repeats once.",
+      "duration_s": 8,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "paired_control_levels_and_task_geometry_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-agility-direction-change",
+      "family": "stylized_and_capability",
+      "slot": 2,
+      "prompt": "A person takes three diagonal steps left, immediately redirects diagonally right, and stops facing forward.",
+      "duration_s": 6,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "paired_control_levels_and_task_geometry_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-strength-shelf-lift",
+      "family": "stylized_and_capability",
+      "slot": 3,
+      "prompt": "A person lifts a compact weight from hip height onto a chest-high shelf and returns their hands to their sides.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "paired_control_levels_and_task_geometry_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-confidence-doorway",
+      "family": "stylized_and_capability",
+      "slot": 4,
+      "prompt": "A person approaches an open doorway, passes through it, and turns to face back through the opening.",
+      "duration_s": 7,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "paired_control_levels_and_task_geometry_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-energy-jump-turn",
+      "family": "stylized_and_capability",
+      "slot": 5,
+      "prompt": "A person makes two small jumps in place, turns a quarter turn during the second jump, and settles into standing.",
+      "duration_s": 6,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "paired_control_levels_and_task_geometry_required",
+      "actor_count": 1,
+      "generated": false
+    },
+    {
+      "id": "release-reserved-stamina-repeat-squat",
+      "family": "stylized_and_capability",
+      "slot": 6,
+      "prompt": "A person completes three controlled squats with arms forward, then stands with their arms relaxed.",
+      "duration_s": 9,
+      "seeds": [
+        61001,
+        62003,
+        63029,
+        64007,
+        65003
+      ],
+      "scene_binding": "paired_control_levels_and_task_geometry_required",
+      "actor_count": 1,
+      "generated": false
+    }
+  ],
+  "release_approved": false
+}

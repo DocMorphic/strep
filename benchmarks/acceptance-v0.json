@@ -1,0 +1,31 @@
+{
+  "id": "strep-acceptance-v0",
+  "status": "provisional_engineering_targets_not_validated_industry_standards",
+  "freeze_context": "Set after inspecting run-loop seed 11, before human review of the remaining grid. Not a preregistered unseen-data evaluation.",
+  "automatic_acceptance": false,
+  "structural_gate": "Finite arrays, valid rotations, consistent frame counts and skeleton, editable export; necessary but not evidence of realism.",
+  "targets": {
+    "independently_annotated_stance_foot_drift_m": 0.02,
+    "independently_annotated_stance_foot_speed_p95_m_s": 0.05,
+    "joint_ground_penetration_warning_m": 0.01,
+    "root_translation_aligned_loop_next_pose_prediction_rms_m": 0.02,
+    "loop_next_local_rotation_prediction_rms_degrees": 5,
+    "loop_root_velocity_gap_m_s": 0.15,
+    "loop_next_root_yaw_prediction_error_degrees": 2,
+    "run_trajectory_heading_p95_degrees": 3,
+    "calibrated_palm_target_error_m": 0.03,
+    "contact_timing_error_frames_at_30fps": 2,
+    "grasp_min_contact_frames": 3,
+    "high_five_min_impact_contact_frames": 1,
+    "human_min_score_each_dimension": 4,
+    "human_min_reviewers": 2
+  },
+  "human_dimensions": ["action_correctness", "weight_balance_and_momentum", "coordination_and_timing", "contacts_and_collisions", "usable_start_end_and_transitions"],
+  "human_scale": {"1": "Wrong action or unusable", "2": "Major obvious defects", "3": "Recognizable but noticeable defects", "4": "Convincing with minor issues", "5": "Polished and convincing"},
+  "acceptance_rule": "Every applicable measured gate passes; both reviewers score every applicable dimension at least 4; no major defect; required rig/engine checks pass. Missing required measurement means unassessed, never pass. Do not average away a failed category.",
+  "proxy_policy": "Model-predicted contacts and joint-only penetration are screening proxies. They cannot satisfy independent stance or mesh collision gates. Report unsupported outputs, including absent box motion, separately.",
+  "cleanup_policy": "Measure active minutes to this same acceptance rubric and record unfinished trials. No arbitrary cleanup-time pass threshold before a matched animator-authored reference exists.",
+  "sampling": "Five fixed seeds per case; report every seed, median, worst case and success fraction. Five trials are exploratory and do not establish broad reliability.",
+  "calibration_pending": ["independent support annotations", "palm and grip offsets", "frozen scene and rig scale", "mesh collision geometry", "licensed action-matched reference clips", "blind animator reviews", "engine selection and import checks"],
+  "source": "https://research.nvidia.com/labs/sil/projects/kimodo/docs/benchmark/metrics.html"
+}

@@ -1,0 +1,28 @@
+{
+  "created_at": "2026-09-25T19:10:28.137603+00:00",
+  "development_clips": [
+    "crawl-seed-11",
+    "get-up-seed-11",
+    "run-roll-stand-seed-11"
+  ],
+  "reserved_seed": 77,
+  "existing_evaluation_seeds": [
+    22,
+    55
+  ],
+  "hashes": {
+    "body_contact.py": "2ae82db502530045174ccc016877d7842ffce4d04183e0b548e59547647ed9ac",
+    "evaluate_body_contact.py": "84dda7b790d5beb4745ce68017adc561ce1fd576faf9b4d1850216280af58361",
+    "floor_contact.py": "3160da9719204320061598cf8e85c9d626e41365249b2e1440318bdcdfdcc3b4",
+    "evaluate_floor_contact.py": "d59853f2d0ad0ecf9a9e14bf0f573b2a84fc191eb2a45e0534b98878aabf529f",
+    "run_body_contact.py": "73e97b81315b7721c1f16adde3df4feb84508f44e0a128fb1f067d3e9347002b"
+  },
+  "request_sha256": "2efc76a058e01cd3d9f5bf08c29f37b428dadc274c18144327234fdf4f2dfa02",
+  "scope": "Previously measured examples are regression checks, not blind held-out actions. Seed77 generated after freeze.",
+  "metadata_amendment": {
+    "at": "2026-09-25T19:21:03.238735+00:00",
+    "reason": "Separate source hashes from derived-version evidence; explicitly label the exact no-op body stage. No solver or evaluation changes.",
+    "exporter_sha256": "9345b03e54c8511c4ec4deff47f74571873d89f6c6563ea5dcade40aba1f9e37",
+    "finalizer_sha256": "2de85a21f94247bd0a4af1600f2e26f731ea0e43da0466a588291aad218a86d3"
+  }
+}

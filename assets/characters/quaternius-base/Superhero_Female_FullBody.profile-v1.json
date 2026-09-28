@@ -1,0 +1,33 @@
+{
+  "schema": "strep-rig-profile-v1",
+  "reference_pose": "default_nodes",
+  "character_sha256": "6af075944be5d9d1881e8eb6722f275dbe4ea2ad46c71b0aa7d99b96b32e6523",
+  "mapping": {
+    "Hips": 63,
+    "Spine2": 51,
+    "Chest": 50,
+    "Neck1": 1,
+    "Head": 0,
+    "LeftArm": 24,
+    "LeftForeArm": 23,
+    "LeftHand": 22,
+    "RightArm": 48,
+    "RightForeArm": 47,
+    "RightHand": 46,
+    "LeftLeg": 57,
+    "LeftShin": 56,
+    "LeftFoot": 55,
+    "LeftToeBase": 54,
+    "RightLeg": 62,
+    "RightShin": 61,
+    "RightFoot": 60,
+    "RightToeBase": 59
+  },
+  "world_offset_m": [
+    0,
+    0,
+    0
+  ],
+  "axis_alignment_xyzw": {},
+  "notes": "Development calibration: name-matched humanoid roles, review neutral alignment before motion study; no per-motion tuning."
+}

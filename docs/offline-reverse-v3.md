@@ -1,0 +1,17 @@
+# Third personal offline installation: reverse-cycle workflow
+
+The new installation is `C:\wassup\Strep Offline Test v3`. The two earlier installations and their running services remain intact. This is a fresh same-laptop personal copy of the locally acquired models, standalone Python/dependencies, Kimodo source, assets, scripts and Godot. It is not a redistribution package or second-machine qualification.
+
+The builder is tracked in `reports/offline-install-v3-builder.json`. `finish_offline_reverse_test.py` waits for that exact PID and creation time to exit with a completed build record; a quiet log or elapsed timeout never triggers a replacement builder. Its request and current state are in `reports/offline-install-v3-check`.
+
+The verification sequence hashes the entire installation before and after the workflow, probes isolated Python/source/CUDA paths and the Python external-network guard, and runs the installed reverse-cycle audit with only `C:\Windows\System32` on PATH. Python path/home overrides and token environment variables are removed. The network guard is a Python audit hook, not an operating-system firewall certificate.
+
+`run_reverse_cycles.py --fixtures` now accepts an explicitly supplied fixture manifest. For this experiment it uses the four already retained fixtures in `reports/runtime-reverse-v2/request.json`. It copies each clip, metadata inputs, reference animation and retained authoring archive into the new installation. The workflow regenerates runtime metadata and uses the installed adapter and installed Godot. Every path used for playback/reference verification must be inside the new installation; source paths remain provenance for the initial data copy only. No development Python packages or scripts are imported through those fixture paths.
+
+The reference clips, source licensing archive and all new results remain separate. This workflow does not run a new model inference, alter the source animations, establish GPU rendering or invert gameplay state. Final results are recorded in the checker's `completion.json` and the installation's `reports/offline-reverse-v1/verification.json`; a completed copy by itself is insufficient.
+
+The checker completed successfully at 21:58:43 UTC on 2026-09-27. Both full integrity passes verified **34,772 files**, at 21:49:59 and 21:58:43 UTC. The first pass was captured before the second pass replaced the installed status file. The isolated probe confirms local Python, PyTorch, Kimodo and startup-hook paths, CUDA availability on the RTX 3070 Ti Laptop GPU, and rejection of the Python external-network probe.
+
+Installed Godot completed **40 runs over four fixtures, 2,238 transform samples, 276 forward marker crossings and 722 reverse crossings**. The exact scenario/extraction combinations, fixture population, local file hashes, silent reverse behavior and invalid-rewind state preservation were checked again in `reports/offline-install-v3-check/verify-completion.py`. Its retained `verified-summary.json` binds the completed checker and installed engine evidence.
+
+Maximum numerical errors are 1.156e-5 for bone transforms, 1.168e-5 for root transforms, 7.402e-6 m for CPU skin positions and 3.553e-15 s for the playback clock. These measure agreement with retained reference animation, not the realism of that animation. No new Studio service was needed. This remains same-laptop development evidence; second-machine operation, GPU rendering, gameplay integration, broad motion quality and independent animator review remain open.

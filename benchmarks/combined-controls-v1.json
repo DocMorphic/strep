@@ -1,0 +1,14 @@
+{
+  "id": "combined-controls-v1",
+  "arm_targets_degrees": [10, 20, 30, 45],
+  "lean_targets_degrees": [0, 10, 20],
+  "seeds": [11, 22, 55],
+  "source_study": "control-calibration-v1/text",
+  "application_order": ["lean", "arm"],
+  "target_error_degrees": {"arm": 2, "lean": 1},
+  "root_and_lower_body_tolerance_m": 0.00001,
+  "maximum_local_edit_degrees": 35,
+  "loop_thresholds": "benchmarks/acceptance-v0.json",
+  "release_rule": "A pair is enabled for screened recipe export only if all three takes pass target accuracy, unchanged root/lower body/contact, inherited baseline acceptance, edit budget and existing loop screens.",
+  "scope": "New combinations of two controls on previously observed seeds. No new held-out data, human realism rating, physics test, arbitrary prompt generation or game-stat mapping. Freeze choices before running. Preserve failed combinations."
+}

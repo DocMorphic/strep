@@ -1,0 +1,15 @@
+{
+  "id": "deterministic-cycle-extraction-v1",
+  "fps": 30,
+  "cycle_frames_min": 18,
+  "cycle_frames_max": 40,
+  "source_start_margin_frames": 6,
+  "blend_frames": [6, 8],
+  "shortlist_per_blend": 32,
+  "root_modes": ["aligned", "constant_forward_speed"],
+  "evaluation_repeats": 3,
+  "foot_speed_p95_allowed_absolute_increase_m_s": 0.03,
+  "foot_speed_p95_allowed_relative_increase": 0.25,
+  "ground_depth_allowed_increase_m": 0.001,
+  "policy": "Deterministic phase search, geodesic rotation crossfade and horizontal root-cycle alignment. Raw source is immutable. Contact masks are inherited source predictions, unioned during blending, never independent annotations. Evaluate repeated cycles and report matched-source and full-source comparisons. No human realism claim."
+}

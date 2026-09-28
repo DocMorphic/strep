@@ -1,0 +1,7 @@
+# Full native breadth population: actual engine import
+
+All 390 original clips from the frozen 72-case breadth protocol were imported into Godot 4.7.2. The audit checks all 77 native bone transforms at every integer frame: **73,950 actor-frame samples**. Maximum position discrepancy is 0.000001014 m; maximum rotation-matrix element discrepancy is 0.000003160. Every planned clip is present, and there are no failed groups.
+
+`reports/breadth-native-engine-v1/completion-verification.json` binds all thirty group reports and actual engine outputs to their hashes. It independently checks the population, frame counts, source motion/GLB hashes and frozen implementation. `study_breadth_native_engine.py` processes groups of thirteen clips to bound memory. It preserves failures without automatic retry and checks at least 2 GiB system RAM is available before a group. The worker completed on September 27 at 15:13:41 UTC.
+
+Each clip is imported alone at identity scene placement. These checks establish that the raw animation transforms survive actual engine import. They do not supply missing props, partners, stairs or water; check rendered pixels; validate root extraction/event dispatch; or establish physical and semantic quality. Raw export evidence remains unchanged, including its historical `engine_import: null`; this separate study supplies the later engine evidence. Release gates remain open.

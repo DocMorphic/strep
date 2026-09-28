@@ -1,0 +1,18 @@
+<div id="rigContactPanel" hidden>
+ <div class="rig-toolbar"><strong>Mesh contacts</strong><button class="btn" id="rigContactClose">Back to mapping</button></div>
+ <p class="small" id="rigContactBinding">Select an exported clip to edit.</p>
+ <div class="rig-toolbar"><label>Patch<select id="rigPatch" aria-label="Contact patch"></select></label><input id="rigPatchName" aria-label="New patch name" placeholder="Left heel, right palm…" maxlength="48"><button class="btn" id="rigPatchAdd">Add patch</button><button class="btn" id="rigPatchDelete">Delete patch</button></div>
+ <label class="small">Vertices<input id="rigPatchVertices" aria-label="Patch vertex indices" placeholder="Pick on mesh or enter indices"></label>
+ <div class="rig-toolbar"><button class="btn" id="rigPick" aria-pressed="false">Pick vertices</button><button class="btn" id="rigPatchClear">Clear vertices</button><span class="small" id="rigPickInfo"></span></div>
+ <p class="small">Pick mode: click the mesh to toggle its nearest triangle vertex. Turn it off to orbit. Gold markers show the patch; the blue cross shows its target.</p>
+ <div class="rig-contact-interval"><label>Start frame<input id="rigContactStart" aria-label="Contact start frame" type="number" min="0" value="0"></label><label>Last frame<input id="rigContactEnd" aria-label="Contact last frame" type="number" min="0" value="0"></label></div>
+ <div class="rig-offsets"><label>Target X (m)<input id="rigTargetX" aria-label="Contact target X" type="number" step="0.001" value="0"></label><label>Y (m)<input id="rigTargetY" aria-label="Contact target Y" type="number" step="0.001" value="0"></label><label>Z (m)<input id="rigTargetZ" aria-label="Contact target Z" type="number" step="0.001" value="0"></label></div>
+ <div class="rig-toolbar"><button class="btn" id="rigCaptureTarget">Use patch position</button><button class="btn" id="rigTargetFloor">Set target on floor</button><button class="btn" id="rigContactAdd">Add interval</button></div>
+ <div id="rigIntervals" class="rig-contact-list" aria-label="Authored contact intervals"></div>
+ <details><summary>Editable joints and hard limits</summary><p class="small">Only checked joints can rotate. Add upper-body joints when the action needs them; larger limits can change the pose substantially.</p><div id="rigEditJoints" class="rig-joint-list"></div>
+ <div class="rig-offsets"><label>Root XZ (m)<input id="rigLimitXZ" aria-label="Root horizontal edit limit" type="number" min="0.001" step="0.01" value="0.04"></label><label>Root Y (m)<input id="rigLimitY" aria-label="Root vertical edit limit" type="number" min="0.001" step="0.01" value="0.12"></label></div>
+ <div class="rig-offsets"><label>Root step (m/frame)<input id="rigLimitRootStep" aria-label="Root edit step limit" type="number" min="0.001" step="0.001" value="0.015"></label><label>Joint step (°/frame)<input id="rigLimitJointStep" aria-label="Joint edit step limit" type="number" min="0.1" step="1" value="5"></label></div></details>
+ <p class="small">Drafts stay on this browser and are bound to this exact clip. Input and failed candidates are preserved. Targets are fixed in world space; moving object contacts need the scene workflow.</p>
+ <div class="rig-toolbar"><button class="btn" id="rigContactInspect">Inspect contact errors</button><button class="btn primary" id="rigContactFit">Fit authored contacts</button></div>
+ <div id="rigContactDiagnostics" class="rig-contact-diagnostics" aria-live="polite"></div>
+</div>
