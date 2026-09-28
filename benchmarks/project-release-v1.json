@@ -820,7 +820,10 @@
         "reports/sphere-convergence-comparison-v1/comparison.json",
         "docs/grasp-pose-feasibility-v1.md",
         "reports/grasp-pose-feasibility-integration-v1/comparison.json",
-        "reports/grasp-finger-clearance-certificate-v1/certificate.json"
+        "reports/grasp-finger-clearance-certificate-v1/certificate.json",
+        "docs/grasp-pose-restoration-v1.md",
+        "reports/grasp-pose-restoration-v1-audit-final/verification.json",
+        "reports/grasp-pose-restoration-v2-audit/verification.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
