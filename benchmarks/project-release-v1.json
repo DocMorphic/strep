@@ -812,7 +812,10 @@
         "reports/sphere-contact-fit-engine-v1/verification.json",
         "reports/sphere-release-integration-v1/verification.json",
         "docs/release-boundary-contact-v1.md",
-        "reports/sphere-release-guard-comparison-v1/comparison.json"
+        "reports/sphere-release-guard-comparison-v1/comparison.json",
+        "docs/object-clearance-inequalities-v1.md",
+        "reports/sphere-object-inequality-comparison-v1/comparison.json",
+        "reports/sphere-collision-samples-v12/diagnosis.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -2563,6 +2566,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-28T21:01:23.658918+00:00",
-  "last_progress": "Release-boundary V11 trial improves dense grip and release speeds, but penetration rises from 18.444 to 20.910 mm and entry speeds worsen. Strict contact/clearance remain failed; no release approval."
+  "last_progress_at": "2026-09-28T21:14:14.690860+00:00",
+  "last_progress": "V12 sampled object inequalities reduce full-skin penetration20.910->5.113mm but worsen grip25.582/31.208mm (right scene contact now fails). Frozen sample omissions localized; no release approval."
 }

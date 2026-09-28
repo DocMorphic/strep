@@ -35,6 +35,15 @@ def torch_primitive_depth(points,position,rotation,geometry,clearance=0.):
     return torch.relu(geometry.dimensions[0]+clearance-torch.linalg.vector_norm(points-position[:,None,:],dim=-1))
 
 
+def torch_primitive_clearance_violation(points,position,rotation,geometry,clearance):
+    """Signed violation of the existing inflated primitive (negative outside)."""
+    if geometry.shape=='sphere':
+        return geometry.dimensions[0]+clearance-torch.linalg.vector_norm(points-position[:,None,:],dim=-1)
+    size=torch.as_tensor(geometry.dimensions,dtype=points.dtype,device=points.device)
+    local=torch.einsum('fvi,fij->fvj',points-position[:,None,:],rotation)
+    return (size/2+clearance-local.abs()).amin(-1)
+
+
 def finger_rotation_budgets(names):
     result={}
     for side in ['Left','Right']:
@@ -52,7 +61,7 @@ def bounded_edit_rotations(parameters,limits,body_count,physical_fingers=False):
     return bounded_rotation(parameters,limits)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False):
     if physical_finger_parameters and not finger_edits:raise ValueError('Physical finger parameters require finger controls')
     torch.set_num_threads(2)
     names,parents,_=skeleton_metadata(77); surface=Surface(skin)
@@ -149,6 +158,8 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     cut_normals=tensor([c['normal'] for c in cuts]).reshape(-1,3)
     cut_multiplier=torch.zeros(len(cuts),dtype=dtype);cut_penalty=CONFIG['partner_penalty']
     last_cuts=None;last_tangents=[]
+    last_objects=[];object_multiplier=[torch.zeros(T,dtype=dtype) for _ in objects]
+    object_penalty=2*CONFIG['object_collision_weight']
     point_penalty=CONFIG['explicit_contact_weight'];normal_penalty=CONFIG['orientation_weight']
     stage_records=[];last_point=None;last_normals=[]
     ci=torch.tensor(np.stack([[mapping[v] for v in c['vertex_ids']] for c in contacts.values()],1))
@@ -159,7 +170,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     original_slide=torch.linalg.vector_norm((baseline_vertices[frame_indices+1,patch_indices]-baseline_vertices[frame_indices,patch_indices])[...,[0,2]]*30,dim=-1)
     calls=0;last={}
     def closure():
-        nonlocal calls,last,last_point,last_normals,last_cuts,last_tangents
+        nonlocal calls,last,last_point,last_normals,last_cuts,last_tangents,last_objects
         optimizer.zero_grad();r,p,_=fk();v=vertices(r,p)
         selected_contact=v[torch.arange(T)[:,None],ci]
         contact=((selected_contact-targets)**2).sum(-1)
@@ -206,7 +217,12 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             terms['orientation']=torch.stack(normal_loss).mean()
             if tangent_loss:terms['hand_tangent']=torch.stack(tangent_loss).mean()
         if objects:
-            terms['object_collision']=torch.stack([torch_primitive_depth(v,op,orr,geometry,CONFIG['object_clearance_m']).square().amax(1).mean() for op,orr,geometry in objects]).mean()*CONFIG['object_collision_weight']
+            if object_inequalities:
+                violations=[torch_primitive_clearance_violation(v,op,orr,geometry,CONFIG['object_clearance_m']).amax(1) for op,orr,geometry in objects]
+                terms['object_collision']=torch.stack([inequality_merit(g,m,object_penalty).mean() for g,m in zip(violations,object_multiplier)]).mean()
+                last_objects=[g.detach() for g in violations]
+            else:
+                terms['object_collision']=torch.stack([torch_primitive_depth(v,op,orr,geometry,CONFIG['object_clearance_m']).square().amax(1).mean() for op,orr,geometry in objects]).mean()*CONFIG['object_collision_weight']
         if cuts:
             signed=((v[cut_frames,cut_vertices]-cut_points)*cut_normals).sum(-1)
             g=CONFIG['partner_clearance_m']-signed
@@ -224,10 +240,15 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             max_active_point_violation_m=float(torch.relu(last_point)[active.bool()].max()) if active.any() else 0.,
             max_partner_cut_violation_m=float(torch.relu(last_cuts).max()) if cuts else 0.,max_active_tangent_chord_violation=max([float(torch.relu(g)[c[2].bool()].max()) for g,c in zip(last_tangents,normal_constraints)]+[0.]),
             max_active_normal_chord_violation=max([float(torch.relu(g)[c[2].bool()].max()) for g,c in zip(last_normals,normal_constraints)]+[0.])))
+        if object_inequalities:
+            stage_records[-1].update(object_penalty=object_penalty,max_sampled_object_clearance_violation_m=max([float(torch.relu(g).max()) for g in last_objects]+[0.]))
         if stage+1<CONFIG['outer_stages']:
             point_multiplier=torch.relu(point_multiplier+point_penalty*last_point)*active
             normal_multiplier=[torch.relu(m+normal_penalty*g)*c[2] for m,g,c in zip(normal_multiplier,last_normals,normal_constraints)]
             tangent_multiplier=[torch.relu(m+normal_penalty*g)*c[2] for m,g,c in zip(tangent_multiplier,last_tangents,normal_constraints)]
+            if object_inequalities:
+                object_multiplier=[torch.relu(m+object_penalty*g) for m,g in zip(object_multiplier,last_objects)]
+                object_penalty*=CONFIG['penalty_growth']
             if cuts:cut_multiplier=torch.relu(cut_multiplier+cut_penalty*last_cuts)
             point_penalty*=CONFIG['penalty_growth'];normal_penalty*=CONFIG['penalty_growth'];cut_penalty*=CONFIG['penalty_growth']
     with torch.no_grad():
@@ -250,4 +271,6 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     if release_endpoint_guards:
         recipe['release_endpoint_guards']=dict(guards=guards,solver_contact_spec=effective_spec,
             scope='Target and surface frame enforced at the release boundary as an additional solver key; authored scene contacts/events unchanged. This is not a continuous-time constraint guarantee.')
+    if object_inequalities:
+        recipe['object_inequalities']=dict(initial_penalty=2*CONFIG['object_collision_weight'],growth=CONFIG['penalty_growth'],scope='One signed max-vertex inequality per object and frame. Existing inflated geometry and frozen samples; no full-skin or continuous-time feasibility guarantee.')
     return result,recipe

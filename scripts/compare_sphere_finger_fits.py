@@ -44,10 +44,10 @@ def compare(control,candidate,output):
     control=Path(control).resolve();candidate=Path(candidate).resolve();output=Path(output).resolve()
     protocols=[read(p/'protocol.json') for p in [control,candidate]]
     versions=[p['solver_version'] for p in protocols]
-    if versions not in [[8,9],[9,10],[10,11]]:raise ValueError('Expected adjacent V8 through V11 fits')
+    if versions not in [[8,9],[9,10],[10,11],[11,12]]:raise ValueError('Expected adjacent V8 through V12 fits')
     sources=[read(p/'source.json')['scene'] for p in [control,candidate]]
     if sources[0]!=sources[1]:raise ValueError('Fits do not share the exact source scene')
-    if versions in [[9,10],[10,11]]:
+    if versions in [[9,10],[10,11],[11,12]]:
         folders=[]
         for study in [control,candidate]:
             trial=read(study/'fit/summary.json')['trials'][0]['id'];folders.append(study/'fit/assets'/trial/'A')
@@ -60,7 +60,7 @@ def compare(control,candidate,output):
         recipes=[read(folder/'recipe.json')['contact'] for folder in folders]
         configs=[recipe['config'].copy() for recipe in recipes]
         if versions==[9,10]:configs[1].pop('finger_parameter_units')
-        else:
+        elif versions==[10,11]:
             from scene_release_guards import compile_release_guards,extend_solver_spec
             if configs[1].pop('release_endpoint_guards') is not True:raise ValueError('Release guards not enabled')
             ids=[c['id'] for c in sources[1]['contacts'] if c['actor']=='A']
@@ -68,6 +68,13 @@ def compare(control,candidate,output):
             if contexts[1].pop('release_guards')!=expected:raise ValueError('Release targets do not match authored scene')
             guard_recipe=recipes[1]['release_endpoint_guards']
             if guard_recipe['guards']!=expected or guard_recipe['solver_contact_spec']!=extend_solver_spec(specs[1],expected):raise ValueError('Effective solver track mismatch')
+        else:
+            if configs[1].pop('object_collision_mode')!='per_frame_max_inequality':raise ValueError('Expected signed object inequalities')
+            for field in ['selected_vertices','release_endpoint_guards','finger_edits']:
+                a=recipes[0][field];b=recipes[1][field]
+                if field=='finger_edits':
+                    a={k:v for k,v in a.items() if k!='measured_max_degrees'};b={k:v for k,v in b.items() if k!='measured_max_degrees'}
+                if a!=b:raise ValueError('Object comparison changed '+field)
         if contexts[0]!=contexts[1]:raise ValueError('Base scene context differs')
         if configs[0]!=configs[1]:raise ValueError('Comparison changes unrelated objective or budget settings')
     output.mkdir(parents=True,exist_ok=False);rows=[]
@@ -98,8 +105,8 @@ def compare(control,candidate,output):
         if a['id']!=b['id']:raise ValueError('Contact comparison order differs')
         changes['contacts'].append(dict(id=a['id'],maximum_error_m=b['maximum_error_m']-a['maximum_error_m'],
             peak_release_palm_speed_m_s=b['boundary']['release']['peak_palm_speed_m_s']-a['boundary']['release']['peak_palm_speed_m_s']))
-    factor={(8,9):'Finger degrees of freedom and separate pose regularizer',(9,10):'Finger parameter scaling only, with the same objective and reachable edits',(10,11):'Additional solver point and surface-frame key at release; fade follows the extended track. Authored events and edit budgets unchanged.'}[tuple(versions)]
-    save(output/'comparison.json',dict(at=now(),rows=rows,candidate_minus_control=changes,changed_factor=factor,exact_source_scene_matched=True,preprocessing_and_constraints_matched=versions==[9,10],preprocessing_and_authored_constraints_matched=versions in [[9,10],[10,11]],quality_approved=False,
+    factor={(8,9):'Finger degrees of freedom and separate pose regularizer',(9,10):'Finger parameter scaling only, with the same objective and reachable edits',(10,11):'Additional solver point and surface-frame key at release; fade follows the extended track. Authored events and edit budgets unchanged.',(11,12):'Sampled object clearance uses per-frame signed max-vertex inequalities and multiplier updates; initial merit equals V11 fixed penalty.'}[tuple(versions)]
+    save(output/'comparison.json',dict(at=now(),rows=rows,candidate_minus_control=changes,changed_factor=factor,exact_source_scene_matched=True,preprocessing_and_constraints_matched=versions in [[9,10],[11,12]],preprocessing_and_authored_constraints_matched=versions in [[9,10],[10,11],[11,12]],quality_approved=False,
         scope='One paired development scene with floor-valid object placement; no new semantic coverage, training, held-out or animator approval. Temporal measurements remain descriptive and must not be hidden by numerical contact passes.',method_sha256=sha256(__file__)))
     print([dict(solver=r['solver_version'],failed=r['failed_screens'],grip_mm=[c['maximum_error_m']*1000 for c in r['dense_candidate']['contacts']],depth_mm=max(o['maximum_skin_vertex_depth_m'] for o in r['dense_candidate']['objects'].values())*1000) for r in rows],flush=True)
 
