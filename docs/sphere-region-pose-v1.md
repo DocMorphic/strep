@@ -1,5 +1,7 @@
 # Bounded two-hand region pose
 
+Follow-up: the [moving grasp trajectory](sphere-region-track-v1.md) passes dense contact checks through the grasp interval, while retaining an unsafe approach and motion regressions. The single-pose evidence below remains unchanged.
+
 One development pose now passes the declared two-region contact, original joint-edit limits, floor and full-skin object-clearance checks. This is a new authored contact condition, not a success on the original fixed-point fixture and not a complete animation. No release capability is approved.
 
 ## Why the condition changed
