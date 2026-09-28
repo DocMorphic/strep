@@ -49,6 +49,8 @@ def source_metadata(url):
         with np.load(motion,allow_pickle=False) as arrays:
             if arrays['posed_joints'].shape!=(frames,77,3) or arrays['global_rot_mats'].shape!=(frames,77,3,3):raise ValueError('Release currently requires native 77-joint scene actors')
     for name,obj in scene['objects'].items():
+        if 'geometry' in obj or obj.get('shape')!='box':
+            raise ValueError('Physics release currently requires legacy box objects; versioned primitive release is not implemented')
         name_check(name);sample_object(obj,frames)
         if min(obj['size_m'])<.01 or max(obj['size_m'])>10:raise ValueError('Box dimensions must be 0.01–10 metres')
     license_path=base/'SOMA-preview-LICENSE.txt'
@@ -136,7 +138,7 @@ def prepare(payload,folder):
     save(folder/'source/bundle.json',bundle);save(folder/'source/object-track.json',track)
     if 'actor_proxy_calibration' in source:save(folder/'source/actor-proxies.json',source['actor_proxy_calibration'])
     snapshot=folder/'source/implementation';snapshot.mkdir()
-    for name in ['scene_release_job.py','scene_object_export.py','object_release.py','godot_object_release.gd','scene_constraints.py','audit_scene_orientation.py',
+    for name in ['scene_release_job.py','scene_object_export.py','object_geometry_mesh.py','object_release.py','godot_object_release.gd','scene_constraints.py','object_geometry.py','audit_scene_orientation.py',
                  'strep.py','object_dynamics.py','gltf_tools.py','package_generated_scenes.py','inspect_motion.py','floor_contact.py','palm_contacts.py','build_soma_preview.py','release_colliders.py','moving_release_colliders.py',
                  'convex_colliders.py','actor_collision_proxies.py','rig_asset.py','rig_clip_import.py','scene_runtime.py','godot_scene_clock.gd']:
         shutil.copyfile(ROOT/'scripts'/name,snapshot/name)

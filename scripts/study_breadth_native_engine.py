@@ -23,7 +23,7 @@ def run(output):
                 motion_sha256=trial['hashes']['motion.npz'],glb_sha256=trial['hashes']['soma.glb']))
     if len(entries)!=390 or len({r['id'] for r in entries})!=390:raise ValueError('Unexpected source population')
     output.mkdir(parents=True);(output/'implementation').mkdir()
-    sources=['study_breadth_native_engine.py','run_godot_scene_import.py','godot_scene_import_audit.gd','scene_constraints.py','inspect_motion.py']
+    sources=['study_breadth_native_engine.py','run_godot_scene_import.py','godot_scene_import_audit.gd','scene_constraints.py','object_geometry.py','inspect_motion.py']
     for name in sources:shutil.copyfile(ROOT/'scripts'/name,output/'implementation'/name)
     hashes={n:sha256(ROOT/'scripts'/n) for n in sources}
     save(output/'protocol.json',dict(at=now(),source_freeze_sha256=sha256(STUDY/'freeze.json'),entries=entries,group_size=13,implementation=hashes,

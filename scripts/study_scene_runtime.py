@@ -66,7 +66,7 @@ def run(output):
     output.mkdir(parents=True,exist_ok=False);project=output/'project';project.mkdir()
     (project/'project.godot').write_text('config_version=5\n[application]\nconfig/name="Strep scene clock audit"\n',encoding='utf-8')
     implementation=output/'implementation';implementation.mkdir()
-    names=['godot_scene_clock.gd','godot_scene_clock_audit.gd','scene_runtime.py','study_scene_runtime.py','rig_clip_import.py','gltf_tools.py','rig_asset.py','scene_object_export.py','scene_constraints.py','package_generated_scenes.py','strep.py','probe_godot_render.py']
+    names=['godot_scene_clock.gd','godot_scene_clock_audit.gd','scene_runtime.py','study_scene_runtime.py','rig_clip_import.py','gltf_tools.py','rig_asset.py','scene_object_export.py','object_geometry_mesh.py','scene_constraints.py','object_geometry.py','package_generated_scenes.py','strep.py','probe_godot_render.py']
     for name in names: shutil.copyfile(ROOT/'scripts'/name,implementation/name)
     for name in ('godot_scene_clock.gd','godot_scene_clock_audit.gd'): shutil.copyfile(ROOT/'scripts'/name,project/name)
     sources=[('paired',ROOT/'reports/frame-guarded-partner-v2/export/candidate.json'),('release',ROOT/'reports/scene-release-jobs/20260927-052950-518417bb/exports/trs-v1/portable-scene.json'),('platform',ROOT/'reports/scene-release-jobs/20260927-132952-35ac417f/portable-scene.json')]

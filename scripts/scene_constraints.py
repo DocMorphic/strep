@@ -1,7 +1,7 @@
 """Shared-clock scene targets for objects and multiple humanoid actors.
 
 Scene transforms and trajectories are authored fixtures, not model predictions.
-Collision diagnostics use skin vertices inside oriented boxes, not mesh/mesh CCD.
+Collision diagnostics sample skin vertices against analytic primitives, not mesh/mesh CCD.
 """
 from pathlib import Path
 import numpy as np
@@ -9,6 +9,7 @@ from scipy.spatial.transform import Rotation,Slerp
 from strep import ROOT,sha256
 from inspect_motion import skeleton_metadata,validate_motion
 from floor_contact import Surface
+from object_geometry import scene_geometry
 
 
 def vector(value,n,label):
@@ -25,11 +26,11 @@ def pose(value):
 
 
 def sample_object(obj,frames):
-    if obj.get('shape')!='box':raise ValueError('Only oriented box geometry is implemented')
-    size=vector(obj.get('size_m'),3,'box dimensions')
-    if np.any(size<=0):raise ValueError('Box dimensions must be positive')
+    scene_geometry(obj)
+    if type(frames) is not int or frames<1:raise ValueError('Positive integer object frame count required')
     keys=obj.get('keyframes')
     if not isinstance(keys,list) or not keys:raise ValueError('Object needs a pose track')
+    if any(not isinstance(k,dict) for k in keys):raise ValueError('Object keyframes must be poses')
     indices=[k.get('frame') for k in keys]
     if any(type(i)!=int for i in indices) or indices[0]!=0 or any(b<=a for a,b in zip(indices,indices[1:])) or indices[-1]>=frames:raise ValueError('Invalid object keyframe times')
     if len(keys)>1 and indices[-1]!=frames-1:raise ValueError('Animated object track must cover the clip')
@@ -116,11 +117,11 @@ def evaluate(scene,skin,project_root=ROOT):
     collisions=[];surface=Surface(skin)
     for actor_name,actor in actors.items():
         for object_name,(positions,rotations) in objects.items():
-            depths=[]
+            depths=[];geometry=scene_geometry(scene['objects'][object_name])
             for f in range(frames):
                 vertices=surface.vertices(actor['rotations'][f],actor['positions'][f])
-                depths.append(float(box_vertex_depth(vertices,positions[f],rotations[f],scene['objects'][object_name]['size_m']).max()))
+                depths.append(float(geometry.penetration_depth(vertices,positions[f],rotations[f]).max()))
             collisions.append(dict(actor=actor_name,object=object_name,max_skin_vertex_depth_m=max(depths),frames_over_1cm=int(np.sum(np.array(depths)>.01)),per_frame_max_depth_m=depths))
     return dict(scene_id=scene['id'],fps=30,frame_count=frames,sources=provenance,contacts=contacts,contact_tracks=tracks,
         object_collisions=collisions,object_tracks={name:dict(positions_m=p.tolist(),rotations_xyzw=Rotation.from_matrix(r).as_quat().tolist(),provenance=scene['objects'][name].get('trajectory_provenance','authored')) for name,(p,r) in objects.items()},
-        partner_collision=None,object_attachment=None,scope='Authored shared-clock transforms and targets; no joint scene-aware generation or interaction correction. Effector offsets are declared proxies. Box tests cover sampled skin vertices only; no triangle intersections, self/partner collision, forces or continuous-time proof.')
+        partner_collision=None,object_attachment=None,scope='Authored shared-clock transforms and targets; no joint scene-aware generation or interaction correction. Effector offsets are declared proxies. Analytic primitive tests cover sampled skin vertices only; no triangle intersections, self/partner collision, forces or continuous-time proof.')

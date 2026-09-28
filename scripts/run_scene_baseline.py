@@ -31,7 +31,7 @@ def scenes(seed):
 def run():
     out=ROOT/'reports/scene-baseline-v1';out.mkdir(exist_ok=False)
     skin=dict(np.load(ASSET));summary=dict(created_at=now(),implementation_sha256=sha256(ROOT/'scripts/scene_constraints.py'),
-        fixture_builder_sha256=sha256(__file__),source_benchmark_sha256=sha256(ROOT/'benchmarks/v0.json'),trials=[],
+        geometry_implementation_sha256=sha256(ROOT/'scripts/object_geometry.py'),fixture_builder_sha256=sha256(__file__),source_benchmark_sha256=sha256(ROOT/'benchmarks/v0.json'),trials=[],
         scope='Re-evaluation of existing raw outputs, not fresh inference or held-out evaluation. Original provisional placements and uncalibrated wrist proxies; not release acceptance.')
     for seed in [11,22,33,44,55]:
         for scene in scenes(seed):

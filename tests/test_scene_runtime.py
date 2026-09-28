@@ -37,3 +37,11 @@ def test_exclusive_contact_end_and_same_time_order_retained(tmp_path):
     assert [(m['frame'],m['payload']['type']) for m in data['markers']]==[(0,'first'),(0,'second'),(frames,'contact_end')]
     assert len({m['id'] for m in data['markers']})==3
     assert data['source_events_sha256']==sha256(tmp_path/'events.json')
+
+
+def test_runtime_rejects_sphere_metadata_paired_with_an_old_box_glb(tmp_path):
+    scene=fixture(tmp_path);obj=next(iter(scene['objects'].values()))
+    obj.pop('shape');obj.pop('size_m')
+    obj['geometry']=dict(schema='strep-object-geometry-v1',shape='sphere',radius_m=.2)
+    save(tmp_path/'portable-scene.json',scene)
+    with pytest.raises(ValueError,match='geometry'):write(tmp_path)

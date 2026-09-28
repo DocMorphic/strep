@@ -19,7 +19,7 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 The development breadth study generated 390 actor clips across 72 cases, 12 action families, and five seeds. Those categories measure coverage; they do not prove support for every requested motion. Release acceptance remains open in [the release matrix](benchmarks/project-release-v1.json).
 
-The latest sustained knee-contact experiment imported all 180 frames into Godot, but failed contact near the start and release of the hold and exceeded the sampled 5 mm floor-clearance limit. Its [method and limitations](docs/knee-held-contact-v1.md) are retained. Experimental [box/sphere geometry foundations](docs/object-geometry-core-v1.md) pass 13 focused tests; sphere scene/export/release integration is still pending. These are development results, not animator approval.
+The latest sustained knee-contact experiment imported all 180 frames into Godot, but failed contact near the start and release of the hold and exceeded the sampled 5 mm floor-clearance limit. Its [method and limitations](docs/knee-held-contact-v1.md) are retained. [Box/sphere scene geometry](docs/primitive-scenes-v1.md) now spans contact calculations, previews, GLB export and baked playback. Sphere physics release and measured grasp quality remain pending. These are development results, not animator approval.
 
 The owner will perform developer review first. Independent animator review and timed cleanup evidence remain release requirements.
 

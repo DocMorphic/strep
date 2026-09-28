@@ -9,7 +9,7 @@ from scipy.ndimage import gaussian_filter1d
 from floor_contact import Surface,reconstruct
 from inspect_motion import skeleton_metadata
 from support_contact_v5 import infer_support,bounded_rotation,bounded_lift,rodrigues,contact_losses,correction_basis,CONFIG as BASE_CONFIG
-from scene_solver_context import box_signed_distance
+from scene_solver_context import context_primitives
 CONFIG={**BASE_CONFIG,'iterations':100,'partner_clearance_m':.002,'partner_penalty':10000.,'outer_stages':3,'penalty_growth':4.,'point_tolerance_m':.005,'normal_tolerance_degrees':10.,'authored_slide_weight':1.,'fade_contact_weight':6.,'orientation_weight':5.,'object_collision_weight':10000.,'object_clearance_m':.002,'object_uniform_stride':48,'object_near_samples':48}
 
 
@@ -27,6 +27,14 @@ def torch_box_depth(points,position,rotation,size,clearance=0.):
     return torch.relu((size/2+clearance-local.abs()).amin(-1))
 
 
+def torch_primitive_depth(points,position,rotation,geometry,clearance=0.):
+    """Preserve legacy box-face inflation; use exact radial sphere clearance."""
+    if geometry.shape=='box':
+        size=torch.as_tensor(geometry.dimensions,dtype=points.dtype,device=points.device)
+        return torch_box_depth(points,position,rotation,size,clearance)
+    return torch.relu(geometry.dimensions[0]+clearance-torch.linalg.vector_norm(points-position[:,None,:],dim=-1))
+
+
 def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None):
     torch.set_num_threads(2)
     names,parents,_=skeleton_metadata(77); surface=Surface(skin)
@@ -41,6 +49,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     T=len(base['root_positions']); dtype=torch.float64
     context=scene_context or dict(frame_count=T,boxes=[],normals=[])
     if context['frame_count']!=T:raise ValueError('Scene context clock mismatch')
+    primitive_records=context_primitives(context)
     def tensor(x):return torch.as_tensor(np.asarray(x),dtype=dtype)
     offsets=np.zeros_like(base['posed_joints'],dtype=float)
     for j,p in enumerate(parents):
@@ -77,13 +86,13 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         faces=skin['faces'][np.any(skin['faces']==c['surface_vertex'],axis=1)]
         if not len(faces):raise ValueError('Contact normal has no surface triangles')
         normal_faces.append(faces);selected.update(faces.reshape(-1).tolist())
-    if context['boxes']:
+    if primitive_records:
         selected.update(range(0,len(skin['bind_vertices']),CONFIG['object_uniform_stride']))
         for source in [base,previous]:
             for f,(r,p) in enumerate(zip(source['global_rot_mats'],source['posed_joints'])):
                 points=surface.vertices(r,p)
-                for box in context['boxes']:
-                    distances=box_signed_distance(points,np.array(box['positions_m'][f]),np.array(box['rotations'][f]),box['size_m'])
+                for geometry,obj in primitive_records:
+                    distances=geometry.distance_gradient(points,np.array(obj['positions_m'][f]),np.array(obj['rotations'][f]))[0]
                     selected.update(np.argsort(distances)[:CONFIG['object_near_samples']].tolist())
     for cut in context.get('partner_cuts',[]):selected.add(cut['vertex'])
     selected=np.array(sorted(selected)); mapping={v:i for i,v in enumerate(selected)}
@@ -92,7 +101,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         indices=torch.tensor([[mapping[int(i)] for i in face] for face in faces])
         mask=np.zeros(T);mask[c['start_frame']:c['end_frame']+1]=1
         normal_constraints.append((indices,tensor(c['directions']),tensor(mask)))
-    objects=[(tensor(b['positions_m']),tensor(b['rotations']),tensor(b['size_m'])) for b in context['boxes']]
+    objects=[(tensor(b['positions_m']),tensor(b['rotations']),geometry) for geometry,b in primitive_records]
 
     inds=skin['lbs_indices'][selected];weights=tensor(skin['lbs_weights'][selected])
     bind=tensor(np.einsum('vwij,vj->vwi',surface.inverse[inds],surface.points[selected])[:,:,:3])
@@ -165,7 +174,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             terms['orientation']=torch.stack(normal_loss).mean()
             if tangent_loss:terms['hand_tangent']=torch.stack(tangent_loss).mean()
         if objects:
-            terms['object_collision']=torch.stack([torch_box_depth(v,op,orr,size,CONFIG['object_clearance_m']).square().amax(1).mean() for op,orr,size in objects]).mean()*CONFIG['object_collision_weight']
+            terms['object_collision']=torch.stack([torch_primitive_depth(v,op,orr,geometry,CONFIG['object_clearance_m']).square().amax(1).mean() for op,orr,geometry in objects]).mean()*CONFIG['object_collision_weight']
         if cuts:
             signed=((v[cut_frames,cut_vertices]-cut_points)*cut_normals).sum(-1)
             g=CONFIG['partner_clearance_m']-signed
@@ -200,5 +209,5 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         contact_spec=contact_spec,scene_context=scene_context,hard_bounds=True,normal_constraints=len(normal_constraints),object_constraints=len(objects),
         contact_normalization='Per explicit region, independently of inferred support duration; v3',
         support={k:dict(spans=c['spans'],active_frames=int(c['active'].sum()),provenance=c.get('provenance','inferred')) for k,c in contacts.items()},
-        scope='Hard root/rotation budgets with augmented-Lagrangian contact inequalities (not guaranteed feasible); candidate only until full-mesh and regression checks pass. Sampled box clearance and oriented surface points only; frozen partner cuts are local approximations, not self/partner collision, anatomy or dynamics certification.')
+        scope='Hard root/rotation budgets with augmented-Lagrangian contact inequalities (not guaranteed feasible); candidate only until full-mesh and regression checks pass. Sampled primitive clearance and oriented surface points only; frozen partner cuts are local approximations, not self/partner collision, anatomy or dynamics certification.')
     return result,recipe

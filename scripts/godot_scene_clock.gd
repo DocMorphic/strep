@@ -46,9 +46,10 @@ func decode_pose(value: Dictionary) -> Variant:
 	if abs(rotation.length()-1.0)>0.00001: return null
 	return Transform3D(Basis(rotation),Vector3(p[0],p[1],p[2]))
 
-func import_clip(path: String, end: float) -> Dictionary:
+func import_clip(path: String, end: float, precise_mesh: bool = false) -> Dictionary:
 	var document:=GLTFDocument.new();var state:=GLTFState.new()
-	if document.append_from_file(path,state)!=OK: return {}
+	var flags := GLTFDocument.IMPORT_FLAG_FORCE_DISABLE_MESH_COMPRESSION if precise_mesh else 0
+	if document.append_from_file(path,state,flags)!=OK: return {}
 	# Retain constant scale tracks: rigid objects must keep quaternion rotation.
 	var model:=document.generate_scene(state,30.0,false,false)
 	if model==null: return {}
@@ -102,7 +103,7 @@ func bind_package(folder: String, parent: Node3D) -> Error:
 		actor_nodes[id]={"placement":placement,"model":imported.model,"skeleton":imported.skeletons[0],"player":imported.player}
 		staged_players.append(imported.player)
 	if not data.objects.is_empty():
-		var imported:=import_clip(folder.path_join(data.object_clip.path),(frames-1)/30.0)
+		var imported:=import_clip(folder.path_join(data.object_clip.path),(frames-1)/30.0,true)
 		if imported.is_empty(): staged.free();return reject("Object animation import failed")
 		staged.add_child(imported.model);staged_players.append(imported.player)
 		for id in data.objects:

@@ -799,7 +799,8 @@
         "reports/scene-release-jobs/scene-runtime-worker-v1/verification.json",
         "docs/moving-object-geometry-gap-v1.md",
         "docs/object-geometry-core-v1.md",
-        "reports/object-geometry-core-v1/verification.json"
+        "reports/object-geometry-core-v1/verification.json",
+        "docs/primitive-scenes-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",

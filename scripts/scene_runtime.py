@@ -11,6 +11,7 @@ from strep import ROOT,read,save,sha256,now
 from scene_constraints import pose
 from scene_object_export import export_objects
 from gltf_tools import read_glb
+from object_geometry import scene_geometry
 
 
 def local(folder,name):
@@ -39,6 +40,9 @@ def write(folder):
         for id in scene['objects']:
             found=[n for n in document['nodes'] if n.get('extras',{}).get('strep_object_id')==id]
             if len(found)!=1: raise ValueError('Object GLB identity missing or ambiguous')
+            geometry=scene_geometry(scene['objects'][id]);declared=found[0].get('extras',{}).get('strep_geometry')
+            if declared is not None and declared!=geometry.record(): raise ValueError('Object GLB geometry differs from scene')
+            if declared is None and 'geometry' in scene['objects'][id]: raise ValueError('Versioned object geometry missing from GLB')
             objects[id]=dict(node_name=found[0]['name'],ownership='baked_track')
         object_clip=dict(path=scene['objects_glb'],sha256=sha256(path))
     events=read(folder/'events.json')

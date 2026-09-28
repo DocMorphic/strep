@@ -51,7 +51,7 @@ def main():
         release_audit=read(job/'release-audit.json'),independent_animator_reviews=0,cleanup_time_observations=0,release_gates_promoted=[],
         limitations=['Native 77-joint actors and box geometry only in this release tool','Floor collider only; no actor/environment/object collision response','Saved contact windows restrict release timing','Existing grip, body penetration and orientation failures remain','Godot import must retain constant scale tracks','No training, held-out release evaluation or human approval']))
     snapshot=report/'final-implementation';snapshot.mkdir(exist_ok=True)
-    names=['scene_release_job.py','scene_object_export.py','scene-release-editor.js','scene-viewer.js','action_studio_server.py','action-studio.html','run_portable_scene_import.py','godot_scene_import_audit.gd','verify_scene_release_job.py','reexport_scene_release.py','godot_rotation_playback_diagnostic.gd','export_attached_scene.py','finalize_scene_release_authoring.py']
+    names=['scene_release_job.py','scene_object_export.py','object_geometry_mesh.py','object_geometry.py','scene-release-editor.js','scene-viewer.js','scene-object-geometry.js','action_studio_server.py','action-studio.html','run_portable_scene_import.py','godot_scene_import_audit.gd','verify_scene_release_job.py','reexport_scene_release.py','godot_rotation_playback_diagnostic.gd','export_attached_scene.py','finalize_scene_release_authoring.py']
     for name in names:shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
     save(report/'final-implementation.json',dict(at=now(),files={name:sha256(snapshot/name) for name in names}))
     print(dict(published=True,original_retained=True,revised_engine_passed=True))

@@ -10,7 +10,7 @@ from scipy.spatial.transform import Rotation
 from strep import ROOT,read,save,sha256,now
 from build_soma_preview import ASSET
 
-SOURCES=['study_breadth_partners.py','scene_constraints.py','palm_contacts.py','floor_contact.py',
+SOURCES=['study_breadth_partners.py','scene_constraints.py','object_geometry.py','palm_contacts.py','floor_contact.py',
          'audit_partner_surface.py','run_godot_scene_import.py','godot_scene_import_audit.gd','inspect_motion.py']
 CASES={'partner_interaction-handshake':dict(hand='RightHand',start=60,end=119),
        'partner_interaction-left-high-five':dict(hand='LeftHand',start=75,end=75)}

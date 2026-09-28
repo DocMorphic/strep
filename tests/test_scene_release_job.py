@@ -21,6 +21,19 @@ def payload():
         mass_kg=3.,friction=.4,restitution=.1,label='Authored release test')
 
 
+def test_versioned_sphere_release_fails_explicitly_before_simulation(work):
+    source=read(ROOT/'reports/object-release-v2/seed-11-original/palm.json')
+    folder=work/'sphere-collection';folder.mkdir()
+    actor=source['scene']['actors']['A']
+    shutil.copyfile(ROOT/'reports/object-release-v2'/actor['preview_glb'],folder/'actor.glb')
+    actor['preview_glb']='actor.glb'
+    obj=source['scene']['objects']['box'];obj.pop('shape');obj.pop('size_m')
+    obj['geometry']=dict(schema='strep-object-geometry-v1',shape='sphere',radius_m=.25)
+    save(folder/'palm.json',source);save(folder/'manifest.json',dict(scenes=[dict(variants=dict(palm='palm.json'))]))
+    url='/files/'+folder.relative_to(ROOT/'reports').as_posix()+'/palm.json'
+    with pytest.raises(ValueError,match='versioned primitive release is not implemented'):metadata(url)
+
+
 @pytest.fixture
 def work():
     base=ROOT/'reports/scene-release-jobs';base.mkdir(exist_ok=True)

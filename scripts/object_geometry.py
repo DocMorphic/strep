@@ -1,6 +1,6 @@
 """Versioned rigid primitive geometry for consistent queries and future scene wiring.
 
-Experimental shared core; existing scene authoring/export/release remains box-only.
+Shared primitive queries. Individual scene/release consumers declare their support.
 Distances are analytic primitive distances, not triangle or continuous collision tests.
 """
 from dataclasses import dataclass
@@ -12,6 +12,22 @@ def finite(value,shape,label):
     except (TypeError,ValueError) as exc:raise ValueError('Invalid '+label) from exc
     if a.shape!=shape or not np.isfinite(a).all():raise ValueError('Invalid '+label)
     return a
+
+
+def scene_geometry(obj):
+    """Read a versioned descriptor, or the original unversioned box format.
+
+    Reject mixed representations so different consumers cannot pick different
+    dimensions. New non-box objects must use the explicit geometry schema.
+    """
+    if not isinstance(obj,dict):raise ValueError('Scene object must be a dictionary')
+    fields={'shape','size_m','radius_m'}
+    if 'geometry' in obj:
+        if fields.intersection(obj):raise ValueError('Do not mix legacy dimensions and versioned geometry')
+        return Geometry.parse(obj['geometry'])
+    if obj.get('shape')!='box' or 'radius_m' in obj:
+        raise ValueError('Non-box scene objects require versioned geometry')
+    return Geometry.parse(dict(schema='strep-object-geometry-v1',shape='box',size_m=obj.get('size_m')))
 
 
 @dataclass(frozen=True)

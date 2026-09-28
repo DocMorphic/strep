@@ -41,19 +41,23 @@ def run(scene_paths,output,solver_version=2):
         import importlib
         solver=importlib.import_module('support_contact_v'+str(solver_version));refine,CONFIG=solver.refine,solver.CONFIG
     out=Path(output).resolve();out.mkdir(parents=True,exist_ok=False);save(out/'pipeline.json',dict(status='processing'))
-    sources=['run_scene_fit.py','compile_scene_contacts.py','contact_spec.py','scene_constraints.py','palm_contacts.py','support_contact_v2.py',
+    sources=['run_scene_fit.py','compile_scene_contacts.py','contact_spec.py','scene_constraints.py','object_geometry.py','palm_contacts.py','support_contact_v2.py',
         'support_contact_v3.py','support_contact_v4.py','support_contact_v5.py','support_contact_v6.py','support_contact_v7.py','support_contact_v8.py','scene_solver_context.py','partner_surface_cuts.py','audit_scene_orientation.py','support_contact.py','floor_contact.py','body_contact.py','evaluate_contact_spec.py','evaluate_body_contact.py','evaluate_floor_contact.py','run_body_contact.py']
     snapshot=out/'source-snapshot';snapshot.mkdir()
     for name in sources:shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
     skin=dict(np.load(ASSET));skeleton=SOMASkeleton77();summary=dict(created_at=now(),solver_version=solver_version,config=CONFIG,trials=[],
         implementation={name:sha256(snapshot/name) for name in sources},mesh_sha256=sha256(ASSET),
-        scope=('In-sample deterministic point and surface-frame fitting with sampled box clearance; optional frozen partner cuts in v8.' if solver_version>=6 else 'In-sample deterministic point fitting; no orientation solve.')+' Not model training or scene-aware inference. All candidates unreviewed; no physical attachment, joint partner solve or dynamic simulation.')
+        scope=('In-sample deterministic point and surface-frame fitting with sampled primitive clearance; optional frozen partner cuts in v8.' if solver_version>=6 else 'In-sample deterministic point fitting; no orientation solve.')+' Not model training or scene-aware inference. All candidates unreviewed; no physical attachment, joint partner solve or dynamic simulation.')
     manifest=dict(created_at=now(),scenes=[],assets={},scope=summary['scope'])
     shutil.copyfile(ROOT/'vendor/kimodo/LICENSE',out/'SOMA-preview-LICENSE.txt')
     try:
         with worker_lock():
             for scene_path in scene_paths:
                 source_scene=read(scene_path);scene=copy.deepcopy(source_scene.get('scene',source_scene));scene_id=scene['id']
+                if solver_version<8:
+                    from object_geometry import scene_geometry
+                    if any(scene_geometry(obj).shape!='box' for obj in scene.get('objects',{}).values()):
+                        raise ValueError('Non-box scene contact fitting requires solver version 8 or newer')
                 if solver_version<8 and (scene.get('partner_cut_file') or any(c.get('tangent_target') for c in scene['contacts'])):
                     raise ValueError('Hand tangents and partner cuts require solver version 8 or newer')
                 if any(t['id']==scene_id for t in summary['trials']):raise ValueError('Duplicate scene id')
@@ -102,7 +106,7 @@ def run(scene_paths,output,solver_version=2):
                 save(folder/'requested-events.json',dict(fps=30,contacts=scene['contacts'],provenance='Requested times and points, not validated gameplay events. See independent after.json measurements.'))
                 for version,spec,motion,evaluation in [('source',original,raw_motions,before),('candidate',scene,motions,after)]:
                     spec=copy.deepcopy(spec);spec['id']=scene_id+'-'+version
-                    spec['review_note']=('Unchanged motion; authored scene trajectory.' if version=='source' else 'Experimental deterministic contact fit; unreviewed. Targets and collisions measured separately.')+(' Surface-frame and sampled box-clearance terms enabled.' if version=='candidate' and solver_version>=6 else ' No palm orientation solve.')+(' Frozen partner clearance cuts applied; independent geometry recheck required.' if version=='candidate' and scene.get('partner_cut_file') else ' No partner clearance solve.')+' No physical attachment or joint partner dynamics.'
+                    spec['review_note']=('Unchanged motion; authored scene trajectory.' if version=='source' else 'Experimental deterministic contact fit; unreviewed. Targets and collisions measured separately.')+(' Surface-frame and sampled primitive-clearance terms enabled.' if version=='candidate' and solver_version>=6 else ' No palm orientation solve.')+(' Frozen partner clearance cuts applied; independent geometry recheck required.' if version=='candidate' and scene.get('partner_cut_file') else ' No partner clearance solve.')+' No physical attachment or joint partner dynamics.'
                     packaged=bundle(spec,motion,evaluation)
                     if solver_version>=6:
                         from audit_scene_orientation import audit

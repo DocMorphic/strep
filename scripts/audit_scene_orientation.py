@@ -1,4 +1,4 @@
-"""Actual skin-normal diagnostics for opposing palms and box-face contacts."""
+"""Actual skin-normal diagnostics for opposing palms and primitive-surface contacts."""
 import argparse
 from pathlib import Path
 import numpy as np
@@ -6,6 +6,7 @@ from strep import ROOT,read,save,sha256,now
 from scene_constraints import transform_motion,sample_object,vector
 from palm_contacts import surface_normal_track,hand_tangent_track
 from build_soma_preview import ASSET
+from object_geometry import scene_geometry
 
 
 def inward_box_face(point,size):
@@ -42,8 +43,10 @@ def audit(scene,skin,tolerance_degrees=15):
             provenance='Opposing actual partner skin normal'
         elif target['space']=='object':
             obj=scene['objects'][target['object']];_,rotation=sample_object(obj,scene['frame_count'])
-            desired=np.einsum('fij,j->fi',rotation,inward_box_face(target['point_m'],obj['size_m']))
-            provenance='Inward normal of the unique box face containing the grip'
+            geometry=scene_geometry(obj)
+            direction=inward_box_face(target['point_m'],geometry.dimensions) if geometry.shape=='box' else -geometry.local_surface_normal(target['point_m'])
+            desired=np.einsum('fij,j->fi',rotation,direction)
+            provenance='Inward analytic primitive surface normal at the grip'
         else:continue
         angles=np.rad2deg(np.arccos(np.clip(np.sum(actual*desired,axis=-1),-1,1)));a,b=c['start_frame'],c['end_frame'];interval=angles[a:b+1]
         records.append(dict(id=c['id'],start_frame=a,end_frame=b,provenance=provenance,max_error_degrees=float(interval.max()),
@@ -69,5 +72,5 @@ def audit(scene,skin,tolerance_degrees=15):
 if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('scene',type=Path);parser.add_argument('--output',type=Path,required=True);args=parser.parse_args()
     data=read(args.scene);scene=data.get('scene',data);result=audit(scene,dict(np.load(ASSET)))
-    save(args.output,dict(**result,created_at=now(),scene_sha256=sha256(args.scene),auditor_sha256=sha256(__file__),palm_code_sha256=sha256(ROOT/'scripts/palm_contacts.py')))
+    save(args.output,dict(**result,created_at=now(),scene_sha256=sha256(args.scene),auditor_sha256=sha256(__file__),geometry_sha256=sha256(ROOT/'scripts/object_geometry.py'),palm_code_sha256=sha256(ROOT/'scripts/palm_contacts.py')))
     print([(c['id'],round(c['max_error_degrees'],2),c['frames_over_tolerance']) for c in result['contacts']])

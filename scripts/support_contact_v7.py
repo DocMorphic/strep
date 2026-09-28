@@ -40,6 +40,8 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     T=len(base['root_positions']); dtype=torch.float64
     context=scene_context or dict(frame_count=T,boxes=[],normals=[])
     if context['frame_count']!=T:raise ValueError('Scene context clock mismatch')
+    if any(item['geometry']['shape']!='box' for item in context.get('primitives',[])):
+        raise ValueError('Non-box contact fitting requires solver version 8 or newer')
     def tensor(x):return torch.as_tensor(np.asarray(x),dtype=dtype)
     offsets=np.zeros_like(base['posed_joints'],dtype=float)
     for j,p in enumerate(parents):

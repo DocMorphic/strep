@@ -1,5 +1,7 @@
 # Moving-object geometry gap
 
+Update: subsequent scene/solver/export integration is recorded in [primitive scenes](primitive-scenes-v1.md). The remainder describes this original snapshot.
+
 A code inspection during release-fixture preparation found a current restriction that prevents treating the broad reserved object scenarios as runnable release fixtures.
 
 - `scene_constraints.sample_object` accepts only `shape: box` with `size_m`; its existing actor/object penetration path calls box-vertex depth.

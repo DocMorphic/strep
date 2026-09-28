@@ -19,7 +19,7 @@ def run(source,output):
     prior={name:sha256(output/name) for name in ['objects.glb','input-objects.glb']}
     export_objects(read(output/'input.json')['scene'],output/'input-objects.glb')
     export_objects(read(output/'candidate.json')['scene'],output/'objects.glb')
-    for name in ['scene_object_export.py','reexport_scene_release.py']:
+    for name in ['scene_object_export.py','object_geometry_mesh.py','object_geometry.py','reexport_scene_release.py']:
         (output/'export-implementation').mkdir(exist_ok=True);shutil.copyfile(ROOT/'scripts'/name,output/'export-implementation'/name)
     save(output/'export-revision.json',dict(at=now(),source_package_sha256=sha256(source/'scene-animation.zip'),prior_glbs=prior,
         reason='Constant unit-scale object tracks preserve complete TRS and avoid Godot 4.7.2 Euler fallback. Keep immutable tracks when importing.',

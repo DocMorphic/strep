@@ -1,5 +1,7 @@
 # Rigid primitive geometry foundation
 
+Update: subsequent scene/solver/export integration is recorded in [primitive scenes](primitive-scenes-v1.md). The remainder describes this original snapshot.
+
 The experimental `scripts/object_geometry.py` defines a strict, versioned geometry descriptor for boxes and spheres. It supplies signed distance, outward gradient, smooth grip normal, world bounds, and uniform solid inertia from the same dimensions. Invalid dimensions and ambiguous surface normals fail explicitly. The sphere center has no unique distance gradient; that ambiguity is returned rather than hidden.
 
 `scripts/object_geometry_mesh.py` generates outward, closed triangle previews. The sphere mesh is inscribed: collision queries must use the analytic sphere. The exporter can retain the reported radial inset bound to distinguish rendering approximation from contact error. A 0.3 m radius sphere with a requested 1 mm bound produced 8,192 triangles with a conservative 0.293 mm maximum inset. Resource limits fail explicitly when the requested tolerance cannot be met.

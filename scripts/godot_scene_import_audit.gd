@@ -71,7 +71,7 @@ func run_audit() -> void:
 		if item.has("objects_glb"):
 			var document := GLTFDocument.new()
 			var state := GLTFState.new()
-			if document.append_from_file(item.objects_glb,state) != OK:
+			if document.append_from_file(item.objects_glb,state,GLTFDocument.IMPORT_FLAG_FORCE_DISABLE_MESH_COMPRESSION) != OK:
 				quit(6)
 				return
 			var model := document.generate_scene(state,30.0,false,false)
@@ -98,6 +98,24 @@ func run_audit() -> void:
 			object_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 			object_player.play(selected)
 		var object_frames: Array = []
+		var object_meshes: Dictionary = {}
+		if item.get("audit_object_meshes", false):
+			for name in objects:
+				var node = objects[name]
+				if not node is MeshInstance3D or node.mesh == null:
+					quit(9)
+					return
+				var surfaces: Array = []
+				for surface in range(node.mesh.get_surface_count()):
+					var arrays = node.mesh.surface_get_arrays(surface)
+					var positions: Array = []
+					var normals: Array = []
+					for point in arrays[Mesh.ARRAY_VERTEX]:
+						positions.append([point.x, point.y, point.z])
+					for normal in arrays[Mesh.ARRAY_NORMAL]:
+						normals.append([normal.x, normal.y, normal.z])
+					surfaces.append({"positions":positions,"normals":normals})
+				object_meshes[name] = surfaces
 		for frame in range(item.frames):
 			var sample: Dictionary = {}
 			# Both actors exist in one scene and seek to the same source clock.
@@ -119,7 +137,7 @@ func run_audit() -> void:
 		var metadata: Dictionary = {}
 		for name in actors:
 			metadata[name] = {"bone_names":actors[name].bone_names,"animation":actors[name].animation}
-		report.scenes.append({"id":item.id,"actors":metadata,"frames":frames,"object_frames":object_frames})
+		report.scenes.append({"id":item.id,"actors":metadata,"frames":frames,"object_frames":object_frames,"object_meshes":object_meshes})
 		holder.queue_free()
 		await process_frame
 	var output := FileAccess.open(args[1],FileAccess.WRITE)

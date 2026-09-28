@@ -16,7 +16,7 @@ def run():
     out=ROOT/'reports/object-attachment-v1';out.mkdir(exist_ok=False);skin=dict(np.load(ASSET));names,_,_=skeleton_metadata(77)
     manifest=dict(created_at=now(),scenes=[],assets={});summary=dict(created_at=now(),trials=[],scope='Authored kinematic attachment experiment on existing unreviewed corrected motion. No physics or joint hand/object solve.')
     snapshot=out/'source-snapshot';snapshot.mkdir()
-    for name in ['object_attachment.py','build_attachment_study.py','audit_scene_orientation.py','palm_contacts.py','scene_constraints.py']:shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
+    for name in ['object_attachment.py','build_attachment_study.py','audit_scene_orientation.py','palm_contacts.py','scene_constraints.py','object_geometry.py']:shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
     shutil.copyfile(ROOT/'vendor/kimodo/LICENSE',out/'SOMA-preview-LICENSE.txt')
     save(out/'pipeline.json',dict(status='processing'))
     for seed in [11,22]:

@@ -22,7 +22,7 @@ def allowed_file(url_path):
     path=unquote(urlsplit(url_path).path)
     if path in ['/','/studio']:return ROOT/'scripts/action-studio.html'
     if path=='/motion-profile-editor.js':return ROOT/'scripts/motion-profile-editor.js'
-    if path in ['/pose-guide-editor.js','/soma-preview-skin.js','/rig-joint-editor.js','/rig-posture-editor.js','/scene-release-editor.js']:return ROOT/'scripts'/path[1:]
+    if path in ['/pose-guide-editor.js','/soma-preview-skin.js','/rig-joint-editor.js','/rig-posture-editor.js','/scene-release-editor.js','/scene-object-geometry.js']:return ROOT/'scripts'/path[1:]
     if path.startswith('/assets/'):
         root=(ROOT/'assets/viewer/node_modules/three').resolve()
         target=(root/path.removeprefix('/assets/')).resolve()
