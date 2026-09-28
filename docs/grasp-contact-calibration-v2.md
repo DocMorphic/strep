@@ -1,5 +1,7 @@
 # Experimental contact calibration
 
+Follow-up: the [bounded two-region pose](sphere-region-pose-v1.md) independently verifies these probes, tests the midpoint of the two right-hand candidates, and projects both hands onto the rig. The historical results below remain unchanged.
+
 These development probes change the authored surface binding. They do not pass the original fixed-point condition, approve a grasp animation, or change Studio defaults or release gates.
 
 ## Alternate fixed point

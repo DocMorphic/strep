@@ -831,7 +831,12 @@
         "docs/grasp-twist-seeds-v1.md",
         "reports/grasp-twist-seeds-v1-audit-final/verification.json",
         "docs/grasp-shape-search-v1.md",
-        "reports/grasp-shape-search-v1-audit/verification.json"
+        "reports/grasp-shape-search-v1-audit/verification.json",
+        "docs/grasp-contact-calibration-v2.md",
+        "docs/sphere-region-pose-v1.md",
+        "reports/sphere-region-projection-v1-audit/verification.json",
+        "reports/sphere-region-projection-right-v1-audit/verification.json",
+        "reports/sphere-region-pose-v1-audit/verification.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",

@@ -27,7 +27,15 @@ def contact_triangle(points, ids, target, gap, limits):
                 centroid_error_m=float(error[best]), contact_gaps_m=gap[triples[best]].tolist())
 
 
-def run(study, seed_report, output, tilt_ring_degrees=0., hand='LeftHand'):
+def declared_azimuths(angles, tilt_ring_degrees):
+    if angles is None: return list(range(0, 360, 45))
+    if not tilt_ring_degrees or not len(angles) or not np.isfinite(angles).all() or any(a < 0 or a >= 360 for a in angles) or len(set(angles)) != len(angles):
+        raise ValueError('Explicit azimuths require a nonzero tilt and unique finite angles in [0, 360)')
+    return list(angles)
+
+
+def run(study, seed_report, output, tilt_ring_degrees=0., hand='LeftHand', azimuth_degrees=None):
+    azimuths = declared_azimuths(azimuth_degrees, tilt_ring_degrees)
     study, seed_report, output = [Path(s).resolve() for s in (study, seed_report, output)]
     fit = study/'fit'; summary = read(fit/'summary.json'); seed_result = read(seed_report/'result.json'); seed_protocol = read(seed_report/'protocol.json')
     if sha256(fit/'summary.json') != seed_protocol['fit_summary_sha256'] or sha256(ASSET) != summary['mesh_sha256'] or sha256(seed_report/'pose.npz') != seed_result['pose_sha256']: raise ValueError('Study or seed changed')
@@ -60,7 +68,7 @@ def run(study, seed_report, output, tilt_ring_degrees=0., hand='LeftHand'):
     if tilt_ring_degrees:
         basis = np.cross(target_n, np.eye(3)[np.argmin(np.abs(target_n))]); basis /= np.linalg.norm(basis)
         second = np.cross(target_n, basis)
-        for azimuth in range(0, 360, 45):
+        for azimuth in azimuths:
             axis = np.cos(np.deg2rad(azimuth))*basis+np.sin(np.deg2rad(azimuth))*second
             orientations.append((tilt_ring_degrees, float(azimuth), Rotation.from_rotvec(np.deg2rad(tilt_ring_degrees)*axis).as_matrix()@rotation))
     limits = dict(clearance_m=p.config['object_clearance_m'], placement_gap_m=.0021, contact_gap_m=.003, spacing_m=.006,
@@ -97,4 +105,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__); parser.add_argument('study', type=Path); parser.add_argument('seed_report', type=Path); parser.add_argument('output', type=Path)
     parser.add_argument('--tilt-ring-degrees', type=float, default=0.)
     parser.add_argument('--hand', choices=['LeftHand', 'RightHand'], default='LeftHand')
-    args = parser.parse_args(); run(args.study, args.seed_report, args.output, args.tilt_ring_degrees, args.hand)
+    parser.add_argument('--azimuth-degrees', type=float, nargs='+', help='Explicit tilt directions; default is the original eight-angle ring')
+    args = parser.parse_args(); run(args.study, args.seed_report, args.output, args.tilt_ring_degrees, args.hand, args.azimuth_degrees)

@@ -1,5 +1,7 @@
 # One project-wide goal: release-ready Strep
 
+Latest development evidence: [bounded two-hand region pose](sphere-region-pose-v1.md) passes original joint-edit budgets, full-skin sphere/floor checks and distributed contact for a new authored region condition. The original fixed-point condition still fails. Temporal integration, anatomical/developer review and broad release validation remain pending; all 14 capabilities remain unapproved.
+
 Created 2026-09-26 at the user's request. Keep the current goal active across intermediate milestones. Do not replace it with a separate goal for each experiment or mark it complete after a successful report.
 
 Build the full offline animation authoring workflow for rigged humanoids: arbitrary descriptions and timed sequences, variation/style and meaningful capability controls, existing-clip editing, scene and partner constraints, character transfer, transitions, previews, and importable game assets. The motion model and the surrounding authoring system together must produce useful editable assets. Training is a means to address demonstrated deficits, not the definition of completion.
