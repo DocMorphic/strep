@@ -14,6 +14,8 @@ def context_primitives(context):
 
 
 def compile_context(scene,actor_id,contact_ids,skin,*,release_endpoint_guards=False):
+    if any('region_contact' in c for c in scene['contacts'] if c['id'] in contact_ids):
+        raise ValueError('Legacy scene solver does not support distributed region contacts')
     origin,rotation=pose(scene['actors'][actor_id]['transform']);frames=scene['frame_count']
     if abs(origin[1])>1e-7 or not np.allclose(rotation@[0.,1.,0.],[0.,1.,0.],atol=1e-7):raise ValueError('Solver requires yaw-only actor placement on ground')
     boxes=[];primitives=[];sampled={}

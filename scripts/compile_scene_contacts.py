@@ -25,6 +25,8 @@ def compile_contacts(scene,actor_id,contact_ids,skin,project_root=ROOT):
     if len({c['id'] for c in contacts})!=len(contacts):raise ValueError('Duplicate scene contact ids')
     selected=[c for c in contacts if c['id'] in contact_ids]
     if len(selected)!=len(contact_ids) or any(c['actor']!=actor_id for c in selected):raise ValueError('Selected contacts must belong to source actor')
+    if any('region_contact' in c for c in selected):
+        raise ValueError('Distributed region contact cannot be reduced to a point track; use compile_scene_regions.py')
     origin,rotation=pose(scene['actors'][actor_id]['transform'])
     if abs(origin[1])>1e-7 or not np.allclose(rotation@[0.,1.,0.],[0.,1.,0.],atol=1e-7):
         raise ValueError('Current floor solver requires source actor on Y=0 with yaw-only placement')

@@ -17,6 +17,8 @@ def inward_box_face(point,size):
 
 
 def audit(scene,skin,tolerance_degrees=15):
+    if any('region_contact' in c for c in scene['contacts']):
+        raise ValueError('Use scene_constraints.evaluate for authored region normals; vertex-normal audit has different semantics')
     actors={};sources={}
     for name,entry in scene['actors'].items():
         path=(ROOT/entry['motion']).resolve()

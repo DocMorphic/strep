@@ -113,6 +113,13 @@ def evaluate(scene,skin,project_root=ROOT):
             first_valid_offset_from_interval_start_frames=int(valid[0]-a) if len(valid) else None,
             nearest_frame=int(errors.argmin()),nearest_distance_m=float(errors.min()),
             all_requested_frames_within_tolerance=bool(np.all(errors[a:b+1]<=tolerance))))
+        if 'region_contact' in c:
+            from scene_region_contact import evaluate_region
+            region_result=evaluate_region(c,scene,actors[c['actor']],objects,skin)
+            contacts[-1]['region_contact']=region_result
+            contacts[-1]['point_track_role']='Explicit anchor constraint; distributed region is an additional authored requirement'
+            contacts[-1]['anchor_all_requested_frames_within_tolerance']=contacts[-1]['all_requested_frames_within_tolerance']
+            contacts[-1]['all_requested_frames_within_tolerance'] &= region_result['all_requested_frames_passed']
         tracks[c['id']]=dict(actual_world_m=actual.tolist(),target_world_m=target.tolist(),errors_m=errors.tolist())
     collisions=[];surface=Surface(skin)
     for actor_name,actor in actors.items():
