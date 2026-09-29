@@ -13,6 +13,26 @@ from scene_solver_context import context_primitives
 CONFIG={**BASE_CONFIG,'iterations':100,'partner_clearance_m':.002,'partner_penalty':10000.,'outer_stages':3,'penalty_growth':4.,'point_tolerance_m':.005,'normal_tolerance_degrees':10.,'authored_slide_weight':1.,'fade_contact_weight':6.,'orientation_weight':5.,'object_collision_weight':10000.,'object_clearance_m':.002,'object_uniform_stride':48,'object_near_samples':48}
 
 
+def select_inferred_supports(contacts, requested):
+    """Select existing active inference without overriding explicit/disabled intent."""
+    if not isinstance(requested,(list,tuple)) or any(not isinstance(name,str) for name in requested) or len(set(requested))!=len(requested):
+        raise ValueError('Distinct inferred support region names required')
+    for name in requested:
+        if name not in contacts:raise ValueError('Unknown inferred support region: '+name)
+        row=contacts[name]
+        if row.get('provenance','inferred')!='inferred':
+            raise ValueError('Cannot replace authored or disabled support: '+name)
+        if not np.any(row['active']):raise ValueError('No active inferred support: '+name)
+    return [name in requested for name in contacts]
+
+
+def normalized_support_residual(point_violation, tolerance):
+    """Dimensionless residual with the same feasible set and original tolerance."""
+    scale=torch.as_tensor(tolerance,dtype=point_violation.dtype,device=point_violation.device)
+    if not torch.isfinite(scale).all() or (scale<=0).any():raise ValueError('Positive finite support tolerance required')
+    return point_violation/scale
+
+
 def inequality_merit(g,multiplier,penalty):
     """PHR inequality merit for g <= 0; multipliers held fixed per subproblem."""
     return (torch.relu(multiplier+penalty*g).square()-multiplier.square())/(2*penalty)
@@ -104,7 +124,7 @@ def object_sampling_layout(selected,vertex_count,full):
     return ids,np.searchsorted(ids,original)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=()):
     if root_coordinate_mode not in ["legacy","scaled_initial","physical_box"]:raise ValueError("Unknown root coordinate mode")
     if object_constraint_mode not in ["maximum","per_vertex"]:raise ValueError("Unknown object constraint mode")
     if object_constraint_mode!="maximum" and not object_inequalities:raise ValueError("Per-vertex constraints require object inequalities")
@@ -227,6 +247,9 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     explicit_mask=torch.tensor([c.get('provenance')=='explicit' for c in contacts.values()])
     active=torch.stack([tensor(c['active']) for c in contacts.values()],1)*explicit_mask
     point_tolerance=CONFIG['point_tolerance_m'] if region_fitting is None else tensor(region_fitting.point_tolerances(contacts,T,CONFIG['point_tolerance_m']))
+    preserved_mask=torch.tensor(select_inferred_supports(contacts,preserve_support_regions))
+    preserved_active=torch.stack([tensor(c['active']) for c in contacts.values()],1)*preserved_mask
+    preserved_multiplier=torch.zeros_like(active)
     point_multiplier=torch.zeros_like(active)
     normal_multiplier=[torch.zeros(T,dtype=dtype) for _ in normal_constraints]
     tangent_multiplier=[torch.zeros(T,dtype=dtype) for _ in normal_constraints]
@@ -273,6 +296,10 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         point_g=torch.linalg.vector_norm(selected_contact-targets,dim=-1)-point_tolerance
         point_merit=inequality_merit(point_g,point_multiplier,point_penalty)
         _,point_loss=contact_losses(point_merit,active,explicit_mask)
+        preserved_loss=None
+        if preserved_mask.any():
+            merit=inequality_merit(normalized_support_residual(point_g,point_tolerance),preserved_multiplier,point_penalty)
+            _,preserved_loss=contact_losses(merit,preserved_active,preserved_mask)
         fade_weights=(cw-active).clamp_min(0)*explicit_mask
         _,fade_loss=contact_losses(contact,fade_weights,explicit_mask)
         moving_weights=active[1:]*active[:-1]*(ci[1:]==ci[:-1])
@@ -289,6 +316,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             temporal=torch.diff(displacement,n=2,dim=0).square().sum(-1).mean()*CONFIG['temporal_weight'],
             velocity=torch.relu(velocity-1.2).square().amax()*CONFIG['velocity_weight'],
             slide=(torch.relu(slide-original_slide-.02).square()*(cw[:-1]*(~explicit_mask))).sum()/(cw[:-1]*(~explicit_mask)).sum().clamp_min(1)*CONFIG['slide_weight'])
+        if preserved_loss is not None:terms['preserved_support']=preserved_loss
         if region_fitting is not None:terms['distributed_region']=region_fitting.loss(v)
         if rate_objective is not None:terms['export_rates']=rate_objective.loss(r,p)
         if finger_edits:
@@ -341,6 +369,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             max_active_point_violation_m=float(torch.relu(last_point)[active.bool()].max()) if active.any() else 0.,
             max_partner_cut_violation_m=float(torch.relu(last_cuts).max()) if cuts else 0.,max_active_tangent_chord_violation=max([float(torch.relu(g)[c[2].bool()].max()) for g,c in zip(last_tangents,normal_constraints)]+[0.]),
             max_active_normal_chord_violation=max([float(torch.relu(g)[c[2].bool()].max()) for g,c in zip(last_normals,normal_constraints)]+[0.])))
+        if preserved_mask.any():stage_records[-1]['max_preserved_support_violation_m']=float(torch.relu(last_point)[preserved_active.bool()].max())
         if root_coordinate_mode=='physical_box':stage_records[-1]['optimizer']=optimizer.summary
         if object_inequalities:
             stage_records[-1].update(object_penalty=object_penalty,max_sampled_object_clearance_violation_m=max([float(torch.relu(g).max()) for g in last_objects]+[0.]))
@@ -349,6 +378,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         if stage+1<stage_count:
             if rate_objective is not None:rate_objective.advance_stage(CONFIG['penalty_growth'])
             if region_fitting is not None:region_fitting.advance_stage(CONFIG['penalty_growth'])
+            if preserved_mask.any():preserved_multiplier=torch.relu(preserved_multiplier+point_penalty*normalized_support_residual(last_point,point_tolerance))*preserved_active
             point_multiplier=torch.relu(point_multiplier+point_penalty*last_point)*active
             normal_multiplier=[torch.relu(m+normal_penalty*g)*c[2] for m,g,c in zip(normal_multiplier,last_normals,normal_constraints)]
             tangent_multiplier=[torch.relu(m+normal_penalty*g)*c[2] for m,g,c in zip(tangent_multiplier,last_tangents,normal_constraints)]
@@ -369,6 +399,10 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         contact_normalization='Per explicit region, independently of inferred support duration; v3',
         support={k:dict(spans=c['spans'],active_frames=int(c['active'].sum()),provenance=c.get('provenance','inferred')) for k,c in contacts.items()},
         scope='Hard root/rotation budgets with augmented-Lagrangian contact inequalities (not guaranteed feasible); candidate only until full-mesh and regression checks pass. Sampled primitive clearance and oriented surface points only; frozen partner cuts are local approximations, not self/partner collision, anatomy or dynamics certification.')
+    if preserved_mask.any():
+        recipe['preserved_support']=dict(regions=list(preserve_support_regions),tolerance_m=CONFIG['point_tolerance_m'],
+            constraint_normalization='signed point violation divided by original point tolerance',
+            scope='Selected inferred source support points, active frames only; augmented inequalities do not guarantee feasibility, a planted sole, balance or force support.')
     if shared_pose:
         recipe['shared_pose']=dict(rotation_control_frames=1,root_control_frames=1,output_frames=T,quality_approved=False)
         recipe['parameterization']='One shared bounded rotation set and root lift; frozen-pose diagnostic only'

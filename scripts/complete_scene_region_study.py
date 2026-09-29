@@ -36,6 +36,11 @@ def run(study,output,pid,creation_time):
         if result['status']!='complete':raise ValueError('Fitting did not complete: '+str(result.get('error')))
         save(output/'status.json',dict(status='auditing',at=now()))
         audit_geometry(study,output/'geometry')
+        support_hash=None
+        if read(study/'protocol.json').get('preserve_support_regions'):
+            from audit_scene_preserved_support import run as audit_support
+            audit_support(study,output/'support.json')
+            support_hash=sha256(output/'support.json')
         audit_rates(study,output/'joint-rates.json')
         frames=read(study/'authored-scene.json')['frame_count'];cases=[]
         for label in ['source','candidate']:
@@ -44,7 +49,7 @@ def run(study,output,pid,creation_time):
         save(output/'manifest.json',dict(cases=cases));audit_engine(output,output/'engine')
         save(output/'status.json',dict(status='complete',at=now(),result_sha256=sha256(study/'result.json'),
              geometry_sha256=sha256(output/'geometry/verification.json'),joint_rates_sha256=sha256(output/'joint-rates.json'),
-             engine_sha256=sha256(output/'engine/verification.json'),quality_approved=False))
+             engine_sha256=sha256(output/'engine/verification.json'),support_sha256=support_hash,quality_approved=False))
         print(dict(status='complete',quality_approved=False),flush=True)
     except Exception as exc:
         save(output/'status.json',dict(status='failed',at=now(),error=str(exc),quality_approved=False))

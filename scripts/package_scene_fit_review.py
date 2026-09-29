@@ -53,16 +53,38 @@ def verified_study(study,audit_path,engine_path):
     return scene,actor,audit
 
 
-def build(study,audit_path,engine_path,output,label,rates_path=None):
+def support_assessment(report, regions, result_digest):
+    from audit_scene_preserved_support import summarize, TOLERANCE_M
+    if report is None or report.get('result_sha256')!=result_digest:
+        raise ValueError('Matching support audit required for preserved supports')
+    if report.get('regions')!=regions or report.get('requested_by_fit')!=regions or report.get('tolerance_m')!=TOLERANCE_M:
+        raise ValueError('Support audit selection or tolerance mismatch')
+    candidate=report['variants']['candidate']
+    if any(type(row.get('error_m')) not in (int,float) or not np.isfinite(row['error_m']) or row['error_m']<0 for row in candidate['rows']):
+        raise ValueError('Support audit errors must be finite and nonnegative')
+    measured=summarize(candidate['rows'],candidate['skipped'])
+    if any(candidate.get(key)!=value for key,value in measured.items()):raise ValueError('Support audit summary mismatch')
+    return measured
+
+
+def build(study,audit_path,engine_path,output,label,rates_path=None,support_path=None):
     study,audit_path,engine_path,output=map(lambda p:Path(p).resolve(),[study,audit_path,engine_path,output])
     if output.parent!=JOBS.resolve() or output.exists():raise ValueError('Fresh scene-region-jobs review directory required')
     if not isinstance(label,str) or not 1<=len(label.strip())<=120:raise ValueError('Review label required')
     scene,actor,audit=verified_study(study,audit_path,engine_path)
+    support_regions=read(study/'protocol.json').get('preserve_support_regions',[])
+    support=None
+    if support_regions:
+        support=support_assessment(read(support_path) if support_path is not None else None,support_regions,sha256(study/'result.json'))
+    elif support_path is not None:raise ValueError('Fit did not request preserved supports')
     if rates_path is not None:
         rates_path=Path(rates_path).resolve()
         if read(rates_path)['result_sha256']!=sha256(study/'result.json'):raise ValueError('Joint-rate report belongs to another fit')
     skin=dict(np.load(ASSET,allow_pickle=False));summary=audit_summary(audit)
     if rates_path is not None:include_rate_diagnostics(summary,read(rates_path))
+    if support is not None:
+        summary['preserved_support']=support
+        if not support['sampled_point_preservation_passed']:summary['motion_regressions'].append('preserved_support_drift')
     output.mkdir(parents=True);scenes=[]
     for version,motion_file in [('source','source-motion.npz'),('candidate','motion.npz')]:
         folder=output/version;folder.mkdir()
@@ -76,6 +98,8 @@ def build(study,audit_path,engine_path,output,label,rates_path=None):
         note=('Preserved original input.' if version=='source' else
               ('Sampled contact/clearance pass.' if summary['contact_geometry_passed'] else 'Contact or clearance checks fail.'))
         note+=' Developer review pending; no motion-quality approval.'
+        if version=='candidate' and support is not None:
+            note+=' Support-point preservation '+('passes sampled checks.' if support['sampled_point_preservation_passed'] else 'fails sampled checks.')
         scenes.append(dict(id=version,label=label.strip()+' · '+version.title(),variants=dict(palm=version+'.json'),review_note=note,
                            downloads=[dict(label='Animated GLB',path=version+'/actor.glb'),
                                       dict(label='Native motion',path=version+'/motion.npz'),
@@ -84,6 +108,9 @@ def build(study,audit_path,engine_path,output,label,rates_path=None):
     if rates_path is not None:
         shutil.copyfile(rates_path,output/'joint-rates.json')
         for row in scenes:row['downloads'].append(dict(label='Per-joint and boundary rates',path='joint-rates.json'))
+    if support_path is not None:
+        shutil.copyfile(support_path,output/'support-audit.json')
+        for row in scenes:row['downloads'].append(dict(label='Source support-point drift',path='support-audit.json'))
     shutil.copyfile(audit_path,output/'geometry-audit.json');shutil.copyfile(engine_path,output/'engine-audit.json')
     shutil.copyfile(ROOT/'vendor/kimodo/LICENSE',output/'SOMA-preview-LICENSE.txt')
     save(output/'manifest.json',dict(scenes=scenes,quality_approved=False,review_mode='unblinded_developer_comparison'))
@@ -100,4 +127,5 @@ if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('study',type=Path);p.add_argument('audit',type=Path);p.add_argument('engine',type=Path)
     p.add_argument('output',type=Path);p.add_argument('--label',required=True)
     p.add_argument('--rates',type=Path)
-    a=p.parse_args();build(a.study,a.audit,a.engine,a.output,a.label,a.rates)
+    p.add_argument('--support',type=Path)
+    a=p.parse_args();build(a.study,a.audit,a.engine,a.output,a.label,a.rates,a.support)

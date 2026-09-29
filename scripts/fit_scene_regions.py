@@ -20,7 +20,7 @@ from scene_constraints import evaluate
 from action_worker_lock import worker_lock
 
 
-def run(scene_path,actor,ids,output,stages=3,iterations=40,seconds=600,region_loss='worst',full_object_skin=False,object_constraint_mode='maximum',region_constraint_mode='penalty',initialization=None,witness_mode='frozen',object_clearance_margin_m=0.,contact_gap_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False):
+def run(scene_path,actor,ids,output,stages=3,iterations=40,seconds=600,region_loss='worst',full_object_skin=False,object_constraint_mode='maximum',region_constraint_mode='penalty',initialization=None,witness_mode='frozen',object_clearance_margin_m=0.,contact_gap_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=()):
     if root_coordinate_mode not in ["legacy","scaled_initial","physical_box"]:raise ValueError("Unknown root coordinate mode")
     if type(seconds) not in [int,float] or not np.isfinite(seconds) or seconds<=0:
         raise ValueError('Positive finite time budget required')
@@ -68,7 +68,7 @@ def run(scene_path,actor,ids,output,stages=3,iterations=40,seconds=600,region_lo
     save(output/'protocol.json',dict(at=now(),solver_version=14,actor=actor,contact_ids=ids,inputs=inputs,
         implementation=hashes,stages=stages,iterations=iterations,seconds_budget=seconds,region_loss=region_loss,full_object_skin=full_object_skin,object_constraint_mode=object_constraint_mode,region_constraint_mode=region_constraint_mode,witness_mode=witness_mode,object_clearance_margin_m=object_clearance_margin_m,contact_gap_margin_m=contact_gap_margin_m,initialization=str(initialization) if initialization is not None else None,
         export_rate_guard=export_rate_guard,export_acceleration_margin_fraction=export_acceleration_margin_fraction,
-        skin_backend=skin_backend,root_coordinate_mode=root_coordinate_mode,shared_pose=shared_pose,source_relative_bounds=True,config=CONFIG,quality_approved=False,
+        skin_backend=skin_backend,root_coordinate_mode=root_coordinate_mode,shared_pose=shared_pose,preserve_support_regions=list(preserve_support_regions),source_relative_bounds=True,config=CONFIG,quality_approved=False,
         scope='Whole-clip source-relative bounded edits. Region witnesses fixed per stage; optional reselection logged. No release guard added implicitly, no partner solve or feasibility guarantee.'))
     started=time.monotonic();history=[]
     def progress(row):
@@ -81,7 +81,7 @@ def run(scene_path,actor,ids,output,stages=3,iterations=40,seconds=600,region_lo
             objective=RegionObjective(package,source,skin,region_loss,region_constraint_mode,witness_mode,contact_gap_margin_m)
             result,recipe=refine(source,source,skin,progress,source,package['anchor_subproblem'],context,
                 finger_edits=True,physical_finger_parameters=True,object_inequalities=True,
-                outer_stage_count=stages,region_fitting=objective,iteration_count=iterations,full_object_skin=full_object_skin,object_constraint_mode=object_constraint_mode,warm_start=warm_start,object_clearance_margin_m=object_clearance_margin_m,export_rate_guard=export_rate_guard,export_acceleration_margin_fraction=export_acceleration_margin_fraction,skin_backend=skin_backend,root_coordinate_mode=root_coordinate_mode,shared_pose=shared_pose)
+                outer_stage_count=stages,region_fitting=objective,iteration_count=iterations,full_object_skin=full_object_skin,object_constraint_mode=object_constraint_mode,warm_start=warm_start,object_clearance_margin_m=object_clearance_margin_m,export_rate_guard=export_rate_guard,export_acceleration_margin_fraction=export_acceleration_margin_fraction,skin_backend=skin_backend,root_coordinate_mode=root_coordinate_mode,shared_pose=shared_pose,preserve_support_regions=preserve_support_regions)
         for path,digest in inputs.items():
             if sha256(path)!=digest:raise ValueError('Fitting input changed')
         for name,digest in hashes.items():
@@ -125,4 +125,5 @@ if __name__=='__main__':
     p.add_argument('--skin-backend',choices=['gather','sparse'],default='gather')
     p.add_argument('--root-coordinate-mode',choices=['legacy','scaled_initial','physical_box'],default='legacy')
     p.add_argument('--shared-pose',action='store_true',help='Diagnostic only: one pose across an exactly repeated source and frozen single-actor scene')
-    a=p.parse_args();run(a.scene,a.actor,a.contact,a.output,a.stages,a.iterations,a.seconds,a.region_loss,a.full_object_skin,a.object_constraint_mode,a.region_constraint_mode,a.initialization,a.witness_mode,a.object_clearance_margin_m,a.contact_gap_margin_m,a.export_rate_guard,a.export_acceleration_margin_fraction,a.skin_backend,a.root_coordinate_mode,a.shared_pose)
+    p.add_argument('--preserve-support',action='append',default=[],help='Preserve an inferred support region within the existing point tolerance on its active frames')
+    a=p.parse_args();run(a.scene,a.actor,a.contact,a.output,a.stages,a.iterations,a.seconds,a.region_loss,a.full_object_skin,a.object_constraint_mode,a.region_constraint_mode,a.initialization,a.witness_mode,a.object_clearance_margin_m,a.contact_gap_margin_m,a.export_rate_guard,a.export_acceleration_margin_fraction,a.skin_backend,a.root_coordinate_mode,a.shared_pose,a.preserve_support)
