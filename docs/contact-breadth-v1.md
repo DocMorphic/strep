@@ -43,3 +43,6 @@ At the time this protocol was published, the numerical batch was running. No fin
 
 
 First completed case: [wave seed 11](contact-breadth-wave-v1.md) passes all 81 pin samples, full-floor preservation and 284 engine pose observations, but retains a 7.5980e-7 m/s approach-speed excess. The fixed root repair rejects an infeasible extra-margin subproblem. A retained-data diagnosis separates that stronger search target from the original limits. Seven cases remain pending; the original batch continues unchanged.
+
+
+Second completed case: [crawl seed 11](contact-breadth-crawl-v1.md) misses four pin samples despite passing point-rate ceilings. Its 5.007995 mm horizontal residual proves that root height alone cannot repair the retained pose to 5 mm. Support/pose regressions and a tiny raw floor difference remain; 284 engine observations pass. Six cases remain pending; the unchanged batch is now fitting kick seed 11.
