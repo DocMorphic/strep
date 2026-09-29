@@ -1,5 +1,7 @@
 # One project-wide goal: release-ready Strep
 
+Latest composition evidence: [repeated carrier edits and duration bounds](carrier-edit-chain-v1.md) pass 1,343 engine observations through retime/trim/second carry. Three reproduced boundary defects are repaired: source reopening, float32 endpoint overflow and residual reverse updates. The final 3/901-frame engine study passes 1,912 observations; 72 focused tests pass. Physics-release limits stay unchanged, and all fourteen capabilities remain unapproved.
+
 Latest scene authoring: [object-relative carrying](scene-carrier-v1.md) lets Studio carry an existing actor clip with a translating/rotating object. The full mesh retains relative motion within 0.076 micrometres across 717 samples; 407 Godot observations pass. A real Studio job reproduces engine-tested files exactly and retains source/candidate review. Twenty-seven Python tests and the offline editor check pass. Existing relative foot motion, balance, transitions and human quality remain unapproved.
 
 Latest timing-quality evidence: [exported support and joint-rate review](scene-timing-support-v1.md) now accompanies Studio trim/speed edits. Three development scenes cover 2,628 matched actor samples: faster release raises slide p95 from 0.04350 to 0.06489 m/s; slower paired motion retains 11.96 mm floor penetration. Fifteen tests and a real Studio object-scene job pass workflow checks. These measurements expose remaining defects; all fourteen capabilities remain unapproved.

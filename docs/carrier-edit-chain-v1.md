@@ -1,0 +1,19 @@
+# Repeated scene edits and duration boundaries
+
+A carried scene now has measured coverage through **retime → trim → carry again**. The development workflow retimes 180 frames to 241, trims frames 30–210 to 181 frames, then applies another carry at reference frame 90. Each step uses the actual Studio metadata, immutable preparation, worker, regenerated scene evaluation and downloads.
+
+Godot passes **1,343 pose observations** across those outputs: 533 after retiming, 405 after trimming and 405 after the second carry. The retimed scene retains two authored events; trimming excludes both events because they fall outside the retained range. Maximum actor/object matrix discrepancies are below **8.24e-7 / 2.33e-7**. Automatic playback, reverse ordering, mutation rejection and unload pass. Evidence is retained in `reports/carrier-edit-chain-v1` with implementation snapshots. No additional support or naturalness approval follows from successful composition.
+
+Studio now identifies actor exports containing carrier metadata. Selecting carry again explains that it **adds another motion rather than replacing the previous carry**. Starting from a scene without carrier motion is the way to replace that operation. The hint avoids presenting an old reference-frame number as belonging to the current clip after trimming or retiming. Offline editor checks cover the hint and switching actors; browser rendering remains unverified.
+
+## Boundary defects found and repaired
+
+1. A valid three-frame trim could be saved but not reopened because the shared scene loader enforced physics-release limits of 4–900 frames. Timing/carry authoring now explicitly selects its 3–901-frame range. Physics-release consumers retain their original limits.
+2. Expanding a three-frame clip to 901 frames could produce a float32 terminal key just over 30 seconds. Export timing now normalizes against the decoded source duration using float64 arithmetic before writing float32 keys. Cubic derivatives use that same scale. Curve comparisons use both decoded endpoints and record the effective time scale alongside the nominal frame ratio.
+3. Reverse playback of a short clip could leave a tiny positive remainder at zero, causing one extra update. The runtime snaps times within 1e-12 seconds of either finite endpoint. The verifier now checks the expected timestamp sequence and duration-appropriate observation count, including the final clamped step; it rejects missing or duplicate terminal updates.
+
+The original rejected source, failed upper-bound job and failed engine verification remain in `reports/scene-timing-limits-v1`. A repaired real Studio job exports exactly 30 seconds of poses, reopens at 901 frames, and accepts a subsequent minimum-duration edit request. Both boundary scenes are still rejected by the default physics-release loader, as intended.
+
+The final engine comparison in `reports/scene-timing-limits-engine-v2` reuses byte-identical animation, native motion, scene and event data while repackaging the corrected runtime. **1,912 pose observations pass**: 23 for the three-frame scene and 1,889 for the 901-frame scene. Both authored events, four callback mutation rejections, transport, reverse playback and unload pass. Maximum actor/object discrepancies are below **7.24e-7 / 1.20e-7**. Pose duration at the upper boundary is 30 seconds; the runtime retains its separate one-frame terminal hold.
+
+Seventy-two distinct focused Python tests pass, plus the offline Node editor check. These include physics-release regressions, timing preflight, LINEAR/STEP/CUBICSPLINE endpoint handling, carry transforms, desktop preservation and strict finite-clock checks. These boundary cases are correctness fixtures, not examples of natural animation at extreme speed ratios. All fourteen release capabilities remain unapproved; moving support correction, physical reactions, attachment transitions and independent review remain open.

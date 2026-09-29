@@ -42,3 +42,6 @@ assert(!el('Actor').disabled);assert(el('Speed').disabled);assert(!el('CarryFiel
 el('Reference').value=180;await el('Apply').onclick();assert.equal(posted,null);
 el('Reference').value=37;await el('Apply').onclick();for(let i=0;i<5;i++)await new Promise(r=>setImmediate(r));
 assert.equal(posted.operation,'carry');assert.equal(posted.actor,'A');assert.equal(posted.object,'platform');assert.equal(posted.reference_frame,37);assert.equal(posted.frames,undefined);
+
+source.actors_with_carrier_motion=['A'];await privateEditor.bind(source.source_url);el('Mode').value='carry';el('Mode').events.input();
+assert.match(el('CarryNote').textContent,/does not replace/);el('Actor').value='B';el('Actor').events.input();assert.equal(el('CarryNote').textContent,'');

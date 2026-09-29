@@ -24,7 +24,7 @@ METHODS = ['carry_scene_actor.py','audit_scene_timing.py','rig_asset.py','retime
 
 
 def source(url):
-    data = source_metadata(url, allow_native_runs=True, allow_actor_only=True)
+    data = source_metadata(url, allow_native_runs=True, allow_actor_only=True,frame_limits=(3,901))
     scene = data['bundle']['scene']
     for actor in scene['actors'].values():
         if actor.get('source_sha256') != sha256(ROOT/actor['motion']):
@@ -50,8 +50,16 @@ def source(url):
 
 def metadata(url):
     data = source(url); scene = data['bundle']['scene']
+    from gltf_tools import read_glb
+    carried=[]
+    for name,actor in scene['actors'].items():
+        path=(data['base']/actor['preview_glb']).resolve()
+        document,_=read_glb(path)
+        if sha256(path)!=data['files'][path]:raise ValueError('Actor export changed while reading carry metadata')
+        extras=document.get('extras')
+        if isinstance(extras,dict) and isinstance(extras.get('strep_carrier'),dict):carried.append(name)
     return dict(source_url=url, revision=data['trim_revision'], frames=scene['frame_count'],
-                actors=len(scene['actors']), objects=len(scene['objects']),actor_ids=list(scene['actors']),object_ids=list(scene['objects']))
+                actors=len(scene['actors']), objects=len(scene['objects']),actor_ids=list(scene['actors']),object_ids=list(scene['objects']),actors_with_carrier_motion=carried)
 
 
 def validate(payload):

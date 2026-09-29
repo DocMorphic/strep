@@ -335,7 +335,11 @@
         "docs/scene-carrier-v1.md",
         "reports/scene-carrier-v1/completion.json",
         "reports/studio-carrier-v1/completion.json",
-        "reports/studio-carrier-v1/final-preflight.json"
+        "reports/studio-carrier-v1/final-preflight.json",
+        "docs/carrier-edit-chain-v1.md",
+        "reports/carrier-edit-chain-v1/completion.json",
+        "reports/scene-timing-limits-v1/source-bounds-verification.json",
+        "reports/scene-timing-limits-engine-v2/completion.json"
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
@@ -1025,7 +1029,11 @@
         "docs/scene-carrier-v1.md",
         "reports/scene-carrier-v1/completion.json",
         "reports/studio-carrier-v1/completion.json",
-        "reports/studio-carrier-v1/final-preflight.json"
+        "reports/studio-carrier-v1/final-preflight.json",
+        "docs/carrier-edit-chain-v1.md",
+        "reports/carrier-edit-chain-v1/completion.json",
+        "reports/scene-timing-limits-v1/source-bounds-verification.json",
+        "reports/scene-timing-limits-engine-v2/completion.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1810,7 +1818,11 @@
         "docs/scene-carrier-v1.md",
         "reports/scene-carrier-v1/completion.json",
         "reports/studio-carrier-v1/completion.json",
-        "reports/studio-carrier-v1/final-preflight.json"
+        "reports/studio-carrier-v1/final-preflight.json",
+        "docs/carrier-edit-chain-v1.md",
+        "reports/carrier-edit-chain-v1/completion.json",
+        "reports/scene-timing-limits-v1/source-bounds-verification.json",
+        "reports/scene-timing-limits-engine-v2/completion.json"
       ],
       "remaining": [
         "Extend GPU/rendered world-placement validation beyond144sampled silhouettes: materials, hidden surfaces, intermediate times, more rigs/backends and gameplay physics.",
@@ -2116,7 +2128,11 @@
         "docs/scene-carrier-v1.md",
         "reports/scene-carrier-v1/completion.json",
         "reports/studio-carrier-v1/completion.json",
-        "reports/studio-carrier-v1/final-preflight.json"
+        "reports/studio-carrier-v1/final-preflight.json",
+        "docs/carrier-edit-chain-v1.md",
+        "reports/carrier-edit-chain-v1/completion.json",
+        "reports/scene-timing-limits-v1/source-bounds-verification.json",
+        "reports/scene-timing-limits-engine-v2/completion.json"
       ],
       "remaining": [
         "Extend GPU/rendered world-placement validation beyond144sampled silhouettes: materials, hidden surfaces, intermediate times, more rigs/backends and gameplay physics.",
@@ -2837,6 +2853,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T14:46:52.013650+00:00",
-  "last_progress": "Studio can carry an existing actor clip with a moving rigid object while retaining original relative animation. A translating/lifting/rotating platform fixture passes 717 full-mesh relative comparisons and 407 Godot observations; actual Studio output matches engine-tested files. 27 distinct Python tests and offline Node editor checks pass. Relative foot movement, physical balance, attachment transitions and human quality remain unapproved; all fourteen capabilities open."
+  "last_progress_at": "2026-09-29T15:03:19.100538+00:00",
+  "last_progress": "Real carried-scene retime/trim/second-carry chain passes 1,343 Godot observations. Fixed source-range mismatch, float32 30-second endpoint overflow and reverse endpoint residue; repaired 3/901-frame packages pass 1,912 engine observations. 72 focused tests and offline editor check pass; original failures retained. Physics-release limits unchanged; all fourteen capabilities remain unapproved."
 }

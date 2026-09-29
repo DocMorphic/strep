@@ -200,7 +200,7 @@ func advance(seconds: float) -> Error:
 	if seconds==0: return OK
 	updating=true
 	var before:=time_s;var increment:=seconds-correction;var raw:=before+increment
-	var after:=minf(raw,duration_s);correction=(raw-before)-increment if after<duration_s else 0.0
+	var after:=duration_s if raw>=duration_s-1e-12 else raw;correction=(raw-before)-increment if after<duration_s else 0.0
 	for event in markers:
 		var at:=float(event.frame)/30.0
 		if at>before and at<=after:
@@ -218,7 +218,7 @@ func rewind(seconds: float, notifications: bool=false) -> Error:
 	if seconds==0: return OK
 	updating=true
 	var before:=time_s;var increment:=-seconds-correction;var raw:=before+increment
-	var after:=maxf(0.0,raw);correction=(raw-before)-increment if after>0 else 0.0
+	var after:=0.0 if raw<=1e-12 else raw;correction=(raw-before)-increment if after>0 else 0.0
 	if notifications:
 		for i in range(markers.size()-1,-1,-1):
 			var event: Dictionary=markers[i];var at:=float(event.frame)/30.0

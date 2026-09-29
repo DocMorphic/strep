@@ -23,6 +23,15 @@ def placement(value):
     matrix=np.eye(4);matrix[:3,:3]=Rotation.from_quat(value['rotation_xyzw']).as_matrix();matrix[:3,3]=value['translation_m'];return matrix
 
 
+def automatic_clock_passed(times,duration,step,reverse=False):
+    """Check exact update prefixes and terminal clamping, including short clips."""
+    steps=int(np.ceil(duration/step-1e-10))
+    if not min(10,steps)<=len(times)<=min(14,steps):return False
+    distance=np.arange(1,len(times)+1)*step
+    expected=np.maximum(duration-distance,0) if reverse else np.minimum(distance,duration)
+    return bool(np.allclose(times,expected,rtol=0,atol=1e-10))
+
+
 def verify(request,actual,output):
     checks=[];parent=np.eye(4);parent[:3,:3]=Rotation.from_euler('y',-.3).as_matrix();parent[:3,3]=[-1,.2,2]
     assert len(actual['cases'])==len(request['cases'])
@@ -52,7 +61,7 @@ def verify(request,actual,output):
         events_ok &= all(abs(e['time_s']-e['frame']/30)<1e-12 and abs(e['observed_at_s']-e['observed']['time_s'])<1e-12 for e in fwd+rev)
         auto=[r['time_s'] for r in case['records'] if r['stage']=='automatic-forward']
         back=[r['time_s'] for r in case['records'] if r['stage']=='automatic-reverse']
-        automation=bool(len(auto)>=10 and len(back)>=10 and np.allclose(np.diff(auto),1/60,rtol=0,atol=1e-10) and np.allclose(np.diff(back),-2/60,rtol=0,atol=1e-10) and case['paused_time_unchanged'] and case['automatic_reverse_silent'])
+        automation=bool(automatic_clock_passed(auto,data['frames']/30,1/60) and automatic_clock_passed(back,data['frames']/30,2/60,True) and case['paused_time_unchanged'] and case['automatic_reverse_silent'])
         passed=bool(max(actor_errors.values())<1e-4 and max(object_errors.values(),default=0)<1e-5 and events_ok and automation and case['silent_preview'] and case['no_terminal_repeat'] and case['unloaded'] and case['invalid_unchanged'] and all(case['invalid']) and all(e==44 for e in case['reentrant_errors']) and len([r for r in case['records'] if r['stage']=='forward'])==data['frames']*2+1)
         checks.append(dict(id=item['id'],passed=passed,actor_matrix_errors=actor_errors,object_matrix_errors=object_errors,pose_observations=len(records),event_order_passed=bool(events_ok),authored_events=len(expected),automatic_playback_passed=automation,callback_mutations_rejected=len(case['reentrant_errors']),unloaded=case['unloaded']))
     controls=actual['controls']

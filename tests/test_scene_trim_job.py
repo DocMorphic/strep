@@ -31,6 +31,19 @@ def test_actor_only_trim_does_not_enable_object_release_without_objects():
     with pytest.raises(ValueError):source_metadata(URL,allow_native_runs=True)
 
 
+def test_three_frame_output_can_be_edited_but_not_used_for_physics_release():
+    url='/files/scene-trim-jobs/three-frame-carried-v1/scene.json'
+    data=metadata(url)
+    assert data['frames']==3 and data['actors_with_carrier_motion']==['A']
+    with pytest.raises(ValueError,match='4–900'):source_metadata(url,allow_native_runs=True)
+
+
+@pytest.mark.parametrize('limits',[(2,900),(3,902),(True,900),(901,3),[3,901]])
+def test_source_frame_limit_override_must_stay_in_native_timing_range(limits):
+    with pytest.raises(ValueError,match='frame limits'):
+        source_metadata(URL,allow_native_runs=True,allow_actor_only=True,frame_limits=limits)
+
+
 @pytest.mark.parametrize('change',[{'revision':'old'},{'first':True},{'last':21},{'last':10000},{'label':''}])
 def test_bad_request_does_not_create_output(folder,change):
     p=payload();p.update(change)

@@ -76,11 +76,14 @@ def retime_export(path, source_frames, target_frames):
     source=AnimationSampler(doc,binary,0)
     if abs(source.duration-(source_frames-1)/30)>1e-5:
         raise ValueError('Export clock differs from native scene duration')
+    # Normalize the decoded source endpoint before float32 export. Multiplying
+    # a rounded native endpoint directly can exceed the 30-second limit.
+    scale=((target_frames-1)/30)/source.duration
     result=copy.deepcopy(doc);buffer=bytearray(binary);inputs={};outputs={}
     for item in result['animations'][0]['samplers']:
         clock=item['input'];values=item['output']
         if clock not in inputs:
-            inputs[clock]=append_accessor(result,buffer,accessor(doc,binary,clock)*scale,'SCALAR')
+            inputs[clock]=append_accessor(result,buffer,accessor(doc,binary,clock).astype(float)*scale,'SCALAR')
         item['input']=inputs[clock]
         if item.get('interpolation','LINEAR')=='CUBICSPLINE':
             if values not in outputs:
@@ -130,18 +133,20 @@ def curve_audit(original, retimed, source_frames, target_frames):
     source_doc,source_binary=read_glb(original);doc,binary=retimed
     a=AnimationSampler(source_doc,source_binary,0);b=AnimationSampler(doc,binary,0)
     scale=frame_scale(source_frames,target_frames)
-    time=np.arange((source_frames-1)*4+1)/120
+    time=np.linspace(0,a.duration,(source_frames-1)*4+1)
+    target_time=np.linspace(0,b.duration,len(time))
     first=np.array([a.sample(float(t)) for t in time])
-    second=np.array([b.sample(float(t*scale)) for t in time])
+    second=np.array([b.sample(float(t)) for t in target_time])
     error=float(np.abs(first-second).max())
     if error>1e-5:raise ValueError('Retimed export differs from source curve')
     peaks={}
-    for name,world,dt in [('source',first,1/120),('retimed',second,scale/120)]:
+    for name,world,dt in [('source',first,a.duration/(len(time)-1)),('retimed',second,b.duration/(len(time)-1))]:
         positions=world[:,:,:3,3]
         speed=np.linalg.norm(np.diff(positions,axis=0)/dt,axis=-1)
         acceleration=np.linalg.norm(np.diff(positions,n=2,axis=0)/dt**2,axis=-1)
         peaks[name]=dict(peak_node_speed_m_s=float(speed.max()),peak_node_acceleration_m_s2=float(acceleration.max()))
     return dict(source_curve_samples=len(time),maximum_matrix_error=error,rates=peaks,
+                source_export_duration_s=a.duration,target_export_duration_s=b.duration,decoded_time_scale=b.duration/a.duration,
                 expected_speed_multiplier=1/scale,expected_acceleration_multiplier=1/scale**2,
                 dynamics_approved=False,
                 scope='Same-phase decoded export comparison; rates over node origins. Retiming preserves the path but scales velocity and acceleration. Gravity, force, balance and collision safety are not re-simulated or approved.')

@@ -23,7 +23,7 @@ def name_check(name):
     if not isinstance(name,str) or not re.fullmatch('[A-Za-z][A-Za-z0-9_-]{0,63}',name) or name.upper() in ['CON','PRN','AUX','NUL',*[f'COM{i}' for i in range(10)],*[f'LPT{i}' for i in range(10)]]:raise ValueError('Unsafe actor/object identifier')
 
 
-def source_metadata(url,*,allow_native_runs=False,allow_actor_only=False):
+def source_metadata(url,*,allow_native_runs=False,allow_actor_only=False,frame_limits=(4,900)):
     from action_studio_server import allowed_file
     if not isinstance(url,str) or not url.startswith('/files/') or '?' in url or '#' in url:raise ValueError('Select a saved scene')
     path=allowed_file(url)
@@ -33,7 +33,9 @@ def source_metadata(url,*,allow_native_runs=False,allow_actor_only=False):
     scene=bundle.get('scene')
     if not isinstance(scene,dict) or scene.get('fps')!=30 or scene.get('schema_version')!=1:raise ValueError('Saved 30fps scene required')
     frames=scene.get('frame_count')
-    if type(frames)!=int or not 4<=frames<=900:raise ValueError('Scene must contain 4–900 frames')
+    if not isinstance(frame_limits,tuple) or len(frame_limits)!=2 or any(type(n) is not int for n in frame_limits) or not 3<=frame_limits[0]<=frame_limits[1]<=901:
+        raise ValueError('Invalid source frame limits')
+    if type(frames)!=int or not frame_limits[0]<=frames<=frame_limits[1]:raise ValueError(f'Scene must contain {frame_limits[0]}–{frame_limits[1]} frames')
     base=None
     for parent in path.parents:
         if parent==ROOT/'reports':break

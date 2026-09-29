@@ -51,6 +51,24 @@ def test_invalid_target_clock_rejected(frames):
     with pytest.raises(ValueError):frame_scale(10,frames)
 
 
+@pytest.mark.parametrize('mode',['LINEAR','STEP','CUBICSPLINE'])
+def test_thirty_second_endpoint_does_not_overflow_from_float32_source_clock(tmp_path,mode):
+    from retime_scene import curve_audit
+    doc=dict(asset=dict(version='2.0'),nodes=[dict(name='root')],scenes=[dict(nodes=[0])],scene=0,buffers=[{}],bufferViews=[],accessors=[])
+    binary=bytearray();times=append_accessor(doc,binary,[0,1/30,2/30],'SCALAR')
+    positions=np.array([[0,0,0],[1,1,0],[2,0,0]],dtype=float)
+    values=positions if mode!='CUBICSPLINE' else np.stack([np.zeros((3,3)),positions,np.zeros((3,3))],axis=1).reshape(-1,3)
+    output=append_accessor(doc,binary,values,'VEC3')
+    doc['animations']=[dict(channels=[dict(sampler=0,target=dict(node=0,path='translation'))],samplers=[dict(input=times,output=output,interpolation=mode)])]
+    path=tmp_path/'source.glb';write_glb(path,doc,binary)
+    result,data=retime_export(path,3,901);sampler=AnimationSampler(result,data,0)
+    assert sampler.duration==30
+    audit=curve_audit(path,(result,data),3,901)
+    assert audit['maximum_matrix_error']<1e-5
+    assert audit['target_export_duration_s']==30
+    np.testing.assert_allclose(sampler.sample(30)[0,:3,3],positions[-1])
+
+
 @pytest.mark.parametrize('fault',['frame','time','fps','contact'])
 def test_invalid_source_clock_rejected(fault):
     scene,events=fixture()
