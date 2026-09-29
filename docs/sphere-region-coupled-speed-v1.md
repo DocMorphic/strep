@@ -49,3 +49,5 @@ Existing local fixtures and separately acquired licensed dependencies are requir
 .venv\Scripts\python.exe scripts/audit_region_grasp_track.py reports/sphere-region-track-v2 reports/new-speed-audit --approach-patch reports/sphere-region-approach-v1 --floor-patch reports/sphere-region-floor-v1 --release-patch reports/sphere-region-release-v1 --spatial-patch reports/sphere-region-spatial-v1 --coupled-patch reports/new-speed-fit
 .venv\Scripts\python.exe scripts/audit_region_boundary_rates.py reports/new-speed-audit reports/new-speed-boundaries
 ```
+
+Follow-up: [per-joint angular preservation](sphere-region-coupled-angular-v1.md) passes all 88 comparisons while retaining both passing hand-speed and all grasp/geometry checks; later acceleration remains unresolved.

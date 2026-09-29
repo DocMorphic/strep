@@ -8,6 +8,7 @@ import psutil
 import torch
 from scipy.optimize import least_squares
 from scipy.sparse import csr_matrix
+from scipy.spatial.transform import Rotation
 from threadpoolctl import threadpool_limits
 from strep import ROOT,read,save,sha256,now
 from build_soma_preview import ASSET
@@ -17,6 +18,7 @@ from grasp_contact_binding import apply_region_binding
 from support_contact_v8 import bounded_rotation,rodrigues
 from region_grasp_track import arm_columns
 from sphere_approach import set_problem_frame
+from angular_join import angular_steps
 
 
 def second_difference_matrix(count):
@@ -43,6 +45,13 @@ class CoupledWindow:
         self.arms=[problems[0].names.index(side+n) for side in ['Left','Right'] for n in ['Shoulder','Arm','ForeArm','Hand']]
         self.support=list(range(frames[0]-2,frames[-1]+3)); self.difference=second_difference_matrix(len(self.support))
         self.initial=np.concatenate([inverse_rotation_bound(v[self.columns].reshape(-1,3),self.limits).ravel() for v in fixed])
+        if settings.get('preserve_angular_joins'):
+            local=source['local_rot_mats'][self.support][:,self.arms]
+            rates=np.array([(Rotation.from_matrix(local[i]).inv()*Rotation.from_matrix(local[i+1])).as_rotvec()*30 for i in range(len(local)-1)])
+            caps=np.linalg.norm(np.diff(rates,axis=0),axis=-1)
+            settings['angular_join_frames']=self.support[1:-1]
+            settings['source_angular_join_caps_rad_s']=caps.tolist()
+            settings['fitting_angular_join_caps_rad_s']=(caps*.99).tolist()
         self.specs=[]
         self.anchor_support=[]
         for frame in self.support:
@@ -143,12 +152,22 @@ class CoupledWindow:
                         speed_jac.append(row)
             residual.append(np.array(speed_residual))
             if jacobian:jac.append(np.array(speed_jac))
+        if self.settings.get('preserve_angular_joins'):
+            tensor=torch.as_tensor(local.reshape(len(self.support),8,3,3),dtype=torch.float64).requires_grad_()
+            caps=torch.as_tensor(self.settings['fitting_angular_join_caps_rad_s'],dtype=torch.float64)
+            def angular_residual(matrices):return (torch.relu(angular_steps(matrices)-caps)/self.settings['angular_join_scale_rad_s']).ravel()
+            residual.append(angular_residual(tensor).detach().numpy())
+            if jacobian:
+                derivative=torch.autograd.functional.jacobian(angular_residual,tensor,vectorize=True).detach().numpy().reshape(caps.numel(),len(self.support),72)
+                full=np.zeros((caps.numel(),len(flat)))
+                for i,frame in enumerate(self.frames):full[:,i*width:(i+1)*width]=derivative[:,self.support.index(frame)]@local_jac[i]
+                jac.append(full)
         residual.append(self.settings['regularization']*(flat-self.initial))
         if jacobian: jac.append(self.settings['regularization']*np.eye(len(flat)))
         return np.concatenate(residual),np.concatenate(jac) if jacobian else None
 
 
-def run(spatial_report,output,cartesian_curvature_scale_m=None,release_speed_reserve_m_s=None):
+def run(spatial_report,output,cartesian_curvature_scale_m=None,release_speed_reserve_m_s=None,preserve_angular_joins=False):
     if cartesian_curvature_scale_m is not None and (not np.isfinite(cartesian_curvature_scale_m) or cartesian_curvature_scale_m<=0): raise ValueError('Positive finite Cartesian curvature scale required')
     if release_speed_reserve_m_s is not None and (not np.isfinite(release_speed_reserve_m_s) or release_speed_reserve_m_s<=0): raise ValueError('Positive finite speed reserve required')
     torch.set_num_threads(2);spatial_report,output=Path(spatial_report).resolve(),Path(output).resolve()
@@ -169,15 +188,16 @@ def run(spatial_report,output,cartesian_curvature_scale_m=None,release_speed_res
         for binding,region in zip(protocol['contact_bindings'],protocol['region_protocols']):apply_region_binding(p,binding['hand'],binding['anchor'],region['patch'])
         problems.append(p)
     settings=dict(release_frame=endpoint,active_point_scale_m=.00002,active_direction_scale=.001,release_point_scale_m=.005,release_direction_scale=.05,
-                  geometry_scale_m=.00005,curvature_scale=.02,cartesian_curvature_scale_m=cartesian_curvature_scale_m,release_speed_reserve_m_s=release_speed_reserve_m_s,release_speed_scale_m_s=.0005,regularization=1e-5,maximum_evaluations=20,maximum_seconds=180,maximum_rss_bytes=3*1024**3,minimum_available_bytes=1024**3)
+                  geometry_scale_m=.00005,curvature_scale=.02,cartesian_curvature_scale_m=cartesian_curvature_scale_m,release_speed_reserve_m_s=release_speed_reserve_m_s,release_speed_scale_m_s=.0005,
+                  preserve_angular_joins=preserve_angular_joins,angular_join_scale_rad_s=.001,regularization=1e-5,maximum_evaluations=20,maximum_seconds=180,maximum_rss_bytes=3*1024**3,minimum_available_bytes=1024**3)
     output.mkdir(parents=True,exist_ok=False);(output/'implementation').mkdir()
-    methods=['coupled_release.py','grasp_pose_witness.py','grasp_pose_witness_bounded.py','grasp_contact_binding.py','sphere_approach.py','region_grasp_track.py','support_contact_v8.py','support_contact_v5.py','floor_contact.py','scene_solver_context.py','object_geometry.py','inspect_motion.py']
+    methods=['coupled_release.py','angular_join.py','grasp_pose_witness.py','grasp_pose_witness_bounded.py','grasp_contact_binding.py','sphere_approach.py','region_grasp_track.py','support_contact_v8.py','support_contact_v5.py','floor_contact.py','scene_solver_context.py','object_geometry.py','inspect_motion.py']
     implementation={n:sha256(ROOT/'scripts'/n) for n in methods}
     for name in methods:shutil.copyfile(ROOT/'scripts'/name,output/'implementation'/name)
     window=CoupledWindow(problems,[parameters[f] for f in frames],source,frames,protocol,settings)
     save(output/'protocol.json',dict(at=now(),spatial_report=spatial_report.relative_to(ROOT).as_posix(),base_study=sp['base_study'],inputs=inputs,implementation=implementation,frames=frames,
          arm_columns=window.columns.tolist(),settings=settings,targets=[[[int(s[0]),s[4].tolist(),s[5].tolist(),s[6].tolist()] for s in specs] for specs in window.specs],
-         scope='Joint nine-key arm fit across grasp and release; frozen non-arm edits/root and all outside keys. Rotation/anchor curvature and optional native object-relative release speed caps are soft fitting objectives; dense exported velocity must be checked independently. Authored contact times/regions/limits unchanged; full dense contact/geometry audit required.',quality_approved=False))
+         scope='Joint nine-key arm fit across grasp and release; frozen non-arm edits/root and all outside keys. Curvature, optional native release speed and per-joint rate-step caps are soft objectives; exported preservation must be independently checked. Authored contact times/regions/limits unchanged; full dense contact/geometry audit required.',quality_approved=False))
     initial=window.initial;began=time.monotonic();res,jac=window.pair(initial)
     direction=np.random.default_rng(1891).normal(size=len(initial));direction/=np.linalg.norm(direction);h=1e-6
     fd=(window.pair(initial+h*direction,False)[0]-window.pair(initial-h*direction,False)[0])/(2*h)
@@ -213,5 +233,5 @@ def run(spatial_report,output,cartesian_curvature_scale_m=None,release_speed_res
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('spatial_report',type=Path);parser.add_argument('output',type=Path);parser.add_argument('--cartesian-curvature-scale-m',type=float);parser.add_argument('--release-speed-reserve-m-s',type=float);args=parser.parse_args()
-    with threadpool_limits(limits=2):run(args.spatial_report,args.output,args.cartesian_curvature_scale_m,args.release_speed_reserve_m_s)
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('spatial_report',type=Path);parser.add_argument('output',type=Path);parser.add_argument('--cartesian-curvature-scale-m',type=float);parser.add_argument('--release-speed-reserve-m-s',type=float);parser.add_argument('--preserve-angular-joins',action='store_true');args=parser.parse_args()
+    with threadpool_limits(limits=2):run(args.spatial_report,args.output,args.cartesian_curvature_scale_m,args.release_speed_reserve_m_s,args.preserve_angular_joins)

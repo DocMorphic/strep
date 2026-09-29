@@ -235,7 +235,7 @@ def run(study, output, approach_patch=None, floor_patch=None, release_patch=None
             if row['solver'] is None: np.testing.assert_array_equal(values,initial)
         candidate=spatial; p0=PoseProblem(folder,skin,start)
         spatial_verification=dict(report=path.relative_to(ROOT).as_posix(),result_sha256=sha256(path/'result.json'),protocol_sha256=sha256(path/'protocol.json'),protected_frames_exact=len(protected),non_arm_parameters_exact=True,native_path_and_correction_replayed=True)
-    coupled_verification=None;coupled_source=None;speed_cap_verification=None
+    coupled_verification=None;coupled_source=None;speed_cap_verification=None;angular_join_verification=None
     if coupled_patch is not None:
         if spatial_patch is None: raise ValueError('Coupled patch requires its spatial input')
         path=Path(coupled_patch).resolve(); cp,cr=read(path/'protocol.json'),read(path/'result.json')
@@ -249,6 +249,16 @@ def run(study, output, approach_patch=None, floor_patch=None, release_patch=None
         frames=list(range(end-5,end+4))
         if cp['frames']!=frames or [r['frame'] for r in cr['rows']]!=frames or cp['arm_columns']!=list(columns): raise ValueError('Coupled frame/joint scope changed')
         if len(cp['targets'])!=len(frames) or any(len(t)!=len(bindings) for t in cp['targets']): raise ValueError('Coupled guidance population changed')
+        if cp['settings'].get('preserve_angular_joins'):
+            support=list(range(frames[0]-2,frames[-1]+3));local=candidate['local_rot_mats'][support][:,arms]
+            rates=np.array([(Rotation.from_matrix(local[i]).inv()*Rotation.from_matrix(local[i+1])).as_rotvec()*30 for i in range(len(local)-1)])
+            caps=np.linalg.norm(np.diff(rates,axis=0),axis=-1)
+            if cp['settings']['angular_join_frames']!=support[1:-1]:raise ValueError('Angular preservation frame set changed')
+            np.testing.assert_allclose(cp['settings']['source_angular_join_caps_rad_s'],caps,atol=1e-12,rtol=0)
+            np.testing.assert_allclose(cp['settings']['fitting_angular_join_caps_rad_s'],caps*.99,atol=1e-12,rtol=0)
+            angular_join_verification=dict(frames=support[1:-1],joints=[p0.names[j] for j in arms],source_native_caps_rad_s=caps.tolist(),fitting_fraction=.99,
+                                           scope='Per-joint native caps verified; decoded join preservation requires the boundary-rate audit.')
+            coupled_source={k:v.copy() for k,v in candidate.items()}
         reserve=cp['settings'].get('release_speed_reserve_m_s')
         if reserve is not None:
             if not np.isfinite(reserve) or reserve<=0 or cp['settings']['release_frame']!=end: raise ValueError('Invalid coupled speed policy')
@@ -280,7 +290,7 @@ def run(study, output, approach_patch=None, floor_patch=None, release_patch=None
                 np.testing.assert_allclose(point,vertices[anchor],atol=2e-6,rtol=0);np.testing.assert_allclose(normal,n,atol=2e-5,rtol=0);np.testing.assert_allclose(tangent,direction,atol=2e-5,rtol=0)
         candidate=fitted;p0=PoseProblem(folder,skin,start)
         coupled_verification=dict(report=path.relative_to(ROOT).as_posix(),result_sha256=sha256(path/'result.json'),protocol_sha256=sha256(path/'protocol.json'),
-                                  protected_frames_exact=len(protected),non_arm_parameters_exact=True,active_grasp_modified=True,solver_status=cr['solver'],original_edit_bounds_verified=True,speed_cap_policy=speed_cap_verification)
+                                  protected_frames_exact=len(protected),non_arm_parameters_exact=True,active_grasp_modified=True,solver_status=cr['solver'],original_edit_bounds_verified=True,speed_cap_policy=speed_cap_verification,angular_join_policy=angular_join_verification)
     output.mkdir(parents=True,exist_ok=False)
     shutil.copyfile(Path(__file__),output/Path(__file__).name)
     metadata = dict(at=now(), study=study.relative_to(ROOT).as_posix(), protocol_sha256=sha256(study/'protocol.json'), result_sha256=sha256(study/'result.json'),

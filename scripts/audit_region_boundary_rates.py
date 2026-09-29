@@ -17,12 +17,26 @@ def rate_steps(local_rotations,fps):
     return np.array([(Rotation.from_matrix(local[f]).inv()*Rotation.from_matrix(local[f+1])).as_rotvec()*fps for f in range(len(local)-1)])
 
 
+def compare_joins(source,candidate,frames):
+    before={r['frame']:r for r in source};after={r['frame']:r for r in candidate};rows=[]
+    for frame in frames:
+        a={r['joint']:r['body_rate_step_difference_rad_s'] for r in before[frame]['joints']}
+        b={r['joint']:r['body_rate_step_difference_rad_s'] for r in after[frame]['joints']}
+        if a.keys()!=b.keys():raise ValueError('Join joint population mismatch')
+        for joint,value in a.items():
+            if not np.isfinite([value,b[joint]]).all() or min(value,b[joint])<0:raise ValueError('Invalid angular step')
+            rows.append(dict(frame=frame,joint=joint,source_rad_s=value,candidate_rad_s=b[joint],passed=b[joint]<=value+1e-5))
+    return dict(rows=rows,comparisons=len(rows),failure_count=sum(not r['passed'] for r in rows),comparison_allowance_rad_s=1e-5,all_passed=all(r['passed'] for r in rows))
+
+
 def run(audit,output):
     audit,output=Path(audit).resolve(),Path(output).resolve();verification=read(audit/'verification.json')
     if not verification.get('coupled_patch') or not verification.get('release_patch') or 'coupled_input' not in verification['variants']:
         raise ValueError('Audited coupled source and candidate exports required')
     protocol=read(ROOT/verification['study']/'protocol.json');count=protocol['frame_count'];end=protocol['active_interval'][1]
     boundaries=[end-6,end-5,end,end+3,end+4,verification['release_patch']['blend_end']]
+    policy=verification['coupled_patch'].get('angular_join_policy')
+    if policy is not None:boundaries=sorted(set(boundaries+policy['frames']))
     names,parents,_=skeleton_metadata(77);arms=[names.index(s+n) for s in ['Left','Right'] for n in ['Shoulder','Arm','ForeArm','Hand']]
     output.mkdir(parents=True,exist_ok=False);shutil.copyfile(Path(__file__),output/Path(__file__).name);variants={}
     for label in ['coupled_input','candidate']:
@@ -42,9 +56,11 @@ def run(audit,output):
             rows.append(dict(frame=frame,maximum_arm_rate_step_rad_s=float(step[arms].max()),worst_joint=names[arms[np.argmax(step[arms])]],
                              joints=[dict(joint=names[j],previous_speed_rad_s=float(np.linalg.norm(rates[frame-1,j])),next_speed_rad_s=float(np.linalg.norm(rates[frame,j])),body_rate_step_difference_rad_s=float(step[j])) for j in arms]))
         variants[label]=dict(glb_sha256=expected,boundaries=rows)
+    preservation=compare_joins(variants['coupled_input']['boundaries'],variants['candidate']['boundaries'],policy['frames']) if policy is not None else None
     save(output/'verification.json',dict(at=now(),source_audit=audit.relative_to(ROOT).as_posix(),source_audit_sha256=sha256(audit/'verification.json'),
-         implementation_sha256=sha256(output/Path(__file__).name),variants=variants,scope='Decoded local relative-log rate-step diagnostics, including all eight arm joints at window/release boundaries. These differences are not inertial angular acceleration or perceptual approval.',quality_approved=False))
+         implementation_sha256=sha256(output/Path(__file__).name),variants=variants,angular_join_preservation=preservation,scope='Decoded local relative-log rate-step diagnostics, including all eight arm joints at window/release boundaries. These differences are not inertial angular acceleration or perceptual approval.',quality_approved=False))
     print({label:[(r['frame'],r['maximum_arm_rate_step_rad_s']) for r in value['boundaries']] for label,value in variants.items()},flush=True)
+    if preservation is not None:print(dict(angular_comparisons=preservation['comparisons'],failures=preservation['failure_count']),flush=True)
 
 
 if __name__=='__main__':

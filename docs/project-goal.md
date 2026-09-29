@@ -1,5 +1,7 @@
 # One project-wide goal: release-ready Strep
 
+Latest development evidence: [per-joint angular preservation](sphere-region-coupled-angular-v1.md) passes all 88 arm comparisons across the fitted window, both hand-speed comparisons, 245 grasp and 717 geometry/edit-limit checks. The later torso/arm acceleration peak and broader release requirements remain. All 14 capabilities are unapproved.
+
 Latest development evidence: [per-hand release speed preservation](sphere-region-coupled-speed-v1.md) passes both exported hand-speed comparisons and retains all 245 grasp/717 geometry/edit-limit checks while improving release angular continuity. Window joins and later acceleration still regress. All 14 release capabilities remain unapproved.
 
 Latest development evidence: [coupled grasp/release fitting](sphere-region-coupled-v1.md) changes six grasp and three release keys while revalidating all 245 grasp and 717 geometry/edit-limit samples. Angular continuity improves, but hand-speed tradeoffs and nonconverged solves remain. All 14 release capabilities remain unapproved.
