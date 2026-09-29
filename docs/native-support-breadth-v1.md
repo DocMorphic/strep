@@ -17,3 +17,10 @@ The per-mode command, after acquiring the original local study data and runtime,
 Repeat into a fresh output directory with `--support-screen` for the paired arm. Substitute the declared crawl-22 and jump-land-22 input directories for the remaining pairs. Do not reuse output folders, alter inputs between arms or treat the public source repository as including the locally acquired character/model/study data.
 
 After completion, compare every screen and fit time, not just the previously failing foot metric. Any export-feedback repairs must be separate, retained follow-ups using the original budgets. A default change requires broader evidence and end-to-end Studio verification; semantic ratings and cleanup-time review remain outstanding.
+
+
+## First completed control
+
+Wave-22 control completed 379 evaluations in 247.78 seconds. All 81 authored foot-pin samples pass (2.953369 mm maximum), with zero added floor depth, no body-review flags, passing original global rate limits and exactly zero audited outside-window errors. The contact screen still fails: approach acceleration exceeds its original ceiling by 0.0000112212 m/s². Hold and release point-rate limits pass. Actual engine playback passes 284 pose observations and the authored event checks.
+
+The saved NPZ support measurements independently match the body report within 1e-10 for every measured reference/foot pair; native body peaks and all original input, current/archived method and completion hashes were verified. The result remains unapproved and does not establish the effect of the new support objective. Its matched support-enabled run is still fitting; crawling and landing pairs remain queued. Partial evidence is retained as `reports/native-support-breadth-v1/wave-control-verification.json`.
