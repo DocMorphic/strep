@@ -24,3 +24,6 @@ All 717 decoded floor samples preserve the source's per-time depth, and all 160 
 The run is reproducible with the longer command in [the sampled-pin study](checked-sampled-pins-v1.md). Numerical inputs, mesh and implementation hashes were verified throughout. Local evidence is in `reports/contact-jobs/studio-sampled-pins-convergence-v1` and `reports/studio-sampled-pins-convergence-v1`, including `comparison.json`, `verification.json` and the separate `residual-origin.json` diagnosis. The 29 focused implementation tests from the preceding change remain the relevant tested code; this result does not claim additional test executions.
 
 Next test a constrained feasibility correction from this retained candidate while keeping the original source as the reference for edit bounds and rate ceilings. Every proposed step must be rechecked against the full export constraints. Another blanket iteration increase or an acceptance-threshold change is not justified by this result. The full project and all release capabilities remain open.
+
+
+Follow-up completed: [a bounded root-height correction](checked-root-feasibility-v1.md) removes the remaining pin/rate residuals in the decoded export while preserving original budgets and floor samples. Broader support/quality failures remain; this does not approve the retained clip.

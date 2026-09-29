@@ -19,3 +19,6 @@ PyTorch's Jacobian transform supports row chunks; `chunk_size=1` computes rows w
 5. If this succeeds, repeat on predeclared development cases from other actions and then separate held-out cases; one nearly repaired get-up clip cannot validate general motion editing.
 
 The existing environment does not have CVXPY or Clarabel installed. No solver package has been installed or selected on the assumption that it would solve this problem. The prototype should first test the available numerical interfaces and reuse relevant existing correction code where its bounds and sampling match.
+
+
+Implemented experiment: [root-height feasibility repair](checked-root-feasibility-v1.md) uses the existing linear-program proposal helper and exact nonlinear rechecks in a restricted translation subspace. It clears the retained contact/rate residuals without changing caps. Full pose correction and broader action-family validation remain open; the trust-constr alternative was not adopted.

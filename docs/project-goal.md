@@ -325,3 +325,6 @@ Latest contact work: [quarter-frame pin fitting](checked-sampled-pins-v1.md) ali
 
 
 Completed convergence work: [four-stage checked-contact result](checked-contact-convergence-v1.md) reduces pin failures from 15 to 1 of 81, with a 5.00165 mm peak and a small remaining release-speed violation. All 717 floor samples preserve the source and 407 engine observations pass. Residual violations precede export, so they remain failures. Next test an explicit constrained feasibility correction; all release gates remain open.
+
+
+Latest feasibility result: [root-height constraint repair](checked-root-feasibility-v1.md) clears the retained get-up contact and point-rate failures in one 7.519-micrometre correction, with all 717 floor samples and 160 outside samples preserved. Thirty-four focused tests and 407 actual Godot observations pass. Support and motion-quality flags remain; next test complete fitting/correction on predeclared cases across other action families. Studio defaults and all release approvals remain unchanged.
