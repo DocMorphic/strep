@@ -58,3 +58,5 @@ Existing local fixtures and separately acquired licensed model/skin dependencies
 .venv\Scripts\python.exe scripts/correct_region_floor.py reports/new-approach reports/new-approach-audit reports/new-floor
 .venv\Scripts\python.exe scripts/audit_region_grasp_track.py reports/sphere-region-track-v2 reports/new-floor-audit --approach-patch reports/new-approach --floor-patch reports/new-floor
 ```
+
+Follow-up: [release return experiments](sphere-region-release-v1.md) preserve these geometry checks while measuring remaining speed/acceleration tradeoffs.
