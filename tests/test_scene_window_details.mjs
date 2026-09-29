@@ -18,3 +18,6 @@ const clean={failure_counts:{locked_segments:0,boundary_segments:0,edited_window
  locked_geometry_conflict:false,suggested_geometry_envelope:[48,133]};
 assert.doesNotMatch(details(clean),/cannot repair|Suggested range|checks pass|approved/);
 console.log('Edit-range diagnostics retain failures, scope, invalid evidence and limitations.');
+
+assert.match(details({preserve_boundary_keys:true,immutable_geometry_failures:54}),/54 sampled geometry failures cannot change/);
+for(const n of [undefined,52,380,-1])assert.match(details({preserve_boundary_keys:true,immutable_geometry_failures:n}),/incomplete or invalid/);

@@ -108,9 +108,9 @@ def build(study,audit_path,engine_path,output,label,rates_path=None,support_path
         if not support['sampled_point_preservation_passed']:summary['motion_regressions'].append('preserved_support_drift')
     if preservation is not None:
         summary['window_preservation']=preservation
-        from plan_scene_edit_window import plan
+        from plan_scene_edit_window import plan,boundary_policy
         summary['window_geometry']=plan(audit['variants']['candidate']['rows'],window,scene['frame_count'],
-                                        protocol['config']['clearance_m'],protocol['config']['object_clearance_m'])
+                                        protocol['config']['clearance_m'],protocol['config']['object_clearance_m'],preserve_boundary_keys=boundary_policy(study))
         for group,flag in [('locked_segments','edit_window_outside_change'),('boundary_segments','edit_window_boundary_change')]:
             if preservation[group]['within_numerical_tolerance'] is False:summary['motion_regressions'].append(flag)
     output.mkdir(parents=True);scenes=[]

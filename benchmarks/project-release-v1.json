@@ -760,6 +760,10 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/window-boundary-preservation-v1.md",
+        "reports/region-window-boundary-v1/completion.json",
+        "docs/expanded-window-surface-fit-v1.md",
+        "reports/region-expanded-window-surface-v1/completion.json",
         "docs/studio-scene-trim-v1.md",
         "reports/studio-scene-trim-v1/completion.json",
         "docs/scene-trim-v1.md",

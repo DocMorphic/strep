@@ -7,7 +7,7 @@ from audit_scene_edit_window import summarize
 from strep import ROOT, read, save, sha256
 
 
-def plan(rows, window, frames, floor_clearance, object_clearance):
+def plan(rows, window, frames, floor_clearance, object_clearance, *, preserve_boundary_keys=False):
     """Flag immutable sampled failures and suggest a conservative key envelope.
 
     The envelope covers both interpolation keys of every failing sample. It is
@@ -15,11 +15,16 @@ def plan(rows, window, frames, floor_clearance, object_clearance):
     """
     summarize([dict(frame=r['frame'], joint_position_error_m=0., basis_error=0.,
                     skin_position_error_m=0.) for r in rows], window, frames)
+    if type(preserve_boundary_keys) is not bool:
+        raise ValueError('Explicit boundary preservation policy required')
     for value in (floor_clearance, object_clearance):
         if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
             raise ValueError('Finite nonnegative clearance required')
     failures = []
     start, end = window
+    def locked(key):
+        return key < start or key > end or (preserve_boundary_keys and
+            ((key == start and start > 0) or (key == end and end < frames-1)))
     for row in rows:
         values = [row['minimum_floor_m'], *row['object_clearances_m'].values()]
         if any(type(v) not in (int, float) or not math.isfinite(v) for v in values):
@@ -36,19 +41,36 @@ def plan(rows, window, frames, floor_clearance, object_clearance):
                  'locked_segments' if math.ceil(frame) < start or math.floor(frame) > end
                  else 'boundary_segments')
         failures.append(dict(frame=frame, group=group, causes=causes,
+                             immutable=locked(math.floor(frame)) and locked(math.ceil(frame)),
                              minimum_floor_m=row['minimum_floor_m'],
                              object_clearances_m=row['object_clearances_m']))
     groups = {name: [r for r in failures if r['group'] == name]
               for name in ['locked_segments', 'boundary_segments', 'edited_window']}
     envelope = [min(start, *(math.floor(r['frame']) for r in failures)),
                 max(end, *(math.ceil(r['frame']) for r in failures))] if failures else list(window)
+    if preserve_boundary_keys and failures:
+        # Make both keys of every observed failure editable, including failures
+        # exactly on a selected endpoint; clip endpoints need no outside guard.
+        envelope = [min(start, max(0, min(math.floor(r['frame']) for r in failures)-1)),
+                    max(end, min(frames-1, max(math.ceil(r['frame']) for r in failures)+1))]
     return dict(requested_window=list(window), frames=frames,
+                preserve_boundary_keys=preserve_boundary_keys,
+                immutable_geometry_failures=sum(r['immutable'] for r in failures),
                 sampled_failures=len(failures),
                 failure_counts={name: len(values) for name, values in groups.items()},
                 locked_geometry_conflict=bool(groups['locked_segments']),
                 suggested_geometry_envelope=envelope,
                 changes_requested_scope=envelope != list(window), failures=failures,
                 scope='Sampled geometry only. Locked segments cannot change under exact outside-key preservation. Suggested envelope covers both keys of observed failures; it does not guarantee solvability, between-sample safety, contacts, support, timing or naturalness. No edit scope is changed automatically.')
+
+
+def boundary_policy(study):
+    """Read the executed policy, retaining native-key-only behavior for old fits."""
+    study=Path(study);result=read(study/'result.json')
+    if sha256(study/'recipe.json')!=result['recipe_sha256']:
+        raise ValueError('Fitting recipe changed')
+    localization=read(study/'recipe.json').get('localization') or {}
+    return 'locked_boundary_keys' in localization
 
 
 def run(study, audit_path, window, output):
@@ -68,7 +90,8 @@ def run(study, audit_path, window, output):
         raise ValueError('Seed audit identity mismatch')
     config = protocol['config']
     report = plan(audit['variants']['candidate']['rows'], window, scene['frame_count'],
-                  config['clearance_m'], config['object_clearance_m'])
+                  config['clearance_m'], config['object_clearance_m'],
+                  preserve_boundary_keys=boundary_policy(study))
     report.update(inputs={str(p): sha256(p) for p in [study/'result.json', study/'protocol.json',
                       study/'authored-scene.json', study/'candidate.glb', study/'motion.npz', audit_path]},
                   planner_sha256=sha256(__file__), quality_approved=False)

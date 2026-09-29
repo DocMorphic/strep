@@ -168,7 +168,7 @@ def bundle(scene,assessment,skin):
 
 def include_window_audit(study,geometry_path,output,summary,window):
     from audit_scene_edit_window import run as audit_window
-    from plan_scene_edit_window import plan
+    from plan_scene_edit_window import plan,boundary_policy
     study,output=Path(study),Path(output)
     protocol=read(study/'protocol.json');geometry=read(geometry_path)
     if protocol.get('edit_window')!=window or geometry['result_sha256']!=sha256(study/'result.json'):
@@ -178,7 +178,7 @@ def include_window_audit(study,geometry_path,output,summary,window):
     for group,flag in [('locked_segments','edit_window_outside_change'),('boundary_segments','edit_window_boundary_change')]:
         if preservation['groups'][group]['within_numerical_tolerance'] is False:summary['motion_regressions'].append(flag)
     rows=geometry['variants']['candidate']['rows']
-    summary['window_geometry']=plan(rows,window,preservation['frames'],protocol['config']['clearance_m'],protocol['config']['object_clearance_m'])
+    summary['window_geometry']=plan(rows,window,preservation['frames'],protocol['config']['clearance_m'],protocol['config']['object_clearance_m'],preserve_boundary_keys=boundary_policy(study))
     save(output/'window-geometry.json',summary['window_geometry'])
 
 

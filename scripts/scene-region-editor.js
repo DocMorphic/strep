@@ -44,7 +44,9 @@ export function sceneWindowDetails(assessment){
     geometry.sampled_failures!==counts.locked_segments+counts.boundary_segments+counts.edited_window||geometry.sampled_failures>(geometry.frames-1)*4+1||
     geometry.locked_geometry_conflict!==(counts.locked_segments>0))
   return ['Edit-range evidence is incomplete or invalid; inspect the downloaded geometry report.'];
+ if(geometry.preserve_boundary_keys===true&&(!Number.isInteger(geometry.immutable_geometry_failures)||geometry.immutable_geometry_failures<counts.locked_segments+counts.boundary_segments||geometry.immutable_geometry_failures>geometry.sampled_failures))return ['Edit-range evidence is incomplete or invalid; inspect the downloaded geometry report.'];
  const output=[`Edit range: frames ${range.join('–')}. Remaining geometry failures: ${counts.edited_window} inside, ${counts.boundary_segments} across the boundary, ${counts.locked_segments} in locked segments.`];
+ if(geometry.preserve_boundary_keys===true)output.push(`Boundary poses are held. ${geometry.immutable_geometry_failures} sampled geometry failures cannot change within this range, including adjoining segments and held endpoints.`);
  if(counts.locked_segments)output.push('Another fit that preserves the same outside keys cannot repair these locked-segment failures.');
  if(next[0]!==range[0]||next[1]!==range[1])output.push(`Suggested range for the observed geometry failures: frames ${next.join('–')}. Your edit range has not been changed.`);
  output.push('The suggested range covers sampled collisions; it does not guarantee a successful fit or natural motion. Download the range report for affected frames.');

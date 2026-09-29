@@ -1,6 +1,8 @@
 # One project-wide goal: release-ready Strep
 
-Latest workflow work: [Studio shared-scene trimming](studio-scene-trim-v1.md) now exposes synchronized actor/prop/contact/event trims with immutable jobs, original/trimmed review and portable downloads. Two real backend jobs pass 371 Godot pose observations; twelve Python and two Node checks pass. No HTTP/browser or motion-quality approval is claimed. The matched expanded-window contact solve remains active; all 14 release capabilities remain unapproved.
+Latest preservation fix: [local edit boundaries](window-boundary-preservation-v1.md) now hold endpoint poses adjoining unchanged motion. A real short fit changes the interior while all 276 outside export samples stay within 0.129 micrometres; 360 Godot actor-frame checks pass. Contact and collision checks still fail, and no release capability is approved.
+
+Latest workflow work: [Studio shared-scene trimming](studio-scene-trim-v1.md) now exposes synchronized actor/prop/contact/event trims with immutable jobs, original/trimmed review and portable downloads. Two real backend jobs pass 371 Godot pose observations; twelve Python and two Node checks pass. No HTTP/browser or motion-quality approval is claimed. The [matched expanded-window contact solve](expanded-window-surface-fit-v1.md) is complete: 372/490 contact failures, 337/717 geometry failures and a 2.015 mm outside-boundary change remain; all 14 release capabilities remain unapproved.
 
 Latest object-relative initialization: [moving grip study](object-grip-initialization-v1.md) reduces exported contact failures from 490 to 15 while preserving original edit bounds. Body penetration remains 38.99 mm; local temporal regressions remain visible. Fourteen focused tests and all 360 Godot actor-frames pass. The matched full-body trial subsequently completed with the failures recorded above; no release approval.
 

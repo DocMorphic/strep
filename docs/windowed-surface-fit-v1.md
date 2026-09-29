@@ -41,3 +41,6 @@ The independent 120 Hz seed/candidate audit confirms fully locked segments match
 All 360 source/candidate actor-frames import into Godot with joint-position discrepancy below 0.345 micrometres. The `windowed-surface-review-v1` collection passes fifteen package hashes and fourteen permitted offline routes; the Python snapshot remains unserved. This is fidelity and packaging evidence, not approval. Exact comparisons, audit identities, stage outcomes and package verification are in `reports/region-windowed-surface-v1/completion.json` and its retained `finish.py` method.
 
 Next compare a wider [23, 133] window with the same original source, arm-guide initializer, physical-root formulation and solver settings. This addresses the demonstrated locked-geometry conflict without changing acceptance thresholds. The result may still fail contacts, feet or timing; it must be measured rather than assumed feasible. All fourteen release capabilities remain unapproved.
+
+
+The subsequent [matched expanded-window study](expanded-window-surface-fit-v1.md) reduces early penetration but still fails contacts, geometry, support and outside-boundary preservation.

@@ -52,3 +52,37 @@ def test_invalid_evidence_rejected(failure):
     if failure == 'nan': values[0]['minimum_floor_m'] = float('nan')
     with pytest.raises(ValueError):
         plan(values, [2, 4], 7, -.1 if failure == 'threshold' else .002, .002)
+
+
+def test_held_endpoint_and_adjoining_failure_are_immutable_and_need_extra_margin():
+    values=rows()
+    values[7]['minimum_floor_m']=-.01  # 1.75: both keys held
+    values[8]['minimum_floor_m']=-.01  # 2: selected but held
+    values[9]['minimum_floor_m']=-.01  # 2.25: can change via key 3
+    result=plan(values,[2,4],7,.002,.002,preserve_boundary_keys=True)
+    assert result['immutable_geometry_failures']==2
+    assert result['failure_counts']==dict(locked_segments=0,boundary_segments=1,edited_window=2)
+    assert result['suggested_geometry_envelope']==[0,4]
+    assert result['preserve_boundary_keys']
+
+
+def test_boundary_envelope_clamps_at_clip_edges_and_keeps_interior_scope():
+    values=rows();values[0]['minimum_floor_m']=-.01;values[-1]['minimum_floor_m']=-.01
+    result=plan(values,[2,4],7,.002,.002,preserve_boundary_keys=True)
+    assert result['suggested_geometry_envelope']==[0,6]
+    values=rows();values[12]['minimum_floor_m']=-.01
+    result=plan(values,[2,4],7,.002,.002,preserve_boundary_keys=True)
+    assert result['suggested_geometry_envelope']==[2,4]
+    assert result['immutable_geometry_failures']==0
+
+
+def test_boundary_policy_is_bound_to_executed_recipe(tmp_path):
+    from plan_scene_edit_window import boundary_policy
+    from strep import save,sha256
+    recipe=tmp_path/'recipe.json'
+    for localization,expected in [(None,False),({'outside_keys':2},False),({'locked_boundary_keys':[2,4]},True)]:
+        save(recipe,dict(localization=localization))
+        save(tmp_path/'result.json',dict(recipe_sha256=sha256(recipe)))
+        assert boundary_policy(tmp_path)==expected
+    save(recipe,dict(localization=None))
+    with pytest.raises(ValueError,match='recipe changed'):boundary_policy(tmp_path)
