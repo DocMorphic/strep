@@ -26,4 +26,15 @@ Twenty-nine focused tests pass: eight restart-budget checks, seventeen exact hel
 
 The output folder must be new. The completed original archive, licensed local assets and pinned Godot acquisition are required. This is a development runner, not an automatically approved Studio correction.
 
-Execution has started under a recorded live process identity. Crawling's re-exported warm seed still misses four of 81 pin samples, with a 5.012671 mm maximum. Its point-phase rate limits pass, raw added floor depth is now zero, and all 80 outside samples have exactly zero pose/basis/skin difference. This establishes the restart input; no restarted-fit result is available yet. The original benchmark and all release approvals remain unchanged.
+At launch, execution started under a recorded live process identity. Crawling's re-exported warm seed still misses four of 81 pin samples, with a 5.012671 mm maximum. Its point-phase rate limits pass, raw added floor depth is now zero, and all 80 outside samples have exactly zero pose/basis/skin difference. This establishes the restart input; no restarted-fit result was available at launch. The original benchmark and all release approvals remain unchanged.
+
+
+## Crawling result: improved pin error, still rejected
+
+The six-stage crawl-11 restart completed in 751.60 seconds of fitting, with 1,268 objective evaluations. Pin misses decrease from four to one of 81 samples; maximum error drops from 5.012671 to **5.000419 mm**, still above the original 5 mm limit. Added floor depth rises from zero in the restored warm seed to **5.966434e-7 m** at frame 58.5. Although below the audit's 1-micrometre diagnostic category, this positive raw regression still fails the study's zero-added-depth acceptance rule. Total floor penetration is 0.451898 mm.
+
+All six contact-point rate ceilings and both global joint-rate ceilings pass. Global speed/acceleration are 2.805085 m/s and 80.726064 m/s², below 2.928820 and 91.925525 respectively. All 80 outside-window observations remain exactly unchanged. Original-relative maximum root lift is 0.107177 m and maximum joint rotation change is 32.378312 degrees, within the original bounds.
+
+The same ten body-regression flags present in the warm seed remain, covering pose/joint-speed change and hand/foot/knee support or sliding. No body-quality approval follows from the smaller pin error. Only the first optimization stage stops on relative objective reduction; the other five hit their iteration limits. Neither stopping condition proves feasibility.
+
+Native BVH/GLB and all eight skin influences pass structural checks. Actual Godot playback passes **284 observations**, two requested boundary events, four callback-mutation rejections, forward/reverse playback and unload (maximum actor matrix error 1.17e-6). Completion and input hashes were independently verified. This result is retained as rejected in `reports/contact-joint-restart-v1/crawl-11/`; kicking is now running under the same frozen method.

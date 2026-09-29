@@ -2928,6 +2928,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T21:08:18.619022+00:00",
-  "last_progress": "Studio checked-contact results now show readable pin, point-rate, floor-regression and outside-window measurements. Tiny excesses stay visible, missing measurements remain unavailable, inherited penetration is disclosed and clip changes clear stale evidence. Offline DOM/workflow checks, four desktop build checks and renderer comparisons against eleven retained reports pass. The live full-joint restart continues with frozen Python/Godot methods unchanged; final crawling/kicking results and all release approvals remain pending."
+  "last_progress_at": "2026-09-29T21:11:20.314391+00:00",
+  "last_progress": "Studio checked-contact results now show readable pin, point-rate, floor-regression and outside-window measurements. Tiny excesses stay visible, missing measurements remain unavailable, inherited penetration is disclosed and clip changes clear stale evidence. Offline DOM/workflow checks, four desktop build checks and renderer comparisons against eleven retained reports pass. The live full-joint restart continues with frozen Python/Godot methods unchanged; the final kicking result and all release approvals remain pending. Crawling restart has now completed: pin misses fall from four to one, but a 5.000419 mm maximum and 5.966434e-7 m added floor depth retain rejection. All point/global rate limits, exact outside preservation and 284 new engine observations pass; ten warm-seed body flags remain. Kicking is running."
 }
