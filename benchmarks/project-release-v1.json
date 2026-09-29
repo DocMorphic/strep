@@ -865,6 +865,10 @@
         "reports/region-object-grip-seed-v2-clearance-diagnosis.json",
         "reports/region-object-grip-seed-v2-contact-diagnosis.json",
         "reports/region-object-grip-elbow-diagnosis-v1/result.json",
+        "reports/region-object-grip-full-v1/comparison.json",
+        "reports/region-object-grip-full-v1/completion/geometry/verification.json",
+        "reports/region-object-grip-full-v1/completion/joint-rates.json",
+        "reports/region-object-grip-full-v1/completion/engine/verification.json",
         "reports/region-witness-comparison-v1/comparison.json",
         "reports/region-augmented-comparison-v1/comparison.json",
         "reports/region-object-constraints-final-v1/comparison.json",
@@ -2646,6 +2650,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T08:21:02.199537+00:00",
-  "last_progress": "Object-relative grip initialization reduces exported contact failures from 490 to 15; body clearance still fails, localized to the right forearm at the worst sample. A fixed-wrist elbow sweep finds no passing sampled correction. All 360 Godot actor-frames and 14 focused tests pass. Matched full-body warm-start trial remains running; no release approval."
+  "last_progress_at": "2026-09-29T08:44:13.677451+00:00",
+  "last_progress": "Full-body grip initialization improves box penetration to 2.786 mm but loses contact: 482/490 exported contact samples fail. All 360 Godot actor-frames and original edit bounds pass without approval. Preserved comparison published; matched regional-multiplier follow-up running with unchanged source, seed and limits."
 }

@@ -34,7 +34,7 @@ The seed's 15 left-hand failures comprise 14 clearance failures and 11 normal fa
 
 A separate one-frame diagnosis sweeps the right elbow around the shoulder-to-wrist axis from -80 to +80 degrees in 0.25-degree steps. Rotating the upper arm and compensating the local wrist keeps the wrist frame fixed; original bone offsets, roots and source-relative edit budgets are checked. Of 641 samples, 291 satisfy the bounds, wrist position error below 1 micrometre and wrist rotation-matrix error below 1e-6. None clears the box. The best valid sample, a -20-degree swivel, still penetrates 38.020208 mm. This rules out the sampled elbow-only orbit as a correction for this frame; it does not establish infeasibility of shoulder/torso movement, different grip placement, other elbow orbits or the full animation problem. No diagnostic pose was applied to the running full-body fit.
 
-Evidence remains under `reports/region-object-grip-seed-v2-clearance-diagnosis.json`, `region-object-grip-seed-v2-contact-diagnosis.json`, and `region-object-grip-elbow-diagnosis-v1/{method.py,result.json}`. The latter preserves its exact diagnostic script and input hashes. The full-body trial continues unchanged while this diagnosis is recorded.
+Evidence remains under `reports/region-object-grip-seed-v2-clearance-diagnosis.json`, `region-object-grip-seed-v2-contact-diagnosis.json`, and `region-object-grip-elbow-diagnosis-v1/{method.py,result.json}`. The latter preserves its exact diagnostic script and input hashes. The full-body trial continued unchanged during this diagnosis; its completed result is recorded below.
 
 ## Review timing details
 
@@ -54,6 +54,28 @@ With the preceding development assets available locally:
 
 Fourteen focused initializer, transport and review-publisher tests pass. The new tests check transport invariance under object translation/rotation, an attainable moving IK target with fixed root and bone lengths, and an unattainable target that must not enlarge the edit budget or claim approval.
 
-The next full-body fit is running in `reports/region-object-grip-full-v1/guard`. It uses exactly the preceding full trial's six stages, 100 iterations per stage, full object skin, per-vertex inequalities, refreshed region witnesses, solver margins, global export-rate guard and sparse skin backend. The only experimental change is initialization from the verified seed. `comparison-protocol.json` records matching settings and implementation hashes. Original source-relative budgets remain unchanged. An exact-process completion watcher will independently audit geometry, rates and Godot import after this worker exits, without retrying fitting. Its result remains unknown until those processes finish.
+## Completed full-body comparison
+
+The initialized full-body trial completed in 1,557.6 seconds and 648 objective evaluations. Its six stages, settings, solver implementation and original source match the previous full trial; only initialization differs. The exact-owner completion process finished the geometry, rate and Godot audits without retrying fitting.
+
+| Exported measurement | Original full fit | Grip seed | Initialized full fit |
+| --- | ---: | ---: | ---: |
+| Failed contact samples / 490 | 490 | 15 | 482 |
+| Failed body geometry samples / 717 | 267 | 349 | 219 |
+| Worst box penetration | 5.272749 mm | 38.993185 mm | 2.786049 mm |
+| Release-boundary speed | 0.788448 m/s | 0.374989 m/s | 0.643522 m/s |
+| Release-boundary acceleration | 36.839410 m/s² | 23.899977 m/s² | 32.670875 m/s² |
+
+The full solver improves body clearance but loses the seed's near-complete hand contact. All 245 left-hand samples fail the normal constraint; 197 right-hand samples fail it. Missing distributed witnesses occur in 77 left and 81 right samples. Anchor errors exceed tolerance in one left and eight right samples. Worst exported penetration occurs at frame 121.5, while native integer-key penetration is 1.592268 mm; native-only checks understate the problem.
+
+Original edit bounds pass with maximum edit 32.480904 degrees. Root lift remains approximately 0.022 mm. Minimum exported floor gap is 2.017051 mm. Global peak speed/acceleration, 1.338512 m/s and 37.771181 m/s², remain below the source peaks, but 50 joint speed maxima and 34 acceleration maxima increase beyond the reporting allowance. All 360 Godot actor-frames pass, with maximum position discrepancy below 0.317 micrometres. Export fidelity does not approve the failed contacts.
+
+Studio collection `scene-region-jobs/object-grip-full-review-v1` retains the failed source/candidate comparison. All previous outputs remain intact. `reports/region-object-grip-full-v1/comparison.json` binds the four-way comparison to result/audit hashes; `compare.py` preserves its method. Twelve package hashes and twelve offline route mappings are checked. No human evidence or live browser verification was added.
+
+## Next controlled experiment
+
+The fixed regional objective retains its weight throughout fitting, while object inequality penalties and multipliers increase between stages. This is a conditioning hypothesis for the lost contact, not proof of causation or feasibility. A follow-up now runs in `reports/region-object-grip-augmented-v1/guard` using the existing regional multiplier mode. Every protocol field except timestamp and `region_constraint_mode` matches the completed initialized control, including seed, source, implementation, margins, full skin, rate guard and iteration budget. No acceptance limit or default changed.
+
+Regional multipliers update from accepted iterates and preserve unchanged constraint identities across witness refreshes. Twenty-four existing objective, inequality, witness-refresh and initializer tests pass. The earlier five-frame augmented experiment also failed and remains reported in `regional-constraints-warm-start-v1.md`; this longer comparison must be judged from its own outcome. Its exact-process completion watcher will audit the run after it finishes. The outcome remains pending.
 
 All 14 release capabilities remain unapproved. The wider arbitrary-action, rig-transfer, editing, partner-interaction and human-validation work remains part of the same project goal.
