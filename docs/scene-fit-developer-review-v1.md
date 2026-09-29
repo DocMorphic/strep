@@ -22,3 +22,18 @@ Example for a completed fit and matching evidence:
 ```
 
 Local publication proof is retained in `reports/scene-fit-review-publication-v1/verification.json`. Packages live under ignored `reports/scene-region-jobs`; source and concise methodology are published to GitHub.
+
+
+## Scene-specific developer observations
+
+Scene interactions now includes **Your scene review notes**. Load a saved scene, watch it at normal speed, enter your name or alias, select a frame range (or use the current frame), describe what you observed, and export feedback. Notes can describe either actor, an object or their interaction. No scores or observations are filled in automatically.
+
+Each export records the exact scene JSON hash and the hashes of every actor GLB actually loaded into the viewer. This binds object tracks and placements through the scene file and motion through the actor files. Drafts are stored separately for each exact scene/actor combination. Loading another scene clears the active binding; editing placement disables saved-scene feedback until reload. Embedded GLBs are required for feedback so an external buffer cannot change without changing a recorded file. Camera and playback changes do not alter the source binding.
+
+`scene_developer_feedback.py` imports a feedback JSON only when its saved collection, scene, all actors and frame range match. It supports nested collection bundles and multi-actor scenes, rejects changed object tracks or partner motion, and preserves existing imports. Notes are explicitly unblinded developer observations. The importer does not verify reviewer identity, correctness of the observation, independent animator ratings or cleanup timing, and never grants release approval.
+
+```powershell
+.venv\Scripts\python.exe scripts/scene_developer_feedback.py reports/scene-region-jobs/object-grip-augmented-review-v1/candidate.json path/to/exported-feedback.json reports/developer-feedback/my-first-scene-review
+```
+
+Thirty-one focused Python tests and two Node feedback checks pass. A duplicate form ID found during integration was fixed; a DOM uniqueness check now guards against recurrence. Offline file-backed checks fingerprint the real source and candidate box scenes plus a nested high-five scene with two actors; their serialized contexts pass the importer using synthetic observations held only in memory. The built module parses and the desktop bundle matches its sources. Evidence is in `reports/scene-developer-feedback-v1/verification.json`. No human notes were fabricated or saved, and no live browser rendering was verified. The pending full root-coordinate trial and its numerical source were unchanged.
