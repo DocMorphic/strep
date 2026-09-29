@@ -23,3 +23,5 @@ Each job copies its actors, authored scene and implementation files before fitti
 The real runs are retained locally under `reports/scene-region-jobs/studio-sphere-v1` and `reports/scene-region-jobs/studio-box-v1`, with their five-frame development inputs registered separately. These are the existing perturbation fixtures, not new action coverage or held-out trials.
 
 Browser/localhost inspection was unavailable under the session's tool policy. No live browser click-through or rendered layout approval is claimed. The implementation, component behavior and workers were checked offline. A visual selection/painting tool for mesh regions, long-clip validation, broader motion/rig/object coverage and human review remain open. Existing release tools also still require their own supported contact/geometry conditions. All 14 project release capabilities remain unapproved.
+
+[Visual grip placement](studio-grip-picking-v1.md) adds a moving draft target marker and analytic object picking to the same request workflow. Hand-region painting remains open.

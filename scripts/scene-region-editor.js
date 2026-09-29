@@ -1,5 +1,5 @@
 // Region drafts and job IDs survive reload; completion is separate from quality.
-export function createSceneRegionEditor({getContext,onComplete}){
+export function createSceneRegionEditor({getContext,onComplete,onDraft=()=>{},onPick=()=>{},onCancelPick=()=>{}}){
  const storage={
   getItem(key){try{return globalThis.localStorage.getItem(key);}catch{return null;}},
   setItem(key,value){try{globalThis.localStorage.setItem(key,value);}catch{}},
@@ -10,7 +10,8 @@ export function createSceneRegionEditor({getContext,onComplete}){
  let source=null,drafts={},busy=false,version=0;
  const status=value=>by('Status').textContent=value;
  async function json(url,options){const response=await fetch(url,{cache:'no-store',...options}),data=await response.json();if(!response.ok)throw Error(data.error||'Request failed');return data;}
- function enabled(){for(const field of [...fields,'Actor','Contact','Include','Label','Apply','UseFrame'])by(field).disabled=busy||!source;}
+ function enabled(){for(const field of [...fields,'Actor','Contact','Include','Label','Apply','UseFrame','Pick'])by(field).disabled=busy||!source;if(busy||!source)onCancelPick();}
+ function preview(){const c=selected();if(c){const d=drafts[c.id];onDraft(c,d.edit,d.include);}else onDraft(null);}
  function selected(){return source?.contacts.find(c=>c.id===by('Contact').value);}
  function store(){if(!source)return;try{storage.setItem('strep:regions:'+source.revision,JSON.stringify({drafts,label:by('Label').value}));}catch{}}
  function fill(){const c=selected();if(!c)return;const d=drafts[c.id],e=d.edit;
@@ -19,18 +20,19 @@ export function createSceneRegionEditor({getContext,onComplete}){
   by('PatchMode').value=e.patch_mode;by('PatchMode').querySelector('[value="saved"]').disabled=c.edit.patch_mode!=='saved';
   by('PatchRadius').value=e.patch_radius_m*100;by('Cone').value=e.patch_normal_degrees;
   for(const [id,key,scale] of [['Clearance','clearance_m',1000],['Gap','contact_gap_m',1000],['Spacing','spacing_m',1000],['Area','area_m2',1e6],['Centroid','centroid_error_m',1000],['TargetRadius','local_radius_m',100],['Normal','normal_degrees',1]])by(id).value=e.limits[key]*scale;
-  by('ContactInfo').textContent=`${c.hand} → ${c.target_object}. Grip coordinates are local to the object. The preview shows the saved motion until a fit completes.`;
+  by('ContactInfo').textContent=`${c.hand} → ${c.target_object}. Grip coordinates are local to the object. Purple: draft grip and inward normal; grey outside its interval. The animation stays unchanged until a fit completes.`;preview();
  }
  function capture(){const c=selected();if(!c)return;const d=drafts[c.id],e=d.edit;d.include=by('Include').checked;
   e.start_frame=Number(by('Start').value);e.end_frame=Number(by('End').value);e.point_m=['X','Y','Z'].map(a=>Number(by(a).value));
   e.anchor_tolerance_m=Number(by('Anchor').value)/1000;e.patch_mode=by('PatchMode').value;e.patch_radius_m=Number(by('PatchRadius').value)/100;e.patch_normal_degrees=Number(by('Cone').value);
   for(const [id,key,scale] of [['Clearance','clearance_m',1000],['Gap','contact_gap_m',1000],['Spacing','spacing_m',1000],['Area','area_m2',1e6],['Centroid','centroid_error_m',1000],['TargetRadius','local_radius_m',100],['Normal','normal_degrees',1]])e.limits[key]=Number(by(id).value)/scale;
-  store();
+  store();preview();
  }
  function actorContacts(){const list=source.contacts.filter(c=>c.supported&&c.actor===by('Actor').value);by('Contact').replaceChildren(...list.map(c=>new Option(c.id,c.id)));fill();}
  for(const field of [...fields,'Include'])by(field).addEventListener('input',capture);
  by('Label').addEventListener('input',store);by('Actor').onchange=actorContacts;by('Contact').onchange=fill;
  by('UseFrame').onclick=()=>{by('Start').value=getContext().frame;capture();};
+ by('Pick').onclick=()=>{if(source&&!busy)onPick();};
  async function poll(id){
   try{const result=await json('/api/scene-region-jobs'),job=result.jobs.find(j=>j.id===id);
    if(!job){busy=false;storage.removeItem('strep:region-active-job');enabled();status('Saved fitting job unavailable. No replacement was started.');return;}
@@ -53,7 +55,7 @@ export function createSceneRegionEditor({getContext,onComplete}){
   catch(error){busy=false;enabled();status(error.message);}
  };
  const active=storage.getItem('strep:region-active-job');if(active){busy=true;poll(active);}enabled();
- return {reset(){version++;source=null;enabled();},async bind(url){const token=++version;source=null;enabled();
+ return {setGripPoint(point){if(!source||busy||!selected())return;['X','Y','Z'].forEach((axis,i)=>by(axis).value=point[i]);capture();},reset(){version++;source=null;onDraft(null);enabled();},async bind(url){const token=++version;source=null;onDraft(null);enabled();
   try{const data=await json('/api/scene-region-source?path='+encodeURIComponent(url));if(token!==version)return;
    const supported=data.contacts.filter(c=>c.supported);if(!supported.length){status('No editable hand-to-object contacts in this scene. '+data.contacts.map(c=>c.reason||'').join(' '));return;}
    source=data;drafts=Object.fromEntries(supported.map(c=>[c.id,{include:true,edit:structuredClone(c.edit)}]));by('Label').value='Hand contact fit';
