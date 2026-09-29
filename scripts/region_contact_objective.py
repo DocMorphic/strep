@@ -61,10 +61,61 @@ def choose_triangle(points, ids, target, gaps, limits):
     return ids[triples[int(score.argmin())]].tolist(), 'best scored triple in 24 nearest candidate vertices'
 
 
+def family_reduction(values, vertices):
+    """Average each multi-row family, then sum the eight constraint families."""
+    if values.ndim != 1 or len(values) != vertices + 13 or vertices < 3:
+        raise ValueError('Regional residual layout mismatch')
+    groups = [values[:vertices].mean(), values[vertices:vertices+3].mean(),
+              values[vertices+3:vertices+6].mean(), values[vertices+6:vertices+9].mean()]
+    groups.extend(values[vertices+9:])
+    return torch.stack(groups).sum()
+
+
+class RegionInequalities:
+    """Separate normalized inequality multipliers, fixed within each LBFGS stage."""
+    def __init__(self, counts):
+        if not counts or any(type(n) != int or n < 3 for n in counts):
+            raise ValueError('Nonempty regional vertex counts required')
+        self.counts = counts
+        self.penalty = 200.  # Zero multipliers exactly match the original balanced loss.
+        self.multipliers = None
+        self.last = None
+
+    def loss(self, values):
+        if len(values) != len(self.counts):
+            raise ValueError('Regional contact/frame count changed')
+        for g, n in zip(values, self.counts):
+            family_reduction(g, n)  # Reject broadcastable but incorrect layouts.
+        if self.multipliers is None:
+            self.multipliers = [torch.zeros_like(g) for g in values]
+        losses = []
+        for g, m, n in zip(values, self.multipliers, self.counts):
+            merit = (torch.relu(m + self.penalty*g).square() - m.square()) / (2*self.penalty)
+            losses.append(family_reduction(merit, n))
+        self.last = [g.detach().clone() for g in values]
+        return torch.stack(losses).mean()
+
+    def advance(self, growth):
+        if self.last is None:
+            raise ValueError('Evaluate accepted parameters before advancing regional multipliers')
+        if type(growth) not in [int, float] or not np.isfinite(growth) or growth <= 1:
+            raise ValueError('Finite penalty growth greater than one required')
+        self.multipliers = [torch.relu(m + self.penalty*g).detach() for m, g in zip(self.multipliers, self.last)]
+        self.penalty *= growth
+
+    def diagnostics(self):
+        return dict(penalty=self.penalty,
+                    maximum_normalized_violation=max(float(torch.relu(g).max()) for g in self.last)
+                    if self.last is not None else None)
+
+
 class RegionObjective:
-    def __init__(self, package, source, skin, reduction='worst'):
+    def __init__(self, package, source, skin, reduction='worst', constraint_mode='penalty'):
         from floor_contact import Surface
         if reduction not in ['worst','balanced']:raise ValueError('Unknown region penalty reduction')
+        if constraint_mode not in ['penalty','augmented']:raise ValueError('Unknown region constraint mode')
+        if constraint_mode=='augmented' and reduction!='balanced':raise ValueError('Regional inequalities require balanced reduction')
+        self.constraint_mode=constraint_mode
         self.reduction=reduction
         self.records=[]; self.selected=set(); self.selections=[]
         surface=Surface(skin)
@@ -87,6 +138,7 @@ class RegionObjective:
                 self.selections.append(dict(contact_id=record['contact_id'],frame=frame,vertices=chosen,method=method))
             self.selected.update(ids.tolist())
         if not self.records:raise ValueError('Region fitting needs active authored regions')
+        self.inequalities=RegionInequalities([len(r['ids']) for r in self.records]) if constraint_mode=='augmented' else None
 
     def bind(self,mapping):
         self.mapping=mapping
@@ -110,6 +162,8 @@ class RegionObjective:
         # Normalize per authored contact-frame, so large patches do not drown
         # out small ones. Max violation retains the worst patch sample.
         values=self.residuals(vertices)
+        if self.inequalities is not None:
+            return self.inequalities.loss(values)
         if self.reduction=='worst':
             losses=[torch.relu(v).square().amax() for v in values]
         else:
@@ -123,6 +177,13 @@ class RegionObjective:
                 losses.append(torch.stack(groups).sum())
         return torch.stack(losses).mean()*100.
 
+    def advance_stage(self,growth):
+        if self.inequalities is not None:self.inequalities.advance(growth)
+
+    def stage_diagnostics(self):
+        return self.inequalities.diagnostics() if self.inequalities is not None else dict(mode='fixed_penalty')
+
     def record(self):
-        return dict(selections=self.selections,weight=100.,reduction=self.reduction,schema='strep-region-fitting-objective-v1',
-            scope='Frozen witness triples; normalized worst-violation penalties. Hard edit bounds inherited from the clip solver, contact feasibility not guaranteed.')
+        return dict(selections=self.selections,weight=100.,reduction=self.reduction,constraint_mode=self.constraint_mode,
+            augmented_state=self.stage_diagnostics(),schema='strep-region-fitting-objective-v1',
+            scope='Frozen witness triples; fixed penalties or separate regional inequality multipliers. Hard edit bounds inherited from the clip solver, contact feasibility not guaranteed.')

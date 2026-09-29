@@ -47,3 +47,5 @@ Local evidence: `reports/region-box-gradient-comparison-v1.json`, `reports/regio
 ## Remaining work
 
 Retain this option as experimental. The remaining regional violations, clearance margin and temporal regression need a coordinated correction, followed by longer clips and varied objects/actions/rigs. Full vertex coverage still does not test triangle interiors, continuous time, self-collision, anatomical limits or forces. This single development fixture cannot establish general manipulation or partner interaction. All 14 project release capabilities remain unapproved.
+
+Follow-up: [regional constraints and bounded restarts](regional-constraints-warm-start-v1.md) compare fixed versus staged regional penalties from original and recovered candidate controls; every interaction remains rejected.

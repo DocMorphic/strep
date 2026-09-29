@@ -97,7 +97,7 @@ def object_sampling_layout(selected,vertex_count,full):
     return ids,np.searchsorted(ids,original)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum"):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None):
     if object_constraint_mode not in ["maximum","per_vertex"]:raise ValueError("Unknown object constraint mode")
     if object_constraint_mode!="maximum" and not object_inequalities:raise ValueError("Per-vertex constraints require object inequalities")
     stage_count=solver_stage_count(outer_stage_count)
@@ -135,8 +135,14 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     offsets=tensor(offsets); initial=tensor(previous['local_rot_mats']);root=tensor(base['root_positions'])
     basis,knots=correction_basis(T,CONFIG['knot_spacing_frames']);basis=tensor(basis)
     delta=torch.zeros((len(knots),len(editable),3),dtype=dtype,requires_grad=True)
+    initialization=None
+    if warm_start is not None:
+        from scene_fit_initialization import recover_controls
+        if not np.array_equal(previous['local_rot_mats'],base['local_rot_mats']):raise ValueError('Warm starts require the original clip as the rotation reference')
+        controls,initialization=recover_controls(base['local_rot_mats'],warm_start['local_rot_mats'],editable,np.deg2rad(limits),body_count,physical_finger_parameters,basis.detach().numpy())
+        with torch.no_grad():delta.copy_(tensor(controls))
     def smooth_delta():return torch.einsum('fk,kjd->fjd',basis,delta)
-    initial_lift=tensor(previous['root_positions'][:,1]-base['root_positions'][:,1])
+    initial_lift=tensor((previous if warm_start is None else warm_start)['root_positions'][:,1]-base['root_positions'][:,1])
     unit=(initial_lift/CONFIG['max_root_lift_m']).clamp(1e-4,1-1e-4)
     lift_parameters=torch.logit(unit).clone().requires_grad_()
     lookup={j:i for i,j in enumerate(editable)}
@@ -288,7 +294,9 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             max_active_normal_chord_violation=max([float(torch.relu(g)[c[2].bool()].max()) for g,c in zip(last_normals,normal_constraints)]+[0.])))
         if object_inequalities:
             stage_records[-1].update(object_penalty=object_penalty,max_sampled_object_clearance_violation_m=max([float(torch.relu(g).max()) for g in last_objects]+[0.]))
+        if region_fitting is not None:stage_records[-1]['regional_constraints']=region_fitting.stage_diagnostics()
         if stage+1<stage_count:
+            if region_fitting is not None:region_fitting.advance_stage(CONFIG['penalty_growth'])
             point_multiplier=torch.relu(point_multiplier+point_penalty*last_point)*active
             normal_multiplier=[torch.relu(m+normal_penalty*g)*c[2] for m,g,c in zip(normal_multiplier,last_normals,normal_constraints)]
             tangent_multiplier=[torch.relu(m+normal_penalty*g)*c[2] for m,g,c in zip(tangent_multiplier,last_tangents,normal_constraints)]
@@ -322,6 +330,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             reduction='sum over vertex constraints, mean over frames and objects' if object_constraint_mode=='per_vertex' else 'maximum vertex constraint, mean over frames and objects',
             scope='Existing inflated geometry and selected skin vertices. Per-vertex mode has separate multipliers and greater total weight when multiple vertices violate. No continuous-time or feasibility guarantee.')
     if region_fitting is not None:recipe['distributed_regions']=region_fitting.record()
+    recipe['initialization']=initialization
     recipe['iterations_per_stage']=iterations
     recipe['object_sampling']=dict(mode='all_vertices' if full_object_skin else 'frozen_subset',
         object_vertices=len(selected),floor_vertices=len(floor_indices),

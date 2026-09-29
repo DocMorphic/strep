@@ -853,6 +853,8 @@
         "docs/studio-grip-picking-v1.md",
         "docs/object-skin-sampling-v1.md",
         "docs/object-vertex-constraints-v1.md",
+        "docs/regional-constraints-warm-start-v1.md",
+        "reports/region-augmented-comparison-v1/comparison.json",
         "reports/region-object-constraints-final-v1/comparison.json",
         "docs/scene-region-fitting-v14.md",
         "docs/scene-region-authoring-v1.md",
