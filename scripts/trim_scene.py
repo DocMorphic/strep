@@ -46,11 +46,11 @@ def trim_clock(scene, events, first, last):
     kept, before, after = [], [], []
     for event in events['events']:
         f, t = event.get('frame'), event.get('time_s')
-        if type(f) is not int or not 0 <= f <= frames or type(t) not in (int, float) or not np.isfinite(t) or abs(t-f/30) > 1e-8:
+        if type(f) not in (int,float) or not np.isfinite(f) or not 0 <= f <= frames or type(t) not in (int, float) or not np.isfinite(t) or abs(t-f/30) > 1e-8:
             raise ValueError('Invalid source event clock')
         # Preserve the source package's exclusive terminal marker only when its
         # original end is retained. Do not pull a future action into this trim.
-        keep = first <= f <= last or (last == frames-1 and f == frames)
+        keep = first <= f <= last or (last == frames-1 and last < f <= frames)
         if keep:
             e = copy.deepcopy(event); e.update(frame=f-first, time_s=(f-first)/30); kept.append(e)
         else:
@@ -64,22 +64,68 @@ def trim_clock(scene, events, first, last):
 
 
 def trim_export(path, frames, first, last):
-    """Keep the actual meshes/materials/rig; slice the baked animation tracks."""
+    """Clip LINEAR/STEP curves at exact boundaries; keep mesh/rig and interior keys."""
+    from rig_clip_import import AnimationSampler
     doc, binary = read_glb(path); binary = bytearray(binary)
     if len(doc.get('animations', [])) != 1:
-        raise ValueError('One baked animation per participant export required')
-    inputs, outputs = {}, {}
-    for sampler in doc['animations'][0]['samplers']:
-        clock, values = sampler['input'], sampler['output']
-        times = accessor(doc, binary, clock); data = accessor(doc, binary, values)
-        if sampler.get('interpolation', 'LINEAR') not in ['LINEAR', 'STEP'] or len(times) != frames or not np.allclose(times, np.arange(frames)/30, atol=1e-5, rtol=0) or len(data) != frames:
-            raise ValueError('Export must use a complete baked 30 fps clock')
-        if clock not in inputs:
-            inputs[clock] = append_accessor(doc, binary, np.arange(last-first+1)/30, 'SCALAR')
-        if values not in outputs:
-            outputs[values] = append_accessor(doc, binary, data[first:last+1], doc['accessors'][values]['type'])
-        sampler.update(input=inputs[clock], output=outputs[values])
-    return doc, binary
+        raise ValueError('One animation per participant export required')
+    source=AnimationSampler(doc,binary,0)
+    if abs(source.duration-(frames-1)/30)>1e-5:
+        raise ValueError('Export clock differs from source scene')
+    if any(type(x) is not int for x in [first,last]) or not 0<=first<last<frames:
+        raise ValueError('Integer trim bounds inside source clock required')
+    animation=doc['animations'][0]
+    # Preserve decoded channels before changing their sampler indices.
+    channels=source.channels;samplers=[]
+    start,end=first/30,last/30
+    for channel,(node,prop,times,values,mode) in zip(animation['channels'],channels):
+        if mode not in ['LINEAR','STEP']:
+            raise ValueError('Curve trimming currently supports LINEAR and STEP tracks')
+        if mode=='LINEAR' and len(times)==frames and np.allclose(times,np.arange(frames)/30,rtol=0,atol=1e-5):
+            clock=np.arange(last-first+1)/30;data=values[first:last+1]
+        else:
+            # Avoid duplicate output times from float32 noise at a cut. Sample
+            # the exact requested boundaries rather than copying nearby keys.
+            times=times.astype(float)
+            margin=1e-7 if mode=='LINEAR' else 0.
+            selected=times[(times>start+margin)&(times<end-margin)]
+            source_times=np.r_[start,selected,end]
+            clock=source_times-start
+            data=np.array([source.value(prop,times,values,mode,float(t)) for t in source_times])
+        if np.any(np.diff(np.asarray(clock,dtype=np.float32))<=0):
+            raise ValueError('Trimmed key times collapse at export precision')
+        clock_id=append_accessor(doc,binary,clock,'SCALAR')
+        value_id=append_accessor(doc,binary,data,'VEC4' if prop=='rotation' else 'VEC3')
+        channel['sampler']=len(samplers)
+        samplers.append(dict(input=clock_id,output=value_id,interpolation=mode))
+    animation['samplers']=samplers
+    AnimationSampler(doc,binary,0)
+    return doc,binary
+
+
+def trim_exact_windows(scene, windows, first, last):
+    """Retain precise retime intent alongside conservative native contact keys."""
+    entries=windows.get('windows')
+    if not isinstance(entries,list):raise ValueError('Invalid exact contact windows')
+    by_id={c['id']:c for c in scene['contacts']}
+    if len(entries)!=len(by_id) or {e['id'] for e in entries}!=set(by_id):
+        raise ValueError('Exact contact windows differ from scene contacts')
+    contacts=[];mapped=[];excluded=[];active=[]
+    for entry in entries:
+        interval=entry.get('exact_output_frames')
+        if not isinstance(interval,list) or len(interval)!=2 or any(type(v) not in (int,float) or not np.isfinite(v) for v in interval) or not 0<=interval[0]<=interval[1]<scene['frame_count']:
+            raise ValueError('Invalid precise contact clock')
+        a,b=interval
+        if b<first or a>last:
+            excluded.append(copy.deepcopy(entry));continue
+        if a<first<=b:active.append(entry['id'])
+        exact=[max(a,first)-first,min(b,last)-first]
+        native=[int(np.floor(exact[0]+1e-10)),int(np.ceil(exact[1]-1e-10))]
+        c=copy.deepcopy(by_id[entry['id']]);c.update(start_frame=native[0],end_frame=native[1]);contacts.append(c)
+        mapped.append(dict(id=c['id'],exact_output_frames=exact,native_enclosing_frames=native,
+                           maximum_enclosure_seconds=max(exact[0]-native[0],native[1]-exact[1])/30))
+    return contacts,dict(windows=mapped,excluded_exact_windows=excluded,contacts_active_at_start=active,
+                         scope='Precise authored intervals clipped and shifted; integer solver intervals conservatively enclose them. Excluded intervals remain provenance, not active requests.')
 
 
 def run(source, output, first, last):
@@ -98,6 +144,11 @@ def run(source, output, first, last):
         raise ValueError('Scene trim requires baked object ownership')
     trimmed, mapped, context = trim_clock(scene, events, first, last)
     inputs = {str(source/name): sha256(source/name) for name in ['portable-scene.json', 'events.json', 'scene-runtime.json', 'SOMA-LICENSE.txt']}
+    exact_path=source/'retime-contact-windows.json';exact=None
+    if exact_path.exists():
+        trimmed['contacts'],exact=trim_exact_windows(scene,read(exact_path),first,last)
+        inputs[str(exact_path)]=sha256(exact_path)
+        context['exact_contacts_active_at_start']=exact['contacts_active_at_start']
     motions, exports = {}, {}
     for name, actor in scene['actors'].items():
         path = local(source, actor['motion']); glb = local(source, actor['preview_glb'])
@@ -115,6 +166,8 @@ def run(source, output, first, last):
             raise ValueError('Source object export changed')
         inputs[str(path)] = sha256(path)
         object_export = trim_export(path, scene['frame_count'], first, last)
+    for path,digest in inputs.items():
+        if sha256(path)!=digest:raise ValueError('Source changed during trimming')
     output.mkdir(parents=True)
     save(output/'source-scene.json', scene); save(output/'source-events.json', events)
     for index, (name, motion) in enumerate(motions.items()):
@@ -128,6 +181,9 @@ def run(source, output, first, last):
     trimmed['id'] += f'-trim-{first}-{last}'
     save(output/'portable-scene.json', trimmed); save(output/'events.json', mapped)
     save(output/'trim-context.json', context)
+    if exact is not None:
+        save(output/'retime-contact-windows.json',exact)
+        shutil.copyfile(exact_path,output/'source-retime-contact-windows.json')
     shutil.copyfile(source/'SOMA-LICENSE.txt', output/'SOMA-LICENSE.txt')
     save(output/'trim-recipe.json', dict(inputs=inputs, first_frame=first, last_frame=last,
          implementation_sha256=sha256(__file__), quality_approved=False,

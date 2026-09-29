@@ -53,6 +53,27 @@ def test_invalid_event_clock_rejected():
     with pytest.raises(ValueError,match='event clock'):trim_clock(scene,events,5,10)
 
 
+def test_fractional_events_and_retained_terminal_hold_keep_precise_time():
+    scene,events=fixture()
+    events['events']=[dict(type=str(f),frame=f,time_s=f/30) for f in [4.75,7.25,7.25,10.5,19.5,20]]
+    _,mapped,context=trim_clock(scene,events,5,10)
+    assert [e['frame'] for e in mapped['events']]==[2.25,2.25]
+    assert all(e['time_s']==.075 for e in mapped['events'])
+    assert [e['frame'] for e in context['events_before_range']]==[4.75]
+    _,mapped,_=trim_clock(scene,events,5,19)
+    assert [e['frame'] for e in mapped['events']][-2:]==[14.5,15]
+
+
+def test_exact_contact_window_excluded_even_if_conservative_native_interval_touches_cut():
+    from trim_scene import trim_exact_windows
+    scene,_=fixture()
+    contacts,mapped=trim_exact_windows(scene,dict(windows=[dict(id='held',exact_output_frames=[3.2,11.8]),dict(id='later',exact_output_frames=[15.1,16.2])]),12,19)
+    assert [c['id'] for c in contacts]==['later']
+    assert contacts[0]['start_frame']==3 and contacts[0]['end_frame']==5
+    assert mapped['windows'][0]['exact_output_frames']==pytest.approx([3.1,4.2])
+    assert mapped['excluded_exact_windows'][0]['id']=='held'
+
+
 @pytest.mark.parametrize('name,path,frames',[
     ('actor','reports/scene-runtime-v2/paired/actors/0/actor.glb',150),
     ('objects','reports/scene-runtime-v2/release/objects.glb',180)])
@@ -65,6 +86,45 @@ def test_real_export_trim_preserves_mesh_rig_and_fractional_poses(name,path,fram
     a=AnimationSampler(doc,binary,0);b=AnimationSampler(result,data,0)
     for f in [0,.25,1,17.5,53.75,80]:
         assert np.max(np.abs(a.sample((20+f)/30)-b.sample(f/30)))<1e-5
+
+
+@pytest.mark.parametrize('path,frames,first,last',[
+    ('reports/scene-retime-import-v1/paired/actors/0/actor.glb',223,35,185),
+    ('reports/scene-retime-import-v1/release/objects.glb',121,20,100),
+])
+def test_retimed_curve_trim_keeps_interior_keys_and_between_key_poses(path,frames,first,last,tmp_path):
+    from gltf_tools import write_glb,accessor
+    from scene_runtime import import_rate
+    from scene_animation_curves import write as curves
+    doc,binary=read_glb(ROOT/path);result,data=trim_export(ROOT/path,frames,first,last)
+    for key in ['nodes','meshes','materials','skins','textures','images']:
+        assert result.get(key)==doc.get(key)
+    a=AnimationSampler(doc,binary,0);b=AnimationSampler(result,data,0)
+    for f in [0,.01,.25,.5,1,17.33,last-first-.01,last-first]:
+        assert np.max(abs(a.sample((first+f)/30)-b.sample(f/30)))<1e-5
+    out=tmp_path/'trim.glb';write_glb(out,result,data)
+    assert import_rate(out) is None
+    target=tmp_path/'curves.json';curves(out,target)
+    from strep import sha256
+    bound=read(target)
+    assert bound['source_sha256']==sha256(out)
+    assert len(bound['channels'])==len(result['animations'][0]['channels'])
+    assert any(len(c['times_s'])!=last-first+1 for c in bound['channels'])
+    np.testing.assert_allclose(bound['channels'][0]['times_s'],accessor(result,data,result['animations'][0]['samplers'][0]['input']))
+
+
+def test_step_jump_just_after_cut_must_not_be_smoothed_or_dropped(tmp_path):
+    from gltf_tools import append_accessor,write_glb
+    doc=dict(asset=dict(version='2.0'),scene=0,scenes=[dict(nodes=[0])],nodes=[dict(name='Jump')],buffers=[],bufferViews=[],accessors=[])
+    binary=bytearray();time=append_accessor(doc,binary,[0,1/30,.1],'SCALAR')
+    values=append_accessor(doc,binary,[[0,0,0],[1,0,0],[1,0,0]],'VEC3')
+    doc['animations']=[dict(samplers=[dict(input=time,output=values,interpolation='STEP')],channels=[dict(sampler=0,target=dict(node=0,path='translation'))])]
+    path=tmp_path/'step.glb';write_glb(path,doc,binary)
+    trimmed,data=trim_export(path,4,1,3)
+    sample=AnimationSampler(trimmed,data,0)
+    assert sample.sample(0)[0,0,3]==0
+    assert sample.sample(.00001)[0,0,3]==1
+    assert len(sample.channels[0][2])==3
 
 
 @pytest.mark.parametrize('fault',['placement','ownership','fps'])

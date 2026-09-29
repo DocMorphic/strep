@@ -28,16 +28,27 @@ def map_frame(frame, source_frames, target_frames):
     return int(round(result)) if abs(result-round(result)) < 1e-10 else float(result)
 
 
-def retime_clock(scene, events, frames):
+def retime_clock(scene, events, frames, exact_windows=None):
     original=scene['frame_count'];scale=frame_scale(original,frames)
     if scene.get('fps')!=30 or events.get('fps')!=30:
         raise ValueError('Scene and events require 30 fps clocks')
     result=copy.deepcopy(scene);result['frame_count']=frames
+    precise={}
+    if exact_windows is not None:
+        entries=exact_windows.get('windows')
+        if not isinstance(entries,list) or len(entries)!=len(scene['contacts']) or {e['id'] for e in entries}!={c['id'] for c in scene['contacts']}:
+            raise ValueError('Exact contact windows differ from scene')
+        precise={e['id']:e['exact_output_frames'] for e in entries}
     windows=[]
     for contact in result['contacts']:
         a,b=contact['start_frame'],contact['end_frame']
         if type(a) is not int or type(b) is not int or not 0 <= a <= b < original:
             raise ValueError('Invalid source contact interval')
+        if contact['id'] in precise:
+            interval=precise[contact['id']]
+            if not isinstance(interval,list) or len(interval)!=2 or any(type(v) not in (int,float) or not np.isfinite(v) for v in interval) or not 0<=interval[0]<=interval[1]<original:
+                raise ValueError('Invalid precise contact clock')
+            a,b=interval
         exact=[a*scale,b*scale]
         # Native contact solvers still need integer keys. Enclose the exact
         # interval rather than silently dropping sub-frame contact requests.
@@ -150,8 +161,10 @@ def run(source, output, frames):
         raise ValueError('Runtime actor placement differs')
     if any(o.get('ownership')!='baked_track' for o in runtime['objects'].values()):
         raise ValueError('Retiming requires baked object ownership')
-    transformed,mapped,windows=retime_clock(scene,events,frames)
+    exact_path=source/'retime-contact-windows.json'
+    transformed,mapped,windows=retime_clock(scene,events,frames,read(exact_path) if exact_path.exists() else None)
     inputs={str(source/n):sha256(source/n) for n in ['portable-scene.json','events.json','scene-runtime.json','SOMA-LICENSE.txt']}
+    if exact_path.exists():inputs[str(exact_path)]=sha256(exact_path)
     motions={};exports={};audits={}
     for name,actor in scene['actors'].items():
         motion=local(source,actor['motion']);glb=local(source,actor['preview_glb'])

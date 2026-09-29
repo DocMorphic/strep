@@ -38,6 +38,13 @@ def test_bad_request_does_not_create_output(folder,change):
     assert not folder.exists()
 
 
+@pytest.mark.parametrize('frames',[True,2,902,11.5])
+def test_bad_retime_request_does_not_create_output(folder,frames):
+    p=payload();p.pop('first');p.pop('last');p.update(operation='retime',frames=frames)
+    with pytest.raises(ValueError):prepare(p,folder)
+    assert not folder.exists()
+
+
 def test_changed_snapshot_stops_before_trim(folder):
     prepare(payload(),folder)
     (folder/'input/events.json').write_text('{}')

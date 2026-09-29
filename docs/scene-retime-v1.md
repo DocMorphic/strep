@@ -6,7 +6,7 @@ Exported animation key times are scaled, preserving meshes, materials, rigs, pla
 
 Events retain precise fractional frame/time positions, stable ties and participant references. Inclusive contact intervals are recorded exactly in `retime-contact-windows.json`; integer native solver windows conservatively enclose them, with the timing expansion reported. A contact shorter than a frame is retained. Existing source quality reports are not copied as approval.
 
-Each package includes source hashes, implementation identities, decoded curve/rate comparisons, native motion, original-rig GLBs, exact events, a shared runtime and a hash-checked ZIP. Outputs use a fresh reports directory; source inputs remain unchanged. Current scope is native SOMA packages with 3–901 frames, up to 30 seconds of poses. The export helper covers LINEAR, STEP and CUBICSPLINE; runtime packaging requires a common uniform export key clock. Generic imported rigs, variable tempo, Studio controls and trimming the retimed exports remain open.
+Each package includes source hashes, implementation identities, decoded curve/rate comparisons, native motion, original-rig GLBs, exact events, a shared runtime and a hash-checked ZIP. Outputs use a fresh reports directory; source inputs remain unchanged. Current scope is native SOMA packages with 3–901 frames, up to 30 seconds of poses. The export helper covers LINEAR, STEP and CUBICSPLINE; nonuniform LINEAR/STEP clocks now use hash-bound authored curves in runtime v3. [Studio timing controls and retimed trims](studio-scene-timing-v1.md) are implemented. Generic imported rigs, CUBICSPLINE trimming and variable tempo remain open.
 
 ## Engine import and callback corrections
 

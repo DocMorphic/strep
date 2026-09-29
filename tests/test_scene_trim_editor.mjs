@@ -28,3 +28,9 @@ globalThis.localStorage={getItem(){throw Error('Denied');},setItem(){throw Error
 const privateEditor=createSceneTrimEditor({getContext:()=>({changed:false,frame:0}),onComplete:async()=>{}});
 await privateEditor.bind(source.source_url);assert.equal(el('Apply').disabled,false);
 console.log('Scene trim editor: clock range, unsaved source, busy rejection, submission, recovery and private storage pass. No HTTP/browser used.');
+
+el('Mode').value='retime';el('Mode').events.input();assert(el('First').disabled);assert(!el('Speed').disabled);
+el('Speed').value=0;posted=null;await el('Apply').onclick();assert.equal(posted,null);
+el('Speed').value=1.5;el('Speed').events.input();assert.match(el('Timing').textContent,/actual speed/);
+await el('Apply').onclick();for(let i=0;i<5;i++)await new Promise(r=>setImmediate(r));
+assert.equal(posted.operation,'retime');assert.equal(posted.frames,120);assert.equal(posted.first,undefined);

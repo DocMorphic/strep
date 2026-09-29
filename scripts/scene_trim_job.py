@@ -18,7 +18,7 @@ from scene_constraints import evaluate
 from build_soma_preview import ASSET
 
 JOBS = ROOT/'reports/scene-trim-jobs'
-METHODS = ['scene_trim_job.py','trim_scene.py','scene_runtime.py','scene_release_job.py',
+METHODS = ['retime_scene.py','scene_animation_curves.py','godot_scene_clock.gd','scene_trim_job.py','trim_scene.py','scene_runtime.py','scene_release_job.py',
            'scene_object_export.py','scene_constraints.py','gltf_tools.py','scene_region_job.py',
            'package_generated_scenes.py','object_geometry.py','object_geometry_mesh.py','rig_clip_import.py']
 
@@ -38,6 +38,9 @@ def source(url):
     if not event_path.is_relative_to(data['base'].resolve()):raise ValueError('Event file escapes collection')
     if data['bundle'].get('events_file') or event_path.exists():
         data['files'][event_path] = sha256(event_path); data['events_path'] = event_path
+    if data.get('events_path'):
+        exact=data['events_path'].parent/'retime-contact-windows.json'
+        if exact.exists():data['files'][exact]=sha256(exact);data['exact_windows_path']=exact
     data['files'][ASSET] = sha256(ASSET)
     data['trim_revision'] = hashlib.sha256(json.dumps(dict(
         files={str(p): d for p, d in data['files'].items()},
@@ -52,7 +55,7 @@ def metadata(url):
 
 
 def validate(payload):
-    if not isinstance(payload, dict) or set(payload) != {'source_url','revision','first','last','label'}:
+    if not isinstance(payload, dict) or (set(payload) != {'source_url','revision','first','last','label'} and not (set(payload)=={'source_url','revision','operation','frames','label'} and payload.get('operation')=='retime')):
         raise ValueError('Saved scene, revision, first/last frame and name required')
     data = source(payload['source_url'])
     if payload['revision'] != data['trim_revision']:
@@ -60,7 +63,14 @@ def validate(payload):
     if not isinstance(payload['label'], str) or not 1 <= len(payload['label'].strip()) <= 100:
         raise ValueError('Name must contain 1–100 characters')
     events = read(data['events_path']) if data.get('events_path') else contact_events(data['bundle']['scene'])
-    trim_clock(data['bundle']['scene'], events, payload['first'], payload['last'])
+    if payload.get('operation')=='retime':
+        from retime_scene import retime_clock
+        retime_clock(data['bundle']['scene'],events,payload['frames'],read(data['exact_windows_path']) if data.get('exact_windows_path') else None)
+    else:
+        trim_clock(data['bundle']['scene'], events, payload['first'], payload['last'])
+        if data.get('exact_windows_path'):
+            from trim_scene import trim_exact_windows
+            trim_exact_windows(data['bundle']['scene'],read(data['exact_windows_path']),payload['first'],payload['last'])
     return data, events
 
 
@@ -86,6 +96,7 @@ def prepare(payload, folder):
     if not license_path.exists():license_path = ROOT/'vendor/kimodo/LICENSE'
     shutil.copyfile(license_path, saved/'SOMA-LICENSE.txt')
     shutil.copyfile(license_path, folder/'SOMA-preview-LICENSE.txt')
+    if data.get('exact_windows_path'):shutil.copyfile(data['exact_windows_path'],saved/'retime-contact-windows.json')
     save(saved/'portable-scene.json', scene); save(saved/'events.json', events); runtime(saved)
     save(folder/'source-bundle.json', data['bundle'])
     implementation = folder/'implementation'; implementation.mkdir()
@@ -111,9 +122,14 @@ def run(folder):
             if sha256(ROOT/'scripts'/name) != sha256(folder/'implementation'/name):raise ValueError('Trimming code changed after preparation')
         if sha256(ASSET) != request['source_files'][str(ASSET)]:raise ValueError('Review skin changed')
         save(folder/'pipeline.json', dict(status='processing', stage='Trimming shared scene clock'))
-        trim(folder/'input', folder/'trimmed', payload['first'], payload['last'])
+        retiming=payload.get('operation')=='retime'
+        target='retimed' if retiming else 'trimmed'
+        if retiming:
+            from retime_scene import run as retime
+            retime(folder/'input',folder/target,payload['frames'])
+        else:trim(folder/'input',folder/target,payload['first'],payload['last'])
         skin = dict(np.load(ASSET, allow_pickle=False))
-        for version in ['input','trimmed']:
+        for version in ['input',target]:
             scene = read(folder/version/'portable-scene.json')
             for actor in scene['actors'].values():
                 actor['motion'] = (folder/version/actor['motion']).relative_to(ROOT).as_posix()
@@ -121,10 +137,16 @@ def run(folder):
             if scene.get('objects_glb'):scene['objects_glb'] = version+'/'+scene['objects_glb']
             data = bundle(scene, evaluate(scene, skin), skin); data['events_file'] = version+'/events.json'
             save(folder/(version+'.json'), data)
-        note = 'Shared scene trimmed; contact measurements recomputed. Collision quality, dynamics and naturalness remain unapproved. Prior event context is retained without replay.'
+        note = 'Shared scene timing edited; contact measurements recomputed. Collision quality, dynamics and naturalness remain unapproved. Prior event context is retained without replay.'
+        downloads=[dict(label='Scene animation ZIP',path=target+'/scene-runtime.zip'),dict(label='Events',path=target+'/events.json')]
+        if retiming:
+            recipe=read(folder/target/'retime-recipe.json');note+=f" Speed multiplier {recipe['speed_multiplier']:.6f}; forces and gravity timing were not re-simulated."
+            downloads.append(dict(label='Timing and rate measurements',path=target+'/retime-audit.json'))
+        else:downloads.append(dict(label='Prior events and contact context',path=target+'/trim-context.json'))
+        if (folder/target/'retime-contact-windows.json').exists():downloads.append(dict(label='Precise contact windows',path=target+'/retime-contact-windows.json'))
         save(folder/'manifest.json', dict(scenes=[dict(id='input',label=payload['label']+' · Original',variants=dict(palm='input.json'),review_note='Preserved complete source scene.'),
-            dict(id='candidate',label=payload['label']+' · Trimmed',variants=dict(palm='trimmed.json'),review_note=note,
-                 downloads=[dict(label='Scene animation ZIP',path='trimmed/scene-runtime.zip'),dict(label='Events',path='trimmed/events.json'),dict(label='Prior events and contact context',path='trimmed/trim-context.json')])],quality_approved=False))
+            dict(id='candidate',label=payload['label']+' · Edited',variants=dict(palm=target+'.json'),review_note=note,
+                 downloads=downloads)],quality_approved=False))
         save(folder/'pipeline.json', dict(status='complete',stage=note,finished_at=now(),quality_approved=False))
     except Exception as exc:
         save(folder/'pipeline.json', dict(status='failed',error=str(exc),finished_at=now()));raise

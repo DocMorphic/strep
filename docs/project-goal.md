@@ -1,6 +1,6 @@
 # One project-wide goal: release-ready Strep
 
-Latest timing work: [shared-scene retiming](scene-retime-v1.md) preserves actors, props and precise event clocks across speed changes. Three retimed scenes and a legacy package pass 1,663 engine pose observations after fixing import sampling and callback timing. Original import failures remain recorded; dynamics and human quality are unapproved. Studio retiming controls remain pending.
+Latest timing work: [Studio timing edits](studio-scene-timing-v1.md) add shared-scene speed controls, trims of retimed curves and exact contact intent through repeated edits. The saved-scene worker chain passes 1,228 engine observations; four-scene trimming passes 1,140. A final actor/box regression passes 205 observations after detecting and rejecting engine-collapsed STEP keys. Sixty-four Python tests and the offline editor check pass. Browser rendering, dynamics and human quality remain unapproved; all fourteen release capabilities remain open.
 
 Latest preservation fix: [local edit boundaries](window-boundary-preservation-v1.md) now hold endpoint poses adjoining unchanged motion. A real short fit changes the interior while all 276 outside export samples stay within 0.129 micrometres; 360 Godot actor-frame checks pass. Contact and collision checks still fail, and no release capability is approved.
 

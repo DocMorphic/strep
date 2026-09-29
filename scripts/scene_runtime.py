@@ -31,10 +31,20 @@ def import_rate(path):
     if len(first)<2 or first.ndim!=1 or not np.isfinite(first).all() or first[0]!=0 or np.any(np.diff(first)<=0):
         raise ValueError('Invalid scene animation clock')
     if any(c.shape!=first.shape or not np.array_equal(c,first) for c in clocks) or not np.allclose(first,np.linspace(0,first[-1],len(first)),rtol=0,atol=1e-5):
-        raise ValueError('Runtime import currently requires a common uniform export key clock')
+        return None
     rate=float((len(first)-1)/first[-1])
     if not .01<=rate<=30000:raise ValueError('Unsupported scene import sampling rate')
     return rate
+
+
+def clip_descriptor(folder,path):
+    rate=import_rate(path)
+    entry=dict(path=path.relative_to(folder).as_posix(),sha256=sha256(path),bake_fps=rate or 30.)
+    if rate is None:
+        from scene_animation_curves import write as write_curves
+        target=path.with_suffix('.curves.json');write_curves(path,target)
+        entry['curves']=dict(path=target.relative_to(folder).as_posix(),sha256=sha256(target))
+    return entry
 
 
 def write(folder):
@@ -49,7 +59,7 @@ def write(folder):
         if sha256(source)!=entry['source_sha256']: raise ValueError('Scene actor source hash mismatch')
         with np.load(source,allow_pickle=False) as motion:
             if motion['root_positions'].shape!=(frames,3): raise ValueError('Scene actor frame count mismatch')
-        actors[id]=dict(path=entry['preview_glb'],sha256=sha256(glb),placement=entry['transform'],bake_fps=import_rate(glb))
+        actors[id]=dict(**clip_descriptor(folder,glb),placement=entry['transform'])
     object_clip=None
     if scene.get('objects'):
         path=local(folder,scene['objects_glb']);document,_=read_glb(path)
@@ -60,7 +70,7 @@ def write(folder):
             if declared is not None and declared!=geometry.record(): raise ValueError('Object GLB geometry differs from scene')
             if declared is None and 'geometry' in scene['objects'][id]: raise ValueError('Versioned object geometry missing from GLB')
             objects[id]=dict(node_name=found[0]['name'],ownership='baked_track')
-        object_clip=dict(path=scene['objects_glb'],sha256=sha256(path),bake_fps=import_rate(path))
+        object_clip=clip_descriptor(folder,path)
     events=read(folder/'events.json')
     if events['fps']!=30 or not isinstance(events['events'],list) or len(events['events'])>4096: raise ValueError('Invalid scene event document')
     markers=[]
@@ -73,7 +83,7 @@ def write(folder):
         markers.append(dict(id=f'event-{index}-{digest}',frame=frame,payload=event))
     markers.sort(key=lambda m:m['frame'])
     rates=[a['bake_fps'] for a in actors.values()]+([object_clip['bake_fps']] if object_clip else [])
-    data=dict(schema='strep-runtime-scene-v2' if any(float(m['frame'])!=int(m['frame']) for m in markers) or any(abs(rate-30)>1e-5 for rate in rates) else 'strep-runtime-scene-v1',fps=30,frames=frames,actors=actors,objects=objects,markers=markers,source_scene_sha256=sha256(folder/'portable-scene.json'),source_events_sha256=sha256(folder/'events.json'),release_approved=False,scope='Shared finite baked-scene playback. Authored event notifications are not verified contacts or physics commands. Objects retain baked ownership; do not also drive them with live physics.')
+    data=dict(schema='strep-runtime-scene-v3' if any('curves' in a for a in actors.values()) or object_clip and 'curves' in object_clip else 'strep-runtime-scene-v2' if any(float(m['frame'])!=int(m['frame']) for m in markers) or any(abs(rate-30)>1e-5 for rate in rates) else 'strep-runtime-scene-v1',fps=30,frames=frames,actors=actors,objects=objects,markers=markers,source_scene_sha256=sha256(folder/'portable-scene.json'),source_events_sha256=sha256(folder/'events.json'),release_approved=False,scope='Shared finite baked-scene playback. Authored event notifications are not verified contacts or physics commands. Objects retain baked ownership; do not also drive them with live physics.')
     if object_clip: data['object_clip']=object_clip
     save(folder/'scene-runtime.json',data)
     shutil.copyfile(ROOT/'scripts/godot_scene_clock.gd',folder/'godot_scene_clock.gd')

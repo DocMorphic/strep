@@ -139,7 +139,12 @@
         "reports/kneel-ending-comparison-v1/decision.json",
         "reports/kneel-ending-guides-audit-v1/completion.json",
         "reports/kneel-body-clearance-audit-v1/completion.json",
-        "reports/kneel-body-clearance-audit-v1/decision.json"
+        "reports/kneel-body-clearance-audit-v1/decision.json",
+        "docs/studio-scene-timing-v1.md",
+        "reports/studio-scene-timing-v1/completion.json",
+        "reports/scene-trim-retimed-v1/completion.json",
+        "reports/scene-trim-precision-guard-v1/completion.json",
+        "reports/scene-trim-precision-guard-v1/step-verification.json"
       ]
     },
     {
@@ -318,7 +323,12 @@
         "docs/knee-contact-windows-v1.md",
         "reports/knee-contact-window-comparison-v1/comparison.json",
         "reports/knee-contact-temporal-audit-v1/verification.json",
-        "reports/knee-contact-temporal-audit-v1/decision.json"
+        "reports/knee-contact-temporal-audit-v1/decision.json",
+        "docs/studio-scene-timing-v1.md",
+        "reports/studio-scene-timing-v1/completion.json",
+        "reports/scene-trim-retimed-v1/completion.json",
+        "reports/scene-trim-precision-guard-v1/completion.json",
+        "reports/scene-trim-precision-guard-v1/step-verification.json"
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
@@ -996,7 +1006,12 @@
         "docs/sphere-region-boundaries-v1.md",
         "reports/sphere-region-approach-v1-audit/verification.json",
         "reports/sphere-region-floor-v1-audit/verification.json",
-        "reports/sphere-region-boundaries-engine-v1/verification.json"
+        "reports/sphere-region-boundaries-engine-v1/verification.json",
+        "docs/studio-scene-timing-v1.md",
+        "reports/studio-scene-timing-v1/completion.json",
+        "reports/scene-trim-retimed-v1/completion.json",
+        "reports/scene-trim-precision-guard-v1/completion.json",
+        "reports/scene-trim-precision-guard-v1/step-verification.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1222,7 +1237,12 @@
         "reports/refined-partner-descent-v1/independent-verification.json",
         "reports/partner-path-review-v1/build.json",
         "reports/partner-path-review-v1/verification.json",
-        "reports/midpoint-support-iterations-v1/comparison-tests.json"
+        "reports/midpoint-support-iterations-v1/comparison-tests.json",
+        "docs/studio-scene-timing-v1.md",
+        "reports/studio-scene-timing-v1/completion.json",
+        "reports/scene-trim-retimed-v1/completion.json",
+        "reports/scene-trim-precision-guard-v1/completion.json",
+        "reports/scene-trim-precision-guard-v1/step-verification.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1648,7 +1668,12 @@
         "reports/rig-mirror-v3/engine/verification.json",
         "reports/rig-mirror-studio-v1/verification.json",
         "reports/rig-mirror-studio-v1/tests.txt",
-        "reports/rig-mirror-studio-v1/study-source-diff.json"
+        "reports/rig-mirror-studio-v1/study-source-diff.json",
+        "docs/studio-scene-timing-v1.md",
+        "reports/studio-scene-timing-v1/completion.json",
+        "reports/scene-trim-retimed-v1/completion.json",
+        "reports/scene-trim-precision-guard-v1/completion.json",
+        "reports/scene-trim-precision-guard-v1/step-verification.json"
       ]
     },
     {
@@ -1753,7 +1778,12 @@
         "reports/rig-mirror-v3/engine/verification.json",
         "reports/rig-mirror-studio-v1/verification.json",
         "reports/rig-mirror-studio-v1/tests.txt",
-        "reports/rig-mirror-studio-v1/study-source-diff.json"
+        "reports/rig-mirror-studio-v1/study-source-diff.json",
+        "docs/studio-scene-timing-v1.md",
+        "reports/studio-scene-timing-v1/completion.json",
+        "reports/scene-trim-retimed-v1/completion.json",
+        "reports/scene-trim-precision-guard-v1/completion.json",
+        "reports/scene-trim-precision-guard-v1/step-verification.json"
       ],
       "remaining": [
         "Extend GPU/rendered world-placement validation beyond144sampled silhouettes: materials, hidden surfaces, intermediate times, more rigs/backends and gameplay physics.",
@@ -2050,7 +2080,12 @@
         "reports/kneel-ending-comparison-v1/decision.json",
         "reports/kneel-ending-guides-audit-v1/completion.json",
         "reports/kneel-body-clearance-audit-v1/completion.json",
-        "reports/kneel-body-clearance-audit-v1/decision.json"
+        "reports/kneel-body-clearance-audit-v1/decision.json",
+        "docs/studio-scene-timing-v1.md",
+        "reports/studio-scene-timing-v1/completion.json",
+        "reports/scene-trim-retimed-v1/completion.json",
+        "reports/scene-trim-precision-guard-v1/completion.json",
+        "reports/scene-trim-precision-guard-v1/step-verification.json"
       ],
       "remaining": [
         "Extend GPU/rendered world-placement validation beyond144sampled silhouettes: materials, hidden surfaces, intermediate times, more rigs/backends and gameplay physics.",
@@ -2771,6 +2806,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T13:55:05.653666+00:00",
-  "last_progress": "Shared-scene CLI retiming preserves exported actor/prop paths and exact fractional event timing. After fixing Godot import sampling and callback/terminal-event timing, three retimed scenes plus a legacy package pass 1,663 engine pose observations; initial failures remain retained. Fifty focused Python tests pass. Studio retiming, trims of retimed exports, dynamics and human quality approval remain open; all fourteen capabilities remain unapproved."
+  "last_progress_at": "2026-09-29T14:22:48.769242+00:00",
+  "last_progress": "Studio speed controls and retimed trims preserve precise event/contact intent through repeated edits. Four-scene trim and real three-job Studio chain pass 1,140 and 1,228 engine observations. Final actor/box regression passes 205 after rejecting engine-collapsed STEP keys; original failing probe retained. 64 Python tests and offline Node editor check pass. Browser rendering, physical dynamics and human quality remain unapproved; all fourteen capabilities remain open."
 }

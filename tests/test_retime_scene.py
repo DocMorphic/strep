@@ -35,6 +35,17 @@ def test_fractional_event_can_be_retimed_again_without_rounding():
     assert map_frame(9.5,10,6)==5.5
 
 
+def test_retime_trim_retime_does_not_expand_exact_contact_intent():
+    from trim_scene import trim_clock,trim_exact_windows
+    scene,events=fixture()
+    new,mapped,windows=retime_clock(scene,events,6)
+    cut,cut_events,_=trim_clock(new,mapped,1,4)
+    cut['contacts'],precise=trim_exact_windows(new,dict(windows=windows),1,4)
+    final,_,final_windows=retime_clock(cut,cut_events,10,precise)
+    assert final_windows[0]['exact_output_frames']==pytest.approx([11/3,11/3])
+    assert final['contacts'][0]['start_frame']==3 and final['contacts'][0]['end_frame']==4
+
+
 @pytest.mark.parametrize('frames',[True,2,902,30.5,float('nan')])
 def test_invalid_target_clock_rejected(frames):
     with pytest.raises(ValueError):frame_scale(10,frames)
