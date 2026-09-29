@@ -328,3 +328,6 @@ Completed convergence work: [four-stage checked-contact result](checked-contact-
 
 
 Latest feasibility result: [root-height constraint repair](checked-root-feasibility-v1.md) clears the retained get-up contact and point-rate failures in one 7.519-micrometre correction, with all 717 floor samples and 160 outside samples preserved. Thirty-four focused tests and 407 actual Godot observations pass. Support and motion-quality flags remain; next test complete fitting/correction on predeclared cases across other action families. Studio defaults and all release approvals remain unchanged.
+
+
+Breadth study started: [eight predeclared contact edits](contact-breadth-v1.md) cover waving, crawling, kicking and jump/landing at seeds 11/22. All eight source previews and timing checks pass; seven source clips require pose changes beyond root height to meet their pins. Thirty-four workflow tests pass. The frozen full-fitting/correction batch is running; final export, support and engine outcomes are pending, and no release capability is approved.

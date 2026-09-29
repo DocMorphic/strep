@@ -349,7 +349,8 @@
         "docs/checked-floor-guard-v1.md",
         "docs/checked-sampled-pins-v1.md",
         "docs/checked-contact-convergence-v1.md",
-        "docs/checked-root-feasibility-v1.md"
+        "docs/checked-root-feasibility-v1.md",
+        "docs/contact-breadth-v1.md"
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
@@ -789,7 +790,8 @@
         "docs/checked-floor-guard-v1.md",
         "docs/checked-sampled-pins-v1.md",
         "docs/checked-contact-convergence-v1.md",
-        "docs/checked-root-feasibility-v1.md"
+        "docs/checked-root-feasibility-v1.md",
+        "docs/contact-breadth-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1063,7 +1065,8 @@
         "docs/checked-floor-guard-v1.md",
         "docs/checked-sampled-pins-v1.md",
         "docs/checked-contact-convergence-v1.md",
-        "docs/checked-root-feasibility-v1.md"
+        "docs/checked-root-feasibility-v1.md",
+        "docs/contact-breadth-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -2681,7 +2684,8 @@
         "docs/checked-floor-guard-v1.md",
         "docs/checked-sampled-pins-v1.md",
         "docs/checked-contact-convergence-v1.md",
-        "docs/checked-root-feasibility-v1.md"
+        "docs/checked-root-feasibility-v1.md",
+        "docs/contact-breadth-v1.md"
       ]
     }
   ],
@@ -2893,6 +2897,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T17:23:58.771000+00:00",
-  "last_progress": "A bounded root-height feasibility correction clears the retained get-up pin and point-rate constraints: 0/81 pin misses, 4.999499 mm maximum error, no phase rate excess, zero added floor depth at all 717 export samples. One 7.519 micrometre step preserves rotations, held segments and original budgets; 34 focused tests and 407 actual Godot observations pass. Support/quality flags remain. Broader action-family validation is next; no release capability approved."
+  "last_progress_at": "2026-09-29T17:35:55.470084+00:00",
+  "last_progress": "Frozen eight-case development contact study across wave, crawl, kick and jump/landing at seeds 11/22. All source previews and timing checks pass; seven original source clips cannot meet the pins using root height alone. Thirty-four workflow tests pass. Full pose fitting plus bounded root repair is running in declared order; final contact/support/engine results remain pending. No release capability approved."
 }

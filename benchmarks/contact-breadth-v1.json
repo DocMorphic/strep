@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "contact-breadth-v1",
+  "scope": "Development contact-edit study across four action families; not held-out release evaluation or an action whitelist.",
+  "source_collection": "body-contact-v1",
+  "selection_policy": "All four named development actions at seeds 11 and 22, without screening solver outcomes. Bind the lowest region material vertex at pin start; target its interval-midpoint source position plus the declared offset, with target Y at least 2 mm. Report timing conflicts without changing windows, targets, seeds or budgets. A stationary pin is an authored edit request, not proof of plausible support.",
+  "binding": {"offset_m": [0.003, 0.0, 0.0], "minimum_target_y_m": 0.002},
+  "fit": {"outer_stage_count": 4, "iteration_count": 120, "authored_point_scaling": "tolerance", "export_floor_guard": true, "export_point_position_guard": true},
+  "repair": {"attempts": 6, "trust_m": 0.00001, "normalized_margin": 0.0001},
+  "acceptance": "Original checked 5 mm stationary-pin tolerance, source point/global rate ceilings and root/rotation budgets, no per-time added floor depth, held outside segments. Record independent body/support flags and engine import separately; passing contact limits is not quality approval.",
+  "cases": [
+    {"id": "wave-11", "family": "gestures", "take_id": "wave-seed-11", "seed": 11, "frames": 120, "region": "LeftFoot", "pin": [50, 70], "window": [10, 109]},
+    {"id": "crawl-11", "family": "ground_movement", "take_id": "crawl-seed-11", "seed": 11, "frames": 120, "region": "LeftHand", "pin": [50, 70], "window": [10, 109]},
+    {"id": "kick-11", "family": "combat", "take_id": "kick-seed-11", "seed": 11, "frames": 120, "region": "LeftFoot", "pin": [50, 70], "window": [10, 109]},
+    {"id": "jump-land-11", "family": "parkour", "take_id": "jump-land-seed-11", "seed": 11, "frames": 120, "region": "LeftFoot", "pin": [85, 100], "window": [10, 109]},
+    {"id": "wave-22", "family": "gestures", "take_id": "wave-seed-22", "seed": 22, "frames": 120, "region": "LeftFoot", "pin": [50, 70], "window": [10, 109]},
+    {"id": "crawl-22", "family": "ground_movement", "take_id": "crawl-seed-22", "seed": 22, "frames": 120, "region": "LeftHand", "pin": [50, 70], "window": [10, 109]},
+    {"id": "kick-22", "family": "combat", "take_id": "kick-seed-22", "seed": 22, "frames": 120, "region": "LeftFoot", "pin": [50, 70], "window": [10, 109]},
+    {"id": "jump-land-22", "family": "parkour", "take_id": "jump-land-seed-22", "seed": 22, "frames": 120, "region": "LeftFoot", "pin": [85, 100], "window": [10, 109]}
+  ],
+  "quality_approved": false
+}
