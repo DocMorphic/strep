@@ -270,7 +270,11 @@ class Handler(BaseHTTPRequestHandler):
             elif self.path=='/api/rig-jobs':
                 from studio_characters import validate_job
                 rig_request,rig_source,rig_profile=validate_job(payload,allowed_file)
-            elif self.path=='/api/contact-edits':source,spec=validate_contact_request(payload)
+            elif self.path=='/api/contact-edits':
+                if isinstance(payload,dict) and 'checked_plan' in payload:
+                    from checked_contact_job import validate_request
+                    validate_request(payload)
+                else:source,spec=validate_contact_request(payload)
             else:
                 batch=validate_batch(payload)
                 if len(batch['requests'])!=1:raise ValueError('The studio accepts one request at a time')
@@ -338,7 +342,13 @@ class Handler(BaseHTTPRequestHandler):
                 return self.respond(202,{'id':job,'status':'starting'})
             if self.path=='/api/contact-edits':
                 folder=ROOT/'reports/contact-jobs'/job
-                if 'timing_check' in payload:
+                if 'checked_plan' in payload:
+                    from checked_contact_job import prepare
+                    try:prepare(payload,folder)
+                    except (ValueError,OSError) as exc:
+                        if folder.exists():save(folder/'pipeline.json',{'status':'failed','error':str(exc)})
+                        return self.respond(400,{'error':str(exc)})
+                elif 'timing_check' in payload:
                     from contact_timing_job import prepare
                     try:prepare(source,spec,payload['timing_check'],folder)
                     except (ValueError,OSError) as exc:

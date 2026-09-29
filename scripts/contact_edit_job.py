@@ -11,6 +11,12 @@ def run(folder):
         import psutil
         save(folder/'worker.json',dict(pid=os.getpid(),created_at=psutil.Process().create_time()))
         request=read(folder/'edit-request.json')
+        if request.get('kind')=='checked_fit':
+            from checked_contact_job import run as checked_fit
+            save(folder/'pipeline.json',dict(status='processing',kind='checked_fit'))
+            checked_fit(folder)
+            save(folder/'pipeline.json',dict(status='complete',kind='checked_fit',finished_at=now()))
+            return
         if request.get('kind')=='timing_check':
             from contact_timing_job import run as timing_check
             save(folder/'pipeline.json',dict(status='processing',kind='timing_check'))

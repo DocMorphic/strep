@@ -5,7 +5,7 @@ const html=await readFile(new URL('../scripts/action-studio.html',import.meta.ur
 class Element{constructor(){this.value='';this.textContent='';this.children=[];}replaceChildren(...c){this.children=c;}append(...c){this.children.push(...c);}setAttribute(){}}
 const elements=new Map([...html.matchAll(/id="(contact[^"]+)"/g)].map(m=>[m[1],new Element()]));
 const el=n=>elements.get('contact'+n);const storage=new Map();let calls=[];
-const context={document:{getElementById:id=>{assert(elements.has(id));return elements.get(id);},createElement:()=>new Element()},
+const context={document:{getElementById:id=>{assert(elements.has(id));return elements.get(id);},createElement:()=>new Element(),createTextNode:text=>({textContent:text})},
  Option:class extends Element{constructor(text,value){super();this.textContent=text;this.value=value;}},
  localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},console};
 vm.createContext(context);vm.runInContext((await readFile(new URL('../scripts/contact-editor.js',import.meta.url),'utf8'))+'\nglobalThis.editor=contactEditor;',context);
@@ -23,3 +23,14 @@ el('Status').textContent='New draft';editor.showTiming(job);assert.equal(el('Sta
 editor.load('other',trial);editor.load('body-contact-v1',trial);assert.equal(Number(el('WindowStart').value),20);assert.equal(Number(el('WindowEnd').value),159);
 assert.match(html,/timing_check:timingCheck/);assert.match(html,/needs_authoring_change/);
 console.log('Contact timing UI: distinct check payload, unchanged legacy apply, held bounds, source-matched results, safe links, persistence and polling pass. No HTTP/browser used.');
+
+const checked={...job,id:'contact-jobs/checked1/result',status:'checked',check_revision:'a'.repeat(64)};
+editor.setBusy(false);editor.showTiming({...checked,status:'needs_authoring_change'});
+assert(el('FitChecked').disabled);const count=calls.length;await el('FitChecked').onclick();assert.equal(calls.length,count);
+editor.showTiming({...checked,id:'contact-jobs/checked2/result'});assert(!el('FitChecked').disabled);
+await el('FitChecked').onclick();assert.equal(calls.length,count+1);
+assert.equal(JSON.stringify(calls.at(-1)[3]),JSON.stringify({checked_plan:'checked2',revision:'a'.repeat(64)}));
+assert.equal(calls.at(-1)[1],null,'Fit sends saved identity instead of substituting the current draft');
+editor.setBusy(false);editor.load('contact-jobs/fit/result',{...trial,support_correction:{checked_fit:true}});
+assert(el('Result').children.some(a=>a.href?.endsWith('/checked-export-audit.json')));
+console.log('Checked fit UI: conflict rejection, exact saved revision payload and separate exported audit link pass.');

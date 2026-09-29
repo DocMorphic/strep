@@ -124,4 +124,5 @@ def listing(folder,state):
     base='/files/'+folder.relative_to(ROOT/'reports').as_posix()
     return dict(kind='contact_check',timing_message=state.get('message','Checking stationary contact timing.'),
         timing_report=base+'/window-preflight.txt',timing_json=base+'/window-preflight.json',
-        bound_contacts=base+'/bound-contact-spec.json',source=state.get('source'))
+        bound_contacts=base+'/bound-contact-spec.json',source=state.get('source'),
+        check_revision=sha256(folder/'timing-result.json') if (folder/'timing-result.json').is_file() else None)

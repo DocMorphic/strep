@@ -310,3 +310,6 @@ Latest authoring check: [contact-window preflight](contact-window-preflight-v1.m
 
 
 Latest Studio work: [stationary contact timing checks](studio-contact-timing-v1.md) now expose immutable preflight reports in the inspector. A real get-up job reports four conflicts, retains source and draft, and creates no animation. Twenty-six Python tests and offline editor checks pass. A separate guarded correction mode remains to be integrated; the existing Apply method is unchanged and no release gate is approved.
+
+
+Latest Studio correction: [fit saved checked pins](studio-checked-fit-v1.md) binds the exact check revision, source, material points, edit window and rate policy. The actual candidate fails all 81 contact samples and retains floor/support/rate regressions despite passing endpoint preflight. Outside-window preservation and 407 engine observations pass; 32 Python tests and offline editor checks pass. All release gates remain open.
