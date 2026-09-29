@@ -21,3 +21,6 @@ Inputs and current Python/Godot methods are copied and hashed before fitting. Ou
 Fifty-five focused tests pass, covering the new objective's gradients, both independent references, immutable reference copies, pose-only and speed-only violations, unchanged fast source movement, multiplier updates and invalid inputs; existing rate, support, restart-budget, initialization and held-pose tests also pass. Four existing Torch deprecation warnings remain. CLI argument parsing passes.
 
 The experiment was launched under a verified live worker identity. Its outcome is not yet established; optimizer loss and successful processing are not acceptance or realism evidence. The full project goal and all fourteen release capabilities remain open.
+
+
+A [full-distance skin bound](contact-pose-sphere-v1.md) now proves kick-11 also conflicts with the current native edit screen: frame 50 requires at least 26.519804 cm versus the 22 cm budget. Exact outward rational bounds verify two new frame/reference conflicts; all 316 retained calculations were replayed, with no motion or acceptance changes. Twenty focused bound tests pass. The already-running body-constraint experiment remains frozen; its result will be retained, then the stronger certificate should enter Studio preflight. No further iteration-only retries are justified for this request.
