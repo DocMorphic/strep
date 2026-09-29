@@ -28,12 +28,13 @@ def select(diagnosis):
     return max(excluded,key=lambda r:(r['necessary_vertical_bound_max_m_s2']/r['acceptance_peak_m_s2'],r['id']))
 
 
-def make_problem(folder,request):
+def make_problem(folder,request,initial_parameters=None):
     fitter,initial=load(folder/'source',SparseSupportReferenceFitter)
     animated={c['target']['node'] for c in fitter.rig.document['animations'][0]['channels']}|set(fitter.nodes)
-    evaluator=SerializedPose(fitter.rig,animated,fitter.spec['root_node'],len(initial))
+    evaluator=SerializedPose(fitter.rig,animated,fitter.spec['root_node'],len(initial),sample_clock='float32')
     _,world=samples(folder/'source/candidate/character.glb',len(initial))
-    return CoupledBreadthBlock(fitter,initial,evaluator,request['frames'],read(folder/'envelope.json'),request['target'],world)
+    return CoupledBreadthBlock(fitter,initial if initial_parameters is None else initial_parameters,evaluator,request['frames'],read(folder/'envelope.json'),request['target'],world,
+                               reference_parameters=initial if initial_parameters is not None else None)
 
 
 def prepare(diagnosis_path,output,case_id=None):

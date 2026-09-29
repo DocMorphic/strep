@@ -4,6 +4,7 @@ import numpy as np
 from scipy import sparse
 from strep import ROOT,read,sha256
 from root_release_block import root_pair
+from conic_linear_screen import screen
 
 
 def solver_module():
@@ -68,11 +69,13 @@ def tightened_cap(item,buffers):
     return item['cap']-min(requested,.5*item['cap'])
 
 
-def direction(p,x,trust,buffers=None,constraint_builder=None):
+def direction(p,x,trust,buffers=None,constraint_builder=None,linear_screen=False):
     clarabel=solver_module();evaluation=p.evaluate(x);g=evaluation[1]
     if not np.isfinite(g).all() or np.max(np.abs(g))==0:return None,dict(status='ZeroGradient',trust=trust)
     c,j,cones=(constraint_builder or affine_constraints)(p,x);bounds=np.tile(p.fitter.bounds[p.free],len(p.frames))
     lower=np.maximum(-1.,(-bounds-x)/trust);upper=np.minimum(1.,(bounds-x)/trust)
+    full_c,full_j=c,j;screening=None
+    if linear_screen:c,j,screening=screen(c,j,lower*trust,upper*trust)
     mats=[-sparse.csc_matrix(j*trust),sparse.eye(len(x),format='csc'),-sparse.eye(len(x),format='csc')]
     rhs=[c,upper,-lower];types=[clarabel.NonnegativeConeT(len(c)+2*len(x))]
     for item in cones:
@@ -85,15 +88,16 @@ def direction(p,x,trust,buffers=None,constraint_builder=None):
     record=dict(status=str(result.status),iterations=result.iterations,trust=trust,linear_rows=len(c),norm_cones=len(cones),
         predicted_objective_change=float(g@delta),max_coordinate_step=float(np.abs(delta).max()),proposal_buffers=buffers or {},
         tightened_cones=int(sum(tightened_cap(t,buffers)<t['cap'] for t in cones)))
+    if screening is not None:record['linear_screen']=screening
     # A solver status is proposal metadata, never final animation acceptance.
     if str(result.status) not in ['Solved','AlmostSolved'] or not np.isfinite(delta).all() or np.abs(delta).max()>trust+1e-12:return None,record
-    record['predicted_linear_minimum']=float((c+j@delta).min())
+    record['predicted_linear_minimum']=float((full_c+full_j@delta).min())
     record['predicted_norm_max_excess']=max(float(np.linalg.norm(t['vector']+t['jacobian']@delta)-t['cap'])/t['scale'] for t in cones)
     record['predicted_buffered_norm_max_excess']=max(float(np.linalg.norm(t['vector']+t['jacobian']@delta)-tightened_cap(t,buffers))/t['scale'] for t in cones)
     return delta,record
 
 
-def solve(p,steps=12,trusts=(1e-4,1e-5,1e-6),progress=None,buffers=None,constraint_builder=None):
+def solve(p,steps=12,trusts=(1e-4,1e-5,1e-6),progress=None,buffers=None,constraint_builder=None,linear_screen=False):
     x=p.initial[np.ix_(p.frames,p.free)].ravel();initial=x.copy();before=p.evaluate(x);history=[]
     if before[2].min()<-1e-8 or not p.geometric_guard(before[5]):raise ValueError('Strictly feasible source required')
     for iteration in range(steps):
@@ -101,7 +105,7 @@ def solve(p,steps=12,trusts=(1e-4,1e-5,1e-6),progress=None,buffers=None,constrai
         if current[0]==0.:break
         attempts=[];accepted=False
         for trust in trusts:
-            delta,record=direction(p,x,trust,buffers,constraint_builder);record['trials']=[]
+            delta,record=direction(p,x,trust,buffers,constraint_builder,linear_screen);record['trials']=[]
             if delta is not None and record['predicted_objective_change']<0:
                 record['proposed_delta']=delta.tolist()
                 for index in range(8):

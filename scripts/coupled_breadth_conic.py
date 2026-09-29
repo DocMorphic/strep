@@ -36,6 +36,6 @@ def constraints(problem, x, quantized=True):
         for column, free in enumerate(p.free):
             if free < 3:
                 row[free, block*len(p.free)+column] = 1.
-        cones.append(dict(vector=values[frame, :3]-p.initial[frame, :3], jacobian=row,
+        cones.append(dict(vector=values[frame, :3]-p.reference_parameters[frame, :3], jacobian=row,
                           cap=p.radius, scale=p.radius, kind='root_radius'))
     return linear, jacobian, cones

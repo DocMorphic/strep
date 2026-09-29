@@ -47,3 +47,19 @@ def test_rejects_invalid_frame_pair_and_nonfinite_world():
         with pytest.raises(ValueError): oracle.half_pose(world, world, frame)
     world[0, 0, 3] = np.nan
     with pytest.raises(ValueError): oracle.pose(world)
+
+
+def test_float32_audit_clock_is_explicit_and_default_clock_is_preserved():
+    rig = SimpleNamespace(parents=[-1], document=dict(nodes=[{}]))
+    default = SerializedPose(rig, {0}, 0, 151)
+    matched = SerializedPose(rig, {0}, 0, 151, sample_clock='float32')
+    worlds = np.tile(np.eye(4), (2, 1, 1, 1))
+    worlds[1, 0, 1, 3] = 1.
+    frame = 108
+    times = matched.times[frame:frame+2].astype(float)
+    actual = matched.half_pose(worlds[0], worlds[1], frame)[0, 1, 3]
+    expected = (float(np.float32((frame+.5)/30))-times[0])/(times[1]-times[0])
+    assert actual == expected
+    assert default.half_pose(worlds[0], worlds[1], frame)[0, 1, 3] != actual
+    with pytest.raises(ValueError, match='sampling clock'):
+        SerializedPose(rig, {0}, 0, 151, sample_clock='unknown')

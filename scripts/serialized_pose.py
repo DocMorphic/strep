@@ -11,9 +11,11 @@ from rig_clip_import import AnimationSampler
 
 
 class SerializedPose:
-    def __init__(self, rig, animated, root, frames):
+    def __init__(self, rig, animated, root, frames, sample_clock='float64'):
         if type(frames) is not int or frames < 2:
             raise ValueError('At least two 30fps animation frames required')
+        if sample_clock not in ('float64', 'float32'): raise ValueError('Unknown sampling clock')
+        self.sample_clock = sample_clock
         self.parents = rig.parents
         self.animated = sorted(set(animated) | {root})
         if any(type(n) is not int or not 0 <= n < len(self.parents) for n in self.animated):
@@ -48,6 +50,7 @@ class SerializedPose:
         rt, rq = self.channels(right_world)
         times = self.times[left_frame:left_frame+2]
         time = (left_frame+.5)/30
+        if self.sample_clock == 'float32': time = float(np.float32(time))
         translations, rotations = [], []
         for i in range(len(self.animated)):
             translations.append(AnimationSampler.value('translation', times, np.array([lt[i], rt[i]]), 'LINEAR', time))

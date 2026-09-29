@@ -7,15 +7,18 @@ from rig_transition import localize
 
 
 class CoupledBreadthBlock(RootBlockProblem):
-    def __init__(self,fitter,initial,evaluator,frames,envelope,target,reference_world):
+    def __init__(self,fitter,initial,evaluator,frames,envelope,target,reference_world,reference_parameters=None):
         self.reference_world=np.asarray(reference_world)
         self.reference_skin=np.asarray([fitter.rig.vertices(w) for w in reference_world])
+        self.reference_parameters=np.asarray(initial if reference_parameters is None else reference_parameters).copy()
+        if self.reference_parameters.shape!=initial.shape:raise ValueError('Reference parameter shape differs')
         self.position_eps=1e-6
         self.radius=.01
         super().__init__(fitter,initial,evaluator,frames,list(range(initial.shape[1])),envelope,target)
         self.augmented_x=None
         # The float32 pose reconstruction must actually match the saved source.
-        rebuilt=np.array([evaluator.pose(w) for w in self.world])
+        reference_poses=self.world if reference_parameters is None else [fitter.pose(f,x)[0] for f,x in enumerate(self.reference_parameters)]
+        rebuilt=np.array([evaluator.pose(w) for w in reference_poses])
         if np.max(np.abs(rebuilt-self.reference_world[::2]))>1e-6:raise ValueError('Parameter reconstruction differs from source export')
         local=localize(self.reference_world[::2],fitter.rig.parents)
         rotations=local[:-1,:,:3,:3].transpose(0,1,3,2)@local[1:,:,:3,:3]
@@ -43,7 +46,7 @@ class CoupledBreadthBlock(RootBlockProblem):
                 full=np.zeros((2,self.width));full[:,offset:offset+len(self.free)]=j[ids].mean(0)[[0,2]][:,self.free]
                 m,d=norm_envelope_pair((point-anchor)[None,:],full[None,:,:],np.array([cap]),.01)
                 additions.extend(m);derivatives.extend(d)
-            shift=values[frame,:3]-self.initial[frame,:3];full=np.zeros((3,self.width));full[:,offset:offset+3]=np.eye(3)
+            shift=values[frame,:3]-self.reference_parameters[frame,:3];full=np.zeros((3,self.width));full[:,offset:offset+3]=np.eye(3)
             m,d=norm_envelope_pair(shift[None,:],full[None,:,:],np.array([self.radius]),.01)
             additions.extend(m);derivatives.extend(d)
         result=(base[0],base[1],np.r_[margins,additions],np.vstack([jac,derivatives]),base[4],base[5])

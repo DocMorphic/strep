@@ -31,6 +31,8 @@ The [bounded region-grasp correction](docs/sphere-region-upper-return-v1.md) pas
 
 [Coordinated root/leg correction](docs/coupled-breadth-conic-v1.md) now retains numerical improvements across all nine diagnosed root-only conflicts after repairing physical step checks. Earlier failures remain recorded. None of the nine original root peaks is restored; full-clip quality remains unresolved.
 
+[Whole-clip correction](docs/coupled-clip-sequence-v1.md) extends this work across 29 selected windows while sharing each clip's original edit budget. Nine exported candidates pass the numerical comparison; original root peaks and usability requirements remain unresolved.
+
 The owner will perform developer review first. Independent animator review and timed cleanup evidence remain release requirements.
 
 ## Using this source snapshot
