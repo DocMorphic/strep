@@ -108,6 +108,9 @@ def build(study,audit_path,engine_path,output,label,rates_path=None,support_path
         if not support['sampled_point_preservation_passed']:summary['motion_regressions'].append('preserved_support_drift')
     if preservation is not None:
         summary['window_preservation']=preservation
+        from plan_scene_edit_window import plan
+        summary['window_geometry']=plan(audit['variants']['candidate']['rows'],window,scene['frame_count'],
+                                        protocol['config']['clearance_m'],protocol['config']['object_clearance_m'])
         for group,flag in [('locked_segments','edit_window_outside_change'),('boundary_segments','edit_window_boundary_change')]:
             if preservation[group]['within_numerical_tolerance'] is False:summary['motion_regressions'].append(flag)
     output.mkdir(parents=True);scenes=[]
@@ -143,6 +146,8 @@ def build(study,audit_path,engine_path,output,label,rates_path=None,support_path
     if window_path is not None:
         shutil.copyfile(window_path,output/'window-audit.json')
         for row in scenes:row['downloads'].append(dict(label='Edit-window preservation',path='window-audit.json'))
+        save(output/'window-geometry.json',summary['window_geometry'])
+        for row in scenes:row['downloads'].append(dict(label='Remaining geometry by edit range',path='window-geometry.json'))
     shutil.copyfile(audit_path,output/'geometry-audit.json');shutil.copyfile(engine_path,output/'engine-audit.json')
     shutil.copyfile(ROOT/'vendor/kimodo/LICENSE',output/'SOMA-preview-LICENSE.txt')
     save(output/'manifest.json',dict(scenes=scenes,quality_approved=False,review_mode='unblinded_developer_comparison'))

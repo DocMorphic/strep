@@ -1,0 +1,13 @@
+# Edit-range conflicts in Studio review
+
+Windowed scene-fit review packages now compute a range assessment from their independently audited candidate geometry. The package includes a downloadable `window-geometry.json`, and the Studio's **Motion, support and edit-range checks** panel reports remaining failures inside the selection, across its boundary, and in locked interpolation segments. When locked failures remain, it explains that another solve preserving the same outside keys cannot repair them. A suggested wider range is informational; no selection is changed and no solver is launched.
+
+The existing contact/geometry failures, timing regressions, preservation report and pending developer review remain visible. Geometry scope and preservation answer different questions: unchanged outside motion can still contain collisions. Old packages without range evidence continue to show their existing diagnostics. Invalid range evidence produces an unavailable-evidence message instead of a success claim. Changing scene placement hides the existing diagnostics, including the new range information, because they no longer describe the edited scene.
+
+## Actual package verification
+
+`reports/scene-region-jobs/window-range-review-v1` packages the completed earlier arm-guide clip. Its measured failures remain **478/490 contact samples** and **379/717 geometry samples**. The range assessment reports 326 interior, 3 boundary and 50 locked-segment geometry failures; it suggests [23, 133] while retaining the requested [48, 133]. All fourteen package file hashes and thirteen permitted offline routes pass. The Python source snapshot remains unserved.
+
+The actual candidate bundle was passed through the Studio text renderer in Node; its counts, range, unchanged-selection message and absence of approval were verified. Twenty Python publisher/planner/auditor tests, four desktop build/preservation tests, and three Node component checks pass. Tests cover invalid ranges/counts, a smaller suggested envelope, absent reports, clean sampled input without quality approval, and the existing contact editor and support details. Evidence and exact verification methods are retained under `reports/edit-window-review-v1`.
+
+The generated desktop HTML was rebuilt from its templates and verified against the builder. No live browser or visual interaction check was performed. This is review integration for already-audited fits, not automatic preflight of arbitrary imported clips. The original full contact solve remains active and unchanged; its result is not yet available. All fourteen release capabilities remain unapproved.
