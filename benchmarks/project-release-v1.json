@@ -137,6 +137,7 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/breadth-root-cleanup-v1.md",
         "docs/rough-clip-and-contact-inspection-v1.md",
         "reports/contact-inspection-v1/corrected.json",
         "reports/rough-clip-authoring-v1/import-verification.json",
@@ -2621,6 +2622,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-28T21:56:20.007336+00:00",
-  "last_progress": "Frame60 grip points are reachable within existing edit bounds, but no full-clearance pose witness found. Analytic LBS bound rules out finger-only cleanup at that particular reachable body pose (at least14.541mm penetration). Joint wrist/body/finger fitting remains needed; no release approval."
+  "last_progress_at": "2026-09-29T02:43:08.236118+00:00",
+  "last_progress": "Completed full 24-case root cleanup: 21 preserved improvements, three unchanged outcomes, 4320 engine frames. Only 9/24 recover original peak acceleration; quality and release approval remain missing."
 }

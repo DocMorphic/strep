@@ -1,6 +1,6 @@
 # Whole-clip support correction across action families
 
-This study is running, not complete. Its protocol is frozen in `reports/whole-support-breadth-v1/protocol.json`; it started after the exact endpoint-batch process completed. The fifth retained interim contains five completed cases and19 pending cases. No new generation, checkpoint changes or training are involved.
+The study completed all 24 candidates on September 28. `reports/whole-support-breadth-final-v1` retains the independently checked full population and 8,640 engine actor-frames; `reports/whole-support-regressions-final-v1` records root-peak regressions in 18/24 cases and predicted-support foot-peak regressions in 13/24. Historical interim observations below remain for provenance. No new generation, checkpoint changes or training were involved. [The full-population root-cleanup follow-up](breadth-root-cleanup-v1.md) preserves these sources and tests the acceleration/contact tradeoff.
 
 The experiment combines the revised planted-foot reference term, clipped-start/end handling, and a root-correction curvature penalty. Each candidate begins with zero edits on the raw transferred clip. All frames may change within the original absolute and adjacent-edit limits. The fitting budget is six sweeps with root-curvature weight 10 and support weight 40, without action-specific tuning. Weight 10 was chosen during earlier combat development comparisons; these results will not qualify as held-out evidence.
 

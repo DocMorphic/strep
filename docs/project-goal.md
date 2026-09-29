@@ -1,5 +1,7 @@
 # One project-wide goal: release-ready Strep
 
+Latest development evidence: [full-population root cleanup](breadth-root-cleanup-v1.md) retains 21 improved candidates across eight actions and three rigs, with three unchanged outcomes. All 24 selected clips pass 4,320 Godot frames; eight focused tests pass. Only 9/24 recover original root-peak levels. All 14 release capabilities remain unapproved; next inspect remaining peak regressions and coupled correction needs.
+
 Latest development evidence: [visual grip placement](studio-grip-picking-v1.md) adds object picking and moving draft target previews. 300 transformed surface picks agree with backend geometry; 33 Python tests and component checks pass. Browser rendering is unverified, contact/quality failures remain, and all 14 capabilities are unapproved. Next broaden motion/rig/object evidence and hand-region authoring.
 
 Latest development evidence: [Studio region fitting](studio-region-fitting-v1.md) adds editable saved-scene hand regions, supervised jobs, input/candidate scenes and independent failure reports. 52 Python tests, an offline component test and two real job pipelines pass their workflow checks; the box motion remains rejected. Live browser validation remains unavailable. Next address visual patch selection and broader development clips without hiding solver failures. All 14 capabilities remain unapproved.
