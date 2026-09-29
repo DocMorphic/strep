@@ -28,3 +28,14 @@ Actual Godot verification passes **284 pose observations**, two requested-bounda
 Local evidence is retained in `reports/contact-breadth-v1/cases/jump-land-11.json`, `engine/jump-land-11/verification.json` and the immutable `reports/contact-jobs/contact-breadth-v1-jump-land-11-*` jobs. The original source still defines every edit, rate and floor budget. No original failed take has been overwritten.
 
 This successful small repair complements the root-only limitations measured in crawling and kicking; it does not resolve them. Finite sampled checks do not establish continuous collision safety, balance, semantic appropriateness or naturalness. No human review or cleanup time is available. The batch now continues with seed 22 under unchanged methods; Studio defaults and all release approvals remain unchanged.
+
+
+## Seed 22: final case retains pin and rate failures
+
+All eight frozen cases are now complete. Jump/landing seed 22 misses two of 61 requested foot-pin samples, with maximum error 5.373962 mm against the 5 mm limit. Its four exported rate excesses are approach speed (0.000039941 m/s), hold acceleration (0.000487326 m/s²), release speed (0.000250844 m/s) and release acceleration (0.001149955 m/s²). The fixed root correction rejects its linear subproblem and retains the fitted motion unchanged; this is not proof that joint-pose correction is infeasible.
+
+The candidate has zero full-mesh floor penetration and added depth, passes all 80 outside-window observations (maximum skin error 7.06e-8 m), and has no body-regression flags. Global speed and acceleration remain below their original limits. Native BVH/GLB and all eight skin influences pass structural checks. Case time was 814.76 seconds before engine verification, including 24.83 seconds for the root-repair stage.
+
+Actual Godot playback passes 284 observations, two requested boundary events, four callback-mutation rejections, forward/reverse playback and unload. Maximum actor matrix error is 9.64e-7. The independent replay also passes. Evidence remains in `reports/contact-breadth-v1/cases/jump-land-22.json`, `engine/jump-land-22/verification.json` and the immutable fit/repair jobs.
+
+The original numerical worker and automatic engine follow-up both exited successfully. Across the eight original cases, 2,272 actual engine pose observations pass, but only jump/landing seed 11 passes the full contact screen. These are development samples with authored targets, not held-out realism evidence. All release approvals remain pending.

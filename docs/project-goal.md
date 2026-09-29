@@ -352,3 +352,9 @@ Additional development result: [targeted export headroom](contact-breadth-wave-v
 
 
 Latest correction evidence: [geometry-limited export headroom](contact-breadth-wave-v1.md#geometry-limited-headroom-both-waving-seeds-pass) makes both separate waving variants pass all original exported pin/rate/floor checks and 568 new Godot observations. Seed 11 reproduces its previous successful native output; seed 22 uses the smaller margin permitted by horizontal motion. This fixes measured precision failures without establishing perceptual realism. Production integration waits for both frozen workers; larger joint-pose failures and all release capabilities remain open.
+
+
+Latest integration experiment: [preserved-pose export correction](preserved-export-repair-v1.md) combines exact locked poses with point/global export-driven root repair across two waving variants and crawl seed 22. Both waving variants pass their original limits with exact outside preservation. Crawling fixes approach/global acceleration but introduces a release-acceleration excess and remains rejected. All 852 additional Godot observations pass. Next preserve previously passing exported constraints between correction steps; all release capabilities remain unapproved.
+
+
+The [eight-case contact batch](contact-breadth-v1.md#completed-frozen-batch) is complete: one original contact-screen pass, eight engine passes and 2,272 actual pose observations. Both workers exited successfully. Next work can integrate tested held-pose preservation after establishing historical snapshot verification, then improve export-aware correction and joint-pose fitting. The broad product goal and all release requirements remain open.

@@ -30,3 +30,14 @@ Actual Godot playback passes **284 pose observations**, two requested-boundary e
 Local evidence is retained in `reports/contact-breadth-v1/cases/kick-11.json`, `engine/kick-11/verification.json`, `kick-11-horizontal-bound.json` and the immutable `reports/contact-jobs/contact-breadth-v1-kick-11-*` jobs. Suite, implementation, completion, engine and unchanged-candidate hashes were rechecked. No browser check, new test run, human rating or cleanup time is claimed.
 
 Three of eight cases have completed; the original batch continues with jump/landing. Keep its methods and inputs frozen. Once all cases are accounted for, test bounded joint-pose correction under the same source-relative pin, floor and rate constraints, alongside the separate near-feasible root-repair improvements motivated by waving. Preserve this fixed-method result as the comparison. All release capabilities remain unapproved.
+
+
+## Seed 22: pin passes, hold acceleration and foot sliding remain
+
+The seventh frozen case, kick seed 22, passes all 81 left-foot pin samples, with maximum error 4.609579 mm. It has zero full-floor penetration/added depth and passes all 80 outside-window preservation observations (maximum skin error 6.11e-8 m). Hold acceleration is 4.010516523668894 m/s² against the original 4.010260922545707 ceiling: excess 0.000255601 m/s². The decoded source peak is 4.0102467664127595 m/s², also below the candidate. All other point-phase rate ceilings pass.
+
+Global speed/acceleration peaks, 9.319279 m/s and 379.198352 m/s², remain below their original 9.320127 and 379.539784 ceilings. Body evaluation adds a left-foot surface-sliding flag to a source with no body flags. Passing one material-point pin does not establish that the whole foot is planted or that motion is natural. The fixed root repair rejects its linear subproblem and retains the seed unchanged; it does not prove the full pose problem infeasible.
+
+The fit used 2,027 evaluations: stage iterations 120, 117, 120 and 120, with 302, 608, 680 and 433 evaluations plus four accepted-point recomputations. Only stage two stopped on relative objective reduction; the others hit their iteration cap. Full case time was 1,337.95 seconds before engine checking. Actual Godot playback and the independent record recheck pass 284 observations, requested events, callback protections, forward/reverse playback and unload (maximum actor matrix error 7.48e-7). Native BVH/GLB and eight-weight skin checks pass.
+
+Evidence is retained in `reports/contact-breadth-v1/cases/kick-22.json`, `engine/kick-22/verification.json` and the immutable fit/repair jobs. Seven original cases are complete; one passes the full contact screen. The final jump/landing case is still running. No human or release approval is inferred.

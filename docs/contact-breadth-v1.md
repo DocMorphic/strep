@@ -58,3 +58,24 @@ Fifth completed case: [wave seed 22](contact-breadth-wave-v1.md#seed-22-a-feasib
 
 
 Sixth completed case: [crawl seed 22](contact-breadth-crawl-v1.md#seed-22-pins-pass-acceleration-checks-remain-open) passes pins, floor, body regression checks and 284 engine observations, while approach/global acceleration still exceed native-derived ceilings. The decoded source exceeds those ceilings too; its separate comparison does not alter fixed-study acceptance. The root repair rejects a locally constant violated constraint. Six original cases are complete, with one contact-screen pass; two remain pending.
+
+
+Seventh completed case: [kick seed 22](contact-breadth-kick-v1.md#seed-22-pin-passes-hold-acceleration-and-foot-sliding-remain) passes pins, floor, original global-rate limits and 284 engine observations. Hold acceleration still exceeds its point-phase limit, and body evaluation adds a foot-sliding flag. The rejected root step preserves the fitted seed. Seven of eight original cases are complete, with one full contact-screen pass; the final jump/landing case remains pending.
+
+
+## Completed frozen batch
+
+All eight original cases and their engine checks are complete. The final [jump/landing seed 22](contact-breadth-jump-v1.md#seed-22-final-case-retains-pin-and-rate-failures) retains two foot-pin misses and four point-phase rate excesses. Both original workers exited successfully; original snapshots and failures remain immutable.
+
+| Original case | Contact screen | Engine pose observations |
+| --- | --- | ---: |
+| Wave 11 | Fail | 284, pass |
+| Crawl 11 | Fail | 284, pass |
+| Kick 11 | Fail | 284, pass |
+| Jump/landing 11 | Pass | 284, pass |
+| Wave 22 | Fail | 284, pass |
+| Crawl 22 | Fail | 284, pass |
+| Kick 22 | Fail | 284, pass |
+| Jump/landing 22 | Fail | 284, pass |
+
+The aggregate is **one of eight contact-screen passes and 2,272 passing engine observations**. Alternative repair experiments are separate results, not replacements for these outcomes. The completed follow-up record binds every case, engine capture and independent recheck by hash. Future method changes must preserve historical verification against frozen snapshots, rather than rewriting old studies to match current code.
