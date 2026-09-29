@@ -1,5 +1,7 @@
 # One project-wide goal: release-ready Strep
 
+Latest object-relative initialization: [moving grip study](object-grip-initialization-v1.md) reduces exported contact failures from 490 to 15 while preserving original edit bounds. Body penetration remains 38.99 mm; local temporal regressions remain visible. Fourteen focused tests and all 360 Godot actor-frames pass. A matched full-body trial is now running with only its initialization changed; no release approval.
+
 Latest full-motion result: [180-frame transfer](full-region-transfer-v1.md) completes with all 490 contact samples still failing, despite penetration falling from 54.26 to 5.27 mm and lower whole-clip rate peaks. Release-boundary speed/acceleration worsen. Original edit bounds and 360 Godot actor-frames pass; the failed source/candidate comparison is in Studio. A bounded tapered-pose seed passes only one grasp frame per hand and is retained without another full solve. Next initialize grips in the moving object frame; all 14 release capabilities remain unapproved.
 
 Latest scene preflight: refining the unchanged full-motion object-floor bound certifies at least 1.100452 mm box-floor separation; the distant prop rests on the floor. The earlier coarse negative bound was inconclusive, so no object-placement change is justified by that check. Skin clearance margins are not a requirement for props to hover. That same full fit and completion auditor subsequently finished with the failures recorded above; release approval remains unproven.
