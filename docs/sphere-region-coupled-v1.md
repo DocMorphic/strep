@@ -50,3 +50,5 @@ Existing local fixtures and licensed dependencies are required; use fresh output
 .venv\Scripts\python.exe scripts/coupled_release.py reports/sphere-region-spatial-v1 reports/new-coupled --cartesian-curvature-scale-m .0005
 .venv\Scripts\python.exe scripts/audit_region_grasp_track.py reports/sphere-region-track-v2 reports/new-coupled-audit --approach-patch reports/sphere-region-approach-v1 --floor-patch reports/sphere-region-floor-v1 --release-patch reports/sphere-region-release-v1 --spatial-patch reports/sphere-region-spatial-v1 --coupled-patch reports/new-coupled
 ```
+
+Follow-up: [per-hand speed preservation](sphere-region-coupled-speed-v1.md) passes fresh source/candidate export comparisons, while retaining window-join and later acceleration defects.

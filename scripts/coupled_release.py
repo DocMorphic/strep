@@ -26,6 +26,16 @@ def second_difference_matrix(count):
     return matrix
 
 
+def speed_excess_pair(first,second,cap,scale,fps=30.):
+    first,second=np.asarray(first,float),np.asarray(second,float)
+    if first.shape!=(3,) or second.shape!=(3,) or not np.isfinite(np.r_[first,second,cap,scale,fps]).all() or cap<0 or scale<=0 or fps<=0:
+        raise ValueError('Finite points, nonnegative cap and positive scale/fps required')
+    velocity=(second-first)*fps;speed=np.linalg.norm(velocity)
+    if speed<=cap:return 0.,np.zeros(3),np.zeros(3)
+    direction=velocity/speed*fps/scale
+    return (speed-cap)/scale,-direction,direction
+
+
 class CoupledWindow:
     def __init__(self,problems,fixed,source,frames,protocol,settings):
         self.problems,self.fixed,self.source,self.frames=problems,fixed,source,frames
@@ -39,6 +49,17 @@ class CoupledWindow:
             vertices=problems[0].surface.vertices(source['global_rot_mats'][frame],source['posed_joints'][frame])
             self.anchor_support.append(np.concatenate([vertices[b['anchor']] for b in protocol['contact_bindings']]))
         self.anchor_support=np.array(self.anchor_support)
+        obj=next(o for o in problems[0].context['primitives'] if o['id']==protocol['object_id'])
+        self.object_positions=np.array(obj['positions_m'])[self.support]
+        self.object_rotations=np.array(obj['rotations'])[self.support]
+        self.speed_edges=[i for i,frame in enumerate(self.support[:-1]) if settings['release_frame']-2<=frame<=settings['release_frame']+1]
+        local_anchors=np.einsum('fji,fhj->fhi',self.object_rotations,self.anchor_support.reshape(-1,2,3)-self.object_positions[:,None])
+        self.native_speed_caps=np.linalg.norm(np.diff(local_anchors,axis=0),axis=2)[self.speed_edges].max(0)*30
+        reserve=settings.get('release_speed_reserve_m_s')
+        if reserve is not None:
+            if reserve>=self.native_speed_caps.min():raise ValueError('Speed reserve must be smaller than both measured source caps')
+            settings['source_native_release_speed_caps_m_s']=self.native_speed_caps.tolist()
+            settings['fitting_release_speed_caps_m_s']=(self.native_speed_caps-reserve).tolist()
         for frame,p,values in zip(frames,problems,fixed):
             with torch.no_grad(): _,joints,_,vertices=p.fk(p.t(values))
             specs=[]
@@ -106,13 +127,30 @@ class CoupledWindow:
                 smooth=np.zeros(((len(self.support)-2)*6,len(flat)))
                 for i,frame in enumerate(self.frames):smooth[:,i*width:(i+1)*width]=np.kron(self.difference[:,self.support.index(frame),None],anchor_jac[i])/cartesian_scale
                 jac.append(smooth)
+        if self.settings.get('release_speed_reserve_m_s') is not None:
+            local_anchors=np.einsum('fji,fhj->fhi',self.object_rotations,anchors.reshape(-1,2,3)-self.object_positions[:,None])
+            speed_residual=[];speed_jac=[]
+            for edge in self.speed_edges:
+                for hand,cap in enumerate(self.settings['fitting_release_speed_caps_m_s']):
+                    value,left,right=speed_excess_pair(local_anchors[edge,hand],local_anchors[edge+1,hand],cap,self.settings['release_speed_scale_m_s'])
+                    speed_residual.append(value)
+                    if jacobian:
+                        row=np.zeros(len(flat))
+                        for index,derivative in [(edge,left),(edge+1,right)]:
+                            frame=self.support[index]
+                            if frame in self.frames:
+                                i=self.frames.index(frame);row[i*width:(i+1)*width]+=derivative@self.object_rotations[index].T@anchor_jac[i][hand*3:hand*3+3]
+                        speed_jac.append(row)
+            residual.append(np.array(speed_residual))
+            if jacobian:jac.append(np.array(speed_jac))
         residual.append(self.settings['regularization']*(flat-self.initial))
         if jacobian: jac.append(self.settings['regularization']*np.eye(len(flat)))
         return np.concatenate(residual),np.concatenate(jac) if jacobian else None
 
 
-def run(spatial_report,output,cartesian_curvature_scale_m=None):
+def run(spatial_report,output,cartesian_curvature_scale_m=None,release_speed_reserve_m_s=None):
     if cartesian_curvature_scale_m is not None and (not np.isfinite(cartesian_curvature_scale_m) or cartesian_curvature_scale_m<=0): raise ValueError('Positive finite Cartesian curvature scale required')
+    if release_speed_reserve_m_s is not None and (not np.isfinite(release_speed_reserve_m_s) or release_speed_reserve_m_s<=0): raise ValueError('Positive finite speed reserve required')
     torch.set_num_threads(2);spatial_report,output=Path(spatial_report).resolve(),Path(output).resolve()
     sp,sr=read(spatial_report/'protocol.json'),read(spatial_report/'result.json')
     if sr['status']!='complete' or sha256(spatial_report/'motion.npz')!=sr['motion_sha256'] or sha256(spatial_report/'protocol.json')!=sr['protocol_sha256']: raise ValueError('Completed unchanged spatial input required')
@@ -131,7 +169,7 @@ def run(spatial_report,output,cartesian_curvature_scale_m=None):
         for binding,region in zip(protocol['contact_bindings'],protocol['region_protocols']):apply_region_binding(p,binding['hand'],binding['anchor'],region['patch'])
         problems.append(p)
     settings=dict(release_frame=endpoint,active_point_scale_m=.00002,active_direction_scale=.001,release_point_scale_m=.005,release_direction_scale=.05,
-                  geometry_scale_m=.00005,curvature_scale=.02,cartesian_curvature_scale_m=cartesian_curvature_scale_m,regularization=1e-5,maximum_evaluations=20,maximum_seconds=180,maximum_rss_bytes=3*1024**3,minimum_available_bytes=1024**3)
+                  geometry_scale_m=.00005,curvature_scale=.02,cartesian_curvature_scale_m=cartesian_curvature_scale_m,release_speed_reserve_m_s=release_speed_reserve_m_s,release_speed_scale_m_s=.0005,regularization=1e-5,maximum_evaluations=20,maximum_seconds=180,maximum_rss_bytes=3*1024**3,minimum_available_bytes=1024**3)
     output.mkdir(parents=True,exist_ok=False);(output/'implementation').mkdir()
     methods=['coupled_release.py','grasp_pose_witness.py','grasp_pose_witness_bounded.py','grasp_contact_binding.py','sphere_approach.py','region_grasp_track.py','support_contact_v8.py','support_contact_v5.py','floor_contact.py','scene_solver_context.py','object_geometry.py','inspect_motion.py']
     implementation={n:sha256(ROOT/'scripts'/n) for n in methods}
@@ -139,7 +177,7 @@ def run(spatial_report,output,cartesian_curvature_scale_m=None):
     window=CoupledWindow(problems,[parameters[f] for f in frames],source,frames,protocol,settings)
     save(output/'protocol.json',dict(at=now(),spatial_report=spatial_report.relative_to(ROOT).as_posix(),base_study=sp['base_study'],inputs=inputs,implementation=implementation,frames=frames,
          arm_columns=window.columns.tolist(),settings=settings,targets=[[[int(s[0]),s[4].tolist(),s[5].tolist(),s[6].tolist()] for s in specs] for specs in window.specs],
-         scope='Joint nine-key arm fit across grasp and release; frozen non-arm edits/root and all outside keys. Chordal local-rotation and optional world-anchor second differences are fitting objectives, not physical acceleration guarantees. Authored contact times/regions/limits unchanged; full dense contact/geometry audit required.',quality_approved=False))
+         scope='Joint nine-key arm fit across grasp and release; frozen non-arm edits/root and all outside keys. Rotation/anchor curvature and optional native object-relative release speed caps are soft fitting objectives; dense exported velocity must be checked independently. Authored contact times/regions/limits unchanged; full dense contact/geometry audit required.',quality_approved=False))
     initial=window.initial;began=time.monotonic();res,jac=window.pair(initial)
     direction=np.random.default_rng(1891).normal(size=len(initial));direction/=np.linalg.norm(direction);h=1e-6
     fd=(window.pair(initial+h*direction,False)[0]-window.pair(initial-h*direction,False)[0])/(2*h)
@@ -175,5 +213,5 @@ def run(spatial_report,output,cartesian_curvature_scale_m=None):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('spatial_report',type=Path);parser.add_argument('output',type=Path);parser.add_argument('--cartesian-curvature-scale-m',type=float);args=parser.parse_args()
-    with threadpool_limits(limits=2):run(args.spatial_report,args.output,args.cartesian_curvature_scale_m)
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('spatial_report',type=Path);parser.add_argument('output',type=Path);parser.add_argument('--cartesian-curvature-scale-m',type=float);parser.add_argument('--release-speed-reserve-m-s',type=float);args=parser.parse_args()
+    with threadpool_limits(limits=2):run(args.spatial_report,args.output,args.cartesian_curvature_scale_m,args.release_speed_reserve_m_s)

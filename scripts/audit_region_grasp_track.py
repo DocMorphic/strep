@@ -235,7 +235,7 @@ def run(study, output, approach_patch=None, floor_patch=None, release_patch=None
             if row['solver'] is None: np.testing.assert_array_equal(values,initial)
         candidate=spatial; p0=PoseProblem(folder,skin,start)
         spatial_verification=dict(report=path.relative_to(ROOT).as_posix(),result_sha256=sha256(path/'result.json'),protocol_sha256=sha256(path/'protocol.json'),protected_frames_exact=len(protected),non_arm_parameters_exact=True,native_path_and_correction_replayed=True)
-    coupled_verification=None
+    coupled_verification=None;coupled_source=None;speed_cap_verification=None
     if coupled_patch is not None:
         if spatial_patch is None: raise ValueError('Coupled patch requires its spatial input')
         path=Path(coupled_patch).resolve(); cp,cr=read(path/'protocol.json'),read(path/'result.json')
@@ -248,6 +248,20 @@ def run(study, output, approach_patch=None, floor_patch=None, release_patch=None
             if sha256(path/'implementation'/name)!=digest: raise ValueError('Coupled source snapshot changed')
         frames=list(range(end-5,end+4))
         if cp['frames']!=frames or [r['frame'] for r in cr['rows']]!=frames or cp['arm_columns']!=list(columns): raise ValueError('Coupled frame/joint scope changed')
+        if len(cp['targets'])!=len(frames) or any(len(t)!=len(bindings) for t in cp['targets']): raise ValueError('Coupled guidance population changed')
+        reserve=cp['settings'].get('release_speed_reserve_m_s')
+        if reserve is not None:
+            if not np.isfinite(reserve) or reserve<=0 or cp['settings']['release_frame']!=end: raise ValueError('Invalid coupled speed policy')
+            obj=next(o for o in p0.context['primitives'] if o['id']==protocol['object_id']);points=[]
+            for frame in range(end-2,end+3):
+                vertices=p0.surface.vertices(candidate['global_rot_mats'][frame],candidate['posed_joints'][frame]);rotation=np.array(obj['rotations'][frame]);position=np.array(obj['positions_m'][frame])
+                points.append([rotation.T@(vertices[b['anchor']]-position) for b in bindings])
+            caps=np.linalg.norm(np.diff(np.array(points),axis=0),axis=2).max(0)*30
+            if np.any(caps<=reserve): raise ValueError('Speed reserve exceeds source cap')
+            np.testing.assert_allclose(cp['settings']['source_native_release_speed_caps_m_s'],caps,atol=1e-12,rtol=0)
+            np.testing.assert_allclose(cp['settings']['fitting_release_speed_caps_m_s'],caps-reserve,atol=1e-12,rtol=0)
+            speed_cap_verification=dict(source_native_caps_m_s=caps.tolist(),fitting_caps_m_s=(caps-reserve).tolist(),reserve_m_s=reserve,scope='Native fitting caps verified; export preservation measured separately.')
+            coupled_source={k:v.copy() for k,v in candidate.items()}
         fitted=dict(np.load(path/'motion.npz',allow_pickle=False));protected=np.setdiff1d(np.arange(protocol['frame_count']),frames)
         for name in candidate: np.testing.assert_array_equal(fitted[name][protected],candidate[name][protected])
         source_parameters={r['frame']:r['parameters'] for r in result['rows']};source_parameters.update({r['frame']:r['parameters'] for r in sr['rows']})
@@ -266,7 +280,7 @@ def run(study, output, approach_patch=None, floor_patch=None, release_patch=None
                 np.testing.assert_allclose(point,vertices[anchor],atol=2e-6,rtol=0);np.testing.assert_allclose(normal,n,atol=2e-5,rtol=0);np.testing.assert_allclose(tangent,direction,atol=2e-5,rtol=0)
         candidate=fitted;p0=PoseProblem(folder,skin,start)
         coupled_verification=dict(report=path.relative_to(ROOT).as_posix(),result_sha256=sha256(path/'result.json'),protocol_sha256=sha256(path/'protocol.json'),
-                                  protected_frames_exact=len(protected),non_arm_parameters_exact=True,active_grasp_modified=True,solver_status=cr['solver'],original_edit_bounds_verified=True)
+                                  protected_frames_exact=len(protected),non_arm_parameters_exact=True,active_grasp_modified=True,solver_status=cr['solver'],original_edit_bounds_verified=True,speed_cap_policy=speed_cap_verification)
     output.mkdir(parents=True,exist_ok=False)
     shutil.copyfile(Path(__file__),output/Path(__file__).name)
     metadata = dict(at=now(), study=study.relative_to(ROOT).as_posix(), protocol_sha256=sha256(study/'protocol.json'), result_sha256=sha256(study/'result.json'),
@@ -289,7 +303,9 @@ def run(study, output, approach_patch=None, floor_patch=None, release_patch=None
         hand_specs.append(dict(hand=hand,anchor=binding['anchor'],ids=np.array(rp['patch']['vertices']),faces=skin['faces'][rp['patch']['face_ids']],limits=rp['limits'],
                                targets=op+np.einsum('fij,j->fi',orr,authored_local),normals=np.einsum('fij,j->fi',orr,normal_local),anchor_local=anchor_local))
     variants={}; active_mask=(times>=start)&(times<=end); edited_mask=(times>=edit_start)&(times<=edit_end)
-    for label,motion in [('baseline',source),('candidate',candidate)]:
+    measured_variants=[('baseline',source),('candidate',candidate)]
+    if coupled_source is not None:measured_variants.append(('coupled_input',coupled_source))
+    for label,motion in measured_variants:
         doc,binary,_,_=make_preview(skin,motion,np.zeros(3),repeat=False); write_glb(output/(label+'.glb'),doc,binary)
         doc,binary=read_glb(output/(label+'.glb')); sampler=AnimationSampler(doc,binary,0); joints=doc['skins'][0]['joints']
         floor=[]; objects={name:[] for name in originals}; poses=[]; hand_rows={s['hand']:[] for s in hand_specs}; key_error=0.; bound_rows=[]
@@ -345,7 +361,11 @@ def run(study, output, approach_patch=None, floor_patch=None, release_patch=None
             maximum_joint_acceleration_m_s2=float(np.linalg.norm(acceleration,axis=-1).max()),glb_sha256=sha256(output/(label+'.glb')))
         save(output/(label+'.json'),dict(frames=times.tolist(),floor_height_m=floor.tolist(),object_clearance_m=objects,hands=hand_rows,edit_bounds=bound_rows,summary=variants[label]))
         print(dict(variant=label,active_passes=variants[label]['active_region_pass_count'],active_samples=int(active_mask.sum()),minimum_active_sphere_m=variants[label]['objects'][protocol['object_id']]['minimum_active_clearance_m'],edited_geometry_fail_count=variants[label]['edited_geometry_fail_count']),flush=True)
-    save(output/'verification.json',dict(**metadata,variants=variants,auditor_sha256=sha256(Path(__file__)),release_approved=False))
+    preservation=None
+    if coupled_source is not None:
+        preservation={hand:dict(source_m_s=variants['coupled_input']['contacts'][hand]['boundary']['release']['peak_object_relative_speed_m_s'],candidate_m_s=variants['candidate']['contacts'][hand]['boundary']['release']['peak_object_relative_speed_m_s']) for hand in variants['candidate']['contacts']}
+        for row in preservation.values():row['passed']=row['candidate_m_s']<=row['source_m_s']+1e-7
+    save(output/'verification.json',dict(**metadata,variants=variants,release_speed_preservation=preservation,auditor_sha256=sha256(Path(__file__)),release_approved=False))
 
 
 if __name__=='__main__':
