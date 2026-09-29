@@ -394,3 +394,6 @@ A [full-distance skin bound](contact-pose-sphere-v1.md) now proves kick-11 also 
 
 
 Studio now [uses the full-distance pose certificate](studio-pose-check-v2.md) before checked fitting. Original crawl-11 and kick-11 requests are both explained as incompatible with the current edit screen; wave-11 remains unproven but not ruled out. Schema 3 binds the new method and rejects older checks with a refresh message. Three real checks, hash verification, direct routes and offline UI behavior pass; 54 focused Python tests pass. The body-constraint kick experiment finished rejected, with 284 engine observations passing but no quality approval. All fourteen release capabilities remain open.
+
+
+[Fixed-patch support constraints](native-support-constraints-v1.md) address a measured optimizer/reviewer mismatch: kick-22 slides more at frames 40–44, before its authored 50–70 pin, where explicit-region overrides remove automatic support handling. The optional objective reproduces independent kick/landing support scores; 50 focused tests pass. A matched four-stage/60-iteration control-versus-support experiment is running with original targets/budgets unchanged. Outcome and release approval remain unproven.

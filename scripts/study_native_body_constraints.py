@@ -28,7 +28,7 @@ from study_contact_joint_restart import original_budget_check
 from study_export_feedback import engine_check
 
 
-def run(source_path, seed_path, check_path, output):
+def run(source_path, seed_path, check_path, output, *, body_screen=True, support_screen=False, outer_stages=6, iterations=120):
     if not output.is_relative_to(ROOT/'reports'):
         raise ValueError('Keep experiment outputs under reports')
     if output.exists():raise ValueError('Use a new output directory')
@@ -78,17 +78,18 @@ def run(source_path, seed_path, check_path, output):
             guard=ExportPointRateObjective(torch.tensor(source['global_rot_mats'],dtype=torch.float64),
                 torch.tensor(source['posed_joints'],dtype=torch.float64),parents,skin,spec,window)
             if guard.record()!=reference:raise ValueError('Original point-rate limits changed')
-            save(output/'protocol.json',dict(outer_stages=6,iterations_per_stage=120,window=window,
-                native_body_references=['raw','limb'],native_limits=dict(joint_change_m=.22,added_joint_speed_m_s=1.5),
-                new_constraint='Native pose/speed augmented inequalities relative to both immutable references',
+            save(output/'protocol.json',dict(outer_stages=outer_stages,iterations_per_stage=iterations,window=window,
+                native_body_references=['raw','limb'] if body_screen else [],native_support_screen=support_screen,native_limits=dict(joint_change_m=.22,added_joint_speed_m_s=1.5),
+                new_constraint='Optional native body and fixed-patch support inequalities relative to both immutable references; enabled modes recorded separately',
                 retained='Original controls, initialization, root/rotation budgets, pin target, export point/global rates and floor guards',
                 quality_approved=False))
             start=time.perf_counter();phase('fitting')
             candidate,recipe=refine(source,source,skin,progress=lambda row:phase('fitting',progress=row),raw=source,
                 contact_spec=spec,warm_start=seed,edit_window=window,export_rate_guard=True,export_point_rate_guard=True,
-                skin_backend='sparse',root_coordinate_mode='physical_box',outer_stage_count=6,iteration_count=120,
+                skin_backend='sparse',root_coordinate_mode='physical_box',outer_stage_count=outer_stages,iteration_count=iterations,
                 authored_point_scaling='tolerance',export_floor_guard=True,export_point_position_guard=True,
-                native_body_references=dict(raw=raw,limb=limb))
+                native_body_references=dict(raw=raw,limb=limb) if body_screen else None,
+                native_support_references=dict(raw=raw,limb=limb) if support_screen else None)
             elapsed=time.perf_counter()-start
             if recipe['export_rates']['ceilings']!=read(root/'seed/recipe.json')['export_rates']['ceilings']:
                 raise ValueError('Original global rate limits changed')
@@ -125,5 +126,9 @@ def run(source_path, seed_path, check_path, output):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     for name in ['source','seed','checked-plan','output']:parser.add_argument('--'+name,type=Path,required=True)
+    parser.add_argument('--body-screen',action=argparse.BooleanOptionalAction,default=True)
+    parser.add_argument('--support-screen',action='store_true')
+    parser.add_argument('--outer-stages',type=int,default=6)
+    parser.add_argument('--iterations',type=int,default=120)
     args=parser.parse_args()
-    run(args.source.resolve(),args.seed.resolve(),args.checked_plan.resolve(),args.output.resolve())
+    run(args.source.resolve(),args.seed.resolve(),args.checked_plan.resolve(),args.output.resolve(),body_screen=args.body_screen,support_screen=args.support_screen,outer_stages=args.outer_stages,iterations=args.iterations)
