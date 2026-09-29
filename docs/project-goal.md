@@ -364,3 +364,6 @@ Production local contact fitting now [preserves held poses exactly](local-edit-p
 
 
 Latest correction result: [export feedback with adjustable optional headroom](export-feedback-v1.md) makes both waving alternatives and crawl seed 22 pass original exported pin/rate/floor checks, nonnegative serialized constraints and 852 new Godot observations. Crawling first rejects a new release regression, then repairs it without relaxing original limits. The earlier failed feedback experiment remains preserved with its separate 852 observations. A reproducible experimental runner and seven policy tests are published; Studio integration, larger joint-pose failures and all release capabilities remain open.
+
+
+A [full-joint warm-restart experiment](contact-joint-restart-v1.md) is now running on retained crawl-11 and kick-11 failures that root-height-only correction cannot solve. It keeps original source edit/rate/floor limits, restores held keys, and tries six stages of 120 iterations from retained poses. Twenty-nine focused tests pass. Crawling initialization/export is verified; final fit and engine outcomes remain pending. All release capabilities remain unapproved.
