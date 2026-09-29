@@ -75,18 +75,21 @@ def strengthen(target,values,blocks,peaks,slacks,requirements,margin_fraction):
     return updated,notes
 
 
-def engine_check(folder,id,take):
+def engine_check(folder,id,take,*,contact_spec):
+    from contact_engine_events import contact_events
+    with np.load(take/'motion.npz') as motion: frames=len(motion['root_positions'])
+    events=contact_events(contact_spec,frames)
     scene=folder/'scene';(scene/'actors/0').mkdir(parents=True)
     shutil.copyfile(take/'motion.npz',scene/'actors/0/motion.npz');shutil.copyfile(take/'soma.glb',scene/'actors/0/actor.glb')
-    save(scene/'portable-scene.json',dict(schema_version=1,id=id,fps=30,frame_count=120,actors={'A':dict(motion='actors/0/motion.npz',preview_glb='actors/0/actor.glb',source_sha256=sha256(take/'motion.npz'),transform=dict(translation_m=[0,0,0],rotation_xyzw=[0,0,0,1]))},objects={},contacts=[]))
-    save(scene/'events.json',dict(fps=30,events=[dict(type='requested_pin_start',actor='A',frame=50,time_s=50/30),dict(type='requested_pin_end',actor='A',frame=70,time_s=70/30)]));write(scene)
+    save(scene/'portable-scene.json',dict(schema_version=1,id=id,fps=30,frame_count=frames,actors={'A':dict(motion='actors/0/motion.npz',preview_glb='actors/0/actor.glb',source_sha256=sha256(take/'motion.npz'),transform=dict(translation_m=[0,0,0],rotation_xyzw=[0,0,0,1]))},objects={},contacts=[]))
+    save(scene/'events.json',events);write(scene)
     project=folder/'project';project.mkdir();(project/'project.godot').write_text('config_version=5\n[application]\nconfig/name="Targeted export headroom diagnostic"\n')
     for name in ['godot_scene_clock.gd','godot_scene_clock_audit.gd']:shutil.copyfile(ROOT/'scripts'/name,project/name)
     engine=ROOT/'.cache/godot/4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe'
     assert sha256(engine)==read(engine.parent/'acquisition.json')['executables'][engine.name]
     engine_output=folder/'engine';engine_output.mkdir()
     command=[str(engine),'--headless','--path',str(project),'--fixed-fps','60','--script','godot_scene_clock_audit.gd','--',str(engine_output/'request.json'),str(engine_output/'engine-output.json')]
-    request=dict(cases=[dict(id=id,folder=str(scene),frames=120,metadata_sha256=sha256(scene/'scene-runtime.json'))],controls=[],command=command)
+    request=dict(cases=[dict(id=id,folder=str(scene),frames=frames,metadata_sha256=sha256(scene/'scene-runtime.json'))],controls=[],command=command)
     save(engine_output/'request.json',request);run_engine(command,engine_output/'engine.log',timeout=150)
     passed,checks=verify_engine(request,read(engine_output/'engine-output.json'),engine_output)
     return passed,checks
@@ -179,7 +182,7 @@ def run():
         save(folder/'solver.json',dict(history=history,final_coordinates=x.tolist(),maximum_root_step_m=float(np.abs(x-p.start).max()),
              original_minimum_slack=float(values.min()),serialized_minimum_slack=float(current['serial'].min()),
              selected_export=str(current['path']),final_export_slacks=current['slacks'],requirements=requirements,optional_margin_fraction=protocol['optional_margin_fractions'][margin_index],quality_approved=False))
-        phase('engine_check',case=id);passed,checks=engine_check(folder,id,take);assert passed
+        phase('engine_check',case=id);passed,checks=engine_check(folder,id,take,contact_spec=spec);assert passed
         for path,h in inputs.items():assert sha256(Path(path))==h,path
         verify_methods()
         screen=bool(min(current['slacks'].values())>=0 and current['serial'].min()>=0)

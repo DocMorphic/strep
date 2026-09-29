@@ -16,7 +16,7 @@ Use a separate environment to preserve an existing inference installation:
 py -3.10 -m venv .venv-ci
 .venv-ci\Scripts\python.exe -m pip install --only-binary=:all: -r requirements-ci.txt
 $env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = '1'
-.venv-ci\Scripts\python.exe -m pytest -q tests/test_object_geometry_mesh.py tests/test_point_rate_reachability.py tests/test_contact_rate_feasibility.py tests/test_contact_pose_reachability.py tests/test_contact_pose_sphere_bound.py tests/test_desktop_build.py tests/test_desktop_build_preservation.py
+.venv-ci\Scripts\python.exe -m pytest -q tests/test_object_geometry_mesh.py tests/test_point_rate_reachability.py tests/test_contact_rate_feasibility.py tests/test_contact_engine_events.py tests/test_contact_pose_reachability.py tests/test_contact_pose_sphere_bound.py tests/test_desktop_build.py tests/test_desktop_build_preservation.py
 node tests/test_contact_timing_editor.mjs
 node tests/test_contact_export_review.mjs
 ```
@@ -26,3 +26,6 @@ The dedicated environment is ignored by Git. The broader test suite still requir
 ## Hosted verification
 
 [GitHub run 36642216213](https://github.com/DocMorphic/strep/actions/runs/36642216213), at commit `ac78f29`, passed on both Windows and Linux: 48 Python tests and both Node editor checks per operating system. The first workflow attempt failed YAML parsing because an unquoted command contained a colon; the corrected workflow uses a block string and was locally parsed before the successful run. Hosted success covers this declared source suite only, not the complete model or game-animation pipeline.
+
+
+The current suite also includes nine authored contact-event timing regressions (57 Python tests total). Historical 48-test results above retain their original scope. These tests cover landing intervals, short clips, multiple regions, empty authored contacts and rejection of invalid clocks/intervals.

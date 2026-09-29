@@ -130,7 +130,7 @@ def run(suite, output):
                 final=audit(old/'source-take/soma.glb',take/'soma.glb',spec,[10,109],reference)
                 save(take/'checked-export-audit.json',final);save(take/'body-evaluation.json',dict(evaluation=evaluation,body=body))
                 phase('engine_check',case=case)
-                engine_passed,checks=engine_check(folder,case,take)
+                engine_passed,checks=engine_check(folder,case,take,contact_spec=spec)
                 global_peaks=[max(r[k] for r in final['variants']['candidate']['joints']) for k in ['peak_speed_m_s','peak_acceleration_m_s2']]
                 caps=recipe['export_rates']['ceilings']
                 contact_pass=bool(final['all_requested_pin_samples_within_5mm'] and final['outside_preservation_passed']

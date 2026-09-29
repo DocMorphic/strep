@@ -107,7 +107,7 @@ def run(source_path, seed_path, check_path, output, *, body_screen=True, support
             for name,motion in [('raw',raw),('limb',limb)]:
                 delta=stored['posed_joints'].astype(float)-motion['posed_joints'].astype(float)
                 body_peaks[name]=[float(np.linalg.norm(delta,axis=-1).max()),float(np.linalg.norm(np.diff(delta,axis=0)*30,axis=-1).max())]
-            phase('engine_check');engine_passed,checks=engine_check(output,'candidate',take)
+            phase('engine_check');engine_passed,checks=engine_check(output,'candidate',take,contact_spec=spec)
             peaks=[max(r[k] for r in final['variants']['candidate']['joints']) for k in ['peak_speed_m_s','peak_acceleration_m_s2']]
             caps=recipe['export_rates']['ceilings'];excess=[max(0.,a-b) for a,b in zip(peaks,caps)]
             contact_pass=bool(final['all_requested_pin_samples_within_5mm'] and final['outside_preservation_passed']

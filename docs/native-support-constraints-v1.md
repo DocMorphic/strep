@@ -53,3 +53,14 @@ The exported contact screen still fails: hold acceleration exceeds its original 
 This single matched case supports fixing the optimization/review coverage mismatch. It does not establish reliability across actions, rigs or seeds, and the support result sits only about 0.000003316 m/s below its raw slide ceiling. Neither output is quality-approved; Studio defaults remain unchanged. The next bounded experiment is the existing export-feedback repair on a separate copy of the support candidate, retaining the original request and budgets and rechecking support, pins, body, preservation and actual engine playback. No repair outcome is claimed here.
 
 Local immutable evidence: `reports/native-support-fit-v1/verification.json`, each arm's `freeze.json`, `protocol.json`, `completion.json`, and saved native/export/engine artifacts. Generated motion, character payloads and machine reports remain excluded from the public repository.
+
+
+## Export feedback on the support candidate
+
+A separate repair now completes the original numerical screen for kick-22. The existing root-height export-feedback adapter accepted two proposals; rotations and root XZ stayed byte-identical to the support seed. Its largest saved NPZ root change is 0.000001430511 m (the continuous solver step is 0.000001397352 m). This distinction records float serialization rather than reporting the optimizer coordinate as the saved motion.
+
+All 81 pin observations pass with a 4.484745 mm maximum error. Every original point-phase and global rate ceiling passes, added floor depth is zero, and audited outside-window position, basis and skin errors are exactly zero. Left-foot slide p95 remains 0.181411910 m/s; both reference comparisons and both feet's gap screens pass. Body flags remain empty. Actual engine playback passes 284 pose observations, event ordering, automatic/reverse playback, four callback mutation rejections and unload.
+
+Verification rechecked original inputs, archived/current methods and all completion hashes before subsequent harness changes. It independently replayed the export audit, matched saved support metrics against the objective, recomputed native body peaks and checked original root/rotation/held-pose budgets. Evidence is retained under `reports/native-support-export-repair-v1` and `reports/native-support-export-verification-v1`; both proposals and the failed pre-repair export remain available. Future reproduction should use the archived methods for this historical result.
+
+This is a numerical pass on one development case, with no human approval or default Studio promotion. The next coverage test compares unchanged and support-enabled fits on gesture, crawling and jump/landing cases using the same fixed budgets. The [engine event harness correction](contact-engine-events-v1.md) makes those new checks use actual authored contact boundaries.
