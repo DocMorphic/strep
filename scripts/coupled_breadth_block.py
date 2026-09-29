@@ -59,7 +59,20 @@ class CoupledBreadthBlock(RootBlockProblem):
             depth=np.maximum(0.,-self.fitter.rig.vertices(half)[:,1])
             old=np.maximum(0.,-self.reference_skin[2*end-1,:,1])
             if np.max(depth-old)>self.position_eps:return False
-        serialized=np.array([self.evaluator.pose(w) for w in world]);local=localize(serialized,self.fitter.rig.parents)
+        serialized=np.array([self.evaluator.pose(w) for w in world])
+        # A normalized cone residual tolerance does not imply the same physical
+        # distance allowance. Match the independent audit in metres before an
+        # optimizer step can be retained.
+        for frame in self.frames:
+            positions=self.fitter.rig.vertices(serialized[frame]);source=self.reference_skin[2*frame]
+            for side,patch in self.fitter.spec['patches'].items():
+                guide=self.fitter.support_guides[side]
+                if guide['weights'][frame]<=0:continue
+                ids=patch['vertices'];anchor=np.asarray(guide['anchors_xz_m'][frame])
+                before=np.linalg.norm(source[ids].mean(0)[[0,2]]-anchor)
+                after=np.linalg.norm(positions[ids].mean(0)[[0,2]]-anchor)
+                if after-before>self.position_eps:return False
+        local=localize(serialized,self.fitter.rig.parents)
         delta=local[:-1,:,:3,:3].transpose(0,1,3,2)@local[1:,:,:3,:3]
         steps=Rotation.from_matrix(delta.reshape(-1,3,3)).magnitude().reshape(len(world)-1,-1)
         return bool(np.all(steps.max(0)<=self.rotation_peaks+1e-6) and np.all(np.percentile(steps,95,axis=0)<=self.rotation_p95+1e-6))

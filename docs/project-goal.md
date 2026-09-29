@@ -1,5 +1,7 @@
 # One project-wide goal: release-ready Strep
 
+Latest development evidence: [coordinated root/leg correction](coupled-breadth-conic-v1.md) completes all nine diagnosed conflicts. Initial replication accepts seven and rejects two; direct physical anchor checks repair both retries under unchanged audit/edit budgets. Combined result: 9/9 numerical improvements, zero restored original whole-clip root peaks, 2,880 + 720 new Godot actor-frames, and 21 focused tests passing. All prior failures remain recorded; all release capabilities remain unapproved. Next address full-clip root failures and numerical stalls, with independent review still pending.
+
 Latest development evidence: [original-peak restoration](breadth-peak-restore-v1.md) tests all 15 remaining root-peak failures. Three alternatives restore the original peak with a small energy tradeoff and pass 510 new Godot frames. A separate geometry bound excludes nine of the remaining cases from root-only correction under unchanged limits. Thirteen focused tests pass. Next coordinate root and leg changes for these demonstrated conflicts; all 14 capabilities remain unapproved.
 
 Latest development evidence: [full-population root cleanup](breadth-root-cleanup-v1.md) retains 21 improved candidates across eight actions and three rigs, with three unchanged outcomes. All 24 selected clips pass 4,320 Godot frames; eight focused tests pass. Only 9/24 recover original root-peak levels. All 14 release capabilities remain unapproved; next inspect remaining peak regressions and coupled correction needs.

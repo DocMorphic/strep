@@ -68,10 +68,10 @@ def tightened_cap(item,buffers):
     return item['cap']-min(requested,.5*item['cap'])
 
 
-def direction(p,x,trust,buffers=None):
+def direction(p,x,trust,buffers=None,constraint_builder=None):
     clarabel=solver_module();evaluation=p.evaluate(x);g=evaluation[1]
     if not np.isfinite(g).all() or np.max(np.abs(g))==0:return None,dict(status='ZeroGradient',trust=trust)
-    c,j,cones=affine_constraints(p,x);bounds=np.tile(p.fitter.bounds[p.free],len(p.frames))
+    c,j,cones=(constraint_builder or affine_constraints)(p,x);bounds=np.tile(p.fitter.bounds[p.free],len(p.frames))
     lower=np.maximum(-1.,(-bounds-x)/trust);upper=np.minimum(1.,(bounds-x)/trust)
     mats=[-sparse.csc_matrix(j*trust),sparse.eye(len(x),format='csc'),-sparse.eye(len(x),format='csc')]
     rhs=[c,upper,-lower];types=[clarabel.NonnegativeConeT(len(c)+2*len(x))]
@@ -84,7 +84,7 @@ def direction(p,x,trust,buffers=None):
     result=solver.solve();delta=np.asarray(result.x)*trust
     record=dict(status=str(result.status),iterations=result.iterations,trust=trust,linear_rows=len(c),norm_cones=len(cones),
         predicted_objective_change=float(g@delta),max_coordinate_step=float(np.abs(delta).max()),proposal_buffers=buffers or {},
-        tightened_cones=sum(tightened_cap(t,buffers)<t['cap'] for t in cones))
+        tightened_cones=int(sum(tightened_cap(t,buffers)<t['cap'] for t in cones)))
     # A solver status is proposal metadata, never final animation acceptance.
     if str(result.status) not in ['Solved','AlmostSolved'] or not np.isfinite(delta).all() or np.abs(delta).max()>trust+1e-12:return None,record
     record['predicted_linear_minimum']=float((c+j@delta).min())
@@ -93,7 +93,7 @@ def direction(p,x,trust,buffers=None):
     return delta,record
 
 
-def solve(p,steps=12,trusts=(1e-4,1e-5,1e-6),progress=None,buffers=None):
+def solve(p,steps=12,trusts=(1e-4,1e-5,1e-6),progress=None,buffers=None,constraint_builder=None):
     x=p.initial[np.ix_(p.frames,p.free)].ravel();initial=x.copy();before=p.evaluate(x);history=[]
     if before[2].min()<-1e-8 or not p.geometric_guard(before[5]):raise ValueError('Strictly feasible source required')
     for iteration in range(steps):
@@ -101,7 +101,7 @@ def solve(p,steps=12,trusts=(1e-4,1e-5,1e-6),progress=None,buffers=None):
         if current[0]==0.:break
         attempts=[];accepted=False
         for trust in trusts:
-            delta,record=direction(p,x,trust,buffers);record['trials']=[]
+            delta,record=direction(p,x,trust,buffers,constraint_builder);record['trials']=[]
             if delta is not None and record['predicted_objective_change']<0:
                 record['proposed_delta']=delta.tolist()
                 for index in range(8):

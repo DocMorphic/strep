@@ -36,9 +36,15 @@ def make_problem(folder,request):
     return CoupledBreadthBlock(fitter,initial,evaluator,request['frames'],read(folder/'envelope.json'),request['target'],world)
 
 
-def prepare(diagnosis_path,output):
+def prepare(diagnosis_path,output,case_id=None):
     if output.exists():raise ValueError('Preserve earlier attempt')
-    diagnosis=read(diagnosis_path);selected=select(diagnosis);case=selected['id']
+    diagnosis=read(diagnosis_path)
+    if case_id is None:selected=select(diagnosis)
+    else:
+        matches=[r for r in diagnosis['rows'] if r['id']==case_id and r['excluded_by_vertical_bound']]
+        if len(matches)!=1:raise ValueError('One diagnosed excluded case required')
+        selected=matches[0]
+    case=selected['id']
     source=ROOT/'reports/whole-support-breadth-v1/takes'/case
     if sha256(source/'candidate/character.glb')!=selected['source_sha256']:raise ValueError('Diagnosed source changed')
     output.mkdir(parents=True);dest=output/'source';dest.mkdir()
@@ -57,7 +63,7 @@ def prepare(diagnosis_path,output):
         support_speed_caps_m_s=(np.linalg.norm(np.diff(centers[:,:,[0,2]],axis=0)*30,axis=2)+60e-6).tolist(),
         root_safety_caps_m_s2=(root_acc+.0036).tolist(),rotation_cap_radians=float(np.pi))
     save(output/'envelope.json',envelope)
-    request=dict(at=now(),case=case,selection='Largest relative necessary vertical bound among all nine excluded cases; one five-frame block at its largest source root peak.',
+    request=dict(at=now(),case=case,selection=('Largest relative necessary vertical bound among all nine excluded cases.' if case_id is None else 'Explicit case from frozen diagnosed excluded population.')+' One five-frame block at its largest source root peak.',
         diagnosis=str(diagnosis_path),diagnosis_sha256=sha256(diagnosis_path),remaining_cases=[r['id'] for r in diagnosis['rows'] if r['id']!=case],
         frames=frames,target=dict(centers=targets,limit_m_s2=selected['original_peak_m_s2']),maxiter=80,
         source_files={p.relative_to(dest).as_posix():sha256(p) for p in dest.rglob('*') if p.is_file()},quality_approved=False)
@@ -94,17 +100,17 @@ def prepare(diagnosis_path,output):
     if not valid:raise ValueError('Preflight failed; preserve diagnostic evidence')
 
 
-def run(output):
+def run(output,solver_function=solve):
     from action_worker_lock import worker_lock
     from run_godot_rig_import import run as engine_import
     request=read(output/'request.json')
     if read(output/'pipeline.json')['status']!='prepared':raise ValueError('Fresh prepared trial required')
-    check_files(output,read(output/'freeze.json'));check_files(output/'source',request['source_files']);check_files(ROOT/'scripts',request['implementation']);check_files(output/'implementation',request['implementation'])
+    check_files(output,read(output/'freeze.json'));check_files(output/'source',request['source_files']);check_files(ROOT/'scripts',request['implementation']);check_files(output/'implementation',request['implementation']);check_files(Path('.'),request.get('resources',{}))
     save(output/'worker.json',dict(pid=os.getpid(),created_at=psutil.Process().create_time()))
     with worker_lock(),threadpool_limits(limits=1):
         p=make_problem(output,request)
         def progress(row):save(output/'pipeline.json',dict(status='fitting',at=now(),**row));print(row,flush=True)
-        save(output/'pipeline.json',dict(status='fitting',at=now()));values,solver=solve(p,request['maxiter'],progress);save(output/'solver.json',solver)
+        save(output/'pipeline.json',dict(status='fitting',at=now()));values,solver=solver_function(p,request['maxiter'],progress);save(output/'solver.json',solver)
         np.savez_compressed(output/'parameters.npz',parameters=values)
         take=output/'take';take.mkdir();shutil.copytree(output/'source/input',take/'input');(take/'candidate').mkdir()
         for name in ['spec.json','request.json']:shutil.copyfile(output/'source'/name,take/name)
@@ -116,7 +122,7 @@ def run(output):
         accepted=solver['accepted_fraction'] is not None and proof['all_guards_passed'] and proof['useful_target_improvement']
         save(output/'manifest.json',dict(cases=[dict(id='source',path=str((output/'source/candidate/character.glb').resolve()),sha256=sha256(output/'source/candidate/character.glb'),frames=len(values),fps=30,sample_by_time=True),
             dict(id='candidate',path=str((take/'candidate/character.glb').resolve()),sha256=sha256(take/'candidate/character.glb'),frames=len(values),fps=30,sample_by_time=True)]))
-        engine_import(output,output/'engine');check_files(output/'source',request['source_files']);check_files(ROOT/'scripts',request['implementation'])
+        engine_import(output,output/'engine');check_files(output/'source',request['source_files']);check_files(ROOT/'scripts',request['implementation']);check_files(Path('.'),request.get('resources',{}))
         save(output/'completion.json',dict(at=now(),request_sha256=sha256(output/'request.json'),audit_sha256=sha256(output/'audit.json'),engine_sha256=sha256(output/'engine/verification.json'),accepted=accepted,quality_approved=False))
         save(output/'pipeline.json',dict(status='complete',accepted=accepted,at=now(),quality_approved=False));print(proof,flush=True)
 

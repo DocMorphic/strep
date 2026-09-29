@@ -29,6 +29,8 @@ The [bounded region-grasp correction](docs/sphere-region-upper-return-v1.md) pas
 
 [A peak-restoration follow-up](docs/breadth-peak-restore-v1.md) finds three additional alternatives and identifies nine cases where root-only correction cannot satisfy the original peak alongside the declared geometry constraints. Coordinated joint correction remains needed.
 
+[Coordinated root/leg correction](docs/coupled-breadth-conic-v1.md) now retains numerical improvements across all nine diagnosed root-only conflicts after repairing physical step checks. Earlier failures remain recorded. None of the nine original root peaks is restored; full-clip quality remains unresolved.
+
 The owner will perform developer review first. Independent animator review and timed cleanup evidence remain release requirements.
 
 ## Using this source snapshot

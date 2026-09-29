@@ -14,4 +14,10 @@ The source reconstruction passes its saved-pose check, all 42,527 initial constr
 
 Three focused tests pass: deterministic relative-conflict selection; rejection of a 2 mm floor edit that the old 5 mm rule would have allowed; and unchanged-source acceptance plus independent detection of a hover mutation. The first audit-test attempt omitted the test fixture's root-track clock and failed; the fixture was corrected without changing the implementation or thresholds before optimization.
 
-The frozen trial is `reports/coupled-breadth-block-v1`. Its worker identity and terminal pipeline, solver trials, separate audit and engine evidence must be checked before claiming an outcome. This is one five-frame development block, not complete clip recovery. The other conflict cases, root failures outside the block, physical support, action semantics, human ratings and cleanup-time evidence remain open. All project release capabilities remain unapproved.
+## Completed result
+
+The frozen trial `reports/coupled-breadth-block-v1` completed all 80 iterations without an accepted correction. SLSQP reached its iteration limit. All eight safeguard fractions reduced the target objective but violated the constraints, including the smallest fraction, 1/128. The retained output therefore reconstructs the unchanged source: objective 46.839763 and root peak 5.442488 m/s², versus the original transfer's 0.709601 m/s². The independent audit passes preservation and explicitly fails useful improvement.
+
+Both source and retained output pass actual Godot imports across 300 actor-frames and 65 bones, with maximum position error below 0.470 µm. Successful import does not resolve the motion defect. The proposed coordinates, all safeguard trials, source snapshot and decoded audit remain local. The [bounded conic comparison](coupled-breadth-conic-v1.md) changes proposal selection while retaining this source and all acceptance limits.
+
+This is one five-frame development block, not complete clip recovery. The other conflict cases, root failures outside the block, physical support, action semantics, human ratings and cleanup-time evidence remain open. All project release capabilities remain unapproved.
