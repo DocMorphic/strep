@@ -121,6 +121,50 @@ Contact improves but clearance becomes much worse. Global acceleration also exce
 
 Forty-one focused coordinate, initialization, regional constraint, witness, objective and job tests pass. An actual five-frame integration check runs two stages of two iterations for the frozen old solver, the current default and the scaled option. Every motion array in the old/current default comparison is bit-identical. All three runs satisfy original edit bounds and native FK discrepancy below 0.3 micrometres. The preserved method and bound inputs are in `reports/root-coordinate-integration-v1`. This short check verifies wiring and compatibility, not quality or convergence.
 
-A full 180-frame comparison is running in `reports/region-root-scaled-full-v1/guard`, initialized from the same object-relative grip seed. It uses six stages, 100 iterations, the 3,600-second budget, regional multipliers, full skin, per-vertex object inequalities, sparse skinning, stage witness refresh and the same margins/rate guard. All original protocol settings and input hashes match the completed regional-multiplier trial. Implementation intentionally differs in `support_contact_v8.py` and `fit_scene_regions.py`, with `bounded_root_coordinates.py` added; the exact differences are recorded in `comparison-protocol.json`. This is an optional parameterization experiment, not an identical-code repetition.
+A full 180-frame comparison completed in `reports/region-root-scaled-full-v1/guard`, initialized from the same object-relative grip seed. It uses six stages, 100 iterations, the 3,600-second budget, regional multipliers, full skin, per-vertex object inequalities, sparse skinning, stage witness refresh and the same margins/rate guard. All original protocol settings and input hashes match the completed regional-multiplier trial. Implementation intentionally differs in `support_contact_v8.py` and `fit_scene_regions.py`, with `bounded_root_coordinates.py` added; the exact differences are recorded in `comparison-protocol.json`. This is an optional parameterization experiment, not an identical-code repetition.
 
-An exact-process completion watcher will run independent geometry, temporal-rate and Godot checks after fitting exits. The outcome is pending. No imported numerical source will change during the trial. All 14 release capabilities remain unapproved; arbitrary actions, rig transfer, editing, partner interaction and human validation remain part of the same project goal.
+The exact-process completion watcher finished independent geometry, temporal-rate and Godot checks after fitting exited. Its result is recorded below. All 14 release capabilities remain unapproved; arbitrary actions, rig transfer, editing, partner interaction and human validation remain part of the same project goal.
+
+
+## Completed root-scaling trial
+
+The scaled sigmoid run completed in 1,799.5 seconds and 743 evaluations. It preserves original edit bounds but does not repair the full animation:
+
+| Exported measurement | Legacy root, regional multipliers | Scaled root, regional multipliers |
+| --- | ---: | ---: |
+| Failed contact samples / 490 | 327 | 90 |
+| Failed body geometry samples / 717 | 284 | 349 |
+| Worst box penetration | 27.872394 mm | 38.484624 mm |
+| Global peak acceleration | 39.515958 m/s² | 40.278385 m/s² |
+| Release-boundary speed | 0.434537 m/s | 0.609421 m/s |
+| Release-boundary acceleration | 20.745412 m/s² | 40.278385 m/s² |
+
+Contact is better than the legacy full fit but worse than the shared initializer, which fails only 15 contact samples. The scaled candidate has higher acceleration peaks in all 77 joints; the maximum is above the source's 37.982124 m/s². Minimum sampled skin-floor gap is 2.023968 mm. Godot reproduces all 360 actor-frames and 77 joints with candidate position discrepancy below 0.346 micrometres. Fidelity and bound checks do not approve the failed motion.
+
+The root reaches 43.608 mm lift at frame 125; the legacy trial remained near 0.022 mm. Conversely, maximum joint rotation change from the shared grip seed is only 0.032958 degrees with scaling, versus 8.545227 degrees with legacy coordinates. This shows strongly different movement between the variable groups; it does not prove the optimizer's causal failure mechanism. The preserved comparison binds results, recipes, seed, geometry and rate measurements in `reports/region-root-scaled-full-v1/comparison.json` with its exact `compare.py`.
+
+Studio collection `root-scaled-full-review-v1` preserves the failed source/candidate result. Twelve package hashes and eleven permitted routes were checked offline; the Python snapshot remains intentionally unserved. No browser rendering or human review was added.
+
+## Directly bounded root pilot
+
+The optional `--root-coordinate-mode physical_box` uses root height directly in metres with the unchanged [0, 0.22] metre box bound and exact legacy starting height. Body/finger rotation controls keep their original bounded parameterization. `box_root_optimizer.py` bridges the existing analytic Torch objective and gradients to SciPy L-BFGS-B. It restores the accepted point after line-search probes before multipliers update, records termination reason/evaluation counts/projected gradient, and never treats optimizer success as contact feasibility. The default remains legacy; the failed scaled sigmoid option remains available for reproduction.
+
+The installed SciPy version is 1.15.3. Its [official L-BFGS-B documentation](https://docs.scipy.org/doc/scipy-1.15.3/reference/optimize.minimize-lbfgsb.html) specifies the projected-gradient stop test, limited-memory corrections, and separate iteration, function-evaluation and line-search budgets. This adapter uses analytic gradients, 12 corrections, 40 line-search steps, a configured per-stage function-evaluation limit of 40 times the iteration budget (minimum 40), and the existing outer wall-time budget. This changes both root coordinates and optimizer; it is not an identical-optimizer ablation or a convergence guarantee.
+
+Forty-four focused tests pass, including a coupled quadratic with a known box-constrained optimum, bounds during every evaluation, restoration of the accepted point after a rejected probe, nonfinite rejection and prior contact/initialization/job checks. A five-frame two-stage/two-iteration integration check preserves all original edit bounds and native FK discrepancy below 0.3 micrometres. The frozen/current legacy motion arrays remain bit-identical. Evidence is in `reports/root-physical-integration-v1`; these checks do not establish animation quality.
+
+The matched full-duration pilot completed in `reports/root-physical-pilot-v1`: one stage and 20 iterations each, with identical implementation, original scene, grip seed, constraints, margins and rate guard; only root mode differs. Legacy takes 79.8 seconds/26 evaluations; physical-box takes 90.9 seconds/31 evaluations. The latter reaches its 20-iteration limit with projected-gradient norm 90.154, so it is explicitly nonconverged.
+
+| Exported pilot measurement | Legacy | Physical-box root |
+| --- | ---: | ---: |
+| Failed contact samples / 490 | 219 | 208 |
+| Failed geometry samples / 717 | 337 | 333 |
+| Worst box penetration | 39.002372 mm | 38.174695 mm |
+| Global peak acceleration | 31.603147 m/s² | 31.334887 m/s² |
+| Release-boundary acceleration | 22.581784 m/s² | 29.625099 m/s² |
+| Maximum root lift | 0.022 mm | 2.781 mm |
+| Maximum rotation change from shared seed | 0.296161° | 0.327024° |
+
+Both variable groups move, but both outputs still fail. Physical-box has a release-acceleration regression despite its lower global peak. Original bounds pass and Godot reproduces all 720 actor-frames across the two comparisons. `comparison-protocol.json` and `comparison.json` bind settings and audited measurements; `method.py` and `compare.py` preserve the methods. This pilot supports testing a longer solve, not quality approval.
+
+A full six-stage/100-iteration/3,600-second physical-box comparison is now running in `reports/region-root-physical-full-v1/guard`, with an exact-owner audit watcher. Original source, seed and settings match the earlier full regional-multiplier control. Root mode and the intentionally changed solver/integration/helper implementation are recorded explicitly in `comparison-protocol.json`; no implementation-identity claim is made. Original acceptance limits and default behavior remain unchanged. All previous failures remain retained, and all 14 release capabilities remain unapproved.

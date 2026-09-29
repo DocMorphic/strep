@@ -105,7 +105,7 @@ def object_sampling_layout(selected,vertex_count,full):
 
 
 def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy"):
-    if root_coordinate_mode not in ["legacy","scaled_initial"]:raise ValueError("Unknown root coordinate mode")
+    if root_coordinate_mode not in ["legacy","scaled_initial","physical_box"]:raise ValueError("Unknown root coordinate mode")
     if object_constraint_mode not in ["maximum","per_vertex"]:raise ValueError("Unknown object constraint mode")
     if object_constraint_mode!="maximum" and not object_inequalities:raise ValueError("Per-vertex constraints require object inequalities")
     if skin_backend not in ["gather","sparse"]:raise ValueError("Unknown skin backend")
@@ -154,14 +154,16 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     def smooth_delta():return torch.einsum('fk,kjd->fjd',basis,delta)
     initial_lift=tensor((previous if warm_start is None else warm_start)['root_positions'][:,1]-base['root_positions'][:,1])
     root_coordinates=None
-    if root_coordinate_mode=='legacy':
+    if root_coordinate_mode in ['legacy','physical_box']:
         unit=(initial_lift/CONFIG['max_root_lift_m']).clamp(1e-4,1-1e-4)
         lift_parameters=torch.logit(unit).clone().requires_grad_()
+        if root_coordinate_mode=='physical_box':lift_parameters=bounded_lift(lift_parameters,CONFIG['max_root_lift_m']).detach().clone().requires_grad_()
     else:
         from bounded_root_coordinates import BoundedRootCoordinates
         root_coordinates=BoundedRootCoordinates(initial_lift,CONFIG['max_root_lift_m'])
         lift_parameters=root_coordinates.initial_parameters().requires_grad_()
     def root_lift():
+        if root_coordinate_mode=='physical_box':return lift_parameters
         return bounded_lift(lift_parameters,CONFIG['max_root_lift_m']) if root_coordinates is None else root_coordinates(lift_parameters)
     lookup={j:i for i,j in enumerate(editable)}
     reference=tensor((base if raw is None else raw)['posed_joints'])
@@ -320,13 +322,18 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         if progress and calls%20==0:progress(dict(evaluations=calls,loss=float(loss.detach()),terms=last))
         return loss
     for stage in range(stage_count):
-        optimizer=torch.optim.LBFGS([delta,lift_parameters],lr=.8,max_iter=iterations,history_size=12,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11)
+        if root_coordinate_mode=='physical_box':
+            from box_root_optimizer import BoxRootOptimizer
+            optimizer=BoxRootOptimizer(delta,lift_parameters,CONFIG['max_root_lift_m'],iterations)
+        else:
+            optimizer=torch.optim.LBFGS([delta,lift_parameters],lr=.8,max_iter=iterations,history_size=12,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11)
         optimizer.step(closure)
         closure() # Recompute at accepted parameters before multiplier updates.
         stage_records.append(dict(stage=stage,point_penalty=point_penalty,normal_penalty=normal_penalty,objective=last.copy(),
             max_active_point_violation_m=float(torch.relu(last_point)[active.bool()].max()) if active.any() else 0.,
             max_partner_cut_violation_m=float(torch.relu(last_cuts).max()) if cuts else 0.,max_active_tangent_chord_violation=max([float(torch.relu(g)[c[2].bool()].max()) for g,c in zip(last_tangents,normal_constraints)]+[0.]),
             max_active_normal_chord_violation=max([float(torch.relu(g)[c[2].bool()].max()) for g,c in zip(last_normals,normal_constraints)]+[0.])))
+        if root_coordinate_mode=='physical_box':stage_records[-1]['optimizer']=optimizer.summary
         if object_inequalities:
             stage_records[-1].update(object_penalty=object_penalty,max_sampled_object_clearance_violation_m=max([float(torch.relu(g).max()) for g in last_objects]+[0.]))
         if region_fitting is not None:stage_records[-1]['regional_constraints']=region_fitting.stage_diagnostics()

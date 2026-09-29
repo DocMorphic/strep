@@ -2,7 +2,7 @@
 
 This changes optimizer coordinates, not the lift range or initial decoded pose.
 Metre units apply locally at initialization; later derivatives can differ.
-Not yet connected to the scene solver or approved by an animation experiment.
+Optional scene-solver mode; full-motion trials have not passed quality checks.
 """
 import math
 import torch
