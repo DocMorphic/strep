@@ -67,7 +67,20 @@ def solver_stage_count(requested):
     return count
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None):
+def object_sampling_layout(selected,vertex_count,full):
+    """Extend object coverage without changing the existing floor sample."""
+    if type(full)!=bool:raise ValueError('Explicit full-skin boolean required')
+    raw=np.asarray(sorted(selected))
+    if raw.dtype.kind not in 'iu' or type(vertex_count)!=int or vertex_count<=0:
+        raise ValueError('Integer vertex identities required')
+    original=raw.astype(int)
+    if not len(original) or original[0]<0 or original[-1]>=vertex_count or len(np.unique(original))!=len(original):
+        raise ValueError('Valid distinct source samples required')
+    ids=np.arange(vertex_count) if full else original
+    return ids,np.searchsorted(ids,original)
+
+
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False):
     stage_count=solver_stage_count(outer_stage_count)
     iterations=CONFIG['iterations'] if iteration_count is None else iteration_count
     if type(iterations)!=int or not 1<=iterations<=100:raise ValueError('Iterations must be an integer from 1 to 100')
@@ -141,7 +154,9 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
                     distances=geometry.distance_gradient(points,np.array(obj['positions_m'][f]),np.array(obj['rotations'][f]))[0]
                     selected.update(np.argsort(distances)[:CONFIG['object_near_samples']].tolist())
     for cut in context.get('partner_cuts',[]):selected.add(cut['vertex'])
-    selected=np.array(sorted(selected)); mapping={v:i for i,v in enumerate(selected)}
+    selected,floor_indices=object_sampling_layout(selected,len(skin['bind_vertices']),full_object_skin)
+    floor_indices=torch.tensor(floor_indices,dtype=torch.long)
+    mapping={v:i for i,v in enumerate(selected)}
     if region_fitting is not None:region_fitting.bind(mapping)
     normal_constraints=[]
     for c,faces in zip(context['normals'],normal_faces):
@@ -198,7 +213,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         displacement=p-reference
         velocity=torch.linalg.vector_norm(torch.diff(displacement,dim=0)*30,dim=-1)
         slide=torch.linalg.vector_norm((v[frame_indices+1,patch_indices]-v[frame_indices,patch_indices])[...,[0,2]]*30,dim=-1)
-        terms=dict(collision=torch.relu(CONFIG['clearance_m']-v[:,:,1]).square().amax(1).mean()*CONFIG['collision_weight'],
+        terms=dict(collision=torch.relu(CONFIG['clearance_m']-v[:,floor_indices,1]).square().amax(1).mean()*CONFIG['collision_weight'],
             contact=inferred_loss*CONFIG['contact_weight'],
             authored_contact=point_loss,authored_fade=fade_loss*CONFIG['fade_contact_weight'],authored_slide=moving_loss*CONFIG['authored_slide_weight'],
             pose=bounded_edits(smooth_delta())[:,:body_count].square().mean()*CONFIG['pose_weight'],
@@ -287,4 +302,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         recipe['object_inequalities']=dict(initial_penalty=2*CONFIG['object_collision_weight'],growth=CONFIG['penalty_growth'],scope='One signed max-vertex inequality per object and frame. Existing inflated geometry and frozen samples; no full-skin or continuous-time feasibility guarantee.')
     if region_fitting is not None:recipe['distributed_regions']=region_fitting.record()
     recipe['iterations_per_stage']=iterations
+    recipe['object_sampling']=dict(mode='all_vertices' if full_object_skin else 'frozen_subset',
+        object_vertices=len(selected),floor_vertices=len(floor_indices),
+        scope='Only object coverage changes; original floor sample and contact/edit/acceptance limits retained.')
     return result,recipe

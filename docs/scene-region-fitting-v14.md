@@ -55,3 +55,5 @@ Primitive targets, native SOMA humanoids and grounded yaw-only actor placement a
 Next connect authored regions, fitting jobs and independent failed/passing measurements to Studio. Further solver work should examine frozen correspondence choices, root-parameter conditioning and unsatisfied full-body clearance. More iterations on this same fixture are not broad validation. All 14 release capabilities remain unapproved.
 
 Follow-up: [Studio region editing](studio-region-fitting-v1.md) now connects saved-scene requests, fitting workers and independent failed/passing measurements. Browser validation and broader motion quality remain open.
+
+Follow-up: [full-skin object sampling](object-skin-sampling-v1.md) diagnoses omitted forearm collisions and compares complete object-vertex coverage while preserving the floor sample. The box interaction still fails; the default subset reproduces its earlier output exactly.
