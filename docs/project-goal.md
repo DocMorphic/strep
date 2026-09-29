@@ -370,3 +370,6 @@ A [full-joint warm-restart experiment](contact-joint-restart-v1.md) is now runni
 
 
 Studio now provides [readable contact-export checks](contact-export-review-v1.md) with numeric pin/rate/floor/preservation results, explicit missing data and retained tiny failures. Offline UI checks, four reproducible-build tests and comparisons against eleven saved reports pass. The separate full-joint study remains running with its Python/Godot methods unchanged; no new motion-quality or release approval is inferred.
+
+
+A [reusable export-feedback core](export-feedback-core-v1.md) now separates proposal search/selection from action-specific study paths. Twenty-nine focused tests pass, and read-only replay of three retained cases reproduces every inspected serialized motion and final selection exactly, including the rejected crawling proposal. No new animation/engine or quality evidence is claimed. Studio integration remains pending while the existing joint-restart study stays frozen; all release capabilities remain unapproved.
