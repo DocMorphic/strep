@@ -322,3 +322,6 @@ Latest checked-contact work: [full-mesh floor preservation](checked-floor-guard-
 
 
 Latest contact work: [quarter-frame pin fitting](checked-sampled-pins-v1.md) aligns the position objective with the export audit. The matched trial still fails (5.78466 mm peak error, 15/81 misses), with floor preservation intact and fitted/export agreement within 4.90e-8 m. Twenty-nine tests and 407 engine observations pass. A separate four-stage/120-iteration convergence study is running; no improvement or release approval is yet claimed.
+
+
+Completed convergence work: [four-stage checked-contact result](checked-contact-convergence-v1.md) reduces pin failures from 15 to 1 of 81, with a 5.00165 mm peak and a small remaining release-speed violation. All 717 floor samples preserve the source and 407 engine observations pass. Residual violations precede export, so they remain failures. Next test an explicit constrained feasibility correction; all release gates remain open.

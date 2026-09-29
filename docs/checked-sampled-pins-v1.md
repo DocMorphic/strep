@@ -30,7 +30,7 @@ Twenty-nine distinct focused Python tests pass. These cover rotation arcs betwee
 
 Use a fresh output directory. Completed evidence is retained under `reports/contact-jobs/studio-sampled-pins-v1` and `reports/studio-sampled-pins-v1`.
 
-## Convergence study in progress
+## Completed convergence study
 
 With position, rate and floor sampling now aligned, a separate experiment tests a larger numerical budget: four stages, at most 120 iterations each. It starts from the original checked source and retains every physical/contact threshold. This is motivated by the measured iteration-limit stops and large residual gradients; it is not assumed to fix feasibility.
 
@@ -38,4 +38,4 @@ With position, rate and floor sampling now aligned, a separate experiment tests 
 .venv\Scripts\python.exe scripts/study_checked_point_scaling.py guarded-fit-check-v1 reports/contact-jobs/studio-sampled-pins-convergence-v1 reports/contact-jobs/studio-sampled-pins-v1 --floor-guard --sampled-pins --stages 4 --iterations 120
 ```
 
-The selected stage/iteration counts are validated and written into the study protocol and fitting options. The longer job is still running at publication of this note. Its candidate, export audit and engine result must be examined before claiming any improvement. No release capability has been approved.
+The selected stage/iteration counts are validated and written into the study protocol and fitting options. The [longer run has now completed](checked-contact-convergence-v1.md): it reduces pin failures from 15 to 1 but retains a 1.65 micrometre point violation and a small release-speed violation. Full-floor and engine checks pass; the candidate remains unapproved. No release capability has been approved.
