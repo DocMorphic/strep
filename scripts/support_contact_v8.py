@@ -130,7 +130,7 @@ def object_sampling_layout(selected,vertex_count,full):
     return ids,np.searchsorted(ids,original)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=(),edit_window=None,export_point_rate_guard=False,authored_point_scaling="metres",export_floor_guard=False,export_point_position_guard=False):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=(),edit_window=None,export_point_rate_guard=False,authored_point_scaling="metres",export_floor_guard=False,export_point_position_guard=False,native_body_references=None):
     if authored_point_scaling not in ["metres","tolerance"]:raise ValueError("Unknown authored point scaling")
     if root_coordinate_mode not in ["legacy","scaled_initial","physical_box"]:raise ValueError("Unknown root coordinate mode")
     if object_constraint_mode not in ["maximum","per_vertex"]:raise ValueError("Unknown object constraint mode")
@@ -322,6 +322,11 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         from export_point_position_objective import ExportPointPositionObjective
         position_objective=ExportPointPositionObjective(tensor(base['global_rot_mats']),tensor(base['posed_joints']),parents,skin,contact_spec,
             tolerance=CONFIG['point_tolerance_m'],scaling=authored_point_scaling,penalty=CONFIG['explicit_contact_weight'])
+    body_objective=None
+    if native_body_references is not None:
+        from native_body_objective import NativeBodyObjective
+        if not isinstance(native_body_references,dict) or not native_body_references:raise ValueError('Named native body reference motions required')
+        body_objective=NativeBodyObjective({name:tensor(motion['posed_joints']) for name,motion in native_body_references.items()})
     calls=0;last={}
     def closure():
         nonlocal calls,last,last_point,last_normals,last_cuts,last_tangents,last_objects
@@ -353,6 +358,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             temporal=torch.diff(displacement,n=2,dim=0).square().sum(-1).mean()*CONFIG['temporal_weight'],
             velocity=torch.relu(velocity-1.2).square().amax()*CONFIG['velocity_weight'],
             slide=(torch.relu(slide-original_slide-.02).square()*(cw[:-1]*(~explicit_mask))).sum()/(cw[:-1]*(~explicit_mask)).sum().clamp_min(1)*CONFIG['slide_weight'])
+        if body_objective is not None:terms['native_body']=body_objective.loss(p)
         if preserved_loss is not None:terms['preserved_support']=preserved_loss
         if region_fitting is not None:terms['distributed_region']=region_fitting.loss(v)
         if rate_objective is not None:terms['export_rates']=rate_objective.loss(r,p)
@@ -417,7 +423,9 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         if point_rate_objective is not None:stage_records[-1]['export_point_rates']=point_rate_objective.record()
         if floor_objective is not None:stage_records[-1]['export_floor']=floor_objective.record()
         if position_objective is not None:stage_records[-1]['export_point_positions']=position_objective.record()
+        if body_objective is not None:stage_records[-1]['native_body']=body_objective.record()
         if stage+1<stage_count:
+            if body_objective is not None:body_objective.advance_stage(CONFIG['penalty_growth'])
             if rate_objective is not None:rate_objective.advance_stage(CONFIG['penalty_growth'])
             if point_rate_objective is not None:point_rate_objective.advance_stage(CONFIG['penalty_growth'])
             if floor_objective is not None:floor_objective.advance_stage(CONFIG['penalty_growth'])
@@ -487,6 +495,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     recipe['object_clearance_margin_m']=object_clearance_margin_m
     if rate_objective is not None:recipe['export_rates']=rate_objective.record()
     if point_rate_objective is not None:recipe['export_point_rates']=point_rate_objective.record()
+    if body_objective is not None:recipe['native_body']=body_objective.record()
     recipe['initialization']=initialization
     recipe['skin_backend']=skin_backend
     recipe['iterations_per_stage']=iterations

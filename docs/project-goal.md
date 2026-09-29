@@ -385,3 +385,6 @@ Studio now [runs export feedback after fitting saved checked pins](studio-export
 
 
 Studio now [checks pose compatibility before fitting](studio-pose-check-v1.md), freezes raw/limb references and explains the crawling conflict without changing the request. Three real checks and all input/artifact/method hashes pass verification; 38 focused Python tests and offline UI checks pass. Old checks require a refresh. No new animation or release approval; kick/support and broader release work remain open.
+
+
+A [native body constraint experiment](native-body-constraints-v1.md) now includes the existing raw/limb pose and added-speed screens in contact fitting rather than relying only on post-fit rejection. Fifty-five focused tests pass. The controlled kick-11 six-stage comparison is running with original targets and budgets unchanged; no outcome, realism evidence or release approval is claimed yet.
