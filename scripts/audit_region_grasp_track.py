@@ -20,7 +20,7 @@ def quintic(t):
     t = min(1., max(0., t)); return 6*t**5-15*t**4+10*t**3
 
 
-def run(study, output):
+def run(study, output, approach_patch=None, floor_patch=None):
     study, output = Path(study).resolve(), Path(output).resolve(); protocol, result = read(study/'protocol.json'), read(study/'result.json')
     if result['status'] != 'complete' or not result['motion_generated']: raise ValueError('Completed trajectory required')
     for path, digest in [(study/'protocol.json', result['protocol_sha256']), (study/'motion.npz', result['motion_sha256'])]:
@@ -59,10 +59,88 @@ def run(study, output):
             for binding,rp in zip(bindings,regions): apply_region_binding(p,binding['hand'],binding['anchor'],rp['patch'])
             actual,_=p.independent(values); compare_record(actual,active[frame]['candidate'])
             replay_passes += actual['pose_witness_passed']
+    patch_verification=None
+    if approach_patch is not None:
+        patch_path=Path(approach_patch).resolve();pp,rr=read(patch_path/'protocol.json'),read(patch_path/'result.json')
+        if ROOT/pp['base_study']!=study or rr['status']!='complete':raise ValueError('Completed matching approach patch required')
+        if sha256(patch_path/'motion.npz')!=rr['motion_sha256'] or sha256(patch_path/'protocol.json')!=rr['protocol_sha256']:raise ValueError('Approach artifact changed')
+        for name,digest in pp['inputs'].items():
+            if sha256(ROOT/name)!=digest:raise ValueError('Approach input changed')
+        for name,digest in pp['implementation'].items():
+            if sha256(patch_path/'implementation'/name)!=digest:raise ValueError('Approach implementation snapshot changed')
+        if pp['eligible_frames']!=list(range(edit_start+1,start)) or pp['arm_columns']!=columns:raise ValueError('Approach scope changed')
+        if [r['frame'] for r in rr['rows']]!=pp['eligible_frames']:raise ValueError('Missing approach rows')
+        changed=[r['frame'] for r in rr['rows'] if r['changed']]
+        if changed!=rr['changed_frames']:raise ValueError('Changed frame summary mismatch')
+        patched=dict(np.load(patch_path/'motion.npz',allow_pickle=False));unmodified=np.setdiff1d(np.arange(protocol['frame_count']),changed)
+        for name in candidate:np.testing.assert_array_equal(patched[name][unmodified],candidate[name][unmodified])
+        for binding,rp in zip(bindings,regions):apply_region_binding(p0,binding['hand'],binding['anchor'],rp['patch'])
+        for row in rr['rows']:
+            frame=row['frame'];base=np.array(stored[frame]['parameters']);p0.frame=frame
+            p0.objects=[(g,o['id'],p0.t(o['positions_m'][frame])[None],p0.t(o['rotations'][frame])[None]) for g,o in context_primitives(p0.context)]
+            before,base_motion=p0.independent(base)
+            vertices=p0.surface.vertices(base_motion['global_rot_mats'][0],base_motion['posed_joints'][0]);sphere,_,center,_=p0.objects[0]
+            for guide,binding in zip(row['guides'],bindings):
+                hand=binding['hand'];root=p0.names.index(hand);descendants={root}
+                for j,parent in enumerate(p0.parents):
+                    if parent in descendants:descendants.add(j)
+                ids=np.array([i for i in range(len(vertices)) if any(j in descendants and w>0 for j,w in zip(skin['lbs_indices'][i],skin['lbs_weights'][i]))])
+                direction=np.array(guide['outward']);np.testing.assert_allclose(np.linalg.norm(direction),1.,atol=1e-12)
+                point=vertices[binding['anchor']];expected_direction=point-center.numpy()[0];expected_direction/=np.linalg.norm(expected_direction)
+                np.testing.assert_allclose(direction,expected_direction,atol=1e-12)
+                np.testing.assert_allclose(guide['point'],point+direction*guide['distance_m'],atol=1e-12)
+                clearance=np.linalg.norm(vertices[ids]+direction*guide['distance_m']-center.numpy()[0],axis=1).min()-sphere.dimensions[0]
+                if guide['distance_m']<0 or clearance<pp['settings']['guide_clearance_m']-1e-10:raise ValueError('Rigid guidance clearance failed')
+                if guide['distance_m']>0 and abs(clearance-pp['settings']['guide_clearance_m'])>1e-8:raise ValueError('Rigid guidance is not on first escape boundary')
+            if row['changed']:
+                values=np.array(row['parameters']);np.testing.assert_array_equal(values[frozen],base[frozen]);actual,replay=p0.independent(values)
+                compare_record(before,row['before']);compare_record(actual,row['candidate'])
+                if not actual['rotation_norm_bounds_passed']:raise ValueError('Approach bounds failed')
+                for name in candidate:np.testing.assert_array_equal(replay[name][0].astype(patched[name].dtype),patched[name][frame])
+        candidate=patched
+        patch_verification=dict(report=patch_path.relative_to(ROOT).as_posix(),result_sha256=sha256(patch_path/'result.json'),protocol_sha256=sha256(patch_path/'protocol.json'),
+                                changed_frames=changed,unchanged_frames=len(unmodified),non_arm_parameters_exact=True,grasp_and_release_exact=True,rigid_guidance_verified=True)
+        # Reset the reference object/contact records used to compile dense authored targets.
+        p0=PoseProblem(folder,skin,start)
+    floor_verification=None
+    if floor_patch is not None:
+        if approach_patch is None:raise ValueError('Floor correction requires its verified approach input')
+        fp=Path(floor_patch).resolve();fprotocol,fresult=read(fp/'protocol.json'),read(fp/'result.json')
+        if ROOT/fprotocol['approach_report']!=Path(approach_patch).resolve() or ROOT/fprotocol['base_study']!=study or fresult['status']!='complete':raise ValueError('Floor input mismatch')
+        for path,digest in [(fp/'protocol.json',fresult['protocol_sha256']),(fp/'motion.npz',fresult['motion_sha256'])]:
+            if sha256(path)!=digest:raise ValueError('Floor artifact changed')
+        for name,digest in fprotocol['inputs'].items():
+            if sha256(ROOT/name)!=digest:raise ValueError('Floor source changed')
+        for name,digest in fprotocol['implementation'].items():
+            if sha256(fp/'implementation'/name)!=digest:raise ValueError('Floor implementation snapshot changed')
+        free=fprotocol['settings']['free_frames']
+        if free!=list(range(1,edit_start)):raise ValueError('Floor correction changed interaction or initial pose')
+        delta=np.array(fresult['root_lift_delta_m']);locked=np.setdiff1d(np.arange(protocol['frame_count']),free)
+        if delta.shape!=(protocol['frame_count'],) or not np.isfinite(delta).all() or np.any(delta<0):raise ValueError('Invalid floor lift')
+        np.testing.assert_array_equal(delta[locked],0.)
+        lifted=dict(np.load(fp/'motion.npz',allow_pickle=False))
+        for name in candidate:
+            expected=candidate[name].copy()
+            if name=='root_positions':expected[:,1]+=delta
+            elif name=='posed_joints':expected[:,:,1]+=delta[:,None]
+            np.testing.assert_array_equal(expected,lifted[name]);np.testing.assert_array_equal(candidate[name][locked],lifted[name][locked])
+        total_lift=lifted['root_positions'][:,1]-p0.base['root_positions'][:,1]
+        if total_lift.min()< -1e-6 or total_lift.max()>p0.config['max_root_lift_m']+1e-6:raise ValueError('Original root bound exceeded')
+        prior_dense=read(ROOT/fprotocol['dense_audit']/'candidate.json');predicted=[]
+        for time,height in zip(prior_dense['frames'],prior_dense['floor_height_m']):
+            low,high=int(np.floor(time)),int(np.ceil(time));fraction=0.
+            if low!=high:
+                a,b,t=[float(np.float32(f/30)) for f in [low,high,time]];fraction=(t-a)/(b-a)
+            predicted.append(height+(1-fraction)*delta[low]+fraction*delta[high])
+        if min(predicted)<fprotocol['settings']['target_height_m']-1e-10:raise ValueError('Predicted dense floor constraints failed')
+        candidate=lifted;outside=np.setdiff1d(outside,free)
+        floor_verification=dict(report=fp.relative_to(ROOT).as_posix(),result_sha256=sha256(fp/'result.json'),protocol_sha256=sha256(fp/'protocol.json'),
+                                maximum_lift_m=float(delta.max()),locked_frames_exact=len(locked),rotations_exact=True,horizontal_root_exact=True,grasp_and_release_exact=True,
+                                minimum_predicted_height_m=min(predicted))
     output.mkdir(parents=True,exist_ok=False)
     shutil.copyfile(Path(__file__),output/Path(__file__).name)
     metadata = dict(at=now(), study=study.relative_to(ROOT).as_posix(), protocol_sha256=sha256(study/'protocol.json'), result_sha256=sha256(study/'result.json'),
-                    native_replay_exact=True, untouched_frames_exact=len(outside), original_edit_budgets_pass=True, serialization_max_error=max_serialized_error,
+                    native_replay_exact=True, untouched_frames_exact=len(outside), original_edit_budgets_pass=True, serialization_max_error=max_serialized_error,approach_patch=patch_verification,floor_patch=floor_verification,
                     substeps=4, scope='Decoded GLB full-skin integer/quarter-frame samples; exact original native edits and untouched frames verified. Discrete samples do not certify continuous collision, anatomy, self-collision, dynamics or human quality.', quality_approved=False)
     save(output/'protocol.json',metadata)
     times=np.arange((protocol['frame_count']-1)*4+1)/4; count=protocol['frame_count']; originals={}; hand_specs=[]
@@ -133,7 +211,7 @@ def run(study, output):
             objects={name:dict(minimum_clearance_m=min(v),minimum_active_clearance_m=float(np.array(v)[active_mask].min()),worst_frame=float(times[np.argmin(v)])) for name,v in objects.items()},
             contacts=contacts,active_region_pass_count=int(region_pass[active_mask].sum()),active_samples=int(active_mask.sum()),
             original_edit_bound_fail_count=sum(not r['passed'] for r in bound_rows),maximum_rotation_edit_degrees=max(r['maximum_rotation_edit_degrees'] for r in bound_rows),
-            edited_geometry_fail_count=int((~all_geometry[edited_mask]).sum()),maximum_joint_speed_m_s=float(np.linalg.norm(velocity,axis=-1).max()),
+            edited_geometry_fail_count=int((~all_geometry[edited_mask]).sum()),full_geometry_fail_count=int((~all_geometry).sum()),maximum_joint_speed_m_s=float(np.linalg.norm(velocity,axis=-1).max()),
             maximum_joint_acceleration_m_s2=float(np.linalg.norm(acceleration,axis=-1).max()),glb_sha256=sha256(output/(label+'.glb')))
         save(output/(label+'.json'),dict(frames=times.tolist(),floor_height_m=floor.tolist(),object_clearance_m=objects,hands=hand_rows,edit_bounds=bound_rows,summary=variants[label]))
         print(dict(variant=label,active_passes=variants[label]['active_region_pass_count'],active_samples=int(active_mask.sum()),minimum_active_sphere_m=variants[label]['objects'][protocol['object_id']]['minimum_active_clearance_m'],edited_geometry_fail_count=variants[label]['edited_geometry_fail_count']),flush=True)
@@ -141,5 +219,5 @@ def run(study, output):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study',type=Path);parser.add_argument('output',type=Path);args=parser.parse_args()
-    with threadpool_limits(limits=2):run(args.study,args.output)
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study',type=Path);parser.add_argument('output',type=Path);parser.add_argument('--approach-patch',type=Path);parser.add_argument('--floor-patch',type=Path);args=parser.parse_args()
+    with threadpool_limits(limits=2):run(args.study,args.output,args.approach_patch,args.floor_patch)

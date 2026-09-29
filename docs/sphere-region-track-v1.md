@@ -1,5 +1,7 @@
 # Region contacts through a moving grasp
 
+Follow-up: [approach and floor corrections](sphere-region-boundaries-v1.md) now pass all 717 full-clip geometry samples while retaining the grasp. The remaining speed/acceleration regression is localized to the release blend. Historical failures below remain unchanged.
+
 The new region-contact condition now passes all 62 grasp/release-guard keys and all 245 exported quarter-frame samples over that interval. The complete clip is still rejected: its approach blend intersects the sphere, some motion peaks increase, and the unchanged outer clip retains small floor-clearance failures. No release capability is approved.
 
 ## Trajectory construction

@@ -1,5 +1,7 @@
 # One project-wide goal: release-ready Strep
 
+Latest development evidence: [sphere approach and floor corrections](sphere-region-boundaries-v1.md) pass all 717 exported geometry/edit-limit samples and retain all 245 grasp samples. Whole-motion speed/acceleration regressions remain at the right forearm during release. All 14 release capabilities remain unapproved.
+
 Latest development evidence: [moving region grasp](sphere-region-track-v1.md) passes all 245 grasp/release-guard samples and original edit limits in decoded exports. The full clip remains rejected for approach collision and motion regressions. Godot playback matches all 540 tested actor-frames; this is fidelity evidence, not release approval.
 
 Latest development evidence: [bounded two-hand region pose](sphere-region-pose-v1.md) passes original joint-edit budgets, full-skin sphere/floor checks and distributed contact for a new authored region condition. The original fixed-point condition still fails. Temporal integration, anatomical/developer review and broad release validation remain pending; all 14 capabilities remain unapproved.
