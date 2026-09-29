@@ -2,7 +2,7 @@
 void (async function correctionReview(){
  const C=id=>document.getElementById(id),panel=C('correctionReview');
  let catalog=null,selected=null,loaded=null,model=null,mixer=null,action=null,root=null,frame=0,clock=0,playing=false,token=0,catalogToken=0,previousRoot=null,last=performance.now(),renderer=null,controls=null,camera=null,scene=null,opening=false;
- const studies={iterations:'/files/rig-jobs/support-iterations-review-v1/catalog.json',midpoint_full:'/files/rig-jobs/midpoint-support-review-v2/catalog.json',midpoint:'/files/rig-jobs/midpoint-support-review-v1/catalog.json',support:'/files/rig-jobs/support-boundary-review-v1/catalog.json',angular:'/files/rig-jobs/correction-review-v2/catalog.json'};
+ const studies={half_floor:'/files/rig-jobs/half-floor-review-v1/catalog.json',iterations:'/files/rig-jobs/support-iterations-review-v1/catalog.json',midpoint_full:'/files/rig-jobs/midpoint-support-review-v2/catalog.json',midpoint:'/files/rig-jobs/midpoint-support-review-v1/catalog.json',support:'/files/rig-jobs/support-boundary-review-v1/catalog.json',angular:'/files/rig-jobs/correction-review-v2/catalog.json'};
  const canvas=C('correctionCanvas');
  let catalogHash=null,verifiedVersion=null;
  const feedback=setupDeveloperFeedback(()=>verifiedVersion&&selected&&catalogHash?{
