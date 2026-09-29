@@ -80,7 +80,7 @@ def test_compilation_preserves_native_region_and_rejects_legacy_reduction(fixtur
     skin,scene,root=fixture;original=copy.deepcopy(scene)
     result=compile_regions(scene,'A',['grip'],skin,root)
     assert scene==original and result['regions'][0]['binding']==scene['contacts'][0]['region_contact']
-    assert not result['solver_supported']
+    assert result['solver_supported'] and result['solver_version']==14
     with pytest.raises(ValueError,match='cannot be reduced'):compile_contacts(scene,'A',['grip'],skin,root)
     with pytest.raises(ValueError,match='does not support'):compile_context(scene,'A',['grip'],skin)
     yaw=Rotation.from_euler('y',60,degrees=True)
@@ -105,3 +105,9 @@ def test_scene_acceptance_cannot_ignore_failed_region_when_anchor_passes(fixture
 def test_region_cannot_be_silently_used_for_partner_or_world(fixture):
     skin,scene,root=fixture;scene['contacts'][0]['target']=dict(space='world',point_m=[0,.5,0])
     with pytest.raises(ValueError,match='rigid primitive'):compile_regions(scene,'A',['grip'],skin,root)
+
+
+@pytest.mark.parametrize('value',[0,-.01,True,float('nan'),float('inf')])
+def test_region_compilation_rejects_invalid_anchor_tolerances(fixture,value):
+    skin,scene,root=fixture;scene['contacts'][0]['tolerance_m']=value
+    with pytest.raises(ValueError,match='Anchor tolerance'):compile_regions(scene,'A',['grip'],skin,root)

@@ -29,11 +29,15 @@ def compile_regions(scene, actor_id, contact_ids, skin, project_root=ROOT):
     compiled = []
     origin, rotation = pose(scene['actors'][actor_id]['transform'])
     for contact in chosen:
+        tolerance=contact.get('tolerance_m',.03)
+        if type(tolerance) not in [int,float] or not np.isfinite(tolerance) or tolerance<=0:
+            raise ValueError('Anchor tolerance must be positive and finite')
         vertices, faces, geometry, normal = compile_region(contact, scene, skin)
         obj = scene['objects'][contact['target']['object']]
         position, orientation = sample_object(obj, scene['frame_count'])
         a, b = contact['start_frame'], contact['end_frame']
         compiled.append(dict(contact_id=contact['id'], start_frame=a, end_frame=b,
+                             anchor_tolerance_m=tolerance,
                              binding=copy.deepcopy(contact['region_contact']),
                              vertex_ids=vertices.tolist(), geometry=geometry.record(),
                              object_id=contact['target']['object'],
@@ -46,7 +50,7 @@ def compile_regions(scene, actor_id, contact_ids, skin, project_root=ROOT):
                 fps=scene['fps'], frame_count=scene['frame_count'],
                 mesh_sha256=mesh_fingerprint(skin), regions=compiled,
                 anchor_subproblem=anchor_spec, source_provenance=provenance,
-                solver_supported=False, quality_approved=False,
+                solver_supported=True, solver_version=14, quality_approved=False,
                 scope='Actor-native anchor AND distributed contact requirements. Not an executable legacy point-only solver specification.')
 
 

@@ -30,7 +30,7 @@ The scene evaluator searches for three patch vertices within the declared object
 
 The anchor is still measured independently. `anchor_all_requested_frames_within_tolerance` records that result; `all_requested_frames_within_tolerance` requires both the anchor and the distributed region. Full-body object penetration remains a separate scene measurement. These native integer-frame checks do not replace the prior decoded quarter-frame export audit.
 
-Legacy point compilation, solver-context compilation and vertex-normal auditing reject region requests with an explicit explanation. Feeding just the anchor subproblem into those tools is not an implementation of the authored region condition. `solver_supported` is therefore false in the compiled package. The next implementation step is a region-aware fitting path and independent exported-motion validation, followed by Studio editing controls.
+Legacy point compilation, solver-context compilation and vertex-normal auditing reject region requests with an explicit explanation. Feeding just the anchor subproblem into those tools is not an implementation of the authored region condition. The [experimental V14 fitting path](scene-region-fitting-v14.md) now consumes the package explicitly, with independent exported-motion validation. Current compilations record `solver_supported: true` and `solver_version: 14`; this denotes an available experimental consumer, not successful fitting. Studio editing controls remain pending.
 
 ## Validation and limits
 

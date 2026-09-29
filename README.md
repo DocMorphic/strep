@@ -23,7 +23,7 @@ An earlier sustained knee-contact experiment imported all 180 frames into Godot,
 
 The [bounded region-grasp correction](docs/sphere-region-upper-return-v1.md) passes sampled contact, geometry, edit-limit and motion-regression comparisons for one authored sphere interaction. This uses an explicit new region condition; it does not solve the original fixed-point grasp or establish general interaction quality.
 
-[Scene region authoring](docs/scene-region-authoring-v1.md) now preserves explicit hand patches and measures distributed contact against boxes and spheres. Region-aware fitting and Studio controls are still pending; existing point-only solvers reject these requests.
+[Scene region authoring](docs/scene-region-authoring-v1.md) now preserves explicit hand patches and measures distributed contact against boxes and spheres. [Experimental region fitting](docs/scene-region-fitting-v14.md) now produces independently audited candidates: a short sphere repair passes sampled contacts, while box variants still fail. Studio editing remains pending; existing point-only solvers reject region requests.
 
 The owner will perform developer review first. Independent animator review and timed cleanup evidence remain release requirements.
 

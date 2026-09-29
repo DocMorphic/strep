@@ -67,8 +67,10 @@ def solver_stage_count(requested):
     return count
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None):
     stage_count=solver_stage_count(outer_stage_count)
+    iterations=CONFIG['iterations'] if iteration_count is None else iteration_count
+    if type(iterations)!=int or not 1<=iterations<=100:raise ValueError('Iterations must be an integer from 1 to 100')
     if physical_finger_parameters and not finger_edits:raise ValueError('Physical finger parameters require finger controls')
     torch.set_num_threads(2)
     names,parents,_=skeleton_metadata(77); surface=Surface(skin)
@@ -120,7 +122,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         return torch.stack(r,1),torch.stack(p,1),torch.stack(locals,1)
     # Fixed baseline skin points near the floor include penetrating torso areas.
     # Full mesh verification remains independent of this optimization sample.
-    selected=set()
+    selected=set() if region_fitting is None else set(region_fitting.selected)
     for r,p in zip(base['global_rot_mats'],base['posed_joints']):
         heights=surface.vertices(r,p)[:,1]
         selected.update(np.argsort(heights)[:32].tolist())
@@ -140,6 +142,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
                     selected.update(np.argsort(distances)[:CONFIG['object_near_samples']].tolist())
     for cut in context.get('partner_cuts',[]):selected.add(cut['vertex'])
     selected=np.array(sorted(selected)); mapping={v:i for i,v in enumerate(selected)}
+    if region_fitting is not None:region_fitting.bind(mapping)
     normal_constraints=[]
     for c,faces in zip(context['normals'],normal_faces):
         indices=torch.tensor([[mapping[int(i)] for i in face] for face in faces])
@@ -155,6 +158,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     cw=torch.stack([tensor(c['weights']) for c in contacts.values()],1)
     explicit_mask=torch.tensor([c.get('provenance')=='explicit' for c in contacts.values()])
     active=torch.stack([tensor(c['active']) for c in contacts.values()],1)*explicit_mask
+    point_tolerance=CONFIG['point_tolerance_m'] if region_fitting is None else tensor(region_fitting.point_tolerances(contacts,T,CONFIG['point_tolerance_m']))
     point_multiplier=torch.zeros_like(active)
     normal_multiplier=[torch.zeros(T,dtype=dtype) for _ in normal_constraints]
     tangent_multiplier=[torch.zeros(T,dtype=dtype) for _ in normal_constraints]
@@ -182,7 +186,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         selected_contact=v[torch.arange(T)[:,None],ci]
         contact=((selected_contact-targets)**2).sum(-1)
         inferred_loss,explicit_loss=contact_losses(contact,cw,explicit_mask)
-        point_g=torch.linalg.vector_norm(selected_contact-targets,dim=-1)-CONFIG['point_tolerance_m']
+        point_g=torch.linalg.vector_norm(selected_contact-targets,dim=-1)-point_tolerance
         point_merit=inequality_merit(point_g,point_multiplier,point_penalty)
         _,point_loss=contact_losses(point_merit,active,explicit_mask)
         fade_weights=(cw-active).clamp_min(0)*explicit_mask
@@ -201,6 +205,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             temporal=torch.diff(displacement,n=2,dim=0).square().sum(-1).mean()*CONFIG['temporal_weight'],
             velocity=torch.relu(velocity-1.2).square().amax()*CONFIG['velocity_weight'],
             slide=(torch.relu(slide-original_slide-.02).square()*(cw[:-1]*(~explicit_mask))).sum()/(cw[:-1]*(~explicit_mask)).sum().clamp_min(1)*CONFIG['slide_weight'])
+        if region_fitting is not None:terms['distributed_region']=region_fitting.loss(v)
         if finger_edits:
             terms['finger_pose']=bounded_edits(smooth_delta())[:,body_count:].square().mean()*CONFIG['pose_weight']
         if normal_constraints:
@@ -240,7 +245,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         if progress and calls%20==0:progress(dict(evaluations=calls,loss=float(loss.detach()),terms=last))
         return loss
     for stage in range(stage_count):
-        optimizer=torch.optim.LBFGS([delta,lift_parameters],lr=.8,max_iter=CONFIG['iterations'],history_size=12,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11)
+        optimizer=torch.optim.LBFGS([delta,lift_parameters],lr=.8,max_iter=iterations,history_size=12,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11)
         optimizer.step(closure)
         closure() # Recompute at accepted parameters before multiplier updates.
         stage_records.append(dict(stage=stage,point_penalty=point_penalty,normal_penalty=normal_penalty,objective=last.copy(),
@@ -280,4 +285,6 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             scope='Target and surface frame enforced at the release boundary as an additional solver key; authored scene contacts/events unchanged. This is not a continuous-time constraint guarantee.')
     if object_inequalities:
         recipe['object_inequalities']=dict(initial_penalty=2*CONFIG['object_collision_weight'],growth=CONFIG['penalty_growth'],scope='One signed max-vertex inequality per object and frame. Existing inflated geometry and frozen samples; no full-skin or continuous-time feasibility guarantee.')
+    if region_fitting is not None:recipe['distributed_regions']=region_fitting.record()
+    recipe['iterations_per_stage']=iterations
     return result,recipe
