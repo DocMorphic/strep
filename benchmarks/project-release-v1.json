@@ -855,6 +855,7 @@
         "docs/object-vertex-constraints-v1.md",
         "docs/regional-constraints-warm-start-v1.md",
         "docs/contact-witness-refresh-v1.md",
+        "docs/export-rate-contact-v1.md",
         "reports/region-witness-comparison-v1/comparison.json",
         "reports/region-augmented-comparison-v1/comparison.json",
         "reports/region-object-constraints-final-v1/comparison.json",

@@ -104,7 +104,7 @@ def object_sampling_layout(selected,vertex_count,full):
     return ids,np.searchsorted(ids,original)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.):
     if object_constraint_mode not in ["maximum","per_vertex"]:raise ValueError("Unknown object constraint mode")
     if object_constraint_mode!="maximum" and not object_inequalities:raise ValueError("Per-vertex constraints require object inequalities")
     object_clearance=object_clearance_target(object_clearance_margin_m)
@@ -231,6 +231,13 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         with torch.no_grad():
             initial_r,initial_p,_=fk()
             region_fitting.initialize_witnesses(vertices(initial_r,initial_p))
+    rate_objective=None
+    if type(export_rate_guard)!=bool:raise ValueError('Explicit export-rate guard boolean required')
+    if export_rate_guard:
+        from export_rate_objective import ExportRateObjective
+        rate_objective=ExportRateObjective(tensor(base['global_rot_mats']),tensor(base['posed_joints']),parents,export_acceleration_margin_fraction)
+    elif export_acceleration_margin_fraction!=0:
+        raise ValueError('Acceleration margin requires the export-rate guard')
     calls=0;last={}
     def closure():
         nonlocal calls,last,last_point,last_normals,last_cuts,last_tangents,last_objects
@@ -258,6 +265,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             velocity=torch.relu(velocity-1.2).square().amax()*CONFIG['velocity_weight'],
             slide=(torch.relu(slide-original_slide-.02).square()*(cw[:-1]*(~explicit_mask))).sum()/(cw[:-1]*(~explicit_mask)).sum().clamp_min(1)*CONFIG['slide_weight'])
         if region_fitting is not None:terms['distributed_region']=region_fitting.loss(v)
+        if rate_objective is not None:terms['export_rates']=rate_objective.loss(r,p)
         if finger_edits:
             terms['finger_pose']=bounded_edits(smooth_delta())[:,body_count:].square().mean()*CONFIG['pose_weight']
         if normal_constraints:
@@ -307,7 +315,9 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         if object_inequalities:
             stage_records[-1].update(object_penalty=object_penalty,max_sampled_object_clearance_violation_m=max([float(torch.relu(g).max()) for g in last_objects]+[0.]))
         if region_fitting is not None:stage_records[-1]['regional_constraints']=region_fitting.stage_diagnostics()
+        if rate_objective is not None:stage_records[-1]['export_rates']=rate_objective.record()
         if stage+1<stage_count:
+            if rate_objective is not None:rate_objective.advance_stage(CONFIG['penalty_growth'])
             if region_fitting is not None:region_fitting.advance_stage(CONFIG['penalty_growth'])
             point_multiplier=torch.relu(point_multiplier+point_penalty*last_point)*active
             normal_multiplier=[torch.relu(m+normal_penalty*g)*c[2] for m,g,c in zip(normal_multiplier,last_normals,normal_constraints)]
@@ -344,6 +354,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     if region_fitting is not None:recipe['distributed_regions']=region_fitting.record()
     recipe['object_clearance_target_m']=object_clearance
     recipe['object_clearance_margin_m']=object_clearance_margin_m
+    if rate_objective is not None:recipe['export_rates']=rate_objective.record()
     recipe['initialization']=initialization
     recipe['iterations_per_stage']=iterations
     recipe['object_sampling']=dict(mode='all_vertices' if full_object_skin else 'frozen_subset',
