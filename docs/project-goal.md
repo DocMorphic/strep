@@ -1,6 +1,6 @@
 # One project-wide goal: release-ready Strep
 
-Latest contact work: the [full windowed surface solve](windowed-surface-fit-v1.md) completed with fewer contact failures but unresolved locked collisions, support drift and boundary changes. The [real Studio selected-range workflow](studio-window-flow-v1.md) also completes with failures retained; together they pass 720 Godot actor-frames. A matched wider-window study is now active; only the first editable key changes from 48 to 23. No wider-window outcome or browser validation is claimed; all 14 release capabilities remain unapproved.
+Latest workflow work: [synchronized scene trimming](scene-trim-v1.md) keeps actors, props, contacts and event clocks aligned while preserving existing meshes, rigs and placements. Three real scenes pass exact native slicing, 120 Hz source comparisons and 648 Godot pose observations; fourteen focused tests pass. This CLI work does not repair motion quality or implement retiming. The matched expanded-window contact solve remains active; all 14 release capabilities remain unapproved.
 
 Latest object-relative initialization: [moving grip study](object-grip-initialization-v1.md) reduces exported contact failures from 490 to 15 while preserving original edit bounds. Body penetration remains 38.99 mm; local temporal regressions remain visible. Fourteen focused tests and all 360 Godot actor-frames pass. The matched full-body trial subsequently completed with the failures recorded above; no release approval.
 

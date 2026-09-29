@@ -109,6 +109,9 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/scene-trim-v1.md",
+        "reports/scene-trim-v1/completion.json",
+        "reports/scene-trim-validation-v1/verification.json",
         "docs/pose-guided-generation-v1.md",
         "reports/action-jobs/pose-guided-generation-v1/comparison.json",
         "reports/action-jobs/pose-guided-generation-v1/package-verification.json",
@@ -139,6 +142,9 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/scene-trim-v1.md",
+        "reports/scene-trim-v1/completion.json",
+        "reports/scene-trim-validation-v1/verification.json",
         "docs/half-floor-population-v1.md",
         "docs/half-floor-pilot-v1.md",
         "docs/coupled-clip-sequence-v1.md",
@@ -306,7 +312,7 @@
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
-        "Validate dynamics/support after trim, retime and local pose edits; preserve transitions and synchronize object/partner clocks",
+        "Validate dynamics/support after trim, retime and local pose edits; preserve transitions and extend synchronized scene trimming to retiming and Studio controls",
         "Additional external clips, rigs and format support",
         "Independent animator and held-out quality/cleanup-time validation"
       ]
@@ -750,6 +756,9 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/scene-trim-v1.md",
+        "reports/scene-trim-v1/completion.json",
+        "reports/scene-trim-validation-v1/verification.json",
         "docs/scene-constraints-v1.md",
         "reports/scene-baseline-v1/summary.json",
         "docs/scene-authoring-v2.md",
@@ -986,6 +995,9 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/scene-trim-v1.md",
+        "reports/scene-trim-v1/completion.json",
+        "reports/scene-trim-validation-v1/verification.json",
         "docs/scene-constraints-v1.md",
         "reports/scene-baseline-v1/summary.json",
         "docs/scene-authoring-v2.md",
@@ -1727,6 +1739,9 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/scene-trim-v1.md",
+        "reports/scene-trim-v1/completion.json",
+        "reports/scene-trim-validation-v1/verification.json",
         "docs/oriented-contacts-and-godot-v1.md",
         "reports/godot-import-v1/verification.json",
         "reports/godot-playback-v3/verification.json",
