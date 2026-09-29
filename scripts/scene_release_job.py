@@ -23,7 +23,7 @@ def name_check(name):
     if not isinstance(name,str) or not re.fullmatch('[A-Za-z][A-Za-z0-9_-]{0,63}',name) or name.upper() in ['CON','PRN','AUX','NUL',*[f'COM{i}' for i in range(10)],*[f'LPT{i}' for i in range(10)]]:raise ValueError('Unsafe actor/object identifier')
 
 
-def source_metadata(url):
+def source_metadata(url,*,allow_native_runs=False):
     from action_studio_server import allowed_file
     if not isinstance(url,str) or not url.startswith('/files/') or '?' in url or '#' in url:raise ValueError('Select a saved scene')
     path=allowed_file(url)
@@ -46,7 +46,8 @@ def source_metadata(url):
     for name,entry in scene['actors'].items():
         name_check(name);pose(entry['transform'])
         motion=(ROOT/entry['motion']).resolve();glb=(base/entry['preview_glb']).resolve()
-        if not motion.is_relative_to((ROOT/'reports').resolve()) or motion.suffix!='.npz' or not glb.is_relative_to(base.resolve()) or glb.suffix!='.glb':raise ValueError('Scene asset escapes saved collection')
+        motion_roots=[(ROOT/'reports').resolve()]+([(ROOT/'runs').resolve()] if allow_native_runs else [])
+        if not any(motion.is_relative_to(r) for r in motion_roots) or motion.suffix!='.npz' or not glb.is_relative_to(base.resolve()) or glb.suffix!='.glb':raise ValueError('Scene asset escapes saved collection')
         for asset in [motion,glb]:files[asset]=sha256(asset)
         with np.load(motion,allow_pickle=False) as arrays:
             if arrays['posed_joints'].shape!=(frames,77,3) or arrays['global_rot_mats'].shape!=(frames,77,3,3):raise ValueError('Release currently requires native 77-joint scene actors')

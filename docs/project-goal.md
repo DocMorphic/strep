@@ -1,5 +1,7 @@
 # One project-wide goal: release-ready Strep
 
+Latest development evidence: [Studio region fitting](studio-region-fitting-v1.md) adds editable saved-scene hand regions, supervised jobs, input/candidate scenes and independent failure reports. 52 Python tests, an offline component test and two real job pipelines pass their workflow checks; the box motion remains rejected. Live browser validation remains unavailable. Next address visual patch selection and broader development clips without hiding solver failures. All 14 capabilities remain unapproved.
+
 Latest development evidence: [experimental region fitting](scene-region-fitting-v14.md) repairs a five-frame sphere perturbation (34 exported contact samples pass). Box variants remain rejected despite reduced penetration. 65 tests pass; source-relative hard bounds and independent native/export consistency checks pass. Next wire region jobs and truthful independent results into Studio, then broaden actions/objects/rigs. All 14 capabilities remain unapproved.
 
 Latest development evidence: [scene region authoring](scene-region-authoring-v1.md) preserves explicit patches and distributed contact limits through compilation and scene measurement. Both hands pass 62 existing development frames; 45 tests pass. Legacy point solvers reject region requests. Next implement region-aware fitting and exported validation, then Studio controls and broader replication. All 14 release capabilities remain unapproved.

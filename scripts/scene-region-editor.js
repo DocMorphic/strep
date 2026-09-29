@@ -1,0 +1,65 @@
+// Region drafts and job IDs survive reload; completion is separate from quality.
+export function createSceneRegionEditor({getContext,onComplete}){
+ const storage={
+  getItem(key){try{return globalThis.localStorage.getItem(key);}catch{return null;}},
+  setItem(key,value){try{globalThis.localStorage.setItem(key,value);}catch{}},
+  removeItem(key){try{globalThis.localStorage.removeItem(key);}catch{}}
+ };
+ const by=id=>document.getElementById('sceneRegion'+id);
+ const fields=['Start','End','X','Y','Z','Anchor','PatchMode','PatchRadius','Cone','Clearance','Gap','Spacing','Area','Centroid','TargetRadius','Normal'];
+ let source=null,drafts={},busy=false,version=0;
+ const status=value=>by('Status').textContent=value;
+ async function json(url,options){const response=await fetch(url,{cache:'no-store',...options}),data=await response.json();if(!response.ok)throw Error(data.error||'Request failed');return data;}
+ function enabled(){for(const field of [...fields,'Actor','Contact','Include','Label','Apply','UseFrame'])by(field).disabled=busy||!source;}
+ function selected(){return source?.contacts.find(c=>c.id===by('Contact').value);}
+ function store(){if(!source)return;try{storage.setItem('strep:regions:'+source.revision,JSON.stringify({drafts,label:by('Label').value}));}catch{}}
+ function fill(){const c=selected();if(!c)return;const d=drafts[c.id],e=d.edit;
+  by('Include').checked=d.include;by('Start').value=e.start_frame;by('End').value=e.end_frame;
+  ['X','Y','Z'].forEach((a,i)=>by(a).value=e.point_m[i]);by('Anchor').value=e.anchor_tolerance_m*1000;
+  by('PatchMode').value=e.patch_mode;by('PatchMode').querySelector('[value="saved"]').disabled=c.edit.patch_mode!=='saved';
+  by('PatchRadius').value=e.patch_radius_m*100;by('Cone').value=e.patch_normal_degrees;
+  for(const [id,key,scale] of [['Clearance','clearance_m',1000],['Gap','contact_gap_m',1000],['Spacing','spacing_m',1000],['Area','area_m2',1e6],['Centroid','centroid_error_m',1000],['TargetRadius','local_radius_m',100],['Normal','normal_degrees',1]])by(id).value=e.limits[key]*scale;
+  by('ContactInfo').textContent=`${c.hand} → ${c.target_object}. Grip coordinates are local to the object. The preview shows the saved motion until a fit completes.`;
+ }
+ function capture(){const c=selected();if(!c)return;const d=drafts[c.id],e=d.edit;d.include=by('Include').checked;
+  e.start_frame=Number(by('Start').value);e.end_frame=Number(by('End').value);e.point_m=['X','Y','Z'].map(a=>Number(by(a).value));
+  e.anchor_tolerance_m=Number(by('Anchor').value)/1000;e.patch_mode=by('PatchMode').value;e.patch_radius_m=Number(by('PatchRadius').value)/100;e.patch_normal_degrees=Number(by('Cone').value);
+  for(const [id,key,scale] of [['Clearance','clearance_m',1000],['Gap','contact_gap_m',1000],['Spacing','spacing_m',1000],['Area','area_m2',1e6],['Centroid','centroid_error_m',1000],['TargetRadius','local_radius_m',100],['Normal','normal_degrees',1]])e.limits[key]=Number(by(id).value)/scale;
+  store();
+ }
+ function actorContacts(){const list=source.contacts.filter(c=>c.supported&&c.actor===by('Actor').value);by('Contact').replaceChildren(...list.map(c=>new Option(c.id,c.id)));fill();}
+ for(const field of [...fields,'Include'])by(field).addEventListener('input',capture);
+ by('Label').addEventListener('input',store);by('Actor').onchange=actorContacts;by('Contact').onchange=fill;
+ by('UseFrame').onclick=()=>{by('Start').value=getContext().frame;capture();};
+ async function poll(id){
+  try{const result=await json('/api/scene-region-jobs'),job=result.jobs.find(j=>j.id===id);
+   if(!job){busy=false;storage.removeItem('strep:region-active-job');enabled();status('Saved fitting job unavailable. No replacement was started.');return;}
+   status(job.stage||job.status);
+   if(job.status==='failed'||job.status==='complete'){
+    busy=false;storage.removeItem('strep:region-active-job');enabled();
+    if(job.status==='failed'){status('Fitting failed: '+(job.error||'See worker output'));return;}
+    await onComplete(job.collection);const a=job.assessment;
+    status(`${a?.contact_geometry_passed?'Contact and clearance samples pass.':'Needs correction: '+(a?.contact_failures??'?')+' contact samples and '+(a?.geometry_failures??'?')+' clearance samples fail.'} ${a?.motion_regressions?.length?'Motion regressions were also measured. ':''}Human review is still required.`);return;
+   }
+  }catch(error){status('Checking saved fitting job: '+error.message);}
+  setTimeout(()=>poll(id),1500);
+ }
+ by('Apply').onclick=async()=>{
+  if(!source||busy)return;if(getContext().changed){status('Placement edits are unsaved. Reload the saved scene before fitting.');return;}
+  capture();const actor=by('Actor').value,contacts=source.contacts.filter(c=>c.supported&&c.actor===actor&&drafts[c.id]?.include).map(c=>drafts[c.id].edit);
+  if(!contacts.length){status('Include at least one contact.');return;}
+  busy=true;enabled();status('Saving authored regions and starting the fit…');
+  try{const job=await json('/api/scene-region-fits',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source_url:source.source_url,revision:source.revision,actor,label:by('Label').value.trim(),contacts})});storage.setItem('strep:region-active-job',job.id);poll(job.id);}
+  catch(error){busy=false;enabled();status(error.message);}
+ };
+ const active=storage.getItem('strep:region-active-job');if(active){busy=true;poll(active);}enabled();
+ return {reset(){version++;source=null;enabled();},async bind(url){const token=++version;source=null;enabled();
+  try{const data=await json('/api/scene-region-source?path='+encodeURIComponent(url));if(token!==version)return;
+   const supported=data.contacts.filter(c=>c.supported);if(!supported.length){status('No editable hand-to-object contacts in this scene. '+data.contacts.map(c=>c.reason||'').join(' '));return;}
+   source=data;drafts=Object.fromEntries(supported.map(c=>[c.id,{include:true,edit:structuredClone(c.edit)}]));by('Label').value='Hand contact fit';
+   try{const saved=JSON.parse(storage.getItem('strep:regions:'+data.revision));if(saved){for(const c of supported)if(saved.drafts?.[c.id])drafts[c.id]=saved.drafts[c.id];by('Label').value=saved.label||'Hand contact fit';}}catch{}
+   by('Actor').replaceChildren(...[...new Set(supported.map(c=>c.actor))].map(a=>new Option(a,a)));actorContacts();enabled();
+   if(!busy)status('Edit one or more contacts, then fit. Suggested palm regions need review; a saved candidate may still fail its checks.');
+  }catch(error){if(token===version){source=null;enabled();if(!busy)status(error.message);}}
+ }};
+}
