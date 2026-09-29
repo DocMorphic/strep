@@ -1,6 +1,6 @@
 # One project-wide goal: release-ready Strep
 
-Latest workflow work: [synchronized scene trimming](scene-trim-v1.md) keeps actors, props, contacts and event clocks aligned while preserving existing meshes, rigs and placements. Three real scenes pass exact native slicing, 120 Hz source comparisons and 648 Godot pose observations; fourteen focused tests pass. This CLI work does not repair motion quality or implement retiming. The matched expanded-window contact solve remains active; all 14 release capabilities remain unapproved.
+Latest workflow work: [Studio shared-scene trimming](studio-scene-trim-v1.md) now exposes synchronized actor/prop/contact/event trims with immutable jobs, original/trimmed review and portable downloads. Two real backend jobs pass 371 Godot pose observations; twelve Python and two Node checks pass. No HTTP/browser or motion-quality approval is claimed. The matched expanded-window contact solve remains active; all 14 release capabilities remain unapproved.
 
 Latest object-relative initialization: [moving grip study](object-grip-initialization-v1.md) reduces exported contact failures from 490 to 15 while preserving original edit bounds. Body penetration remains 38.99 mm; local temporal regressions remain visible. Fourteen focused tests and all 360 Godot actor-frames pass. The matched full-body trial subsequently completed with the failures recorded above; no release approval.
 

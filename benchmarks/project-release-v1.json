@@ -109,6 +109,8 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/studio-scene-trim-v1.md",
+        "reports/studio-scene-trim-v1/completion.json",
         "docs/scene-trim-v1.md",
         "reports/scene-trim-v1/completion.json",
         "reports/scene-trim-validation-v1/verification.json",
@@ -142,6 +144,8 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/studio-scene-trim-v1.md",
+        "reports/studio-scene-trim-v1/completion.json",
         "docs/scene-trim-v1.md",
         "reports/scene-trim-v1/completion.json",
         "reports/scene-trim-validation-v1/verification.json",
@@ -312,7 +316,7 @@
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
-        "Validate dynamics/support after trim, retime and local pose edits; preserve transitions and extend synchronized scene trimming to retiming and Studio controls",
+        "Validate dynamics/support after trim, retime and local pose edits; preserve transitions and extend synchronized scene trimming to retiming and validate Studio browser interaction",
         "Additional external clips, rigs and format support",
         "Independent animator and held-out quality/cleanup-time validation"
       ]
@@ -756,6 +760,8 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/studio-scene-trim-v1.md",
+        "reports/studio-scene-trim-v1/completion.json",
         "docs/scene-trim-v1.md",
         "reports/scene-trim-v1/completion.json",
         "reports/scene-trim-validation-v1/verification.json",
@@ -995,6 +1001,8 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/studio-scene-trim-v1.md",
+        "reports/studio-scene-trim-v1/completion.json",
         "docs/scene-trim-v1.md",
         "reports/scene-trim-v1/completion.json",
         "reports/scene-trim-validation-v1/verification.json",
@@ -1739,6 +1747,8 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/studio-scene-trim-v1.md",
+        "reports/studio-scene-trim-v1/completion.json",
         "docs/scene-trim-v1.md",
         "reports/scene-trim-v1/completion.json",
         "reports/scene-trim-validation-v1/verification.json",

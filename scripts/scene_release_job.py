@@ -23,7 +23,7 @@ def name_check(name):
     if not isinstance(name,str) or not re.fullmatch('[A-Za-z][A-Za-z0-9_-]{0,63}',name) or name.upper() in ['CON','PRN','AUX','NUL',*[f'COM{i}' for i in range(10)],*[f'LPT{i}' for i in range(10)]]:raise ValueError('Unsafe actor/object identifier')
 
 
-def source_metadata(url,*,allow_native_runs=False):
+def source_metadata(url,*,allow_native_runs=False,allow_actor_only=False):
     from action_studio_server import allowed_file
     if not isinstance(url,str) or not url.startswith('/files/') or '?' in url or '#' in url:raise ValueError('Select a saved scene')
     path=allowed_file(url)
@@ -41,7 +41,7 @@ def source_metadata(url,*,allow_native_runs=False):
         if manifest.exists() and any((parent/value).resolve()==path.resolve() for s in read(manifest).get('scenes',[]) for value in s.get('variants',{}).values()):base=parent;break
     if base is None:raise ValueError('Scene is not registered in its saved collection')
     if not isinstance(scene.get('actors'),dict) or not 1<=len(scene['actors'])<=4:raise ValueError('Scene needs one to four native actors')
-    if not isinstance(scene.get('objects'),dict) or not 1<=len(scene['objects'])<=8:raise ValueError('Scene needs one to eight primitive objects')
+    if not isinstance(scene.get('objects'),dict) or not (0 if allow_actor_only else 1)<=len(scene['objects'])<=8:raise ValueError('Scene object count is unsupported')
     files={path:sha256(path)}
     for name,entry in scene['actors'].items():
         name_check(name);pose(entry['transform'])

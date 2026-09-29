@@ -22,7 +22,7 @@ def allowed_file(url_path):
     path=unquote(urlsplit(url_path).path)
     if path in ['/','/studio']:return ROOT/'scripts/action-studio.html'
     if path=='/motion-profile-editor.js':return ROOT/'scripts/motion-profile-editor.js'
-    if path in ['/pose-guide-editor.js','/soma-preview-skin.js','/rig-joint-editor.js','/rig-posture-editor.js','/scene-release-editor.js','/scene-region-editor.js','/scene-grip-picker.js','/scene-object-geometry.js','/scene-hand-patch.js']:return ROOT/'scripts'/path[1:]
+    if path in ['/pose-guide-editor.js','/soma-preview-skin.js','/rig-joint-editor.js','/rig-posture-editor.js','/scene-release-editor.js','/scene-region-editor.js','/scene-grip-picker.js','/scene-object-geometry.js','/scene-hand-patch.js','/scene-trim-editor.js']:return ROOT/'scripts'/path[1:]
     if path.startswith('/assets/'):
         root=(ROOT/'assets/viewer/node_modules/three').resolve()
         target=(root/path.removeprefix('/assets/')).resolve()
@@ -31,7 +31,7 @@ def allowed_file(url_path):
         prefixes=['character-assets','rig-jobs','rig-loop-searches','scene-preview-v1','scene-fitting-v1','scene-fitting-v2','scene-fitting-v3','scene-fitting-v4','scene-fitting-v5','scene-fitting-v6','scene-fitting-v7','hand-frame-fit-v1','partner-clearance-fit-v1','object-attachment-v1','action-coverage-v1','action-jobs','contact-jobs',*CORRECTION_STUDIES]
         prefixes.append('pose-targets')
         prefixes.extend(['object-release-v1','object-release-v2','static-collider-v1','moving-collider-v1'])
-        prefixes.extend(['scene-release-jobs','scene-region-jobs'])
+        prefixes.extend(['scene-release-jobs','scene-region-jobs','scene-trim-jobs'])
         if not any(relative.startswith(p+'/') for p in prefixes):return None
         root=(ROOT/'reports').resolve();target=(root/relative).resolve()
         allowed=[(root/p).resolve() for p in prefixes]
@@ -74,7 +74,7 @@ class Handler(BaseHTTPRequestHandler):
                    'hand-frame-fit-v1','partner-clearance-fit-v1','object-attachment-v1',
                    'object-release-v1','object-release-v2','static-collider-v1','moving-collider-v1']
             folders=[ROOT/'reports'/name for name in names]
-            for parent in ['action-jobs','scene-release-jobs','scene-region-jobs']:
+            for parent in ['action-jobs','scene-release-jobs','scene-region-jobs','scene-trim-jobs']:
                 folders.extend(sorted((ROOT/'reports'/parent).glob('*')))
             collections=[]
             for folder in folders:
@@ -83,6 +83,22 @@ class Handler(BaseHTTPRequestHandler):
                 if folder.name!='scene-preview-v1' and (not (folder/'pipeline.json').is_file() or read(folder/'pipeline.json')['status']!='complete'):continue
                 collections.append(folder.relative_to(ROOT/'reports').as_posix())
             return self.respond(200,{'collections':collections})
+        if route=='/api/scene-trim-source':
+            from scene_trim_job import metadata
+            try:
+                query=parse_qs(urlsplit(self.path).query)
+                if set(query)!={'path'} or len(query['path'])!=1:raise ValueError('Saved scene path required')
+                return self.respond(200,metadata(query['path'][0]))
+            except (ValueError,TypeError,KeyError,OSError) as exc:return self.respond(400,{'error':str(exc)})
+        if route=='/api/scene-trim-jobs':
+            from scene_trim_job import JOBS
+            from contact_edit_job import observed_state
+            jobs=[]
+            for folder in sorted(JOBS.glob('*'),reverse=True):
+                if not (folder/'request.json').exists():continue
+                jobs.append(dict(id=folder.name,collection='scene-trim-jobs/'+folder.name,
+                    label=read(folder/'request.json')['authored']['label'],**observed_state(folder)))
+            return self.respond(200,dict(jobs=jobs))
         if route=='/api/scene-region-source':
             from scene_region_job import metadata
             try:
@@ -163,7 +179,7 @@ class Handler(BaseHTTPRequestHandler):
         except (BrokenPipeError,ConnectionResetError):pass
 
     def do_POST(self):
-        if self.path not in ['/api/jobs','/api/scene-releases','/api/scene-region-fits','/api/pose-target','/api/motion-brief','/api/contact-edits','/api/characters/import','/api/characters/sample','/api/characters/profile','/api/rig-jobs','/api/rig-contact-edits','/api/rig-contact-inspect','/api/rig-clip-edits','/api/rig-joint-edits','/api/rig-posture-edits','/api/rig-mirror-edits','/api/rig-transitions','/api/rig-loops','/api/rig-loop-search','/api/rig-events','/api/rig-prompt-edits','/api/rig-dynamics-edits']:return self.respond(404,{'error':'Unknown endpoint'})
+        if self.path not in ['/api/jobs','/api/scene-trims','/api/scene-releases','/api/scene-region-fits','/api/pose-target','/api/motion-brief','/api/contact-edits','/api/characters/import','/api/characters/sample','/api/characters/profile','/api/rig-jobs','/api/rig-contact-edits','/api/rig-contact-inspect','/api/rig-clip-edits','/api/rig-joint-edits','/api/rig-posture-edits','/api/rig-mirror-edits','/api/rig-transitions','/api/rig-loops','/api/rig-loop-search','/api/rig-events','/api/rig-prompt-edits','/api/rig-dynamics-edits']:return self.respond(404,{'error':'Unknown endpoint'})
         host=self.headers.get('Host');origin=self.headers.get('Origin')
         if host not in self.server.allowed_hosts or origin!=f'http://{host}':return self.respond(403,{'error':'Submit from the local studio page'})
         if self.path=='/api/characters/import':
@@ -207,7 +223,10 @@ class Handler(BaseHTTPRequestHandler):
             if self.path=='/api/rig-loop-search':
                 from rig_loop_search import search
                 return self.respond(200,search(payload))
-            if self.path=='/api/scene-region-fits':
+            if self.path=='/api/scene-trims':
+                from scene_trim_job import validate
+                validate(payload)
+            elif self.path=='/api/scene-region-fits':
                 from scene_region_job import validate
                 validate(payload)
             elif self.path=='/api/scene-releases':
@@ -254,14 +273,15 @@ class Handler(BaseHTTPRequestHandler):
         with self.server.job_lock:
             if worker_busy() or (self.server.worker is not None and self.server.worker.poll() is None):return self.respond(409,{'error':'A local request is already running; wait for it to finish'})
             job=datetime.now().strftime('%Y%m%d-%H%M%S')+'-'+uuid.uuid4().hex[:8]
-            if self.path in ('/api/scene-releases','/api/scene-region-fits'):
-                if self.path=='/api/scene-region-fits':from scene_region_job import JOBS,prepare
+            if self.path in ('/api/scene-releases','/api/scene-region-fits','/api/scene-trims'):
+                if self.path=='/api/scene-trims':from scene_trim_job import JOBS,prepare
+                elif self.path=='/api/scene-region-fits':from scene_region_job import JOBS,prepare
                 else:from scene_release_job import JOBS,prepare
                 folder=JOBS/job
                 try:
                     prepare(payload,folder)
                     with (folder/'supervisor.log').open('w',encoding='utf8') as log:
-                        self.server.worker=subprocess.Popen([sys.executable,str(ROOT/'scripts'/('scene_region_job.py' if self.path=='/api/scene-region-fits' else 'scene_release_job.py')),str(folder)],cwd=ROOT,env=offline_environment(),stdout=log,stderr=subprocess.STDOUT,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+                        self.server.worker=subprocess.Popen([sys.executable,str(ROOT/'scripts'/({'/api/scene-region-fits':'scene_region_job.py','/api/scene-releases':'scene_release_job.py','/api/scene-trims':'scene_trim_job.py'}[self.path])),str(folder)],cwd=ROOT,env=offline_environment(),stdout=log,stderr=subprocess.STDOUT,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
                     import psutil
                     try:save(folder/'worker.json',dict(pid=self.server.worker.pid,created_at=psutil.Process(self.server.worker.pid).create_time()))
                     except psutil.NoSuchProcess:pass
