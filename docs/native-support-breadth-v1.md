@@ -6,7 +6,7 @@ Each case runs control first, then fixed-patch support, from the same original s
 
 The existing runner exports both candidates, independently measures contact/body/rate/preservation results, computes saved NPZ body peaks, and runs actual engine playback with the corrected authored event mapping. Neither mode automatically replaces the source or approves motion quality. All original, warm, failed and intermediate artifacts remain available. Snapshot and completion hashes are checked after each mode and again at batch completion; the pair's source snapshots and protocols must match except for the support switch.
 
-The six fits run sequentially under the normal local worker lock. The batch is launched under `reports/native-support-breadth-v1`; at publication the first control is running. No outcomes are claimed yet. Existing Python/Godot study source stays frozen until the batch is terminal and accounted for.
+The six fits run sequentially under the normal local worker lock. The completed batch is retained under `reports/native-support-breadth-v1`. All six modes are terminal and independently verified. The final outcome below supersedes the intermediate running-state notes retained in this report. Study source remained frozen through completion and verification.
 
 The per-mode command, after acquiring the original local study data and runtime, is:
 
@@ -53,3 +53,20 @@ The landing control completes 383 evaluations in 252.34 seconds, with three of 6
 A separate decoded-pin check isolates failures at frames 90, 99.75 and 100. Their horizontal errors alone are 5.003851, 5.141218 and 5.360478 mm. At frame 100, vertical error is only 0.346954 mm. Holding rotations and root XZ fixed cannot reduce the horizontal component: therefore root-height-only export feedback cannot repair this control to the unchanged 5 mm limit. This is a restriction of that repair subspace, not a proof that the authored landing request is impossible.
 
 The candidate, hash-bound pin diagnostic (`landing-control-pin-diagnosis.json`) and independent control verification remain under the local batch folder. A future pose correction must preserve the original edit and rate limits; no failed result is replaced and no extra root-only retry is justified by this evidence. Five of six runs are complete; no paired landing outcome is claimed yet.
+
+
+## Final six-run result
+
+All six fits are terminal. Independent verification checks every original input, method snapshot and completion artifact, replays the complete saved GLB audits and NPZ support/body measurements, verifies identical paired protocols except for the support switch, and rechecks captured engine observations and actual authored event boundaries. Final evidence is `reports/native-support-breadth-verification-v1/verification.json`. There are **one of six numerical contact-screen passes and 1,704 passing engine pose observations**, with no human approval.
+
+| Case | Control | Fixed-patch support |
+| --- | --- | --- |
+| Wave 22 | Approach acceleration failure | Numerical contact pass |
+| Crawl 22 | Release acceleration failure | Identical motion and failure |
+| Jump/landing 22 | 3/61 pin misses and point-rate failures | 2/61 pin misses and point-rate failures |
+
+All six preserve original global-rate ceilings, per-time floor depth and outside-window poses, with empty body-review flag lists. These nonregression screens do not certify that the original motion was realistic. The landing support mode takes 328.34 seconds and 381 evaluations. Its maximum pin error is 5.370261 mm; the horizontal component alone is 5.359365 mm at frame 100. Thus neither landing arm can be repaired to 5 mm by root-height-only feedback with fixed rotations and root XZ.
+
+The landing change is mixed: one fewer pin miss and lower approach/release acceleration excess, but a newly failing hold-speed ceiling (+0.0000354440 m/s), higher hold-acceleration excess (+0.0020341296 m/s²) and higher release-speed excess (+0.0002504587 m/s). It is not a general improvement. The control's recorded optimizer point maximum (5.371720 mm) already matches the exported failure closely: this is primarily unresolved optimization, not export rounding. Its last three stages reach their iteration limits while projected gradients remain nonzero; increased penalties barely reduce the pin residual.
+
+Decision: keep the optional support objective off by default. Retain the earlier successful kick repair as separate case evidence, not a substitute for this population. A bounded export-feedback follow-up may address the single identical crawling candidate's small rate residual, with the original nearly saturated pin and all other limits rechecked. Landing needs a pose-capable feasibility correction that retains original source bounds and passes complete native/export audits. Do not retry its known-inadequate root-height subspace or infer feasibility from missing conflict certificates. Independent semantic review, broader held-out coverage and all release requirements remain open.
