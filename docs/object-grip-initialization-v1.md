@@ -82,6 +82,14 @@ Both a uniform root translation and a normalized physical-gradient direction pas
 
 The current regional-multiplier comparison remains unchanged. Root-coordinate scaling is a separate candidate experiment after that matched run, retaining the original 0-0.22 m bounds and exact starting motion. An optimizer change must demonstrate its own contact, geometry and temporal results; gradient rescaling alone is not an animation improvement.
 
+### Prepared coordinate helper
+
+`bounded_root_coordinates.py` implements a fixed diagonal rescaling around the legacy initial sigmoid state. Its zero-valued coordinates reproduce the old decoded starting pose exactly. Its scale is the initial lift derivative, giving unit derivative with respect to the new coordinate at initialization. Scaling stays frozen during a solve; later derivatives are not guaranteed to remain one. Finite coordinates still decode into the same 0-0.22 m lift interval, including floating-point saturation at the endpoints. No production scene-solver call or default currently uses this helper.
+
+Five focused tests cover float32/float64 starting-pose identity and gradients, finite differences, extreme finite coordinate bounds, and invalid input layouts. A separate copy of the real fitting function changes only root initialization/decoding for a no-step probe. The initial loss is exactly 18.908899475238105 in both versions; the new coordinate gradient matches every previously measured physical root-gradient component exactly. Its central finite-difference discrepancy is 3.54e-8 relative at a 1e-9 coordinate step. The probe takes zero optimizer steps and writes no candidate motion.
+
+The isolated function copy, driver, input hashes and result remain in `reports/region-root-coordinate-probe-v1`. Production numerical source and the active regional-multiplier worker remain unchanged. Solver integration and an actual animation comparison are deferred until that worker and its audits have finished; the helper alone has no motion-quality approval.
+
 ## Next controlled experiment
 
 The fixed regional objective retains its weight throughout fitting, while object inequality penalties and multipliers increase between stages. This is a conditioning hypothesis for the lost contact, not proof of causation or feasibility. A follow-up now runs in `reports/region-object-grip-augmented-v1/guard` using the existing regional multiplier mode. Every protocol field except timestamp and `region_constraint_mode` matches the completed initialized control, including seed, source, implementation, margins, full skin, rate guard and iteration budget. No acceptance limit or default changed.

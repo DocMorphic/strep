@@ -867,6 +867,7 @@
         "reports/region-object-grip-elbow-diagnosis-v1/result.json",
         "reports/region-object-grip-full-v1/comparison.json",
         "reports/region-root-conditioning-v1/result.json",
+        "reports/region-root-coordinate-probe-v1/result.json",
         "reports/region-object-grip-full-v1/completion/geometry/verification.json",
         "reports/region-object-grip-full-v1/completion/joint-rates.json",
         "reports/region-object-grip-full-v1/completion/engine/verification.json",
