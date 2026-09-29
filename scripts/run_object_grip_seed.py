@@ -18,6 +18,14 @@ from gltf_tools import write_glb
 from action_worker_lock import worker_lock
 
 
+def validate_guide_reference(reference, start, end, frame_count):
+    """Bind guide frame zero to a native frame inside the authored grasp."""
+    if any(type(value) is not int for value in [reference, start, end, frame_count]):
+        raise ValueError('Integer guide reference, interval and frame count required')
+    if not 0 <= start <= reference <= end < frame_count:
+        raise ValueError('Guide reference must lie within the authored contact interval')
+
+
 def run(scene_path, guide_study, guide_audit, seed_path, output, reference=60, iterations=100):
     scene_path, guide_study, guide_audit, seed_path, output = map(lambda p: Path(p).resolve(),
         [scene_path, guide_study, guide_audit, seed_path, output])
@@ -45,8 +53,7 @@ def run(scene_path, guide_study, guide_audit, seed_path, output, reference=60, i
     if len(objects) != 1 or len(intervals) != 1:
         raise ValueError('Matched interval on a single object required')
     object_id = next(iter(objects)); start, end = next(iter(intervals))
-    if reference != start:
-        raise ValueError('Guide frame zero must correspond to the contact start')
+    validate_guide_reference(reference, start, end, scene['frame_count'])
     for contact in contacts:
         guide_contact = next(c for c in guide_scene['contacts'] if c['id'] == contact['id'])
         fields = lambda c: {k: v for k, v in c.items() if k not in ['start_frame', 'end_frame']}
