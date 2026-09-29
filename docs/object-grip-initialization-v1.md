@@ -36,6 +36,14 @@ A separate one-frame diagnosis sweeps the right elbow around the shoulder-to-wri
 
 Evidence remains under `reports/region-object-grip-seed-v2-clearance-diagnosis.json`, `region-object-grip-seed-v2-contact-diagnosis.json`, and `region-object-grip-elbow-diagnosis-v1/{method.py,result.json}`. The latter preserves its exact diagnostic script and input hashes. The full-body trial continued unchanged during this diagnosis; its completed result is recorded below.
 
+## Forearm-path diagnosis
+
+A further native-pose check rules out an embedded wrist center as the explanation for the grip seed's worst collision. At frame 121, its right wrist center is 28.655 mm outside the box and its elbow center is 76.336 mm outside, while the worst skin vertex penetrates 38.993 mm. That vertex is approximately 127 mm back along the forearm from the wrist and 31.7 mm off the forearm axis. The problem is farther along the forearm, not at the wrist center.
+
+Sampling 1,001 equally spaced points along the elbow-to-wrist segment at each of the 62 native grasp frames finds points inside the box in 12 seed frames and six regional-multiplier frames. At frame 121, the deepest sampled centerline point is 21.331 mm inside for the seed and 7.565 mm inside for the regional-multiplier candidate. The fixed-region full-body candidate has no sampled centerline crossings, yet its skin still penetrates; its frame-121 sampled centerline gap is 26.017 mm while skin penetrates 1.592 mm. Joint centers and bone segments are diagnostic references, not substitutes for skin clearance.
+
+This identifies an arm-path problem despite outside endpoints. It does not prove the grip targets are infeasible, make centerline clearance a sufficient acceptance test, or justify relaxing original pose budgets. The recorded elbow-only orbit still found no passing correction. Broader arm/shoulder/torso corrections must preserve the grip and pass the full skin and timing checks. No pose, target or active fitting worker was modified. Exact diagnostic methods, inputs and measurements are retained under `reports/region-wrist-clearance-diagnosis-v1/{method.py,result.json,axis-method.py,axis-result.json}`.
+
 ## Review timing details
 
 Studio now exposes **Motion timing diagnostics** beneath the scene assessment for packages with a bound joint-rate report. The expandable section identifies the number of joints with increased whole-clip peaks and names the affected contact phases with their frame ranges. For this seed, it reports 24 speed increases and 37 acceleration increases, including the release boundary at frames 119-123. The full per-joint report remains downloadable. Source-only and older packages without these diagnostics hide the section; changing scene placement or loading another scene clears the previous display.
