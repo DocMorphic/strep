@@ -8,6 +8,7 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/model-free-source-checks.md",
         "docs/offline-source-snapshot-v1.md",
         "reports/offline-source-snapshot-v1/verification.json",
         "docs/motion-correction-v1.md",
@@ -2228,6 +2229,7 @@
       "status": "incomplete",
       "release_evidence": [],
       "development_evidence": [
+        "docs/model-free-source-checks.md",
         "docs/offline-source-snapshot-v1.md",
         "reports/offline-source-snapshot-v1/verification.json",
         "docs/prompt-edit-v1.md",

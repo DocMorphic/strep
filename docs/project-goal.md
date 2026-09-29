@@ -397,3 +397,6 @@ Studio now [uses the full-distance pose certificate](studio-pose-check-v2.md) be
 
 
 [Fixed-patch support constraints](native-support-constraints-v1.md) address a measured optimizer/reviewer mismatch: kick-22 slides more at frames 40–44, before its authored 50–70 pin, where explicit-region overrides remove automatic support handling. The optional objective reproduces independent kick/landing support scores; 50 focused tests pass. A matched four-stage/60-iteration control-versus-support experiment is running with original targets/budgets unchanged. Outcome and release approval remain unproven.
+
+
+[Public model-free source checks](model-free-source-checks.md) now pass on actual GitHub Windows and Linux runners: 48 Python tests and both offline editor checks per OS. A fresh local tracked-files snapshot also passes without model, study or character assets. This is reproducible source regression coverage, not full installation or animation approval. The matched support comparison continues; its completed control retains foot sliding and a small release-rate failure. All fourteen release capabilities remain unapproved.

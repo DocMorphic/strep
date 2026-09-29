@@ -21,3 +21,10 @@ Read-only replay on the actual kick-22 and jump/landing-22 candidates matches ev
 `reports/native-support-fit-v1` compares two fresh warm restarts of kick-22: control and fixed-patch support. Both use the same original source, warm seed, pin target, held window, root/rotation limits and export point/global/floor guards. Both use four outer stages and 60 iterations per stage. The native body objective is disabled in both, isolating the support change. This is a new matched development experiment, not a replacement for the earlier four-stage/120-iteration batch.
 
 The runner now exposes explicit body/support mode and stage/iteration options while retaining its previous defaults. Each run snapshots inputs and methods, preserves all outputs, independently checks exported motion and runs engine playback. At launch, the control worker was confirmed live; neither outcome is established yet. No human evidence or release approval is inferred.
+
+
+## Completed matched control
+
+The control mode completed 924 evaluations in 602.29 seconds. All 81 pin samples pass (4.751178 mm maximum), raw added floor depth is zero, and original global speed/acceleration limits pass. Release point acceleration still exceeds its fixed ceiling by 0.000077121 m/s². The left-foot sliding flag remains: raw-relative p95 is 0.194987017 m/s versus the 0.181415226 limit, worse than the original warm seed's 0.187536916.
+
+Native exports and 284 actual engine observations pass. All original input, implementation-snapshot and completion-artifact hashes were verified after this mode completed. This control remains rejected and cannot establish the benefit of the new constraint by itself. The matched support-enabled mode is still running under the same frozen methods; both results will be compared after it finishes.

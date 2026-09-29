@@ -22,3 +22,7 @@ node tests/test_contact_export_review.mjs
 ```
 
 The dedicated environment is ignored by Git. The broader test suite still requires separately provisioned assets and tools; all release capabilities remain unapproved.
+
+## Hosted verification
+
+[GitHub run 36642216213](https://github.com/DocMorphic/strep/actions/runs/36642216213), at commit `ac78f29`, passed on both Windows and Linux: 48 Python tests and both Node editor checks per operating system. The first workflow attempt failed YAML parsing because an unquoted command contained a colon; the corrected workflow uses a block string and was locally parsed before the successful run. Hosted success covers this declared source suite only, not the complete model or game-animation pipeline.
