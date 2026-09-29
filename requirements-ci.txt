@@ -1,0 +1,4 @@
+# Model-free source checks; not the inference or full integration environment.
+numpy==2.2.6
+scipy==1.15.3
+pytest==9.1.1

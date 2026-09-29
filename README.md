@@ -55,6 +55,8 @@ On an already provisioned development workspace, start Studio from the project r
 
 Then open `http://127.0.0.1:8768/studio`. Offline inference requires prior acquisition of the pinned dependencies. This repository is not a bundled model download or a hosted generation service.
 
+A [model-free source-check workflow](docs/model-free-source-checks.md) now runs geometry/contact certificates, the Studio build and offline editor tests on Windows and Linux. It needs no model or saved study artifacts; this is not full inference or animation-quality validation.
+
 Some tests require the separately acquired model, rig fixtures, or Godot executable. A full-suite pass on a fresh clone has not been established. Small geometry checks can be run in a provisioned environment with:
 
 ```powershell
