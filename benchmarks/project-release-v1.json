@@ -356,7 +356,8 @@
         "docs/contact-breadth-kick-v1.md",
         "docs/contact-breadth-jump-v1.md",
         "docs/preserved-export-repair-v1.md",
-        "docs/local-edit-preservation-v1.md"
+        "docs/local-edit-preservation-v1.md",
+        "docs/export-feedback-v1.md"
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
@@ -803,7 +804,8 @@
         "docs/contact-breadth-kick-v1.md",
         "docs/contact-breadth-jump-v1.md",
         "docs/preserved-export-repair-v1.md",
-        "docs/local-edit-preservation-v1.md"
+        "docs/local-edit-preservation-v1.md",
+        "docs/export-feedback-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -2708,7 +2710,8 @@
         "docs/contact-breadth-kick-v1.md",
         "docs/contact-breadth-jump-v1.md",
         "docs/preserved-export-repair-v1.md",
-        "docs/local-edit-preservation-v1.md"
+        "docs/local-edit-preservation-v1.md",
+        "docs/export-feedback-v1.md"
       ]
     }
   ],
@@ -2920,6 +2923,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T19:50:38.472103+00:00",
-  "last_progress": "Production local contact fitting restores exact held native poses from the original or warm-start seed, retaining every free fitted key. Seventy focused tests pass. Two real character export smoke tests preserve 22 locked keys each and all 160 combined outside samples exactly; NPZ/BVH/GLB/eight-weight checks pass. The read-only historical archive verifier preserves all eight original outcomes and 2,272 recorded engine observations after solver changes, while current-code stale-job checks still reject old methods. No new contact/engine/human quality approval; export-feedback correction and larger joint-pose failures remain open."
+  "last_progress_at": "2026-09-29T20:47:36.717372+00:00",
+  "last_progress": "Actual-export feedback rejects a newly introduced crawling release-acceleration failure. Retaining observed export discrepancies while reducing only optional LP headroom then repairs crawl-22; both waving alternatives remain unchanged passes. All three alternatives pass original exported contact/floor/point/global limits and serialized constraints with exact outside preservation, empty body flags and 852 new Godot observations. The rejected earlier feedback attempt and its separate 852 observations are preserved. Published experimental runner retains the measured function bodies and passes seven policy tests. Original eight-case outcomes and all release approvals are unchanged; broader joint-pose failures and Studio integration remain open."
 }

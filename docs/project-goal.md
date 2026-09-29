@@ -361,3 +361,6 @@ The [eight-case contact batch](contact-breadth-v1.md#completed-frozen-batch) is 
 
 
 Production local contact fitting now [preserves held poses exactly](local-edit-preservation-v1.md), including the correct warm-start clip. Seventy focused tests pass, and two real character exports retain exactly zero outside-window joint/basis/full-skin differences at 160 combined samples. Historical verification still checks all eight original cases against saved method snapshots; the current-code verifier correctly rejects stale jobs. Export-feedback correction, larger joint-pose failures and all release capabilities remain unresolved.
+
+
+Latest correction result: [export feedback with adjustable optional headroom](export-feedback-v1.md) makes both waving alternatives and crawl seed 22 pass original exported pin/rate/floor checks, nonnegative serialized constraints and 852 new Godot observations. Crawling first rejects a new release regression, then repairs it without relaxing original limits. The earlier failed feedback experiment remains preserved with its separate 852 observations. A reproducible experimental runner and seven policy tests are published; Studio integration, larger joint-pose failures and all release capabilities remain open.
