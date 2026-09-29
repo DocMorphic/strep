@@ -109,6 +109,9 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/scene-retime-v1.md",
+        "reports/scene-retime-import-v1/completion.json",
+        "reports/scene-retime-import-v1/current-runtime-check/verification.json",
         "docs/studio-scene-trim-v1.md",
         "reports/studio-scene-trim-v1/completion.json",
         "docs/scene-trim-v1.md",
@@ -144,6 +147,9 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/scene-retime-v1.md",
+        "reports/scene-retime-import-v1/completion.json",
+        "reports/scene-retime-import-v1/current-runtime-check/verification.json",
         "docs/studio-scene-trim-v1.md",
         "reports/studio-scene-trim-v1/completion.json",
         "docs/scene-trim-v1.md",
@@ -316,7 +322,7 @@
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
-        "Validate dynamics/support after trim, retime and local pose edits; preserve transitions and extend synchronized scene trimming to retiming and validate Studio browser interaction",
+        "Validate dynamics/support after trim, retime and local pose edits; preserve transitions and connect synchronized scene retiming to Studio, support trims of retimed curves and validate browser interaction",
         "Additional external clips, rigs and format support",
         "Independent animator and held-out quality/cleanup-time validation"
       ]
@@ -760,6 +766,9 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/scene-retime-v1.md",
+        "reports/scene-retime-import-v1/completion.json",
+        "reports/scene-retime-import-v1/current-runtime-check/verification.json",
         "docs/window-boundary-preservation-v1.md",
         "reports/region-window-boundary-v1/completion.json",
         "docs/expanded-window-surface-fit-v1.md",
@@ -1005,6 +1014,9 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/scene-retime-v1.md",
+        "reports/scene-retime-import-v1/completion.json",
+        "reports/scene-retime-import-v1/current-runtime-check/verification.json",
         "docs/studio-scene-trim-v1.md",
         "reports/studio-scene-trim-v1/completion.json",
         "docs/scene-trim-v1.md",
@@ -1589,6 +1601,9 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/scene-retime-v1.md",
+        "reports/scene-retime-import-v1/completion.json",
+        "reports/scene-retime-import-v1/current-runtime-check/verification.json",
         "docs/motion-profile-v1.md",
         "reports/motion-profile-v1/design.json",
         "reports/motion-profile-v1/api-preview.json",
@@ -1641,6 +1656,9 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/scene-retime-v1.md",
+        "reports/scene-retime-import-v1/completion.json",
+        "reports/scene-retime-import-v1/current-runtime-check/verification.json",
         "reports/object-attachment-v1/verification.json",
         "docs/oriented-contacts-and-godot-v1.md",
         "reports/godot-import-v1/verification.json",
@@ -1751,6 +1769,9 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/scene-retime-v1.md",
+        "reports/scene-retime-import-v1/completion.json",
+        "reports/scene-retime-import-v1/current-runtime-check/verification.json",
         "docs/studio-scene-trim-v1.md",
         "reports/studio-scene-trim-v1/completion.json",
         "docs/scene-trim-v1.md",
@@ -2750,6 +2771,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T08:44:13.677451+00:00",
-  "last_progress": "Full-body grip initialization improves box penetration to 2.786 mm but loses contact: 482/490 exported contact samples fail. All 360 Godot actor-frames and original edit bounds pass without approval. Preserved comparison published; matched regional-multiplier follow-up running with unchanged source, seed and limits."
+  "last_progress_at": "2026-09-29T13:55:05.653666+00:00",
+  "last_progress": "Shared-scene CLI retiming preserves exported actor/prop paths and exact fractional event timing. After fixing Godot import sampling and callback/terminal-event timing, three retimed scenes plus a legacy package pass 1,663 engine pose observations; initial failures remain retained. Fifty focused Python tests pass. Studio retiming, trims of retimed exports, dynamics and human quality approval remain open; all fourteen capabilities remain unapproved."
 }

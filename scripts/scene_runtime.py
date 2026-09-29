@@ -10,7 +10,7 @@ import numpy as np
 from strep import ROOT,read,save,sha256,now
 from scene_constraints import pose
 from scene_object_export import export_objects
-from gltf_tools import read_glb
+from gltf_tools import read_glb,accessor
 from object_geometry import scene_geometry
 
 
@@ -19,6 +19,22 @@ def local(folder,name):
     path=(folder/name).resolve()
     if not path.is_relative_to(folder.resolve()) or not path.is_file(): raise ValueError('Package asset missing/outside folder')
     return path
+
+
+def import_rate(path):
+    """Keep uniform exported keys on their own clock when Godot bakes tracks."""
+    doc,binary=read_glb(path)
+    if len(doc.get('animations',[]))!=1:raise ValueError('One scene animation required')
+    clocks=[accessor(doc,binary,s['input']) for s in doc['animations'][0]['samplers']]
+    if not clocks:raise ValueError('Animated scene tracks required')
+    first=clocks[0]
+    if len(first)<2 or first.ndim!=1 or not np.isfinite(first).all() or first[0]!=0 or np.any(np.diff(first)<=0):
+        raise ValueError('Invalid scene animation clock')
+    if any(c.shape!=first.shape or not np.array_equal(c,first) for c in clocks) or not np.allclose(first,np.linspace(0,first[-1],len(first)),rtol=0,atol=1e-5):
+        raise ValueError('Runtime import currently requires a common uniform export key clock')
+    rate=float((len(first)-1)/first[-1])
+    if not .01<=rate<=30000:raise ValueError('Unsupported scene import sampling rate')
+    return rate
 
 
 def write(folder):
@@ -33,7 +49,7 @@ def write(folder):
         if sha256(source)!=entry['source_sha256']: raise ValueError('Scene actor source hash mismatch')
         with np.load(source,allow_pickle=False) as motion:
             if motion['root_positions'].shape!=(frames,3): raise ValueError('Scene actor frame count mismatch')
-        actors[id]=dict(path=entry['preview_glb'],sha256=sha256(glb),placement=entry['transform'])
+        actors[id]=dict(path=entry['preview_glb'],sha256=sha256(glb),placement=entry['transform'],bake_fps=import_rate(glb))
     object_clip=None
     if scene.get('objects'):
         path=local(folder,scene['objects_glb']);document,_=read_glb(path)
@@ -44,19 +60,20 @@ def write(folder):
             if declared is not None and declared!=geometry.record(): raise ValueError('Object GLB geometry differs from scene')
             if declared is None and 'geometry' in scene['objects'][id]: raise ValueError('Versioned object geometry missing from GLB')
             objects[id]=dict(node_name=found[0]['name'],ownership='baked_track')
-        object_clip=dict(path=scene['objects_glb'],sha256=sha256(path))
+        object_clip=dict(path=scene['objects_glb'],sha256=sha256(path),bake_fps=import_rate(path))
     events=read(folder/'events.json')
     if events['fps']!=30 or not isinstance(events['events'],list) or len(events['events'])>4096: raise ValueError('Invalid scene event document')
     markers=[]
     for index,event in enumerate(events['events']):
         frame=event.get('frame');time=event.get('time_s')
-        if type(frame) is not int or not 0<=frame<=frames or type(time) not in (float,int) or not np.isfinite(time) or abs(time-frame/30)>1e-8: raise ValueError('Scene marker clock mismatch')
+        if type(frame) not in (int,float) or not np.isfinite(frame) or not 0<=frame<=frames or type(time) not in (float,int) or not np.isfinite(time) or abs(time-frame/30)>1e-8: raise ValueError('Scene marker clock mismatch')
         if not isinstance(event.get('type'),str) or not event['type']: raise ValueError('Scene marker type required')
         if 'actor' in event and event['actor'] not in actors or 'object' in event and event['object'] not in objects: raise ValueError('Scene marker references unknown participant')
         digest=hashlib.sha256(json.dumps(event,sort_keys=True).encode()).hexdigest()[:16]
         markers.append(dict(id=f'event-{index}-{digest}',frame=frame,payload=event))
     markers.sort(key=lambda m:m['frame'])
-    data=dict(schema='strep-runtime-scene-v1',fps=30,frames=frames,actors=actors,objects=objects,markers=markers,source_scene_sha256=sha256(folder/'portable-scene.json'),source_events_sha256=sha256(folder/'events.json'),release_approved=False,scope='Shared finite baked-scene playback. Authored event notifications are not verified contacts or physics commands. Objects retain baked ownership; do not also drive them with live physics.')
+    rates=[a['bake_fps'] for a in actors.values()]+([object_clip['bake_fps']] if object_clip else [])
+    data=dict(schema='strep-runtime-scene-v2' if any(float(m['frame'])!=int(m['frame']) for m in markers) or any(abs(rate-30)>1e-5 for rate in rates) else 'strep-runtime-scene-v1',fps=30,frames=frames,actors=actors,objects=objects,markers=markers,source_scene_sha256=sha256(folder/'portable-scene.json'),source_events_sha256=sha256(folder/'events.json'),release_approved=False,scope='Shared finite baked-scene playback. Authored event notifications are not verified contacts or physics commands. Objects retain baked ownership; do not also drive them with live physics.')
     if object_clip: data['object_clip']=object_clip
     save(folder/'scene-runtime.json',data)
     shutil.copyfile(ROOT/'scripts/godot_scene_clock.gd',folder/'godot_scene_clock.gd')

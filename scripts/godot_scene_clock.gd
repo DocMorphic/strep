@@ -46,12 +46,13 @@ func decode_pose(value: Dictionary) -> Variant:
 	if abs(rotation.length()-1.0)>0.00001: return null
 	return Transform3D(Basis(rotation),Vector3(p[0],p[1],p[2]))
 
-func import_clip(path: String, end: float, precise_mesh: bool = false) -> Dictionary:
+func import_clip(path: String, end: float, precise_mesh: bool = false, bake_fps: float = 30.0) -> Dictionary:
+	if not is_finite(bake_fps) or bake_fps<0.01 or bake_fps>30000: return {}
 	var document:=GLTFDocument.new();var state:=GLTFState.new()
 	var flags := GLTFDocument.IMPORT_FLAG_FORCE_DISABLE_MESH_COMPRESSION if precise_mesh else 0
 	if document.append_from_file(path,state,flags)!=OK: return {}
 	# Retain constant scale tracks: rigid objects must keep quaternion rotation.
-	var model:=document.generate_scene(state,30.0,false,false)
+	var model:=document.generate_scene(state,bake_fps,false,false)
 	if model==null: return {}
 	var found: Array=[];var skeletons: Array=[]
 	for node in nodes(model):
@@ -71,7 +72,7 @@ func import_clip(path: String, end: float, precise_mesh: bool = false) -> Dictio
 func bind_package(folder: String, parent: Node3D) -> Error:
 	if bound or parent==null or not parent.is_inside_tree(): return ERR_INVALID_PARAMETER
 	var data=JSON.parse_string(FileAccess.get_file_as_string(folder.path_join("scene-runtime.json")))
-	if not data is Dictionary or data.get("schema")!="strep-runtime-scene-v1" or data.get("fps")!=30: return reject("Invalid scene runtime schema/fps")
+	if not data is Dictionary or data.get("schema") not in ["strep-runtime-scene-v1","strep-runtime-scene-v2"] or data.get("fps")!=30: return reject("Invalid scene runtime schema/fps")
 	var frames:=float(data.get("frames",0))
 	if not is_finite(frames) or frames!=floor(frames) or frames<3 or frames>1800: return reject("Invalid finite scene length")
 	if not data.get("actors") is Dictionary or data.actors.size()<1 or data.actors.size()>4 or not data.get("objects") is Dictionary or data.objects.size()>8 or not data.get("markers") is Array: return reject("Invalid scene population")
@@ -81,21 +82,21 @@ func bind_package(folder: String, parent: Node3D) -> Error:
 		if not data.get("object_clip") is Dictionary or not valid_file(folder,data.object_clip): return reject("Object clip hash/path failed")
 		for entry in data.objects.values():
 			if not entry is Dictionary or entry.get("ownership")!="baked_track" or not entry.get("node_name") is String: return reject("Object ownership must remain baked_track")
-	var previous:=-1
+	var previous:=-1.0
 	var ids: Dictionary={}
 	for event in data.markers:
 		if not event is Dictionary or not event.get("id") is String or event.id.is_empty() or ids.has(event.id) or not event.get("payload") is Dictionary: return reject("Invalid marker identity/payload")
 		var frame:=float(event.get("frame",-1))
-		if not is_finite(frame) or frame!=floor(frame) or frame<0 or frame>frames or frame<previous: return reject("Invalid marker clock/order")
+		if not (event.get("frame") is int or event.get("frame") is float) or not is_finite(frame) or (data.schema=="strep-runtime-scene-v1" and frame!=floor(frame)) or frame<0 or frame>frames or frame<previous: return reject("Invalid marker clock/order")
 		if event.payload.has("actor") and not data.actors.has(event.payload.actor): return reject("Unknown marker actor")
 		if event.payload.has("object") and not data.objects.has(event.payload.object): return reject("Unknown marker object")
-		ids[event.id]=true;previous=int(frame)
+		ids[event.id]=true;previous=frame
 	# Stage every import before exposing any actor in the user's scene.
 	var staged:=Node3D.new();staged.name="StrepScene"
 	var actor_nodes: Dictionary={};var object_nodes: Dictionary={};var staged_players: Array=[]
 	for id in data.actors:
 		var entry: Dictionary=data.actors[id]
-		var imported:=import_clip(folder.path_join(entry.path),(frames-1)/30.0)
+		var imported:=import_clip(folder.path_join(entry.path),(frames-1)/30.0,false,float(entry.get("bake_fps",30.0)))
 		if imported.is_empty(): staged.free();return reject("Actor animation import failed: "+id)
 		if imported.skeletons.size()!=1: imported.model.free();staged.free();return reject("Actor requires one skeleton: "+id)
 		var placement:=Node3D.new();placement.transform=decode_pose(entry.placement)
@@ -103,7 +104,7 @@ func bind_package(folder: String, parent: Node3D) -> Error:
 		actor_nodes[id]={"placement":placement,"model":imported.model,"skeleton":imported.skeletons[0],"player":imported.player}
 		staged_players.append(imported.player)
 	if not data.objects.is_empty():
-		var imported:=import_clip(folder.path_join(data.object_clip.path),(frames-1)/30.0,true)
+		var imported:=import_clip(folder.path_join(data.object_clip.path),(frames-1)/30.0,true,float(data.object_clip.get("bake_fps",30.0)))
 		if imported.is_empty(): staged.free();return reject("Object animation import failed")
 		staged.add_child(imported.model);staged_players.append(imported.player)
 		for id in data.objects:
@@ -117,12 +118,12 @@ func bind_package(folder: String, parent: Node3D) -> Error:
 	last_sample_s=(frames-1)/30.0;duration_s=frames/30.0;bound=true
 	return seek_preview(0.0)
 
-func sample(seconds: float) -> void:
+func sample(seconds: float, notify: bool=true) -> void:
 	# Pose every participant before any sampled/marker/completion callback.
 	for player in players: player.seek(minf(seconds,last_sample_s),true,true)
 	for actor in actors.values(): actor.skeleton.force_update_all_bone_transforms()
 	time_s=seconds
-	sampled.emit(seconds)
+	if notify: sampled.emit(seconds)
 
 func seek_preview(seconds: float) -> Error:
 	if updating: return ERR_BUSY
@@ -152,10 +153,11 @@ func advance(seconds: float) -> Error:
 	updating=true
 	var before:=time_s;var increment:=seconds-correction;var raw:=before+increment
 	var after:=minf(raw,duration_s);correction=(raw-before)-increment if after<duration_s else 0.0
-	sample(after)
 	for event in markers:
 		var at:=float(event.frame)/30.0
-		if at>before and at<=after: dispatch(event,1)
+		if at>before and at<=after:
+			sample(at,false);dispatch(event,1)
+	sample(after)
 	if after==duration_s:
 		playing=false
 		if before<duration_s: finished.emit()
@@ -169,11 +171,12 @@ func rewind(seconds: float, notifications: bool=false) -> Error:
 	updating=true
 	var before:=time_s;var increment:=-seconds-correction;var raw:=before+increment
 	var after:=maxf(0.0,raw);correction=(raw-before)-increment if after>0 else 0.0
-	sample(after)
 	if notifications:
 		for i in range(markers.size()-1,-1,-1):
 			var event: Dictionary=markers[i];var at:=float(event.frame)/30.0
-			if at>=after and at<before: dispatch(event,-1)
+			if (at>=after and at<before) or (before==duration_s and at==duration_s):
+				sample(at,false);dispatch(event,-1)
+	sample(after)
 	if after==0: playing=false
 	updating=false
 	return OK
