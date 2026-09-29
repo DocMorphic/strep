@@ -104,9 +104,10 @@ def object_sampling_layout(selected,vertex_count,full):
     return ids,np.searchsorted(ids,original)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather"):
     if object_constraint_mode not in ["maximum","per_vertex"]:raise ValueError("Unknown object constraint mode")
     if object_constraint_mode!="maximum" and not object_inequalities:raise ValueError("Per-vertex constraints require object inequalities")
+    if skin_backend not in ["gather","sparse"]:raise ValueError("Unknown skin backend")
     object_clearance=object_clearance_target(object_clearance_margin_m)
     stage_count=solver_stage_count(outer_stage_count)
     iterations=CONFIG['iterations'] if iteration_count is None else iteration_count
@@ -222,7 +223,12 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     point_penalty=CONFIG['explicit_contact_weight'];normal_penalty=CONFIG['orientation_weight']
     stage_records=[];last_point=None;last_normals=[]
     ci=torch.tensor(np.stack([[mapping[v] for v in c['vertex_ids']] for c in contacts.values()],1))
+    sparse_skin=None
+    if skin_backend=="sparse":
+        from linear_skin_operator import LinearSkinOperator
+        sparse_skin=LinearSkinOperator(torch.as_tensor(inds,dtype=torch.long),weights,bind,len(names))
     def vertices(r,p):
+        if sparse_skin is not None:return sparse_skin(r,p)
         return (((r[:,inds]@bind[None,:,:,:,None]).squeeze(-1)+p[:,inds])*weights[None,:,:,None]).sum(2)
     baseline_vertices=vertices(tensor(base['global_rot_mats']),tensor(base['posed_joints']))
     frame_indices=torch.arange(T-1)[:,None]; patch_indices=ci[:-1]
@@ -356,6 +362,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     recipe['object_clearance_margin_m']=object_clearance_margin_m
     if rate_objective is not None:recipe['export_rates']=rate_objective.record()
     recipe['initialization']=initialization
+    recipe['skin_backend']=skin_backend
     recipe['iterations_per_stage']=iterations
     recipe['object_sampling']=dict(mode='all_vertices' if full_object_skin else 'frozen_subset',
         object_vertices=len(selected),floor_vertices=len(floor_indices),

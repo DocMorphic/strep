@@ -14,7 +14,7 @@ from scene_region_contact import SCHEMA,mesh_fingerprint,compile_region
 from hand_patch_authoring import hand_mesh,custom_patch
 
 JOBS=ROOT/'reports/scene-region-jobs'
-METHODS=['export_motion_sampling.py','export_rate_objective.py','scene_region_job.py','scene_fit_initialization.py','hand_patch_authoring.py','fit_scene_regions.py','audit_scene_region_fit.py','region_contact_objective.py',
+METHODS=['linear_skin_operator.py','export_motion_sampling.py','export_rate_objective.py','scene_region_job.py','scene_fit_initialization.py','hand_patch_authoring.py','fit_scene_regions.py','audit_scene_region_fit.py','region_contact_objective.py',
          'compile_scene_regions.py','scene_region_contact.py','support_contact_v8.py','scene_constraints.py',
          'scene_solver_context.py','paired_palm_region.py','palm_contacts.py','floor_contact.py','object_geometry.py',
          'scene_release_job.py','compile_scene_contacts.py','contact_spec.py','support_contact.py','support_contact_v5.py',
