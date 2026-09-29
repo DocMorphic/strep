@@ -104,11 +104,18 @@ def object_sampling_layout(selected,vertex_count,full):
     return ids,np.searchsorted(ids,original)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy"):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False):
     if root_coordinate_mode not in ["legacy","scaled_initial","physical_box"]:raise ValueError("Unknown root coordinate mode")
     if object_constraint_mode not in ["maximum","per_vertex"]:raise ValueError("Unknown object constraint mode")
     if object_constraint_mode!="maximum" and not object_inequalities:raise ValueError("Per-vertex constraints require object inequalities")
     if skin_backend not in ["gather","sparse"]:raise ValueError("Unknown skin backend")
+    if type(shared_pose)!=bool:raise ValueError('Explicit shared-pose boolean required')
+    if shared_pose:
+        from shared_pose_diagnostic import require_repeated_motion,shared_basis
+        count=require_repeated_motion(base)
+        for track in [previous,raw,warm_start]:
+            if track is not None:require_repeated_motion(track,count)
+        if release_endpoint_guards:raise ValueError('Shared pose does not support release guards')
     object_clearance=object_clearance_target(object_clearance_margin_m)
     stage_count=solver_stage_count(outer_stage_count)
     iterations=CONFIG['iterations'] if iteration_count is None else iteration_count
@@ -143,7 +150,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     for j,p in enumerate(parents):
         if p>=0:offsets[:,j]=np.einsum('fji,fj->fi',base['global_rot_mats'][:,p],base['posed_joints'][:,j]-base['posed_joints'][:,p])
     offsets=tensor(offsets); initial=tensor(previous['local_rot_mats']);root=tensor(base['root_positions'])
-    basis,knots=correction_basis(T,CONFIG['knot_spacing_frames']);basis=tensor(basis)
+    basis,knots=shared_basis(T) if shared_pose else correction_basis(T,CONFIG['knot_spacing_frames']);basis=tensor(basis)
     delta=torch.zeros((len(knots),len(editable),3),dtype=dtype,requires_grad=True)
     initialization=None
     if warm_start is not None:
@@ -153,6 +160,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         with torch.no_grad():delta.copy_(tensor(controls))
     def smooth_delta():return torch.einsum('fk,kjd->fjd',basis,delta)
     initial_lift=tensor((previous if warm_start is None else warm_start)['root_positions'][:,1]-base['root_positions'][:,1])
+    if shared_pose:initial_lift=initial_lift[:1]
     root_coordinates=None
     if root_coordinate_mode in ['legacy','physical_box']:
         unit=(initial_lift/CONFIG['max_root_lift_m']).clamp(1e-4,1-1e-4)
@@ -163,8 +171,8 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         root_coordinates=BoundedRootCoordinates(initial_lift,CONFIG['max_root_lift_m'])
         lift_parameters=root_coordinates.initial_parameters().requires_grad_()
     def root_lift():
-        if root_coordinate_mode=='physical_box':return lift_parameters
-        return bounded_lift(lift_parameters,CONFIG['max_root_lift_m']) if root_coordinates is None else root_coordinates(lift_parameters)
+        value=lift_parameters if root_coordinate_mode=='physical_box' else (bounded_lift(lift_parameters,CONFIG['max_root_lift_m']) if root_coordinates is None else root_coordinates(lift_parameters))
+        return value.expand(T) if shared_pose else value
     lookup={j:i for i,j in enumerate(editable)}
     reference=tensor((base if raw is None else raw)['posed_joints'])
     def fk():
@@ -361,6 +369,9 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         contact_normalization='Per explicit region, independently of inferred support duration; v3',
         support={k:dict(spans=c['spans'],active_frames=int(c['active'].sum()),provenance=c.get('provenance','inferred')) for k,c in contacts.items()},
         scope='Hard root/rotation budgets with augmented-Lagrangian contact inequalities (not guaranteed feasible); candidate only until full-mesh and regression checks pass. Sampled primitive clearance and oriented surface points only; frozen partner cuts are local approximations, not self/partner collision, anatomy or dynamics certification.')
+    if shared_pose:
+        recipe['shared_pose']=dict(rotation_control_frames=1,root_control_frames=1,output_frames=T,quality_approved=False)
+        recipe['parameterization']='One shared bounded rotation set and root lift; frozen-pose diagnostic only'
     recipe['root_coordinate_mode']=root_coordinate_mode
     if root_coordinates is not None:recipe['root_coordinate_reference']=root_coordinates.record()
     if finger_edits:
