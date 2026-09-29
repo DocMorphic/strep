@@ -16,7 +16,7 @@ The existing three-stage, 40-iteration short sphere repair reproduces every nati
 
 ## Full-motion validation
 
-The full fit is running; its contact, geometry, temporal and engine results are not yet known. A completion process is bound to the numerical worker's PID and creation time. It never retries fitting. Once that exact owner exits successfully, it will audit decoded quarter-frame geometry and original edit bounds, record per-joint rates, and import all source/candidate frames into Godot. Missing or failed fitting output remains a failure.
+The full fit and its exact-owner completion audit have finished. The numerical worker took 1,509 seconds. Execution completed, but the candidate fails contact and clearance requirements. The completion process did not retry fitting; it audited decoded quarter-frame geometry, original edit bounds, per-joint rates and all source/candidate Godot frames.
 
 `audit_scene_joint_rates.py` reports each joint's peak and its sample location over the whole clip, approach, grasp, release, and two-frame neighborhoods around each contact boundary. Speed samples are located at edge midpoints and acceleration at stencil centers; overlapping windows are explicit. An unchanged global maximum cannot hide local increases in this report. These diagnostics do not create new acceptance thresholds or infer naturalness.
 
@@ -24,4 +24,32 @@ Evidence is retained in `reports/linear-skin-full-clip-v1.json`, `reports/region
 
 Reproduce with `prepare_region_transfer_study.py` in a fresh report directory, then `fit_scene_regions.py` with the configuration above. The fixture builder requires the preceding local development assets. `verify_linear_skin_operator.py` independently compares a supplied native motion against gathered skinning; `audit_scene_region_fit.py` and `audit_scene_joint_rates.py` consume a completed fitting directory. Weights and generated artifacts remain excluded from Git.
 
-The refined object-only evidence is retained in `reports/region-full-transfer-v1/object-floor-diagnosis.json`. Its two-millimetre comparison is a diagnostic reference, not an authored prop-floor acceptance gate. Nonpenetration does not establish physical support, friction, contact forces or valid actor contact. The full character fit and its independent audit remain pending.
+The refined object-only evidence is retained in `reports/region-full-transfer-v1/object-floor-diagnosis.json`. Its two-millimetre comparison is a diagnostic reference, not an authored prop-floor acceptance gate. Nonpenetration does not establish physical support, friction, contact forces or valid actor contact. The full character fit and independent audit are now complete, with failures detailed below.
+
+## Completed full-motion result
+
+| Measurement | Original full source | Candidate |
+| --- | ---: | ---: |
+| Hand-contact failures | 490 / 490 | 490 / 490 |
+| Full-body geometry failures | 382 / 717 | 267 / 717 |
+| Worst body-box penetration | 54.256846 mm | 5.272749 mm |
+| Whole-clip peak joint speed | 1.364918 m/s | 1.342813 m/s |
+| Whole-clip peak joint acceleration | 37.982124 m/s² | 36.839410 m/s² |
+| Release-boundary peak speed, frames 119–123 | 0.337513 m/s | 0.788448 m/s |
+| Release-boundary peak acceleration, frames 119–123 | 22.747577 m/s² | 36.839410 m/s² |
+
+The candidate's worst penetration occurs at frame 121.75, outside the integer fitting keys. All 245 left-hand samples still fail the normal limit; 221 right-hand samples fail it. Missing distributed-contact witnesses remain in 183 left and 130 right samples, and anchor failures increase from zero to 26 and 111 respectively. Original edit bounds pass with a maximum 31.589323-degree edit. Root lift stays approximately 0.022 mm despite its larger allowed range; that observation does not by itself prove that root motion would resolve the contact errors.
+
+Whole-clip peaks conceal local changes: 47 joints increase their speed maximum and 14 increase acceleration by more than 1e-5 in the respective units. Across the release boundary, those counts are 69 and 68. No temporal-quality approval follows from the lower global maxima. Actual Godot imports pass all 360 actor-frames and 77 joints, with maximum position discrepancy below 0.317 micrometres. Playback fidelity does not approve the failed motion.
+
+The complete source/candidate scene is available in Studio's Scene interactions collection as `full-box-transfer-review-v2`, labelled “needs correction.” It preserves object tracks and target regions and includes the geometry, joint-rate and engine evidence. The comparison is summarized in `reports/region-full-transfer-v1/comparison.json`; all raw outputs and snapshots remain intact.
+
+## Bounded pose-seed diagnostic
+
+A separate inexpensive initializer applies the passing short grip's source-relative rotation correction at frame 60 and tapers its original spline control parameters around contact frames 60–121, using a 24-frame fade. The two source conditions have matching contact definitions, primitive geometry and object transform at the reference frame. This is a parameter-transfer test, not rigid transport of a grip with the object.
+
+`scene_pose_seed.py` retains the original body/finger rotation balls and physical finger parameter units. Its full 180-frame seed passes original edit and bone-offset checks and is recoverable by the unchanged spline to 4.08e-8 radians. Two focused tests verify representability, bounds and invalid-guide rejection. However, each hand passes distributed contact in only one of 62 native grasp frames. Worst anchor errors reach 21.50 and 27.06 mm, and whole-body box penetration remains 52.62 mm. This seed was not submitted to another expensive full solve. Evidence is in `reports/region-full-pose-seed-v1`.
+
+The next initialization must account for the object's moving frame, rather than repeating a local-joint correction. Short-fixture success has not established full-action contact reliability. All 14 release capabilities remain unapproved; no training, human ratings or held-out coverage were added.
+
+The updated publisher flags per-joint and phase/boundary rate increases even when both whole-clip peaks improve. Eleven focused seed, initializer and publisher tests pass. The earlier `full-box-transfer-review-v1` package remains retained; v2 copies the same motion and adds these diagnostic warnings, rather than representing another animation trial.

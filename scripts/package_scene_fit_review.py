@@ -13,6 +13,21 @@ from scene_constraints import evaluate
 from scene_region_job import JOBS,audit_summary,bundle
 
 
+def include_rate_diagnostics(summary, report):
+    """Keep local increases visible even when global maxima both decrease."""
+    diagnostics={}
+    for rate,item in report['rates'].items():
+        windows=item['windows'];whole=next(w for w in windows if w['window']=='whole_clip')
+        local=sum(j['candidate_peak']>j['source_peak']+1e-5 for j in whole['joints'])
+        increased=[w['window'] for w in windows if w['samples'] and w['candidate_peak']>w['source_peak']+1e-5]
+        diagnostics[rate]=dict(increased_joint_peaks=local,increased_window_peaks=increased)
+        if local:summary['motion_regressions'].append('per_joint_peak_'+rate)
+        if increased:summary['motion_regressions'].append('phase_or_boundary_peak_'+rate)
+    summary['rate_diagnostics']=diagnostics
+    summary['rate_diagnostic_scope']='1e-5 reporting allowance in the recorded rate units; no calibrated quality acceptance threshold.'
+    return summary
+
+
 def verified_study(study,audit_path,engine_path):
     study=Path(study);result=read(study/'result.json');audit=read(audit_path);engine=read(engine_path)
     if result.get('status')!='complete' or audit['result_sha256']!=sha256(study/'result.json'):
@@ -47,6 +62,7 @@ def build(study,audit_path,engine_path,output,label,rates_path=None):
         rates_path=Path(rates_path).resolve()
         if read(rates_path)['result_sha256']!=sha256(study/'result.json'):raise ValueError('Joint-rate report belongs to another fit')
     skin=dict(np.load(ASSET,allow_pickle=False));summary=audit_summary(audit)
+    if rates_path is not None:include_rate_diagnostics(summary,read(rates_path))
     output.mkdir(parents=True);scenes=[]
     for version,motion_file in [('source','source-motion.npz'),('candidate','motion.npz')]:
         folder=output/version;folder.mkdir()

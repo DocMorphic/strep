@@ -6,7 +6,7 @@ import pytest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from strep import ROOT,read,save,sha256
 from scene_region_job import JOBS
-from package_scene_fit_review import build,verified_study
+from package_scene_fit_review import build,verified_study,include_rate_diagnostics
 from action_studio_server import allowed_file
 
 STUDY=ROOT/'reports/region-box-export-rates-control-v1'
@@ -73,3 +73,16 @@ def test_wrong_rate_report_and_output_location_do_not_publish(work):
     with pytest.raises(ValueError,match='review directory'):
         build(STUDY,AUDIT,ENGINE,work/'nested','Wrong location')
     assert not (work/'nested').exists()
+
+
+def test_local_rate_regression_is_not_hidden_by_better_global_peaks():
+    report={'rates':{'speed':{'windows':[
+        dict(window='whole_clip',samples=8,source_peak=2.,candidate_peak=1.9,
+             joints=[dict(source_peak=2.,candidate_peak=1.9),dict(source_peak=.5,candidate_peak=1.)]),
+        dict(window='grip/end_boundary',samples=2,source_peak=.5,candidate_peak=1.),
+        dict(window='empty',samples=0,joints=[])]}}}
+    summary=include_rate_diagnostics(dict(motion_regressions=[],quality_approved=False),report)
+    assert summary['motion_regressions']==['per_joint_peak_speed','phase_or_boundary_peak_speed']
+    assert summary['rate_diagnostics']['speed']['increased_joint_peaks']==1
+    assert summary['rate_diagnostics']['speed']['increased_window_peaks']==['grip/end_boundary']
+    assert summary['quality_approved'] is False

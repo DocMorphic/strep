@@ -11,7 +11,7 @@ Two retained short diagnostic comparisons are now available after reloading Stud
 
 Both have five frames and are explicitly labelled diagnostics. They are not complete-action review evidence. Four publisher tests pass, and both real packages verify 22 content hashes and 28 offline route mappings in total. Their existing Godot evidence is reused; no new engine run, live browser or HTTP verification is claimed. No human notes, scores or cleanup times were created.
 
-The separately running 180-frame transfer retains its exact worker and completion-audit processes. Once it finishes, the same publisher can expose its successful or failed motion with the complete object context. Its contact, geometry and temporal outcomes are still unknown. All 14 release capabilities remain unapproved.
+The 180-frame transfer and its audits are now complete. The failed motion is available as `full-box-transfer-review-v2`, with all 490 hand-contact failures and release-boundary rate increases preserved. The publisher now includes per-joint and phase/boundary increases in its visible motion-regression warning even when global peaks decrease. These are diagnostics, not a calibrated naturalness test. The original v1 package remains retained. All 14 release capabilities remain unapproved.
 
 For actual developer feedback on complete motions, the existing Studio Characters → Review corrected motions → Floor constraint comparison contains nine cases and four versions each. Watch at normal speed first; then record the case, version, frame range and observed problem in **Your review notes** and export the feedback. This is unblinded developer evidence. Independent animator ratings and measured cleanup work remain separate release requirements.
 
