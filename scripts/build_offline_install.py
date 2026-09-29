@@ -10,18 +10,11 @@ import shutil
 import subprocess
 import sys
 from strep import ROOT, read, save, sha256, source_check, model_directory, now
-
-
-EXCLUDE = {'__pycache__', '.git', '.pytest_cache'}
+from offline_source_snapshot import eligible_files,capture_project,copy_project,verify_project
 
 
 def copy_tree(source, destination):
-    for path in source.rglob('*'):
-        relative = path.relative_to(source)
-        if not path.is_file() or any(p in EXCLUDE for p in relative.parts):
-            continue
-        if path.suffix == '.pth' or path.name.startswith(('__editable__', '_virtualenv')):
-            continue
+    for relative,path in eligible_files(source):
         target = destination / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(path, target)
@@ -37,9 +30,11 @@ def build(destination):
         raise RuntimeError('At least 40 GiB free space required')
     destination.mkdir()
     save(destination / 'build-status.json', {'status': 'building', 'started_at': now()})
-    for directory in ['scripts', 'assets', 'benchmarks', 'integrations']:
-        print('Copying ' + directory, flush=True)
-        copy_tree(ROOT / directory, destination / directory)
+    print('Capturing and copying Strep project source', flush=True)
+    project_snapshot = capture_project(ROOT)
+    save(destination / 'project-source.json', project_snapshot)
+    project_snapshot_hash = sha256(destination / 'project-source.json')
+    copy_project(ROOT, destination, project_snapshot)
     vendor = ROOT / 'vendor/kimodo'
     names = subprocess.check_output(['git', '-c', f'safe.directory={vendor.as_posix()}', '-C', str(vendor),
                                      'ls-files', '-z'], text=True).split('\0')
@@ -103,10 +98,16 @@ def build(destination):
         'Models and dependencies retain their own licenses. Personal local copy, not a redistributable release.\n', encoding='utf-8')
     if source_check() != commit:
         raise RuntimeError('Vendor source changed during build')
+    verify_project(ROOT, destination, project_snapshot)
     print('Hashing complete installation', flush=True)
     files = {p.relative_to(destination).as_posix(): sha256(p) for p in destination.rglob('*')
              if p.is_file() and p.name != 'build-status.json'}
+    expected_project = {**project_snapshot['files_sha256'], 'project-source.json': project_snapshot_hash}
+    for relative, digest in expected_project.items():
+        if files.get(relative) != digest:
+            raise RuntimeError('Copied project changed during inventory: ' + relative)
     save(destination / 'installation.json', {'schema': 1, 'built_at': now(), 'vendor_commit': commit,
+                                           'project_source_sha256': project_snapshot_hash,
                                            'purpose': 'personal offline relocation experiment', 'files_sha256': files})
     save(destination / 'build-status.json', {'status': 'complete', 'finished_at': now(), 'files': len(files)})
     print(str(destination), flush=True)

@@ -8,6 +8,8 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/offline-source-snapshot-v1.md",
+        "reports/offline-source-snapshot-v1/verification.json",
         "docs/motion-correction-v1.md",
         "reports/motion-correction-v2/verification.json",
         "reports/motion-correction-v2/decision.json",
@@ -1983,6 +1985,8 @@
       "status": "incomplete",
       "release_evidence": [],
       "development_evidence": [
+        "docs/offline-source-snapshot-v1.md",
+        "reports/offline-source-snapshot-v1/verification.json",
         "docs/prompt-edit-v1.md",
         "reports/prompt-edit-v1/verification.json",
         "reports/prompt-edit-v1/quality-decision.json",
