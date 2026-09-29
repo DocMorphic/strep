@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createSceneTrimEditor} from '../scripts/scene-trim-editor.js';
 const html=await readFile(new URL('../scripts/action-studio.html',import.meta.url),'utf8');
-class Element{constructor(){this.value='';this.disabled=false;this.events={};}addEventListener(n,f){this.events[n]=f;}}
+class Element{constructor(){this.value='';this.disabled=false;this.events={};}addEventListener(n,f){this.events[n]=f;}replaceChildren(...children){this.children=children;}}
 const elements=new Map([...html.matchAll(/id="(sceneTrim[^"]+)"/g)].map(m=>[m[1],new Element()]));
-globalThis.document={getElementById(id){assert(elements.has(id),'Missing '+id);return elements.get(id);}};
+globalThis.document={createElement(){return new Element();},getElementById(id){assert(elements.has(id),'Missing '+id);return elements.get(id);}};
 const storage=new Map();globalThis.localStorage={getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)};
 let posted=null,completed=null,changed=false,reject=false;
 const source={source_url:'/files/example/scene.json',revision:'v1',frames:180,actors:2,objects:0};
@@ -34,3 +34,11 @@ el('Speed').value=0;posted=null;await el('Apply').onclick();assert.equal(posted,
 el('Speed').value=1.5;el('Speed').events.input();assert.match(el('Timing').textContent,/actual speed/);
 await el('Apply').onclick();for(let i=0;i<5;i++)await new Promise(r=>setImmediate(r));
 assert.equal(posted.operation,'retime');assert.equal(posted.frames,120);assert.equal(posted.first,undefined);
+
+el('Mode').value='carry';el('Mode').events.input();posted=null;await el('Apply').onclick();assert.equal(posted,null);
+source.actor_ids=['A','B'];source.object_ids=['platform'];source.objects=1;
+await privateEditor.bind(source.source_url);el('Mode').value='carry';el('Mode').events.input();
+assert(!el('Actor').disabled);assert(el('Speed').disabled);assert(!el('CarryFields').hidden);
+el('Reference').value=180;await el('Apply').onclick();assert.equal(posted,null);
+el('Reference').value=37;await el('Apply').onclick();for(let i=0;i<5;i++)await new Promise(r=>setImmediate(r));
+assert.equal(posted.operation,'carry');assert.equal(posted.actor,'A');assert.equal(posted.object,'platform');assert.equal(posted.reference_frame,37);assert.equal(posted.frames,undefined);

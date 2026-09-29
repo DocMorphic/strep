@@ -331,7 +331,11 @@
         "reports/scene-trim-precision-guard-v1/step-verification.json",
         "docs/scene-timing-support-v1.md",
         "reports/scene-timing-support-v1/verification.json",
-        "reports/studio-timing-support-v1/completion.json"
+        "reports/studio-timing-support-v1/completion.json",
+        "docs/scene-carrier-v1.md",
+        "reports/scene-carrier-v1/completion.json",
+        "reports/studio-carrier-v1/completion.json",
+        "reports/studio-carrier-v1/final-preflight.json"
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
@@ -1017,7 +1021,11 @@
         "reports/scene-trim-precision-guard-v1/step-verification.json",
         "docs/scene-timing-support-v1.md",
         "reports/scene-timing-support-v1/verification.json",
-        "reports/studio-timing-support-v1/completion.json"
+        "reports/studio-timing-support-v1/completion.json",
+        "docs/scene-carrier-v1.md",
+        "reports/scene-carrier-v1/completion.json",
+        "reports/studio-carrier-v1/completion.json",
+        "reports/studio-carrier-v1/final-preflight.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1798,7 +1806,11 @@
         "reports/studio-scene-timing-v1/completion.json",
         "reports/scene-trim-retimed-v1/completion.json",
         "reports/scene-trim-precision-guard-v1/completion.json",
-        "reports/scene-trim-precision-guard-v1/step-verification.json"
+        "reports/scene-trim-precision-guard-v1/step-verification.json",
+        "docs/scene-carrier-v1.md",
+        "reports/scene-carrier-v1/completion.json",
+        "reports/studio-carrier-v1/completion.json",
+        "reports/studio-carrier-v1/final-preflight.json"
       ],
       "remaining": [
         "Extend GPU/rendered world-placement validation beyond144sampled silhouettes: materials, hidden surfaces, intermediate times, more rigs/backends and gameplay physics.",
@@ -2100,7 +2112,11 @@
         "reports/studio-scene-timing-v1/completion.json",
         "reports/scene-trim-retimed-v1/completion.json",
         "reports/scene-trim-precision-guard-v1/completion.json",
-        "reports/scene-trim-precision-guard-v1/step-verification.json"
+        "reports/scene-trim-precision-guard-v1/step-verification.json",
+        "docs/scene-carrier-v1.md",
+        "reports/scene-carrier-v1/completion.json",
+        "reports/studio-carrier-v1/completion.json",
+        "reports/studio-carrier-v1/final-preflight.json"
       ],
       "remaining": [
         "Extend GPU/rendered world-placement validation beyond144sampled silhouettes: materials, hidden surfaces, intermediate times, more rigs/backends and gameplay physics.",
@@ -2821,6 +2837,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T14:32:59.991045+00:00",
-  "last_progress": "Studio trim/speed edits now include exported ground-support, full-skin floor and per-joint linear/angular rate comparisons. Three development scenes cover 2,628 matched actor samples; faster release worsens slide p95 and slower paired motion retains floor penetration. Fifteen focused tests and a real Studio object timing job pass workflow validation. Moving-support frames, physical validity, browser and human review remain open; no release capability approved."
+  "last_progress_at": "2026-09-29T14:46:52.013650+00:00",
+  "last_progress": "Studio can carry an existing actor clip with a moving rigid object while retaining original relative animation. A translating/lifting/rotating platform fixture passes 717 full-mesh relative comparisons and 407 Godot observations; actual Studio output matches engine-tested files. 27 distinct Python tests and offline Node editor checks pass. Relative foot movement, physical balance, attachment transitions and human quality remain unapproved; all fourteen capabilities open."
 }

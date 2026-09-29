@@ -45,6 +45,15 @@ def test_bad_retime_request_does_not_create_output(folder,frames):
     assert not folder.exists()
 
 
+@pytest.mark.parametrize('change',[{'actor':[]},{'object':[]},{'reference_frame':True},{'reference_frame':180}])
+def test_bad_carrier_request_does_not_create_output(folder,change):
+    url='/files/scene-trim-jobs/carrier-source-v1/input.json';m=metadata(url)
+    p=dict(source_url=url,revision=m['revision'],operation='carry',actor='A',object='platform',reference_frame=0,label='Carry')
+    p.update(change)
+    with pytest.raises(ValueError):prepare(p,folder)
+    assert not folder.exists()
+
+
 def test_changed_snapshot_stops_before_trim(folder):
     prepare(payload(),folder)
     (folder/'input/events.json').write_text('{}')
