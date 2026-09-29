@@ -130,13 +130,14 @@ def object_sampling_layout(selected,vertex_count,full):
     return ids,np.searchsorted(ids,original)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=()):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=(),edit_window=None):
     if root_coordinate_mode not in ["legacy","scaled_initial","physical_box"]:raise ValueError("Unknown root coordinate mode")
     if object_constraint_mode not in ["maximum","per_vertex"]:raise ValueError("Unknown object constraint mode")
     if object_constraint_mode!="maximum" and not object_inequalities:raise ValueError("Per-vertex constraints require object inequalities")
     if skin_backend not in ["gather","sparse"]:raise ValueError("Unknown skin backend")
     if type(shared_pose)!=bool:raise ValueError('Explicit shared-pose boolean required')
     if shared_pose:
+        if edit_window is not None:raise ValueError('Shared pose does not support a local edit window')
         from shared_pose_diagnostic import require_repeated_motion,shared_basis
         count=require_repeated_motion(base)
         for track in [previous,raw,warm_start]:
@@ -183,7 +184,18 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         if not np.array_equal(previous['local_rot_mats'],base['local_rot_mats']):raise ValueError('Warm starts require the original clip as the rotation reference')
         controls,initialization=recover_controls(base['local_rot_mats'],warm_start['local_rot_mats'],editable,np.deg2rad(limits),body_count,physical_finger_parameters,basis.detach().numpy())
         with torch.no_grad():delta.copy_(tensor(controls))
-    def smooth_delta():return torch.einsum('fk,kjd->fjd',basis,delta)
+    localization=None;control_transform=None;seed_controls=None;outside_keys=None
+    if edit_window is not None:
+        from localized_spline import localized_controls
+        if not np.array_equal(previous['local_rot_mats'],base['local_rot_mats']):
+            raise ValueError('Localized fitting requires the original rotation reference')
+        transform,outside,localization=localized_controls(basis.detach().numpy(),edit_window)
+        outside_keys=torch.as_tensor(outside,dtype=torch.bool)
+        control_transform=tensor(transform);seed_controls=delta.detach().clone()
+        delta=torch.zeros((transform.shape[1],len(editable),3),dtype=dtype,requires_grad=True)
+    def smooth_delta():
+        controls=delta if control_transform is None else seed_controls+torch.einsum('kr,rjd->kjd',control_transform,delta)
+        return torch.einsum('fk,kjd->fjd',basis,controls)
     initial_lift=tensor((previous if warm_start is None else warm_start)['root_positions'][:,1]-base['root_positions'][:,1])
     if shared_pose:initial_lift=initial_lift[:1]
     root_coordinates=None
@@ -197,6 +209,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         lift_parameters=root_coordinates.initial_parameters().requires_grad_()
     def root_lift():
         value=lift_parameters if root_coordinate_mode=='physical_box' else (bounded_lift(lift_parameters,CONFIG['max_root_lift_m']) if root_coordinates is None else root_coordinates(lift_parameters))
+        if outside_keys is not None:value=torch.where(outside_keys,initial_lift,value)
         return value.expand(T) if shared_pose else value
     lookup={j:i for i,j in enumerate(editable)}
     reference=tensor((base if raw is None else raw)['posed_joints'])
@@ -398,7 +411,16 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         actual_delta=bounded_edits(smooth_delta())
     shifted={k:v.copy() for k,v in base.items()};shifted['root_positions'][:,1]+=lift.detach().numpy()
     result=reconstruct(shifted,local.detach().numpy().copy(),parents);result.pop('smooth_root_pos',None)
-    recipe=dict(config={**CONFIG,'outer_stages':stage_count},correction_knots=knots.tolist(),parameterization='Cubic edit controls with hand tangents and frozen partner clearance cuts; v8',partner_cut_count=len(cuts),stage_records=stage_records,applied=True,evaluations=calls,objective=last,selected_vertices=len(selected),
+    if localization is not None:
+        from scipy.spatial.transform import Rotation
+        seed=base if warm_start is None else warm_start
+        outside=outside_keys.numpy()
+        relative=seed['local_rot_mats'][outside].transpose(0,1,3,2)@result['local_rot_mats'][outside]
+        rotation_error=float(Rotation.from_matrix(relative.reshape(-1,3,3)).magnitude().max()) if outside.any() else 0.
+        root_error=float(np.max(np.abs(seed['root_positions'][outside]-result['root_positions'][outside]))) if outside.any() else 0.
+        if rotation_error>1e-6 or root_error>1e-7:raise ValueError('Unselected seed motion changed')
+        localization.update(maximum_outside_seed_rotation_error_rad=rotation_error,maximum_outside_seed_root_error_m=root_error)
+    recipe=dict(localization=localization,config={**CONFIG,'outer_stages':stage_count},correction_knots=knots.tolist(),parameterization='Cubic edit controls with hand tangents and frozen partner clearance cuts; v8',partner_cut_count=len(cuts),stage_records=stage_records,applied=True,evaluations=calls,objective=last,selected_vertices=len(selected),
         root_lift_m=lift.detach().tolist(), max_rotation_delta_degrees=float(torch.linalg.vector_norm(actual_delta,dim=-1).max()*180/torch.pi),
         contact_spec=contact_spec,scene_context=scene_context,hard_bounds=True,normal_constraints=len(normal_constraints),object_constraints=len(objects),
         contact_normalization='Per explicit region, independently of inferred support duration; v3',

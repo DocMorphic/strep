@@ -102,7 +102,7 @@ def run(scene_path, guide_study, guide_audit, seed_path, output, reference=60, i
     weights = np.zeros(scene['frame_count']); weights[start:end+1] = 1
     inputs = {str(p): sha256(p) for p in [scene_path, source_path, seed_path, guide_study/'motion.npz',
         guide_study/'result.json', guide_study/'authored-scene.json', guide_audit, ASSET]}
-    implementation = ['run_object_grip_seed.py', 'object_grip_seed.py', 'scene_fit_initialization.py',
+    implementation = ['localized_spline.py','run_object_grip_seed.py', 'object_grip_seed.py', 'scene_fit_initialization.py',
         'support_contact_v5.py', 'support_contact_v8.py', 'floor_contact.py', 'scene_constraints.py',
         'inspect_motion.py', 'scene_region_contact.py', 'object_geometry.py', 'audit_scene_region_fit.py',
         'build_soma_preview.py', 'gltf_tools.py', 'strep.py']

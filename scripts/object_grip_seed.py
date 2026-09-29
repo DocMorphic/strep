@@ -9,6 +9,7 @@ from scene_fit_initialization import recover_controls
 from support_contact_v5 import rodrigues
 from support_contact_v8 import bounded_edit_rotations
 from floor_contact import reconstruct
+from localized_spline import localized_controls
 
 
 def transport_frames(positions, rotations, reference, guide_positions, guide_rotations):
@@ -21,24 +22,6 @@ def transport_frames(positions, rotations, reference, guide_positions, guide_rot
     relative_r = rotations[reference].T @ np.asarray(guide_rotations)
     return (positions[:, None] + np.einsum('fij,hj->fhi', rotations, relative_p),
             rotations[:, None] @ relative_r[None])
-
-
-def localized_controls(basis, window):
-    """Null-space controls preserve the seed on every unselected native key."""
-    from scipy.linalg import null_space
-    basis=np.asarray(basis,dtype=float)
-    if basis.ndim!=2 or not np.isfinite(basis).all():raise ValueError('Finite frame/control basis required')
-    if not isinstance(window,(list,tuple)) or len(window)!=2 or any(type(v) is not int for v in window):
-        raise ValueError('Two integer edit-window endpoints required')
-    start,end=window
-    if not 0<=start<=end<len(basis):raise ValueError('Edit window outside clip')
-    outside=(np.arange(len(basis))<start)|(np.arange(len(basis))>end)
-    transform=null_space(basis[outside],rcond=1e-12) if outside.any() else np.eye(basis.shape[1])
-    if transform.shape[1]==0:raise ValueError('Edit window has no free spline controls')
-    error=float(np.abs(basis[outside]@transform).max()) if outside.any() else 0.
-    if error>1e-11:raise ValueError('Outside-window control residual too large')
-    return transform,outside,dict(window=list(window),free_controls=transform.shape[1],outside_keys=int(outside.sum()),basis_residual=error,
-        scope='Seed rotations preserved at unselected native keys; boundary dynamics and between-key motion still require audit.')
 
 
 def fit_frames(source, seed, parents, editable, limits, body_count, basis,
