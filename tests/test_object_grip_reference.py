@@ -28,3 +28,17 @@ def test_guide_at_any_contact_frame_reproduces_its_world_pose(reference):
 @pytest.mark.parametrize('args',[(0,1,2,3),(3,1,2,4),(2,1,3,3),(1,2,1,3),(-1,-1,1,3),(True,0,2,3),(1.,0,2,3)])
 def test_invalid_or_outside_contact_reference_rejected(args):
     with pytest.raises(ValueError):validate_guide_reference(*args)
+
+
+def test_arm_guide_adds_proximal_frames_without_dropping_hand_targets():
+    from run_object_grip_seed import guide_joint_indices
+    names=['LeftHand','RightHand','LeftHandIndex1','RightHandIndex1',
+           'LeftShoulder','LeftArm','LeftForeArm','RightShoulder','RightArm','RightForeArm']
+    fingers={2:5.,3:5.}
+    hands=guide_joint_indices(names,fingers)
+    assert hands==[0,1,2,3]
+    arms=guide_joint_indices(names,fingers,'arms')
+    assert arms[:len(hands)]==hands
+    assert [names[j] for j in arms[len(hands):]]==names[4:]
+    assert len(arms)==len(set(arms))
+    with pytest.raises(ValueError):guide_joint_indices(names,fingers,'unknown')

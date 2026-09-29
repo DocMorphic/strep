@@ -26,7 +26,17 @@ def validate_guide_reference(reference, start, end, frame_count):
         raise ValueError('Guide reference must lie within the authored contact interval')
 
 
-def run(scene_path, guide_study, guide_audit, seed_path, output, reference=60, iterations=100):
+def guide_joint_indices(names, fingers, mode='hands'):
+    if mode not in ['hands', 'arms']:raise ValueError('Unknown guide mode')
+    joints = [names.index('LeftHand'), names.index('RightHand')] + list(fingers)
+    if mode == 'arms':
+        joints += [names.index(side+part) for side in ['Left','Right']
+                   for part in ['Shoulder','Arm','ForeArm']]
+    return joints
+
+
+def run(scene_path, guide_study, guide_audit, seed_path, output, reference=60, iterations=100, guide_mode='hands'):
+    if guide_mode not in ['hands','arms']:raise ValueError('Unknown guide mode')
     scene_path, guide_study, guide_audit, seed_path, output = map(lambda p: Path(p).resolve(),
         [scene_path, guide_study, guide_audit, seed_path, output])
     if not output.is_relative_to(ROOT/'reports') or output.exists():
@@ -79,7 +89,7 @@ def run(scene_path, guide_study, guide_audit, seed_path, output, reference=60, i
     fingers = finger_rotation_budgets(names)
     editable = [names.index(n) for n in body] + list(fingers)
     limits = np.deg2rad([CONFIG['max_rotation_degrees']]*len(body) + list(fingers.values()))
-    joints = [names.index('LeftHand'), names.index('RightHand')] + list(fingers)
+    joints = guide_joint_indices(names, fingers, guide_mode)
     world = transform_motion(guide, guide_scene['actors']['A']['transform'])
     tp, tr = transport_frames(op, orm, reference, world['positions'][0, joints], world['rotations'][0, joints])
     origin, placement = pose(scene['actors']['A']['transform'])
@@ -99,6 +109,7 @@ def run(scene_path, guide_study, guide_audit, seed_path, output, reference=60, i
     save(output/'protocol.json', dict(at=now(), inputs=inputs, implementation={n: sha256(output/'implementation'/n) for n in implementation},
         actor='A', contact_ids=[c['id'] for c in contacts],
         reference_frame=reference, guide_frame=0, active_interval=[start,end], iterations=iterations,
+        guide_mode=guide_mode, target_joint_names=[names[j] for j in joints],
         config=CONFIG, correction_knots=knots.tolist(), quality_approved=False,
         scope='Joint frames transported with prescribed object; source-relative bounded spline initialization. Not contact or release acceptance.'))
     started = time.monotonic()
@@ -114,6 +125,7 @@ def run(scene_path, guide_study, guide_audit, seed_path, output, reference=60, i
             if sha256(path) != digest: raise ValueError('Input changed during initialization')
         for name in implementation:
             if sha256(ROOT/'scripts'/name) != sha256(output/'implementation'/name): raise ValueError('Implementation changed')
+        recipe['guide_mode']=guide_mode
         bounds, angles, _ = edit_bounds(source, motion, names, CONFIG)
         fk = native_fk_error(source, motion, parents)
         if not bounds or fk > 3e-6: raise ValueError('Candidate original bounds or FK failed')
@@ -147,4 +159,5 @@ if __name__ == '__main__':
     p = argparse.ArgumentParser(description=__doc__)
     for name in ['scene', 'guide_study', 'guide_audit', 'seed', 'output']: p.add_argument(name, type=Path)
     p.add_argument('--reference', type=int, default=60); p.add_argument('--iterations', type=int, default=100)
-    a = p.parse_args(); run(a.scene, a.guide_study, a.guide_audit, a.seed, a.output, a.reference, a.iterations)
+    p.add_argument('--guide-mode',choices=['hands','arms'],default='hands',help='Optional shoulder, upper-arm and forearm frame targets in the moving object frame')
+    a = p.parse_args(); run(a.scene, a.guide_study, a.guide_audit, a.seed, a.output, a.reference, a.iterations, a.guide_mode)
