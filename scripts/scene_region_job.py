@@ -11,9 +11,10 @@ from strep import ROOT,read,save,sha256,now
 from build_soma_preview import ASSET
 from scene_release_job import source_metadata
 from scene_region_contact import SCHEMA,mesh_fingerprint,compile_region
+from hand_patch_authoring import hand_mesh,custom_patch
 
 JOBS=ROOT/'reports/scene-region-jobs'
-METHODS=['scene_region_job.py','fit_scene_regions.py','audit_scene_region_fit.py','region_contact_objective.py',
+METHODS=['scene_region_job.py','hand_patch_authoring.py','fit_scene_regions.py','audit_scene_region_fit.py','region_contact_objective.py',
          'compile_scene_regions.py','scene_region_contact.py','support_contact_v8.py','scene_constraints.py',
          'scene_solver_context.py','paired_palm_region.py','palm_contacts.py','floor_contact.py','object_geometry.py',
          'scene_release_job.py','compile_scene_contacts.py','contact_spec.py','support_contact.py','support_contact_v5.py',
@@ -59,7 +60,8 @@ def metadata(url):
             contacts.append(dict(id=c['id'],actor=c['actor'],hand=c['effector']['joint'],supported=True,
                 edit=dict(id=c['id'],start_frame=c['start_frame'],end_frame=c['end_frame'],point_m=c['target']['point_m'],
                     anchor_tolerance_m=c.get('tolerance_m',.005),patch_mode=mode,patch_radius_m=.045,patch_normal_degrees=60.,limits=binding['limits']),
-                target_object=c['target']['object'],anchor_vertex=anchor,patch_vertices=len(np.unique(skin['faces'][binding['face_ids']]))))
+                target_object=c['target']['object'],anchor_vertex=anchor,patch_vertices=len(np.unique(skin['faces'][binding['face_ids']])),
+                patch_face_ids=binding['face_ids'],hand_mesh=hand_mesh(skin,c['effector']['joint'])))
         except (ValueError,KeyError,IndexError) as exc:
             contacts.append(dict(id=c['id'],actor=c['actor'],supported=False,reason=str(exc)))
     return dict(source_url=url,revision=revision(source),frames=scene['frame_count'],actors=list(scene['actors']),contacts=contacts,
@@ -81,6 +83,7 @@ def validate(payload):
     skin=dict(np.load(ASSET,allow_pickle=False))
     for edit in edits:
         keys={'id','start_frame','end_frame','point_m','anchor_tolerance_m','patch_mode','patch_radius_m','patch_normal_degrees','limits'}
+        if edit.get('patch_mode')=='custom':keys|={'patch_mesh_sha256','patch_face_ids'}
         if set(edit)!=keys:raise ValueError('Invalid region contact fields')
         matches=[c for c in scene['contacts'] if c['id']==edit['id'] and c['actor']==actor]
         if len(matches)!=1:raise ValueError('Contact must belong to the selected actor')
@@ -93,7 +96,9 @@ def validate(payload):
             if type(radius) not in [int,float] or not .01<=radius<=.06 or type(angle) not in [int,float] or not 5<=angle<=85:
                 raise ValueError('Patch radius must be 1–6 cm and selection angle 5–85 degrees')
             binding,anchor=suggested_patch(skin,c,radius,angle)
-        else:raise ValueError('Choose a saved or suggested palm region')
+        elif edit['patch_mode']=='custom':
+            binding,anchor=custom_patch(skin,c,edit)
+        else:raise ValueError('Choose a saved, suggested or painted hand region')
         binding['limits']=copy.deepcopy(edit['limits']);c['region_contact']=binding
         c['effector']=dict(joint=binding['hand'],surface_vertex=anchor)
         c['start_frame']=edit['start_frame'];c['end_frame']=edit['end_frame'];c['target']['point_m']=edit['point_m'];c['tolerance_m']=edit['anchor_tolerance_m']

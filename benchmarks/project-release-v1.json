@@ -849,6 +849,7 @@
         "reports/sphere-region-track-v2-audit/verification.json",
         "reports/sphere-region-track-engine-v1/verification.json",
         "docs/studio-region-fitting-v1.md",
+        "docs/studio-hand-selection-v1.md",
         "docs/studio-grip-picking-v1.md",
         "docs/scene-region-fitting-v14.md",
         "docs/scene-region-authoring-v1.md",

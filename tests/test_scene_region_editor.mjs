@@ -18,6 +18,7 @@ const storage=new Map();globalThis.localStorage={getItem:k=>storage.get(k)||null
 const data={source_url:'/files/example/palm.json',revision:'version1',frames:10,contacts:[{id:'grip',actor:'A',hand:'LeftHand',target_object:'box',supported:true,
  edit:{id:'grip',start_frame:2,end_frame:6,point_m:[.2,.1,0],anchor_tolerance_m:.005,patch_mode:'saved',patch_radius_m:.045,patch_normal_degrees:60,
  limits:{clearance_m:.002,contact_gap_m:.003,spacing_m:.006,area_m2:.000025,centroid_error_m:.005,local_radius_m:.02,normal_degrees:10}}}]};
+data.contacts[0].hand_mesh={mesh_sha256:'meshA'};data.contacts[0].patch_face_ids=[4,5];
 let posted=null,completed=null,changed=false,preview=null,pickRequests=0,cancellations=0;
 globalThis.fetch=async(url,options)=>{
  if(url.startsWith('/api/scene-region-source'))return {ok:true,json:async()=>structuredClone(data)};
@@ -42,6 +43,13 @@ assert.deepEqual(posted.contacts[0].point_m,[.2,.137425,.021625]);assert(cancell
 assert.equal(posted.label,'Edited grip');assert.equal(completed,'scene-region-jobs/job1');
 assert.match(el('Status').textContent,/Needs correction/);assert.match(el('Status').textContent,/Motion regressions/);
 assert.equal(storage.get('strep:region-active-job'),undefined);
+editor.setHandFaces([4,5],'meshA');assert.equal(el('PatchMode').value,'custom');
+await editor.bind(data.source_url);assert.deepEqual(preview.edit.patch_face_ids,[4,5]);
+editor.setHandFaces([],'meshA');posted=null;await el('Apply').onclick();assert.equal(posted,null);assert.match(el('Status').textContent,/Select hand triangles/);
+editor.setHandFaces([4],'meshA');await el('Apply').onclick();for(let i=0;i<5;i++)await new Promise(resolve=>setImmediate(resolve));
+assert.deepEqual(posted.contacts[0].patch_face_ids,[4]);assert.equal(posted.contacts[0].patch_mesh_sha256,'meshA');
+el('PatchMode').value='saved';el('PatchMode').events.input();await el('Apply').onclick();for(let i=0;i<5;i++)await new Promise(resolve=>setImmediate(resolve));
+assert.equal(posted.contacts[0].patch_face_ids,undefined);assert.equal(posted.contacts[0].patch_mesh_sha256,undefined);
 editor.reset();assert.equal(el('Apply').disabled,true);
 assert.equal(el('Pick').disabled,true);assert.equal(preview,null);el('Pick').onclick();assert.equal(pickRequests,1);
 globalThis.localStorage={getItem(){throw Error('Storage denied');},setItem(){throw Error('Storage denied');},removeItem(){throw Error('Storage denied');}};
