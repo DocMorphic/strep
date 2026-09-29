@@ -355,7 +355,8 @@
         "docs/contact-breadth-crawl-v1.md",
         "docs/contact-breadth-kick-v1.md",
         "docs/contact-breadth-jump-v1.md",
-        "docs/preserved-export-repair-v1.md"
+        "docs/preserved-export-repair-v1.md",
+        "docs/local-edit-preservation-v1.md"
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
@@ -801,7 +802,8 @@
         "docs/contact-breadth-crawl-v1.md",
         "docs/contact-breadth-kick-v1.md",
         "docs/contact-breadth-jump-v1.md",
-        "docs/preserved-export-repair-v1.md"
+        "docs/preserved-export-repair-v1.md",
+        "docs/local-edit-preservation-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -2705,7 +2707,8 @@
         "docs/contact-breadth-crawl-v1.md",
         "docs/contact-breadth-kick-v1.md",
         "docs/contact-breadth-jump-v1.md",
-        "docs/preserved-export-repair-v1.md"
+        "docs/preserved-export-repair-v1.md",
+        "docs/local-edit-preservation-v1.md"
       ]
     }
   ],
@@ -2917,6 +2920,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T19:41:04.774884+00:00",
-  "last_progress": "The combined held-pose/export-correction experiment completes three retained variants and 852 additional Godot observations. Both waving variants retain full contact/rate/floor passes with exact outside-window decoded preservation. Crawl-22 repairs approach/global acceleration but introduces a release-acceleration failure after serialization/export and stays rejected. Its earlier constant native speed violation at frames 8\u20138.25 is removed by exact held restoration; exported acceleration peaks occur inside the edit window. Original batch methods remain frozen and running; no release approval. Original kick-22 also completed: pins/floor/global rates and engine pass, but hold acceleration and a new foot-sliding flag remain. Seven original cases are verified; final jump/landing is pending. The final jump/landing case also completed, retaining two pin misses and four point-phase rate excesses. Both workers exited successfully. All eight original cases are hash-verified: one contact-screen pass and 2,272 passing engine observations. Historical frozen verification and production integration are next; all release approvals remain pending."
+  "last_progress_at": "2026-09-29T19:50:38.472103+00:00",
+  "last_progress": "Production local contact fitting restores exact held native poses from the original or warm-start seed, retaining every free fitted key. Seventy focused tests pass. Two real character export smoke tests preserve 22 locked keys each and all 160 combined outside samples exactly; NPZ/BVH/GLB/eight-weight checks pass. The read-only historical archive verifier preserves all eight original outcomes and 2,272 recorded engine observations after solver changes, while current-code stale-job checks still reject old methods. No new contact/engine/human quality approval; export-feedback correction and larger joint-pose failures remain open."
 }

@@ -358,3 +358,6 @@ Latest integration experiment: [preserved-pose export correction](preserved-expo
 
 
 The [eight-case contact batch](contact-breadth-v1.md#completed-frozen-batch) is complete: one original contact-screen pass, eight engine passes and 2,272 actual pose observations. Both workers exited successfully. Next work can integrate tested held-pose preservation after establishing historical snapshot verification, then improve export-aware correction and joint-pose fitting. The broad product goal and all release requirements remain open.
+
+
+Production local contact fitting now [preserves held poses exactly](local-edit-preservation-v1.md), including the correct warm-start clip. Seventy focused tests pass, and two real character exports retain exactly zero outside-window joint/basis/full-skin differences at 160 combined samples. Historical verification still checks all eight original cases against saved method snapshots; the current-code verifier correctly rejects stale jobs. Export-feedback correction, larger joint-pose failures and all release capabilities remain unresolved.

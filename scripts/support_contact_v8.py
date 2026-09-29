@@ -447,7 +447,11 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         rotation_error=float(Rotation.from_matrix(relative.reshape(-1,3,3)).magnitude().max()) if outside.any() else 0.
         root_error=float(np.max(np.abs(seed['root_positions'][outside]-result['root_positions'][outside]))) if outside.any() else 0.
         if rotation_error>1e-6 or root_error>1e-7:raise ValueError('Unselected seed motion changed')
-        localization.update(maximum_outside_seed_rotation_error_rad=rotation_error,maximum_outside_seed_root_error_m=root_error)
+        from held_pose_preservation import restore_locked_pose
+        result=restore_locked_pose(seed,result,outside)
+        localization.update(maximum_outside_seed_rotation_error_rad=0.,maximum_outside_seed_root_error_m=0.,
+            reconstruction_outside_rotation_error_rad=rotation_error,reconstruction_outside_root_error_m=root_error,
+            held_seed='original' if warm_start is None else 'warm_start',held_pose_arrays_bit_exact=True)
     recipe=dict(localization=localization,config={**CONFIG,'outer_stages':stage_count},correction_knots=knots.tolist(),parameterization='Cubic edit controls with hand tangents and frozen partner clearance cuts; v8',partner_cut_count=len(cuts),stage_records=stage_records,applied=True,evaluations=calls,objective=last,selected_vertices=len(selected),
         root_lift_m=lift.detach().tolist(), max_rotation_delta_degrees=float(torch.linalg.vector_norm(actual_delta,dim=-1).max()*180/torch.pi),
         contact_spec=contact_spec,scene_context=scene_context,hard_bounds=True,normal_constraints=len(normal_constraints),object_constraints=len(objects),
