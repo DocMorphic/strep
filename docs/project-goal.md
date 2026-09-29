@@ -316,3 +316,6 @@ Latest Studio correction: [fit saved checked pins](studio-checked-fit-v1.md) bin
 
 
 Latest contact diagnosis: [matched point-scaling comparison](checked-point-scaling-v1.md) reduces pin error from 99.58 to 5.28 mm but increases floor penetration from 10.40 to 83.25 mm. The fitting subset already sees 82.41 mm, so sampling alone cannot fix the soft collision tradeoff. Nineteen focused tests and 407 engine observations pass. Default behavior retained; next constrain floor regressions while fitting pins. No release gates approved.
+
+
+Latest checked-contact work: [full-mesh floor preservation](checked-floor-guard-v1.md) reduces floor penetration from 83.25 to 2.20 mm with zero measured added depth at all 717 export samples. Pin accuracy and some rate/support screens still fail. Thirty-eight tests and 407 actual engine observations pass; default behavior stays unchanged and all release gates remain open.

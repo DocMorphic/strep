@@ -19,9 +19,10 @@ from evaluate_contact_spec import evaluate as evaluate_targets
 from export_actions import sequence_diagnostics
 
 
-def run(source,spec_path,output,checked_plan=None,*,authored_point_scaling="metres"):
+def run(source,spec_path,output,checked_plan=None,*,authored_point_scaling="metres",export_floor_guard=False):
     if authored_point_scaling not in ["metres","tolerance"]:raise ValueError("Unknown authored point scaling")
     if checked_plan is None and authored_point_scaling!="metres":raise ValueError("Point scaling requires a checked plan")
+    if type(export_floor_guard)!=bool or (export_floor_guard and checked_plan is None):raise ValueError('Floor guard requires a checked plan')
     source=Path(source).resolve();output=Path(output).resolve()
     skin=dict(np.load(ASSET));base=dict(np.load(source/'limb/motion.npz'))
     previous=dict(np.load(source/'motion.npz'));raw=dict(np.load(source/'raw/motion.npz'))
@@ -41,7 +42,7 @@ def run(source,spec_path,output,checked_plan=None,*,authored_point_scaling="metr
         checked_reference=read(checked_plan/'rate-reference.json')
         if guard.record()!=checked_reference:raise ValueError('Recomputed rate reference differs from checked policy')
         fit_options=dict(edit_window=options['edit_window'],export_rate_guard=True,export_point_rate_guard=True,
-            skin_backend='sparse',root_coordinate_mode='physical_box',outer_stage_count=2,iteration_count=60,authored_point_scaling=authored_point_scaling)
+            skin_backend='sparse',root_coordinate_mode='physical_box',outer_stage_count=2,iteration_count=60,authored_point_scaling=authored_point_scaling,export_floor_guard=export_floor_guard)
     parent=read(source/'evidence.json')
     if 'body_correction' not in parent:raise ValueError('This editor currently requires a body-corrected source take')
     output.mkdir(parents=True,exist_ok=False)
@@ -79,6 +80,7 @@ def run(source,spec_path,output,checked_plan=None,*,authored_point_scaling="metr
                 save(path/'checked-export-audit.json',export_audit)
                 save(path/'checked-rate-reference.json',checked_reference)
                 if not export_audit['all_requested_pin_samples_within_5mm']:evaluation['flags'].append('exported_checked_pins_missed')
+                if export_floor_guard and export_audit['floor_nonregression']['samples_over_1um_numerical_budget']:evaluation['flags'].append('exported_floor_nonregression_missed')
                 if not export_audit['outside_preservation_passed']:evaluation['flags'].append('exported_outside_window_changed')
                 if any(max(row['candidate_excess_over_checked'])>0 for row in export_audit['phase_rates']):evaluation['flags'].append('exported_point_rate_excess')
             evaluation['screen_status']='flagged' if evaluation['flags'] else 'within_provisional_screen'

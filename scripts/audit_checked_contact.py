@@ -45,7 +45,12 @@ def audit(source,candidate,spec,window,reference):
             candidate_excess_over_checked=[max(0.,p-c) for p,c in zip(variants['candidate'],row['reference_ceilings'])]))
     names=[rigs[1].document['nodes'][j].get('name',str(j)) for j in rigs[1].joints]
     preservation=summarize(rows,window,frames)
-    return dict(samples=count,contacts=contacts,phase_rates=phases,preservation=preservation,
+    floor_excess=np.maximum(0.,np.array(depths[1])-np.array(depths[0]))
+    floor_nonregression=dict(maximum_added_depth_m=float(floor_excess.max()),
+        samples_over_1um_numerical_budget=int((floor_excess>1e-6).sum()),
+        maximum_added_depth_frame=float(floor_excess.argmax()/4),
+        numerical_budget_m=1e-6,scope='Per-time decoded full-mesh depth difference; raw excess retained. Numerical budget only classifies export precision, not a solver depth allowance.')
+    return dict(samples=count,contacts=contacts,phase_rates=phases,preservation=preservation,floor_nonregression=floor_nonregression,
         variants={label:dict(maximum_floor_depth_m=max(depths[v]),joints=rates(np.array(joints[v]),1/120,names)) for v,label in enumerate(['source','candidate'])},
         all_requested_pin_samples_within_5mm=all(c['samples_over_5mm']==0 for c in contacts),
         outside_preservation_passed=preservation['all_outside_times']['within_numerical_tolerance'],

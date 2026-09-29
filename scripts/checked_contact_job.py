@@ -3,6 +3,7 @@ import re
 import shutil
 from pathlib import Path
 from strep import ROOT,read,save,sha256
+from build_soma_preview import ASSET
 
 RATE_METHODS=['export_point_rate_objective.py','export_motion_sampling.py','linear_skin_operator.py',
               'floor_contact.py','contact_spec.py','support_contact.py','inspect_motion.py']
@@ -24,6 +25,7 @@ def validate_request(payload):
         path=(folder/name).resolve()
         if not path.is_relative_to(folder.resolve()) or sha256(path)!=h:raise ValueError('Checked artifact changed')
     freeze=read(folder/'freeze.json')
+    if sha256(ASSET)!=freeze.get('mesh_sha256'):raise ValueError('Contact mesh changed; run a new timing check')
     if sha256(folder/'edit-request.json')!=freeze['request_sha256'] or sha256(folder/'contact-spec.json')!=freeze['spec_sha256']:
         raise ValueError('Checked request changed')
     if read(folder/'edit-request.json')['options']['edit_window']!=result['requested_window']:
@@ -59,12 +61,13 @@ def prepare(payload,folder):
         shutil.copyfile(p,folder/'implementation'/p.name);implementation[p.name]=sha256(p)
     inputs={p.relative_to(folder).as_posix():sha256(p) for root in [folder/'source-take',folder/'checked-plan'] for p in root.rglob('*') if p.is_file()}
     inputs['edit-request.json']=sha256(folder/'edit-request.json')
-    save(folder/'checked-freeze.json',dict(implementation=implementation,inputs=inputs))
+    save(folder/'checked-freeze.json',dict(implementation=implementation,inputs=inputs,mesh_sha256=sha256(ASSET)))
     save(folder/'pipeline.json',dict(status='starting',kind='checked_fit'))
 
 
 def verify(folder):
     frozen=read(folder/'checked-freeze.json')
+    if sha256(ASSET)!=frozen.get('mesh_sha256'):raise ValueError('Guarded-job mesh changed')
     if any(sha256(folder/n)!=h for n,h in frozen['inputs'].items()):raise ValueError('Guarded-job input changed')
     if any(sha256(ROOT/'scripts'/n)!=h for n,h in frozen['implementation'].items()):raise ValueError('Guarded-job implementation changed')
 

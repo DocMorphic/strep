@@ -9,6 +9,7 @@ from strep import save,sha256
 @pytest.fixture
 def bound_check(tmp_path,monkeypatch):
     monkeypatch.setattr(job,'ROOT',tmp_path)
+    asset=tmp_path/'mesh.npz';asset.write_bytes(b'opaque mesh');monkeypatch.setattr(job,'ASSET',asset)
     check=tmp_path/'reports/contact-jobs/check1';source=tmp_path/'reports/native/take'
     (check/'source').mkdir(parents=True);source.mkdir(parents=True);(tmp_path/'scripts').mkdir()
     inputs={}
@@ -19,7 +20,7 @@ def bound_check(tmp_path,monkeypatch):
         (tmp_path/'scripts'/name).write_text('opaque version');implementation[name]=sha256(tmp_path/'scripts'/name)
     save(check/'edit-request.json',dict(options=dict(edit_window=[2,17])))
     save(check/'contact-spec.json',{});save(check/'bound-contact-spec.json',{})
-    save(check/'freeze.json',dict(inputs=inputs,implementation=implementation,
+    save(check/'freeze.json',dict(inputs=inputs,implementation=implementation,mesh_sha256=sha256(asset),
         request_sha256=sha256(check/'edit-request.json'),spec_sha256=sha256(check/'contact-spec.json')))
     save(check/'timing-result.json',dict(status='checked',conflicts=0,source='native/take',requested_window=[2,17],
         files={n:sha256(check/n) for n in ['freeze.json','bound-contact-spec.json']}))
@@ -54,3 +55,15 @@ def test_conflicting_check_cannot_start_fit(bound_check):
 def test_calculation_version_change_requires_new_check(bound_check):
     payload,_,_=bound_check;(job.ROOT/'scripts'/job.RATE_METHODS[0]).write_text('new version')
     with pytest.raises(ValueError,match='Rate calculation changed'):job.validate_request(payload)
+
+
+def test_mesh_change_requires_new_check(bound_check):
+    payload,_,_=bound_check;job.ASSET.write_bytes(b'changed mesh outside pinned point')
+    with pytest.raises(ValueError,match='Contact mesh changed'):job.validate_request(payload)
+
+
+def test_mesh_change_after_job_snapshot_is_rejected(tmp_path,monkeypatch):
+    asset=tmp_path/'mesh.npz';asset.write_bytes(b'mesh');monkeypatch.setattr(job,'ASSET',asset)
+    save(tmp_path/'checked-freeze.json',dict(implementation={},inputs={},mesh_sha256=sha256(asset)))
+    job.verify(tmp_path);asset.write_bytes(b'changed')
+    with pytest.raises(ValueError,match='Guarded-job mesh changed'):job.verify(tmp_path)

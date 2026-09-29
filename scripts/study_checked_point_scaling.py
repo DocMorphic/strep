@@ -11,7 +11,7 @@ from checked_contact_job import prepare, verify
 from run_contact_edit import run as edit
 
 
-def run(check_id, output, control):
+def run(check_id, output, control, *, floor_guard=False):
     output, control = Path(output).resolve(), Path(control).resolve()
     if output.parent != ROOT / 'reports/contact-jobs' or output.exists():
         raise ValueError('Fresh immediate contact-job folder required')
@@ -28,9 +28,9 @@ def run(check_id, output, control):
         raise ValueError('Comparison source or checked policy differs')
     save(output/'worker.json', dict(pid=os.getpid(), created_at=psutil.Process().create_time()))
     protocol = dict(check=payload, control=control.relative_to(ROOT).as_posix(),
-                    control_inputs=control_hashes, authored_point_scaling='tolerance',
+                    control_inputs=control_hashes, authored_point_scaling='tolerance', export_floor_guard=floor_guard,
                     outer_stages=2, iterations_per_stage=60, quality_approved=False,
-                    scope='Development comparison: only explicit point residual scaling changes; '
+                    scope='Development comparison: explicit point scaling plus optional full-skin floor inequalities; '
                           'same targets, edit budgets, rates, initializer and iteration limits. '
                           'The default Studio fitter remains in metres.')
     save(output/'scaling-protocol.json', protocol)
@@ -40,7 +40,7 @@ def run(check_id, output, control):
     try:
         verify(output)
         edit(output/'source-take', output/'checked-plan/bound-contact-spec.json',
-             output/'result', checked_plan=output/'checked-plan', authored_point_scaling='tolerance')
+             output/'result', checked_plan=output/'checked-plan', authored_point_scaling='tolerance', export_floor_guard=floor_guard)
         verify(output)
         assert sha256(output/'scaling-protocol.json') == protocol_hash
         assert all(sha256(control/name) == h for name, h in control_hashes.items())
@@ -58,5 +58,6 @@ if __name__ == '__main__':
     parser.add_argument('check_id')
     parser.add_argument('output')
     parser.add_argument('control')
+    parser.add_argument('--floor-guard', action='store_true')
     args = parser.parse_args()
-    run(args.check_id, args.output, args.control)
+    run(args.check_id, args.output, args.control, floor_guard=args.floor_guard)

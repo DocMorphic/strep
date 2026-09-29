@@ -28,3 +28,18 @@ def test_every_interval_and_outside_export_are_checked():
     assert result['contacts'][1]['samples_over_5mm']>0
     assert not result['all_requested_pin_samples_within_5mm'] and not result['outside_preservation_passed']
     assert result['phase_rates'][1]['candidate_excess_over_checked'][0]>0
+
+
+def test_floor_regression_cannot_hide_below_source_global_peak():
+    class FloorClock(Clock):
+        def sample(self,t):
+            m=np.eye(4)[None]
+            m[0,1,3]=-.02 if t<1/30 else (-.01 if self.candidate else 0.)
+            return m
+    spec=dict(frame_count=3,regions={'LeftFoot':dict(mode='explicit',segments=[
+        dict(start_frame=0,end_frame=2,vertex_id=0,space='world',position_m=[0.,0.,0.])])})
+    with patch('audit_checked_contact.RigAsset.load',side_effect=[Rig(False),Rig(True)]),patch('audit_checked_contact.AnimationSampler',FloorClock):
+        result=audit('source','candidate',spec,[0,2],dict(rows=[]))
+    assert result['variants']['source']['maximum_floor_depth_m']==result['variants']['candidate']['maximum_floor_depth_m']==.02
+    assert result['floor_nonregression']['maximum_added_depth_m']==.01
+    assert result['floor_nonregression']['samples_over_1um_numerical_budget']==5

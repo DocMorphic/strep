@@ -345,7 +345,8 @@
         "docs/contact-window-preflight-v1.md",
         "docs/studio-contact-timing-v1.md",
         "docs/studio-checked-fit-v1.md",
-        "docs/checked-point-scaling-v1.md"
+        "docs/checked-point-scaling-v1.md",
+        "docs/checked-floor-guard-v1.md"
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
@@ -781,7 +782,8 @@
         "docs/contact-window-preflight-v1.md",
         "docs/studio-contact-timing-v1.md",
         "docs/studio-checked-fit-v1.md",
-        "docs/checked-point-scaling-v1.md"
+        "docs/checked-point-scaling-v1.md",
+        "docs/checked-floor-guard-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1051,7 +1053,8 @@
         "docs/contact-window-preflight-v1.md",
         "docs/studio-contact-timing-v1.md",
         "docs/studio-checked-fit-v1.md",
-        "docs/checked-point-scaling-v1.md"
+        "docs/checked-point-scaling-v1.md",
+        "docs/checked-floor-guard-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -2665,7 +2668,8 @@
         "docs/contact-window-preflight-v1.md",
         "docs/studio-contact-timing-v1.md",
         "docs/studio-checked-fit-v1.md",
-        "docs/checked-point-scaling-v1.md"
+        "docs/checked-point-scaling-v1.md",
+        "docs/checked-floor-guard-v1.md"
       ]
     }
   ],
@@ -2877,6 +2881,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T16:20:54.115192+00:00",
-  "last_progress": "Matched checked-pin scaling experiment reduces maximum contact error 99.5805 to 5.28119 mm (81 to 6 failing samples), but worsens floor depth 10.3989 to 83.2522 mm and retains rate violations. Solver subset already sees 82.4112 mm penetration, identifying soft floor tradeoff rather than only omitted vertices. Default retained; 19 focused tests and 407 actual engine observations pass, no release approval."
+  "last_progress_at": "2026-09-29T16:31:03.611349+00:00",
+  "last_progress": "Full-skin quarter-frame floor guard eliminates per-time added depth in the matched pin trial: peak 83.2522 to 2.19759 mm versus source 2.33564 mm. Pin error remains 5.36849 mm (8/81 misses), with hold/release rate and support failures; default unchanged. Floor proxy agrees within 1.45e-7 m; 38 Python tests and 407 Godot observations pass. Saved checked fits now enforce mesh hashes before and after execution. No release gate approved."
 }
