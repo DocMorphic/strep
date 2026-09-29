@@ -349,3 +349,6 @@ Fifth breadth result: [wave seed 22](contact-breadth-wave-v1.md#seed-22-a-feasib
 
 
 Additional development result: [targeted export headroom](contact-breadth-wave-v1.md#isolated-targeted-headroom-experiment) repairs wave seed 11 under every original exported limit with a 1.25-micrometre root change. Seed 22 rejects the stronger search target; a horizontal-speed bound shows its requested margin exceeds root-only capacity, without proving the original cap infeasible. Both separate exports pass 568 new Godot observations in total. Keep these alternatives separate from the frozen breadth outcomes, and bound future margins by geometry. All release capabilities remain unapproved.
+
+
+Latest correction evidence: [geometry-limited export headroom](contact-breadth-wave-v1.md#geometry-limited-headroom-both-waving-seeds-pass) makes both separate waving variants pass all original exported pin/rate/floor checks and 568 new Godot observations. Seed 11 reproduces its previous successful native output; seed 22 uses the smaller margin permitted by horizontal motion. This fixes measured precision failures without establishing perceptual realism. Production integration waits for both frozen workers; larger joint-pose failures and all release capabilities remain open.
