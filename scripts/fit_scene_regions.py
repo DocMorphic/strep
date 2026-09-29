@@ -20,7 +20,7 @@ from scene_constraints import evaluate
 from action_worker_lock import worker_lock
 
 
-def run(scene_path,actor,ids,output,stages=3,iterations=40,seconds=600,region_loss='worst',full_object_skin=False):
+def run(scene_path,actor,ids,output,stages=3,iterations=40,seconds=600,region_loss='worst',full_object_skin=False,object_constraint_mode='maximum'):
     if type(seconds) not in [int,float] or not np.isfinite(seconds) or seconds<=0:
         raise ValueError('Positive finite time budget required')
     scene_path,output=Path(scene_path).resolve(),Path(output).resolve()
@@ -48,7 +48,7 @@ def run(scene_path,actor,ids,output,stages=3,iterations=40,seconds=600,region_lo
     shutil.copyfile(source_path,output/'source-motion.npz')
     save(output/'authored-scene.json',scene);save(output/'region-constraints.json',package)
     save(output/'protocol.json',dict(at=now(),solver_version=14,actor=actor,contact_ids=ids,inputs=inputs,
-        implementation=hashes,stages=stages,iterations=iterations,seconds_budget=seconds,region_loss=region_loss,full_object_skin=full_object_skin,
+        implementation=hashes,stages=stages,iterations=iterations,seconds_budget=seconds,region_loss=region_loss,full_object_skin=full_object_skin,object_constraint_mode=object_constraint_mode,
         source_relative_bounds=True,config=CONFIG,quality_approved=False,
         scope='Whole-clip source-relative bounded edits. Region witness triples frozen from input. No release guard added implicitly, no partner solve or feasibility guarantee.'))
     started=time.monotonic();history=[]
@@ -62,7 +62,7 @@ def run(scene_path,actor,ids,output,stages=3,iterations=40,seconds=600,region_lo
             objective=RegionObjective(package,source,skin,region_loss)
             result,recipe=refine(source,source,skin,progress,source,package['anchor_subproblem'],context,
                 finger_edits=True,physical_finger_parameters=True,object_inequalities=True,
-                outer_stage_count=stages,region_fitting=objective,iteration_count=iterations,full_object_skin=full_object_skin)
+                outer_stage_count=stages,region_fitting=objective,iteration_count=iterations,full_object_skin=full_object_skin,object_constraint_mode=object_constraint_mode)
         for path,digest in inputs.items():
             if sha256(path)!=digest:raise ValueError('Fitting input changed')
         for name,digest in hashes.items():
@@ -95,4 +95,5 @@ if __name__=='__main__':
     p.add_argument('--stages',type=int,default=3);p.add_argument('--iterations',type=int,default=40);p.add_argument('--seconds',type=float,default=600)
     p.add_argument('--region-loss',choices=['worst','balanced'],default='worst')
     p.add_argument('--full-object-skin',action='store_true')
-    a=p.parse_args();run(a.scene,a.actor,a.contact,a.output,a.stages,a.iterations,a.seconds,a.region_loss,a.full_object_skin)
+    p.add_argument('--object-constraint-mode',choices=['maximum','per_vertex'],default='maximum')
+    a=p.parse_args();run(a.scene,a.actor,a.contact,a.output,a.stages,a.iterations,a.seconds,a.region_loss,a.full_object_skin,a.object_constraint_mode)

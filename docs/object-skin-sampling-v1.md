@@ -38,3 +38,5 @@ In a provisioned workspace with the retained fixture:
 For another authored scene, use the commands in [region fitting](scene-region-fitting-v14.md), adding `--full-object-skin` to the fitting command. The comparison runner depends on a locally generated development fixture; it is not a self-contained public benchmark download. Output directories must be fresh. Raw evidence remains locally under `reports/region-box-sampling-v1` and `reports/region-box-sampling-diagnostic-v1.json`.
 
 The optimizer checks full vertex coverage at native keys only. This does not guarantee collision-free triangle interiors, continuous time, self-collision, anatomical feasibility, forces, or human realism. No model was trained or changed, no held-out trial was consumed, and all 14 release capabilities remain unapproved. Further solver work must address the remaining constraints; repeating iterations on this fixture cannot establish broad action coverage.
+
+Follow-up: [separate per-vertex object constraints](object-vertex-constraints-v1.md) improve sampled clearance further while retaining contact and temporal failures.
