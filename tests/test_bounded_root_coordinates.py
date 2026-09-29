@@ -55,3 +55,12 @@ def test_invalid_reference_and_parameter_layouts_are_rejected():
     for params in [torch.zeros(3, dtype=torch.float64), torch.zeros(2), torch.full((2,), float('nan'), dtype=torch.float64)]:
         with pytest.raises(ValueError, match='layout'):
             coordinate(params)
+
+
+def test_solver_and_cli_reject_unknown_mode_before_loading_assets():
+    from support_contact_v8 import refine
+    from fit_scene_regions import run
+    with pytest.raises(ValueError, match='root coordinate mode'):
+        refine(None, None, None, root_coordinate_mode='unknown')
+    with pytest.raises(ValueError, match='root coordinate mode'):
+        run(None, 'A', [], None, root_coordinate_mode='unknown')

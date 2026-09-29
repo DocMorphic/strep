@@ -104,7 +104,8 @@ def object_sampling_layout(selected,vertex_count,full):
     return ids,np.searchsorted(ids,original)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather"):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy"):
+    if root_coordinate_mode not in ["legacy","scaled_initial"]:raise ValueError("Unknown root coordinate mode")
     if object_constraint_mode not in ["maximum","per_vertex"]:raise ValueError("Unknown object constraint mode")
     if object_constraint_mode!="maximum" and not object_inequalities:raise ValueError("Per-vertex constraints require object inequalities")
     if skin_backend not in ["gather","sparse"]:raise ValueError("Unknown skin backend")
@@ -152,13 +153,21 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         with torch.no_grad():delta.copy_(tensor(controls))
     def smooth_delta():return torch.einsum('fk,kjd->fjd',basis,delta)
     initial_lift=tensor((previous if warm_start is None else warm_start)['root_positions'][:,1]-base['root_positions'][:,1])
-    unit=(initial_lift/CONFIG['max_root_lift_m']).clamp(1e-4,1-1e-4)
-    lift_parameters=torch.logit(unit).clone().requires_grad_()
+    root_coordinates=None
+    if root_coordinate_mode=='legacy':
+        unit=(initial_lift/CONFIG['max_root_lift_m']).clamp(1e-4,1-1e-4)
+        lift_parameters=torch.logit(unit).clone().requires_grad_()
+    else:
+        from bounded_root_coordinates import BoundedRootCoordinates
+        root_coordinates=BoundedRootCoordinates(initial_lift,CONFIG['max_root_lift_m'])
+        lift_parameters=root_coordinates.initial_parameters().requires_grad_()
+    def root_lift():
+        return bounded_lift(lift_parameters,CONFIG['max_root_lift_m']) if root_coordinates is None else root_coordinates(lift_parameters)
     lookup={j:i for i,j in enumerate(editable)}
     reference=tensor((base if raw is None else raw)['posed_joints'])
     def fk():
         change=rodrigues(bounded_edits(smooth_delta()));r=[];p=[];locals=[]
-        lift=bounded_lift(lift_parameters,CONFIG['max_root_lift_m'])
+        lift=root_lift()
         for j,parent in enumerate(parents):
             local=initial[:,j] if j not in lookup else initial[:,j]@change[:,lookup[j]]
             locals.append(local)
@@ -335,7 +344,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             point_penalty*=CONFIG['penalty_growth'];normal_penalty*=CONFIG['penalty_growth'];cut_penalty*=CONFIG['penalty_growth']
     with torch.no_grad():
         _,_,local=fk()
-        lift=bounded_lift(lift_parameters,CONFIG['max_root_lift_m'])
+        lift=root_lift()
         actual_delta=bounded_edits(smooth_delta())
     shifted={k:v.copy() for k,v in base.items()};shifted['root_positions'][:,1]+=lift.detach().numpy()
     result=reconstruct(shifted,local.detach().numpy().copy(),parents);result.pop('smooth_root_pos',None)
@@ -345,6 +354,8 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         contact_normalization='Per explicit region, independently of inferred support duration; v3',
         support={k:dict(spans=c['spans'],active_frames=int(c['active'].sum()),provenance=c.get('provenance','inferred')) for k,c in contacts.items()},
         scope='Hard root/rotation budgets with augmented-Lagrangian contact inequalities (not guaranteed feasible); candidate only until full-mesh and regression checks pass. Sampled primitive clearance and oriented surface points only; frozen partner cuts are local approximations, not self/partner collision, anatomy or dynamics certification.')
+    recipe['root_coordinate_mode']=root_coordinate_mode
+    if root_coordinates is not None:recipe['root_coordinate_reference']=root_coordinates.record()
     if finger_edits:
         recipe['finger_edits']=dict(budgets_degrees={names[j]:v for j,v in fingers.items()},
             parameter_units='physical_radians_before_smooth_bound' if physical_finger_parameters else 'dimensionless_bound_fraction',

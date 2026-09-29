@@ -1,6 +1,6 @@
 # One project-wide goal: release-ready Strep
 
-Latest full-body result: the object-relative seed improves grip contact, but the following correction loses it: 482/490 exported contact samples fail while box penetration falls to 2.786 mm. Original bounds and all 360 Godot actor-frames pass without quality approval. A matched regional-multiplier trial is now running; see [the measured comparison](object-grip-initialization-v1.md). All 14 release capabilities remain unapproved.
+Latest full-body result: regional multipliers reduce failed exported contact samples from 482 to 327/490, but worsen box penetration from 2.786 to 27.872 mm and exceed source peak acceleration. Original bounds and all 360 Godot actor-frames pass without quality approval. Optional root-coordinate scaling now has 41 focused passing tests and a bit-identical legacy-default integration check; a full comparison is running. See [the measured comparison](object-grip-initialization-v1.md). All 14 release capabilities remain unapproved.
 
 Latest object-relative initialization: [moving grip study](object-grip-initialization-v1.md) reduces exported contact failures from 490 to 15 while preserving original edit bounds. Body penetration remains 38.99 mm; local temporal regressions remain visible. Fourteen focused tests and all 360 Godot actor-frames pass. The matched full-body trial subsequently completed with the failures recorded above; no release approval.
 

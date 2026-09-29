@@ -80,20 +80,39 @@ The root lift starts at 22 micrometres because the zero-lift seed is mapped thro
 
 Both a uniform root translation and a normalized physical-gradient direction pass central finite-difference checks at a 1-micrometre step, with relative discrepancies below 3.3e-11. A uniform upward step lowers the initial loss from 18.908899 to 18.908332; its derivative is -567.833592 objective units per metre. Individual physical gradients favor upward movement in 85 frames and downward movement in 95 frames. This rules out an identically zero root gradient at initialization; it does not establish final stationarity, the cause of the completed fit's failure, a feasible root trajectory, foot support or a successful reparameterization.
 
-The current regional-multiplier comparison remains unchanged. Root-coordinate scaling is a separate candidate experiment after that matched run, retaining the original 0-0.22 m bounds and exact starting motion. An optimizer change must demonstrate its own contact, geometry and temporal results; gradient rescaling alone is not an animation improvement.
+The regional-multiplier comparison completed without changes during this diagnosis. Root-coordinate scaling is a separate candidate experiment after that matched run, retaining the original 0-0.22 m bounds and exact starting motion. An optimizer change must demonstrate its own contact, geometry and temporal results; gradient rescaling alone is not an animation improvement.
 
 ### Prepared coordinate helper
 
-`bounded_root_coordinates.py` implements a fixed diagonal rescaling around the legacy initial sigmoid state. Its zero-valued coordinates reproduce the old decoded starting pose exactly. Its scale is the initial lift derivative, giving unit derivative with respect to the new coordinate at initialization. Scaling stays frozen during a solve; later derivatives are not guaranteed to remain one. Finite coordinates still decode into the same 0-0.22 m lift interval, including floating-point saturation at the endpoints. No production scene-solver call or default currently uses this helper.
+`bounded_root_coordinates.py` implements a fixed diagonal rescaling around the legacy initial sigmoid state. Its zero-valued coordinates reproduce the old decoded starting pose exactly. Its scale is the initial lift derivative, giving unit derivative with respect to the new coordinate at initialization. Scaling stays frozen during a solve; later derivatives are not guaranteed to remain one. Finite coordinates still decode into the same 0-0.22 m lift interval, including floating-point saturation at the endpoints. The helper was initially isolated from production; the optional integration below now uses it. The default remains legacy.
 
 Five focused tests cover float32/float64 starting-pose identity and gradients, finite differences, extreme finite coordinate bounds, and invalid input layouts. A separate copy of the real fitting function changes only root initialization/decoding for a no-step probe. The initial loss is exactly 18.908899475238105 in both versions; the new coordinate gradient matches every previously measured physical root-gradient component exactly. Its central finite-difference discrepancy is 3.54e-8 relative at a 1e-9 coordinate step. The probe takes zero optimizer steps and writes no candidate motion.
 
-The isolated function copy, driver, input hashes and result remain in `reports/region-root-coordinate-probe-v1`. Production numerical source and the active regional-multiplier worker remain unchanged. Solver integration and an actual animation comparison are deferred until that worker and its audits have finished; the helper alone has no motion-quality approval.
+The isolated function copy, driver, input hashes and result remain in `reports/region-root-coordinate-probe-v1`. The isolated probe did not change production numerical source or the then-active regional-multiplier worker. That worker and its audits subsequently completed before the optional integration below; the helper alone has no motion-quality approval.
 
-## Next controlled experiment
+## Completed regional-multiplier comparison
 
-The fixed regional objective retains its weight throughout fitting, while object inequality penalties and multipliers increase between stages. This is a conditioning hypothesis for the lost contact, not proof of causation or feasibility. A follow-up now runs in `reports/region-object-grip-augmented-v1/guard` using the existing regional multiplier mode. Every protocol field except timestamp and `region_constraint_mode` matches the completed initialized control, including seed, source, implementation, margins, full skin, rate guard and iteration budget. No acceptance limit or default changed.
+The six-stage regional-multiplier trial completed in 1,644.0 seconds and 674 objective evaluations. Its protocol matches the fixed-region initialized control except timestamp and regional constraint mode, including implementation, inputs, seed, margins and budgets. All raw failures are retained.
 
-Regional multipliers update from accepted iterates and preserve unchanged constraint identities across witness refreshes. Twenty-four existing objective, inequality, witness-refresh and initializer tests pass. The earlier five-frame augmented experiment also failed and remains reported in `regional-constraints-warm-start-v1.md`; this longer comparison must be judged from its own outcome. Its exact-process completion watcher will audit the run after it finishes. The outcome remains pending.
+| Exported measurement | Fixed regional penalty | Regional multipliers |
+| --- | ---: | ---: |
+| Failed contact samples / 490 | 482 | 327 |
+| Failed body geometry samples / 717 | 219 | 284 |
+| Worst box penetration | 2.786049 mm | 27.872394 mm |
+| Global peak acceleration | 37.771181 m/s² | 39.515958 m/s² |
+| Release-boundary speed | 0.643522 m/s | 0.434537 m/s |
+| Release-boundary acceleration | 32.670875 m/s² | 20.745412 m/s² |
 
-All 14 release capabilities remain unapproved. The wider arbitrary-action, rig-transfer, editing, partner-interaction and human-validation work remains part of the same project goal.
+Contact improves but clearance becomes much worse. Global acceleration also exceeds the source's 37.982124 m/s² despite the optional optimization guard. Neither hand passes overall contact. Root lift remains approximately 22 micrometres. Original edit bounds pass; maximum rotation edit is 22.693982 degrees. Actual Godot import passes all 360 actor-frames and 77 joints with candidate position discrepancy below 0.316 micrometres. None of this approves motion quality.
+
+`reports/region-object-grip-augmented-v1/comparison.json` binds the comparison to its result and audit hashes; `compare.py` preserves the method. The failed candidate is available in Studio collection `object-grip-augmented-review-v1`. Twelve package hashes and eleven permitted offline file routes were verified; the Python provenance snapshot is intentionally not served by the route allowlist. No live browser or human review was performed.
+
+## Optional root-coordinate integration
+
+`fit_scene_regions.py --root-coordinate-mode scaled_initial` now selects the frozen initial-derivative scaling. Omitting the option preserves legacy behavior. The protocol, recipe and implementation snapshots record the selected mode and helper. Root range, original source-relative rotation bounds, contact limits and default behavior remain unchanged.
+
+Forty-one focused coordinate, initialization, regional constraint, witness, objective and job tests pass. An actual five-frame integration check runs two stages of two iterations for the frozen old solver, the current default and the scaled option. Every motion array in the old/current default comparison is bit-identical. All three runs satisfy original edit bounds and native FK discrepancy below 0.3 micrometres. The preserved method and bound inputs are in `reports/root-coordinate-integration-v1`. This short check verifies wiring and compatibility, not quality or convergence.
+
+A full 180-frame comparison is running in `reports/region-root-scaled-full-v1/guard`, initialized from the same object-relative grip seed. It uses six stages, 100 iterations, the 3,600-second budget, regional multipliers, full skin, per-vertex object inequalities, sparse skinning, stage witness refresh and the same margins/rate guard. All original protocol settings and input hashes match the completed regional-multiplier trial. Implementation intentionally differs in `support_contact_v8.py` and `fit_scene_regions.py`, with `bounded_root_coordinates.py` added; the exact differences are recorded in `comparison-protocol.json`. This is an optional parameterization experiment, not an identical-code repetition.
+
+An exact-process completion watcher will run independent geometry, temporal-rate and Godot checks after fitting exits. The outcome is pending. No imported numerical source will change during the trial. All 14 release capabilities remain unapproved; arbitrary actions, rig transfer, editing, partner interaction and human validation remain part of the same project goal.

@@ -20,7 +20,8 @@ from scene_constraints import evaluate
 from action_worker_lock import worker_lock
 
 
-def run(scene_path,actor,ids,output,stages=3,iterations=40,seconds=600,region_loss='worst',full_object_skin=False,object_constraint_mode='maximum',region_constraint_mode='penalty',initialization=None,witness_mode='frozen',object_clearance_margin_m=0.,contact_gap_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather"):
+def run(scene_path,actor,ids,output,stages=3,iterations=40,seconds=600,region_loss='worst',full_object_skin=False,object_constraint_mode='maximum',region_constraint_mode='penalty',initialization=None,witness_mode='frozen',object_clearance_margin_m=0.,contact_gap_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy"):
+    if root_coordinate_mode not in ["legacy","scaled_initial"]:raise ValueError("Unknown root coordinate mode")
     if type(seconds) not in [int,float] or not np.isfinite(seconds) or seconds<=0:
         raise ValueError('Positive finite time budget required')
     scene_path,output=Path(scene_path).resolve(),Path(output).resolve()
@@ -49,7 +50,7 @@ def run(scene_path,actor,ids,output,stages=3,iterations=40,seconds=600,region_lo
         'scene_region_contact.py','scene_constraints.py','scene_solver_context.py','support_contact_v8.py',
         'support_contact_v5.py','support_contact_v4.py','support_contact_v3.py','support_contact_v2.py',
         'support_contact.py','floor_contact.py','body_contact.py','contact_spec.py','object_geometry.py',
-        'build_soma_preview.py','inspect_motion.py','compile_scene_contacts.py','scene_fit_initialization.py','audit_scene_region_fit.py','export_motion_sampling.py','export_rate_objective.py','linear_skin_operator.py']
+        'build_soma_preview.py','inspect_motion.py','compile_scene_contacts.py','scene_fit_initialization.py','audit_scene_region_fit.py','export_motion_sampling.py','export_rate_objective.py','linear_skin_operator.py','bounded_root_coordinates.py']
     inputs={str(scene_path):sha256(scene_path),str(ASSET):sha256(ASSET)}
     inputs.update({str(ROOT/r['path']):r['sha256'] for r in package['source_provenance']['sources'].values()})
     if initialization is not None:inputs[str(initialization)]=sha256(initialization)
@@ -61,7 +62,7 @@ def run(scene_path,actor,ids,output,stages=3,iterations=40,seconds=600,region_lo
     save(output/'protocol.json',dict(at=now(),solver_version=14,actor=actor,contact_ids=ids,inputs=inputs,
         implementation=hashes,stages=stages,iterations=iterations,seconds_budget=seconds,region_loss=region_loss,full_object_skin=full_object_skin,object_constraint_mode=object_constraint_mode,region_constraint_mode=region_constraint_mode,witness_mode=witness_mode,object_clearance_margin_m=object_clearance_margin_m,contact_gap_margin_m=contact_gap_margin_m,initialization=str(initialization) if initialization is not None else None,
         export_rate_guard=export_rate_guard,export_acceleration_margin_fraction=export_acceleration_margin_fraction,
-        skin_backend=skin_backend,source_relative_bounds=True,config=CONFIG,quality_approved=False,
+        skin_backend=skin_backend,root_coordinate_mode=root_coordinate_mode,source_relative_bounds=True,config=CONFIG,quality_approved=False,
         scope='Whole-clip source-relative bounded edits. Region witnesses fixed per stage; optional reselection logged. No release guard added implicitly, no partner solve or feasibility guarantee.'))
     started=time.monotonic();history=[]
     def progress(row):
@@ -74,7 +75,7 @@ def run(scene_path,actor,ids,output,stages=3,iterations=40,seconds=600,region_lo
             objective=RegionObjective(package,source,skin,region_loss,region_constraint_mode,witness_mode,contact_gap_margin_m)
             result,recipe=refine(source,source,skin,progress,source,package['anchor_subproblem'],context,
                 finger_edits=True,physical_finger_parameters=True,object_inequalities=True,
-                outer_stage_count=stages,region_fitting=objective,iteration_count=iterations,full_object_skin=full_object_skin,object_constraint_mode=object_constraint_mode,warm_start=warm_start,object_clearance_margin_m=object_clearance_margin_m,export_rate_guard=export_rate_guard,export_acceleration_margin_fraction=export_acceleration_margin_fraction,skin_backend=skin_backend)
+                outer_stage_count=stages,region_fitting=objective,iteration_count=iterations,full_object_skin=full_object_skin,object_constraint_mode=object_constraint_mode,warm_start=warm_start,object_clearance_margin_m=object_clearance_margin_m,export_rate_guard=export_rate_guard,export_acceleration_margin_fraction=export_acceleration_margin_fraction,skin_backend=skin_backend,root_coordinate_mode=root_coordinate_mode)
         for path,digest in inputs.items():
             if sha256(path)!=digest:raise ValueError('Fitting input changed')
         for name,digest in hashes.items():
@@ -116,4 +117,5 @@ if __name__=='__main__':
     p.add_argument('--export-rate-guard',action='store_true')
     p.add_argument('--export-acceleration-margin-fraction',type=float,default=0.)
     p.add_argument('--skin-backend',choices=['gather','sparse'],default='gather')
-    a=p.parse_args();run(a.scene,a.actor,a.contact,a.output,a.stages,a.iterations,a.seconds,a.region_loss,a.full_object_skin,a.object_constraint_mode,a.region_constraint_mode,a.initialization,a.witness_mode,a.object_clearance_margin_m,a.contact_gap_margin_m,a.export_rate_guard,a.export_acceleration_margin_fraction,a.skin_backend)
+    p.add_argument('--root-coordinate-mode',choices=['legacy','scaled_initial'],default='legacy')
+    a=p.parse_args();run(a.scene,a.actor,a.contact,a.output,a.stages,a.iterations,a.seconds,a.region_loss,a.full_object_skin,a.object_constraint_mode,a.region_constraint_mode,a.initialization,a.witness_mode,a.object_clearance_margin_m,a.contact_gap_margin_m,a.export_rate_guard,a.export_acceleration_margin_fraction,a.skin_backend,a.root_coordinate_mode)
