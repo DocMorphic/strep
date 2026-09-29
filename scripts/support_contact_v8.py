@@ -111,6 +111,12 @@ def solver_stage_count(requested):
     return count
 
 
+def solver_iteration_count(requested):
+    count=CONFIG['iterations'] if requested is None else requested
+    if type(count)!=int or not 1<=count<=1000:raise ValueError('Iterations must be an integer from 1 to 1000')
+    return count
+
+
 def object_sampling_layout(selected,vertex_count,full):
     """Extend object coverage without changing the existing floor sample."""
     if type(full)!=bool:raise ValueError('Explicit full-skin boolean required')
@@ -138,8 +144,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         if release_endpoint_guards:raise ValueError('Shared pose does not support release guards')
     object_clearance=object_clearance_target(object_clearance_margin_m)
     stage_count=solver_stage_count(outer_stage_count)
-    iterations=CONFIG['iterations'] if iteration_count is None else iteration_count
-    if type(iterations)!=int or not 1<=iterations<=100:raise ValueError('Iterations must be an integer from 1 to 100')
+    iterations=solver_iteration_count(iteration_count)
     if physical_finger_parameters and not finger_edits:raise ValueError('Physical finger parameters require finger controls')
     torch.set_num_threads(2)
     names,parents,_=skeleton_metadata(77); surface=Surface(skin)

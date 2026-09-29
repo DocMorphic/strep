@@ -21,6 +21,20 @@ export function sceneRateDetails(assessment,scene){
  return output;
 }
 
+export function sceneSupportDetails(assessment){
+ const row=assessment?.preserved_support;if(!row)return [];
+ const {samples,failures,maximum_error_m:peak,vertex_identity_gaps:gaps}=row;
+ if(![samples,failures,gaps].every(n=>Number.isInteger(n)&&n>=0)||failures>samples||
+    (samples>0&&(!Number.isFinite(peak)||peak<0))||typeof row.sampled_point_preservation_passed!=='boolean')
+  return ['Support-point evidence is incomplete or invalid; no pass can be shown.'];
+ const pass=samples>0&&failures===0&&gaps===0&&row.sampled_point_preservation_passed;
+ return [
+  `Source support points: ${pass?'sampled checks pass':'preservation not verified'}. ${failures}/${samples} samples exceed the recorded tolerance.${samples?' Maximum drift: '+(peak*1000).toFixed(3)+' mm.':' No support samples were measured.'}`,
+  `${gaps} ${gaps===1?'sample could':'samples could'} not be checked because material-point identity changes between keys. These are gaps in the audit coverage.`,
+  'These checks preserve inferred source points. They do not establish a planted sole, balance, contact forces or naturalness. Download the support report for the measured points.'
+ ];
+}
+
 // Region drafts and job IDs survive reload; completion is separate from quality.
 export function createSceneRegionEditor({getContext,onComplete,onDraft=()=>{},onPick=()=>{},onCancelPick=()=>{},onHandPick=()=>{},onHandFrame=()=>{}}){
  const storage={

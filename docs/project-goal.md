@@ -1,6 +1,6 @@
 # One project-wide goal: release-ready Strep
 
-Latest contact result: [optional support preservation](preserved-support-v1.md) reduces drift from about 75 mm to 4.973 mm and passes all 34 sampled foot-support checks on the shared-pose fixture. Hand contact and geometry still fail, with 14.080 mm box penetration. Forty-five focused tests, bit-identical default-fit checks and Godot export audits validate the integration; no full-motion or quality approval follows. Next solve forearm/contact constraints with support preserved. All 14 release capabilities remain unapproved.
+Latest contact result: a [larger inner solve](support-inner-budget-v1.md) removes sampled box intersection on the shared pose and retains all 34 source-support checks, but 1.044 mm box clearance still misses the 2 mm requirement and both hand regions fail contact. All six stages remain iteration-limited. Studio now shows support drift alongside timing checks. Original edit bounds and Godot export fidelity pass; this is not a full action or quality approval. All 14 release capabilities remain unapproved.
 
 Latest object-relative initialization: [moving grip study](object-grip-initialization-v1.md) reduces exported contact failures from 490 to 15 while preserving original edit bounds. Body penetration remains 38.99 mm; local temporal regressions remain visible. Fourteen focused tests and all 360 Godot actor-frames pass. The matched full-body trial subsequently completed with the failures recorded above; no release approval.
 
