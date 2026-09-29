@@ -67,12 +67,33 @@ def support_assessment(report, regions, result_digest):
     return measured
 
 
-def build(study,audit_path,engine_path,output,label,rates_path=None,support_path=None):
+def window_assessment(report, window, frames, result_digest):
+    from audit_scene_edit_window import summarize, POSITION_TOLERANCE_M, BASIS_TOLERANCE
+    if report is None or report.get('result_sha256')!=result_digest:
+        raise ValueError('Matching edit-window audit required')
+    if report.get('window')!=window or report.get('frames')!=frames:
+        raise ValueError('Edit-window audit selection mismatch')
+    if report.get('position_tolerance_m')!=POSITION_TOLERANCE_M or report.get('basis_tolerance')!=BASIS_TOLERANCE:
+        raise ValueError('Edit-window audit tolerance mismatch')
+    measured=summarize(report['rows'],window,frames)
+    if measured!=report.get('groups'):raise ValueError('Edit-window audit summary mismatch')
+    return measured
+
+
+def build(study,audit_path,engine_path,output,label,rates_path=None,support_path=None,window_path=None):
     study,audit_path,engine_path,output=map(lambda p:Path(p).resolve(),[study,audit_path,engine_path,output])
     if output.parent!=JOBS.resolve() or output.exists():raise ValueError('Fresh scene-region-jobs review directory required')
     if not isinstance(label,str) or not 1<=len(label.strip())<=120:raise ValueError('Review label required')
     scene,actor,audit=verified_study(study,audit_path,engine_path)
-    support_regions=read(study/'protocol.json').get('preserve_support_regions',[])
+    protocol=read(study/'protocol.json')
+    support_regions=protocol.get('preserve_support_regions',[])
+    window=protocol.get('edit_window');preservation=None
+    if window is not None:
+        report=read(window_path) if window_path is not None else None
+        preservation=window_assessment(report,window,scene['frame_count'],sha256(study/'result.json'))
+        for path,digest in report['inputs'].items():
+            if sha256(path)!=digest:raise ValueError('Edit-window audit input changed')
+    elif window_path is not None:raise ValueError('Fit did not request an edit window')
     support=None
     if support_regions:
         support=support_assessment(read(support_path) if support_path is not None else None,support_regions,sha256(study/'result.json'))
@@ -85,6 +106,10 @@ def build(study,audit_path,engine_path,output,label,rates_path=None,support_path
     if support is not None:
         summary['preserved_support']=support
         if not support['sampled_point_preservation_passed']:summary['motion_regressions'].append('preserved_support_drift')
+    if preservation is not None:
+        summary['window_preservation']=preservation
+        for group,flag in [('locked_segments','edit_window_outside_change'),('boundary_segments','edit_window_boundary_change')]:
+            if preservation[group]['within_numerical_tolerance'] is False:summary['motion_regressions'].append(flag)
     output.mkdir(parents=True);scenes=[]
     for version,motion_file in [('source','source-motion.npz'),('candidate','motion.npz')]:
         folder=output/version;folder.mkdir()
@@ -100,6 +125,10 @@ def build(study,audit_path,engine_path,output,label,rates_path=None,support_path
         note+=' Developer review pending; no motion-quality approval.'
         if version=='candidate' and support is not None:
             note+=' Support-point preservation '+('passes sampled checks.' if support['sampled_point_preservation_passed'] else 'fails sampled checks.')
+        if version=='candidate' and preservation is not None:
+            check=preservation['locked_segments']['within_numerical_tolerance']
+            note+=(' No unselected intervals to audit.' if check is None else ' Locked motion '+('passes' if check else 'fails')+' sampled preservation checks.')
+            if preservation['boundary_segments']['within_numerical_tolerance'] is False:note+=' Boundary-straddling motion changes remain visible in the window audit.'
         scenes.append(dict(id=version,label=label.strip()+' · '+version.title(),variants=dict(palm=version+'.json'),review_note=note,
                            downloads=[dict(label='Animated GLB',path=version+'/actor.glb'),
                                       dict(label='Native motion',path=version+'/motion.npz'),
@@ -111,6 +140,9 @@ def build(study,audit_path,engine_path,output,label,rates_path=None,support_path
     if support_path is not None:
         shutil.copyfile(support_path,output/'support-audit.json')
         for row in scenes:row['downloads'].append(dict(label='Source support-point drift',path='support-audit.json'))
+    if window_path is not None:
+        shutil.copyfile(window_path,output/'window-audit.json')
+        for row in scenes:row['downloads'].append(dict(label='Edit-window preservation',path='window-audit.json'))
     shutil.copyfile(audit_path,output/'geometry-audit.json');shutil.copyfile(engine_path,output/'engine-audit.json')
     shutil.copyfile(ROOT/'vendor/kimodo/LICENSE',output/'SOMA-preview-LICENSE.txt')
     save(output/'manifest.json',dict(scenes=scenes,quality_approved=False,review_mode='unblinded_developer_comparison'))
@@ -128,4 +160,5 @@ if __name__=='__main__':
     p.add_argument('output',type=Path);p.add_argument('--label',required=True)
     p.add_argument('--rates',type=Path)
     p.add_argument('--support',type=Path)
-    a=p.parse_args();build(a.study,a.audit,a.engine,a.output,a.label,a.rates,a.support)
+    p.add_argument('--window',type=Path)
+    a=p.parse_args();build(a.study,a.audit,a.engine,a.output,a.label,a.rates,a.support,a.window)
