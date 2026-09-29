@@ -382,3 +382,6 @@ Studio now [runs export feedback after fitting saved checked pins](studio-export
 
 
 [Contact feasibility diagnosis](contact-feasibility-diagnosis-v1.md) now distinguishes requests incompatible with current quality screens from numerical failures. All 24 component timing programs find no proved conflict, but the conservative native skin bound proves crawl-11 needs at least 53.65 cm of joint displacement against the 22 cm screen. Thirteen frame/reference pairs conflict; kicking remains unresolved. Twenty-four tests and replay of 316 pose calculations pass. Next integrate these conflict explanations into saved contact checks, then investigate kicking/coupled support without weakening original limits. No motion or release approval changed.
+
+
+Studio now [checks pose compatibility before fitting](studio-pose-check-v1.md), freezes raw/limb references and explains the crawling conflict without changing the request. Three real checks and all input/artifact/method hashes pass verification; 38 focused Python tests and offline UI checks pass. Old checks require a refresh. No new animation or release approval; kick/support and broader release work remain open.

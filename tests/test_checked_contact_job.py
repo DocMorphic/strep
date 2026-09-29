@@ -13,7 +13,8 @@ def bound_check(tmp_path,monkeypatch):
     check=tmp_path/'reports/contact-jobs/check1';source=tmp_path/'reports/native/take'
     (check/'source').mkdir(parents=True);source.mkdir(parents=True);(tmp_path/'scripts').mkdir()
     inputs={}
-    for name in ['motion.npz','soma.glb']:
+    for name in ['motion.npz','soma.glb','raw/motion.npz','limb/motion.npz']:
+        (source/name).parent.mkdir(parents=True,exist_ok=True);(check/'source'/name).parent.mkdir(parents=True,exist_ok=True)
         (source/name).write_bytes(b'opaque source bytes');shutil.copyfile(source/name,check/'source'/name);inputs[name]=sha256(source/name)
     implementation={}
     for name in job.RATE_METHODS:
@@ -22,8 +23,9 @@ def bound_check(tmp_path,monkeypatch):
     save(check/'contact-spec.json',{});save(check/'bound-contact-spec.json',{})
     save(check/'freeze.json',dict(inputs=inputs,implementation=implementation,mesh_sha256=sha256(asset),
         request_sha256=sha256(check/'edit-request.json'),spec_sha256=sha256(check/'contact-spec.json')))
-    save(check/'timing-result.json',dict(status='checked',conflicts=0,source='native/take',requested_window=[2,17],
-        files={n:sha256(check/n) for n in ['freeze.json','bound-contact-spec.json']}))
+    save(check/'pose-preflight.json',dict(status='not_ruled_out',conflicting_frame_reference_pairs=0))
+    save(check/'timing-result.json',dict(status='checked',check_schema_version=2,conflicts=0,source='native/take',requested_window=[2,17],
+        files={n:sha256(check/n) for n in ['freeze.json','bound-contact-spec.json','pose-preflight.json']}))
     save(check/'pipeline.json',dict(status='checked'))
     return dict(checked_plan='check1',revision=sha256(check/'timing-result.json')),check,source
 
@@ -49,7 +51,7 @@ def test_altered_bound_points_and_stale_revision_rejected(bound_check):
 
 def test_conflicting_check_cannot_start_fit(bound_check):
     payload,check,_=bound_check;save(check/'pipeline.json',dict(status='needs_authoring_change'))
-    with pytest.raises(ValueError,match='Resolve timing conflicts'):job.validate_request(payload)
+    with pytest.raises(ValueError,match='Resolve timing or pose-screen conflicts'):job.validate_request(payload)
 
 
 def test_calculation_version_change_requires_new_check(bound_check):
@@ -77,3 +79,46 @@ def test_checked_job_enables_feedback_between_verifications(tmp_path,monkeypatch
     job.run(tmp_path)
     assert [c[0] for c in calls]==['verify','edit','verify']
     assert calls[1][2]==dict(checked_plan=tmp_path/'checked-plan',export_feedback=True)
+
+
+def rebind(payload,check):
+    from strep import read
+    result=read(check/'timing-result.json')
+    result['files']={n:sha256(check/n) for n in result['files']}
+    save(check/'timing-result.json',result)
+    return dict(payload,revision=sha256(check/'timing-result.json'))
+
+
+def test_old_check_requires_new_pose_verification(bound_check):
+    from strep import read
+    payload,check,_=bound_check
+    result=read(check/'timing-result.json');result.pop('check_schema_version');save(check/'timing-result.json',result)
+    with pytest.raises(ValueError,match='predates pose-screen'):
+        job.validate_request(dict(payload,revision=sha256(check/'timing-result.json')))
+
+
+@pytest.mark.parametrize('reference',['raw','limb'])
+def test_changed_original_reference_invalidates_saved_check(bound_check,reference):
+    payload,_,source=bound_check
+    (source/reference/'motion.npz').write_bytes(b'changed reference')
+    with pytest.raises(ValueError,match='Current clip differs'):job.validate_request(payload)
+
+
+def test_missing_pose_method_hash_requests_refresh_instead_of_key_error(bound_check):
+    from strep import read
+    payload,check,_=bound_check
+    freeze=read(check/'freeze.json');freeze['implementation'].pop('contact_pose_preflight.py');save(check/'freeze.json',freeze)
+    with pytest.raises(ValueError,match='pose screen changed'):job.validate_request(rebind(payload,check))
+
+
+def test_saved_pose_conflict_cannot_be_hidden_by_checked_summary(bound_check):
+    payload,check,_=bound_check
+    save(check/'pose-preflight.json',dict(status='incompatible_with_pose_screen',conflicting_frame_reference_pairs=13))
+    with pytest.raises(ValueError,match='Pose screen has unresolved'):job.validate_request(rebind(payload,check))
+
+
+def test_missing_reference_binding_cannot_claim_new_schema(bound_check):
+    from strep import read
+    payload,check,_=bound_check
+    freeze=read(check/'freeze.json');freeze['inputs'].pop('raw/motion.npz');save(check/'freeze.json',freeze)
+    with pytest.raises(ValueError,match='lacks pose references'):job.validate_request(rebind(payload,check))

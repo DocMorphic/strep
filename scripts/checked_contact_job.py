@@ -6,7 +6,8 @@ from strep import ROOT,read,save,sha256
 from build_soma_preview import ASSET
 
 RATE_METHODS=['export_point_rate_objective.py','export_motion_sampling.py','linear_skin_operator.py',
-              'floor_contact.py','contact_spec.py','support_contact.py','inspect_motion.py']
+              'floor_contact.py','contact_spec.py','support_contact.py','inspect_motion.py',
+              'contact_pose_preflight.py','contact_pose_reachability.py']
 
 
 def validate_request(payload):
@@ -19,12 +20,19 @@ def validate_request(payload):
     if not isinstance(payload['revision'],str) or sha256(folder/'timing-result.json')!=payload['revision']:
         raise ValueError('Timing check changed; review it again')
     result=read(folder/'timing-result.json');state=read(folder/'pipeline.json')
+    if result.get('check_schema_version')!=2 or 'pose-preflight.json' not in result.get('files',{}):
+        raise ValueError('Saved check predates pose-screen verification; run a new check')
     if result.get('status')!='checked' or state.get('status')!='checked' or result.get('conflicts')!=0:
-        raise ValueError('Resolve timing conflicts and run a new check before fitting')
+        raise ValueError('Resolve timing or pose-screen conflicts and run a new check before fitting')
     for name,h in result['files'].items():
         path=(folder/name).resolve()
         if not path.is_relative_to(folder.resolve()) or sha256(path)!=h:raise ValueError('Checked artifact changed')
+    pose=read(folder/'pose-preflight.json')
+    if pose.get('status')!='not_ruled_out' or type(pose.get('conflicting_frame_reference_pairs')) is not int or pose['conflicting_frame_reference_pairs']!=0:
+        raise ValueError('Pose screen has unresolved conflicts; run a new check')
     freeze=read(folder/'freeze.json')
+    if not {'raw/motion.npz','limb/motion.npz'}<=set(freeze['inputs']):
+        raise ValueError('Saved check lacks pose references; run a new check')
     if sha256(ASSET)!=freeze.get('mesh_sha256'):raise ValueError('Contact mesh changed; run a new timing check')
     if sha256(folder/'edit-request.json')!=freeze['request_sha256'] or sha256(folder/'contact-spec.json')!=freeze['spec_sha256']:
         raise ValueError('Checked request changed')
@@ -33,7 +41,7 @@ def validate_request(payload):
     for name,h in freeze['inputs'].items():
         if sha256(folder/'source'/name)!=h:raise ValueError('Checked source snapshot changed')
     for name in RATE_METHODS:
-        if sha256(ROOT/'scripts'/name)!=freeze['implementation'][name]:raise ValueError('Rate calculation changed; run a new timing check')
+        if sha256(ROOT/'scripts'/name)!=freeze['implementation'].get(name):raise ValueError('Rate calculation changed or pose screen changed; run a new timing check')
     source=(ROOT/'reports'/result['source']).resolve()
     if not source.is_relative_to(ROOT/'reports'):raise ValueError('Checked source escapes reports')
     for name,h in freeze['inputs'].items():
@@ -52,7 +60,7 @@ def prepare(payload,folder):
     for name in ['motion.npz','soma.glb','motion.bvh','root-motion.json','contacts.json','evidence.json','request.json','timeline.json','generation-record.json']:
         shutil.copyfile(source/name,target/name)
     validate_request(payload)
-    if sha256(target/'motion.npz')!=sha256(check/'source/motion.npz') or sha256(target/'soma.glb')!=sha256(check/'source/soma.glb'):
+    if any(sha256(target/name)!=digest for name,digest in read(check/'freeze.json')['inputs'].items()):
         raise ValueError('Source changed during guarded-job snapshot')
     save(folder/'edit-request.json',dict(kind='checked_fit',check_id=payload['checked_plan'],check_revision=payload['revision']))
     (folder/'implementation').mkdir()

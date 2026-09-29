@@ -41,6 +41,7 @@ const contactEditor=(()=>{
  const el=id=>document.getElementById(id),names=['LeftHand','RightHand','LeftFoot','RightFoot','Torso','Head','LeftKnee','RightKnee','LeftElbow','RightElbow'];
  let context=null,draft=null,busy=false,submit=null,currentFrame=null,editing=null,shownTiming=null,savedCheck=null;
  const clone=v=>JSON.parse(JSON.stringify(v));
+ const canFit=()=>savedCheck?.status==='checked'&&savedCheck?.check_schema_version===2&&!!savedCheck?.check_revision;
  function persist(){if(context)try{localStorage.setItem('strep:contacts:'+context.key,JSON.stringify(draft));}catch{}}
  function inputs(){const mode=el('contactMode').value;el('contactInterval').hidden=['inferred','disabled'].includes(mode);el('contactWorld').hidden=mode!=='world';}
  function message(text){el('contactStatus').textContent=text;}
@@ -55,7 +56,7 @@ const contactEditor=(()=>{
    });
   }
   if(!Object.keys(draft.regions).length)el('contactPlan').textContent='No overrides. Automatic contact estimates remain in use.';
-  el('contactApply').disabled=busy||!context;el('contactCheck').disabled=busy||!context;el('contactFitChecked').disabled=busy||!savedCheck||savedCheck.status!=='checked'||!savedCheck.check_revision;
+  el('contactApply').disabled=busy||!context;el('contactCheck').disabled=busy||!context;el('contactFitChecked').disabled=busy||!canFit();
  }
  function save(){
   if(!context)return;const region=el('contactRegion').value,mode=el('contactMode').value;
@@ -86,7 +87,7 @@ const contactEditor=(()=>{
    el('contactHere').onclick=()=>{el('contactStart').value=currentFrame();el('contactEnd').value=currentFrame();};
    el('contactApply').onclick=async()=>{if(!context||busy)return;busy=true;render();message('Starting local contact correction…');try{await submit(context,clone(draft));message('Correction is running. The result will open when ready.');}catch(e){message(e.message);busy=false;render();}};
    for(const id of ['contactWindowStart','contactWindowEnd'])el(id).oninput=()=>{if(context)try{localStorage.setItem('strep:contact-window:'+context.key,JSON.stringify([Number(el('contactWindowStart').value),Number(el('contactWindowEnd').value)]));}catch{}};
-   el('contactFitChecked').onclick=async()=>{if(!context||busy||savedCheck?.status!=='checked')return;busy=true;render();message('Fitting the saved checked pins on a source copy…');try{await submit(context,null,null,{checked_plan:savedCheck.id.split('/')[1],revision:savedCheck.check_revision});}catch(e){message(e.message);busy=false;render();}};
+   el('contactFitChecked').onclick=async()=>{if(!context||busy||!canFit())return;busy=true;render();message('Fitting the saved checked pins on a source copy…');try{await submit(context,null,null,{checked_plan:savedCheck.id.split('/')[1],revision:savedCheck.check_revision});}catch(e){message(e.message);busy=false;render();}};
    el('contactCheck').onclick=async()=>{if(!context||busy)return;const w=[Number(el('contactWindowStart').value),Number(el('contactWindowEnd').value)];if(!w.every(Number.isInteger)||w[0]<1||w[0]>=w[1]||w[1]>=draft.frame_count-1)return message('Choose two held interior frames in increasing order.');busy=true;render();message('Checking stationary pin timing on a saved copy…');try{await submit(context,clone(draft),{edit_window:w});}catch(e){message(e.message);busy=false;render();}};
    inputs();
   },
@@ -117,7 +118,7 @@ const contactEditor=(()=>{
    }
    render();
   },
-  showTiming(job){if(!context||job.source!==context.collection+'/takes/'+context.take_id||shownTiming===job.id)return;shownTiming=job.id;savedCheck=job;el('contactFitChecked').disabled=busy||job.status!=='checked'||!job.check_revision;el('contactTimingResult').textContent='Saved timing check (your current draft may differ):\n'+(job.timing_message||'Timing check finished.');el('contactTimingLinks').replaceChildren();for(const [label,url] of [['Explanation',job.timing_report],['Full timing report',job.timing_json],['Bound contact points',job.bound_contacts]]){if(typeof url!=='string'||!url.startsWith('/files/contact-jobs/'))continue;const a=document.createElement('a');a.textContent=label;a.href=url;a.className='btn';a.target='_blank';a.rel='noopener';el('contactTimingLinks').append(a);}message('Timing check saved. Your source and contact draft are unchanged.');},
-  setBusy(value){busy=value;if(context){el('contactApply').disabled=busy;el('contactCheck').disabled=busy;el('contactFitChecked').disabled=busy||savedCheck?.status!=='checked'||!savedCheck?.check_revision;}}
+  showTiming(job){if(!context||job.source!==context.collection+'/takes/'+context.take_id||shownTiming===job.id)return;shownTiming=job.id;savedCheck=job;el('contactFitChecked').disabled=busy||!canFit();el('contactTimingResult').textContent='Saved timing check (your current draft may differ):\n'+(job.timing_message||'Timing check finished.')+(job.check_schema_version!==2?'\nThis saved check predates pose-screen verification. Run a new check before fitting.':'');el('contactTimingLinks').replaceChildren();for(const [label,url] of [['Explanation',job.timing_report],['Full timing report',job.timing_json],['Pose compatibility',job.pose_report],['Bound contact points',job.bound_contacts]]){if(typeof url!=='string'||!url.startsWith('/files/contact-jobs/'))continue;const a=document.createElement('a');a.textContent=label;a.href=url;a.className='btn';a.target='_blank';a.rel='noopener';el('contactTimingLinks').append(a);}message('Timing check saved. Your source and contact draft are unchanged.');},
+  setBusy(value){busy=value;if(context){el('contactApply').disabled=busy;el('contactCheck').disabled=busy;el('contactFitChecked').disabled=busy||!canFit();}}
  };
 })();

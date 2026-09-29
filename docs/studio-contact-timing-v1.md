@@ -21,3 +21,6 @@ Twenty-six focused Python tests pass, including API compatibility, strict timing
 Next, a distinct correction mode can consume the checked point identities, edit window and rate policy through an immutable request, then export and audit an unapproved candidate. That requires integrating the newer fitter explicitly; the legacy Apply action must not silently acquire different motion semantics. The broader project goal and all fourteen release capabilities remain open.
 
 Follow-up: the separate [Fit saved checked pins action](studio-checked-fit-v1.md) is now implemented with an independent export audit. The retained candidate demonstrates that a successful timing check does not guarantee successful correction.
+
+
+Studio now [checks pose compatibility before fitting](studio-pose-check-v1.md), freezes raw/limb references and explains the crawling conflict without changing the request. Three real checks and all input/artifact/method hashes pass verification; 38 focused Python tests and offline UI checks pass. Old checks require a refresh. No new animation or release approval; kick/support and broader release work remain open.

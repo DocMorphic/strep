@@ -24,7 +24,7 @@ editor.load('other',trial);editor.load('body-contact-v1',trial);assert.equal(Num
 assert.match(html,/timing_check:timingCheck/);assert.match(html,/needs_authoring_change/);
 console.log('Contact timing UI: distinct check payload, unchanged legacy apply, held bounds, source-matched results, safe links, persistence and polling pass. No HTTP/browser used.');
 
-const checked={...job,id:'contact-jobs/checked1/result',status:'checked',check_revision:'a'.repeat(64)};
+const checked={...job,id:'contact-jobs/checked1/result',status:'checked',check_schema_version:2,check_revision:'a'.repeat(64)};
 editor.setBusy(false);editor.showTiming({...checked,status:'needs_authoring_change'});
 assert(el('FitChecked').disabled);const count=calls.length;await el('FitChecked').onclick();assert.equal(calls.length,count);
 editor.showTiming({...checked,id:'contact-jobs/checked2/result'});assert(!el('FitChecked').disabled);
@@ -34,4 +34,10 @@ assert.equal(calls.at(-1)[1],null,'Fit sends saved identity instead of substitut
 editor.setBusy(false);editor.load('contact-jobs/fit/result',{...trial,support_correction:{checked_fit:true}});
 const descendants=e=>[e,...(e.children||[]).flatMap(descendants)];
 assert(descendants(el('Result')).some(a=>a.href?.endsWith('/checked-export-audit.json')));
+editor.load('body-contact-v1',trial);editor.setBusy(false);editor.showTiming({...checked,id:'contact-jobs/legacy/result',check_schema_version:undefined});
+assert(el('FitChecked').disabled);assert.match(el('TimingResult').textContent,/predates pose-screen/);
+const legacyCount=calls.length;await el('FitChecked').onclick();assert.equal(calls.length,legacyCount);
+editor.showTiming({...checked,id:'contact-jobs/pose-conflict/result',status:'needs_authoring_change',timing_message:'LeftHand requires 53.65 cm; current body screen permits 22.00 cm.',pose_report:'/files/contact-jobs/pose-conflict/pose-preflight.json'});
+assert(el('FitChecked').disabled);assert.match(el('TimingResult').textContent,/53.65 cm/);
+assert(el('TimingLinks').children.some(a=>a.href==='/files/contact-jobs/pose-conflict/pose-preflight.json'));
 console.log('Checked fit UI: conflict rejection, exact saved revision payload and separate exported audit link pass.');
