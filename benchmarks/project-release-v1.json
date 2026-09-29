@@ -137,6 +137,7 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/breadth-peak-restore-v1.md",
         "docs/breadth-root-cleanup-v1.md",
         "docs/rough-clip-and-contact-inspection-v1.md",
         "reports/contact-inspection-v1/corrected.json",
@@ -2622,6 +2623,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T02:43:08.236118+00:00",
-  "last_progress": "Completed full 24-case root cleanup: 21 preserved improvements, three unchanged outcomes, 4320 engine frames. Only 9/24 recover original peak acceleration; quality and release approval remain missing."
+  "last_progress_at": "2026-09-29T02:53:51.708480+00:00",
+  "last_progress": "Tested all15 remaining root-peak failures: three alternatives restore original peaks with energy tradeoffs, 510 new engine frames. Independent geometric bounds exclude nine root-only cases under unchanged constraints; coupled root/leg correction is next. No release approval."
 }

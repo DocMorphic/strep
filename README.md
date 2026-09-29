@@ -27,6 +27,8 @@ The [bounded region-grasp correction](docs/sphere-region-upper-return-v1.md) pas
 
 [Root cleanup across eight actions and three rigs](docs/breadth-root-cleanup-v1.md) reduces total root-acceleration energy in 21/24 existing corrected clips while retaining the measured contact/geometry bounds. All 24 selected outputs pass engine imports; only 9/24 return to their original root-peak levels, so this is partial recovery.
 
+[A peak-restoration follow-up](docs/breadth-peak-restore-v1.md) finds three additional alternatives and identifies nine cases where root-only correction cannot satisfy the original peak alongside the declared geometry constraints. Coordinated joint correction remains needed.
+
 The owner will perform developer review first. Independent animator review and timed cleanup evidence remain release requirements.
 
 ## Using this source snapshot
