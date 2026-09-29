@@ -65,3 +65,8 @@ Official SciPy rotation-vector API/source checked: https://scipy.github.io/devdo
 ### Endpoint angular-rate returns (2026-09-29)
 
 Official SciPy [rotation-spline source](https://github.com/scipy/scipy/blob/main/scipy/spatial/transform/_rotation_spline.py) checked, alongside the installed 1.15.3 angular-rate/rotation-log Jacobian implementation. The project uses an explicit cubic Hermite return, tested with noncommuting rotations and independently audited. This is not use of RotationSpline or a claim of continuity after correction/baking. Results and retained failures: [endpoint-rate study](sphere-region-tangent-v1.md). No dependency, model or data acquisition.
+
+
+### Contact feasibility certificates (2026-09-29)
+
+Official [SciPy HiGHS interface](https://docs.scipy.org/doc/scipy/reference/optimize.linprog-highs.html) checked for inequality form, status, residuals and marginals. Existing SciPy 1.15.3 retained; no dependency acquisition. The project independently derives and exactly verifies bounded-domain contradiction certificates, and a separate conservative skin/joint displacement bound. Results and assumptions: [contact feasibility diagnosis](contact-feasibility-diagnosis-v1.md).
