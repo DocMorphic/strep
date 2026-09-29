@@ -60,10 +60,16 @@ def test_real_closure_and_multiplier_update_use_same_scale(monkeypatch):
     default, before = refine(base, base, skin, **args)
     explicit, same = refine(base, base, skin, authored_point_scaling='metres', **args)
     scaled, after = refine(base, base, skin, authored_point_scaling='tolerance', **args)
+    sampled, quarter = refine(base, base, skin, authored_point_scaling='tolerance', export_point_position_guard=True, **args)
     for key in default:
         np.testing.assert_array_equal(default[key], explicit[key])
         np.testing.assert_array_equal(default[key], scaled[key])
+        np.testing.assert_array_equal(default[key], sampled[key])
     for original, repeated, normalized in zip(before['stage_records'], same['stage_records'], after['stage_records']):
         assert original['objective'] == repeated['objective']
         assert normalized['max_active_point_violation_m'] == original['max_active_point_violation_m']
         assert normalized['objective']['authored_contact']/original['objective']['authored_contact'] == pytest.approx(1/.005**2)
+
+    for native, sampled_stage in zip(after['stage_records'], quarter['stage_records']):
+        assert sampled_stage['objective']['authored_contact'] == pytest.approx(native['objective']['authored_contact'])
+        assert sampled_stage['export_point_positions']['rows'][0]['samples'] == 17

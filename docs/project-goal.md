@@ -319,3 +319,6 @@ Latest contact diagnosis: [matched point-scaling comparison](checked-point-scali
 
 
 Latest checked-contact work: [full-mesh floor preservation](checked-floor-guard-v1.md) reduces floor penetration from 83.25 to 2.20 mm with zero measured added depth at all 717 export samples. Pin accuracy and some rate/support screens still fail. Thirty-eight tests and 407 actual engine observations pass; default behavior stays unchanged and all release gates remain open.
+
+
+Latest contact work: [quarter-frame pin fitting](checked-sampled-pins-v1.md) aligns the position objective with the export audit. The matched trial still fails (5.78466 mm peak error, 15/81 misses), with floor preservation intact and fitted/export agreement within 4.90e-8 m. Twenty-nine tests and 407 engine observations pass. A separate four-stage/120-iteration convergence study is running; no improvement or release approval is yet claimed.

@@ -19,17 +19,19 @@ from evaluate_contact_spec import evaluate as evaluate_targets
 from export_actions import sequence_diagnostics
 
 
-def run(source,spec_path,output,checked_plan=None,*,authored_point_scaling="metres",export_floor_guard=False):
+def run(source,spec_path,output,checked_plan=None,*,authored_point_scaling="metres",export_floor_guard=False,export_point_position_guard=False,outer_stage_count=2,iteration_count=60):
     if authored_point_scaling not in ["metres","tolerance"]:raise ValueError("Unknown authored point scaling")
     if checked_plan is None and authored_point_scaling!="metres":raise ValueError("Point scaling requires a checked plan")
     if type(export_floor_guard)!=bool or (export_floor_guard and checked_plan is None):raise ValueError('Floor guard requires a checked plan')
+    if type(export_point_position_guard)!=bool or (export_point_position_guard and checked_plan is None):raise ValueError('Sampled pins require a checked plan')
+    if checked_plan is None and (outer_stage_count!=2 or iteration_count!=60):raise ValueError('Custom fitting budgets require a checked plan')
     source=Path(source).resolve();output=Path(output).resolve()
     skin=dict(np.load(ASSET));base=dict(np.load(source/'limb/motion.npz'))
     previous=dict(np.load(source/'motion.npz'));raw=dict(np.load(source/'raw/motion.npz'))
     spec=read(spec_path);validate(spec,len(base['root_positions']),regions(skin))
     limb=base;fit_refine=refine;config=CONFIG;solver_raw=raw;fit_options={}
     if checked_plan is not None:
-        from support_contact_v8 import refine as fit_refine,CONFIG as config
+        from support_contact_v8 import refine as fit_refine,CONFIG as config,solver_stage_count,solver_iteration_count
         from contact_timing_job import validate_options
         from export_point_rate_objective import ExportPointRateObjective
         from inspect_motion import skeleton_metadata
@@ -42,7 +44,7 @@ def run(source,spec_path,output,checked_plan=None,*,authored_point_scaling="metr
         checked_reference=read(checked_plan/'rate-reference.json')
         if guard.record()!=checked_reference:raise ValueError('Recomputed rate reference differs from checked policy')
         fit_options=dict(edit_window=options['edit_window'],export_rate_guard=True,export_point_rate_guard=True,
-            skin_backend='sparse',root_coordinate_mode='physical_box',outer_stage_count=2,iteration_count=60,authored_point_scaling=authored_point_scaling,export_floor_guard=export_floor_guard)
+            skin_backend='sparse',root_coordinate_mode='physical_box',outer_stage_count=solver_stage_count(outer_stage_count),iteration_count=solver_iteration_count(iteration_count),authored_point_scaling=authored_point_scaling,export_floor_guard=export_floor_guard,export_point_position_guard=export_point_position_guard)
     parent=read(source/'evidence.json')
     if 'body_correction' not in parent:raise ValueError('This editor currently requires a body-corrected source take')
     output.mkdir(parents=True,exist_ok=False)
@@ -52,7 +54,7 @@ def run(source,spec_path,output,checked_plan=None,*,authored_point_scaling="metr
     if checked_plan is not None:scripts=sorted(p.name for p in (ROOT/'scripts').glob('*.py'))
     implementation={n:sha256(ROOT/'scripts'/n) for n in scripts}
     sources={n:sha256(source/n) for n in ['motion.npz','limb/motion.npz','raw/motion.npz']}
-    save(output/'freeze.json',dict(created_at=now(),implementation=implementation,sources=sources,config=config,contact_spec=spec,checked_plan=str(checked_plan) if checked_plan else None))
+    save(output/'freeze.json',dict(created_at=now(),implementation=implementation,sources=sources,config=config,fit_options=fit_options,contact_spec=spec,checked_plan=str(checked_plan) if checked_plan else None))
     try:
         with worker_lock():
             start=time.perf_counter()

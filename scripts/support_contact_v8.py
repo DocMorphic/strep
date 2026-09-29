@@ -130,7 +130,7 @@ def object_sampling_layout(selected,vertex_count,full):
     return ids,np.searchsorted(ids,original)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=(),edit_window=None,export_point_rate_guard=False,authored_point_scaling="metres",export_floor_guard=False):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=(),edit_window=None,export_point_rate_guard=False,authored_point_scaling="metres",export_floor_guard=False,export_point_position_guard=False):
     if authored_point_scaling not in ["metres","tolerance"]:raise ValueError("Unknown authored point scaling")
     if root_coordinate_mode not in ["legacy","scaled_initial","physical_box"]:raise ValueError("Unknown root coordinate mode")
     if object_constraint_mode not in ["maximum","per_vertex"]:raise ValueError("Unknown object constraint mode")
@@ -315,6 +315,13 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     if export_floor_guard:
         from export_floor_objective import ExportFloorObjective
         floor_objective=ExportFloorObjective(tensor(base['global_rot_mats']),tensor(base['posed_joints']),parents,skin)
+    position_objective=None
+    if type(export_point_position_guard)!=bool:raise ValueError('Explicit point-position guard boolean required')
+    if export_point_position_guard:
+        if region_fitting is not None or release_endpoint_guards:raise ValueError('Sampled stationary pins do not replace regional or release-guard constraints')
+        from export_point_position_objective import ExportPointPositionObjective
+        position_objective=ExportPointPositionObjective(tensor(base['global_rot_mats']),tensor(base['posed_joints']),parents,skin,contact_spec,
+            tolerance=CONFIG['point_tolerance_m'],scaling=authored_point_scaling,penalty=CONFIG['explicit_contact_weight'])
     calls=0;last={}
     def closure():
         nonlocal calls,last,last_point,last_normals,last_cuts,last_tangents,last_objects
@@ -341,7 +348,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         slide=torch.linalg.vector_norm((v[frame_indices+1,patch_indices]-v[frame_indices,patch_indices])[...,[0,2]]*30,dim=-1)
         terms=dict(collision=torch.relu(CONFIG['clearance_m']-v[:,floor_indices,1]).square().amax(1).mean()*CONFIG['collision_weight'],
             contact=inferred_loss*CONFIG['contact_weight'],
-            authored_contact=point_loss,authored_fade=fade_loss*CONFIG['fade_contact_weight'],authored_slide=moving_loss*CONFIG['authored_slide_weight'],
+            authored_contact=point_loss if position_objective is None else position_objective.loss(r,p),authored_fade=fade_loss*CONFIG['fade_contact_weight'],authored_slide=moving_loss*CONFIG['authored_slide_weight'],
             pose=bounded_edits(smooth_delta())[:,:body_count].square().mean()*CONFIG['pose_weight'],
             temporal=torch.diff(displacement,n=2,dim=0).square().sum(-1).mean()*CONFIG['temporal_weight'],
             velocity=torch.relu(velocity-1.2).square().amax()*CONFIG['velocity_weight'],
@@ -409,10 +416,12 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         if rate_objective is not None:stage_records[-1]['export_rates']=rate_objective.record()
         if point_rate_objective is not None:stage_records[-1]['export_point_rates']=point_rate_objective.record()
         if floor_objective is not None:stage_records[-1]['export_floor']=floor_objective.record()
+        if position_objective is not None:stage_records[-1]['export_point_positions']=position_objective.record()
         if stage+1<stage_count:
             if rate_objective is not None:rate_objective.advance_stage(CONFIG['penalty_growth'])
             if point_rate_objective is not None:point_rate_objective.advance_stage(CONFIG['penalty_growth'])
             if floor_objective is not None:floor_objective.advance_stage(CONFIG['penalty_growth'])
+            if position_objective is not None:position_objective.advance_stage(CONFIG['penalty_growth'])
             if region_fitting is not None:region_fitting.advance_stage(CONFIG['penalty_growth'])
             if preserved_mask.any():preserved_multiplier=torch.relu(preserved_multiplier+point_penalty*normalized_support_residual(last_point,point_tolerance))*preserved_active
             point_residual=normalized_support_residual(last_point,point_tolerance) if authored_point_scaling=="tolerance" else last_point
@@ -453,6 +462,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         recipe['shared_pose']=dict(rotation_control_frames=1,root_control_frames=1,output_frames=T,quality_approved=False)
         recipe['parameterization']='One shared bounded rotation set and root lift; frozen-pose diagnostic only'
     if floor_objective is not None:recipe['export_floor']=floor_objective.record()
+    if position_objective is not None:recipe['export_point_positions']=position_objective.record()
     recipe['authored_point_scaling']=authored_point_scaling
     recipe['root_coordinate_mode']=root_coordinate_mode
     if root_coordinates is not None:recipe['root_coordinate_reference']=root_coordinates.record()
