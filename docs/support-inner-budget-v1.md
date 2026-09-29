@@ -34,3 +34,9 @@ All six larger-budget stages still hit the iteration limit. The output repeats e
 Studio collection `support-inner300-review-v1` preserves the failed source/candidate result with support and timing reports. Thirteen package hashes and twelve permitted routes pass offline verification; the Python snapshot is intentionally unserved. The new review panel exposes the passing support measurements without hiding hand/geometry failures. No live browser or human review was added.
 
 The larger inner budget materially changes the candidate, so the earlier result cannot be treated as a pose-feasibility limit. However, more iterations have still not established convergence or complete contact. Next target the remaining forearm/palm/finger clearance and missing right-hand contact witnesses while preserving support and all original edit limits. Full-motion transitions and broader release validation remain open; all fourteen release capabilities are unapproved.
+
+## Optional solver buffers
+
+The regional fitter now exposes `--region-limit-margin-fraction` (default zero). A positive fraction tightens solver clearance, spacing and area requirements, and reduces solver contact-gap, local-radius, centroid, normal and anchor tolerances. The existing absolute contact-gap margin is applied first. Authored scene limits and independent audit acceptance remain unchanged, as do original edit bounds and inferred support tolerances. The protocol and objective record retain the requested fraction.
+
+Forty focused region-objective, witness-refresh, initialization, support and job tests pass, including limit immutability and rejection of invalid or exhausted buffers. This verifies the implementation, not improved fitting quality. A paired continuation from the same best pose, with zero versus a small positive fraction, remains to be run and audited before making an effectiveness claim.

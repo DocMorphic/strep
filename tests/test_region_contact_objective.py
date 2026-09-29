@@ -6,10 +6,25 @@ import torch
 from scipy.spatial.transform import Rotation
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from object_geometry import Geometry
-from region_contact_objective import signed_distance,violations,choose_triangle
+from region_contact_objective import signed_distance,violations,choose_triangle,solver_region_limits
 
 LIMITS=dict(clearance_m=.002,contact_gap_m=.003,spacing_m=.006,area_m2=.000025,
             centroid_error_m=.005,local_radius_m=.03,normal_degrees=10.)
+
+
+def test_solver_buffer_tightens_every_family_without_changing_authored_limits():
+    original=LIMITS.copy();buffered=solver_region_limits(LIMITS,.00001,.001)
+    assert LIMITS==original
+    assert solver_region_limits(LIMITS,.00001,0)==solver_region_limits(LIMITS,.00001)
+    for key in ['clearance_m','spacing_m','area_m2']:assert buffered[key]>LIMITS[key]
+    for key in ['contact_gap_m','local_radius_m','centroid_error_m','normal_degrees']:assert buffered[key]<LIMITS[key]
+    assert buffered['clearance_m']<buffered['contact_gap_m']
+    assert buffered['centroid_error_m']==.004995
+
+
+@pytest.mark.parametrize('value',[-1,1,True,float('nan'),float('inf'),.5])
+def test_invalid_or_exhausted_buffer_rejected(value):
+    with pytest.raises(ValueError):solver_region_limits(LIMITS,0,value)
 
 
 @pytest.mark.parametrize('shape',[Geometry('sphere',(.5,)),Geometry('box',(1,1,1))])

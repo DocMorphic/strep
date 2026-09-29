@@ -117,18 +117,23 @@ class RegionInequalities:
             self.multipliers[index][n:n+11]=0
 
 
-def solver_region_limits(limits,gap_margin):
+def solver_region_limits(limits,gap_margin,limit_margin_fraction=0.):
     if type(gap_margin) not in [int,float] or not np.isfinite(gap_margin) or gap_margin<0:
         raise ValueError('Contact gap margin must be finite and nonnegative')
+    if type(limit_margin_fraction) not in [int,float] or not np.isfinite(limit_margin_fraction) or not 0<=limit_margin_fraction<1:
+        raise ValueError('Region limit margin fraction must be finite in [0, 1)')
     result=dict(limits)
     result['contact_gap_m']-=gap_margin
-    if result['contact_gap_m']<result['clearance_m'] or (gap_margin>0 and result['contact_gap_m']==result['clearance_m']):
+    if limit_margin_fraction:
+        for key in ['clearance_m','spacing_m','area_m2']:result[key]*=1+limit_margin_fraction
+        for key in ['contact_gap_m','local_radius_m','centroid_error_m','normal_degrees']:result[key]*=1-limit_margin_fraction
+    if result['contact_gap_m']<result['clearance_m'] or ((gap_margin>0 or limit_margin_fraction>0) and result['contact_gap_m']==result['clearance_m']):
         raise ValueError('Contact gap margin exhausts the clearance window')
     return result
 
 
 class RegionObjective:
-    def __init__(self, package, source, skin, reduction='worst', constraint_mode='penalty',witness_mode='frozen',gap_margin_m=0.):
+    def __init__(self, package, source, skin, reduction='worst', constraint_mode='penalty',witness_mode='frozen',gap_margin_m=0.,limit_margin_fraction=0.):
         from floor_contact import Surface
         if reduction not in ['worst','balanced']:raise ValueError('Unknown region penalty reduction')
         if constraint_mode not in ['penalty','augmented']:raise ValueError('Unknown region constraint mode')
@@ -137,6 +142,7 @@ class RegionObjective:
         if witness_mode not in ['frozen','stage_refresh']:raise ValueError('Unknown witness mode')
         self.witness_mode=witness_mode
         self.gap_margin_m=gap_margin_m
+        self.limit_margin_fraction=limit_margin_fraction
         self.witness_history=[];self.witness_stage=0;self.last_points=None
         self.reduction=reduction
         self.records=[]; self.selected=set(); self.selections=[]
@@ -147,7 +153,7 @@ class RegionObjective:
             hand=record['binding']['hand'];a,b=record['start_frame'],record['end_frame']
             segments=package['anchor_subproblem']['regions'][hand]['segments']
             segment=next(s for s in segments if s['start_frame']==a and s['end_frame']==b)
-            geometry=Geometry.parse(record['geometry']);limits=solver_region_limits(record['binding']['limits'],gap_margin_m)
+            geometry=Geometry.parse(record['geometry']);limits=solver_region_limits(record['binding']['limits'],gap_margin_m,limit_margin_fraction)
             for frame in range(a,b+1):
                 points=surface.vertices(source['global_rot_mats'][frame],source['posed_joints'][frame],ids)
                 position=np.asarray(record['object_positions_m'][frame]);rotation=np.asarray(record['object_rotations'][frame])
@@ -156,7 +162,7 @@ class RegionObjective:
                 self.records.append(dict(frame=frame,hand=hand,ids=ids,faces=faces,
                     triple=np.array([remap[v] for v in chosen]),anchor=remap[segment['vertex_id']],target=target,
                     desired_normal=np.asarray(record['desired_normals'][frame]),geometry=geometry,position=position,
-                    rotation=rotation,limits=limits,anchor_tolerance=record['anchor_tolerance_m']))
+                    rotation=rotation,limits=limits,anchor_tolerance=record['anchor_tolerance_m']*(1-limit_margin_fraction)))
                 self.selections.append(dict(contact_id=record['contact_id'],frame=frame,vertices=chosen,method=method))
             self.selected.update(ids.tolist())
         if not self.records:raise ValueError('Region fitting needs active authored regions')
@@ -248,6 +254,7 @@ class RegionObjective:
         return dict(selections=self.selections,weight=100.,reduction=self.reduction,constraint_mode=self.constraint_mode,
             witness_mode=self.witness_mode,witness_history=self.witness_history,
             solver_contact_gap_margin_m=self.gap_margin_m,
+            solver_limit_margin_fraction=self.limit_margin_fraction,
             final_witnesses=[r['ids'][r['triple']].tolist() for r in self.records],
             augmented_state=self.stage_diagnostics(),schema='strep-region-fitting-objective-v1',
             scope='Witnesses fixed within each stage; optional strictly improving reselection at accepted stage boundaries. Authored patches/limits unchanged; feasibility not guaranteed.')
