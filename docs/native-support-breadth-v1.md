@@ -44,3 +44,12 @@ All 81 hand-pin samples pass, but the 4.999953099 mm maximum is only about 0.000
 Saved NPZ/body/support replay, complete export-audit replay, engine-observation replay and paired input/method/protocol verification pass. The original limits and failed candidates are retained. Local evidence includes `crawl-control-verification.json`, `crawl-support-verification.json`, `crawl-identical-artifacts.json` and `crawl-pair-engine-verification` in the batch folder. A later export repair can reuse one identical candidate, but must preserve the pin's very small remaining margin. No repair outcome is assumed.
 
 Four of six runs are complete. The landing control is running, followed by its matched support arm. This partial population does not justify enabling the constraint by default or claiming general motion quality.
+
+
+## Landing control: pose correction is still necessary
+
+The landing control completes 383 evaluations in 252.34 seconds, with three of 61 pin samples outside 5 mm and a 5.371695 mm maximum error. Point-phase speed/acceleration failures remain, while original global rate limits, floor preservation, outside-window preservation and body-review flags pass. Actual engine playback passes 284 observations. Independent saved-NPZ support/body replay and all input/current/archived/completion hashes were verified; the support-enabled arm is still running.
+
+A separate decoded-pin check isolates failures at frames 90, 99.75 and 100. Their horizontal errors alone are 5.003851, 5.141218 and 5.360478 mm. At frame 100, vertical error is only 0.346954 mm. Holding rotations and root XZ fixed cannot reduce the horizontal component: therefore root-height-only export feedback cannot repair this control to the unchanged 5 mm limit. This is a restriction of that repair subspace, not a proof that the authored landing request is impossible.
+
+The candidate, hash-bound pin diagnostic (`landing-control-pin-diagnosis.json`) and independent control verification remain under the local batch folder. A future pose correction must preserve the original edit and rate limits; no failed result is replaced and no extra root-only retry is justified by this evidence. Five of six runs are complete; no paired landing outcome is claimed yet.
