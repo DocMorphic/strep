@@ -33,3 +33,14 @@ The support-enabled wave-22 fit completed 325 evaluations in 281.60 seconds. All
 Verification confirmed identical original inputs and method snapshots, with the support switch as the sole protocol difference. Independent saved-NPZ support/body replay, complete export-audit replay and replay of the captured engine observations all pass. The left-foot slide p95 is 0.020256981 m/s (control 0.020391423); the right-foot value is 0.027324274 m/s (control 0.027302977). Both modes were already comfortably inside the fixed support limits. This is evidence of nonregression on this development case, not proof that the support term generally improves motion or that the control's small rate failure was physically meaningful. All numerical acceptance thresholds remain unchanged.
 
 Evidence is retained in `wave-support-verification.json` and `wave-pair-engine-verification` under the local batch folder. Two of six runs are complete; the crawl-22 control is now running and the remaining modes stay queued under frozen methods. No default Studio change, human-quality approval or release claim follows from this pair.
+
+
+## Completed crawling pair
+
+Both crawl-22 arms finish after 462 evaluations. Their native NPZ, BVH, GLB, exported contact audit and body evaluation are byte-identical. The control takes 298.89 seconds and the support-enabled fit takes 440.47 seconds on this local run. This case demonstrates no motion improvement and additional computation; neither arm is selected as a quality winner.
+
+All 81 hand-pin samples pass, but the 4.999953099 mm maximum is only about 0.000046901 mm below the unchanged 5 mm limit. Both retain a release point-acceleration excess of 0.000036604731 m/s², so both contact screens fail. All other point/global rate limits pass, added floor depth and audited outside-window errors are zero, and no body-review flag is added. All eight measured raw/limb hand/foot support comparisons pass. Each arm passes 284 engine pose observations and its authored event checks.
+
+Saved NPZ/body/support replay, complete export-audit replay, engine-observation replay and paired input/method/protocol verification pass. The original limits and failed candidates are retained. Local evidence includes `crawl-control-verification.json`, `crawl-support-verification.json`, `crawl-identical-artifacts.json` and `crawl-pair-engine-verification` in the batch folder. A later export repair can reuse one identical candidate, but must preserve the pin's very small remaining margin. No repair outcome is assumed.
+
+Four of six runs are complete. The landing control is running, followed by its matched support arm. This partial population does not justify enabling the constraint by default or claiming general motion quality.
