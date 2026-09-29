@@ -18,7 +18,7 @@ from scene_constraints import evaluate
 from build_soma_preview import ASSET
 
 JOBS = ROOT/'reports/scene-trim-jobs'
-METHODS = ['retime_scene.py','scene_animation_curves.py','godot_scene_clock.gd','scene_trim_job.py','trim_scene.py','scene_runtime.py','scene_release_job.py',
+METHODS = ['audit_scene_timing.py','rig_asset.py','retime_scene.py','scene_animation_curves.py','godot_scene_clock.gd','scene_trim_job.py','trim_scene.py','scene_runtime.py','scene_release_job.py',
            'scene_object_export.py','scene_constraints.py','gltf_tools.py','scene_region_job.py',
            'package_generated_scenes.py','object_geometry.py','object_geometry_mesh.py','rig_clip_import.py']
 
@@ -121,13 +121,17 @@ def run(folder):
         for name in METHODS:
             if sha256(ROOT/'scripts'/name) != sha256(folder/'implementation'/name):raise ValueError('Trimming code changed after preparation')
         if sha256(ASSET) != request['source_files'][str(ASSET)]:raise ValueError('Review skin changed')
-        save(folder/'pipeline.json', dict(status='processing', stage='Trimming shared scene clock'))
+        save(folder/'pipeline.json', dict(status='processing', stage='Editing shared scene clock'))
         retiming=payload.get('operation')=='retime'
         target='retimed' if retiming else 'trimmed'
         if retiming:
             from retime_scene import run as retime
             retime(folder/'input',folder/target,payload['frames'])
         else:trim(folder/'input',folder/target,payload['first'],payload['last'])
+        from audit_scene_timing import run as timing_review, summary as timing_summary
+        save(folder/'pipeline.json',dict(status='processing',stage='Measuring exported support and joint rates'))
+        timing=timing_review(folder/'input',folder/target,folder/'timing-review.json',
+                            0 if retiming else payload['first'],None if retiming else payload['last'])
         skin = dict(np.load(ASSET, allow_pickle=False))
         for version in ['input',target]:
             scene = read(folder/version/'portable-scene.json')
@@ -138,7 +142,8 @@ def run(folder):
             data = bundle(scene, evaluate(scene, skin), skin); data['events_file'] = version+'/events.json'
             save(folder/(version+'.json'), data)
         note = 'Shared scene timing edited; contact measurements recomputed. Collision quality, dynamics and naturalness remain unapproved. Prior event context is retained without replay.'
-        downloads=[dict(label='Scene animation ZIP',path=target+'/scene-runtime.zip'),dict(label='Events',path=target+'/events.json')]
+        note+=' '+timing_summary(timing)
+        downloads=[dict(label='Scene animation ZIP',path=target+'/scene-runtime.zip'),dict(label='Events',path=target+'/events.json'),dict(label='Support and joint-rate comparison',path='timing-review.json')]
         if retiming:
             recipe=read(folder/target/'retime-recipe.json');note+=f" Speed multiplier {recipe['speed_multiplier']:.6f}; forces and gravity timing were not re-simulated."
             downloads.append(dict(label='Timing and rate measurements',path=target+'/retime-audit.json'))

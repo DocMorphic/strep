@@ -29,6 +29,6 @@ The corrected import study reuses byte-verified retimed assets from the failed s
 
 Six actor/object export comparisons cover **4,062 source-clock samples at 120 Hz**, with maximum matrix component discrepancy below 1.200e-6. The later schema guard produces byte-identical manifests for all four engine-tested cases; that check is retained separately. Fifty Python tests cover clocks, fractional events, terminal holds, conservative contact windows, interpolation/tangent scaling, import rates, runtime validation and existing trim workers.
 
-Evidence is retained under `reports/scene-retime-import-v1`, including the current-runtime check. No browser interaction or animator assessment was performed. This is CLI/backend work; the Studio interface does not yet expose retiming.
+Evidence is retained under `reports/scene-retime-import-v1`, including the current-runtime check. No browser interaction or animator assessment was performed. This initial study covered the CLI/backend. The subsequent [Studio timing integration](studio-scene-timing-v1.md) adds retiming and trims of retimed exports.
 
 Uniform retiming changes physics: speed scales by the multiplier and acceleration by its square. The faster release has an acceleration multiplier of **2.225069**. Node-origin finite-difference rates are reported, but gravity, force, balance and support are not re-simulated or approved. Preserving a collision-prone path retains its defects. All fourteen release capabilities remain unapproved.

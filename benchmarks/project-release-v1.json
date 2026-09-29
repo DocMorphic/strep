@@ -328,11 +328,14 @@
         "reports/studio-scene-timing-v1/completion.json",
         "reports/scene-trim-retimed-v1/completion.json",
         "reports/scene-trim-precision-guard-v1/completion.json",
-        "reports/scene-trim-precision-guard-v1/step-verification.json"
+        "reports/scene-trim-precision-guard-v1/step-verification.json",
+        "docs/scene-timing-support-v1.md",
+        "reports/scene-timing-support-v1/verification.json",
+        "reports/studio-timing-support-v1/completion.json"
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
-        "Validate dynamics/support after trim, retime and local pose edits; preserve transitions and connect synchronized scene retiming to Studio, support trims of retimed curves and validate browser interaction",
+        "Validate dynamics/support after trim, retime and local pose edits; preserve transitions and validate browser interaction. Shared-scene Studio retiming and trims of retimed LINEAR/STEP exports are implemented.",
         "Additional external clips, rigs and format support",
         "Independent animator and held-out quality/cleanup-time validation"
       ]
@@ -1011,7 +1014,10 @@
         "reports/studio-scene-timing-v1/completion.json",
         "reports/scene-trim-retimed-v1/completion.json",
         "reports/scene-trim-precision-guard-v1/completion.json",
-        "reports/scene-trim-precision-guard-v1/step-verification.json"
+        "reports/scene-trim-precision-guard-v1/step-verification.json",
+        "docs/scene-timing-support-v1.md",
+        "reports/scene-timing-support-v1/verification.json",
+        "reports/studio-timing-support-v1/completion.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1242,7 +1248,10 @@
         "reports/studio-scene-timing-v1/completion.json",
         "reports/scene-trim-retimed-v1/completion.json",
         "reports/scene-trim-precision-guard-v1/completion.json",
-        "reports/scene-trim-precision-guard-v1/step-verification.json"
+        "reports/scene-trim-precision-guard-v1/step-verification.json",
+        "docs/scene-timing-support-v1.md",
+        "reports/scene-timing-support-v1/verification.json",
+        "reports/studio-timing-support-v1/completion.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1607,7 +1616,10 @@
         "docs/knee-contact-windows-v1.md",
         "reports/knee-contact-window-comparison-v1/comparison.json",
         "reports/knee-contact-temporal-audit-v1/verification.json",
-        "reports/knee-contact-temporal-audit-v1/decision.json"
+        "reports/knee-contact-temporal-audit-v1/decision.json",
+        "docs/scene-timing-support-v1.md",
+        "reports/scene-timing-support-v1/verification.json",
+        "reports/studio-timing-support-v1/completion.json"
       ],
       "remaining": [
         "Periodic bounded correction and Godot playback are implemented; turning blend contact intent and imported locomotion floor failures remain. Broader support-aware selection/regeneration and runtime integration need validation.",
@@ -1673,7 +1685,10 @@
         "reports/studio-scene-timing-v1/completion.json",
         "reports/scene-trim-retimed-v1/completion.json",
         "reports/scene-trim-precision-guard-v1/completion.json",
-        "reports/scene-trim-precision-guard-v1/step-verification.json"
+        "reports/scene-trim-precision-guard-v1/step-verification.json",
+        "docs/scene-timing-support-v1.md",
+        "reports/scene-timing-support-v1/verification.json",
+        "reports/studio-timing-support-v1/completion.json"
       ]
     },
     {
@@ -2806,6 +2821,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T14:22:48.769242+00:00",
-  "last_progress": "Studio speed controls and retimed trims preserve precise event/contact intent through repeated edits. Four-scene trim and real three-job Studio chain pass 1,140 and 1,228 engine observations. Final actor/box regression passes 205 after rejecting engine-collapsed STEP keys; original failing probe retained. 64 Python tests and offline Node editor check pass. Browser rendering, physical dynamics and human quality remain unapproved; all fourteen capabilities remain open."
+  "last_progress_at": "2026-09-29T14:32:59.991045+00:00",
+  "last_progress": "Studio trim/speed edits now include exported ground-support, full-skin floor and per-joint linear/angular rate comparisons. Three development scenes cover 2,628 matched actor samples; faster release worsens slide p95 and slower paired motion retains floor penetration. Fifteen focused tests and a real Studio object timing job pass workflow validation. Moving-support frames, physical validity, browser and human review remain open; no release capability approved."
 }

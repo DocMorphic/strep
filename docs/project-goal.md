@@ -1,5 +1,7 @@
 # One project-wide goal: release-ready Strep
 
+Latest timing-quality evidence: [exported support and joint-rate review](scene-timing-support-v1.md) now accompanies Studio trim/speed edits. Three development scenes cover 2,628 matched actor samples: faster release raises slide p95 from 0.04350 to 0.06489 m/s; slower paired motion retains 11.96 mm floor penetration. Fifteen tests and a real Studio object-scene job pass workflow checks. These measurements expose remaining defects; all fourteen capabilities remain unapproved.
+
 Latest timing work: [Studio timing edits](studio-scene-timing-v1.md) add shared-scene speed controls, trims of retimed curves and exact contact intent through repeated edits. The saved-scene worker chain passes 1,228 engine observations; four-scene trimming passes 1,140. A final actor/box regression passes 205 observations after detecting and rejecting engine-collapsed STEP keys. Sixty-four Python tests and the offline editor check pass. Browser rendering, dynamics and human quality remain unapproved; all fourteen release capabilities remain open.
 
 Latest preservation fix: [local edit boundaries](window-boundary-preservation-v1.md) now hold endpoint poses adjoining unchanged motion. A real short fit changes the interior while all 276 outside export samples stay within 0.129 micrometres; 360 Godot actor-frame checks pass. Contact and collision checks still fail, and no release capability is approved.
