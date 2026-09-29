@@ -1,3 +1,26 @@
+// Readable diagnostics for independently measured exports; never quality approval.
+export function sceneRateDetails(assessment,scene){
+ const output=[];
+ function windowLabel(value){
+  const slash=value.lastIndexOf('/'),id=value.slice(0,slash),phase=value.slice(slash+1);
+  const contact=scene?.contacts?.find(c=>c.id===id),end=(scene?.frame_count??1)-1;
+  const names={approach:'approach',grasp:'grasp',release:'release',start_boundary:'contact-start boundary',end_boundary:'contact-end boundary'};
+  if(value==='whole_clip')return 'whole clip';
+  if(!contact||!names[phase])return value;
+  const a=contact.start_frame,b=contact.end_frame;
+  const spans={approach:[0,a],grasp:[a,b],release:[b,end],start_boundary:[Math.max(0,a-2),Math.min(end,a+2)],end_boundary:[Math.max(0,b-2),Math.min(end,b+2)]};
+  return `${id}: ${names[phase]} (frames ${spans[phase].join('–')})`;
+ }
+ for(const [key,label] of [['speed','Speed'],['acceleration','Acceleration']]){
+  const row=assessment?.rate_diagnostics?.[key];if(!row)continue;
+  const count=row.increased_joint_peaks,windows=Array.isArray(row.increased_window_peaks)?row.increased_window_peaks.filter(v=>typeof v==='string'):[];
+  if(!Number.isInteger(count)||count<0)continue;
+  output.push(`${label}: ${count} ${count===1?'joint has':'joints have'} higher whole-clip peaks. ${windows.length?'Higher peaks in '+windows.map(windowLabel).join('; ')+'.':'No higher phase or boundary peaks reported.'}`);
+ }
+ if(output.length)output.push('Compared with the source clip using a 0.00001 reporting allowance in m/s or m/s². These measurements are not a naturalness rating. Download the per-joint report for individual values.');
+ return output;
+}
+
 // Region drafts and job IDs survive reload; completion is separate from quality.
 export function createSceneRegionEditor({getContext,onComplete,onDraft=()=>{},onPick=()=>{},onCancelPick=()=>{},onHandPick=()=>{},onHandFrame=()=>{}}){
  const storage={

@@ -36,6 +36,12 @@ A separate one-frame diagnosis sweeps the right elbow around the shoulder-to-wri
 
 Evidence remains under `reports/region-object-grip-seed-v2-clearance-diagnosis.json`, `region-object-grip-seed-v2-contact-diagnosis.json`, and `region-object-grip-elbow-diagnosis-v1/{method.py,result.json}`. The latter preserves its exact diagnostic script and input hashes. The full-body trial continues unchanged while this diagnosis is recorded.
 
+## Review timing details
+
+Studio now exposes **Motion timing diagnostics** beneath the scene assessment for packages with a bound joint-rate report. The expandable section identifies the number of joints with increased whole-clip peaks and names the affected contact phases with their frame ranges. For this seed, it reports 24 speed increases and 37 acceleration increases, including the release boundary at frames 119-123. The full per-joint report remains downloadable. Source-only and older packages without these diagnostics hide the section; changing scene placement or loading another scene clears the previous display.
+
+The existing region-editor checks pass, and a Node check against the actual saved seed package verifies the counts and boundary ranges. The generated desktop bundle matches its sources, contains unique control IDs and passes module syntax checking. Evidence is in `reports/scene-rate-details-ui-v1/verification.json`. This was checked offline; live rendering was not verified. Numerical worker source, its inputs and acceptance limits are unchanged.
+
 ## Reproduction and follow-through
 
 With the preceding development assets available locally:
