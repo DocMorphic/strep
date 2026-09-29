@@ -883,6 +883,8 @@
         "docs/frame121-static-diagnostic-v1.md",
         "docs/shared-pose-diagnostic-v1.md",
         "docs/preserved-support-v1.md",
+        "docs/studio-edit-window-v1.md",
+        "reports/studio-edit-window-v1/verification.json",
         "docs/edit-window-review-v1.md",
         "reports/edit-window-review-v1/publisher-verification.json",
         "reports/edit-window-review-v1/ui-verification.json",

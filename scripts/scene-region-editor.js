@@ -63,10 +63,10 @@ export function createSceneRegionEditor({getContext,onComplete,onDraft=()=>{},on
  let source=null,drafts={},busy=false,version=0;
  const status=value=>by('Status').textContent=value;
  async function json(url,options){const response=await fetch(url,{cache:'no-store',...options}),data=await response.json();if(!response.ok)throw Error(data.error||'Request failed');return data;}
- function enabled(){for(const field of [...fields,'Actor','Contact','Include','Label','Apply','UseFrame','Pick','Paint','Erase','ClearPatch','FrameHand'])by(field).disabled=busy||!source;if(busy||!source)onCancelPick();}
+ function enabled(){for(const field of [...fields,'Actor','Contact','Include','Label','Apply','UseFrame','Pick','Paint','Erase','ClearPatch','FrameHand','LimitWindow'])by(field).disabled=busy||!source;for(const field of ['WindowStart','WindowEnd'])by(field).disabled=busy||!source||!by('LimitWindow').checked;if(busy||!source)onCancelPick();}
  function preview(){const c=selected();if(c){const d=drafts[c.id];onDraft(c,d.edit,d.include);}else onDraft(null);}
  function selected(){return source?.contacts.find(c=>c.id===by('Contact').value);}
- function store(){if(!source)return;try{storage.setItem('strep:regions:'+source.revision,JSON.stringify({drafts,label:by('Label').value}));}catch{}}
+ function store(){if(!source)return;try{storage.setItem('strep:regions:'+source.revision,JSON.stringify({drafts,label:by('Label').value,edit_window:by('LimitWindow').checked?[Number(by('WindowStart').value),Number(by('WindowEnd').value)]:null}));}catch{}}
  function fill(){const c=selected();if(!c)return;const d=drafts[c.id],e=d.edit;
   by('Include').checked=d.include;by('Start').value=e.start_frame;by('End').value=e.end_frame;
   ['X','Y','Z'].forEach((a,i)=>by(a).value=e.point_m[i]);by('Anchor').value=e.anchor_tolerance_m*1000;
@@ -85,6 +85,7 @@ export function createSceneRegionEditor({getContext,onComplete,onDraft=()=>{},on
  }
  function actorContacts(){const list=source.contacts.filter(c=>c.supported&&c.actor===by('Actor').value);by('Contact').replaceChildren(...list.map(c=>new Option(c.id,c.id)));fill();}
  for(const field of [...fields,'Include'])by(field).addEventListener('input',capture);
+ by('LimitWindow').addEventListener('input',()=>{enabled();store();});for(const field of ['WindowStart','WindowEnd'])by(field).addEventListener('input',store);
  by('Label').addEventListener('input',store);by('Actor').onchange=actorContacts;by('Contact').onchange=fill;
  by('UseFrame').onclick=()=>{by('Start').value=getContext().frame;capture();};
  by('Pick').onclick=()=>{if(source&&!busy)onPick();};
@@ -111,16 +112,18 @@ export function createSceneRegionEditor({getContext,onComplete,onDraft=()=>{},on
   capture();const actor=by('Actor').value,contacts=source.contacts.filter(c=>c.supported&&c.actor===actor&&drafts[c.id]?.include).map(c=>{const e=structuredClone(drafts[c.id].edit);if(e.patch_mode!=='custom'){delete e.patch_face_ids;delete e.patch_mesh_sha256;}return e;});
   if(!contacts.length){status('Include at least one contact.');return;}
   if(contacts.some(c=>c.patch_mode==='custom'&&!c.patch_face_ids?.length)){status('Select hand triangles before fitting.');return;}
+  const editWindow=by('LimitWindow').checked?[Number(by('WindowStart').value),Number(by('WindowEnd').value)]:null;
+  if(editWindow&&(!editWindow.every(Number.isInteger)||editWindow[0]<0||editWindow[1]>=source.frames||editWindow[0]>editWindow[1]||contacts.some(c=>c.start_frame<editWindow[0]||c.end_frame>editWindow[1]))){status('Choose an integer edit range inside the clip that includes every selected contact interval.');return;}
   busy=true;enabled();status('Saving authored regions and starting the fit…');
-  try{const job=await json('/api/scene-region-fits',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source_url:source.source_url,revision:source.revision,actor,label:by('Label').value.trim(),contacts})});storage.setItem('strep:region-active-job',job.id);poll(job.id);}
+  try{const job=await json('/api/scene-region-fits',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source_url:source.source_url,revision:source.revision,actor,label:by('Label').value.trim(),contacts,...(editWindow?{edit_window:editWindow}:{})})});storage.setItem('strep:region-active-job',job.id);poll(job.id);}
   catch(error){busy=false;enabled();status(error.message);}
  };
  const active=storage.getItem('strep:region-active-job');if(active){busy=true;poll(active);}enabled();
  return {setHandFaces,setGripPoint(point){if(!source||busy||!selected())return;['X','Y','Z'].forEach((axis,i)=>by(axis).value=point[i]);capture();},reset(){version++;source=null;onDraft(null);enabled();},async bind(url){const token=++version;source=null;onDraft(null);enabled();
   try{const data=await json('/api/scene-region-source?path='+encodeURIComponent(url));if(token!==version)return;
    const supported=data.contacts.filter(c=>c.supported);if(!supported.length){status('No editable hand-to-object contacts in this scene. '+data.contacts.map(c=>c.reason||'').join(' '));return;}
-   source=data;drafts=Object.fromEntries(supported.map(c=>[c.id,{include:true,edit:structuredClone(c.edit)}]));by('Label').value='Hand contact fit';
-   try{const saved=JSON.parse(storage.getItem('strep:regions:'+data.revision));if(saved){for(const c of supported)if(saved.drafts?.[c.id])drafts[c.id]=saved.drafts[c.id];by('Label').value=saved.label||'Hand contact fit';}}catch{}
+   source=data;drafts=Object.fromEntries(supported.map(c=>[c.id,{include:true,edit:structuredClone(c.edit)}]));by('Label').value='Hand contact fit';by('LimitWindow').checked=false;by('WindowStart').value=0;by('WindowEnd').value=data.frames-1;for(const field of ['WindowStart','WindowEnd'])by(field).max=data.frames-1;
+   try{const saved=JSON.parse(storage.getItem('strep:regions:'+data.revision));if(saved){for(const c of supported)if(saved.drafts?.[c.id])drafts[c.id]=saved.drafts[c.id];by('Label').value=saved.label||'Hand contact fit';if(Array.isArray(saved.edit_window)&&saved.edit_window.length===2){by('LimitWindow').checked=true;[by('WindowStart').value,by('WindowEnd').value]=saved.edit_window;}}}catch{}
    by('Actor').replaceChildren(...[...new Set(supported.map(c=>c.actor))].map(a=>new Option(a,a)));actorContacts();enabled();
    if(!busy)status('Edit one or more contacts, then fit. Suggested palm regions need review; a saved candidate may still fail its checks.');
   }catch(error){if(token===version){source=null;enabled();if(!busy)status(error.message);}}

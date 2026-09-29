@@ -30,6 +30,7 @@ const editor=createSceneRegionEditor({getContext:()=>({frame:4,changed}),onCompl
 await editor.bind(data.source_url);
 const el=id=>elements.get('sceneRegion'+id);
 assert.equal(el('Gap').value,3);assert.equal(el('Area').value,25);
+assert.equal(el('LimitWindow').checked,false);assert.equal(el('WindowStart').disabled,true);
 el('Pick').onclick();assert.equal(pickRequests,1);
 editor.setGripPoint([.2,.137425,.021625]);assert.deepEqual(preview.edit.point_m,[.2,.137425,.021625]);
 assert.equal(preview.include,true);assert.equal(preview.contact.target_object,'box');
@@ -41,6 +42,7 @@ await el('Apply').onclick();for(let i=0;i<5;i++)await new Promise(resolve=>setIm
 assert.equal(posted.contacts[0].limits.contact_gap_m,.0035);assert.equal(posted.contacts[0].start_frame,4);
 assert.deepEqual(posted.contacts[0].point_m,[.2,.137425,.021625]);assert(cancellations>0);
 assert.equal(posted.label,'Edited grip');assert.equal(completed,'scene-region-jobs/job1');
+assert.equal(posted.edit_window,undefined);
 assert.match(el('Status').textContent,/Needs correction/);assert.match(el('Status').textContent,/Motion regressions/);
 assert.equal(storage.get('strep:region-active-job'),undefined);
 editor.setHandFaces([4,5],'meshA');assert.equal(el('PatchMode').value,'custom');
@@ -50,7 +52,15 @@ editor.setHandFaces([4],'meshA');await el('Apply').onclick();for(let i=0;i<5;i++
 assert.deepEqual(posted.contacts[0].patch_face_ids,[4]);assert.equal(posted.contacts[0].patch_mesh_sha256,'meshA');
 el('PatchMode').value='saved';el('PatchMode').events.input();await el('Apply').onclick();for(let i=0;i<5;i++)await new Promise(resolve=>setImmediate(resolve));
 assert.equal(posted.contacts[0].patch_face_ids,undefined);assert.equal(posted.contacts[0].patch_mesh_sha256,undefined);
+el('LimitWindow').checked=true;el('LimitWindow').events.input();assert.equal(el('WindowStart').disabled,false);
+el('WindowStart').value='5';el('WindowEnd').value='8';posted=null;
+await el('Apply').onclick();assert.equal(posted,null);assert.match(el('Status').textContent,/includes every selected contact/);
+el('WindowStart').value='1';el('WindowStart').events.input();
+await el('Apply').onclick();for(let i=0;i<5;i++)await new Promise(resolve=>setImmediate(resolve));
+assert.deepEqual(posted.edit_window,[1,8]);
+await editor.bind(data.source_url);assert.equal(el('LimitWindow').checked,true);assert.equal(Number(el('WindowStart').value),1);assert.equal(Number(el('WindowEnd').value),8);
 editor.reset();assert.equal(el('Apply').disabled,true);
+assert.equal(el('WindowStart').disabled,true);
 assert.equal(el('Pick').disabled,true);assert.equal(preview,null);el('Pick').onclick();assert.equal(pickRequests,1);
 globalThis.localStorage={getItem(){throw Error('Storage denied');},setItem(){throw Error('Storage denied');},removeItem(){throw Error('Storage denied');}};
 const privateEditor=createSceneRegionEditor({getContext:()=>({frame:0,changed:false}),onComplete:async()=>{}});

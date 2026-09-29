@@ -14,7 +14,7 @@ from scene_region_contact import SCHEMA,mesh_fingerprint,compile_region
 from hand_patch_authoring import hand_mesh,custom_patch
 
 JOBS=ROOT/'reports/scene-region-jobs'
-METHODS=['localized_spline.py','shared_pose_diagnostic.py','box_root_optimizer.py','bounded_root_coordinates.py','linear_skin_operator.py','export_motion_sampling.py','export_rate_objective.py','scene_region_job.py','scene_fit_initialization.py','hand_patch_authoring.py','fit_scene_regions.py','audit_scene_region_fit.py','region_contact_objective.py',
+METHODS=['audit_scene_edit_window.py','plan_scene_edit_window.py','localized_spline.py','shared_pose_diagnostic.py','box_root_optimizer.py','bounded_root_coordinates.py','linear_skin_operator.py','export_motion_sampling.py','export_rate_objective.py','scene_region_job.py','scene_fit_initialization.py','hand_patch_authoring.py','fit_scene_regions.py','audit_scene_region_fit.py','region_contact_objective.py',
          'compile_scene_regions.py','scene_region_contact.py','support_contact_v8.py','scene_constraints.py',
          'scene_solver_context.py','paired_palm_region.py','palm_contacts.py','floor_contact.py','object_geometry.py',
          'scene_release_job.py','compile_scene_contacts.py','contact_spec.py','support_contact.py','support_contact_v5.py',
@@ -68,8 +68,21 @@ def metadata(url):
         note='Suggested palm patches are geometric proposals. Changes create a new authored condition; fitting and completion are not quality approval.')
 
 
+def validate_window(window,frames,contacts):
+    if window is None:return None
+    from localized_spline import localized_controls
+    from support_contact_v5 import correction_basis
+    from support_contact_v8 import CONFIG
+    basis,_=correction_basis(frames,CONFIG['knot_spacing_frames'])
+    localized_controls(basis,window)
+    if any(c['start_frame']<window[0] or c['end_frame']>window[1] for c in contacts):
+        raise ValueError('Edit range must include every selected contact interval')
+    return list(window)
+
+
 def validate(payload):
-    if not isinstance(payload,dict) or set(payload)!={'source_url','revision','actor','label','contacts'}:
+    required={'source_url','revision','actor','label','contacts'}
+    if not isinstance(payload,dict) or not required<=set(payload) or set(payload)-required-{'edit_window'}:
         raise ValueError('Scene, revision, actor, name and contact edits required')
     source=region_source(payload['source_url'])
     if payload['revision']!=revision(source):raise ValueError('Scene, mesh or fitting code changed; reload the saved scene')
@@ -105,6 +118,7 @@ def validate(payload):
         compile_region(c,scene,skin)
     from compile_scene_regions import compile_regions
     compile_regions(scene,actor,ids,skin)
+    validate_window(payload.get('edit_window'),scene['frame_count'],edits)
     return source,scene,ids
 
 
@@ -152,6 +166,22 @@ def bundle(scene,assessment,skin):
     return dict(scene=scene,evaluation=assessment,native_contact_tracks=tracks)
 
 
+def include_window_audit(study,geometry_path,output,summary,window):
+    from audit_scene_edit_window import run as audit_window
+    from plan_scene_edit_window import plan
+    study,output=Path(study),Path(output)
+    protocol=read(study/'protocol.json');geometry=read(geometry_path)
+    if protocol.get('edit_window')!=window or geometry['result_sha256']!=sha256(study/'result.json'):
+        raise ValueError('Window review differs from requested fit or geometry audit')
+    preservation=audit_window(study,output/'window-audit')
+    summary['window_preservation']=preservation['groups']
+    for group,flag in [('locked_segments','edit_window_outside_change'),('boundary_segments','edit_window_boundary_change')]:
+        if preservation['groups'][group]['within_numerical_tolerance'] is False:summary['motion_regressions'].append(flag)
+    rows=geometry['variants']['candidate']['rows']
+    summary['window_geometry']=plan(rows,window,preservation['frames'],protocol['config']['clearance_m'],protocol['config']['object_clearance_m'])
+    save(output/'window-geometry.json',summary['window_geometry'])
+
+
 def run(folder):
     import psutil
     folder=Path(folder).resolve()
@@ -167,10 +197,16 @@ def run(folder):
         payload=request['authored'];actor=payload['actor']
         save(folder/'pipeline.json',dict(status='processing',stage='Fitting authored hand regions'))
         from fit_scene_regions import run as fit
-        fit(folder/'source/authored-scene.json',actor,request['contact_ids'],folder/'fit',stages=3,iterations=40,seconds=300,region_loss='balanced')
+        window=payload.get('edit_window')
+        authored=read(folder/'source/authored-scene.json')
+        validate_window(window,authored['frame_count'],[c for c in authored['contacts'] if c['id'] in request['contact_ids']])
+        options={} if window is None else dict(edit_window=window)
+        fit(folder/'source/authored-scene.json',actor,request['contact_ids'],folder/'fit',stages=3,iterations=40,seconds=300,region_loss='balanced',**options)
         save(folder/'pipeline.json',dict(status='processing',stage='Checking exported contact, clearance and edit bounds'))
         from audit_scene_region_fit import run as audit
         audit(folder/'fit',folder/'audit');summary=audit_summary(read(folder/'audit/verification.json'))
+        if window is not None:
+            include_window_audit(folder/'fit',folder/'audit/verification.json',folder,summary,window)
         save(folder/'assessment.json',summary)
         skin=dict(np.load(ASSET,allow_pickle=False));input_scene=read(folder/'source/authored-scene.json');candidate=read(folder/'fit/candidate-scene.json')
         input_scene['actors'][actor]['preview_glb']='fit/source.glb';candidate['actors'][actor]['preview_glb']='fit/candidate.glb'
@@ -179,6 +215,8 @@ def run(folder):
         save(folder/'input.json',input_bundle);save(folder/'candidate.json',candidate_bundle)
         label=payload['label'].strip();note=('Contact and clearance samples pass.' if summary['contact_geometry_passed'] else 'Needs correction: contact or clearance checks failed.')+' Human review pending.'
         downloads=[dict(label='Candidate GLB',path='fit/candidate.glb'),dict(label='Independent audit',path='audit/verification.json'),dict(label='Authored scene',path='candidate.json')]
+        if window is not None:
+            downloads.extend([dict(label='Edit-window preservation',path='window-audit/verification.json'),dict(label='Remaining geometry by edit range',path='window-geometry.json')])
         save(folder/'manifest.json',dict(scenes=[dict(id='input',label=label+' · Input',variants=dict(palm='input.json'),review_note='Preserved source with the newly authored contact condition.'),
             dict(id='candidate',label=label+' · Candidate',variants=dict(palm='candidate.json'),review_note=note,downloads=downloads)]))
         save(folder/'pipeline.json',dict(status='complete',stage=note,finished_at=now(),assessment=summary))

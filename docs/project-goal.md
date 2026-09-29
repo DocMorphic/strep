@@ -1,6 +1,6 @@
 # One project-wide goal: release-ready Strep
 
-Latest contact work: [edit-range diagnostics in Studio review](edit-window-review-v1.md) show unresolved collisions inside, across and outside a selected window, with a downloadable range assessment and no automatic scope change. A real failed clip retains its 478 contact and 379 geometry failures; fourteen package hashes, thirteen offline routes, twenty-four Python tests and three Node checks pass. The original full solve remains active with no final result yet; all 14 release capabilities remain unapproved.
+Latest contact work: [Studio edit-range authoring](studio-edit-window-v1.md) now saves and submits optional native-frame limits, rejects incompatible ranges before job creation, and audits preservation after a fit. Twenty-five Python tests, two Node checks and the real post-fit audit helper pass; no new complete Studio solve or browser interaction is claimed. The local server was refreshed without interrupting the separate full contact solve. All 14 release capabilities remain unapproved.
 
 Latest object-relative initialization: [moving grip study](object-grip-initialization-v1.md) reduces exported contact failures from 490 to 15 while preserving original edit bounds. Body penetration remains 38.99 mm; local temporal regressions remain visible. Fourteen focused tests and all 360 Godot actor-frames pass. The matched full-body trial subsequently completed with the failures recorded above; no release approval.
 

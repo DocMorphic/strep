@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from strep import ROOT,read
-from scene_region_job import JOBS,metadata,validate,prepare,run,audit_summary
+from scene_region_job import JOBS,metadata,validate,prepare,run,audit_summary,validate_window
 from action_studio_server import allowed_file
 
 URL='/files/scene-preview-v1/lift-box-seed-11/palm.json'
@@ -70,3 +70,36 @@ def test_completion_summary_never_promotes_failed_geometry_or_motion_regression(
     result=audit_summary(dict(hard_edit_bounds_passed=True,variants=dict(source=source,candidate=candidate)))
     assert not result['contact_geometry_passed'] and not result['quality_approved']
     assert result['motion_regressions']==['peak_joint_speed_m_s']
+
+
+def test_window_preserves_legacy_requests_and_rejects_no_free_controls():
+    contacts=[dict(start_frame=20,end_frame=40)]
+    assert validate_window(None,60,contacts) is None
+    assert validate_window([12,48],60,contacts)==[12,48]
+    with pytest.raises(ValueError,match='include every selected'):
+        validate_window([24,48],60,contacts)
+    with pytest.raises(ValueError,match='no free spline controls'):
+        validate_window([20,20],60,[])
+
+
+@pytest.mark.parametrize('window',[[True,133],[48.5,133],[-1,133],[0,10000],[133,48],[0], 'all'])
+def test_invalid_edit_window_is_rejected_before_snapshot(payload,work,window):
+    p=copy.deepcopy(payload);p['edit_window']=window
+    with pytest.raises(ValueError):prepare(p,work/'job')
+    assert not (work/'job').exists()
+
+
+@pytest.mark.parametrize('limited',[False,True])
+def test_worker_forwards_optional_edit_window_to_solver(payload,work,monkeypatch,limited):
+    import fit_scene_regions
+    p=copy.deepcopy(payload);_,scene,_=validate(p)
+    if limited:p['edit_window']=[0,scene['frame_count']-1]
+    folder=work/'job';prepare(p,folder);captured={}
+    def intercepted(*args,**kwargs):
+        captured.update(kwargs)
+        raise RuntimeError('Solver call intercepted; no numerical work performed')
+    monkeypatch.setattr(fit_scene_regions,'run',intercepted)
+    with pytest.raises(RuntimeError,match='Solver call intercepted'):run(folder)
+    if limited:assert captured['edit_window']==p['edit_window']
+    else:assert 'edit_window' not in captured
+    assert not (folder/'fit').exists()
