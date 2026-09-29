@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 from strep import read, save, sha256
 from contact_pose_reachability import point_bound
+from contact_pose_sphere_bound import sphere_bound
 
 
 def analyze(references, skin, spec):
@@ -31,13 +32,18 @@ def analyze(references, skin, spec):
             for frame in range(pin['start_frame'], pin['end_frame']+1):
                 positions = motion['posed_joints'][frame, indices]
                 inputs = dict(positions=positions.tolist(), weights=weights.tolist(), local_points=local.tolist(), target=pin['position_m'])
+                bound=point_bound(**inputs);sphere=sphere_bound(**inputs)
+                bound['sphere']=sphere
+                bound['any_verified_conflict']=bound['any_verified_conflict'] or sphere['conflict_verified']
+                bound['joint_displacement_lower_bound_m']=max(bound['joint_displacement_lower_bound_m'],sphere['joint_displacement_lower_bound_m'])
                 rows.append(dict(reference=name, region=region, vertex_id=vertex, frame=frame,
-                                 certificate_inputs=inputs, **point_bound(**inputs)))
+                                 certificate_inputs=inputs, **bound))
     conflicts = [r for r in rows if r['any_verified_conflict']]
     worst = max(rows, key=lambda r: r['joint_displacement_lower_bound_m'])
     return dict(status='incompatible_with_pose_screen' if conflicts else 'not_ruled_out',
                 conflicting_frame_reference_pairs=len(conflicts), rows=rows,
                 worst={k: worst[k] for k in ['reference', 'region', 'vertex_id', 'frame', 'joint_displacement_lower_bound_m', 'joint_budget_m']},
+                bound_methods=['component_l1','euclidean_outward_rational'],
                 policy='Current .22 m native joint-change screen and .005 m native pin tolerance. Conservative rotation operator norm assumption 1.02; 1 micrometre arithmetic reserve. No acceptance limits changed.',
                 quality_approved=False)
 
@@ -66,5 +72,5 @@ if __name__ == '__main__':
     for path, digest in inputs.items():
         if sha256(Path(path)) != digest:raise ValueError('Diagnostic input changed')
     result['inputs'] = inputs
-    result['implementation'] = {p.name: sha256(p) for p in [Path(__file__), Path(__file__).with_name('contact_pose_reachability.py')]}
+    result['implementation'] = {p.name: sha256(p) for p in [Path(__file__), Path(__file__).with_name('contact_pose_reachability.py'), Path(__file__).with_name('contact_pose_sphere_bound.py')]}
     save(args.output, result);print(describe(result))

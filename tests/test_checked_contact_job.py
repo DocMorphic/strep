@@ -24,7 +24,7 @@ def bound_check(tmp_path,monkeypatch):
     save(check/'freeze.json',dict(inputs=inputs,implementation=implementation,mesh_sha256=sha256(asset),
         request_sha256=sha256(check/'edit-request.json'),spec_sha256=sha256(check/'contact-spec.json')))
     save(check/'pose-preflight.json',dict(status='not_ruled_out',conflicting_frame_reference_pairs=0))
-    save(check/'timing-result.json',dict(status='checked',check_schema_version=2,conflicts=0,source='native/take',requested_window=[2,17],
+    save(check/'timing-result.json',dict(status='checked',check_schema_version=3,conflicts=0,source='native/take',requested_window=[2,17],
         files={n:sha256(check/n) for n in ['freeze.json','bound-contact-spec.json','pose-preflight.json']}))
     save(check/'pipeline.json',dict(status='checked'))
     return dict(checked_plan='check1',revision=sha256(check/'timing-result.json')),check,source
@@ -89,10 +89,11 @@ def rebind(payload,check):
     return dict(payload,revision=sha256(check/'timing-result.json'))
 
 
-def test_old_check_requires_new_pose_verification(bound_check):
+@pytest.mark.parametrize("version", [None, 2])
+def test_old_check_requires_new_pose_verification(bound_check, version):
     from strep import read
     payload,check,_=bound_check
-    result=read(check/'timing-result.json');result.pop('check_schema_version');save(check/'timing-result.json',result)
+    result=read(check/'timing-result.json');result['check_schema_version']=version;save(check/'timing-result.json',result)
     with pytest.raises(ValueError,match='predates pose-screen'):
         job.validate_request(dict(payload,revision=sha256(check/'timing-result.json')))
 
@@ -104,10 +105,11 @@ def test_changed_original_reference_invalidates_saved_check(bound_check,referenc
     with pytest.raises(ValueError,match='Current clip differs'):job.validate_request(payload)
 
 
-def test_missing_pose_method_hash_requests_refresh_instead_of_key_error(bound_check):
+@pytest.mark.parametrize("method", ["contact_pose_preflight.py", "contact_pose_sphere_bound.py"])
+def test_missing_pose_method_hash_requests_refresh_instead_of_key_error(bound_check, method):
     from strep import read
     payload,check,_=bound_check
-    freeze=read(check/'freeze.json');freeze['implementation'].pop('contact_pose_preflight.py');save(check/'freeze.json',freeze)
+    freeze=read(check/'freeze.json');freeze['implementation'].pop(method);save(check/'freeze.json',freeze)
     with pytest.raises(ValueError,match='pose screen changed'):job.validate_request(rebind(payload,check))
 
 

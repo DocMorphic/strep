@@ -7,7 +7,7 @@ from build_soma_preview import ASSET
 
 RATE_METHODS=['export_point_rate_objective.py','export_motion_sampling.py','linear_skin_operator.py',
               'floor_contact.py','contact_spec.py','support_contact.py','inspect_motion.py',
-              'contact_pose_preflight.py','contact_pose_reachability.py']
+              'contact_pose_preflight.py','contact_pose_reachability.py','contact_pose_sphere_bound.py']
 
 
 def validate_request(payload):
@@ -20,8 +20,8 @@ def validate_request(payload):
     if not isinstance(payload['revision'],str) or sha256(folder/'timing-result.json')!=payload['revision']:
         raise ValueError('Timing check changed; review it again')
     result=read(folder/'timing-result.json');state=read(folder/'pipeline.json')
-    if result.get('check_schema_version')!=2 or 'pose-preflight.json' not in result.get('files',{}):
-        raise ValueError('Saved check predates pose-screen verification; run a new check')
+    if result.get('check_schema_version')!=3 or 'pose-preflight.json' not in result.get('files',{}):
+        raise ValueError('Saved check predates pose-screen verification with full-distance bounds; run a new check')
     if result.get('status')!='checked' or state.get('status')!='checked' or result.get('conflicts')!=0:
         raise ValueError('Resolve timing or pose-screen conflicts and run a new check before fitting')
     for name,h in result['files'].items():

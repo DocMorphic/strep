@@ -69,7 +69,7 @@ def prepare(source,spec,options,folder):
     save(folder/'edit-request.json',dict(kind='timing_check',source=source.relative_to(ROOT/'reports').as_posix(),options=options))
     methods=['contact_edit_job.py','action_worker_lock.py','strep.py','contact_timing_job.py','contact_spec.py','support_contact.py','floor_contact.py','export_point_rate_objective.py',
         'export_motion_sampling.py','linear_skin_operator.py','plan_point_rate_window.py','point_rate_reachability.py',
-        'rig_asset.py','rig_clip_import.py','gltf_tools.py','inspect_motion.py','contact_pose_preflight.py','contact_pose_reachability.py']
+        'rig_asset.py','rig_clip_import.py','gltf_tools.py','inspect_motion.py','contact_pose_preflight.py','contact_pose_reachability.py','contact_pose_sphere_bound.py']
     (folder/'implementation').mkdir()
     for name in methods:shutil.copyfile(ROOT/'scripts'/name,folder/'implementation'/name)
     save(folder/'freeze.json',dict(inputs=inputs,mesh_sha256=sha256(ASSET),spec_sha256=sha256(folder/'contact-spec.json'),
@@ -119,7 +119,7 @@ def run(folder):
     conflicts=report['requested_conflicts']+pose['conflicting_frame_reference_pairs']
     explanation=describe(report)+'\n\n'+pose_describe(pose)+'\nThis check does not run a correction or enforce these limits in the existing Apply contact edit tool.\n'
     (folder/'window-preflight.txt').write_text(explanation,encoding='utf-8')
-    result=dict(status='needs_authoring_change' if conflicts else 'checked',kind='timing_check',check_schema_version=2,
+    result=dict(status='needs_authoring_change' if conflicts else 'checked',kind='timing_check',check_schema_version=3,
         timing_conflicts=report['requested_conflicts'],pose_conflicts=pose['conflicting_frame_reference_pairs'],pose_screen_status=pose['status'],
         requested_window=options['edit_window'],conflicts=conflicts,proposed_window=report['proposed_window'],
         message=explanation,source=request['source'],bound_points=bindings,quality_approved=False,solver_started=False,
@@ -132,7 +132,7 @@ def listing(folder,state):
     if state.get('kind')!='timing_check':return {}
     base='/files/'+folder.relative_to(ROOT/'reports').as_posix()
     return dict(kind='contact_check',check_schema_version=state.get('check_schema_version'),
-        pose_report=base+'/pose-preflight.json' if state.get('check_schema_version')==2 else None,
+        pose_report=base+'/pose-preflight.json' if state.get('check_schema_version') in [2,3] else None,
         timing_message=state.get('message','Checking stationary contact timing.'),
         timing_report=base+'/window-preflight.txt',timing_json=base+'/window-preflight.json',
         bound_contacts=base+'/bound-contact-spec.json',source=state.get('source'),

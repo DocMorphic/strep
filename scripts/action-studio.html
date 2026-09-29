@@ -573,7 +573,7 @@ const contactEditor=(()=>{
  const el=id=>document.getElementById(id),names=['LeftHand','RightHand','LeftFoot','RightFoot','Torso','Head','LeftKnee','RightKnee','LeftElbow','RightElbow'];
  let context=null,draft=null,busy=false,submit=null,currentFrame=null,editing=null,shownTiming=null,savedCheck=null;
  const clone=v=>JSON.parse(JSON.stringify(v));
- const canFit=()=>savedCheck?.status==='checked'&&savedCheck?.check_schema_version===2&&!!savedCheck?.check_revision;
+ const canFit=()=>savedCheck?.status==='checked'&&savedCheck?.check_schema_version===3&&!!savedCheck?.check_revision;
  function persist(){if(context)try{localStorage.setItem('strep:contacts:'+context.key,JSON.stringify(draft));}catch{}}
  function inputs(){const mode=el('contactMode').value;el('contactInterval').hidden=['inferred','disabled'].includes(mode);el('contactWorld').hidden=mode!=='world';}
  function message(text){el('contactStatus').textContent=text;}
@@ -650,7 +650,7 @@ const contactEditor=(()=>{
    }
    render();
   },
-  showTiming(job){if(!context||job.source!==context.collection+'/takes/'+context.take_id||shownTiming===job.id)return;shownTiming=job.id;savedCheck=job;el('contactFitChecked').disabled=busy||!canFit();el('contactTimingResult').textContent='Saved timing check (your current draft may differ):\n'+(job.timing_message||'Timing check finished.')+(job.check_schema_version!==2?'\nThis saved check predates pose-screen verification. Run a new check before fitting.':'');el('contactTimingLinks').replaceChildren();for(const [label,url] of [['Explanation',job.timing_report],['Full timing report',job.timing_json],['Pose compatibility',job.pose_report],['Bound contact points',job.bound_contacts]]){if(typeof url!=='string'||!url.startsWith('/files/contact-jobs/'))continue;const a=document.createElement('a');a.textContent=label;a.href=url;a.className='btn';a.target='_blank';a.rel='noopener';el('contactTimingLinks').append(a);}message('Timing check saved. Your source and contact draft are unchanged.');},
+  showTiming(job){if(!context||job.source!==context.collection+'/takes/'+context.take_id||shownTiming===job.id)return;shownTiming=job.id;savedCheck=job;el('contactFitChecked').disabled=busy||!canFit();el('contactTimingResult').textContent='Saved timing check (your current draft may differ):\n'+(job.timing_message||'Timing check finished.')+(job.check_schema_version!==3?'\nThis saved check predates pose-screen verification with full-distance bounds. Run a new check before fitting.':'');el('contactTimingLinks').replaceChildren();for(const [label,url] of [['Explanation',job.timing_report],['Full timing report',job.timing_json],['Pose compatibility',job.pose_report],['Bound contact points',job.bound_contacts]]){if(typeof url!=='string'||!url.startsWith('/files/contact-jobs/'))continue;const a=document.createElement('a');a.textContent=label;a.href=url;a.className='btn';a.target='_blank';a.rel='noopener';el('contactTimingLinks').append(a);}message('Timing check saved. Your source and contact draft are unchanged.');},
   setBusy(value){busy=value;if(context){el('contactApply').disabled=busy;el('contactCheck').disabled=busy;el('contactFitChecked').disabled=busy||!canFit();}}
  };
 })();

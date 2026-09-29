@@ -23,3 +23,6 @@ All source, snapshot, artifact and implementation hashes were verified. No new a
 Local evidence is retained under ignored `reports/studio-pose-check-v1` and `reports/contact-jobs/studio-pose-check-v1-*`. The Studio process was restarted after verifying its identity and acquiring the worker lock; its replacement process and listening socket were checked.
 
 The full project goal remains active, with all fourteen release capabilities unapproved. Next work remains the coupled joint/support failure in kick and the broader scene, partner, rig and review requirements; this check prevents a known incompatible request from entering another expensive checked fit.
+
+
+Studio now [uses the full-distance pose certificate](studio-pose-check-v2.md) before checked fitting. Original crawl-11 and kick-11 requests are both explained as incompatible with the current edit screen; wave-11 remains unproven but not ruled out. Schema 3 binds the new method and rejects older checks with a refresh message. Three real checks, hash verification, direct routes and offline UI behavior pass; 54 focused Python tests pass. The body-constraint kick experiment finished rejected, with 284 engine observations passing but no quality approval. All fourteen release capabilities remain open.
