@@ -307,3 +307,6 @@ Latest contact work: [per-point rate guard and endpoint travel diagnosis](carrie
 
 
 Latest authoring check: [contact-window preflight](contact-window-preflight-v1.md) retains original targets, timing and rate caps and searches held-boundary expansions. The actual platform fixture has no complete window solution, so CLI preflight now stops before solving with a readable conflict report. Seventeen tests and an actual solver-spy check pass. Studio integration remains pending; no release capability is approved.
+
+
+Latest Studio work: [stationary contact timing checks](studio-contact-timing-v1.md) now expose immutable preflight reports in the inspector. A real get-up job reports four conflicts, retains source and draft, and creates no animation. Twenty-six Python tests and offline editor checks pass. A separate guarded correction mode remains to be integrated; the existing Apply method is unchanged and no release gate is approved.

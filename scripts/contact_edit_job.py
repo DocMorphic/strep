@@ -11,6 +11,12 @@ def run(folder):
         import psutil
         save(folder/'worker.json',dict(pid=os.getpid(),created_at=psutil.Process().create_time()))
         request=read(folder/'edit-request.json')
+        if request.get('kind')=='timing_check':
+            from contact_timing_job import run as timing_check
+            save(folder/'pipeline.json',dict(status='processing',kind='timing_check'))
+            result=timing_check(folder)
+            save(folder/'pipeline.json',dict(**result,finished_at=now()))
+            return
         source=(ROOT/'reports'/request['source']).resolve()
         if not source.is_relative_to((ROOT/'reports').resolve()):raise ValueError('Source escapes reports')
         save(folder/'pipeline.json',dict(status='processing',started_at=now()))

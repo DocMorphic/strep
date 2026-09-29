@@ -42,7 +42,7 @@ def allowed_file(url_path):
 
 
 def validate_contact_request(payload):
-    if not isinstance(payload,dict) or set(payload)!={'collection','take_id','contact_spec'}:raise ValueError('Collection, take and contact specification required')
+    if not isinstance(payload,dict) or not {'collection','take_id','contact_spec'}<=set(payload) or set(payload)-{'collection','take_id','contact_spec','timing_check'}:raise ValueError('Collection, take and contact specification required')
     collection=payload['collection'];take=payload['take_id']
     if not isinstance(collection,str) or not re.fullmatch(r'[a-zA-Z0-9_/-]+',collection):raise ValueError('Invalid collection')
     if not isinstance(take,str) or not re.fullmatch(r'[a-zA-Z0-9_-]+',take):raise ValueError('Invalid take')
@@ -57,6 +57,10 @@ def validate_contact_request(payload):
     from support_contact import regions
     from build_soma_preview import ASSET
     validate(payload['contact_spec'],parent['frames'],regions(dict(np.load(ASSET))))
+    if 'timing_check' in payload:
+        from contact_timing_job import validate_options
+        if not (source/'soma.glb').is_file():raise ValueError('Source preview missing')
+        validate_options(payload['timing_check'],payload['contact_spec'],parent['frames'])
     return source,payload['contact_spec']
 
 
@@ -164,8 +168,9 @@ class Handler(BaseHTTPRequestHandler):
                 if not folder.is_dir():continue
                 from contact_edit_job import observed_state
                 state=observed_state(folder)
+                from contact_timing_job import listing as timing_listing
                 studies.insert(0,{'id':(folder/'result').relative_to(ROOT/'reports').as_posix(),'status':state['status'],
-                    'kind':'contact_edit','ready':state['status']=='complete' and (folder/'result/summary.json').is_file(), 'error':state.get('error')})
+                    'kind':'contact_edit','ready':state['status']=='complete' and (folder/'result/summary.json').is_file(), 'error':state.get('error'), **timing_listing(folder,state)})
             return self.respond(200,{'studies':studies,'busy':worker_busy() or (self.server.worker is not None and self.server.worker.poll() is None)})
         target=allowed_file(self.path)
         if target is None or not target.is_file():return self.respond(404,{'error':'File not found'})
@@ -332,8 +337,16 @@ class Handler(BaseHTTPRequestHandler):
                     return self.respond(500,{'error':'Could not start local rig transfer'})
                 return self.respond(202,{'id':job,'status':'starting'})
             if self.path=='/api/contact-edits':
-                folder=ROOT/'reports/contact-jobs'/job;folder.mkdir(parents=True)
-                save(folder/'contact-spec.json',spec);save(folder/'edit-request.json',{'source':source.relative_to(ROOT/'reports').as_posix()})
+                folder=ROOT/'reports/contact-jobs'/job
+                if 'timing_check' in payload:
+                    from contact_timing_job import prepare
+                    try:prepare(source,spec,payload['timing_check'],folder)
+                    except (ValueError,OSError) as exc:
+                        if folder.exists():save(folder/'pipeline.json',{'status':'failed','error':str(exc)})
+                        return self.respond(400,{'error':str(exc)})
+                else:
+                    folder.mkdir(parents=True)
+                    save(folder/'contact-spec.json',spec);save(folder/'edit-request.json',{'source':source.relative_to(ROOT/'reports').as_posix()})
                 save(folder/'pipeline.json',{'status':'starting'})
                 try:
                     with (folder/'supervisor.log').open('w',encoding='utf8') as log:

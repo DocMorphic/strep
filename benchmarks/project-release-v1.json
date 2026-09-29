@@ -342,7 +342,8 @@
         "reports/scene-timing-limits-engine-v2/completion.json",
         "docs/carrier-support-v1.md",
         "docs/carrier-point-rates-v1.md",
-        "docs/contact-window-preflight-v1.md"
+        "docs/contact-window-preflight-v1.md",
+        "docs/studio-contact-timing-v1.md"
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
@@ -775,7 +776,8 @@
         "reports/knee-contact-reference-population-summary-v1/common-input-failures.json",
         "docs/carrier-support-v1.md",
         "docs/carrier-point-rates-v1.md",
-        "docs/contact-window-preflight-v1.md"
+        "docs/contact-window-preflight-v1.md",
+        "docs/studio-contact-timing-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1042,7 +1044,8 @@
         "reports/scene-timing-limits-engine-v2/completion.json",
         "docs/carrier-support-v1.md",
         "docs/carrier-point-rates-v1.md",
-        "docs/contact-window-preflight-v1.md"
+        "docs/contact-window-preflight-v1.md",
+        "docs/studio-contact-timing-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -2653,7 +2656,8 @@
         "reports/knee-contact-reference-population-summary-v1/common-input-failures.json",
         "docs/carrier-support-v1.md",
         "docs/carrier-point-rates-v1.md",
-        "docs/contact-window-preflight-v1.md"
+        "docs/contact-window-preflight-v1.md",
+        "docs/studio-contact-timing-v1.md"
       ]
     }
   ],
@@ -2865,6 +2869,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T15:43:13.005459+00:00",
-  "last_progress": "Added frozen-cap held-window planner and experimental CLI preflight. Actual fixture has approach solutions from frame 8 earlier but no passing held release endpoint; no full window proposed. Actual final-code solver-spy check proves three conflicts stop fitting without candidate or scope changes. 17 focused tests pass. Studio contact editor remains on older fitting path; all release capabilities unapproved."
+  "last_progress_at": "2026-09-29T15:55:46.927732+00:00",
+  "last_progress": "Studio now offers a separate immutable stationary-contact timing check, preserving legacy Apply behavior. Actual get-up clip job binds points, reports four conflicts, resolves three report routes and produces no animation; source/draft unchanged. Fixed encoded-vs-normalized weight validation with failed attempt retained. 26 Python tests and offline Node editor checks pass; no browser/human review or capability approval."
 }
