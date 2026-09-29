@@ -1,6 +1,6 @@
 # One project-wide goal: release-ready Strep
 
-Latest contact work: the full window-preserving surface solve remains active. In parallel, [independent edit-window export auditing](edit-window-audit-v1.md) now checks joints and full skin against the exact starting clip and is required when publishing windowed fits. The completed earlier clip preserves outside skin within 0.137 micrometres while retaining its contact failures. Eighteen audit/publisher/support tests and a real guarded publication pass. No final result from the active surface solve is claimed; all 14 release capabilities remain unapproved.
+Latest contact work: [edit-window preflight](edit-window-plan-v1.md) identifies 50 geometry failures in locked segments of the current solve's exact initializer, plus three boundary failures. Its suggested geometry envelope is [23, 133] instead of [48, 133]; the requested scope is never widened automatically. Fifteen planner/preservation tests pass. The original solve continues unchanged for comparison; its final result is not yet available and all 14 release capabilities remain unapproved.
 
 Latest object-relative initialization: [moving grip study](object-grip-initialization-v1.md) reduces exported contact failures from 490 to 15 while preserving original edit bounds. Body penetration remains 38.99 mm; local temporal regressions remain visible. Fourteen focused tests and all 360 Godot actor-frames pass. The matched full-body trial subsequently completed with the failures recorded above; no release approval.
 
