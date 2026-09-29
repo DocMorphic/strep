@@ -26,6 +26,16 @@ Maximum edit is 16.03 degrees, and maximum native FK discrepancy is 3.58e-7 (met
 
 Independent reports are `region-object-grip-seed-v2-audit/verification.json`, `region-object-grip-seed-v2-rates.json` and `region-object-grip-seed-v2-engine/verification.json` under local `reports/`. Studio's scene collection `object-grip-seed-review-v1` exposes the source and failed seed with these diagnostics. All 12 package file hashes and 12 offline route mappings were verified. No live browser check or human rating was performed.
 
+## Remaining-failure diagnosis
+
+Re-evaluating the worst exported sample reproduces the recorded signed distance exactly. At frame 121 the seed has 108 penetrating vertices, all dominated by the right forearm; the deepest vertex has 100% right-forearm weight. The source has 954 penetrating vertices across both forearms, hands and fingers at that same frame. The earlier full-body fit's worst sample at 121.75 also belongs to the right forearm. These are sample-specific skin-weight groupings, not a statement about every frame or anatomical collision volumes.
+
+The seed's 15 left-hand failures comprise 14 clearance failures and 11 normal failures with overlap. Minimum patch clearance is 1.937686 mm against the unchanged 2 mm requirement (with the existing 1 micrometre numerical allowance); maximum normal error is 10.045554 degrees against 10 degrees. The right hand has no failed exported samples. No anchor or distributed-witness failures remain in this seed.
+
+A separate one-frame diagnosis sweeps the right elbow around the shoulder-to-wrist axis from -80 to +80 degrees in 0.25-degree steps. Rotating the upper arm and compensating the local wrist keeps the wrist frame fixed; original bone offsets, roots and source-relative edit budgets are checked. Of 641 samples, 291 satisfy the bounds, wrist position error below 1 micrometre and wrist rotation-matrix error below 1e-6. None clears the box. The best valid sample, a -20-degree swivel, still penetrates 38.020208 mm. This rules out the sampled elbow-only orbit as a correction for this frame; it does not establish infeasibility of shoulder/torso movement, different grip placement, other elbow orbits or the full animation problem. No diagnostic pose was applied to the running full-body fit.
+
+Evidence remains under `reports/region-object-grip-seed-v2-clearance-diagnosis.json`, `region-object-grip-seed-v2-contact-diagnosis.json`, and `region-object-grip-elbow-diagnosis-v1/{method.py,result.json}`. The latter preserves its exact diagnostic script and input hashes. The full-body trial continues unchanged while this diagnosis is recorded.
+
 ## Reproduction and follow-through
 
 With the preceding development assets available locally:

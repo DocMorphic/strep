@@ -858,6 +858,13 @@
         "docs/export-rate-contact-v1.md",
         "docs/full-region-transfer-v1.md",
         "docs/scene-fit-developer-review-v1.md",
+        "docs/object-grip-initialization-v1.md",
+        "reports/region-object-grip-seed-v2-audit/verification.json",
+        "reports/region-object-grip-seed-v2-rates.json",
+        "reports/region-object-grip-seed-v2-engine/verification.json",
+        "reports/region-object-grip-seed-v2-clearance-diagnosis.json",
+        "reports/region-object-grip-seed-v2-contact-diagnosis.json",
+        "reports/region-object-grip-elbow-diagnosis-v1/result.json",
         "reports/region-witness-comparison-v1/comparison.json",
         "reports/region-augmented-comparison-v1/comparison.json",
         "reports/region-object-constraints-final-v1/comparison.json",
@@ -2639,6 +2646,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T02:53:51.708480+00:00",
-  "last_progress": "Tested all15 remaining root-peak failures: three alternatives restore original peaks with energy tradeoffs, 510 new engine frames. Independent geometric bounds exclude nine root-only cases under unchanged constraints; coupled root/leg correction is next. No release approval."
+  "last_progress_at": "2026-09-29T08:21:02.199537+00:00",
+  "last_progress": "Object-relative grip initialization reduces exported contact failures from 490 to 15; body clearance still fails, localized to the right forearm at the worst sample. A fixed-wrist elbow sweep finds no passing sampled correction. All 360 Godot actor-frames and 14 focused tests pass. Matched full-body warm-start trial remains running; no release approval."
 }
