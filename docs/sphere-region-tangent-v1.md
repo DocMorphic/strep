@@ -54,3 +54,5 @@ Existing local fixtures and licensed dependencies are required. Use fresh output
 .venv\Scripts\python.exe scripts/spatial_release.py reports/sphere-region-release-v1 reports/new-tangent --path-profile tangent-cubic --bound-path
 .venv\Scripts\python.exe scripts/audit_region_grasp_track.py reports/sphere-region-track-v2 reports/new-tangent-audit --approach-patch reports/sphere-region-approach-v1 --floor-patch reports/sphere-region-floor-v1 --release-patch reports/sphere-region-release-v1 --spatial-patch reports/new-tangent
 ```
+
+Follow-up: [coupled grasp and release fitting](sphere-region-coupled-v1.md) reduces the boundary angular jump while retaining all sampled contact/geometry checks; hand-speed tradeoffs remain.

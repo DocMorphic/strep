@@ -1,5 +1,7 @@
 # One project-wide goal: release-ready Strep
 
+Latest development evidence: [coupled grasp/release fitting](sphere-region-coupled-v1.md) changes six grasp and three release keys while revalidating all 245 grasp and 717 geometry/edit-limit samples. Angular continuity improves, but hand-speed tradeoffs and nonconverged solves remain. All 14 release capabilities remain unapproved.
+
 Latest development evidence: [endpoint-rate return failures](sphere-region-tangent-v1.md) show that exact discrete incoming arm continuation exceeds the original edit budget; bounded matching reduces boundary jumps but introduces 15 geometry failures. Next solve the final grasp and release together. All 14 release capabilities remain unapproved.
 
 Latest development evidence: [spatial arm return](sphere-region-spatial-v1.md) reduces peak joint speed below the original comparison while retaining all 717 geometry/edit-limit and 245 grasp checks. Acceleration and release-boundary continuity remain unresolved. All 14 release capabilities remain unapproved.

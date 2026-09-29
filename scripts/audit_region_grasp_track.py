@@ -22,7 +22,7 @@ def quintic(t):
     t = min(1., max(0., t)); return 6*t**5-15*t**4+10*t**3
 
 
-def run(study, output, approach_patch=None, floor_patch=None, release_patch=None, spatial_patch=None):
+def run(study, output, approach_patch=None, floor_patch=None, release_patch=None, spatial_patch=None, coupled_patch=None):
     study, output = Path(study).resolve(), Path(output).resolve(); protocol, result = read(study/'protocol.json'), read(study/'result.json')
     if result['status'] != 'complete' or not result['motion_generated']: raise ValueError('Completed trajectory required')
     for path, digest in [(study/'protocol.json', result['protocol_sha256']), (study/'motion.npz', result['motion_sha256'])]:
@@ -235,11 +235,43 @@ def run(study, output, approach_patch=None, floor_patch=None, release_patch=None
             if row['solver'] is None: np.testing.assert_array_equal(values,initial)
         candidate=spatial; p0=PoseProblem(folder,skin,start)
         spatial_verification=dict(report=path.relative_to(ROOT).as_posix(),result_sha256=sha256(path/'result.json'),protocol_sha256=sha256(path/'protocol.json'),protected_frames_exact=len(protected),non_arm_parameters_exact=True,native_path_and_correction_replayed=True)
+    coupled_verification=None
+    if coupled_patch is not None:
+        if spatial_patch is None: raise ValueError('Coupled patch requires its spatial input')
+        path=Path(coupled_patch).resolve(); cp,cr=read(path/'protocol.json'),read(path/'result.json')
+        if ROOT/cp['spatial_report']!=Path(spatial_patch).resolve() or cp['base_study']!=sp['base_study'] or cr['status'] not in ['complete','interrupted_resource_guard']: raise ValueError('Coupled input mismatch')
+        for artifact,digest in [(path/'protocol.json',cr['protocol_sha256']),(path/'motion.npz',cr['motion_sha256'])]:
+            if sha256(artifact)!=digest: raise ValueError('Coupled artifact changed')
+        for name,digest in cp['inputs'].items():
+            if sha256(ROOT/name)!=digest: raise ValueError('Coupled input changed')
+        for name,digest in cp['implementation'].items():
+            if sha256(path/'implementation'/name)!=digest: raise ValueError('Coupled source snapshot changed')
+        frames=list(range(end-5,end+4))
+        if cp['frames']!=frames or [r['frame'] for r in cr['rows']]!=frames or cp['arm_columns']!=list(columns): raise ValueError('Coupled frame/joint scope changed')
+        fitted=dict(np.load(path/'motion.npz',allow_pickle=False));protected=np.setdiff1d(np.arange(protocol['frame_count']),frames)
+        for name in candidate: np.testing.assert_array_equal(fitted[name][protected],candidate[name][protected])
+        source_parameters={r['frame']:r['parameters'] for r in result['rows']};source_parameters.update({r['frame']:r['parameters'] for r in sr['rows']})
+        for i,row in enumerate(cr['rows']):
+            frame=row['frame'];values=np.array(row['parameters']);np.testing.assert_array_equal(values[frozen],np.array(source_parameters[frame])[frozen])
+            p0.frame=frame;actual,replay=p0.independent(values)
+            if not actual['rotation_norm_bounds_passed']: raise ValueError('Coupled original edit bounds failed')
+            for name in candidate: np.testing.assert_array_equal(fitted[name][frame],replay[name][0].astype(fitted[name].dtype))
+            vertices=p0.surface.vertices(candidate['global_rot_mats'][frame],candidate['posed_joints'][frame])
+            for saved,binding,region in zip(cp['targets'][i],bindings,regions):
+                anchor,point,normal,tangent=saved
+                if anchor!=binding['anchor']: raise ValueError('Coupled guidance anchor changed')
+                tri=vertices[skin['faces'][region['patch']['face_ids']]];n=np.cross(tri[:,1]-tri[:,0],tri[:,2]-tri[:,0]).sum(0);n/=np.linalg.norm(n)
+                hand=binding['hand'];knuckles=[p0.names.index(hand+j+'2') for j in ['Index','Middle','Ring','Pinky']]
+                direction=candidate['posed_joints'][frame,knuckles].mean(0)-candidate['posed_joints'][frame,p0.names.index(hand)];direction=direction-n*(n@direction);direction/=np.linalg.norm(direction)
+                np.testing.assert_allclose(point,vertices[anchor],atol=2e-6,rtol=0);np.testing.assert_allclose(normal,n,atol=2e-5,rtol=0);np.testing.assert_allclose(tangent,direction,atol=2e-5,rtol=0)
+        candidate=fitted;p0=PoseProblem(folder,skin,start)
+        coupled_verification=dict(report=path.relative_to(ROOT).as_posix(),result_sha256=sha256(path/'result.json'),protocol_sha256=sha256(path/'protocol.json'),
+                                  protected_frames_exact=len(protected),non_arm_parameters_exact=True,active_grasp_modified=True,solver_status=cr['solver'],original_edit_bounds_verified=True)
     output.mkdir(parents=True,exist_ok=False)
     shutil.copyfile(Path(__file__),output/Path(__file__).name)
     metadata = dict(at=now(), study=study.relative_to(ROOT).as_posix(), protocol_sha256=sha256(study/'protocol.json'), result_sha256=sha256(study/'result.json'),
                     native_replay_exact=True, untouched_frames_exact=len(outside), original_edit_budgets_pass=True, serialization_max_error=max_serialized_error,approach_patch=patch_verification,floor_patch=floor_verification,release_patch=release_verification,
-                    spatial_patch=spatial_verification,substeps=4, scope='Decoded GLB full-skin integer/quarter-frame samples; exact original native edits and untouched frames verified. Discrete samples do not certify continuous collision, anatomy, self-collision, dynamics or human quality.', quality_approved=False)
+                    spatial_patch=spatial_verification,coupled_patch=coupled_verification,substeps=4, scope='Decoded GLB full-skin integer/quarter-frame samples; exact original native edits and untouched frames verified. Discrete samples do not certify continuous collision, anatomy, self-collision, dynamics or human quality.', quality_approved=False)
     save(output/'protocol.json',metadata)
     times=np.arange((protocol['frame_count']-1)*4+1)/4; count=protocol['frame_count']; originals={}; hand_specs=[]
     for geometry,obj in context_primitives(p0.context):
@@ -317,5 +349,5 @@ def run(study, output, approach_patch=None, floor_patch=None, release_patch=None
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study',type=Path);parser.add_argument('output',type=Path);parser.add_argument('--approach-patch',type=Path);parser.add_argument('--floor-patch',type=Path);parser.add_argument('--release-patch',type=Path);parser.add_argument('--spatial-patch',type=Path);args=parser.parse_args()
-    with threadpool_limits(limits=2):run(args.study,args.output,args.approach_patch,args.floor_patch,args.release_patch,args.spatial_patch)
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study',type=Path);parser.add_argument('output',type=Path);parser.add_argument('--approach-patch',type=Path);parser.add_argument('--floor-patch',type=Path);parser.add_argument('--release-patch',type=Path);parser.add_argument('--spatial-patch',type=Path);parser.add_argument('--coupled-patch',type=Path);args=parser.parse_args()
+    with threadpool_limits(limits=2):run(args.study,args.output,args.approach_patch,args.floor_patch,args.release_patch,args.spatial_patch,args.coupled_patch)
