@@ -337,3 +337,6 @@ First cross-family outcome: [wave seed 11 contact edit](contact-breadth-wave-v1.
 
 
 Second breadth result: [crawl seed 11](contact-breadth-crawl-v1.md) shows a genuine root-only limitation: the pinned hand is horizontally more than 5 mm from its target, requiring joint-pose changes. Four exported pin samples fail and support/pose flags remain, while 284 engine observations pass. A separate wave diagnostic shows that a feasible linear proposal need not be nonlinearly feasible, and float32 rounding can flip the result. The original eight-case batch continues unchanged; all release gates remain open.
+
+
+Third breadth result: [kick seed 11](contact-breadth-kick-v1.md) retains substantial pin, phase-rate and per-time floor failures despite passing global rate ceilings and 284 Godot observations. Horizontal pin error of 44.484085 mm excludes root-height-only repair for the retained pose. Three of eight cases are complete; the original batch continues with jump/landing before any method changes. All release gates remain open.

@@ -46,3 +46,6 @@ First completed case: [wave seed 11](contact-breadth-wave-v1.md) passes all 81 p
 
 
 Second completed case: [crawl seed 11](contact-breadth-crawl-v1.md) misses four pin samples despite passing point-rate ceilings. Its 5.007995 mm horizontal residual proves that root height alone cannot repair the retained pose to 5 mm. Support/pose regressions and a tiny raw floor difference remain; 284 engine observations pass. Six cases remain pending; the unchanged batch is now fitting kick seed 11.
+
+
+Third completed case: [kick seed 11](contact-breadth-kick-v1.md) fails 55 of 81 pin samples, three point-rate ceilings and per-time floor preservation. Its 44.484085 mm horizontal pin error cannot be repaired by root height alone. All 284 engine observations pass; motion quality remains unapproved. Three cases are complete and five remain pending; the original batch continues with jump/landing.
