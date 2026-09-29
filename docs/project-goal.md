@@ -313,3 +313,6 @@ Latest Studio work: [stationary contact timing checks](studio-contact-timing-v1.
 
 
 Latest Studio correction: [fit saved checked pins](studio-checked-fit-v1.md) binds the exact check revision, source, material points, edit window and rate policy. The actual candidate fails all 81 contact samples and retains floor/support/rate regressions despite passing endpoint preflight. Outside-window preservation and 407 engine observations pass; 32 Python tests and offline editor checks pass. All release gates remain open.
+
+
+Latest contact diagnosis: [matched point-scaling comparison](checked-point-scaling-v1.md) reduces pin error from 99.58 to 5.28 mm but increases floor penetration from 10.40 to 83.25 mm. The fitting subset already sees 82.41 mm, so sampling alone cannot fix the soft collision tradeoff. Nineteen focused tests and 407 engine observations pass. Default behavior retained; next constrain floor regressions while fitting pins. No release gates approved.

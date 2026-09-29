@@ -344,7 +344,8 @@
         "docs/carrier-point-rates-v1.md",
         "docs/contact-window-preflight-v1.md",
         "docs/studio-contact-timing-v1.md",
-        "docs/studio-checked-fit-v1.md"
+        "docs/studio-checked-fit-v1.md",
+        "docs/checked-point-scaling-v1.md"
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
@@ -779,7 +780,8 @@
         "docs/carrier-point-rates-v1.md",
         "docs/contact-window-preflight-v1.md",
         "docs/studio-contact-timing-v1.md",
-        "docs/studio-checked-fit-v1.md"
+        "docs/studio-checked-fit-v1.md",
+        "docs/checked-point-scaling-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1048,7 +1050,8 @@
         "docs/carrier-point-rates-v1.md",
         "docs/contact-window-preflight-v1.md",
         "docs/studio-contact-timing-v1.md",
-        "docs/studio-checked-fit-v1.md"
+        "docs/studio-checked-fit-v1.md",
+        "docs/checked-point-scaling-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -2661,7 +2664,8 @@
         "docs/carrier-point-rates-v1.md",
         "docs/contact-window-preflight-v1.md",
         "docs/studio-contact-timing-v1.md",
-        "docs/studio-checked-fit-v1.md"
+        "docs/studio-checked-fit-v1.md",
+        "docs/checked-point-scaling-v1.md"
       ]
     }
   ],
@@ -2873,6 +2877,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T16:11:17.324023+00:00",
-  "last_progress": "Studio can fit exact saved stationary-pin checks with immutable source, point IDs, window and rate reference. Actual revised single-foot get-up request passes endpoint checks but its candidate misses all 81 pin samples and has floor/support/rate regressions. All 160 outside-window samples and 407 Godot pose observations pass; 32 Python tests and offline editor checks pass. Failure retained; no browser/human review or release capability approval."
+  "last_progress_at": "2026-09-29T16:20:54.115192+00:00",
+  "last_progress": "Matched checked-pin scaling experiment reduces maximum contact error 99.5805 to 5.28119 mm (81 to 6 failing samples), but worsens floor depth 10.3989 to 83.2522 mm and retains rate violations. Solver subset already sees 82.4112 mm penetration, identifying soft floor tradeoff rather than only omitted vertices. Default retained; 19 focused tests and 407 actual engine observations pass, no release approval."
 }

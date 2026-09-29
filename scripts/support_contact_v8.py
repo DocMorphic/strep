@@ -130,7 +130,8 @@ def object_sampling_layout(selected,vertex_count,full):
     return ids,np.searchsorted(ids,original)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=(),edit_window=None,export_point_rate_guard=False):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=(),edit_window=None,export_point_rate_guard=False,authored_point_scaling="metres"):
+    if authored_point_scaling not in ["metres","tolerance"]:raise ValueError("Unknown authored point scaling")
     if root_coordinate_mode not in ["legacy","scaled_initial","physical_box"]:raise ValueError("Unknown root coordinate mode")
     if object_constraint_mode not in ["maximum","per_vertex"]:raise ValueError("Unknown object constraint mode")
     if object_constraint_mode!="maximum" and not object_inequalities:raise ValueError("Per-vertex constraints require object inequalities")
@@ -317,7 +318,8 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         contact=((selected_contact-targets)**2).sum(-1)
         inferred_loss,explicit_loss=contact_losses(contact,cw,explicit_mask)
         point_g=torch.linalg.vector_norm(selected_contact-targets,dim=-1)-point_tolerance
-        point_merit=inequality_merit(point_g,point_multiplier,point_penalty)
+        point_residual=normalized_support_residual(point_g,point_tolerance) if authored_point_scaling=="tolerance" else point_g
+        point_merit=inequality_merit(point_residual,point_multiplier,point_penalty)
         _,point_loss=contact_losses(point_merit,active,explicit_mask)
         preserved_loss=None
         if preserved_mask.any():
@@ -405,7 +407,8 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             if point_rate_objective is not None:point_rate_objective.advance_stage(CONFIG['penalty_growth'])
             if region_fitting is not None:region_fitting.advance_stage(CONFIG['penalty_growth'])
             if preserved_mask.any():preserved_multiplier=torch.relu(preserved_multiplier+point_penalty*normalized_support_residual(last_point,point_tolerance))*preserved_active
-            point_multiplier=torch.relu(point_multiplier+point_penalty*last_point)*active
+            point_residual=normalized_support_residual(last_point,point_tolerance) if authored_point_scaling=="tolerance" else last_point
+            point_multiplier=torch.relu(point_multiplier+point_penalty*point_residual)*active
             normal_multiplier=[torch.relu(m+normal_penalty*g)*c[2] for m,g,c in zip(normal_multiplier,last_normals,normal_constraints)]
             tangent_multiplier=[torch.relu(m+normal_penalty*g)*c[2] for m,g,c in zip(tangent_multiplier,last_tangents,normal_constraints)]
             if object_inequalities:
@@ -441,6 +444,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     if shared_pose:
         recipe['shared_pose']=dict(rotation_control_frames=1,root_control_frames=1,output_frames=T,quality_approved=False)
         recipe['parameterization']='One shared bounded rotation set and root lift; frozen-pose diagnostic only'
+    recipe['authored_point_scaling']=authored_point_scaling
     recipe['root_coordinate_mode']=root_coordinate_mode
     if root_coordinates is not None:recipe['root_coordinate_reference']=root_coordinates.record()
     if finger_edits:
