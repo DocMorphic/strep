@@ -298,3 +298,6 @@ Latest continuation:12of13 direct support pairs measured; full24 population deno
 Completed iteration study: [matched three-versus-twelve-step results](support-iterations-v1.md). All24 population rows accounted for,13 targeted,8 numerically improved and5 unchanged versus earlier;8 still exceed raw foot-speed references.4,800 Godot actor-frames pass.24case96version review delivered in Studio with tested measured-frame shortcuts. All18 blocks stopped before the12-step limit; next investigate constraint-feasible proposals and omitted support edges, not more iterations alone. No human review or release gate promoted.
 
 Latest solver work: [bounded backtracking](support-backtracking-v1.md) finds missed feasible shorter steps in one frozen kneel-rise diagnostic. Same physical thresholds retained;21tests pass. A matched24-row/13-targeted population study is running; whole-export quality and held-out benefit remain unproven.
+
+
+Latest support experiment: [two platform foot-pin fits](carrier-support-v1.md) reduce target error but worsen right-foot motion; neither passes the authored 5 mm screen. The global rate guard lowers whole-body acceleration but misses local regression. 814 actual Godot observations and outside-window preservation pass. Next work is per-foot exported-trajectory constraints; all release capabilities remain unapproved.

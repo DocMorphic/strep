@@ -25,3 +25,6 @@ An actual Studio job independently verifies source snapshots, execution, five do
 Twenty-seven distinct Python tests pass, plus the offline Node editor check. These cover rotated/nonzero-reference transforms, native heading/root updates, predicted-label preservation, invalid carriers/references, saved-scene worker behavior and desktop build preservation. A final preflight change rejects malformed actor/object types; execution functions remain unchanged from the actual job. No HTTP/browser rendering, human review or new model generation is claimed. All fourteen release capabilities remain unapproved.
 
 Repeated carry composes with existing carrier motion; it does not replace it. Studio marks clips carrying this metadata. [The edit-chain study](carrier-edit-chain-v1.md) covers carry followed by retiming, trimming and another carry at a nonzero reference frame.
+
+
+[Foot-pin correction experiments](carrier-support-v1.md) now compare two bounded candidates before carrying. Both reduce position error but introduce right-foot rate regressions and remain unapproved.
