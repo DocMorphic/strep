@@ -75,5 +75,5 @@ def verify(folder):
 def run(folder):
     from run_contact_edit import run as edit
     verify(folder)
-    edit(folder/'source-take',folder/'checked-plan/bound-contact-spec.json',folder/'result',checked_plan=folder/'checked-plan')
+    edit(folder/'source-take',folder/'checked-plan/bound-contact-spec.json',folder/'result',checked_plan=folder/'checked-plan',export_feedback=True)
     verify(folder)

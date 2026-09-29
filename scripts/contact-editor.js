@@ -108,6 +108,13 @@ const contactEditor=(()=>{
     details.append(list);const note=document.createElement('p');note.textContent='These sampled checks do not approve the animation. Review the full clip and its body-quality flags.';details.append(note);
     const a=document.createElement('a');a.textContent='Full contact export audit';a.href='/files/'+collection+'/takes/'+t.id+'/checked-export-audit.json';a.target='_blank';a.rel='noopener';details.append(a);el('contactResult').append(details);
    }
+   const feedback=t.support_correction?.export_feedback;
+   if(feedback){
+    const p=document.createElement('p'),value=feedback.maximum_root_step_m,valid=typeof value==='number'&&Number.isFinite(value)&&value>=0&&typeof feedback.export_and_native_screen==='boolean';
+    p.textContent=valid?`Export repair: ${value>0?'selected a corrected candidate':'retained the fitted motion'}; ${feedback.export_and_native_screen?'sampled export and native checks pass':'measured constraints still fail'}. Maximum root adjustment ${Number((value*1000).toPrecision(6))} mm. Animation remains unapproved.`:'Export repair measurements unavailable. Animation remains unapproved.';
+    el('contactResult').append(p);
+    for(const [label,file] of [['Repair decisions','feedback-report.json'],['Joint rate measurements','checked-global-rates.json'],['Initial fitted motion','initial-fit/motion.npz']]){const a=document.createElement('a');a.textContent=label;a.href='/files/'+collection+'/takes/'+t.id+'/'+file;a.target='_blank';a.rel='noopener';el('contactResult').append(a,document.createTextNode(' '));}
+   }
    render();
   },
   showTiming(job){if(!context||job.source!==context.collection+'/takes/'+context.take_id||shownTiming===job.id)return;shownTiming=job.id;savedCheck=job;el('contactFitChecked').disabled=busy||job.status!=='checked'||!job.check_revision;el('contactTimingResult').textContent='Saved timing check (your current draft may differ):\n'+(job.timing_message||'Timing check finished.');el('contactTimingLinks').replaceChildren();for(const [label,url] of [['Explanation',job.timing_report],['Full timing report',job.timing_json],['Bound contact points',job.bound_contacts]]){if(typeof url!=='string'||!url.startsWith('/files/contact-jobs/'))continue;const a=document.createElement('a');a.textContent=label;a.href=url;a.className='btn';a.target='_blank';a.rel='noopener';el('contactTimingLinks').append(a);}message('Timing check saved. Your source and contact draft are unchanged.');},

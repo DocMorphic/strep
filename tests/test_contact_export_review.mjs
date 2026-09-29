@@ -56,4 +56,15 @@ editor.load('contact-jobs/third/result',{...trial,id:'third',support_correction:
 assert.match(result.textContent,/0 failed · 4 unavailable/);
 assert(!result.textContent.includes('LeftHand'),'Missing data does not reuse the previous clip');
 assert(html.includes('function contactAuditRows(audit)')&&html.includes('id="contactResult" class="small"></div>'));
+for(const [step,passed,expected] of [[0,false,'retained the fitted motion'],[.000001,true,'selected a corrected candidate']]){
+ editor.load('contact-jobs/feedback/result',{...trial,id:'feedback-'+step,support_correction:{checked_fit:true,export_audit:sample(),export_feedback:{maximum_root_step_m:step,export_and_native_screen:passed}}});
+ assert(result.textContent.includes(expected));assert(result.textContent.includes(passed?'sampled export and native checks pass':'measured constraints still fail'));
+ assert(result.textContent.includes('Animation remains unapproved'));
+ assert(walk(result).some(e=>e.href?.endsWith('/feedback-report.json')));
+ assert(walk(result).some(e=>e.href?.endsWith('/initial-fit/motion.npz')));
+}
+editor.load('contact-jobs/missing-feedback/result',{...trial,id:'unknown-feedback',support_correction:{checked_fit:true,export_feedback:{maximum_root_step_m:NaN}}});
+assert(result.textContent.includes('Export repair measurements unavailable'));
+editor.load('contact-jobs/no-feedback/result',{...trial,id:'no-feedback',support_correction:{checked_fit:true,export_audit:sample()}});
+assert(!result.textContent.includes('Export repair:')&&!walk(result).some(e=>e.href?.endsWith('/feedback-report.json')));
 console.log('Contact export review: numeric limits, tiny failures, missing evidence, retained source penetration, safe text, stale-state clearing and audit links pass. No HTTP/browser used.');

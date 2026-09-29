@@ -67,3 +67,13 @@ def test_mesh_change_after_job_snapshot_is_rejected(tmp_path,monkeypatch):
     save(tmp_path/'checked-freeze.json',dict(implementation={},inputs={},mesh_sha256=sha256(asset)))
     job.verify(tmp_path);asset.write_bytes(b'changed')
     with pytest.raises(ValueError,match='Guarded-job mesh changed'):job.verify(tmp_path)
+
+
+def test_checked_job_enables_feedback_between_verifications(tmp_path,monkeypatch):
+    import run_contact_edit
+    calls=[]
+    monkeypatch.setattr(job,'verify',lambda folder:calls.append(('verify',folder)))
+    monkeypatch.setattr(run_contact_edit,'run',lambda *args,**kwargs:calls.append(('edit',args,kwargs)))
+    job.run(tmp_path)
+    assert [c[0] for c in calls]==['verify','edit','verify']
+    assert calls[1][2]==dict(checked_plan=tmp_path/'checked-plan',export_feedback=True)

@@ -19,7 +19,8 @@ from evaluate_contact_spec import evaluate as evaluate_targets
 from export_actions import sequence_diagnostics
 
 
-def run(source,spec_path,output,checked_plan=None,*,authored_point_scaling="metres",export_floor_guard=False,export_point_position_guard=False,outer_stage_count=2,iteration_count=60):
+def run(source,spec_path,output,checked_plan=None,*,authored_point_scaling="metres",export_floor_guard=False,export_point_position_guard=False,outer_stage_count=2,iteration_count=60,export_feedback=False):
+    if type(export_feedback)!=bool or (export_feedback and checked_plan is None):raise ValueError('Export feedback requires a checked plan')
     if authored_point_scaling not in ["metres","tolerance"]:raise ValueError("Unknown authored point scaling")
     if checked_plan is None and authored_point_scaling!="metres":raise ValueError("Point scaling requires a checked plan")
     if type(export_floor_guard)!=bool or (export_floor_guard and checked_plan is None):raise ValueError('Floor guard requires a checked plan')
@@ -54,7 +55,7 @@ def run(source,spec_path,output,checked_plan=None,*,authored_point_scaling="metr
     if checked_plan is not None:scripts=sorted(p.name for p in (ROOT/'scripts').glob('*.py'))
     implementation={n:sha256(ROOT/'scripts'/n) for n in scripts}
     sources={n:sha256(source/n) for n in ['motion.npz','limb/motion.npz','raw/motion.npz']}
-    save(output/'freeze.json',dict(created_at=now(),implementation=implementation,sources=sources,config=config,fit_options=fit_options,contact_spec=spec,checked_plan=str(checked_plan) if checked_plan else None))
+    save(output/'freeze.json',dict(created_at=now(),implementation=implementation,sources=sources,config=config,fit_options=fit_options,export_feedback=export_feedback,contact_spec=spec,checked_plan=str(checked_plan) if checked_plan else None))
     try:
         with worker_lock():
             start=time.perf_counter()
@@ -75,17 +76,25 @@ def run(source,spec_path,output,checked_plan=None,*,authored_point_scaling="metr
                 shutil.copyfile(source/name,path/'previous'/name)
             for name in ['request.json','timeline.json','generation-record.json']:shutil.copyfile(source/name,path/name)
             validation=export_motion(path,candidate,skin,SOMASkeleton77(),evaluation['after']['per_frame_max_depth_m'])
-            export_audit=None
+            export_audit=None;feedback=None
             if checked_plan is not None:
                 from audit_checked_contact import audit
                 export_audit=audit(source/'soma.glb',path/'soma.glb',spec,options['edit_window'],checked_reference)
                 save(path/'checked-export-audit.json',export_audit)
                 save(path/'checked-rate-reference.json',checked_reference)
-                if not export_audit['all_requested_pin_samples_within_5mm']:evaluation['flags'].append('exported_checked_pins_missed')
-                if export_floor_guard and export_audit['floor_nonregression']['samples_over_1um_numerical_budget']:evaluation['flags'].append('exported_floor_nonregression_missed')
-                if not export_audit['outside_preservation_passed']:evaluation['flags'].append('exported_outside_window_changed')
-                if any(max(row['candidate_excess_over_checked'])>0 for row in export_audit['phase_rates']):evaluation['flags'].append('exported_point_rate_excess')
+                from finish_contact_feedback import finish,checked_flags
+                if export_feedback:
+                    selected=finish(source,path,checked_plan,output/'export-feedback',config,recipe,evaluation,body,targets,skin)
+                    candidate,recipe,evaluation,body,targets,export_audit,validation,feedback=[selected[k] for k in
+                        ['candidate','recipe','evaluation','body','targets','export_audit','validation','feedback']]
+                    delta=candidate['root_positions'][:,1].astype(float)-base['root_positions'][:,1]
+                    if any(r['frames_outside_tolerance'] for r in targets['intervals']):evaluation['flags'].append('authored_contact_target_missed')
+                evaluation['flags'].extend(checked_flags(export_audit,recipe['export_rates']['ceilings'],feedback))
             evaluation['screen_status']='flagged' if evaluation['flags'] else 'within_provisional_screen'
+            if checked_plan is not None:
+                save(path/'checked-global-rates.json',dict(ceilings=recipe['export_rates']['ceilings'],
+                    peaks=[max(r[k] for r in export_audit['variants']['candidate']['joints']) for k in ['peak_speed_m_s','peak_acceleration_m_s2']],
+                    units=['m/s','m/s2'],quality_approved=False))
             names,_,feet=validate_motion(candidate,30)
             record={k:v for k,v in parent.items() if k not in ['hashes','validation','previous_trial','support_correction']}
             record.update(previous_trial={k:v for k,v in parent.items() if k not in ['hashes','raw_trial','limb_trial','previous_trial']},
@@ -93,7 +102,7 @@ def run(source,spec_path,output,checked_plan=None,*,authored_point_scaling="metr
                 sequence=sequence_diagnostics(candidate,read(source/'timeline.json')['segments']),
                 processing=('Checked stationary pins with source rate guards; experimental unapproved candidate' if checked_plan else 'Explicit contact edit with hard root/rotation budgets; experimental'),
                 support_correction=dict(previous_flags=parent['flags'],previous_body=parent['body_correction'],support=recipe['support'],contact_spec=spec,
-                    target_evaluation=targets,checked_fit=checked_plan is not None,export_audit=export_audit,policy='Unreviewed constraints and result; no automatic promotion'),validation=validation,
+                    target_evaluation=targets,checked_fit=checked_plan is not None,export_audit=export_audit,export_feedback=feedback,policy='Unreviewed constraints and result; no automatic promotion'),validation=validation,
                 correction_and_evaluation_time_s=time.perf_counter()-start,human_approved=False,engine_import=None)
             save(path/'recipe.json',recipe);save(path/'contact-spec.json',spec)
             save(path/'explicit-contact-evaluation.json',targets)
