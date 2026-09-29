@@ -56,3 +56,5 @@ Existing local fixtures and separately acquired licensed dependencies are requir
 .venv\Scripts\python.exe scripts/spatial_release.py reports/sphere-region-release-v1 reports/new-spatial
 .venv\Scripts\python.exe scripts/audit_region_grasp_track.py reports/sphere-region-track-v2 reports/new-spatial-audit --approach-patch reports/sphere-region-approach-v1 --floor-patch reports/sphere-region-floor-v1 --release-patch reports/sphere-region-release-v1 --spatial-patch reports/new-spatial
 ```
+
+Follow-up: [endpoint-rate experiments](sphere-region-tangent-v1.md) retain failed budget/clearance variants and motivate solving the final grasp and release jointly.

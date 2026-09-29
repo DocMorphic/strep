@@ -15,6 +15,7 @@ from grasp_contact_binding import apply_region_binding
 from grasp_orientation import hand_frame, unit
 from region_grasp_track import arm_columns, project, smoothstep5
 from sphere_approach import set_problem_frame, influenced_hand_vertices, outward_clearance_shift
+from rotation_return import tangent_return, bounded_path_edits
 
 
 def arm_path(first, last, fraction):
@@ -24,7 +25,8 @@ def arm_path(first, last, fraction):
     return (a * Rotation.from_rotvec((a.inv()*b).as_rotvec()*smoothstep5(fraction))).as_matrix()
 
 
-def run(release_report, output):
+def run(release_report, output, path_profile='quintic', bound_path=False):
+    if path_profile not in ['quintic','tangent-cubic']: raise ValueError('Unknown path profile')
     torch.set_num_threads(2)
     release_report, output = Path(release_report).resolve(), Path(output).resolve()
     rp, rr = read(release_report/'protocol.json'), read(release_report/'result.json')
@@ -43,24 +45,33 @@ def run(release_report, output):
     patches = {b['hand']: influenced_hand_vertices(p, b['hand']) for b in bindings}
     source = dict(np.load(release_report/'motion.npz', allow_pickle=False))
     candidate = {k:v.copy() for k,v in source.items()}; uncorrected = {k:v.copy() for k,v in source.items()}
-    columns, _ = arm_columns(p); frozen = np.setdiff1d(np.arange(p.dim), columns)
+    columns, arm_limits = arm_columns(p); frozen = np.setdiff1d(np.arange(p.dim), columns)
     arms = [p.names.index(s+n) for s in ['Left', 'Right'] for n in ['Shoulder', 'Arm', 'ForeArm', 'Hand']]
     first, last = rp['release_frame'], rp['blend_end']; stored = {r['frame']:np.array(r['parameters']) for r in rr['rows']}
+    if first < 1 or last+1 >= len(source['root_positions']): raise ValueError('Surrounding endpoint keys required')
     settings = dict(maximum_evaluations=100, point_scale_m=.001, direction_scale=.01, regularization=1e-5,
                     guide_clearance_m=.0025, seconds_per_frame=60, maximum_rss_bytes=2*1024**3, minimum_available_bytes=int(1.25*1024**3))
     output.mkdir(parents=True, exist_ok=False); (output/'implementation').mkdir()
-    methods = ['spatial_release.py','sphere_approach.py','region_grasp_track.py','grasp_contact_binding.py','grasp_pose_witness.py',
+    methods = ['spatial_release.py','rotation_return.py','sphere_approach.py','region_grasp_track.py','grasp_contact_binding.py','grasp_pose_witness.py',
                'grasp_pose_witness_bounded.py','grasp_orientation.py','support_contact_v8.py','support_contact_v5.py','floor_contact.py','scene_solver_context.py','object_geometry.py','inspect_motion.py']
     implementation = {n:sha256(ROOT/'scripts'/n) for n in methods}
     for name in methods: shutil.copyfile(ROOT/'scripts'/name, output/'implementation'/name)
     save(output/'protocol.json',dict(at=now(), release_report=release_report.relative_to(ROOT).as_posix(), base_study=rp['base_study'],
-         inputs=inputs, implementation=implementation, settings=settings, release_frame=first, blend_end=last, arm_joints=arms, arm_columns=columns.tolist(),
-         eligible_frames=list(range(first+1,last)), scope='Eight absolute local arm rotations follow endpoint shortest arcs with quintic time. Other edits/root retain the input release. Radial full-influence hand guidance is projected through bounded arm IK if needed. Events and all outside frames unchanged. Full exported validation required.', quality_approved=False))
+         inputs=inputs, implementation=implementation, settings=settings, path_profile=path_profile, path_bound_reserve_radians=.001 if bound_path else None, release_frame=first, blend_end=last, arm_joints=arms, arm_columns=columns.tolist(),
+         eligible_frames=list(range(first+1,last)), scope='Eight absolute local arm rotations follow the recorded endpoint path profile. Tangent-cubic matches body rates estimated from adjacent keys before correction/baking; quintic has zero endpoint rates. Other edits/root retain the input release. Radial full-influence hand guidance is projected through bounded arm IK if needed. Events and all outside frames unchanged. Full exported validation required.', quality_approved=False))
     rows=[]; solves=0
     for frame in range(first+1,last):
         set_problem_frame(p,frame); base=stored[frame].copy()
         desired=arm_path(source['local_rot_mats'][first,arms],source['local_rot_mats'][last,arms],(frame-first)/(last-first))
+        if path_profile=='tangent-cubic':
+            desired=tangent_return(source['local_rot_mats'][first,arms],source['local_rot_mats'][last,arms],source['local_rot_mats'][first-1,arms],source['local_rot_mats'][last+1,arms],(frame-first)/(last-first),last-first)
         base[columns]=Rotation.from_matrix(p.previous['local_rot_mats'][frame,arms].transpose(0,2,1)@desired).as_rotvec().ravel()
+        proposed=base.copy()
+        if bound_path: base[columns]=bounded_path_edits(base[columns].reshape(-1,3),arm_limits).ravel()
+        if np.any(np.linalg.norm(base[columns].reshape(-1,3),axis=1)>=arm_limits):
+            save(output/'failure.json',dict(at=now(),status='failed',stage='path_seed',frame=frame,reason='Proposed arm path is not strictly inside original rotation budgets',
+                 proposed_parameters=proposed.tolist(),motion_written=False,protocol_sha256=sha256(output/'protocol.json'),quality_approved=False))
+            raise ValueError('Proposed arm path exceeds bounded solver seed domain; failure report retained')
         before, motion=p.independent(base)
         for name in source: uncorrected[name][frame]=motion[name][0]
         vertices=p.surface.vertices(motion['global_rot_mats'][0],motion['posed_joints'][0])
@@ -82,7 +93,7 @@ def run(release_report, output):
         np.testing.assert_array_equal(values[frozen],stored[frame][frozen])
         audit,motion=p.independent(values)
         for name in candidate: candidate[name][frame]=motion[name][0]
-        rows.append(dict(frame=frame,initial_parameters=base.tolist(),parameters=values.tolist(),guides=guides,solver=solver,before=before,candidate=audit,seconds=time.monotonic()-began))
+        rows.append(dict(frame=frame,proposed_parameters=proposed.tolist(),initial_parameters=base.tolist(),parameters=values.tolist(),guides=guides,solver=solver,before=before,candidate=audit,seconds=time.monotonic()-began))
         save(output/'progress.json',dict(status='running',rows=rows))
         print(dict(frame=frame,projected=solver is not None,sphere_clearance_m=audit['objects'][0]['minimum_clearance_m'],bounds=audit['rotation_norm_bounds_passed']),flush=True)
         if solver and solver['status']!='complete': break
@@ -100,5 +111,5 @@ def run(release_report, output):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__); parser.add_argument('release_report',type=Path); parser.add_argument('output',type=Path); args=parser.parse_args()
-    with threadpool_limits(limits=2): run(args.release_report,args.output)
+    parser=argparse.ArgumentParser(description=__doc__); parser.add_argument('release_report',type=Path); parser.add_argument('output',type=Path); parser.add_argument('--path-profile',choices=['quintic','tangent-cubic'],default='quintic'); parser.add_argument('--bound-path',action='store_true'); args=parser.parse_args()
+    with threadpool_limits(limits=2): run(args.release_report,args.output,args.path_profile,args.bound_path)

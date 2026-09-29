@@ -61,3 +61,7 @@ Checked 2026-09-24 unless marked otherwise. Preserve license files with assets a
 ### Per-joint angular development (2026-09-28)
 
 Official SciPy rotation-vector API/source checked: https://scipy.github.io/devdocs/reference/generated/scipy.spatial.transform.Rotation.as_rotvec.html and https://github.com/scipy/scipy/blob/main/scipy/spatial/transform/_rotation.py . Runtime dependency unchanged. Project tests prove the chord/relative-angle identity and local derivatives; docs/angular-release-v1.md records the new protocol and limits. No training data or model acquired.
+
+### Endpoint angular-rate returns (2026-09-29)
+
+Official SciPy [rotation-spline source](https://github.com/scipy/scipy/blob/main/scipy/spatial/transform/_rotation_spline.py) checked, alongside the installed 1.15.3 angular-rate/rotation-log Jacobian implementation. The project uses an explicit cubic Hermite return, tested with noncommuting rotations and independently audited. This is not use of RotationSpline or a claim of continuity after correction/baking. Results and retained failures: [endpoint-rate study](sphere-region-tangent-v1.md). No dependency, model or data acquisition.

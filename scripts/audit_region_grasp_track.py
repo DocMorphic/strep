@@ -5,6 +5,7 @@ import math
 from pathlib import Path
 import numpy as np
 from scipy.spatial.transform import Rotation, Slerp
+from scipy.interpolate import CubicHermiteSpline
 from threadpoolctl import threadpool_limits
 from strep import ROOT, read, save, sha256, now
 from build_soma_preview import ASSET, make_preview
@@ -195,8 +196,34 @@ def run(study, output, approach_patch=None, floor_patch=None, release_patch=None
         for row in sr['rows']:
             frame=row['frame']; q=quintic((frame-first)/(last-first))
             # Independent Slerp implementation of each local endpoint path.
-            desired=np.array([Slerp([0.,1.],Rotation.from_matrix(candidate['local_rot_mats'][[first,last],j]))(q).as_matrix() for j in arms])
+            profile=sp.get('path_profile','quintic')
+            if profile=='quintic':
+                desired=np.array([Slerp([0.,1.],Rotation.from_matrix(candidate['local_rot_mats'][[first,last],j]))(q).as_matrix() for j in arms])
+            elif profile=='tangent-cubic':
+                desired=[]
+                for j in arms:
+                    before,a,b,after=Rotation.from_matrix(candidate['local_rot_mats'][[first-1,first,last,last+1],j])
+                    delta=(a.inv()*b).as_rotvec(); theta=np.linalg.norm(delta)
+                    x,y,z=delta; skew=np.array([[0,-z,y],[z,0,-x],[-y,x,0]])
+                    # Invert the forward right Jacobian rather than use the
+                    # writer's inverse-Jacobian cross-product expression.
+                    aa=(1-np.cos(theta))/theta**2 if theta>1e-4 else .5-theta**2/24
+                    bb=(theta-np.sin(theta))/theta**3 if theta>1e-4 else 1/6-theta**2/120
+                    jac=np.eye(3)-aa*skew+bb*(skew@skew)
+                    incoming=(before.inv()*a).as_rotvec()*(last-first)
+                    outgoing=np.linalg.solve(jac,(b.inv()*after).as_rotvec()*(last-first))
+                    vector=CubicHermiteSpline([0,1],np.stack([np.zeros(3),delta]),np.stack([incoming,outgoing]))((frame-first)/(last-first))
+                    desired.append((a*Rotation.from_rotvec(vector)).as_matrix())
+                desired=np.array(desired)
+            else: raise ValueError('Unknown spatial profile')
             expected=np.array(release_rows[frame]['parameters']); expected[columns]=Rotation.from_matrix(p0.previous['local_rot_mats'][frame,arms].transpose(0,2,1)@desired).as_rotvec().ravel()
+            if 'proposed_parameters' in row: np.testing.assert_allclose(row['proposed_parameters'],expected,atol=1e-12,rtol=0)
+            reserve=sp.get('path_bound_reserve_radians')
+            if reserve is not None:
+                if reserve!=.001: raise ValueError('Unexpected spatial seed reserve')
+                for joint,col in zip(arms,np.array(columns).reshape(-1,3)):
+                    norm=np.linalg.norm(expected[col]); maximum=p0.limits[p0.lookup[joint]]-reserve
+                    if norm>maximum: expected[col]*=maximum/norm
             initial=np.array(row['initial_parameters']); values=np.array(row['parameters'])
             np.testing.assert_allclose(initial,expected,atol=1e-12,rtol=0)
             np.testing.assert_array_equal(values[frozen],initial[frozen])
