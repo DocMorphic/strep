@@ -35,7 +35,7 @@ def guide_joint_indices(names, fingers, mode='hands'):
     return joints
 
 
-def run(scene_path, guide_study, guide_audit, seed_path, output, reference=60, iterations=100, guide_mode='hands'):
+def run(scene_path, guide_study, guide_audit, seed_path, output, reference=60, iterations=100, guide_mode='hands', edit_window=None):
     if guide_mode not in ['hands','arms']:raise ValueError('Unknown guide mode')
     scene_path, guide_study, guide_audit, seed_path, output = map(lambda p: Path(p).resolve(),
         [scene_path, guide_study, guide_audit, seed_path, output])
@@ -95,6 +95,10 @@ def run(scene_path, guide_study, guide_audit, seed_path, output, reference=60, i
     origin, placement = pose(scene['actors']['A']['transform'])
     tp = (tp-origin) @ placement; tr = placement.T @ tr
     basis, knots = correction_basis(scene['frame_count'], CONFIG['knot_spacing_frames'])
+    if edit_window is not None:
+        from object_grip_seed import localized_controls
+        localized_controls(basis,edit_window)
+        if not edit_window[0]<=start<=end<=edit_window[1]:raise ValueError('Edit window must contain the complete grasp interval')
     weights = np.zeros(scene['frame_count']); weights[start:end+1] = 1
     inputs = {str(p): sha256(p) for p in [scene_path, source_path, seed_path, guide_study/'motion.npz',
         guide_study/'result.json', guide_study/'authored-scene.json', guide_audit, ASSET]}
@@ -109,7 +113,7 @@ def run(scene_path, guide_study, guide_audit, seed_path, output, reference=60, i
     save(output/'protocol.json', dict(at=now(), inputs=inputs, implementation={n: sha256(output/'implementation'/n) for n in implementation},
         actor='A', contact_ids=[c['id'] for c in contacts],
         reference_frame=reference, guide_frame=0, active_interval=[start,end], iterations=iterations,
-        guide_mode=guide_mode, target_joint_names=[names[j] for j in joints],
+        edit_window=edit_window, guide_mode=guide_mode, target_joint_names=[names[j] for j in joints],
         config=CONFIG, correction_knots=knots.tolist(), quality_approved=False,
         scope='Joint frames transported with prescribed object; source-relative bounded spline initialization. Not contact or release acceptance.'))
     started = time.monotonic()
@@ -120,7 +124,7 @@ def run(scene_path, guide_study, guide_audit, seed_path, output, reference=60, i
         torch.set_num_threads(2)
         with worker_lock():
             motion, recipe = fit_frames(source, seed, parents, editable, limits, len(body), basis,
-                joints, tp, tr, weights, iterations, progress)
+                joints, tp, tr, weights, iterations, progress,edit_window)
         for path, digest in inputs.items():
             if sha256(path) != digest: raise ValueError('Input changed during initialization')
         for name in implementation:
@@ -160,4 +164,5 @@ if __name__ == '__main__':
     for name in ['scene', 'guide_study', 'guide_audit', 'seed', 'output']: p.add_argument(name, type=Path)
     p.add_argument('--reference', type=int, default=60); p.add_argument('--iterations', type=int, default=100)
     p.add_argument('--guide-mode',choices=['hands','arms'],default='hands',help='Optional shoulder, upper-arm and forearm frame targets in the moving object frame')
-    a = p.parse_args(); run(a.scene, a.guide_study, a.guide_audit, a.seed, a.output, a.reference, a.iterations, a.guide_mode)
+    p.add_argument('--edit-window',type=int,nargs=2,metavar=('START','END'),help='Preserve seed rotations outside this inclusive native-key window')
+    a = p.parse_args(); run(a.scene, a.guide_study, a.guide_audit, a.seed, a.output, a.reference, a.iterations, a.guide_mode, a.edit_window)

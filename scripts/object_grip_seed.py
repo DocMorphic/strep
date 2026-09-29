@@ -23,9 +23,27 @@ def transport_frames(positions, rotations, reference, guide_positions, guide_rot
             rotations[:, None] @ relative_r[None])
 
 
+def localized_controls(basis, window):
+    """Null-space controls preserve the seed on every unselected native key."""
+    from scipy.linalg import null_space
+    basis=np.asarray(basis,dtype=float)
+    if basis.ndim!=2 or not np.isfinite(basis).all():raise ValueError('Finite frame/control basis required')
+    if not isinstance(window,(list,tuple)) or len(window)!=2 or any(type(v) is not int for v in window):
+        raise ValueError('Two integer edit-window endpoints required')
+    start,end=window
+    if not 0<=start<=end<len(basis):raise ValueError('Edit window outside clip')
+    outside=(np.arange(len(basis))<start)|(np.arange(len(basis))>end)
+    transform=null_space(basis[outside],rcond=1e-12) if outside.any() else np.eye(basis.shape[1])
+    if transform.shape[1]==0:raise ValueError('Edit window has no free spline controls')
+    error=float(np.abs(basis[outside]@transform).max()) if outside.any() else 0.
+    if error>1e-11:raise ValueError('Outside-window control residual too large')
+    return transform,outside,dict(window=list(window),free_controls=transform.shape[1],outside_keys=int(outside.sum()),basis_residual=error,
+        scope='Seed rotations preserved at unselected native keys; boundary dynamics and between-key motion still require audit.')
+
+
 def fit_frames(source, seed, parents, editable, limits, body_count, basis,
                target_joints, target_positions, target_rotations, weights,
-               iterations=100, progress=None):
+               iterations=100, progress=None, edit_window=None):
     if type(iterations) != int or not 1 <= iterations <= 300:
         raise ValueError('Iteration count must be between 1 and 300')
     frames = len(source['root_positions'])
@@ -45,11 +63,20 @@ def fit_frames(source, seed, parents, editable, limits, body_count, basis,
     offsets, initial, root = tensor(offsets), tensor(source['local_rot_mats']), tensor(source['root_positions'])
     spline, caps = tensor(basis), tensor(limits)[None, :, None]
     target_p, target_r, weight = tensor(target_positions), tensor(target_rotations), tensor(weights)
-    delta = tensor(controls).clone().requires_grad_()
+    localization=None;control_transform=None;seed_controls=None;outside=None
+    if edit_window is None:
+        delta = tensor(controls).clone().requires_grad_()
+    else:
+        if not np.array_equal(seed['root_positions'],source['root_positions']):
+            raise ValueError('Localized fitting requires matching seed and source root tracks')
+        transform,outside,localization=localized_controls(basis,edit_window)
+        control_transform=tensor(transform);seed_controls=tensor(controls)
+        delta=torch.zeros((transform.shape[1],len(editable),3),dtype=torch.float64,requires_grad=True)
     lookup = {j: i for i, j in enumerate(editable)}
 
     def state():
-        values = torch.einsum('fk,kjd->fjd', spline, delta)
+        full_controls=delta if control_transform is None else seed_controls+torch.einsum('kr,rjd->kjd',control_transform,delta)
+        values = torch.einsum('fk,kjd->fjd', spline, full_controls)
         vectors = bounded_edit_rotations(values, caps, body_count, True)
         changes = rodrigues(vectors)
         rotations, positions, locals_ = [], [], []
@@ -86,7 +113,13 @@ def fit_frames(source, seed, parents, editable, limits, body_count, basis,
         errors = torch.linalg.vector_norm(p[:, target_joints]-target_p, dim=-1).numpy()
     result = reconstruct(source, local.detach().numpy(), parents)
     _, proof = recover_controls(source['local_rot_mats'], result['local_rot_mats'], editable, limits, body_count, True, basis)
-    return result, dict(evaluations=len(history), objective_history=history,
+    if localization is not None:
+        from scipy.spatial.transform import Rotation
+        relative=seed['local_rot_mats'][outside].transpose(0,1,3,2)@result['local_rot_mats'][outside]
+        error=float(Rotation.from_matrix(relative.reshape(-1,3,3)).magnitude().max()) if outside.any() else 0.
+        if error>1e-6:raise ValueError('Unselected seed rotations changed')
+        localization['maximum_outside_seed_rotation_error_rad']=error
+    return result, dict(localization=localization,evaluations=len(history), objective_history=history,
         target_joint_ids=target_joints, maximum_active_joint_position_error_m=float(errors[weights > 0].max()),
         reconstruction=proof, root_unchanged=bool(np.array_equal(result['root_positions'], source['root_positions'])),
         quality_approved=False, scope='Object-relative joint-frame initializer; no skin-contact, collision, temporal-quality or dynamics acceptance.')
