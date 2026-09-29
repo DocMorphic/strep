@@ -1,0 +1,17 @@
+# Coordinated root and leg correction pilot
+
+The independent root-only bound identifies nine development cases that cannot recover their original root peak while retaining the declared floor/hover/edit conditions. This pilot starts with the **largest relative bound conflict**, Quaternius male beckoning (`motion-026-rig-03`). It is a measured failure selection, not a newly held-out case or a restriction of Strep's action scope.
+
+The 150-frame whole-support source has a root-acceleration peak of about 5.4425 m/s², versus 0.7096 in the original transfer. Frames 127–131 form the first block, centered on the largest current root peak. All other frames and non-leg rotations remain protected. Root translation and the existing eight leg/foot/toe rotation edits provide 135 free values. The original 4 cm horizontal / 12 cm vertical root budgets, 15 mm adjacent-root budget, per-joint angle budgets and 5° adjacent-edit limits remain. Additional root motion is limited to 1 cm from the same source.
+
+`coupled_breadth_block.py` adapts the existing temporal root/leg formulation. It replaces the inherited 5 mm floor allowance with **each source vertex's existing depth**, plus the existing 1 µm export tolerance. Foot hover, drafted horizontal anchors, predicted-support speed, whole-clip foot acceleration and per-center root acceleration retain the source-relative guards. The geometry check additionally protects half-frame floor depth and each joint's whole-clip rotation-step peak and 95th percentile. A useful accepted output must reduce the selected root-excess objective by at least 0.1%; tiny quantization changes do not qualify.
+
+The fixed trial budget is one SLSQP proposal with at most 80 iterations, followed by eight fixed safeguard fractions. An optimizer status or an intermediate objective is not acceptance. `audit_coupled_breadth.py` independently decodes the output, rechecks original edit bounds against the raw transfer and measures all preservation conditions against the unchanged whole-support source. Source and output then receive actual engine import checks. Every rejected proposal and failure remains local; nothing is promoted to a default correction.
+
+## Preflight evidence
+
+The source reconstruction passes its saved-pose check, all 42,527 initial constraint rows are feasible within numerical precision, and the geometry guard passes. Three actual-skin derivative directions pass on stable branches at a 1e-6 step; maximum directional error is 3.44e-6, below the unchanged 2e-4 preflight threshold. This checks smooth proposal derivatives, not derivatives through float quantization.
+
+Three focused tests pass: deterministic relative-conflict selection; rejection of a 2 mm floor edit that the old 5 mm rule would have allowed; and unchanged-source acceptance plus independent detection of a hover mutation. The first audit-test attempt omitted the test fixture's root-track clock and failed; the fixture was corrected without changing the implementation or thresholds before optimization.
+
+The frozen trial is `reports/coupled-breadth-block-v1`. Its worker identity and terminal pipeline, solver trials, separate audit and engine evidence must be checked before claiming an outcome. This is one five-frame development block, not complete clip recovery. The other conflict cases, root failures outside the block, physical support, action semantics, human ratings and cleanup-time evidence remain open. All project release capabilities remain unapproved.
