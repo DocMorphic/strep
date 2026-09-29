@@ -72,6 +72,16 @@ Original edit bounds pass with maximum edit 32.480904 degrees. Root lift remains
 
 Studio collection `scene-region-jobs/object-grip-full-review-v1` retains the failed source/candidate comparison. All previous outputs remain intact. `reports/region-object-grip-full-v1/comparison.json` binds the four-way comparison to result/audit hashes; `compare.py` preserves its method. Twelve package hashes and twelve offline route mappings are checked. No human evidence or live browser verification was added.
 
+## Root-coordinate conditioning diagnosis
+
+A separate process probes the completed fixed-region trial's exact initial objective closure without taking an optimizer step. It uses the same source, grip seed, constraints, witness initialization, sparse skin implementation and zero initial multipliers. It preserves the diagnostic script and bound protocol/result hashes in `reports/region-root-conditioning-v1` and rechecks all solver-input and implementation hashes afterward. No running worker or animation was modified.
+
+The root lift starts at 22 micrometres because the zero-lift seed is mapped through a clamped sigmoid. At that point, one unit of the encoded root variable changes lift by only 0.0000219978 metres. The gradient norm in encoded root coordinates is 0.002315, versus 105.248 per metre in physical coordinates: a factor of about 45,459. The rotation-control gradient norm is 855.184 in its own mixed parameter units. These norms illustrate coordinate scaling; they are not a Hessian condition number or directly comparable physical forces.
+
+Both a uniform root translation and a normalized physical-gradient direction pass central finite-difference checks at a 1-micrometre step, with relative discrepancies below 3.3e-11. A uniform upward step lowers the initial loss from 18.908899 to 18.908332; its derivative is -567.833592 objective units per metre. Individual physical gradients favor upward movement in 85 frames and downward movement in 95 frames. This rules out an identically zero root gradient at initialization; it does not establish final stationarity, the cause of the completed fit's failure, a feasible root trajectory, foot support or a successful reparameterization.
+
+The current regional-multiplier comparison remains unchanged. Root-coordinate scaling is a separate candidate experiment after that matched run, retaining the original 0-0.22 m bounds and exact starting motion. An optimizer change must demonstrate its own contact, geometry and temporal results; gradient rescaling alone is not an animation improvement.
+
 ## Next controlled experiment
 
 The fixed regional objective retains its weight throughout fitting, while object inequality penalties and multipliers increase between stages. This is a conditioning hypothesis for the lost contact, not proof of causation or feasibility. A follow-up now runs in `reports/region-object-grip-augmented-v1/guard` using the existing regional multiplier mode. Every protocol field except timestamp and `region_constraint_mode` matches the completed initialized control, including seed, source, implementation, margins, full skin, rate guard and iteration budget. No acceptance limit or default changed.
