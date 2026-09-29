@@ -304,3 +304,6 @@ Latest support experiment: [two platform foot-pin fits](carrier-support-v1.md) r
 
 
 Latest contact work: [per-point rate guard and endpoint travel diagnosis](carrier-point-rates-v1.md) avoids the earlier large foot jerk but does not solve the pins. The held right approach and both release transitions fail necessary distance/speed bounds. Thirty-one tests and 407 engine observations pass. Next expose the conflict and propose an explicitly expanded edit window before further fitting; all release gates remain open.
+
+
+Latest authoring check: [contact-window preflight](contact-window-preflight-v1.md) retains original targets, timing and rate caps and searches held-boundary expansions. The actual platform fixture has no complete window solution, so CLI preflight now stops before solving with a readable conflict report. Seventeen tests and an actual solver-spy check pass. Studio integration remains pending; no release capability is approved.

@@ -9,11 +9,11 @@ This option requires explicit, fixed vertex IDs with stationary world targets an
 The opt-in experiment and diagnostic are reproducible with the previously retained local fixture:
 
 ```powershell
-.venv\Scripts\python.exe scripts/study_carrier_support.py reports/scene-carrier-v1/input reports/carrier-support-point-rate-v1 --rate-guard --point-rate-guard
+.venv\Scripts\python.exe scripts/study_carrier_support.py reports/scene-carrier-v1/input reports/carrier-support-point-rate-v1 --rate-guard --point-rate-guard --allow-incompatible
 .venv\Scripts\python.exe scripts/point_rate_reachability.py reports/carrier-support-point-rate-v1 reports/carrier-support-point-rate-v1/reachability.json
 ```
 
-Use fresh output paths; these already exist in the development checkout. Model/mesh/fixture payloads are not bundled in the public repository.
+Use fresh output paths; these already exist in the development checkout. The original run predates preflight; the explicit override above now reproduces its best-effort behavior. Without that override, the [contact-window preflight](contact-window-preflight-v1.md) stops the known-conflicting request before fitting. Model/mesh/fixture payloads are not bundled in the public repository.
 
 ## Measurements
 

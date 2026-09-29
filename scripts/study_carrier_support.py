@@ -69,7 +69,7 @@ def audit(source_glb, candidate_glb, spec, window, frames):
         quality_approved=False)
 
 
-def run(source, output, *, start=30, end=149, anchor=90, window=(20,159), stages=2, iterations=60, rate_guard=False, point_rate_guard=False):
+def run(source, output, *, start=30, end=149, anchor=90, window=(20,159), stages=2, iterations=60, rate_guard=False, point_rate_guard=False, allow_incompatible=False):
     source, output = Path(source).resolve(), Path(output).resolve()
     if output.exists() or not output.is_relative_to(ROOT/'reports'):
         raise ValueError('Fresh output beneath reports required')
@@ -101,7 +101,7 @@ def run(source, output, *, start=30, end=149, anchor=90, window=(20,159), stages
     inputs[str(ASSET)] = sha256(ASSET)
     protocol = dict(source=str(source),inputs=inputs,implementation=hashes,contact_spec=spec,
         edit_window=list(window),anchor_frame=anchor,outer_stages=stages,iterations_per_stage=iterations,
-        config=CONFIG,root_coordinate_mode='physical_box',skin_backend='sparse',export_rate_guard=rate_guard,export_point_rate_guard=point_rate_guard,
+        config=CONFIG,root_coordinate_mode='physical_box',skin_backend='sparse',export_rate_guard=rate_guard,export_point_rate_guard=point_rate_guard,allow_incompatible=allow_incompatible,
         scope='Authored ground-space foot pins, then the existing rigid carry transform. Original motion is the initializer and edit reference. Other contact regions disabled; no original box/hand interaction constraint. Not trained, held-out, physically simulated or human reviewed.')
     save(output/'protocol.json',protocol)
     save(output/'owner.json',dict(pid=os.getpid(),create_time=psutil.Process().create_time()))
@@ -109,6 +109,30 @@ def run(source, output, *, start=30, end=149, anchor=90, window=(20,159), stages
     try:
         began = time.perf_counter()
         with worker_lock():
+            if point_rate_guard:
+                import torch
+                from export_point_rate_objective import ExportPointRateObjective
+                from inspect_motion import skeleton_metadata
+                from plan_point_rate_window import from_export,describe
+                _,parents,*_=skeleton_metadata(raw['posed_joints'].shape[1])
+                torch.set_num_threads(2)
+                guard=ExportPointRateObjective(torch.tensor(raw['global_rot_mats'],dtype=torch.float64),
+                    torch.tensor(raw['posed_joints'],dtype=torch.float64),parents,skin,spec,list(window))
+                preflight=from_export(source/scene['actors']['A']['preview_glb'],spec,guard.record(),
+                    list(window),frames,CONFIG['point_tolerance_m'])
+                save(output/'window-preflight.json',preflight)
+                (output/'window-preflight.txt').write_text(describe(preflight)+'\n',encoding='utf-8')
+                print(describe(preflight),flush=True)
+                print(dict(preflight_conflicts=preflight['requested_conflicts'],
+                    proposed_window=preflight['proposed_window'],window_applied=False),flush=True)
+                if preflight['requested_conflicts'] and not allow_incompatible:
+                    if any(sha256(p)!=h for p,h in inputs.items()):raise ValueError('Preflight input changed')
+                    if any(sha256(ROOT/'scripts'/n)!=h for n,h in hashes.items()):raise ValueError('Preflight implementation changed')
+                    result=dict(status='needs_authoring_change',quality_approved=False,solver_started=False,
+                        preflight_sha256=sha256(output/'window-preflight.json'),protocol_sha256=sha256(output/'protocol.json'),
+                        reason='Held endpoint travel is incompatible with the requested stationary pins and source-speed ceilings. No window, target or limit changed. Use the explicit best-effort override only to retain a diagnostic failed fit.')
+                    save(output/'preflight-result.json',result);save(output/'status.json',result)
+                    return result
             candidate, recipe = refine(raw,raw,skin,
                 lambda row: print(dict(evaluations=row['evaluations'],loss=row['loss'],seconds=time.perf_counter()-began),flush=True),
                 raw=raw,contact_spec=spec,outer_stage_count=stages,iteration_count=iterations,
@@ -151,4 +175,5 @@ if __name__ == '__main__':
     p.add_argument('--stages',type=int,default=2);p.add_argument('--iterations',type=int,default=60)
     p.add_argument('--rate-guard',action='store_true',help='Original-source global joint speed/acceleration inequalities; not per-foot limits')
     p.add_argument('--point-rate-guard',action='store_true',help='Per-material-point source ceilings for approach, hold and release')
-    args=p.parse_args();run(args.source,args.output,stages=args.stages,iterations=args.iterations,rate_guard=args.rate_guard,point_rate_guard=args.point_rate_guard)
+    p.add_argument('--allow-incompatible',action='store_true',help='Explicitly run a best-effort diagnostic fit despite failed endpoint travel checks')
+    args=p.parse_args();run(args.source,args.output,stages=args.stages,iterations=args.iterations,rate_guard=args.rate_guard,point_rate_guard=args.point_rate_guard,allow_incompatible=args.allow_incompatible)

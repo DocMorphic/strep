@@ -341,7 +341,8 @@
         "reports/scene-timing-limits-v1/source-bounds-verification.json",
         "reports/scene-timing-limits-engine-v2/completion.json",
         "docs/carrier-support-v1.md",
-        "docs/carrier-point-rates-v1.md"
+        "docs/carrier-point-rates-v1.md",
+        "docs/contact-window-preflight-v1.md"
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
@@ -773,7 +774,8 @@
         "reports/knee-contact-reference-population-summary-v1/decision.json",
         "reports/knee-contact-reference-population-summary-v1/common-input-failures.json",
         "docs/carrier-support-v1.md",
-        "docs/carrier-point-rates-v1.md"
+        "docs/carrier-point-rates-v1.md",
+        "docs/contact-window-preflight-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1039,7 +1041,8 @@
         "reports/scene-timing-limits-v1/source-bounds-verification.json",
         "reports/scene-timing-limits-engine-v2/completion.json",
         "docs/carrier-support-v1.md",
-        "docs/carrier-point-rates-v1.md"
+        "docs/carrier-point-rates-v1.md",
+        "docs/contact-window-preflight-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -2649,7 +2652,8 @@
         "reports/knee-contact-reference-population-summary-v1/decision.json",
         "reports/knee-contact-reference-population-summary-v1/common-input-failures.json",
         "docs/carrier-support-v1.md",
-        "docs/carrier-point-rates-v1.md"
+        "docs/carrier-point-rates-v1.md",
+        "docs/contact-window-preflight-v1.md"
       ]
     }
   ],
@@ -2861,6 +2865,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T15:32:12.231643+00:00",
-  "last_progress": "Added optional exported per-material-point speed/acceleration guard and endpoint travel diagnostic. Matched fit avoids large right-foot jerk but remains near source and misses 620/954 target samples; three held-boundary transitions are incompatible with source-speed ceilings. 31 focused tests and 407 Godot observations pass. Next: author-visible conflict and explicit window planning; no release capability approved."
+  "last_progress_at": "2026-09-29T15:43:13.005459+00:00",
+  "last_progress": "Added frozen-cap held-window planner and experimental CLI preflight. Actual fixture has approach solutions from frame 8 earlier but no passing held release endpoint; no full window proposed. Actual final-code solver-spy check proves three conflicts stop fitting without candidate or scope changes. 17 focused tests pass. Studio contact editor remains on older fitting path; all release capabilities unapproved."
 }
