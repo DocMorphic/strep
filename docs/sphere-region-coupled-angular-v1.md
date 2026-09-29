@@ -47,3 +47,5 @@ Existing local fixtures and licensed dependencies are required. Use fresh output
 .venv\Scripts\python.exe scripts/audit_region_grasp_track.py reports/sphere-region-track-v2 reports/new-angular-audit --approach-patch reports/sphere-region-approach-v1 --floor-patch reports/sphere-region-floor-v1 --release-patch reports/sphere-region-release-v1 --spatial-patch reports/sphere-region-spatial-v1 --coupled-patch reports/new-angular-fit
 .venv\Scripts\python.exe scripts/audit_region_boundary_rates.py reports/new-angular-audit reports/new-angular-boundaries
 ```
+
+Follow-up: the [upper-body return correction](sphere-region-upper-return-v1.md) removes the later measured acceleration regression while preserving these comparisons. Broader validation remains open.

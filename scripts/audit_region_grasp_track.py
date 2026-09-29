@@ -22,7 +22,7 @@ def quintic(t):
     t = min(1., max(0., t)); return 6*t**5-15*t**4+10*t**3
 
 
-def run(study, output, approach_patch=None, floor_patch=None, release_patch=None, spatial_patch=None, coupled_patch=None):
+def run(study, output, approach_patch=None, floor_patch=None, release_patch=None, spatial_patch=None, coupled_patch=None, upper_body_patch=None):
     study, output = Path(study).resolve(), Path(output).resolve(); protocol, result = read(study/'protocol.json'), read(study/'result.json')
     if result['status'] != 'complete' or not result['motion_generated']: raise ValueError('Completed trajectory required')
     for path, digest in [(study/'protocol.json', result['protocol_sha256']), (study/'motion.npz', result['motion_sha256'])]:
@@ -291,11 +291,42 @@ def run(study, output, approach_patch=None, floor_patch=None, release_patch=None
         candidate=fitted;p0=PoseProblem(folder,skin,start)
         coupled_verification=dict(report=path.relative_to(ROOT).as_posix(),result_sha256=sha256(path/'result.json'),protocol_sha256=sha256(path/'protocol.json'),
                                   protected_frames_exact=len(protected),non_arm_parameters_exact=True,active_grasp_modified=True,solver_status=cr['solver'],original_edit_bounds_verified=True,speed_cap_policy=speed_cap_verification,angular_join_policy=angular_join_verification)
+    upper_verification=None;upper_source=None
+    if upper_body_patch is not None:
+        if coupled_patch is None:raise ValueError('Upper-body stage requires its coupled input')
+        path=Path(upper_body_patch).resolve();up,ur=read(path/'protocol.json'),read(path/'result.json')
+        if ROOT/up['coupled_report']!=Path(coupled_patch).resolve() or ROOT/up['spatial_report']!=Path(spatial_patch).resolve() or up['base_study']!=cp['base_study'] or ur['status']!='complete':raise ValueError('Upper-body input chain mismatch')
+        for artifact,digest in [(path/'protocol.json',ur['protocol_sha256']),(path/'motion.npz',ur['motion_sha256'])]:
+            if sha256(artifact)!=digest:raise ValueError('Upper-body artifact changed')
+        for name,digest in up['inputs'].items():
+            if sha256(ROOT/name)!=digest:raise ValueError('Upper-body source changed')
+        for name,digest in up['implementation'].items():
+            if sha256(path/'implementation'/name)!=digest:raise ValueError('Upper-body implementation snapshot changed')
+        joint_names=['Spine1','Spine2','Chest','Neck1','Neck2','Head'];selected=[p0.names.index(n) for n in joint_names];cols=np.array([3*p0.lookup[j]+k for j in selected for k in range(3)])
+        first,last=end+5,end+19;frames=list(range(first+1,last));strength=up['strength']
+        if up['joint_names']!=joint_names or up['columns']!=cols.tolist() or up['locked_endpoints']!=[first,last] or up['frames']!=frames or [r['frame'] for r in ur['rows']]!=frames or not np.isfinite(strength) or not 0<=strength<=1:raise ValueError('Upper-body scope changed')
+        smoothed=dict(np.load(path/'motion.npz',allow_pickle=False));protected=np.setdiff1d(np.arange(protocol['frame_count']),frames);unselected=np.setdiff1d(np.arange(p0.dim),cols)
+        for name in candidate:np.testing.assert_array_equal(smoothed[name][protected],candidate[name][protected])
+        source_parameters={r['frame']:np.array(r['parameters']) for r in sr['rows']}
+        for row in ur['rows']:
+            frame=row['frame'];p0.frame=frame;baseline=source_parameters[frame];_,replay=p0.independent(baseline)
+            for name in candidate:np.testing.assert_array_equal(candidate[name][frame],replay[name][0].astype(candidate[name].dtype))
+            t=(frame-first)/(last-first);weight=strength*16*t*t*(1-t)*(1-t);np.testing.assert_allclose(row['weight'],weight,atol=1e-14)
+            previous=Rotation.from_matrix(candidate['local_rot_mats'][frame-1,selected]);current=Rotation.from_matrix(candidate['local_rot_mats'][frame,selected]);following=Rotation.from_matrix(candidate['local_rot_mats'][frame+1,selected])
+            desired=(current*Rotation.from_rotvec(((current.inv()*previous).as_rotvec()+(current.inv()*following).as_rotvec())*(weight/2))).as_matrix()
+            expected=baseline.copy();expected[cols]=Rotation.from_matrix(p0.previous['local_rot_mats'][frame,selected].transpose(0,2,1)@desired).as_rotvec().ravel()
+            values=np.array(row['parameters']);np.testing.assert_allclose(values,expected,atol=1e-12,rtol=0);np.testing.assert_array_equal(values[unselected],baseline[unselected])
+            actual,replay=p0.independent(values)
+            if not actual['rotation_norm_bounds_passed']:raise ValueError('Upper-body original edit bounds failed')
+            for name in candidate:np.testing.assert_array_equal(smoothed[name][frame],replay[name][0].astype(smoothed[name].dtype))
+        upper_source={k:v.copy() for k,v in candidate.items()};candidate=smoothed;p0=PoseProblem(folder,skin,start)
+        upper_verification=dict(report=path.relative_to(ROOT).as_posix(),protocol_sha256=sha256(path/'protocol.json'),result_sha256=sha256(path/'result.json'),protected_frames_exact=len(protected),selected_joints=joint_names,
+                                other_physical_parameters_exact=True,source_parameter_replay_exact=True,grasp_and_release_comparison_frames_exact=True)
     output.mkdir(parents=True,exist_ok=False)
     shutil.copyfile(Path(__file__),output/Path(__file__).name)
     metadata = dict(at=now(), study=study.relative_to(ROOT).as_posix(), protocol_sha256=sha256(study/'protocol.json'), result_sha256=sha256(study/'result.json'),
                     native_replay_exact=True, untouched_frames_exact=len(outside), original_edit_budgets_pass=True, serialization_max_error=max_serialized_error,approach_patch=patch_verification,floor_patch=floor_verification,release_patch=release_verification,
-                    spatial_patch=spatial_verification,coupled_patch=coupled_verification,substeps=4, scope='Decoded GLB full-skin integer/quarter-frame samples; exact original native edits and untouched frames verified. Discrete samples do not certify continuous collision, anatomy, self-collision, dynamics or human quality.', quality_approved=False)
+                    spatial_patch=spatial_verification,coupled_patch=coupled_verification,upper_body_patch=upper_verification,substeps=4, scope='Decoded GLB full-skin integer/quarter-frame samples; exact original native edits and untouched frames verified. Discrete samples do not certify continuous collision, anatomy, self-collision, dynamics or human quality.', quality_approved=False)
     save(output/'protocol.json',metadata)
     times=np.arange((protocol['frame_count']-1)*4+1)/4; count=protocol['frame_count']; originals={}; hand_specs=[]
     for geometry,obj in context_primitives(p0.context):
@@ -315,6 +346,7 @@ def run(study, output, approach_patch=None, floor_patch=None, release_patch=None
     variants={}; active_mask=(times>=start)&(times<=end); edited_mask=(times>=edit_start)&(times<=edit_end)
     measured_variants=[('baseline',source),('candidate',candidate)]
     if coupled_source is not None:measured_variants.append(('coupled_input',coupled_source))
+    if upper_source is not None:measured_variants.append(('upper_body_input',upper_source))
     for label,motion in measured_variants:
         doc,binary,_,_=make_preview(skin,motion,np.zeros(3),repeat=False); write_glb(output/(label+'.glb'),doc,binary)
         doc,binary=read_glb(output/(label+'.glb')); sampler=AnimationSampler(doc,binary,0); joints=doc['skins'][0]['joints']
@@ -375,9 +407,12 @@ def run(study, output, approach_patch=None, floor_patch=None, release_patch=None
     if coupled_source is not None:
         preservation={hand:dict(source_m_s=variants['coupled_input']['contacts'][hand]['boundary']['release']['peak_object_relative_speed_m_s'],candidate_m_s=variants['candidate']['contacts'][hand]['boundary']['release']['peak_object_relative_speed_m_s']) for hand in variants['candidate']['contacts']}
         for row in preservation.values():row['passed']=row['candidate_m_s']<=row['source_m_s']+1e-7
-    save(output/'verification.json',dict(**metadata,variants=variants,release_speed_preservation=preservation,auditor_sha256=sha256(Path(__file__)),release_approved=False))
+    dynamics=None
+    if upper_source is not None:
+        dynamics={key:{label:dict(source=variants[label][key],candidate=variants['candidate'][key],passed=variants['candidate'][key]<=variants[label][key]+1e-7) for label in ['baseline','upper_body_input']} for key in ['maximum_joint_speed_m_s','maximum_joint_acceleration_m_s2']}
+    save(output/'verification.json',dict(**metadata,variants=variants,release_speed_preservation=preservation,upper_body_dynamics_comparison=dynamics,auditor_sha256=sha256(Path(__file__)),release_approved=False))
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study',type=Path);parser.add_argument('output',type=Path);parser.add_argument('--approach-patch',type=Path);parser.add_argument('--floor-patch',type=Path);parser.add_argument('--release-patch',type=Path);parser.add_argument('--spatial-patch',type=Path);parser.add_argument('--coupled-patch',type=Path);args=parser.parse_args()
-    with threadpool_limits(limits=2):run(args.study,args.output,args.approach_patch,args.floor_patch,args.release_patch,args.spatial_patch,args.coupled_patch)
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study',type=Path);parser.add_argument('output',type=Path);parser.add_argument('--approach-patch',type=Path);parser.add_argument('--floor-patch',type=Path);parser.add_argument('--release-patch',type=Path);parser.add_argument('--spatial-patch',type=Path);parser.add_argument('--coupled-patch',type=Path);parser.add_argument('--upper-body-patch',type=Path);args=parser.parse_args()
+    with threadpool_limits(limits=2):run(args.study,args.output,args.approach_patch,args.floor_patch,args.release_patch,args.spatial_patch,args.coupled_patch,args.upper_body_patch)
