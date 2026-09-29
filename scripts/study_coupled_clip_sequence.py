@@ -117,20 +117,23 @@ def prepare(parent, output, previous=None):
     print('Prepared nine cases,', sum(len(read(output/'takes'/c['id']/'request.json')['windows']) for c in cases), 'windows', flush=True)
 
 
-def fit_case(folder, request):
+def fit_case(folder, request, proposal_builder_factory=None):
     values = np.load(folder/'starting-parameters.npz')['parameters'].copy()
     touched = set(request['frames'])
     blocks = []
     for index, window in enumerate(request['windows']):
         block_request = {**request, 'frames': window['frames']}
         problem = make_problem(folder, block_request, initial_parameters=values)
+        builder = constraints if proposal_builder_factory is None else proposal_builder_factory()
         if index==0:
             save(folder/'start-verification.json', verify_start(problem, folder/'starting.glb'))
         def progress(row):
             save(folder/'pipeline.json', dict(status='fitting', block=index+1, at=now(), **row))
             print(folder.name, 'block', index+1, row, flush=True)
         values, solver = solve(problem, request['maxiter'], tuple(request['trusts']), progress,
-                               constraint_builder=constraints, linear_screen=True)
+                               constraint_builder=builder, linear_screen=True)
+        if hasattr(builder, 'builds'):
+            solver['proposal_model_builds'] = builder.builds
         save(folder/f'block-{index+1:02d}-solver.json', solver)
         np.savez_compressed(folder/f'block-{index+1:02d}-parameters.npz', parameters=values)
         touched.update(window['frames'])

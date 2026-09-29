@@ -137,6 +137,7 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/half-floor-pilot-v1.md",
         "docs/coupled-clip-sequence-v1.md",
         "docs/coupled-breadth-conic-v1.md",
         "docs/coupled-breadth-block-v1.md",

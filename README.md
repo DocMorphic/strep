@@ -33,6 +33,8 @@ The [bounded region-grasp correction](docs/sphere-region-upper-return-v1.md) pas
 
 [Whole-clip correction](docs/coupled-clip-sequence-v1.md) extends this work across 29 selected windows while sharing each clip's original edit budget. Nine exported candidates pass the numerical comparison; original root peaks and usability requirements remain unresolved.
 
+[Between-key floor constraints](docs/half-floor-pilot-v1.md) unlock a further 1.18% numerical improvement in one previously blocked backpedal window, with independent geometry and 600 engine frame checks passing. The original root peak and all seven failing regions remain unresolved; broader replication is still needed.
+
 The owner will perform developer review first. Independent animator review and timed cleanup evidence remain release requirements.
 
 ## Using this source snapshot
