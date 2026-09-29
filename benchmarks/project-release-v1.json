@@ -2913,6 +2913,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T18:36:09.862570+00:00",
-  "last_progress": "Four of eight frozen breadth cases completed. Jump/landing seed 11 is the first exported contact-screen pass, with all 61 pins, original point/global rate limits, floor preservation and 284 Godot observations passing. A separate crawl held-pose restoration diagnostic removes locked-frame/floor drift while retaining all pin failures, with 284 additional engine observations. The original batch continues with wave seed 22; four cases pending. No release capability is approved."
+  "last_progress_at": "2026-09-29T18:49:56.642436+00:00",
+  "last_progress": "Five of eight frozen breadth cases and their Godot checks completed. Wave-22 passes pins and floor but retains a 6.6607e-8 m/s exported approach-speed excess over the original native-derived cap; a passing native/interpolation proxy caused root repair to exit without a step. The decoded-source comparison is recorded separately without changing the budget. Only jump/landing seed 11 passes the full contact screen so far. Original numerical worker continues with crawl-22; a one-run engine follow-up verifies remaining cases automatically. No release approval."
 }

@@ -52,3 +52,6 @@ Third completed case: [kick seed 11](contact-breadth-kick-v1.md) fails 55 of 81 
 
 
 Fourth completed case: [jump/landing seed 11](contact-breadth-jump-v1.md) passes all 61 pin samples, point/global rate limits, full-floor preservation and 284 engine observations after one accepted root correction. This is the first contact-screen pass among four completed cases, with four still pending. The original batch continues with wave seed 22. A separate [crawl preservation diagnostic](contact-breadth-crawl-v1.md#isolated-held-pose-restoration-diagnostic) removes locked-frame reconstruction drift and raw floor difference without changing its four pin failures; the frozen crawl outcome remains intact.
+
+
+Fifth completed case: [wave seed 22](contact-breadth-wave-v1.md#seed-22-a-feasible-proxy-still-fails-the-exported-speed-limit) passes pins, floor, body regression checks and 284 engine observations, but retains a 6.6607e-8 m/s approach-speed excess over the original native-derived ceiling. The root proxy is feasible, so no repair step was attempted. The decoded source also exceeds that ceiling; both native-budget and decoded-source comparisons remain visible. Five cases are complete, only jump/landing seed 11 passes the full contact screen, and the original batch continues with crawl seed 22.
