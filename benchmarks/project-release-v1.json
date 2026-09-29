@@ -807,7 +807,8 @@
         "docs/preserved-export-repair-v1.md",
         "docs/local-edit-preservation-v1.md",
         "docs/export-feedback-v1.md",
-        "docs/contact-joint-restart-v1.md"
+        "docs/contact-joint-restart-v1.md",
+        "docs/contact-export-review-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -2714,7 +2715,8 @@
         "docs/preserved-export-repair-v1.md",
         "docs/local-edit-preservation-v1.md",
         "docs/export-feedback-v1.md",
-        "docs/contact-joint-restart-v1.md"
+        "docs/contact-joint-restart-v1.md",
+        "docs/contact-export-review-v1.md"
       ]
     }
   ],
@@ -2926,6 +2928,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T20:57:16.467580+00:00",
-  "last_progress": "Started a predeclared full-joint warm restart for crawl-11 and kick-11, whose retained horizontal pin errors exclude root-height-only repair. Both seeds are representable within original spline/rotation budgets. Six stages of 120 iterations reuse fitted poses while retaining immutable original root/rotation/rate/floor limits; optimizer/multiplier state resets. Twenty-nine focused tests and CLI help pass. Crawling warm-seed export confirms four pin misses, zero added floor depth and exact outside preservation. A verified live worker is fitting crawling; final candidate/engine results remain pending and all release approvals are unchanged."
+  "last_progress_at": "2026-09-29T21:08:18.619022+00:00",
+  "last_progress": "Studio checked-contact results now show readable pin, point-rate, floor-regression and outside-window measurements. Tiny excesses stay visible, missing measurements remain unavailable, inherited penetration is disclosed and clip changes clear stale evidence. Offline DOM/workflow checks, four desktop build checks and renderer comparisons against eleven retained reports pass. The live full-joint restart continues with frozen Python/Godot methods unchanged; final crawling/kicking results and all release approvals remain pending."
 }

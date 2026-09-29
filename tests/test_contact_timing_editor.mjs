@@ -32,5 +32,6 @@ await el('FitChecked').onclick();assert.equal(calls.length,count+1);
 assert.equal(JSON.stringify(calls.at(-1)[3]),JSON.stringify({checked_plan:'checked2',revision:'a'.repeat(64)}));
 assert.equal(calls.at(-1)[1],null,'Fit sends saved identity instead of substituting the current draft');
 editor.setBusy(false);editor.load('contact-jobs/fit/result',{...trial,support_correction:{checked_fit:true}});
-assert(el('Result').children.some(a=>a.href?.endsWith('/checked-export-audit.json')));
+const descendants=e=>[e,...(e.children||[]).flatMap(descendants)];
+assert(descendants(el('Result')).some(a=>a.href?.endsWith('/checked-export-audit.json')));
 console.log('Checked fit UI: conflict rejection, exact saved revision payload and separate exported audit link pass.');

@@ -367,3 +367,6 @@ Latest correction result: [export feedback with adjustable optional headroom](ex
 
 
 A [full-joint warm-restart experiment](contact-joint-restart-v1.md) is now running on retained crawl-11 and kick-11 failures that root-height-only correction cannot solve. It keeps original source edit/rate/floor limits, restores held keys, and tries six stages of 120 iterations from retained poses. Twenty-nine focused tests pass. Crawling initialization/export is verified; final fit and engine outcomes remain pending. All release capabilities remain unapproved.
+
+
+Studio now provides [readable contact-export checks](contact-export-review-v1.md) with numeric pin/rate/floor/preservation results, explicit missing data and retained tiny failures. Offline UI checks, four reproducible-build tests and comparisons against eleven saved reports pass. The separate full-joint study remains running with its Python/Godot methods unchanged; no new motion-quality or release approval is inferred.

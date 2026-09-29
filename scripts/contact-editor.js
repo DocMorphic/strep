@@ -1,3 +1,42 @@
+// Render recorded numeric evidence without turning a partial screen into approval.
+function contactAuditRows(audit){
+ const rows=[],finite=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0;
+ const fmt=v=>Number(v.toPrecision(6)).toString(),mm=v=>fmt(v*1000)+' mm';
+ const add=(label,status,detail)=>rows.push({label,status,detail});
+ const pins=Array.isArray(audit?.contacts)?audit.contacts:[];
+ if(!pins.length)add('Contact pins','unavailable','No exported pin measurements attached.');
+ for(const pin of pins){
+  const label=typeof pin?.region==='string'?pin.region:'Contact';
+  const interval=Number.isInteger(pin?.start_frame)&&Number.isInteger(pin?.end_frame)?` · frames ${pin.start_frame}–${pin.end_frame}`:'';
+  const valid=finite(pin?.maximum_error_m)&&Number.isInteger(pin?.samples)&&pin.samples>0&&Number.isInteger(pin?.samples_over_5mm)&&pin.samples_over_5mm>=0&&pin.samples_over_5mm<=pin.samples;
+  if(!valid){add(label+interval,'unavailable','Incomplete exported pin measurements.');continue;}
+  const over=Math.max(0,pin.maximum_error_m-.005),failed=over>0||pin.samples_over_5mm>0;
+  add(label+interval,failed?'fail':'pass',`${mm(pin.maximum_error_m)} maximum / 5 mm limit; ${pin.samples_over_5mm} of ${pin.samples} samples miss the target.${over>0?' Over by '+mm(over)+'.':''}`);
+ }
+ const rates=Array.isArray(audit?.phase_rates)?audit.phase_rates:[];
+ if(!rates.length)add('Contact speed and acceleration','unavailable','No exported rate limits attached.');
+ for(const row of rates){
+  for(const [index,name,unit] of [[0,'speed','m/s'],[1,'acceleration','m/s²']]){
+   const label=[typeof row?.region==='string'?row.region:'Contact',typeof row?.phase==='string'?row.phase:'phase',name].join(' · ');
+   const value=row?.variants?.candidate?.[index],limit=row?.checked_ceilings?.[index];
+   if(!finite(value)||!finite(limit)){add(label,'unavailable','Measurement or limit unavailable.');continue;}
+   const excess=Math.max(0,value-limit);
+   add(label,excess>0?'fail':'pass',`${fmt(value)} / ${fmt(limit)} ${unit} limit.${excess>0?' Over by '+fmt(excess)+' '+unit+'.':''}`);
+  }
+ }
+ const depth=audit?.floor_nonregression?.maximum_added_depth_m,total=audit?.variants?.candidate?.maximum_floor_depth_m;
+ add('Added floor penetration',finite(depth)?(depth>0?'fail':'pass'):'unavailable',finite(depth)?`${mm(depth)} added compared with the source.${finite(total)?' Total penetration: '+mm(total)+'.':''}`:'No floor comparison attached.');
+ const outside=audit?.preservation?.all_outside_times,errors=outside?.maximum_errors;
+ const valid=Number.isInteger(outside?.samples)&&outside.samples>0&&typeof outside.within_numerical_tolerance==='boolean'&&['joint_position_error_m','basis_error','skin_position_error_m'].every(k=>finite(errors?.[k]));
+ if(!valid)add('Outside the edit window','unavailable','No complete outside-window comparison attached.');
+ else{
+  // Matches the existing SOMA outside-window audit's 1e-6 position/basis limits.
+  const passed=outside.within_numerical_tolerance&&Object.values(errors).every(v=>v<=1e-6),exact=passed&&Object.values(errors).every(v=>v===0);
+  add('Outside the edit window',passed?'pass':'fail',`${exact?'Unchanged at':passed?'Within export tolerance at':'Changed beyond export tolerance at'} ${outside.samples} samples; maximum mesh drift ${mm(errors.skin_position_error_m)}.`);
+ }
+ return rows;
+}
+
 const contactEditor=(()=>{
  const el=id=>document.getElementById(id),names=['LeftHand','RightHand','LeftFoot','RightFoot','Torso','Head','LeftKnee','RightKnee','LeftElbow','RightElbow'];
  let context=null,draft=null,busy=false,submit=null,currentFrame=null,editing=null,shownTiming=null,savedCheck=null;
@@ -60,7 +99,15 @@ const contactEditor=(()=>{
    }
    const check=t.support_correction?.target_evaluation;
    el('contactResult').textContent=check?.intervals?.length?check.intervals.map(r=>`${r.region} frames ${r.start_frame}–${r.end_frame}: max ${(r.max_error_m*1000).toFixed(1)} mm; ${r.frames_outside_tolerance}/${r.frame_count} frames outside target tolerance.`).join(' '):'No authored-target measurements attached to this candidate.';
-   if(t.support_correction?.checked_fit){el('contactResult').append(document.createTextNode(' This candidate was fitted from a saved timing check. Exported contact and rate failures remain review flags. '));const a=document.createElement('a');a.textContent='Checked export audit';a.href='/files/'+collection+'/takes/'+t.id+'/checked-export-audit.json';a.target='_blank';a.rel='noopener';el('contactResult').append(a);}
+   if(t.support_correction?.checked_fit){
+    const rows=contactAuditRows(t.support_correction.export_audit),failures=rows.filter(r=>r.status==='fail').length,missing=rows.filter(r=>r.status==='unavailable').length;
+    const details=document.createElement('details'),summary=document.createElement('summary'),list=document.createElement('ul');
+    details.className='contact-audit';details.open=failures>0||missing>0;
+    summary.textContent=`Contact export checks · ${failures} failed · ${missing} unavailable`;details.append(summary);
+    for(const row of rows){const item=document.createElement('li'),label=document.createElement('strong');item.setAttribute('data-status',row.status);label.textContent=`${row.status==='pass'?'Pass':row.status==='fail'?'Fail':'Unavailable'} · ${row.label}`;item.append(label,document.createTextNode(' — '+row.detail));list.append(item);}
+    details.append(list);const note=document.createElement('p');note.textContent='These sampled checks do not approve the animation. Review the full clip and its body-quality flags.';details.append(note);
+    const a=document.createElement('a');a.textContent='Full contact export audit';a.href='/files/'+collection+'/takes/'+t.id+'/checked-export-audit.json';a.target='_blank';a.rel='noopener';details.append(a);el('contactResult').append(details);
+   }
    render();
   },
   showTiming(job){if(!context||job.source!==context.collection+'/takes/'+context.take_id||shownTiming===job.id)return;shownTiming=job.id;savedCheck=job;el('contactFitChecked').disabled=busy||job.status!=='checked'||!job.check_revision;el('contactTimingResult').textContent='Saved timing check (your current draft may differ):\n'+(job.timing_message||'Timing check finished.');el('contactTimingLinks').replaceChildren();for(const [label,url] of [['Explanation',job.timing_report],['Full timing report',job.timing_json],['Bound contact points',job.bound_contacts]]){if(typeof url!=='string'||!url.startsWith('/files/contact-jobs/'))continue;const a=document.createElement('a');a.textContent=label;a.href=url;a.className='btn';a.target='_blank';a.rel='noopener';el('contactTimingLinks').append(a);}message('Timing check saved. Your source and contact draft are unchanged.');},
