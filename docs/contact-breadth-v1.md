@@ -55,3 +55,6 @@ Fourth completed case: [jump/landing seed 11](contact-breadth-jump-v1.md) passes
 
 
 Fifth completed case: [wave seed 22](contact-breadth-wave-v1.md#seed-22-a-feasible-proxy-still-fails-the-exported-speed-limit) passes pins, floor, body regression checks and 284 engine observations, but retains a 6.6607e-8 m/s approach-speed excess over the original native-derived ceiling. The root proxy is feasible, so no repair step was attempted. The decoded source also exceeds that ceiling; both native-budget and decoded-source comparisons remain visible. Five cases are complete, only jump/landing seed 11 passes the full contact screen, and the original batch continues with crawl seed 22.
+
+
+Sixth completed case: [crawl seed 22](contact-breadth-crawl-v1.md#seed-22-pins-pass-acceleration-checks-remain-open) passes pins, floor, body regression checks and 284 engine observations, while approach/global acceleration still exceed native-derived ceilings. The decoded source exceeds those ceilings too; its separate comparison does not alter fixed-study acceptance. The root repair rejects a locally constant violated constraint. Six original cases are complete, with one contact-screen pass; two remain pending.

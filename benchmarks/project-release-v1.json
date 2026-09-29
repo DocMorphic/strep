@@ -2913,6 +2913,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T18:49:56.642436+00:00",
-  "last_progress": "Five of eight frozen breadth cases and their Godot checks completed. Wave-22 passes pins and floor but retains a 6.6607e-8 m/s exported approach-speed excess over the original native-derived cap; a passing native/interpolation proxy caused root repair to exit without a step. The decoded-source comparison is recorded separately without changing the budget. Only jump/landing seed 11 passes the full contact screen so far. Original numerical worker continues with crawl-22; a one-run engine follow-up verifies remaining cases automatically. No release approval."
+  "last_progress_at": "2026-09-29T18:59:03.932066+00:00",
+  "last_progress": "Separate targeted-headroom alternatives completed for both waving seeds without changing the frozen breadth batch. Seed 11 passes all original exported contact/rate/floor checks after a 1.25-micrometre root correction; seed 22 remains unchanged and fails. A horizontal-speed bound proves the extra seed-22 margin exceeds root-only capacity, not that its original cap is infeasible. Both alternatives pass 568 new Godot observations in total. Original numerical and engine-follow-up workers remain active; no release approval. The sixth original case, crawl-22, also completed: pins/floor and engine pass, but native-derived approach/global acceleration limits still fail; two cases remain pending."
 }

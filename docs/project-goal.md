@@ -346,3 +346,6 @@ Fourth breadth result: [jump/landing seed 11](contact-breadth-jump-v1.md) passes
 
 
 Fifth breadth result: [wave seed 22](contact-breadth-wave-v1.md#seed-22-a-feasible-proxy-still-fails-the-exported-speed-limit) exposes a stopping-rule gap: passing serialized/interpolation constraints prevent any root repair despite a failed actual exported speed limit. Pins/floor/body checks and 284 engine observations pass. Keep the native-derived ceiling failure and decoded-source comparison separate; after the fixed batch, use actual export failures to trigger targeted correction. Five of eight cases are complete; the one-run engine follow-up verifies remaining exports automatically. All release capabilities remain unapproved.
+
+
+Additional development result: [targeted export headroom](contact-breadth-wave-v1.md#isolated-targeted-headroom-experiment) repairs wave seed 11 under every original exported limit with a 1.25-micrometre root change. Seed 22 rejects the stronger search target; a horizontal-speed bound shows its requested margin exceeds root-only capacity, without proving the original cap infeasible. Both separate exports pass 568 new Godot observations in total. Keep these alternatives separate from the frozen breadth outcomes, and bound future margins by geometry. All release capabilities remain unapproved.
