@@ -167,4 +167,23 @@ The matched full-duration pilot completed in `reports/root-physical-pilot-v1`: o
 
 Both variable groups move, but both outputs still fail. Physical-box has a release-acceleration regression despite its lower global peak. Original bounds pass and Godot reproduces all 720 actor-frames across the two comparisons. `comparison-protocol.json` and `comparison.json` bind settings and audited measurements; `method.py` and `compare.py` preserve the methods. This pilot supports testing a longer solve, not quality approval.
 
-A full six-stage/100-iteration/3,600-second physical-box comparison is now running in `reports/region-root-physical-full-v1/guard`, with an exact-owner audit watcher. Original source, seed and settings match the earlier full regional-multiplier control. Root mode and the intentionally changed solver/integration/helper implementation are recorded explicitly in `comparison-protocol.json`; no implementation-identity claim is made. Original acceptance limits and default behavior remain unchanged. All previous failures remain retained, and all 14 release capabilities remain unapproved.
+A full six-stage/100-iteration/3,600-second physical-box comparison subsequently completed in `reports/region-root-physical-full-v1/guard`, with an exact-owner audit watcher. Original source, seed and settings match the earlier full regional-multiplier control. Root mode and the intentionally changed solver/integration/helper implementation are recorded explicitly in `comparison-protocol.json`; no implementation-identity claim is made. Original acceptance limits and default behavior remain unchanged. All previous failures remain retained, and all 14 release capabilities remain unapproved.
+
+## Completed directly bounded root trial
+
+The full physical-box run finished in 1,774.6 seconds and 730 objective evaluations. All six stages reached their 100-iteration limit; none reported convergence. Both rotation and root variables move, but the candidate still fails contact, body clearance and temporal checks.
+
+| Exported measurement | Legacy root, regional multipliers | Physical-box root, regional multipliers |
+| --- | ---: | ---: |
+| Failed contact samples / 490 | 327 | 242 |
+| Failed body geometry samples / 717 | 284 | 303 |
+| Worst box penetration | 27.872394 mm | 31.678220 mm |
+| Global peak acceleration | 39.515958 m/s² | 39.445628 m/s² |
+| Release-boundary speed | 0.434537 m/s | 0.892800 m/s |
+| Release-boundary acceleration | 20.745412 m/s² | 39.445628 m/s² |
+
+Worst penetration occurs at frame 120. Original edit bounds pass: maximum rotation edit is 20.332668 degrees and root lift spans 0 to 50.676402 mm. Maximum rotation change from the shared seed is 5.529122 degrees, versus 8.545227 with legacy coordinates. Minimum sampled skin-floor gap is 2.019805 mm. Relative to the original clip, all 77 joint acceleration maxima increase beyond the reporting allowance; the global peak also exceeds the original 37.982124 m/s². Improving an aggregate contact count does not approve this candidate.
+
+The independent Godot check reproduces 360 source/candidate actor-frames and 77 joints; candidate position discrepancy is below 0.352 micrometres. `reports/region-root-physical-full-v1/comparison.json` and its preserved `compare.py` bind the comparison to protocols, source/seed, outputs and audit hashes. The completed exact-owner fit and audit processes exited successfully. Studio collection `root-physical-full-review-v1` preserves the failed source/candidate result: twelve hashes and eleven permitted file routes pass offline verification. No live browser or human review was performed.
+
+The longer physical-root experiment does not justify replacing the default solver or spending another full-clip budget on the same settings. A [frozen frame-121 diagnostic](frame121-static-diagnostic-v1.md) subsequently retained the original pose as the edit-budget reference; both tested variants still fail. A failed local solve cannot prove that a feasible pose does not exist. The broad action, partner, rig, editing and human-review requirements remain unchanged; all 14 release capabilities are unapproved.
