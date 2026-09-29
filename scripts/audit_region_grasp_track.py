@@ -21,7 +21,7 @@ def quintic(t):
     t = min(1., max(0., t)); return 6*t**5-15*t**4+10*t**3
 
 
-def run(study, output, approach_patch=None, floor_patch=None, release_patch=None):
+def run(study, output, approach_patch=None, floor_patch=None, release_patch=None, spatial_patch=None):
     study, output = Path(study).resolve(), Path(output).resolve(); protocol, result = read(study/'protocol.json'), read(study/'result.json')
     if result['status'] != 'complete' or not result['motion_generated']: raise ValueError('Completed trajectory required')
     for path, digest in [(study/'protocol.json', result['protocol_sha256']), (study/'motion.npz', result['motion_sha256'])]:
@@ -171,11 +171,48 @@ def run(study, output, approach_patch=None, floor_patch=None, release_patch=None
         candidate=released;outside=np.setdiff1d(outside,changed);edit_end=max(edit_end,blend_end);p0=PoseProblem(folder,skin,start)
         release_verification=dict(report=path.relative_to(ROOT).as_posix(),result_sha256=sha256(path/'result.json'),protocol_sha256=sha256(path/'protocol.json'),
                                   release_frame=end,blend_end=blend_end,protected_frames_exact=len(protected),approach_and_grasp_exact=True,original_edit_bounds_verified=True)
+    spatial_verification=None
+    if spatial_patch is not None:
+        if release_patch is None: raise ValueError('Spatial patch requires its release input')
+        path=Path(spatial_patch).resolve(); sp,sr=read(path/'protocol.json'),read(path/'result.json')
+        if ROOT/sp['release_report']!=Path(release_patch).resolve() or sp['base_study']!=rp['base_study'] or sr['status']!='complete': raise ValueError('Spatial input mismatch')
+        for artifact,digest in [(path/'protocol.json',sr['protocol_sha256']),(path/'motion.npz',sr['motion_sha256']),(path/'uncorrected-motion.npz',sr['uncorrected_motion_sha256'])]:
+            if sha256(artifact)!=digest: raise ValueError('Spatial artifact changed')
+        for name,digest in sp['inputs'].items():
+            if sha256(ROOT/name)!=digest: raise ValueError('Spatial input changed')
+        for name,digest in sp['implementation'].items():
+            if sha256(path/'implementation'/name)!=digest: raise ValueError('Spatial snapshot changed')
+        first,last=sp['release_frame'],sp['blend_end']
+        if first!=end or last!=rp['blend_end'] or sp['eligible_frames']!=list(range(first+1,last)) or [r['frame'] for r in sr['rows']]!=sp['eligible_frames']: raise ValueError('Spatial timing changed')
+        arms=[p0.names.index(s+n) for s in ['Left','Right'] for n in ['Shoulder','Arm','ForeArm','Hand']]
+        if arms!=sp['arm_joints'] or list(columns)!=sp['arm_columns']: raise ValueError('Spatial joint scope changed')
+        spatial=dict(np.load(path/'motion.npz',allow_pickle=False)); uncorrected=dict(np.load(path/'uncorrected-motion.npz',allow_pickle=False))
+        protected=np.setdiff1d(np.arange(protocol['frame_count']),sp['eligible_frames'])
+        for name in candidate:
+            np.testing.assert_array_equal(spatial[name][protected],candidate[name][protected])
+            np.testing.assert_array_equal(uncorrected[name][protected],candidate[name][protected])
+        release_rows={r['frame']:r for r in rr['rows']}
+        for row in sr['rows']:
+            frame=row['frame']; q=quintic((frame-first)/(last-first))
+            # Independent Slerp implementation of each local endpoint path.
+            desired=np.array([Slerp([0.,1.],Rotation.from_matrix(candidate['local_rot_mats'][[first,last],j]))(q).as_matrix() for j in arms])
+            expected=np.array(release_rows[frame]['parameters']); expected[columns]=Rotation.from_matrix(p0.previous['local_rot_mats'][frame,arms].transpose(0,2,1)@desired).as_rotvec().ravel()
+            initial=np.array(row['initial_parameters']); values=np.array(row['parameters'])
+            np.testing.assert_allclose(initial,expected,atol=1e-12,rtol=0)
+            np.testing.assert_array_equal(values[frozen],initial[frozen])
+            p0.frame=frame
+            for parameters,motion in [(initial,uncorrected),(values,spatial)]:
+                actual,replay=p0.independent(parameters)
+                if not actual['rotation_norm_bounds_passed']: raise ValueError('Spatial edit bounds failed')
+                for name in candidate: np.testing.assert_array_equal(motion[name][frame],replay[name][0].astype(motion[name].dtype))
+            if row['solver'] is None: np.testing.assert_array_equal(values,initial)
+        candidate=spatial; p0=PoseProblem(folder,skin,start)
+        spatial_verification=dict(report=path.relative_to(ROOT).as_posix(),result_sha256=sha256(path/'result.json'),protocol_sha256=sha256(path/'protocol.json'),protected_frames_exact=len(protected),non_arm_parameters_exact=True,native_path_and_correction_replayed=True)
     output.mkdir(parents=True,exist_ok=False)
     shutil.copyfile(Path(__file__),output/Path(__file__).name)
     metadata = dict(at=now(), study=study.relative_to(ROOT).as_posix(), protocol_sha256=sha256(study/'protocol.json'), result_sha256=sha256(study/'result.json'),
                     native_replay_exact=True, untouched_frames_exact=len(outside), original_edit_budgets_pass=True, serialization_max_error=max_serialized_error,approach_patch=patch_verification,floor_patch=floor_verification,release_patch=release_verification,
-                    substeps=4, scope='Decoded GLB full-skin integer/quarter-frame samples; exact original native edits and untouched frames verified. Discrete samples do not certify continuous collision, anatomy, self-collision, dynamics or human quality.', quality_approved=False)
+                    spatial_patch=spatial_verification,substeps=4, scope='Decoded GLB full-skin integer/quarter-frame samples; exact original native edits and untouched frames verified. Discrete samples do not certify continuous collision, anatomy, self-collision, dynamics or human quality.', quality_approved=False)
     save(output/'protocol.json',metadata)
     times=np.arange((protocol['frame_count']-1)*4+1)/4; count=protocol['frame_count']; originals={}; hand_specs=[]
     for geometry,obj in context_primitives(p0.context):
@@ -253,5 +290,5 @@ def run(study, output, approach_patch=None, floor_patch=None, release_patch=None
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study',type=Path);parser.add_argument('output',type=Path);parser.add_argument('--approach-patch',type=Path);parser.add_argument('--floor-patch',type=Path);parser.add_argument('--release-patch',type=Path);args=parser.parse_args()
-    with threadpool_limits(limits=2):run(args.study,args.output,args.approach_patch,args.floor_patch,args.release_patch)
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study',type=Path);parser.add_argument('output',type=Path);parser.add_argument('--approach-patch',type=Path);parser.add_argument('--floor-patch',type=Path);parser.add_argument('--release-patch',type=Path);parser.add_argument('--spatial-patch',type=Path);args=parser.parse_args()
+    with threadpool_limits(limits=2):run(args.study,args.output,args.approach_patch,args.floor_patch,args.release_patch,args.spatial_patch)

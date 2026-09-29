@@ -1,5 +1,7 @@
 # One project-wide goal: release-ready Strep
 
+Latest development evidence: [spatial arm return](sphere-region-spatial-v1.md) reduces peak joint speed below the original comparison while retaining all 717 geometry/edit-limit and 245 grasp checks. Acceleration and release-boundary continuity remain unresolved. All 14 release capabilities remain unapproved.
+
 Latest development evidence: [release return experiments](sphere-region-release-v1.md) preserve all 717 geometry/edit-limit and 245 grasp samples. Longer returns reduce some dynamics peaks but retain speed regressions; neither variant is approved. All 14 release capabilities remain unapproved.
 
 Latest development evidence: [sphere approach and floor corrections](sphere-region-boundaries-v1.md) pass all 717 exported geometry/edit-limit samples and retain all 245 grasp samples. Whole-motion speed/acceleration regressions remain at the right forearm during release. All 14 release capabilities remain unapproved.

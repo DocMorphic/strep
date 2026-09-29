@@ -1,5 +1,6 @@
 """Offline software preview of actual SOMA skin and the authored sphere track."""
 import argparse
+import shutil
 from pathlib import Path
 import numpy as np
 from PIL import Image,ImageDraw,ImageFont
@@ -8,15 +9,16 @@ from build_soma_preview import ASSET
 from floor_contact import Surface
 
 
-def run(first,second,output):
+def run(first,second,output,first_label='Input motion',second_label='Candidate motion'):
     first,second,output=[Path(v).resolve() for v in (first,second,output)];skin=dict(np.load(ASSET,allow_pickle=False));surface=Surface(skin)
     motions=[dict(np.load(folder/'motion.npz',allow_pickle=False)) for folder in [first,second]]
     for folder in [first,second]:
         if sha256(folder/'motion.npz')!=read(folder/'result.json')['motion_sha256']:raise ValueError('Preview motion changed')
     release=read(second/'protocol.json');study=ROOT/release['base_study'];protocol=read(study/'protocol.json');fit=ROOT/protocol['study']/'fit'
-    summary=read(fit/'summary.json');context=read(fit/'assets'/summary['trials'][0]['id']/'A'/'recipe.json')['contact']['scene_context'];obj=next(o for o in context['primitives'] if o['id']==protocol['object_id'])
+    summary=read(fit/'summary.json');recipe=fit/'assets'/summary['trials'][0]['id']/'A'/'recipe.json';context=read(recipe)['contact']['scene_context'];obj=next(o for o in context['primitives'] if o['id']==protocol['object_id'])
     if obj['geometry']['shape']!='sphere':raise ValueError('Sphere preview required')
     output.mkdir(parents=True,exist_ok=False)
+    shutil.copyfile(Path(__file__),output/Path(__file__).name)
     font_path=Path('C:/Windows/Fonts/segoeui.ttf')
     font=lambda size:ImageFont.truetype(str(font_path),size) if font_path.exists() else ImageFont.load_default()
     title_font,small_font=font(21),font(15);width,height=480,570
@@ -49,7 +51,7 @@ def run(first,second,output):
         draw.rectangle((0,0,width,57),fill=(247,249,252));draw.text((20,14),label,font=title_font,fill=(30,43,60))
         draw.rectangle((0,height-52,width,height),fill=(247,249,252));phase='Grasp' if frame<=121 else 'Release / return';draw.text((20,height-37),f'{phase}  |  frame {frame}  |  {frame/30:.2f}s',font=small_font,fill=(49,65,85))
         return canvas
-    images=[];labels=['Prior 12-frame return','Candidate 24-frame return']
+    images=[];labels=[first_label,second_label]
     frames=list(range(100,180,3))
     for frame in frames:
         canvas=Image.new('RGB',(width*2+2,height+34),(250,251,253))
@@ -58,9 +60,9 @@ def run(first,second,output):
         images.append(canvas)
     images[0].save(output/'comparison.gif',save_all=True,append_images=images[1:],duration=100,loop=0,optimize=False)
     images[10].save(output/'comparison-frame130.png')
-    save(output/'preview.json',dict(at=now(),first=first.relative_to(ROOT).as_posix(),second=second.relative_to(ROOT).as_posix(),source_sha256=[sha256(f/'motion.npz') for f in [first,second]],mesh_sha256=sha256(ASSET),frames=frames,preview_fps=10,scope='Offline painter-order triangle rasterization of actual animated skin; approximate occlusion/lighting, no GPU fidelity or visual-quality approval.',quality_approved=False))
+    save(output/'preview.json',dict(at=now(),first=first.relative_to(ROOT).as_posix(),second=second.relative_to(ROOT).as_posix(),labels=labels,source_sha256=[sha256(f/'motion.npz') for f in [first,second]],mesh_sha256=sha256(ASSET),recipe_sha256=sha256(recipe),renderer_sha256=sha256(output/Path(__file__).name),frames=frames,preview_fps=10,scope='Offline painter-order triangle rasterization of actual animated skin; approximate occlusion/lighting, no GPU fidelity or visual-quality approval.',quality_approved=False))
     print(dict(frames=len(frames),gif=str(output/'comparison.gif')),flush=True)
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('first',type=Path);parser.add_argument('second',type=Path);parser.add_argument('output',type=Path);args=parser.parse_args();run(args.first,args.second,args.output)
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('first',type=Path);parser.add_argument('second',type=Path);parser.add_argument('output',type=Path);parser.add_argument('--first-label',default='Input motion');parser.add_argument('--second-label',default='Candidate motion');args=parser.parse_args();run(args.first,args.second,args.output,args.first_label,args.second_label)

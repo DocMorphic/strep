@@ -33,3 +33,5 @@ Existing local fixtures and separately acquired licensed dependencies are requir
 .venv\Scripts\python.exe scripts/region_release_blend.py reports/sphere-region-floor-v1 reports/new-release --blend-frames 24 --profile early-return
 .venv\Scripts\python.exe scripts/audit_region_grasp_track.py reports/sphere-region-track-v2 reports/new-release-audit --approach-patch reports/sphere-region-approach-v1 --floor-patch reports/sphere-region-floor-v1 --release-patch reports/new-release
 ```
+
+Follow-up: [spatial arm return](sphere-region-spatial-v1.md) removes the speed regression but retains acceleration and endpoint continuity defects.
