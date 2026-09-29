@@ -340,7 +340,8 @@
         "reports/carrier-edit-chain-v1/completion.json",
         "reports/scene-timing-limits-v1/source-bounds-verification.json",
         "reports/scene-timing-limits-engine-v2/completion.json",
-        "docs/carrier-support-v1.md"
+        "docs/carrier-support-v1.md",
+        "docs/carrier-point-rates-v1.md"
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
@@ -771,7 +772,8 @@
         "reports/knee-contact-reference-population-summary-v1/verification.json",
         "reports/knee-contact-reference-population-summary-v1/decision.json",
         "reports/knee-contact-reference-population-summary-v1/common-input-failures.json",
-        "docs/carrier-support-v1.md"
+        "docs/carrier-support-v1.md",
+        "docs/carrier-point-rates-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1036,7 +1038,8 @@
         "reports/carrier-edit-chain-v1/completion.json",
         "reports/scene-timing-limits-v1/source-bounds-verification.json",
         "reports/scene-timing-limits-engine-v2/completion.json",
-        "docs/carrier-support-v1.md"
+        "docs/carrier-support-v1.md",
+        "docs/carrier-point-rates-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -2645,7 +2648,8 @@
         "reports/knee-contact-reference-population-summary-v1/verification.json",
         "reports/knee-contact-reference-population-summary-v1/decision.json",
         "reports/knee-contact-reference-population-summary-v1/common-input-failures.json",
-        "docs/carrier-support-v1.md"
+        "docs/carrier-support-v1.md",
+        "docs/carrier-point-rates-v1.md"
       ]
     }
   ],
@@ -2857,6 +2861,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T15:19:40.077796+00:00",
-  "last_progress": "Two matched bounded platform-support fits lower point error but fail 5 mm targets and worsen right-foot rates. Global rate guard lowers whole-body acceleration while missing local foot regression. 814 Godot observations, edit-window preservation and between-key audit regression pass; both failed motion candidates retained. Next: individual requested-foot trajectory constraints. All fourteen capabilities remain unapproved."
+  "last_progress_at": "2026-09-29T15:32:12.231643+00:00",
+  "last_progress": "Added optional exported per-material-point speed/acceleration guard and endpoint travel diagnostic. Matched fit avoids large right-foot jerk but remains near source and misses 620/954 target samples; three held-boundary transitions are incompatible with source-speed ceilings. 31 focused tests and 407 Godot observations pass. Next: author-visible conflict and explicit window planning; no release capability approved."
 }

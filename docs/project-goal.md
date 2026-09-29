@@ -301,3 +301,6 @@ Latest solver work: [bounded backtracking](support-backtracking-v1.md) finds mis
 
 
 Latest support experiment: [two platform foot-pin fits](carrier-support-v1.md) reduce target error but worsen right-foot motion; neither passes the authored 5 mm screen. The global rate guard lowers whole-body acceleration but misses local regression. 814 actual Godot observations and outside-window preservation pass. Next work is per-foot exported-trajectory constraints; all release capabilities remain unapproved.
+
+
+Latest contact work: [per-point rate guard and endpoint travel diagnosis](carrier-point-rates-v1.md) avoids the earlier large foot jerk but does not solve the pins. The held right approach and both release transitions fail necessary distance/speed bounds. Thirty-one tests and 407 engine observations pass. Next expose the conflict and propose an explicitly expanded edit window before further fitting; all release gates remain open.

@@ -69,7 +69,7 @@ def audit(source_glb, candidate_glb, spec, window, frames):
         quality_approved=False)
 
 
-def run(source, output, *, start=30, end=149, anchor=90, window=(20,159), stages=2, iterations=60, rate_guard=False):
+def run(source, output, *, start=30, end=149, anchor=90, window=(20,159), stages=2, iterations=60, rate_guard=False, point_rate_guard=False):
     source, output = Path(source).resolve(), Path(output).resolve()
     if output.exists() or not output.is_relative_to(ROOT/'reports'):
         raise ValueError('Fresh output beneath reports required')
@@ -101,7 +101,7 @@ def run(source, output, *, start=30, end=149, anchor=90, window=(20,159), stages
     inputs[str(ASSET)] = sha256(ASSET)
     protocol = dict(source=str(source),inputs=inputs,implementation=hashes,contact_spec=spec,
         edit_window=list(window),anchor_frame=anchor,outer_stages=stages,iterations_per_stage=iterations,
-        config=CONFIG,root_coordinate_mode='physical_box',skin_backend='sparse',export_rate_guard=rate_guard,
+        config=CONFIG,root_coordinate_mode='physical_box',skin_backend='sparse',export_rate_guard=rate_guard,export_point_rate_guard=point_rate_guard,
         scope='Authored ground-space foot pins, then the existing rigid carry transform. Original motion is the initializer and edit reference. Other contact regions disabled; no original box/hand interaction constraint. Not trained, held-out, physically simulated or human reviewed.')
     save(output/'protocol.json',protocol)
     save(output/'owner.json',dict(pid=os.getpid(),create_time=psutil.Process().create_time()))
@@ -112,7 +112,7 @@ def run(source, output, *, start=30, end=149, anchor=90, window=(20,159), stages
             candidate, recipe = refine(raw,raw,skin,
                 lambda row: print(dict(evaluations=row['evaluations'],loss=row['loss'],seconds=time.perf_counter()-began),flush=True),
                 raw=raw,contact_spec=spec,outer_stage_count=stages,iteration_count=iterations,
-                root_coordinate_mode='physical_box',skin_backend='sparse',edit_window=list(window),export_rate_guard=rate_guard)
+                root_coordinate_mode='physical_box',skin_backend='sparse',edit_window=list(window),export_rate_guard=rate_guard,export_point_rate_guard=point_rate_guard)
         elapsed = time.perf_counter()-began
         save(output/'recipe.json',recipe)
         save(output/'native-targets.json',dict(source=evaluate(raw,raw,skin,spec,.005),candidate=evaluate(raw,candidate,skin,spec,.005)))
@@ -150,4 +150,5 @@ if __name__ == '__main__':
     p.add_argument('source',type=Path);p.add_argument('output',type=Path)
     p.add_argument('--stages',type=int,default=2);p.add_argument('--iterations',type=int,default=60)
     p.add_argument('--rate-guard',action='store_true',help='Original-source global joint speed/acceleration inequalities; not per-foot limits')
-    args=p.parse_args();run(args.source,args.output,stages=args.stages,iterations=args.iterations,rate_guard=args.rate_guard)
+    p.add_argument('--point-rate-guard',action='store_true',help='Per-material-point source ceilings for approach, hold and release')
+    args=p.parse_args();run(args.source,args.output,stages=args.stages,iterations=args.iterations,rate_guard=args.rate_guard,point_rate_guard=args.point_rate_guard)

@@ -130,7 +130,7 @@ def object_sampling_layout(selected,vertex_count,full):
     return ids,np.searchsorted(ids,original)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=(),edit_window=None):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=(),edit_window=None,export_point_rate_guard=False):
     if root_coordinate_mode not in ["legacy","scaled_initial","physical_box"]:raise ValueError("Unknown root coordinate mode")
     if object_constraint_mode not in ["maximum","per_vertex"]:raise ValueError("Unknown object constraint mode")
     if object_constraint_mode!="maximum" and not object_inequalities:raise ValueError("Per-vertex constraints require object inequalities")
@@ -304,6 +304,11 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         rate_objective=ExportRateObjective(tensor(base['global_rot_mats']),tensor(base['posed_joints']),parents,export_acceleration_margin_fraction)
     elif export_acceleration_margin_fraction!=0:
         raise ValueError('Acceleration margin requires the export-rate guard')
+    point_rate_objective=None
+    if type(export_point_rate_guard)!=bool:raise ValueError('Explicit point-rate guard boolean required')
+    if export_point_rate_guard:
+        from export_point_rate_objective import ExportPointRateObjective
+        point_rate_objective=ExportPointRateObjective(tensor(base['global_rot_mats']),tensor(base['posed_joints']),parents,skin,contact_spec,edit_window)
     calls=0;last={}
     def closure():
         nonlocal calls,last,last_point,last_normals,last_cuts,last_tangents,last_objects
@@ -337,6 +342,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         if preserved_loss is not None:terms['preserved_support']=preserved_loss
         if region_fitting is not None:terms['distributed_region']=region_fitting.loss(v)
         if rate_objective is not None:terms['export_rates']=rate_objective.loss(r,p)
+        if point_rate_objective is not None:terms['export_point_rates']=point_rate_objective.loss(r,p)
         if finger_edits:
             terms['finger_pose']=bounded_edits(smooth_delta())[:,body_count:].square().mean()*CONFIG['pose_weight']
         if normal_constraints:
@@ -393,8 +399,10 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             stage_records[-1].update(object_penalty=object_penalty,max_sampled_object_clearance_violation_m=max([float(torch.relu(g).max()) for g in last_objects]+[0.]))
         if region_fitting is not None:stage_records[-1]['regional_constraints']=region_fitting.stage_diagnostics()
         if rate_objective is not None:stage_records[-1]['export_rates']=rate_objective.record()
+        if point_rate_objective is not None:stage_records[-1]['export_point_rates']=point_rate_objective.record()
         if stage+1<stage_count:
             if rate_objective is not None:rate_objective.advance_stage(CONFIG['penalty_growth'])
+            if point_rate_objective is not None:point_rate_objective.advance_stage(CONFIG['penalty_growth'])
             if region_fitting is not None:region_fitting.advance_stage(CONFIG['penalty_growth'])
             if preserved_mask.any():preserved_multiplier=torch.relu(preserved_multiplier+point_penalty*normalized_support_residual(last_point,point_tolerance))*preserved_active
             point_multiplier=torch.relu(point_multiplier+point_penalty*last_point)*active
@@ -451,6 +459,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     recipe['object_clearance_target_m']=object_clearance
     recipe['object_clearance_margin_m']=object_clearance_margin_m
     if rate_objective is not None:recipe['export_rates']=rate_objective.record()
+    if point_rate_objective is not None:recipe['export_point_rates']=point_rate_objective.record()
     recipe['initialization']=initialization
     recipe['skin_backend']=skin_backend
     recipe['iterations_per_stage']=iterations

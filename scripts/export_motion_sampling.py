@@ -45,7 +45,8 @@ def slerp(a,b,t):
     return result/torch.linalg.vector_norm(result,dim=-1,keepdim=True)
 
 
-def joint_trajectory(rotations,positions,parents,subdivisions=4,fps=30):
+def joint_trajectory(rotations,positions,parents,subdivisions=4,fps=30,*,return_rotations=False):
+    if type(return_rotations)!=bool:raise ValueError('Explicit rotation-return boolean required')
     if rotations.ndim!=4 or rotations.shape[-2:]!=(3,3) or positions.shape!=rotations.shape[:2]+(3,):
         raise ValueError('Matching frame/joint rotation and position arrays required')
     if rotations.dtype!=torch.float64 or positions.dtype!=torch.float64:
@@ -75,7 +76,8 @@ def joint_trajectory(rotations,positions,parents,subdivisions=4,fps=30):
         else:
             world_r.append(world_r[parent]@r[:,j])
             world_p.append(world_p[parent]+(world_r[parent]@p[:,j,:,None]).squeeze(-1))
-    return torch.stack(world_p,1)
+    positions=torch.stack(world_p,1)
+    return (torch.stack(world_r,1),positions) if return_rotations else positions
 
 
 def motion_rates(trajectory,fps=30,subdivisions=4):
