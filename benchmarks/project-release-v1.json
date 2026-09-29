@@ -350,7 +350,8 @@
         "docs/checked-sampled-pins-v1.md",
         "docs/checked-contact-convergence-v1.md",
         "docs/checked-root-feasibility-v1.md",
-        "docs/contact-breadth-v1.md"
+        "docs/contact-breadth-v1.md",
+        "docs/contact-breadth-wave-v1.md"
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
@@ -791,7 +792,8 @@
         "docs/checked-sampled-pins-v1.md",
         "docs/checked-contact-convergence-v1.md",
         "docs/checked-root-feasibility-v1.md",
-        "docs/contact-breadth-v1.md"
+        "docs/contact-breadth-v1.md",
+        "docs/contact-breadth-wave-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1066,7 +1068,8 @@
         "docs/checked-sampled-pins-v1.md",
         "docs/checked-contact-convergence-v1.md",
         "docs/checked-root-feasibility-v1.md",
-        "docs/contact-breadth-v1.md"
+        "docs/contact-breadth-v1.md",
+        "docs/contact-breadth-wave-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -2685,7 +2688,8 @@
         "docs/checked-sampled-pins-v1.md",
         "docs/checked-contact-convergence-v1.md",
         "docs/checked-root-feasibility-v1.md",
-        "docs/contact-breadth-v1.md"
+        "docs/contact-breadth-v1.md",
+        "docs/contact-breadth-wave-v1.md"
       ]
     }
   ],
@@ -2897,6 +2901,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T17:35:55.470084+00:00",
-  "last_progress": "Frozen eight-case development contact study across wave, crawl, kick and jump/landing at seeds 11/22. All source previews and timing checks pass; seven original source clips cannot meet the pins using root height alone. Thirty-four workflow tests pass. Full pose fitting plus bounded root repair is running in declared order; final contact/support/engine results remain pending. No release capability approved."
+  "last_progress_at": "2026-09-29T18:02:42.605828+00:00",
+  "last_progress": "First of eight frozen breadth cases completed: wave-11 pin maximum 3.927542 mm, zero floor penetration, no body/support flags, 284 actual Godot observations passed. An approach-speed excess of 7.5980e-7 m/s remains. Root repair preserves the seed after an unreachable uniform extra margin makes its linear subproblem infeasible; a zero-margin linear diagnostic is feasible but no alternate animation was generated. Original batch continues on crawl-11; other cases pending. No release approval."
 }

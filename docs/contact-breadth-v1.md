@@ -40,3 +40,6 @@ Run the other declared case IDs in protocol order. Existing outputs are preserve
 Thirty-four focused workflow tests pass: nine new catalog/binding/rejection checks, eleven timing checks, seven immutable checked-job checks and seven root-feasibility checks. The new tests cover catalog coverage, reservation separation, deterministic binding without source mutation, changed-method rejection, invalid IDs/windows, and refusing to fit or overwrite a timing-rejected case. All eight actual source previews pass mesh/pose verification during timing checks.
 
 At the time this protocol was published, the numerical batch was running. No final success fraction, new engine result or human rating is claimed. Numerical outputs, preserved failures, full exported contact/rate/floor audits, body/support flags, then engine checks will determine the next action. Studio defaults remain unchanged and all release capabilities remain unapproved.
+
+
+First completed case: [wave seed 11](contact-breadth-wave-v1.md) passes all 81 pin samples, full-floor preservation and 284 engine pose observations, but retains a 7.5980e-7 m/s approach-speed excess. The fixed root repair rejects an infeasible extra-margin subproblem. A retained-data diagnosis separates that stronger search target from the original limits. Seven cases remain pending; the original batch continues unchanged.

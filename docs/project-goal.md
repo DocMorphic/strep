@@ -331,3 +331,6 @@ Latest feasibility result: [root-height constraint repair](checked-root-feasibil
 
 
 Breadth study started: [eight predeclared contact edits](contact-breadth-v1.md) cover waving, crawling, kicking and jump/landing at seeds 11/22. All eight source previews and timing checks pass; seven source clips require pose changes beyond root height to meet their pins. Thirty-four workflow tests pass. The frozen full-fitting/correction batch is running; final export, support and engine outcomes are pending, and no release capability is approved.
+
+
+First cross-family outcome: [wave seed 11 contact edit](contact-breadth-wave-v1.md) reaches 3.927542 mm pin accuracy with no floor penetration or body/support flags, yet retains a small approach-speed failure. Its root repair is blocked by an unreachable extra margin on an already-passing global-speed row; that does not prove original-constraint infeasibility. All 284 engine observations pass. The frozen batch continues through the other seven cases; no release approval.
