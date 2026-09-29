@@ -18,6 +18,13 @@ def inequality_merit(g,multiplier,penalty):
     return (torch.relu(multiplier+penalty*g).square()-multiplier.square())/(2*penalty)
 
 
+def object_clearance_target(margin):
+    """Optional stricter solver target; acceptance CONFIG remains unchanged."""
+    if type(margin) not in [int,float] or not np.isfinite(margin) or margin<0:
+        raise ValueError('Object clearance margin must be finite and nonnegative')
+    return CONFIG['object_clearance_m']+margin
+
+
 def object_constraint_residuals(vertex_violations,mode):
     """Same feasible set, either a maximum row or one row per vertex."""
     if mode not in ['maximum','per_vertex']:raise ValueError('Unknown object constraint mode')
@@ -97,9 +104,10 @@ def object_sampling_layout(selected,vertex_count,full):
     return ids,np.searchsorted(ids,original)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.):
     if object_constraint_mode not in ["maximum","per_vertex"]:raise ValueError("Unknown object constraint mode")
     if object_constraint_mode!="maximum" and not object_inequalities:raise ValueError("Per-vertex constraints require object inequalities")
+    object_clearance=object_clearance_target(object_clearance_margin_m)
     stage_count=solver_stage_count(outer_stage_count)
     iterations=CONFIG['iterations'] if iteration_count is None else iteration_count
     if type(iterations)!=int or not 1<=iterations<=100:raise ValueError('Iterations must be an integer from 1 to 100')
@@ -219,6 +227,10 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     baseline_vertices=vertices(tensor(base['global_rot_mats']),tensor(base['posed_joints']))
     frame_indices=torch.arange(T-1)[:,None]; patch_indices=ci[:-1]
     original_slide=torch.linalg.vector_norm((baseline_vertices[frame_indices+1,patch_indices]-baseline_vertices[frame_indices,patch_indices])[...,[0,2]]*30,dim=-1)
+    if region_fitting is not None and region_fitting.witness_mode=='stage_refresh':
+        with torch.no_grad():
+            initial_r,initial_p,_=fk()
+            region_fitting.initialize_witnesses(vertices(initial_r,initial_p))
     calls=0;last={}
     def closure():
         nonlocal calls,last,last_point,last_normals,last_cuts,last_tangents,last_objects
@@ -270,11 +282,11 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             if tangent_loss:terms['hand_tangent']=torch.stack(tangent_loss).mean()
         if objects:
             if object_inequalities:
-                violations=[object_constraint_residuals(torch_primitive_clearance_violation(v,op,orr,geometry,CONFIG['object_clearance_m']),object_constraint_mode) for op,orr,geometry in objects]
+                violations=[object_constraint_residuals(torch_primitive_clearance_violation(v,op,orr,geometry,object_clearance),object_constraint_mode) for op,orr,geometry in objects]
                 terms['object_collision']=torch.stack([object_constraint_merit(g,m,object_penalty,object_constraint_mode) for g,m in zip(violations,object_multiplier)]).mean()
                 last_objects=[g.detach() for g in violations]
             else:
-                terms['object_collision']=torch.stack([torch_primitive_depth(v,op,orr,geometry,CONFIG['object_clearance_m']).square().amax(1).mean() for op,orr,geometry in objects]).mean()*CONFIG['object_collision_weight']
+                terms['object_collision']=torch.stack([torch_primitive_depth(v,op,orr,geometry,object_clearance).square().amax(1).mean() for op,orr,geometry in objects]).mean()*CONFIG['object_collision_weight']
         if cuts:
             signed=((v[cut_frames,cut_vertices]-cut_points)*cut_normals).sum(-1)
             g=CONFIG['partner_clearance_m']-signed
@@ -330,6 +342,8 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             reduction='sum over vertex constraints, mean over frames and objects' if object_constraint_mode=='per_vertex' else 'maximum vertex constraint, mean over frames and objects',
             scope='Existing inflated geometry and selected skin vertices. Per-vertex mode has separate multipliers and greater total weight when multiple vertices violate. No continuous-time or feasibility guarantee.')
     if region_fitting is not None:recipe['distributed_regions']=region_fitting.record()
+    recipe['object_clearance_target_m']=object_clearance
+    recipe['object_clearance_margin_m']=object_clearance_margin_m
     recipe['initialization']=initialization
     recipe['iterations_per_stage']=iterations
     recipe['object_sampling']=dict(mode='all_vertices' if full_object_skin else 'frozen_subset',

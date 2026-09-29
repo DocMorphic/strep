@@ -1,4 +1,4 @@
-"""Differentiable distributed-contact penalties with frozen witness choices.
+"""Differentiable contact penalties with witnesses fixed within each solve stage.
 
 Witness selection is a local optimization heuristic, never an infeasibility
 certificate. Independent scene measurement searches the full authored patch.
@@ -108,14 +108,36 @@ class RegionInequalities:
                     maximum_normalized_violation=max(float(torch.relu(g).max()) for g in self.last)
                     if self.last is not None else None)
 
+    def reset_witness(self,index):
+        # Gap/radius/spacing/area/centroid rows now refer to different vertices.
+        # Whole-patch clearance, normal and authored anchor identities persist.
+        if not 0 <= index < len(self.counts):raise ValueError('Unknown regional constraint record')
+        if self.multipliers is not None:
+            n=self.counts[index]
+            self.multipliers[index][n:n+11]=0
+
+
+def solver_region_limits(limits,gap_margin):
+    if type(gap_margin) not in [int,float] or not np.isfinite(gap_margin) or gap_margin<0:
+        raise ValueError('Contact gap margin must be finite and nonnegative')
+    result=dict(limits)
+    result['contact_gap_m']-=gap_margin
+    if result['contact_gap_m']<result['clearance_m'] or (gap_margin>0 and result['contact_gap_m']==result['clearance_m']):
+        raise ValueError('Contact gap margin exhausts the clearance window')
+    return result
+
 
 class RegionObjective:
-    def __init__(self, package, source, skin, reduction='worst', constraint_mode='penalty'):
+    def __init__(self, package, source, skin, reduction='worst', constraint_mode='penalty',witness_mode='frozen',gap_margin_m=0.):
         from floor_contact import Surface
         if reduction not in ['worst','balanced']:raise ValueError('Unknown region penalty reduction')
         if constraint_mode not in ['penalty','augmented']:raise ValueError('Unknown region constraint mode')
         if constraint_mode=='augmented' and reduction!='balanced':raise ValueError('Regional inequalities require balanced reduction')
         self.constraint_mode=constraint_mode
+        if witness_mode not in ['frozen','stage_refresh']:raise ValueError('Unknown witness mode')
+        self.witness_mode=witness_mode
+        self.gap_margin_m=gap_margin_m
+        self.witness_history=[];self.witness_stage=0;self.last_points=None
         self.reduction=reduction
         self.records=[]; self.selected=set(); self.selections=[]
         surface=Surface(skin)
@@ -125,7 +147,7 @@ class RegionObjective:
             hand=record['binding']['hand'];a,b=record['start_frame'],record['end_frame']
             segments=package['anchor_subproblem']['regions'][hand]['segments']
             segment=next(s for s in segments if s['start_frame']==a and s['end_frame']==b)
-            geometry=Geometry.parse(record['geometry']);limits=record['binding']['limits']
+            geometry=Geometry.parse(record['geometry']);limits=solver_region_limits(record['binding']['limits'],gap_margin_m)
             for frame in range(a,b+1):
                 points=surface.vertices(source['global_rot_mats'][frame],source['posed_joints'][frame],ids)
                 position=np.asarray(record['object_positions_m'][frame]);rotation=np.asarray(record['object_rotations'][frame])
@@ -162,6 +184,8 @@ class RegionObjective:
         # Normalize per authored contact-frame, so large patches do not drown
         # out small ones. Max violation retains the worst patch sample.
         values=self.residuals(vertices)
+        if self.witness_mode=='stage_refresh':
+            self.last_points=[vertices[r['frame'],[self.mapping[v] for v in r['ids']]].detach().clone() for r in self.records]
         if self.inequalities is not None:
             return self.inequalities.loss(values)
         if self.reduction=='worst':
@@ -179,11 +203,51 @@ class RegionObjective:
 
     def advance_stage(self,growth):
         if self.inequalities is not None:self.inequalities.advance(growth)
+        if self.witness_mode=='stage_refresh':
+            if self.last_points is None:raise ValueError('Accepted pose required for witness refresh')
+            self.witness_stage+=1
+            self.refresh_witnesses(self.last_points)
+
+    def initialize_witnesses(self,vertices):
+        if self.witness_mode=='stage_refresh':
+            points=[vertices[r['frame'],[self.mapping[v] for v in r['ids']]].detach() for r in self.records]
+            self.refresh_witnesses(points)
+
+    def refresh_witnesses(self,points_by_record):
+        if len(points_by_record)!=len(self.records):raise ValueError('Witness pose layout mismatch')
+        changes=[]
+        for index,(r,points) in enumerate(zip(self.records,points_by_record)):
+            array=points.cpu().numpy()
+            gaps=r['geometry'].distance_gradient(array,r['position'],r['rotation'])[0]
+            chosen,method=choose_triangle(array,r['ids'],r['target'],gaps,r['limits'])
+            old=r['ids'][r['triple']].tolist()
+            if set(chosen)==set(old):continue
+            mapping={v:i for i,v in enumerate(r['ids'])}
+            proposed=np.array([mapping[v] for v in chosen])
+            def score(triple):
+                def tensor(x):return torch.as_tensor(x,dtype=points.dtype,device=points.device)
+                g=violations(points,r['faces'],triple,r['anchor'],tensor(r['target']),tensor(r['desired_normal']),
+                             r['geometry'],tensor(r['position']),tensor(r['rotation']),r['limits'],r['anchor_tolerance'])
+                q=torch.relu(g).square();n=len(r['ids'])
+                if self.reduction=='worst':return float(q.max())
+                # Only changed families, avoiding cancellation against large
+                # unchanged clearance or orientation penalties.
+                return float(q[n:n+3].mean()+q[n+3:n+6].mean()+q[n+6:n+9].mean()+q[n+9]+q[n+10])
+            before,after=score(r['triple']),score(proposed)
+            if after>=before-1e-12:continue
+            r['triple']=proposed
+            if self.inequalities is not None:self.inequalities.reset_witness(index)
+            changes.append(dict(record=index,contact_id=self.selections[index]['contact_id'],frame=r['frame'],
+                                old_vertices=old,new_vertices=chosen,old_score=before,new_score=after,method=method))
+        self.witness_history.append(dict(stage=self.witness_stage,changes=changes))
 
     def stage_diagnostics(self):
         return self.inequalities.diagnostics() if self.inequalities is not None else dict(mode='fixed_penalty')
 
     def record(self):
         return dict(selections=self.selections,weight=100.,reduction=self.reduction,constraint_mode=self.constraint_mode,
+            witness_mode=self.witness_mode,witness_history=self.witness_history,
+            solver_contact_gap_margin_m=self.gap_margin_m,
+            final_witnesses=[r['ids'][r['triple']].tolist() for r in self.records],
             augmented_state=self.stage_diagnostics(),schema='strep-region-fitting-objective-v1',
-            scope='Frozen witness triples; fixed penalties or separate regional inequality multipliers. Hard edit bounds inherited from the clip solver, contact feasibility not guaranteed.')
+            scope='Witnesses fixed within each stage; optional strictly improving reselection at accepted stage boundaries. Authored patches/limits unchanged; feasibility not guaranteed.')

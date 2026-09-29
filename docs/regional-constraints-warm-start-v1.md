@@ -41,3 +41,5 @@ In a provisioned workspace, using fresh output paths:
 Local results and preserved implementations live under `reports/region-box-augmented-regions-v1`, `reports/region-box-augmented-warm-v1`, `reports/region-box-fixed-warm-v1`, their audit folders, and `reports/region-augmented-comparison-v1`. The prior fixed baseline is `reports/region-box-object-constraints-long-v1/per_vertex`. Generated assets and machine-specific outputs are excluded from Git.
 
 Next investigate frozen witness selection and constrained clearance together, while retaining temporal regression measurements. Do not promote stronger penalties alone or repeat this short fixture as evidence of broad motion support. Longer clips, varied actions/objects/rigs, partner reliability and human review remain required. All 14 release capabilities remain unapproved.
+
+Follow-up: [witness reselection and interior solver margins](contact-witness-refresh-v1.md) repair the sampled native/exported box contact and clearance while retaining the acceleration regression.
