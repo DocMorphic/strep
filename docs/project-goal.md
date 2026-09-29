@@ -373,3 +373,6 @@ Studio now provides [readable contact-export checks](contact-export-review-v1.md
 
 
 A [reusable export-feedback core](export-feedback-core-v1.md) now separates proposal search/selection from action-specific study paths. Twenty-nine focused tests pass, and read-only replay of three retained cases reproduces every inspected serialized motion and final selection exactly, including the rejected crawling proposal. No new animation/engine or quality evidence is claimed. Studio integration remains pending while the existing joint-restart study stays frozen; all release capabilities remain unapproved.
+
+
+The [full-joint restart study](contact-joint-restart-v1.md) is terminal: both cases improve pin error but remain rejected, with 568 engine observations passing. Kicking adds a support-gap flag and exceeds original acceleration ceilings. A [generic file/export adapter](contact-export-adapter-v1.md) now applies measured feedback without fixed action names: fresh exports reproduce the successful crawl-22 result exactly and retain both failed restarted motions unchanged. Forty-four tests pass, saved artifacts are hash-verified, and a mismatched source preview is rejected before output creation. Studio integration and broader joint/support correction remain next; all fourteen release capabilities remain unapproved.

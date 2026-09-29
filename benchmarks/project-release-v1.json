@@ -2928,6 +2928,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T21:20:01.605566+00:00",
-  "last_progress": "Reusable export-feedback core passes 29 focused tests. Read-only replay of wave-11, wave-22 and crawl-22 reproduces all inspected serialized motions, decisions and final selections exactly, retaining the rejected crawling trial. No new exports/engine observations or quality approvals. Studio integration remains pending; kick-11 joint restart continues under unchanged frozen Python/Godot methods."
+  "last_progress_at": "2026-09-29T21:28:50.813795+00:00",
+  "last_progress": "Full-joint crawl/kick restarts are terminal and rejected despite 568 passing engine observations; kicking adds a support-gap flag and exceeds acceleration caps. Reusable feedback core and generic file/export adapter pass 44 focused tests. Fresh adapter exports reproduce crawl-22 exactly and retain both failed restarted motions unchanged. Input/artifact/snapshot hashes verified; mismatched source preview rejected before output creation. No new adapter engine or human evidence. Studio integration and joint/support work remain pending; all release capabilities unapproved."
 }
