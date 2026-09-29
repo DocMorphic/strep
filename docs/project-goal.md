@@ -1,6 +1,6 @@
 # One project-wide goal: release-ready Strep
 
-Latest contact work: [Studio edit-range authoring](studio-edit-window-v1.md) now saves and submits optional native-frame limits, rejects incompatible ranges before job creation, and audits preservation after a fit. Twenty-five Python tests, two Node checks and the real post-fit audit helper pass; no new complete Studio solve or browser interaction is claimed. The local server was refreshed without interrupting the separate full contact solve. All 14 release capabilities remain unapproved.
+Latest contact work: the [full windowed surface solve](windowed-surface-fit-v1.md) completed with fewer contact failures but unresolved locked collisions, support drift and boundary changes. The [real Studio selected-range workflow](studio-window-flow-v1.md) also completes with failures retained; together they pass 720 Godot actor-frames. A matched wider-window study is now active; only the first editable key changes from 48 to 23. No wider-window outcome or browser validation is claimed; all 14 release capabilities remain unapproved.
 
 Latest object-relative initialization: [moving grip study](object-grip-initialization-v1.md) reduces exported contact failures from 490 to 15 while preserving original edit bounds. Body penetration remains 38.99 mm; local temporal regressions remain visible. Fourteen focused tests and all 360 Godot actor-frames pass. The matched full-body trial subsequently completed with the failures recorded above; no release approval.
 
