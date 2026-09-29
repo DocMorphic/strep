@@ -340,3 +340,6 @@ Second breadth result: [crawl seed 11](contact-breadth-crawl-v1.md) shows a genu
 
 
 Third breadth result: [kick seed 11](contact-breadth-kick-v1.md) retains substantial pin, phase-rate and per-time floor failures despite passing global rate ceilings and 284 Godot observations. Horizontal pin error of 44.484085 mm excludes root-height-only repair for the retained pose. Three of eight cases are complete; the original batch continues with jump/landing before any method changes. All release gates remain open.
+
+
+Fourth breadth result: [jump/landing seed 11](contact-breadth-jump-v1.md) passes the exported contact screen and 284 Godot observations after one bounded root correction. Four of eight cases are complete; only this case passes the full contact screen so far. A separate [held-pose restoration diagnostic](contact-breadth-crawl-v1.md#isolated-held-pose-restoration-diagnostic) removes crawl's locked-frame and floor drift while preserving its pin failures and rate measurements, with 284 additional engine observations. Integrate exact held-seed preservation after the frozen batch and keep broader joint-pose correction on the work plan. All release capabilities remain unapproved.

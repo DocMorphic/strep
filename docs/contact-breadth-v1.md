@@ -49,3 +49,6 @@ Second completed case: [crawl seed 11](contact-breadth-crawl-v1.md) misses four 
 
 
 Third completed case: [kick seed 11](contact-breadth-kick-v1.md) fails 55 of 81 pin samples, three point-rate ceilings and per-time floor preservation. Its 44.484085 mm horizontal pin error cannot be repaired by root height alone. All 284 engine observations pass; motion quality remains unapproved. Three cases are complete and five remain pending; the original batch continues with jump/landing.
+
+
+Fourth completed case: [jump/landing seed 11](contact-breadth-jump-v1.md) passes all 61 pin samples, point/global rate limits, full-floor preservation and 284 engine observations after one accepted root correction. This is the first contact-screen pass among four completed cases, with four still pending. The original batch continues with wave seed 22. A separate [crawl preservation diagnostic](contact-breadth-crawl-v1.md#isolated-held-pose-restoration-diagnostic) removes locked-frame reconstruction drift and raw floor difference without changing its four pin failures; the frozen crawl outcome remains intact.

@@ -353,7 +353,8 @@
         "docs/contact-breadth-v1.md",
         "docs/contact-breadth-wave-v1.md",
         "docs/contact-breadth-crawl-v1.md",
-        "docs/contact-breadth-kick-v1.md"
+        "docs/contact-breadth-kick-v1.md",
+        "docs/contact-breadth-jump-v1.md"
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
@@ -797,7 +798,8 @@
         "docs/contact-breadth-v1.md",
         "docs/contact-breadth-wave-v1.md",
         "docs/contact-breadth-crawl-v1.md",
-        "docs/contact-breadth-kick-v1.md"
+        "docs/contact-breadth-kick-v1.md",
+        "docs/contact-breadth-jump-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1075,7 +1077,8 @@
         "docs/contact-breadth-v1.md",
         "docs/contact-breadth-wave-v1.md",
         "docs/contact-breadth-crawl-v1.md",
-        "docs/contact-breadth-kick-v1.md"
+        "docs/contact-breadth-kick-v1.md",
+        "docs/contact-breadth-jump-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -2697,7 +2700,8 @@
         "docs/contact-breadth-v1.md",
         "docs/contact-breadth-wave-v1.md",
         "docs/contact-breadth-crawl-v1.md",
-        "docs/contact-breadth-kick-v1.md"
+        "docs/contact-breadth-kick-v1.md",
+        "docs/contact-breadth-jump-v1.md"
       ]
     }
   ],
@@ -2909,6 +2913,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T18:24:14.372099+00:00",
-  "last_progress": "Three of eight frozen breadth cases completed. Kick-11 fails 55 pin samples, three point-rate ceilings and per-time floor preservation; its 44.484085 mm horizontal pin error excludes root-height-only repair for the retained pose. All three cases pass 284 Godot observations each without motion-quality approval. The original batch continues with jump/landing; five cases pending. Bounded joint-pose correction is needed alongside near-feasible root repair. All release capabilities remain unapproved."
+  "last_progress_at": "2026-09-29T18:36:09.862570+00:00",
+  "last_progress": "Four of eight frozen breadth cases completed. Jump/landing seed 11 is the first exported contact-screen pass, with all 61 pins, original point/global rate limits, floor preservation and 284 Godot observations passing. A separate crawl held-pose restoration diagnostic removes locked-frame/floor drift while retaining all pin failures, with 284 additional engine observations. The original batch continues with wave seed 22; four cases pending. No release capability is approved."
 }
