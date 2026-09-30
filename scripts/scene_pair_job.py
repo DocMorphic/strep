@@ -6,7 +6,7 @@ import shutil
 from strep import ROOT, read, save, sha256, now
 from paired_edit_request import JOBS, describe, compile_request, prepare as prepare_request
 
-METHODS = ['scene_pair_job.py', 'publish_scene_pair_fit.py', 'verify_scene_pair_fit.py',
+METHODS = ['scene_pair_job.py', 'scene_pair_engine.py', 'publish_scene_pair_fit.py', 'verify_scene_pair_fit.py',
            'run_godot_rig_import.py', 'godot_import_audit.gd', 'retime_scene.py', 'scene_constraints.py',
            'scene_region_job.py', 'floor_contact.py', 'inspect_motion.py']
 
@@ -94,7 +94,7 @@ def copy_completed_fit(folder, study):
     save(folder/'adopted-study.json', dict(source=str(study), request_sha256=sha256(study/'request.json'), result_sha256=sha256(study/'result.json')))
 
 
-def run(folder, completed_study=None):
+def run(folder, completed_study=None, completed_engine=None):
     folder = Path(folder).resolve()
     if folder.parent != JOBS.resolve(): raise ValueError('Saved paired job folder required')
     try:
@@ -122,7 +122,11 @@ def run(folder, completed_study=None):
             save(folder/'pipeline.json', dict(status='processing', stage='Independently replaying exported motion'))
             replay(folder/'fit', folder/'replay')
             save(folder/'pipeline.json', dict(status='processing', stage='Checking game-engine import'))
-            engine(folder/'fit', folder/'engine')
+            if completed_engine is None:
+                engine(folder/'fit', folder/'engine')
+            else:
+                from scene_pair_engine import copy_verified_engine
+                copy_verified_engine(folder/'fit', completed_engine, folder/'engine')
             save(folder/'pipeline.json', dict(status='processing', stage='Building scene comparison'))
             collection = publish(folder)
         accepted = read(folder/'fit/result.json')['selected'] is not None
@@ -134,8 +138,8 @@ def run(folder, completed_study=None):
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description=__doc__); p.add_argument('folder', type=Path)
-    p.add_argument('--completed-study', type=Path); p.add_argument('--label'); args = p.parse_args()
+    p.add_argument('--completed-study', type=Path); p.add_argument('--completed-engine', type=Path); p.add_argument('--label'); args = p.parse_args()
     if args.completed_study is not None and not (args.folder/'job.json').exists():
         if args.label is None: p.error('--label is required to register an existing prepared request')
         attach_review_inputs(args.folder, args.label)
-    run(args.folder, args.completed_study)
+    run(args.folder, args.completed_study, args.completed_engine)

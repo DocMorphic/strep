@@ -16,7 +16,7 @@ Run an immutable prepared request with:
 
 The runner preserves source geometry samples, hashes, implementation snapshots, the linearization, solver results and every attempted export. It checks all source vertices for penetration using conservative broad-phase exclusion at each requested time, retaining at most 64 fitting witnesses per direction/time. Full candidate vertex-depth queries run only after exported motion, edit, preservation and retained-surface checks pass. A local step additionally requires at least 1 micrometre of peak-depth improvement without exceeding per-time caps or worsening sampled floor depth. This local acceptance is not release approval.
 
-The first invocation is running against the saved, retimed-then-trimmed 111-frame development scene, using 126 local time samples and 72 controls. Early source samples confirm penetration above 20 mm. No completed fit, accepted candidate or engine result is claimed yet. Original reports and failures remain under ignored `reports/`.
+The first invocation used the saved, retimed-then-trimmed 111-frame development scene, 126 local time samples and 72 controls. It completed source geometry and solving, then stopped at a logging error. The preserved geometry was verified and reused for the [completed fitting and Studio review](scene-pair-fit-review-v1.md). Original reports and failures remain under ignored `reports/`.
 
 After it reaches a terminal result, independently replay it with:
 

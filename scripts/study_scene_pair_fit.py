@@ -199,8 +199,9 @@ def run(prepared, output, source_study=None):
 
 
 if __name__ == '__main__':
+    from action_worker_lock import worker_lock
     from threadpoolctl import threadpool_limits
     p = argparse.ArgumentParser(description=__doc__); p.add_argument('prepared', type=Path); p.add_argument('output', type=Path)
     p.add_argument('--source-study', type=Path); a = p.parse_args()
-    with threadpool_limits(limits=1):
+    with worker_lock(), threadpool_limits(limits=1):
         run(a.prepared, a.output, a.source_study)

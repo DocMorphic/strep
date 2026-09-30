@@ -65,6 +65,7 @@ jobs:
           tests/test_scene_pair_replay.py
           tests/test_publish_scene_pair_fit.py
           tests/test_scene_pair_activity.py
+          tests/test_scene_pair_engine.py
           tests/test_scene_joint_rates.py
           tests/test_lsmr_accuracy.py
           tests/test_inward_feasibility_step.py
