@@ -84,6 +84,7 @@ jobs:
           tests/test_scene_review_update.py
           tests/test_reserve_publication_geometry.py
           tests/test_assemble_scene_pair_reserve.py
+          tests/test_assemble_scene_pair_continuation.py
           tests/test_copy_prepared_pair_review.py
           tests/test_refined_solver_scaling.py
           tests/test_refined_trust_limits.py
