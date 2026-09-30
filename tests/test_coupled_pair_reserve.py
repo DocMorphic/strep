@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'scripts'))
-from coupled_pair_reserve import empirical_reserve, tightened_radii
+from coupled_pair_reserve import empirical_reserve, tightened_radii, conservative_refresh
 
 
 def test_reserve_protects_each_row_against_positive_observed_error():
@@ -41,3 +41,13 @@ def test_empirical_reserve_does_not_certify_a_new_direction():
     later_prediction, later_export = .97, 1.001
     assert later_prediction <= tightened_radii([1.], reserve, ['speed'])[0]
     assert later_export > 1.+1e-5
+
+
+def test_refresh_retains_old_margins_and_only_tightens_motion_rows():
+    reserve,_=conservative_refresh([0,.1,.01],[[1.,2.,3.]],[[1.2,2.01,3.02]],['edit','speed','acceleration'])
+    np.testing.assert_allclose(reserve,[0,.1,.04])
+
+
+def test_refresh_rejects_a_prior_native_edit_margin():
+    with pytest.raises(ValueError,match='prior motion'):
+        conservative_refresh([.1],[[1.]],[[1.]],['edit'])

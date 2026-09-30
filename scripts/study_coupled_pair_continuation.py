@@ -10,22 +10,24 @@ from coupled_pair_proposal import solve
 from coupled_pair_reserve import tightened_radii
 from coupled_continuation_checks import ContinuationReview
 from coupled_continuation_policy import acceptance
+from coupled_continuation_checkpoint import checkpoint
 
 
-def run(start,geometry,witnesses,output):
+def run(start,geometry,witnesses,output,reserve_override=None):
     start,geometry,output=map(lambda p:Path(p).resolve(),[start,geometry,output])
     if output.exists():raise ValueError('Preserve earlier continuation')
-    problem=PairProblem(witnesses);sr,sp=read(start/'result.json'),read(start/'request.json');ss=read(start/'solver.json')
+    problem=PairProblem(witnesses);state=checkpoint(start);sr,sp=state['result'],state['request'];origin=state['origin']
     gp,gr=read(geometry/'request.json'),read(geometry/'verification.json')
-    if sr['status']!='complete' or sr['selected'] is None or sr['request_sha256']!=sha256(start/'request.json') or sr['solver_sha256']!=sha256(start/'solver.json'):
-        raise ValueError('Completed bound starting proposal required')
-    if not sp['penetrating_surface_norms'] or sp['fitting_reserve'] is None:raise ValueError('Validated full-vector starting condition required')
     if gr['request_sha256']!=sha256(geometry/'request.json') or gr['samples_sha256']!=sha256(geometry/'samples.json') or gr['samples']!=57 or gr['fresh_directional_queries']!=114 or gr['cap_failures_over_1e_6']!=0 or gr['maximum_floor_increase_m']>1e-6:
         raise ValueError('Completed nonregressing geometry starting condition required')
-    reserve=Path(sp['fitting_reserve']);rp,rr=read(reserve/'request.json'),read(reserve/'result.json')
+    reserve=state['reserve'] if reserve_override is None else Path(reserve_override).resolve();rp,rr=read(reserve/'request.json'),read(reserve/'result.json')
     if rr['request_sha256']!=sha256(reserve/'request.json') or rr['reserve_sha256']!=sha256(reserve/'reserve.npz'):raise ValueError('Bound reserve required')
-    inputs={**problem.inputs,**sp['inputs'],**gp['inputs'],**rp['inputs']}
-    for folder,names in [(start,['result.json','request.json','solver.json','linearization.npz']),
+    inputs={**problem.inputs,**state['inputs'],**gp['inputs'],**rp['inputs']}
+    if 'center_controls' in rr:
+        if rr['checkpoint']!=str(start):raise ValueError('Local margins belong to another checkpoint')
+        np.testing.assert_array_equal(rr['center_controls'],state['controls'])
+        if sha256(rr['center_linearization_path'])!=rr['center_linearization_sha256']:raise ValueError('Local margin center changed')
+    for folder,names in [(start,['result.json','request.json']),
                          (geometry,['request.json','verification.json','samples.json']),(reserve,['request.json','result.json','reserve.npz'])]:
         for name in names:inputs[str(folder/name)]=sha256(folder/name)
     for check in sr['selected']['actors']:
@@ -35,19 +37,19 @@ def run(start,geometry,witnesses,output):
     for path,digest in inputs.items():
         if sha256(path)!=digest:raise ValueError('Bound continuation input changed')
     output.mkdir();snapshot=output/'implementation';snapshot.mkdir()
-    methods=['study_coupled_pair_continuation.py','coupled_continuation_checks.py','coupled_continuation_policy.py','coupled_pair_problem.py','coupled_pair_proposal.py',
+    methods=['study_coupled_pair_continuation.py','coupled_continuation_checks.py','coupled_continuation_policy.py','coupled_continuation_checkpoint.py','coupled_pair_problem.py','coupled_pair_proposal.py',
         'coupled_pair_reserve.py','coupled_surface_norms.py','paired_approach_basis.py','paired_surface_witness.py','paired_guarded_temporal.py','paired_temporal_neighbor.py',
         'study_paired_guarded_temporal.py','study_paired_temporal_neighbor.py','audit_scene_joint_rates.py','verify_paired_stage_rates.py','rig_asset.py','rig_clip_import.py','gltf_tools.py','conic_root_descent.py','strep.py']
     for name in methods:shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
-    request=dict(at=now(),inputs=inputs,implementation={name:sha256(snapshot/name) for name in methods},start=str(start),maximum_steps=12,maximum_seconds=900,
+    request=dict(at=now(),inputs=inputs,implementation={name:sha256(snapshot/name) for name in methods},start=str(start),origin=str(origin),maximum_steps=12,maximum_seconds=900,
         trust_degrees_per_step=.2,line_factors=[1.,.5,.25,.125,.0625],minimum_retained_distance_improvement_m=1e-6,
         original_edit_limit_degrees=5.,export_edit_tolerance_degrees=1e-4,motion_tolerance=1e-5,surface_comparison_tolerance_m=1e-6,
         reserve=str(reserve),windows=problem.windows,quality_approved=False,
         scope='Original clips, edit balls, per-joint motion caps and per-time depth allowances remain fixed across every step. Relinearize kinematics at total controls; never reset the edit origin. Reuse empirically calibrated motion fitting margins by identical row layout, not as certified bounds. Fixed initial penetrating-witness norms and all scalar gaps screen every exported trial; only complete fresh mesh queries can qualify the final candidate. Stop on exhausted line search or bounded resources; no convergence claim.')
     save(output/'request.json',request)
-    with np.load(start/'linearization.npz',allow_pickle=False) as archive:original=dict(archive)
+    with np.load(origin/'linearization.npz',allow_pickle=False) as archive:original=dict(archive)
     with np.load(reserve/'reserve.npz',allow_pickle=False) as archive:margins=archive['reserve'].copy()
-    controls=np.array(ss['controls'])*sr['selected']['factor'];review=ContinuationReview(problem,original['gaps'])
+    controls=state['controls'].copy();review=ContinuationReview(problem,original['gaps'])
     selected=review.export_and_check(controls,output/'start')
     for check in selected['actors']:
         if check['sha256']!=sha256(start/'candidate'/(check['actor']+'.glb')):raise ValueError('Starting controls do not reproduce selected exports')
@@ -61,6 +63,9 @@ def run(start,geometry,witnesses,output):
         if time.monotonic()-started>request['maximum_seconds']:termination='time_limit';break
         folder=output/f'iteration-{iteration:02d}';folder.mkdir();save(output/'progress.json',dict(status='linearizing',iteration=iteration,accepted_steps=len(history),retained_peak_m=peak))
         linear=problem.linearize(controls,include_surface_vectors=True)
+        if iteration==1 and 'center_controls' in rr:
+            with np.load(rr['center_linearization_path'],allow_pickle=False) as center:
+                for key,value in linear.items():np.testing.assert_array_equal(value,center[key],err_msg='Refreshed margin center mismatch: '+key)
         for key in ['radii','kinds','depth_caps']:np.testing.assert_array_equal(linear[key],original[key])
         inside=review.initial_inside
         vectors=np.concatenate([linear['vectors'],linear['surface_vectors'][inside]])
@@ -111,5 +116,5 @@ if __name__=='__main__':
     from threadpoolctl import threadpool_limits
     p=argparse.ArgumentParser(description=__doc__)
     for name in ['start','geometry','witnesses','output']:p.add_argument(name,type=Path)
-    a=p.parse_args()
-    with threadpool_limits(limits=1):run(a.start,a.geometry,a.witnesses,a.output)
+    p.add_argument('--reserve',type=Path);a=p.parse_args()
+    with threadpool_limits(limits=1):run(a.start,a.geometry,a.witnesses,a.output,a.reserve)

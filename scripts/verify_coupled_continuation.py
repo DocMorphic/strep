@@ -10,6 +10,7 @@ from study_paired_guarded_temporal import decoded
 from paired_temporal_neighbor import placed_joint_positions
 from rig_asset import RigAsset
 from verify_paired_stage_rates import verify_rates
+from coupled_continuation_checkpoint import checkpoint
 
 
 def run(study,witnesses,output):
@@ -18,13 +19,14 @@ def run(study,witnesses,output):
     request,result=read(study/'request.json'),read(study/'result.json');problem=PairProblem(witnesses)
     if result['status']!='complete' or result['request_sha256']!=sha256(study/'request.json'):raise ValueError('Completed bound continuation required')
     start=Path(request['start']);initial=read(study/'start-review.json');accepted=read(study/'accepted.json') if (study/'accepted.json').exists() else []
-    with np.load(start/'linearization.npz',allow_pickle=False) as archive:original=dict(archive)
+    state=checkpoint(start)
+    with np.load(state['origin']/'linearization.npz',allow_pickle=False) as archive:original=dict(archive)
     inside=original['gaps']<0;caps=original['depth_caps'];normals=np.concatenate([g['normals'] for g in problem.groups])
     inputs={**request['inputs'],**problem.inputs}
     for name in ['request.json','result.json','start-review.json','manifest.json']:
         inputs[str(study/name)]=sha256(study/name)
     if accepted:inputs[str(study/'accepted.json')]=sha256(study/'accepted.json')
-    start_solver=read(start/'solver.json');controls=np.array(start_solver['controls'])*read(start/'result.json')['selected']['factor']
+    controls=state['controls'].copy()
     previous=initial['surface']['peak_m'];accepted_count=0;trials_count=0;peak_values=initial['verified_peak_values'];decisions=[]
     for folder in sorted(study.glob('iteration-*')):
         solver=read(folder/'solver.json');inputs[str(folder/'solver.json')]=sha256(folder/'solver.json')

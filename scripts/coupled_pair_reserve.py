@@ -28,3 +28,12 @@ def tightened_radii(radii, reserve, kinds):
     if np.any(reserve > radii):
         raise ValueError('Empirical reserve exceeds a source cap; no silent clipping allowed')
     return radii - reserve
+
+
+def conservative_refresh(previous,predicted,exported,kinds):
+    """Retain prior margins while incorporating newly measured local error."""
+    measured,error=empirical_reserve(predicted,exported,kinds)
+    previous=np.asarray(previous,float);kinds=np.asarray(kinds)
+    if previous.shape!=measured.shape or not np.isfinite(previous).all() or np.any(previous<0) or np.any(previous[kinds=='edit']!=0):
+        raise ValueError('Matching finite prior motion margins required')
+    return np.maximum(previous,measured),error
