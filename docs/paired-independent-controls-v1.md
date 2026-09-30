@@ -210,3 +210,35 @@ No final candidate result is available yet. The focused new/affected suite has
 The derivative audit preceded the solver change and retains its original method
 snapshot. Its strict replay requires those bound method versions; a later source
 checkout is intentionally rejected when its methods differ.
+
+
+## Individual-witness solve outcome; fresh geometry pending
+
+Both 100-iteration starts reached status 9. The search recorded 17,637
+observations, including finite differences, of which 90 passed the motion/domain
+checks. Selected observation 8,867 changes only actor A's wrist X by another
+6 micrometres at native time 1.991499066 seconds relative to the bound independent
+warm start. Its fixed-witness peak is 20.927446 mm versus the donor's
+20.927482 mm: about 0.000036 mm difference, not a useful clearance result.
+
+The final proposals from the two starts reach lower fixed-witness peaks of
+20.737698 and 20.737694 mm, but their minimum normalized margins are negative
+(-0.000779853 and -0.000217156). Neither has a feasible tested backoff. They
+remain rejected. The completed-return diagnostic must attribute the actual
+motion violations after this worker finishes; optimizer margin alone does not
+identify the joints or physical excesses.
+
+The selected GLBs replay exactly for both actors, retain all frozen native keys,
+and have zero positional/angular-speed/angular-acceleration violations over the
+original 148-pose clock. Actor B is unchanged from the donor:
+
+- A: `c180497b9e4a6e849dfb437fd0b6e81ec71495ab4af0bd3d86dbba6ef66626a1`.
+- B: `13adf945e5fe0537898c394106cabf94be21cfd0e0c409e61247c67ad9db2b5b`.
+- Selected record: `52782804487b3dbd4bf5e8bdd0dff668c73c8499ebbad05e27755262d86ed42a`.
+- Solver returns: `e0f66624d24becab2e70479976137c040a29f231cb1f42e39e6921c36d97b4db`.
+- Export audit: `c6cca0262345c9fab43ebffe2e32c2841b8a4994e985c0af6bc1867cb8cc5e8e`.
+
+The existing worker is auditing all 43 hand times against fresh full partner
+meshes. Its first two times still exceed the 5 mm threshold. Keep its loaded
+methods unchanged until completion. No Studio replacement, full-body clearance,
+engine acceptance or release approval follows from these partial results.
