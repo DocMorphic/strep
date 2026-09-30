@@ -49,6 +49,8 @@ The owner will perform developer review first. Independent animator review and t
 
 [Triangle-based repair](docs/triangle-hand-repair-v1.md) now targets actual surface crossings under the original motion limits, with a broader editable approach window. Its first trial accepts no change. A separately verified crossing at the protected contact involves finger-dominated triangles, motivating a finger-posture experiment with explicit palm/contact preservation.
 
+[Finger-only correction](docs/finger-triangle-repair-v1.md) now preserves native timing, body/wrist motion and measured palm geometry. Its first trial also accepts no change. A saved-model diagnostic points to older signed vertex constraints as a major restriction; fresh geometry must validate any proposed alternative. The source palm markers remain 22.6 mm apart, so contact quality is still unproven.
+
 [Visual hand-region selection](docs/studio-hand-selection-v1.md) now connects selected hand triangles to saved contact-fitting requests, alongside object grip picking. Mesh identity, all eight skin weights, edit bounds and exported geometry are checked; this currently covers canonical SOMA scenes and is not general grasp or animation-quality approval.
 
 ## Using this source snapshot
