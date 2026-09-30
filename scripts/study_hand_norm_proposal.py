@@ -6,7 +6,7 @@ import numpy as np
 from strep import ROOT, read, save, sha256, now
 
 
-def run(study, output):
+def run(study, output, iterations=1):
     from diagnose_oriented_hand_returns import load_evidence
     from bound_evidence import bind_inputs
     from diagnose_scene_pair_limits import load_bound_study
@@ -19,6 +19,8 @@ def run(study, output):
     from continuous_terminal_hand import HandWitnessObjective
     study, output = Path(study).resolve(), Path(output).resolve()
     if output.exists(): raise ValueError('Fresh vector-norm study required')
+    if type(iterations) is not int or not 1 <= iterations <= 12:
+        raise ValueError('One to twelve local iterations required')
     request, files = load_evidence(study)
     terminal = read(Path(request['study']) / 'request.json')
     plan = read(Path(terminal['plan']) / 'request.json')
@@ -86,6 +88,7 @@ def run(study, output):
     names = set(request['implementation']) | {'study_hand_norm_proposal.py', 'hand_norm_proposal.py',
         'smooth_hand_proposal.py', 'conic_root_descent.py', 'conic_linear_screen.py', 'root_release_block.py',
         'diagnose_oriented_hand_returns.py', 'diagnose_terminal_hand_rates.py', 'hand_geometry_comparison.py'}
+    if iterations > 1: names.add('iterated_hand_norm.py')
     for name in sorted(names):
         shutil.copyfile(ROOT/'scripts'/name, output/'implementation'/name)
         methods[name] = sha256(output/'implementation'/name)
@@ -98,9 +101,9 @@ def run(study, output):
     save(output/'request.json', dict(at=now(), study=str(study), inputs=files, implementation=methods,
         point=point.tolist(), scale=scale.tolist(), selected_measurement_reproduced=before,
         sample_indices=ids.tolist(), hand_samples=request['hand_samples'], original_bins_s=request['original_bins_s'],
-        derivative_step=derivative_step, trusts=trusts, solver_version=solver.__version__,
+        derivative_step=derivative_step, trusts=trusts, solver_version=solver.__version__, local_iterations=iterations,
         motion_gate_tolerance=.9*caps.tolerance, export_tolerance=caps.tolerance,
-        scope='One local central-difference vector model at the completed selected controls; three independent trust sizes, eight exact backoffs each. Actual float32 base values, float64 proposal Jacobians, all individual signed witnesses and original motion/domain caps. Best exact-feasible improvement is exported and freshly screened. No full-body, engine, human quality or Studio publication.', quality_approved=False))
+        scope=f'Up to {iterations} local central-difference vector models, starting at the completed selected controls; three independent trust sizes per model, eight exact backoffs each. Actual float32 base values, float64 proposal Jacobians, all individual signed witnesses and fixed original motion/domain caps. Exact-feasible improvements relinearize for the next iteration; final motion is exported and freshly screened. No full-body, engine, human quality or Studio publication.', quality_approved=False))
     def observe(count, total):
         if count % 7 == 0: print(dict(phase='vector_jacobian', coordinates=count, total=total), flush=True)
     model = linearize(exact, proposal, point, derivative_step, observe)
@@ -120,15 +123,30 @@ def run(study, output):
                 signed_depth_residual=float(np.abs(model['base']['depths']+model['jacobian']['depths']@delta-actual['depths']).max()/.02)))
     save(output/'prediction.json', prediction)
     best = point.copy(); metric = before; attempts = []
-    for trust in trusts:
-        delta, report = direction(model, trust, solver)
-        if delta is not None:
-            candidate, trials = backtrack(exact, point, delta, model['base']); report['trials'] = trials
-            if candidate is not None:
-                value = measurement(exact(candidate))
-                if value['witness_peak_m'] < metric['witness_peak_m']: best, metric = candidate, value
-        attempts.append(report); save(output/'proposals.json', attempts)
-        print(dict(phase='proposal', trust=trust, status=report['status'], best=metric), flush=True)
+    extra_outputs = []
+    if iterations == 1:
+        for trust in trusts:
+            delta, report = direction(model, trust, solver)
+            if delta is not None:
+                candidate, trials = backtrack(exact, point, delta, model['base']); report['trials'] = trials
+                if candidate is not None:
+                    value = measurement(exact(candidate))
+                    if value['witness_peak_m'] < metric['witness_peak_m']: best, metric = candidate, value
+            attempts.append(report); save(output/'proposals.json', attempts)
+            print(dict(phase='proposal', trust=trust, status=report['status'], best=metric), flush=True)
+    else:
+        from iterated_hand_norm import solve as iterate
+        def checkpoint(local_model, record):
+            name = f'iteration-{record["iteration"]:02d}.npz'
+            np.savez_compressed(output/name, point=local_model['point'], **local_model['base'],
+                                **{key+'_jacobian': value for key, value in local_model['jacobian'].items()})
+            extra_outputs.append(name); attempts.append(record); save(output/'proposals.json', attempts)
+        def iteration_progress(record):
+            if record['phase'] != 'jacobian' or record['coordinates'] % 7 == 0: print(record, flush=True)
+        best, report = iterate(exact, proposal, point, solver, iterations=iterations, trusts=trusts,
+                               step=derivative_step, observe=iteration_progress, checkpoint=checkpoint)
+        save(output/'proposals.json', attempts); save(output/'iteration-summary.json', report)
+        extra_outputs.append('iteration-summary.json'); metric = measurement(exact(best))
     control = best*scale
     save(output/'selected.json', dict(controls=control.tolist(), **metric))
     names = [actor['name']+':'+rig.document['nodes'][n]['name'] for actor, rig in zip(actors, sources) for n in rig.joints]
@@ -165,7 +183,7 @@ def run(study, output):
     for name, digest in methods.items():
         if sha256(ROOT/'scripts'/name) != digest: raise ValueError('Vector-norm study method changed')
     outputs = {name: sha256(output/name) for name in ['request.json', 'local-model.npz', 'prediction.json',
-               'proposals.json', 'selected.json', 'decoded.json', 'geometry.json', 'donor-comparison.json']}
+               'proposals.json', 'selected.json', 'decoded.json', 'geometry.json', 'donor-comparison.json']+extra_outputs}
     result = dict(at=now(), status='complete', outputs=outputs, witness_before=before, witness_after=metric,
                   full_clock_motion_pass=True, fresh_hand_peak_m=max(r['hand_peak_m'] for r in geometry),
                   failed_hand_samples=sum(r['hand_peak_m'] > request['hand_tolerance_m'] for r in geometry),
@@ -177,5 +195,6 @@ if __name__ == '__main__':
     from action_worker_lock import worker_lock
     from threadpoolctl import threadpool_limits
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('study', type=Path); parser.add_argument('output', type=Path); args = parser.parse_args()
-    with worker_lock(), threadpool_limits(limits=1): run(args.study, args.output)
+    parser.add_argument('study', type=Path); parser.add_argument('output', type=Path)
+    parser.add_argument('--iterations', type=int, default=1); args = parser.parse_args()
+    with worker_lock(), threadpool_limits(limits=1): run(args.study, args.output, args.iterations)

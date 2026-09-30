@@ -37,7 +37,7 @@ exact. This is not a full-body collision or engine acceptance test.
 .venv/Scripts/python.exe -u scripts/study_hand_norm_proposal.py reports/scene-pair-witness-epigraph-v1 reports/scene-pair-hand-norm-proposal-v1
 ```
 
-## Local solve and export results; geometry pending
+## Completed one-step solve, export and geometry
 
 All three convex proposals returned `Solved`. All full steps failed exact
 motion checks, and all half steps passed. The largest trust radius produced the
@@ -59,9 +59,15 @@ Local predictions still have error; they do not replace exact acceptance.
 
 Both selected GLBs replay with zero batch error, retain frozen native keys and
 pass all four motion categories across the original 148 samples. Fresh geometry
-is still running. The first three of 43 times include two failures, so this is
-already not a collision-quality pass. No candidate replaces Studio or approves a
-release capability. The entire project-wide goal remains active.
+completed at all 43 hand times. Failing samples decrease from 17 to 16: sample 69
+now passes and no new sample fails. Peak penetration decreases from 20.932800 to
+20.901569 mm, a 0.031231 mm improvement. This remains far above the 5 mm limit.
+
+Twelve directional observations worsen, by up to 0.360605 mm. The largest
+regression in the maximum across both directions at a single sample is
+0.047039 mm. Lower peak depth does not imply every local contact improved.
+The candidate does not replace Studio or approve a release capability. The
+entire project-wide goal remains active.
 
 Local evidence in `reports/scene-pair-hand-norm-proposal-v1`:
 
@@ -73,6 +79,9 @@ Local evidence in `reports/scene-pair-hand-norm-proposal-v1`:
 - Decoded audit: `759e23232702192602702268968caea593d5292437b3c75c75027084cebaf946`.
 - Actor A GLB: `3571a6f34524a8235004acc367f8c5aeab6a6a8163ebc48586b4285dd053ef10`.
 - Actor B GLB: `b37263948936a19767ec86415ce99e4c8bbe9bbf3023785d9fe5ad83717a63cb`.
+- Fresh geometry: `0ad5af71b9924b91e68fce68d0dfe252b810fe3c497cd989075e435beec62174`.
+- Directional donor comparison: `7ec0a45bba3a3d48c047afb2cdeae2b41f5785e2aa87799612acf752532eb2a7`.
+- Completed result: `56a0d85d258ee64d8801538e59c145605f25707f28c2efb8bfaaaf5ff36f45fd`.
 
 ## Validation and platform test correction
 
@@ -88,8 +97,39 @@ stored quaternion values still matched exactly. The fixture now checks frozen
 native values explicitly for exact equality and allows 1e-14 absolute error only
 when comparing reconstructed outside-window transforms to the cached source.
 Zero-control poses still require exact equality. No production export or motion
-acceptance tolerance changed. Hosted verification of this correction is pending.
+acceptance tolerance changed. Both Windows and Linux hosted checks passed on
+commit e7e0413 (run 36773060121).
 
-The next decision requires the completed fresh mesh audit and directional donor
-comparison. Preserve this worker's imported methods until it exits; do not treat
-the local convex result as a global optimum or an infeasibility certificate.
+## Bounded relinearization study
+
+The completed one-step study supports testing further exact-feasible local steps,
+without treating a solved convex approximation as the final animation.
+`iterated_hand_norm.py` rebuilds the local approximation at each accepted point.
+Every probe and accepted step must retain the initial caps, scales and row
+populations. Caps cannot be recalculated from the newly edited animation.
+
+For each iteration, the same three trust radii produce proposals; the best
+actual-feasible improvement becomes the next point. The search stops at its
+fixed budget, when no tested step improves exact depth while remaining feasible,
+or when central probes would leave the control domain or two-bone reach. These
+stops do not prove global infeasibility. Every local model and proposal history
+is saved. Fresh mesh screening still follows the final export, so intermediate
+surrogate improvements are not mesh quality certificates.
+
+Fourteen additional tests cover relinearization on a nonlinear vector constraint,
+original-cap preservation across iterations, best feasible candidate selection,
+stopping, changed populations, initial feasibility and explicit probe boundaries.
+All 765 minimal public Python tests pass. A separate analytical nonlinear fixture
+using the pinned solver made six accepted steps while preserving its initial
+norm cap; it is solver evidence, not an animation result.
+
+The connected six-iteration experiment starts at the same bound selected controls
+as the one-step experiment. It is running at
+`reports/scene-pair-hand-norm-iterations-v1`; no completed geometry result exists
+yet. Both source and method snapshots must remain unchanged while it runs.
+
+```powershell
+.venv/Scripts/python.exe -u scripts/study_hand_norm_proposal.py reports/scene-pair-witness-epigraph-v1 reports/scene-pair-hand-norm-iterations-v1 --iterations 6
+```
+
+No model was trained, no held-out prompt was used, and no release gate changed.
