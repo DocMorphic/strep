@@ -47,7 +47,7 @@ def solve(evaluate,scale,starts,*,iterations=100,observe=None):
     depth. Mesh clearance remains a separate fresh query after this solve.
     """
     scale=np.asarray(scale,float)
-    if scale.ndim!=1 or not (len(scale)==5 or 11<=len(scale)<=132 and len(scale)%11==0) or not np.isfinite(scale).all() or np.any(scale<=0):raise ValueError('Five legacy or up to twelve groups of eleven positive control scales required')
+    if scale.ndim!=1 or not (len(scale)==5 or any(width<=len(scale)<=12*width and len(scale)%width==0 for width in [11,14])) or not np.isfinite(scale).all() or np.any(scale<=0):raise ValueError('Five legacy or up to twelve groups of eleven or fourteen positive control scales required')
     dimensions=len(scale)
     if type(iterations) is not int or iterations<1:raise ValueError('Positive iteration budget required')
     cache={};records=[];best=None;cache_capacity=max(32,dimensions+3)

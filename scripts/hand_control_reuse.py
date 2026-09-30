@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 from strep import ROOT,read,sha256
 from bound_evidence import bind_inputs
+from independent_hand_motion import SYMMETRIC_LAYOUT,INDEPENDENT_LAYOUT,layout,from_symmetric
 
 
 CONTROL_METHODS=['oriented_terminal_hand.py','continuous_waypoint_motion.py','timed_rotation_edit.py',
@@ -11,25 +12,28 @@ CONTROL_METHODS=['oriented_terminal_hand.py','continuous_waypoint_motion.py','ti
     'verify_scene_pair_fit.py','oriented_guide_domain.py']
 
 
-def embed(controls,source_native,target_native):
+def embed(controls,source_native,target_native,*,width=11):
+    if type(width) is not int or width not in [11,14]:raise ValueError('Supported control row width required')
     old,new=np.asarray(source_native,float),np.asarray(target_native,float);controls=np.asarray(controls,float)
     for clock in [old,new]:
         if clock.ndim!=1 or len(clock)<3 or not np.isfinite(clock).all() or np.any(np.diff(clock)<=0):
             raise ValueError('Increasing finite native keys required')
-    if controls.shape!=(11*(len(old)-2),) or not np.isfinite(controls).all():raise ValueError('Matching finite donor controls required')
+    if controls.shape!=(width*(len(old)-2),) or not np.isfinite(controls).all():raise ValueError('Matching finite donor controls required')
     if old[-1]!=new[-1] or new[0]>old[0] or not np.isin(old,new).all():raise ValueError('Target must extend the same native support with the same frozen end')
-    result=np.zeros((len(new)-2,11))
-    for time,row in zip(old[1:-1],controls.reshape(-1,11)):
+    result=np.zeros((len(new)-2,width))
+    for time,row in zip(old[1:-1],controls.reshape(-1,width)):
         ids=np.flatnonzero(new[1:-1]==time)
         if len(ids)!=1:raise ValueError('Donor editable keys must remain editable')
         result[ids[0]]=row
     return result.ravel()
 
 
-def load_controls(folder,required,target_native):
+def load_controls(folder,required,target_native,*,independent_wrists=False):
     folder=Path(folder).resolve();result=read(folder/'result.json');request=read(folder/'request.json')
     if result['status']!='complete' or not result.get('full_clock_motion_pass') or not request.get('hand_orientation'):
         raise ValueError('Completed motion-valid oriented hand study required')
+    donor_layout=request.get('control_layout',SYMMETRIC_LAYOUT);width,_,_,_=layout(donor_layout)
+    if donor_layout==INDEPENDENT_LAYOUT and not independent_wrists:raise ValueError('Cannot discard independent partner wrist controls')
     files={str(folder/'result.json'):sha256(folder/'result.json')}
     for name in ['request','selected','decoded']:
         path=folder/(name+'.json');digest=result[name+'_sha256']
@@ -40,7 +44,7 @@ def load_controls(folder,required,target_native):
         path=(folder/'implementation'/name).resolve()
         if path.parent!=folder/'implementation' or sha256(path)!=digest:raise ValueError('Warm-start snapshot changed')
         files[str(path)]=digest
-    for name in CONTROL_METHODS:
+    for name in CONTROL_METHODS+(['independent_hand_motion.py'] if donor_layout==INDEPENDENT_LAYOUT else []):
         if request['implementation'].get(name)!=sha256(ROOT/'scripts'/name):raise ValueError('Warm-start control interpretation changed')
     selected=read(folder/'selected.json');decoded=read(folder/'decoded.json')
     if not selected['motion_domain_feasible'] or [r['actor'] for r in decoded]!=['A','B']:
@@ -52,4 +56,6 @@ def load_controls(folder,required,target_native):
         if actor['positional']['failures'] or any(v['exceeding_observations'] for v in actor['angular'].values()):
             raise ValueError('Warm-start decoded motion failed')
         files[str(path)]=actor['sha256'];paths.append(path)
-    return embed(selected['controls'],request['edit_native_times_s'],target_native),paths,files
+    controls=embed(selected['controls'],request['edit_native_times_s'],target_native,width=width)
+    if independent_wrists and donor_layout==SYMMETRIC_LAYOUT:controls=from_symmetric(controls)
+    return controls,paths,files

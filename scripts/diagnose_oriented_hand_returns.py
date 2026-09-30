@@ -28,13 +28,13 @@ def run(study,output):
     from rig_asset import RigAsset
     from rig_clip_import import AnimationSampler
     from sampled_motion_caps import SampledMotionCaps,features
-    from oriented_terminal_hand import OrientedTerminalMotion
-    from oriented_guide_domain import margins
+    from independent_hand_motion import layout,SYMMETRIC_LAYOUT
     from diagnose_terminal_hand_rates import explain
     from hand_geometry_comparison import compare,load_warm_geometry
     study,output=Path(study).resolve(),Path(output).resolve()
     if output.exists():raise ValueError('Fresh return diagnosis required')
     request,files=load_evidence(study);terminal=read(Path(request['study'])/'request.json')
+    _,model_type,_,margins=layout(request.get('control_layout',SYMMETRIC_LAYOUT))
     plan=read(Path(terminal['plan'])/'request.json');protocol=read(Path(plan['source_plan'])/'request.json');baseline=Path(protocol['study'])
     original,_,required=load_bound_study(baseline);files.update(bind_inputs(required,request['inputs']))
     warm_geometry=None
@@ -50,7 +50,7 @@ def run(study,output):
             raise ValueError('Bound baseline clip required')
         rig=RigAsset.load(path);reader=AnimationSampler(rig.document,rig.binary,0)
         sources.append(rig);worlds.append(np.array([reader.sample(t) for t in times]))
-        models.append(OrientedTerminalMotion(rig,protocol['chains'][actor['name']],native,times,prepared['protected_seconds'],actor['rotation'],i))
+        models.append(model_type(rig,protocol['chains'][actor['name']],native,times,prepared['protected_seconds'],actor['rotation'],i))
         labels.extend(actor['name']+':'+rig.document['nodes'][n]['name'] for n in rig.joints)
     def payload(world,indices):
         parts=[features(w[indices],r.joints) for w,r in zip(world,sources)]

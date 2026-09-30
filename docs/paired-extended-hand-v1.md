@@ -72,13 +72,10 @@ and its expanded-support motion and guide checks passed. It verified/reused all
 50 donor source queries, completed the 36 additional directions, and entered
 the optimization phase.
 
-The optimization phase has finished; the fresh mesh audit is still running.
-No clearance improvement, publication or release approval is claimed. Once
-terminal, compare selected geometry at matching times
-against both the unchanged source and the three-key donor where their measured
-clocks overlap. Record local regressions as well as peak depth, and diagnose
-actual exported motion failures before deciding the next step. Studio remains
-on its previously published evidence; all 14 release capabilities are unapproved.
+The optimization, fresh 43-time geometry audit and bound return diagnosis are
+complete. The selected correction is unchanged from the three-key donor.
+Studio retains its previously published evidence; all 14 release capabilities
+remain unapproved. See the completed audit below.
 
 ## Comparison with the previous correction
 
@@ -102,9 +99,9 @@ duplicate/missing times, shifted timestamps, changed hand/full vertex counts,
 nonfinite or negative depths, modified/unbound donor geometry and incomplete
 studies. No new optimization or mesh outcome is inferred from these checks.
 
-The complete minimal public Python suite now passes 673 tests. Commit `531c60e` passed hosted CI. The running worker's imported method snapshots remain unchanged.
+At that implementation stage, the minimal public Python suite passed 673 tests. Commit `531c60e` passed hosted CI. The worker completed with its imported method snapshots unchanged.
 
-## Completed optimization; mesh audit pending
+## Completed optimization and mesh audit
 
 Both starts reached their 100-iteration limit (status 9). The solver recorded
 14,423 evaluations, including finite differences, with 69 motion/domain-feasible
@@ -122,9 +119,41 @@ The selected A/B exports exactly match the prior candidate file hashes:
 The complete 148-pose decoded motion audit has zero positional, angular-speed
 or angular-acceleration violations for either actor, and zero batched replay
 error. Those passes retain the prior correction; they do not demonstrate that
-the six-key search improved it. Fresh 43-time hand geometry and the bound return
-diagnosis are not yet complete. The existing worker must finish before its
-imported sources change or an independent-wrist experiment is launched.
+the six-key search improved it. The fresh 43-time hand audit and bound return
+diagnosis both completed before any of their imported source files were changed.
 
 The [updated interaction-model survey](interaction-research-v4.md) records why
 the inspected alternatives do not establish a qualified replacement model.
+
+The full hand audit has 17 failing times (42, 43 and 69 through 83) at the 5 mm
+threshold, with a 20.932848 mm peak. Against the unchanged source on the same
+43-time clock, the peak improves by 0.500532 mm but the failing population stays
+the same; the largest per-time regression is 0.938765 mm. Those changes were
+already present in the warm start. Against the three-key donor, all 50 ordered
+directional observations at its 25 shared times are exactly unchanged. The 18
+earlier times are explicitly outside that donor comparison, not omitted from
+the complete audit. Two of them fail at 8.718181 and 6.748842 mm.
+
+The diagnostic independently exports both optimizer returns. Return 0 has three
+positional-acceleration violations, including actor A's forearm at 7.350083
+versus 6.866606 m/s2. Return 1 has two positional-acceleration and three angular-
+acceleration violations, including actor A's index end at 86.811775 versus
+85.975655 rad/s2. The selected donor has zero violations. Failed returns are
+retained as evidence, not accepted by relaxing limits.
+
+The result does not prove the six-key domain infeasible. It shows no improvement
+in this bounded search. The next controlled comparison removes the symmetric
+wrist-offset restriction while retaining the same clock, individual actor caps,
+protected final pose, original source and verified warm start.
+
+Local immutable evidence:
+
+- Study request: `21942438b678f2da0ea33aa518c3a543b1231acdcf71aec4db25a039c3d2f425`
+- Fresh geometry: `ac74dcf62f95db98e4687fa5fbb4a8506c3dc2a33ded50b4d62155e133d15062`
+- Diagnosis request: `2768ef7a7f5c5ad3416b2fd6fe60bdfb0f8b487589f1d6316fb61c8e5280f7d1`
+- Return audits: `f5d24e8f2d212ef1d0919dd3789d9472690d11577168ea31876e70ef8b14832c`
+- Donor comparison: `b4511abc9c0ed6ca98bb1a9323738fbe8b1b07bc65fb72354cc70db30d74e1ce`
+
+The original diagnosis used source commit `9871092` and the completed local
+study snapshots. A reproduction must use matching methods; changing control
+interpretation must not silently reinterpret that recorded evidence.

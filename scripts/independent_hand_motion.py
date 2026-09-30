@@ -51,3 +51,14 @@ class IndependentHandMotion:
 
     def export_vector(self,controls,path):
         return self.model.export_vector(actor_controls(controls,self.count,self.actor),path)
+
+
+SYMMETRIC_LAYOUT='symmetric-wrist-v1'
+INDEPENDENT_LAYOUT='independent-wrists-v1'
+
+
+def layout(name):
+    """Explicit persisted interpretation shared by search and return replay."""
+    if name==SYMMETRIC_LAYOUT:return 11,OrientedTerminalMotion,control_scales,oriented_margins
+    if name==INDEPENDENT_LAYOUT:return 14,IndependentHandMotion,scales,margins
+    raise ValueError('Unknown oriented hand control layout')

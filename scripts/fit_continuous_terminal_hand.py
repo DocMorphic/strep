@@ -5,7 +5,7 @@ import numpy as np
 from strep import ROOT,read,save,sha256,now
 
 
-def run(study,output,hand_orientation=False,witness_study=None,editable_key_count=1,warm_start_study=None):
+def run(study,output,hand_orientation=False,witness_study=None,editable_key_count=1,warm_start_study=None,independent_wrists=False):
     from bound_evidence import bind_inputs
     from diagnose_scene_pair_limits import load_bound_study
     from scene_pair_problem import load_actors
@@ -15,8 +15,8 @@ def run(study,output,hand_orientation=False,witness_study=None,editable_key_coun
     from hand_surface_screen import hand_vertices,screen
     from paired_approach_basis import BoundSkin
     from continuous_terminal_hand import VectorTerminalMotion,HandWitnessObjective,solve
-    from oriented_terminal_hand import OrientedTerminalMotion,support_clock
-    from oriented_guide_domain import control_scales,margins as guide_margins
+    from oriented_terminal_hand import support_clock
+    from independent_hand_motion import layout,SYMMETRIC_LAYOUT,INDEPENDENT_LAYOUT,from_symmetric
     from hand_witness_reuse import load_queries,rebuild_witnesses
     from hand_control_reuse import load_controls
     from build_guarded_pair_witnesses import query
@@ -28,6 +28,9 @@ def run(study,output,hand_orientation=False,witness_study=None,editable_key_coun
     from scalar_angular_replay import angular_replay
     study,output=Path(study).resolve(),Path(output).resolve()
     if output.exists():raise ValueError('Fresh continuous terminal study required')
+    if independent_wrists and not hand_orientation:raise ValueError('Independent wrists require oriented controls')
+    control_layout=INDEPENDENT_LAYOUT if independent_wrists else SYMMETRIC_LAYOUT
+    width,oriented_type,control_scales,guide_margins=layout(control_layout)
     if warm_start_study is not None and not hand_orientation:raise ValueError('Warm start requires oriented controls')
     result=read(study/'result.json');request=read(study/'request.json');files={str(study/'result.json'):sha256(study/'result.json')}
     if result['status']!='complete':raise ValueError('Completed terminal search required')
@@ -67,7 +70,7 @@ def run(study,output,hand_orientation=False,witness_study=None,editable_key_coun
     if len(edge)<2 or len(suffix)!=2:raise ValueError('Terminal edge and two frozen suffix samples required')
     ids=np.r_[edge,suffix];np.testing.assert_array_equal(np.diff(ids),1)
     if hand_orientation:edge,ids=support_clock(times,edit_native)
-    model_type=OrientedTerminalMotion if hand_orientation else VectorTerminalMotion
+    model_type=oriented_type if hand_orientation else VectorTerminalMotion
     models=[model_type(s['rig'],s['chain'],edit_native,times[ids],prepared['protected_seconds'],a['rotation'],i)
             for i,(s,a) in enumerate(zip(sources,actors))]
     parts=[features(w,s['rig'].joints) for w,s in zip(reference,sources)]
@@ -82,10 +85,11 @@ def run(study,output,hand_orientation=False,witness_study=None,editable_key_coun
         starts[3][5:]=[0,2.,0,0,-2.,0]
         if editable_key_count>1:
             weights=np.sin(np.linspace(0,np.pi,editable_key_count+2)[1:-1])**2
-            starts=[np.zeros(len(scale)),(weights[:,None]*starts[3]).ravel()]
+            starts=[np.zeros(11*editable_key_count),(weights[:,None]*starts[3]).ravel()]
+        if independent_wrists:starts=[from_symmetric(v) for v in starts]
     source_queries=[];reuse_required=files.copy();warm_replay=None
     if warm_start_study is not None:
-        warm,paths,warm_files=load_controls(warm_start_study,reuse_required,edit_native);files.update(warm_files)
+        warm,paths,warm_files=load_controls(warm_start_study,reuse_required,edit_native,independent_wrists=independent_wrists);files.update(warm_files)
         evaluated=[m.evaluate_vector(warm) for m in models];warm_parts=[];errors=[]
         for s,(world,maximum),path in zip(sources,evaluated,paths):
             donor=RigAsset.load(path);reader=AnimationSampler(donor.document,donor.binary,0)
@@ -102,18 +106,18 @@ def run(study,output,hand_orientation=False,witness_study=None,editable_key_coun
     output.mkdir();(output/'implementation').mkdir();methods={}
     names=set(request['implementation'])|{'fit_continuous_terminal_hand.py','continuous_terminal_hand.py','continuous_waypoint_motion.py',
         'build_guarded_pair_witnesses.py','paired_surface_witness.py','verify_scene_pair_fit.py','scalar_angular_replay.py','wrist_waypoint_motion.py',
-        'oriented_terminal_hand.py','hand_witness_reuse.py','oriented_guide_domain.py','hand_control_reuse.py'}
+        'oriented_terminal_hand.py','hand_witness_reuse.py','oriented_guide_domain.py','hand_control_reuse.py','independent_hand_motion.py'}
     for name in sorted(names):
         shutil.copyfile(ROOT/'scripts'/name,output/'implementation'/name);methods[name]=sha256(output/'implementation'/name)
     save(output/'request.json',dict(at=now(),study=str(study),inputs=files,implementation=methods,scale=scale.tolist(),starts=[v.tolist() for v in starts],
         sample_indices=ids.tolist(),hand_samples=edge.tolist(),native_times_s=native.tolist(),original_bins_s=request['original_bins_s'],
-        hand_orientation=hand_orientation,witness_study=None if witness_study is None else str(Path(witness_study).resolve()),
+        hand_orientation=hand_orientation,control_layout=control_layout if hand_orientation else 'legacy-five-v1',witness_study=None if witness_study is None else str(Path(witness_study).resolve()),
         warm_start_study=None if warm_start_study is None else str(Path(warm_start_study).resolve()),warm_start_replay=warm_replay,
         editable_key_count=editable_key_count,edit_native_times_s=edit_native.tolist(),
         source_directional_queries_reused=len(source_queries),
         optimizer=dict(method='SLSQP',iterations_per_start=100,finite_difference_step=1e-4,ftol=1e-9),
         witness_maximum_per_direction_time=32,hand_tolerance_m=.005,motion_gate_tolerance=9e-6,export_tolerance=1e-5,
-        scope=('Eleven continuous wrist/elbow/independent scene-hand rotation controls per editable native key. Adjacent vector guide rates and frozen endpoint controls are bounded. Motion covers the full edit support and two frozen halo samples on each side; hand witnesses and fresh hand audits cover every affected native interval. ' if hand_orientation else
+        scope=(f'{width} continuous controls per editable native key ({control_layout}): wrist displacements, two elbow swivels and independent scene-hand rotations. Adjacent vector guide rates and frozen endpoint controls are bounded. Motion covers the full edit support and two frozen halo samples on each side; hand witnesses and fresh hand audits cover every affected native interval. ' if hand_orientation else
                'Five continuous symmetric wrist-vector/two-elbow controls at the final editable key. Motion is constrained on the final edge and two frozen suffix samples; incoming edge is not optimized. ')+
               'Fixed hand witnesses guide search only; exact baked GLBs, full-clock motion and fresh hand meshes are audited afterwards. No full-body/engine acceptance inferred.',quality_approved=False))
     reused_samples={q['sample'] for q in source_queries}
@@ -194,7 +198,7 @@ def run(study,output,hand_orientation=False,witness_study=None,editable_key_coun
         if sha256(ROOT/'scripts'/name)!=digest:raise ValueError('Continuous hand method changed')
     output_result=dict(at=now(),status='complete',nonzero_controls=bool(np.any(control)),terminal_motion_pass=True,
         hand_orientation=hand_orientation,whole_key_support_motion_constrained=hand_orientation,
-        editable_key_count=editable_key_count,
+        editable_key_count=editable_key_count,control_layout=control_layout if hand_orientation else 'legacy-five-v1',
         full_clock_motion_pass=all(not a['positional']['failures'] and not any(v['exceeding_observations'] for v in a['angular'].values()) for a in decoded),
         witness_peak_m=best['witness_peak_m'],fresh_hand_peak_m=max(r['hand_peak_m'] for r in geometry),
         failed_hand_samples=sum(r['hand_peak_m']>.005 for r in geometry),full_mesh_clock_checked=False,accepted_for_publication=False,quality_approved=False)
@@ -208,6 +212,6 @@ if __name__=='__main__':
     from threadpoolctl import threadpool_limits
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study',type=Path);parser.add_argument('output',type=Path)
     parser.add_argument('--hand-orientation',action='store_true');parser.add_argument('--witness-study',type=Path)
-    parser.add_argument('--warm-start-study',type=Path)
+    parser.add_argument('--warm-start-study',type=Path);parser.add_argument('--independent-wrists',action='store_true')
     parser.add_argument('--editable-keys',type=int,default=1);args=parser.parse_args()
-    with worker_lock(),threadpool_limits(limits=1):run(args.study,args.output,args.hand_orientation,args.witness_study,args.editable_keys,args.warm_start_study)
+    with worker_lock(),threadpool_limits(limits=1):run(args.study,args.output,args.hand_orientation,args.witness_study,args.editable_keys,args.warm_start_study,args.independent_wrists)

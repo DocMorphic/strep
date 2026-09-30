@@ -66,3 +66,12 @@ def test_optimizer_success_and_false_epigraph_cannot_approve_infeasible_controls
     assert best['controls']==[0.]*5 and best['witness_peak_m']==.01
     assert reports[0]['success'] and reports[0]['returned_minimum_margin']<0
     assert reports[0]['returned_epigraph_m']==0 and reports[0]['returned_witness_peak_m']>0
+
+
+
+def test_eighty_four_control_solve_uses_final_component_and_preserves_hard_margin():
+    def objective(c):return max(0.,.01-c[-1]),np.array([.004-c[-1],c[-1]+.04])
+    best,reports,records=solve(objective,np.full(84,.04),[np.zeros(84)],iterations=25)
+    assert len(best['controls'])==84 and 0<best['controls'][-1]<=.004
+    assert .006<=best['witness_peak_m']<.0061
+    assert reports and records and best['motion_domain_feasible']

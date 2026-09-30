@@ -72,18 +72,62 @@ def test_warm_start_requires_bound_feasible_donor_and_exact_native_mapping(tmp_p
         assert all(str(p) in files for p in paths) and str(tmp_path/'source.dat') in files
 
 
-def test_solver_retains_full_sixty_six_component_finite_difference_batch(monkeypatch):
+@pytest.mark.parametrize('dimensions',[66,84])
+def test_solver_retains_full_control_finite_difference_batch(monkeypatch,dimensions):
     import continuous_terminal_hand as module
     observed=[]
     def evaluate(c):
         observed.append(c.copy());return .02,np.ones(1)
     def minimize(fun,initial,**kwargs):
         constraint=kwargs['constraints'][0]['fun'];constraint(initial)
-        for i in range(66):
+        for i in range(dimensions):
             step=initial.copy();step[i]+=1e-4;constraint(step)
         constraint(initial)
         return SimpleNamespace(x=initial,success=True,status=0,message='fixture',nit=1,nfev=1)
     monkeypatch.setattr(module,'minimize',minimize)
-    best,_,records=module.solve(evaluate,np.ones(66),[np.zeros(66)],iterations=1)
-    assert len(observed)==len(records)==67
+    best,_,records=module.solve(evaluate,np.ones(dimensions),[np.zeros(dimensions)],iterations=1)
+    assert len(observed)==len(records)==dimensions+1
     assert best['motion_domain_feasible']
+
+
+@pytest.mark.parametrize('independent_donor',[False,True])
+def test_control_layout_conversion_preserves_individual_rows_and_binds_method(tmp_path,independent_donor):
+    from independent_hand_motion import from_symmetric,INDEPENDENT_LAYOUT
+    required=fixture(tmp_path);native=[0.,.1,.2,.3,.4,.5,.6,.7]
+    expected=from_symmetric(np.arange(33)/1000)
+    if independent_donor:
+        expected.reshape(-1,14)[:,3:6]+=.017  # deliberately not equal/opposite
+        row=read(tmp_path/'request.json');row['control_layout']=INDEPENDENT_LAYOUT
+        name='independent_hand_motion.py';shutil.copyfile(ROOT/'scripts'/name,tmp_path/'implementation'/name)
+        row['implementation'][name]=sha256(tmp_path/'implementation'/name);save(tmp_path/'request.json',row)
+        save(tmp_path/'selected.json',dict(controls=expected.tolist(),motion_domain_feasible=True));seal(tmp_path)
+    controls,_,files=load_controls(tmp_path,required,native,independent_wrists=True)
+    np.testing.assert_array_equal(controls[:42],0);np.testing.assert_array_equal(controls[42:],expected)
+    if independent_donor:
+        assert str(tmp_path/'implementation'/'independent_hand_motion.py') in files
+        with pytest.raises(ValueError,match='discard'):load_controls(tmp_path,required,native)
+        row=read(tmp_path/'request.json');path=tmp_path/'implementation'/'independent_hand_motion.py'
+        path.write_text('# altered independent interpretation');row['implementation'][path.name]=sha256(path)
+        save(tmp_path/'request.json',row);seal(tmp_path)
+        with pytest.raises(ValueError,match='interpretation'):load_controls(tmp_path,required,native,independent_wrists=True)
+
+
+def test_unknown_layout_is_rejected_even_with_resealed_artifacts(tmp_path):
+    from independent_hand_motion import layout
+    required=fixture(tmp_path);row=read(tmp_path/'request.json');row['control_layout']='future-v9'
+    save(tmp_path/'request.json',row);seal(tmp_path)
+    with pytest.raises(ValueError,match='Unknown'):load_controls(tmp_path,required,[.3,.4,.5,.6,.7],independent_wrists=True)
+    with pytest.raises(ValueError,match='Unknown'):layout('future-v9')
+
+
+@pytest.mark.parametrize('actor',[0,1])
+def test_fourteen_control_embedding_keeps_export_byte_identical_with_asymmetric_wrists(actor,tmp_path):
+    from independent_hand_motion import IndependentHandMotion
+    rig,clock=rig_fixture();rig.document['skins']=[dict(joints=rig.joints)]
+    old,new=clock[4:9].astype(float),clock[1:9].astype(float);times=np.arange(241)/120
+    placement=Rotation.from_euler('xyz',[7,-29,13],degrees=True).as_matrix()
+    control=(np.array([.4,1.,.7])[:,None]*np.array([.001,-.002,.003,.004,.001,-.002,1.,-2.,.3,-.7,.2,-.4,.8,-.6])).ravel()
+    paths=[tmp_path/'old.glb',tmp_path/'new.glb']
+    for native,values,path in zip([old,new],[control,embed(control,old,new,width=14)],paths):
+        model=IndependentHandMotion(rig,[1,2,3],native,times,[],placement,actor);model.export_vector(values,path)
+    assert paths[0].read_bytes()==paths[1].read_bytes()
