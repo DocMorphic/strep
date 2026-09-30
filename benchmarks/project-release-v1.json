@@ -913,6 +913,10 @@
         "docs/cylinder-pose-phase-one-v1.md",
         "docs/cylinder-pose-bundle-v1.md",
         "docs/cylinder-pose-full-residual-v1.md",
+        "docs/cylinder-inner-solve-v1.md",
+        "reports/cylinder-inner-solve-review-v1/verification.json",
+        "reports/cylinder-pose-full-residual-review-v2/verification.json",
+        "reports/cylinder-pose-full-residual-review-v2/conditioning.json",
         "reports/cylinder-pose-full-residual-review-v1/verification.json",
         "reports/cylinder-pose-full-residual-review-v1/diagnosis.json",
         "reports/cylinder-pose-bundle-review-v1/verification.json",
@@ -2965,6 +2969,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-30T02:22:47.635645+00:00",
-  "last_progress": "Full-residual bounded feasibility search is independently verified and rejected. Matrix-free products cover all 36,518 residuals. Whole-body object penetration drops from 21.040 mm to 10.538-10.564 mm and anchors improve, but hand-patch penetration regresses and both complete contacts fail. All retained serialized variants pass edit bounds. The 150-evaluation run stops before convergence; the half-squared-objective gradient infinity norm is 9.074. Next examine inner-solve accuracy and convergence before changing physical budgets. No clip is promoted; all 14 release capabilities remain unapproved."
+  "last_progress_at": "2026-09-30T02:34:55.655344+00:00",
+  "last_progress": "Actual TRF inner-system replay confirms the 30-iteration LSMR cap truncates a solve that meets its stopping criterion in 107 iterations. An explicit hash-bound continuation with cap 175 reduces weighted cost from 7.208 to 6.725 and gradient infinity norm from 9.074 to 0.794, but every retained pose still fails hand contact. Independent variants, limits and selection replay pass. Local Jacobian columns vary by about 129,000 in norm and contain near-dependent directions; next test conditioning-aware steps under unchanged physical bounds. No clip is promoted and all 14 release capabilities remain unapproved."
 }

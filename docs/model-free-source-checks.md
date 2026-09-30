@@ -35,3 +35,6 @@ The Phase-I feasibility adapter adds 11 model-free tests for normalized Jacobian
 
 
 Eight inward-feasibility LP tests now cover common progress, conflicting constraints, protected passing rows, nonlinear curvature reserve and invalid input. The selected public Python suite now contains 77 tests. This is source verification, not animation approval.
+
+
+Three LSMR diagnostic tests add fixed-system iteration-cap comparisons, independent damped normal-residual checks and invalid-input rejection. The selected public Python suite now contains 80 tests; this does not qualify a motion or the full product.

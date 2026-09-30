@@ -33,9 +33,30 @@ def family_weights(count,groups,singles):
     return weights
 
 
-def run(study,output,evaluations=150,seconds=180.):
+def read_warm_start(path,variant,study,prior):
+    path=Path(path).resolve();study=Path(study).resolve()
+    if variant not in ['best_peak','best_cost','terminal']:raise ValueError('Unknown warm-start variant')
+    protocol=read(path/'protocol.json');result=read(path/'result.json')
+    if result['status'] not in ['complete','interrupted_resource_guard'] or result['protocol_sha256']!=sha256(path/'protocol.json'):
+        raise ValueError('Completed or resource-stopped full-residual result required')
+    if protocol['study']!=study.relative_to(ROOT).as_posix():raise ValueError('Warm start belongs to a different source study')
+    for key in ['selections','rotation_limits_degrees','max_root_lift_m']:
+        if protocol[key]!=prior[key]:raise ValueError('Warm-start controls changed: '+key)
+    for file,digest in protocol['inputs'].items():
+        if sha256(file)!=digest:raise ValueError('Warm-start input changed')
+    for name,digest in protocol['methods'].items():
+        if sha256(path/'implementation'/name)!=digest:raise ValueError('Warm-start archived method changed')
+    selected=result['variants'][variant]
+    if not selected['audit']['bounds_passed'] or sha256(path/selected['pose'])!=selected['pose_sha256']:
+        raise ValueError('Warm-start pose changed or failed bounds')
+    inputs={**protocol['inputs'],**{str(path/n):sha256(path/n) for n in ['protocol.json','result.json',selected['pose']]}}
+    return selected,inputs,dict(study=path.relative_to(ROOT).as_posix(),variant=variant,result_sha256=sha256(path/'result.json'))
+
+
+def run(study,output,evaluations=150,seconds=180.,lsmr_iterations=30,warm_start=None,variant='best_cost'):
     if type(evaluations) is not int or not 1<=evaluations<=500 or type(seconds) not in [int,float] or not np.isfinite(seconds) or not 0<seconds<=1200:
         raise ValueError('Bounded solve budgets required')
+    if type(lsmr_iterations) is not int or not 1<=lsmr_iterations<=500:raise ValueError('Bounded positive LSMR iteration cap required')
     torch.set_num_threads(2);study=Path(study).resolve();output=Path(output).resolve()
     previous=read(study/'result.json');prior=read(study/'protocol.json')
     if previous['status']!='complete' or not previous['candidate']['bounds_passed']:raise ValueError('Completed bounded study required')
@@ -45,20 +66,24 @@ def run(study,output,evaluations=150,seconds=180.):
     for name,digest in prior['methods'].items():
         if sha256(study/'implementation'/name)!=digest:raise ValueError('Archived seed method changed')
     p=RegionalPoseProblem(ROOT/prior['fit'],prior['frame']);b=BundleProblem(p)
-    initial=np.array(previous['bounded_preimage']);np.testing.assert_array_equal(b.physical(p.t(initial)).numpy(),previous['parameters'])
+    selected=previous;expected_seed=previous['candidate'];warm_inputs={};warm_descriptor=None
+    if warm_start is not None:
+        selected,warm_inputs,warm_descriptor=read_warm_start(warm_start,variant,study,prior)
+        expected_seed=selected['audit']
+    initial=np.array(selected['bounded_preimage']);np.testing.assert_array_equal(b.physical(p.t(initial)).numpy(),selected['parameters'])
     weights=family_weights(b.count,b.groups,b.singles);tw=p.t(weights)
     output.mkdir(parents=True,exist_ok=False);snap=output/'implementation';snap.mkdir()
     for pattern in ['*.py','*.gd']:
         for path in (ROOT/'scripts').glob(pattern):shutil.copyfile(path,snap/path.name)
-    inputs={**prior['inputs'],**{str(study/n):sha256(study/n) for n in ['protocol.json','result.json','pose.npz']}}
+    inputs={**prior['inputs'],**warm_inputs,**{str(study/n):sha256(study/n) for n in ['protocol.json','result.json','pose.npz']}}
     protocol=dict(at=now(),study=study.relative_to(ROOT).as_posix(),inputs=inputs,methods={q.name:sha256(q) for q in snap.iterdir()},
         selections=prior['selections'],rotation_limits_degrees=prior['rotation_limits_degrees'],max_root_lift_m=prior['max_root_lift_m'],
-        evaluations=evaluations,seconds_budget=seconds,lsmr_maxiter=30,full_residual_count=b.count,
+        evaluations=evaluations,seconds_budget=seconds,lsmr_maxiter=lsmr_iterations,warm_start=warm_descriptor,full_residual_count=b.count,
         weighting='Squared residual means per full-skin/patch clearance family; means per gap/radius/spacing triple; unit weight for area/centroid/normal/anchor. Every row has positive weight; zero residual requires all original modeled inequalities.',
         selection='Retain lexicographically smallest (maximum unweighted violation, weighted squared residual), smallest weighted squared residual, and terminal point separately; include seed. No variant is promoted automatically.',
         scope='Exploratory single-pose feasibility; intermediate regression allowed. Original independent serialized contact/geometry/edit thresholds unchanged. No temporal, anatomy, balance, support, engine or human-review approval.',quality_approved=False)
     save(output/'protocol.json',protocol)
-    seed_serial,seed_audit,_,_=b.serialized(initial);assert seed_audit==previous['candidate']
+    seed_serial,seed_audit,_,_=b.serialized(initial);assert seed_audit==expected_seed
     def residual(z):return torch.relu(b.residual(z))*tw
     op=TorchJacobianOperator(residual,initial)
     direction=np.random.default_rng(929).normal(size=len(initial));direction/=np.linalg.norm(direction)
@@ -132,5 +157,7 @@ def run(study,output,evaluations=150,seconds=180.):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study',type=Path);parser.add_argument('output',type=Path)
     parser.add_argument('--evaluations',type=int,default=150);parser.add_argument('--seconds',type=float,default=180.)
+    parser.add_argument('--lsmr-iterations',type=int,default=30);parser.add_argument('--warm-start',type=Path)
+    parser.add_argument('--variant',choices=['best_peak','best_cost','terminal'],default='best_cost')
     a=parser.parse_args()
-    with threadpool_limits(limits=2):run(a.study,a.output,a.evaluations,a.seconds)
+    with threadpool_limits(limits=2):run(a.study,a.output,a.evaluations,a.seconds,a.lsmr_iterations,a.warm_start,a.variant)

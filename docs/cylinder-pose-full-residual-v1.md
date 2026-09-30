@@ -46,3 +46,6 @@ Requires the separately acquired character assets and retained bounded developme
 ```
 
 All 25 targeted tests pass locally. These Torch/asset-dependent tests are separate from the public model-free CI suite. Frozen raw evidence is under `reports/cylinder-pose-full-residual-v1`; independent verification and cost/gradient diagnosis are under `reports/cylinder-pose-full-residual-review-v1`. Generated assets remain excluded from Git. No held-out reservation or new model training is involved; all fourteen release capabilities remain unapproved.
+
+
+Follow-up: the [actual inner-system comparison and continued search](cylinder-inner-solve-v1.md) retain the original failed output, quantify additional compute and examine the remaining local conditioning problem.
