@@ -16,10 +16,13 @@ from region_grasp_track import arm_columns,smoothstep5
 from scene_solver_context import context_primitives
 from build_soma_preview import make_preview
 from gltf_tools import write_glb
+from joint_continuity import step_degrees
 
 
-def run(pose_report,output,reserve=.0001):
+def run(pose_report,output,reserve=.0001,continuity_weight=0.,maximum_step_degrees=3.):
     if type(reserve) not in [int,float] or not np.isfinite(reserve) or not 0<=reserve<=.0005:raise ValueError('Reserve must be within 0--0.5 mm')
+    if type(continuity_weight) not in [int,float] or not np.isfinite(continuity_weight) or not 0<=continuity_weight<=10:raise ValueError('Continuity weight must be in [0,10]')
+    if type(maximum_step_degrees) not in [int,float] or not np.isfinite(maximum_step_degrees) or not 0<maximum_step_degrees<=30:raise ValueError('Positive sampled joint-step screen within 30 degrees required')
     torch.set_num_threads(2);pose_report,output=Path(pose_report).resolve(),Path(output).resolve()
     pp,pr=read(pose_report/'protocol.json'),read(pose_report/'result.json')
     if not pr['alternative_pose_passed'] or pr['protocol_sha256']!=sha256(pose_report/'protocol.json') or pr['pose_sha256']!=sha256(pose_report/'pose.npz'):raise ValueError('Passing matching alternative pose required')
@@ -58,7 +61,9 @@ def run(pose_report,output,reserve=.0001):
     settings=dict(maximum_evaluations=100,seconds_per_frame=45.,maximum_seconds=600.,maximum_rss_bytes=2*1024**3,minimum_available_bytes=int(1.25*1024**3),blend_frames=12)
     protocol=dict(at=now(),pose_report=pose_report.relative_to(ROOT).as_posix(),fit=prior['fit'],reference_frame=p0.frame,frame_count=frames,
         active_interval=[start,end],projection_interval=[start,guard_end],edited_interval=[edit_start,edit_end],bindings=bindings,outward_reserve_m=reserve,
-        settings=settings,inputs=inputs,implementation={q.name:sha256(q) for q in snap.iterdir()},actor=read(fit/'protocol.json')['actor'],
+        settings=settings,continuity_weight=continuity_weight,maximum_step_degrees=maximum_step_degrees if continuity_weight else None,
+        continuity_policy='Optional physical local-rotation chordal preference to previous projected key; first key prefers reference pose. Native adjacent arm geodesic step is screened separately; a preference is not a hard optimization constraint or anatomical speed limit.',
+        inputs=inputs,implementation={q.name:sha256(q) for q in snap.iterdir()},actor=read(fit/'protocol.json')['actor'],
         contact_ids=[c['id'] for c in scene['contacts']],config=p0.config,targets={hand:{k:v.tolist() for k,v in t.items()} for hand,t in targets.items()},
         condition='Explicit alternative guides fixed for the whole clip; unchanged regions/targets/numeric limits. Fixed absolute reference finger rotations within each frame original edit budgets. Other non-arm edits/root lift fixed during grasp. Original source clip outside quintic 12-frame blends.',
         scope='Development trajectory, not a scene solver V14 rerun. Exported dense contact/geometry/edit checks required. No anatomy, self-collision, balance, force, semantic or human review approval.',quality_approved=False)
@@ -67,6 +72,7 @@ def run(pose_report,output,reserve=.0001):
     reference_audit,_=frame_problem(p0,p0.frame,scene,anchors).independent(reference)
     if reference_audit!=pr['alternative_condition_audit']:raise ValueError('Reference pose replay changed')
     columns,_=arm_columns(p0);last=reference[columns].copy();parameters={};rows=[];started=time.monotonic();peak=0
+    arm_joints=np.array(p0.editable)[columns.reshape(-1,3)[:,0]//3];previous_local=reference_motion['local_rot_mats'][0].copy()
     for frame in range(start,guard_end+1):
         p=frame_problem(p0,frame,scene,anchors);fixed=fixed_finger_parameters(p,reference,reference_motion['local_rot_mats'][0]);frame_start=time.monotonic()
         def guard():
@@ -74,14 +80,19 @@ def run(pose_report,output,reserve=.0001):
             peak=max(peak,psutil.Process().memory_info().rss)
             if time.monotonic()-frame_start>settings['seconds_per_frame'] or time.monotonic()-started>settings['maximum_seconds'] or peak>settings['maximum_rss_bytes'] or psutil.virtual_memory().available<settings['minimum_available_bytes']:raise TimeoutError('Moving grasp resource guard')
         local_targets={hand:dict(position=t['positions'][frame],rotation=t['rotations'][frame]) for hand,t in targets.items()}
-        values,solver=project(p,fixed,last,local_targets,guard,settings['maximum_evaluations'],frame==start);last=values[columns].copy()
+        values,solver=project(p,fixed,last,local_targets,guard,settings['maximum_evaluations'],frame==start,
+            previous_local if continuity_weight else None,continuity_weight);last=values[columns].copy()
         audit,motion=p.independent(values);parameters[frame]=values;reach=[]
+        steps=step_degrees(previous_local[arm_joints],motion['local_rot_mats'][0,arm_joints]) if frame>start else None
+        step_pass=steps is None or not continuity_weight or bool(steps.max()<=maximum_step_degrees)
+        previous_local=motion['local_rot_mats'][0].copy()
         for hand,t in local_targets.items():
             wrist=p.names.index(hand);position_error=float(np.linalg.norm(motion['posed_joints'][0,wrist]-t['position']))
             angle=float(np.rad2deg(np.linalg.norm(Rotation.from_matrix(t['rotation'].T@motion['global_rot_mats'][0,wrist]).as_rotvec())))
             reach.append(dict(hand=hand,position_error_m=position_error,rotation_error_degrees=angle,passed=position_error<=.0001 and angle<=.1))
-        passed=audit['pose_witness_passed'] and all(r['passed'] for r in reach)
-        rows.append(dict(frame=frame,parameters=values.tolist(),candidate=audit,reach=reach,passed=bool(passed),solver=solver,seconds=time.monotonic()-frame_start))
+        passed=audit['pose_witness_passed'] and all(r['passed'] for r in reach) and step_pass
+        rows.append(dict(frame=frame,parameters=values.tolist(),candidate=audit,reach=reach,passed=bool(passed),solver=solver,seconds=time.monotonic()-frame_start,
+            arm_step_degrees=None if steps is None else steps.tolist(),sampled_step_passed=bool(step_pass)))
         save(output/'progress.json',dict(status='running',pid=psutil.Process().pid,frame=frame,rows=rows))
         if frame==start or frame%10==0 or frame==guard_end:print(dict(frame=frame,passed=passed,clearance=audit['objects'][0]['minimum_clearance_m'],evaluations=solver['solver']['evaluations']),flush=True)
         if solver['status']!='complete':
@@ -112,5 +123,6 @@ def run(pose_report,output,reserve=.0001):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('pose_report',type=Path);parser.add_argument('output',type=Path);parser.add_argument('--outward-reserve-m',type=float,default=.0001)
+    parser.add_argument('--continuity-weight',type=float,default=0.);parser.add_argument('--maximum-step-degrees',type=float,default=3.)
     args=parser.parse_args()
-    with threadpool_limits(limits=2):run(args.pose_report,args.output,args.outward_reserve_m)
+    with threadpool_limits(limits=2):run(args.pose_report,args.output,args.outward_reserve_m,args.continuity_weight,args.maximum_step_degrees)

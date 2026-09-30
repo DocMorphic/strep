@@ -7,6 +7,7 @@ from scipy.spatial.transform import Rotation
 from rigid_contact_placement import bounded
 from region_grasp_track import arm_columns
 from scene_solver_context import context_primitives
+from joint_continuity import rotation_residual
 
 
 def frame_problem(reference,frame,scene,anchors,contacts=True):
@@ -38,8 +39,15 @@ def fixed_finger_parameters(problem,reference_parameters,reference_local):
     return values
 
 
-def project(problem,fixed,initial_angles,targets,guard,maximum_evaluations=100,check_derivative=False):
+def project(problem,fixed,initial_angles,targets,guard,maximum_evaluations=100,check_derivative=False,previous_local=None,continuity_weight=0.):
+    if type(continuity_weight) not in [int,float] or not np.isfinite(continuity_weight) or continuity_weight<0:
+        raise ValueError('Finite nonnegative continuity weight required')
+    if (previous_local is None)!=(continuity_weight==0):raise ValueError('Physical continuity requires prior rotations and a positive weight')
+    if previous_local is not None and (np.asarray(previous_local).shape!=problem.initial.shape or not np.isfinite(previous_local).all()):
+        raise ValueError('Previous local rotation layout changed')
+    if previous_local is not None:previous_local=np.asarray(previous_local)
     columns,limits=arm_columns(problem);scaled=np.asarray(initial_angles).reshape(-1,3)/limits[:,None]
+    arm_joints=np.array(problem.editable)[columns.reshape(-1,3)[:,0]//3]
     if np.any(np.sum(scaled**2,axis=1)>=1):raise ValueError('Interior bounded arm initialization required')
     initial=(scaled/np.sqrt(1-np.sum(scaled**2,axis=1))[:,None]).ravel()
     hp=copy.copy(problem);hp.indices=problem.indices[:1];hp.bind=problem.bind[:1];hp.weights=problem.weights[:1]
@@ -50,6 +58,10 @@ def project(problem,fixed,initial_angles,targets,guard,maximum_evaluations=100,c
             wrist=problem.names.index(hand)
             values.extend([(positions[wrist]-problem.t(target['position']))/.001,((rotations[wrist]-problem.t(target['rotation']))/.01).reshape(-1)])
         return torch.cat(values)
+    def preference(raw):
+        if previous_local is None:return 1e-6*(raw-problem.t(initial))
+        theta=physical(raw)[columns].reshape(-1,3)
+        return rotation_residual(problem.initial[arm_joints],theta,problem.t(previous_local[arm_joints]),continuity_weight)
     class Reached(Exception):pass
     cache=None;last=initial.copy();evaluations=0;early=False
     def pair(raw):
@@ -61,14 +73,17 @@ def project(problem,fixed,initial_angles,targets,guard,maximum_evaluations=100,c
         # determine pose acceptance; this does not waive any geometry condition.
         if early and all(np.linalg.norm(row[:3])<.001 and np.linalg.norm(row[3:])<.001 for row in array.reshape(-1,12)):
             raise Reached()
-        jac=np.array([torch.autograd.grad(v,variable,retain_graph=True)[0].detach().numpy() for v in values])
-        residual=np.r_[array,1e-6*(raw-initial)];jac=np.r_[jac,1e-6*np.eye(len(raw))]
+        all_values=torch.cat([values,preference(variable)])
+        jac=np.array([torch.autograd.grad(v,variable,retain_graph=True)[0].detach().numpy() for v in all_values])
+        residual=all_values.detach().numpy()
         cache=raw.copy(),residual,jac;return residual,jac
     derivative_error=None
     if check_derivative:
         _,jac=pair(initial);direction=np.random.default_rng(549).normal(size=len(initial));direction/=np.linalg.norm(direction);h=1e-6
-        with torch.no_grad():fd=((geometry(problem.t(initial+h*direction))-geometry(problem.t(initial-h*direction)))/(2*h)).numpy()
-        np.testing.assert_allclose(jac[:len(fd)]@direction,fd,atol=2e-5,rtol=2e-4);derivative_error=float(abs(jac[:len(fd)]@direction-fd).max())
+        with torch.no_grad():
+            plus=problem.t(initial+h*direction);minus=problem.t(initial-h*direction)
+            fd=((torch.cat([geometry(plus),preference(plus)])-torch.cat([geometry(minus),preference(minus)]))/(2*h)).numpy()
+        np.testing.assert_allclose(jac@direction,fd,atol=2e-5,rtol=2e-4);derivative_error=float(abs(jac@direction-fd).max())
     early=True;cache=None;status='complete'
     try:
         fitted=least_squares(lambda raw:pair(raw)[0],initial,jac=lambda raw:pair(raw)[1],max_nfev=maximum_evaluations,ftol=1e-10,xtol=1e-10,gtol=1e-10)

@@ -918,6 +918,10 @@
         "docs/cylinder-hand-placement-v1.md",
         "docs/cylinder-guide-calibration-v1.md",
         "docs/cylinder-guide-track-v1.md",
+        "docs/cylinder-guide-continuity-v1.md",
+        "reports/cylinder-guide-track-review-v2/verification.json",
+        "reports/cylinder-guide-track-review-v2/comparison.json",
+        "reports/cylinder-guide-track-engine-v2/verification.json",
         "reports/cylinder-guide-track-review-v1/verification.json",
         "reports/cylinder-guide-track-review-v1/diagnosis.json",
         "reports/cylinder-guide-track-engine-v1/verification.json",
@@ -2980,6 +2984,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-30T03:27:14.638666+00:00",
-  "last_progress": "Moving cylinder grasp preserves fixed alternative guides and original edit/contact gates. All 62 native keys pass, but exported quarter-frame review finds 11 grasp geometry failures, 17 hand-contact failures and unsafe approach/release blends. Native replay and all 717 dense edit bounds pass; Godot verifies 360 actor-frames. Arm jumps reach 13 degrees and peak sampled acceleration 197.226 m/s2. Next constrain physical temporal joint motion before rechecking interpolation and boundary paths. Thirty-nine focused tests pass. Failed trajectory retained; all 14 release capabilities remain unapproved."
+  "last_progress_at": "2026-09-30T03:36:28.426826+00:00",
+  "last_progress": "Physical local-joint continuity preserves matched cylinder targets/guides/thresholds and yields zero exported grasp and release-guard contact/geometry failures. All 62 native keys and 717 dense edit bounds pass; maximum active arm step is 1.927 degrees. Full clip remains failed: 21 approach, 26 release and 125 inherited floor samples; peak speed worsens while acceleration improves to 43.072 m/s2. Forty-three focused tests and 180 Godot actor frames pass. Next preserve the grasp and replace unsafe boundary paths, then correct outer floor clearance. All 14 release capabilities remain unapproved."
 }

@@ -32,7 +32,8 @@ def run(study,output):
     assert [row['frame'] for row in track]==list(range(left+1,right))
     untouched=np.setdiff1d(np.arange(protocol['frame_count']),[row['frame'] for row in track])
     for key in source:np.testing.assert_array_equal(source[key][untouched],candidate[key][untouched])
-    arms,_=arm_columns(p);finger_slots=[i for i,j in enumerate(p.editable) if 'Hand' in p.names[j] and p.names[j] not in ['LeftHand','RightHand']]
+    arms,_=arm_columns(p);arm_joints=np.array(p.editable)[arms.reshape(-1,3)[:,0]//3]
+    finger_slots=[i for i,j in enumerate(p.editable) if 'Hand' in p.names[j] and p.names[j] not in ['LeftHand','RightHand']]
     finger_columns=np.array([3*i+k for i in finger_slots for k in range(3)]);fixed=np.setdiff1d(np.arange(p.dim),np.r_[arms,finger_columns]);native_bounds=0
     for record in track:
         frame=record['frame'];values=np.array(record['parameters']);p.frame=frame
@@ -46,6 +47,15 @@ def run(study,output):
         np.testing.assert_allclose(values,expected,atol=1e-12,rtol=0);assert abs(weight-record['blend_weight'])<1e-12
         audit,motion=p.independent(values);assert audit['bounds_passed'];native_bounds+=1
         for key in candidate:np.testing.assert_array_equal(motion[key][0].astype(candidate[key].dtype),candidate[key][frame])
+    native_steps=[]
+    for frame in range(start+1,end+1):
+        before=Rotation.from_matrix(candidate['local_rot_mats'][frame-1,arm_joints]);after=Rotation.from_matrix(candidate['local_rot_mats'][frame,arm_joints])
+        angles=np.rad2deg(np.linalg.norm((before.inv()*after).as_rotvec(),axis=1));row=active[frame]
+        if 'arm_step_degrees' in row:
+            np.testing.assert_allclose(angles,row['arm_step_degrees'],atol=1e-12,rtol=0)
+            expected=not protocol.get('continuity_weight',0) or bool(angles.max()<=protocol['maximum_step_degrees'])
+            assert expected==row['sampled_step_passed']
+        native_steps.append(dict(frame=frame,maximum_step_degrees=float(angles.max())))
     # Existing independent auditor verifies native FK and GLB keys, samples all
     # full-skin geometry and authored contacts, and reports speed/acceleration.
     geometry_audit(study,output/'geometry');dense=read(output/'geometry/verification.json')
@@ -61,11 +71,16 @@ def run(study,output):
     for name,obj in scene['objects'].items():
         op,orr=sample_object(obj,protocol['frame_count']);objects[name]=(op,Slerp(np.arange(len(orr)),Rotation.from_matrix(orr)))
     region_specs={c['id']:compile_region(c,scene,p.skin) for c in scene['contacts']}
+    previous_dense_local=None;dense_steps=[]
     for frame in times:
         matrices={};local={}
         for label,(sampler,joints) in samples.items():
             matrices[label]=sampler.sample(frame/30)[joints]
             local[label]=Rotation.from_quat([AnimationSampler.value(*channels[label][j][1:],frame/30) for j in joints]).as_matrix()
+        if start<frame<=end:
+            change=(Rotation.from_matrix(previous_dense_local[arm_joints]).inv()*Rotation.from_matrix(local['candidate'][arm_joints])).as_rotvec()
+            dense_steps.append(dict(frame=float(frame),maximum_step_degrees=float(np.rad2deg(np.linalg.norm(change,axis=1)).max())))
+        previous_dense_local=local['candidate']
         angles=np.rad2deg(np.linalg.norm(Rotation.from_matrix((local['source'].transpose(0,2,1)@local['candidate']).reshape(-1,3,3)).as_rotvec(),axis=1))
         delta=matrices['candidate'][0,:3,3]-matrices['source'][0,:3,3]
         passed=bool(np.all(angles<=limits+1e-4) and -1e-7<=delta[1]<=p.config['max_root_lift_m']+1e-7 and abs(delta[[0,2]]).max()<1e-7)
@@ -98,6 +113,10 @@ def run(study,output):
     report=dict(at=now(),study=study.relative_to(ROOT).as_posix(),result_sha256=sha256(study/'result.json'),auditor_sha256=sha256(__file__),
         native_replayed_frames=len(track),native_bounds_passes=native_bounds,unchanged_frames=len(untouched),geometry_audit_sha256=sha256(output/'geometry/verification.json'),
         dense_bounds=bounds,dense_bound_failures=sum(not r['passed'] for r in bounds),original_guides=original_rows,
+        native_arm_steps=native_steps,maximum_native_arm_step_degrees=max(r['maximum_step_degrees'] for r in native_steps),
+        dense_active_arm_steps=dense_steps,maximum_dense_active_arm_speed_degrees_s=max(r['maximum_step_degrees'] for r in dense_steps)*120,
+        sampled_step_failures=sum(r['maximum_step_degrees']>protocol['maximum_step_degrees']+1e-4 for r in native_steps) if protocol.get('continuity_weight',0) else None,
+        dense_step_failures=sum(r['maximum_step_degrees']>protocol['maximum_step_degrees']/4+1e-4 for r in dense_steps) if protocol.get('continuity_weight',0) else None,
         original_guide_failures=sum(not c['passed'] for r in original_rows for c in r['guides']),release_guard=guard_rows,
         release_guard_contact_failures=sum(not c['all_conditions_passed'] for r in guard_rows for c in r['contacts']),phases=phases,quality_approved=False)
     save(output/'verification.json',report);print({k:report[k] for k in ['native_replayed_frames','unchanged_frames','dense_bound_failures','original_guide_failures','release_guard_contact_failures','phases']},flush=True)

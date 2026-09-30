@@ -50,3 +50,17 @@ def test_projection_stops_at_reached_wrist_without_claiming_pose_acceptance(fixt
     assert result['solver']['success'] is None
     np.testing.assert_allclose(parameters,reference,atol=1e-15,rtol=0)
     assert not p.independent(parameters)[0]['pose_witness_passed'] # Original guides still fail.
+
+
+def test_physical_continuity_validates_prior_and_preserves_reached_pose(fixture):
+    p,_,_,_=fixture;reference=np.array(read(ROOT/'reports/cylinder-guide-projection-v1/result.json')['parameters'])
+    _,motion=p.independent(reference);columns,_=arm_columns(p)
+    targets={hand:dict(position=motion['posed_joints'][0,p.names.index(hand)],rotation=motion['global_rot_mats'][0,p.names.index(hand)]) for hand in ['LeftHand','RightHand']}
+    with pytest.raises(ValueError,match='prior rotations'):
+        project(p,reference,reference[columns],targets,lambda:None,continuity_weight=1.)
+    with pytest.raises(ValueError,match='layout'):
+        project(p,reference,reference[columns],targets,lambda:None,previous_local=np.eye(3),continuity_weight=1.)
+    values,record=project(p,reference,reference[columns],targets,lambda:None,previous_local=motion['local_rot_mats'][0].tolist(),continuity_weight=1.,check_derivative=True)
+    assert record['solver']['termination']=='numerical_wrist_targets_reached'
+    assert record['derivative_error']<2e-5
+    np.testing.assert_allclose(values,reference,atol=1e-15,rtol=0)
