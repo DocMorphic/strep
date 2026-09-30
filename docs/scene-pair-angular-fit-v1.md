@@ -1,6 +1,6 @@
 # Matched angular-constrained paired fitting
 
-The [angular review](scene-pair-angular-v1.md) found changes that positional motion checks did not cover. A new fitting experiment now appends angular speed and acceleration norm constraints to the existing refined-curve problem. The real fixture run is queued behind the active full-mesh audit; no real-scene solver or candidate result is claimed yet.
+The [angular review](scene-pair-angular-v1.md) found changes that positional motion checks did not cover. A fitting experiment now appends angular speed and acceleration norm constraints to the existing refined-curve problem. The real fixture solve and exported comparisons have since completed; see the [result and fixed-window obstruction](scene-pair-window-limit-v1.md). None of the five exported fractions passes both motion screens.
 
 ## What remains matched
 
@@ -24,6 +24,6 @@ Other tests verify unchanged preexisting rows, actor-column separation, unequal 
 
 The optional bounded wait acquires the existing OS worker lock before loading the real fixture and running the solve. It does not start a competing heavy job, recreate an existing destination or restart the geometry audit. It stops waiting after the declared timeout. The current destination is `reports/scene-pair-angular-fit-v1`; a historical process observation is saved separately in `reports/scene-pair-angular-fit-v1-queue.json`. Process identity and the command handle, not that record alone, establish whether it is still waiting or running.
 
-The previous quarter-step geometry audit remains active in `reports/scene-pair-refinement-geometry-v1`. Its successful engine import and incomplete geometry must not be treated as a final acceptance result. Once the new solve is terminal, retain either its failure or proposed controls and independently check every attempted export. The extra parent-evidence bindings in the new proposal also need support in the existing export-audit loader before reuse; that dependency is unchanged while the original mesh worker is live.
+The previous quarter-step geometry audit and the new solve are both terminal. Every attempted angular-constrained export is retained and independently checked. After the original worker finished, the export loader was updated to verify and retain extra parent-evidence bindings without dropping required original inputs. The result above documents the remaining failures.
 
 Production paired fitting, the published Studio candidate and all release approvals remain unchanged. These angular caps are a source-relative engineering constraint, not a validated naturalness criterion. No held-out actions, new training or human quality ratings are involved.

@@ -72,6 +72,9 @@ jobs:
           tests/test_joint_angular_rates.py
           tests/test_angular_motion_rows.py
           tests/test_scene_pair_angular_constraints.py
+          tests/test_bound_evidence.py
+          tests/test_paired_window_feasibility.py
+          tests/test_proximity_candidate_filter.py
           tests/test_scene_joint_rates.py
           tests/test_lsmr_accuracy.py
           tests/test_inward_feasibility_step.py

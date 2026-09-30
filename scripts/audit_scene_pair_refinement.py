@@ -9,6 +9,7 @@ from scene_pair_problem import load_actors, ScenePairProblem
 from timed_rotation_edit import TimedRotationEdit
 from study_scene_pair_fit import exported_motion
 from verify_scene_pair_fit import rate_check
+from bound_evidence import bind_inputs
 
 
 def run(refinement, output):
@@ -29,8 +30,7 @@ def run(refinement, output):
         files[str(path)] = digest
     study = Path(request['study']); original_request, _, bound_files = load_bound_study(study)
     files.update(bound_files)
-    for name, digest in request['inputs'].items():
-        if files.get(name) != digest: raise ValueError('Refinement input binding differs')
+    files.update(bind_inputs(bound_files, request['inputs']))
     _, actors = load_actors(Path(original_request['prepared_request']).parent)
     if [a['name'] for a in actors] != [a['actor'] for a in request['actors']]: raise ValueError('Refined actor order changed')
     for actor, description in zip(actors, request['actors']):
@@ -45,7 +45,7 @@ def run(refinement, output):
     step = np.asarray(step); problem.split(step)
     output.mkdir(); (output/'implementation').mkdir()
     methods = {}
-    for name in sorted(set(request['implementation']) | {'audit_scene_pair_refinement.py', 'verify_scene_pair_fit.py'}):
+    for name in sorted(set(request['implementation']) | {'audit_scene_pair_refinement.py', 'verify_scene_pair_fit.py', 'bound_evidence.py'}):
         shutil.copyfile(ROOT/'scripts'/name, output/'implementation'/name); methods[name] = sha256(output/'implementation'/name)
     save(output/'request.json', dict(at=now(), refinement=str(refinement), inputs=files, implementation=methods,
         factors=[1., .5, .25, .125, .0625], scope='Export and independent original-bin motion checks only. Full fresh mesh/floor queries and engine import still required.', quality_approved=False))

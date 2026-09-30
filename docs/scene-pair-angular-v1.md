@@ -25,7 +25,7 @@ Finite differences through the world rotations supply derivatives for the existi
 
 The new geometry runner reconstructs the quarter-step GLBs exactly from their saved controls before importing them. Godot verifies both originals and both candidates: **four clips, 444 actor-frame observations**, 77 bones each, one skinned surface, original duration and nonlooping playback. Maximum position error is 6.574707e-7 m; maximum basis-element error is 6.565565e-7.
 
-The complete 126-time, 252-direction mesh/floor audit is still running in `reports/scene-pair-refinement-geometry-v1`. Its engine evidence is complete, but partial geometry rows do not establish a final result. The live worker identity and command session are tracked separately from its progress file. The candidate has not replaced the existing Studio comparison. A local geometry pass also cannot erase the new angular observations.
+The complete 126-time, 252-direction mesh/floor audit subsequently finished without a sampled depth-cap or floor regression. All 37 failing times remain; see the [completed review and fixed-window obstruction](scene-pair-window-limit-v1.md). The candidate has not replaced the existing Studio comparison. Its local geometry pass cannot erase the angular observations.
 
 ## Reproduction
 
