@@ -69,6 +69,7 @@ jobs:
           tests/test_hand_witness_reuse.py
           tests/test_hand_control_reuse.py
           tests/test_hand_geometry_comparison.py
+          tests/test_independent_hand_motion.py
           tests/test_native_waypoint_clock.py
           tests/test_motion_lattice.py
           tests/test_decoded_motion_edges.py
