@@ -292,5 +292,19 @@ The envelope study uses the same original donor, six-iteration limit, three
 proposal radii and eight backoffs. Its first iteration accepted no proposal;
 all 24 exact trials had a negative constraint margin. The solver stage stopped
 early and retained the donor. This finite local failure is not a proof that the
-problem has no solution. The fresh exported mesh audit is still running. No
-model training or held-out prompts are used; all 14 capabilities stay unapproved.
+problem has no solution. The completed fresh mesh audit reproduces the donor
+exactly: both candidate GLB hashes match the donor, all 43 two-direction depths
+match, and 17 times still fail with a 20.932800 mm peak. Original motion checks
+pass over all 148 times. No candidate replaces Studio.
+
+The local models predict only about 0.000013 mm peak reduction under the added
+per-witness limits. All 24 actual backoffs fail a constraint; increasing the
+iteration budget cannot change this study's early stop. This is evidence against
+continuing the same local formulation unchanged, not evidence of general
+infeasibility or permission to weaken the original study's acceptance gates.
+
+Completed envelope result: `dd1ff1b603abf6d58075ca557f787ce7a468752fb73d64c3936e86a13b327867`.
+Geometry: `0de5059470998ae0d5ba7e827117d81ff3a5cb8b095d5f288986c70b4d0aa6b9`.
+Envelope: `83559a7ec671f0d5707522e4c38bd0fd04ea1284e41f0c2758a3e3f9cdba291e`.
+All workers for this comparison are terminal. No model training or held-out
+prompts are used; all 14 capabilities stay unapproved.

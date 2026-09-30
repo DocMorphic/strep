@@ -41,6 +41,8 @@ The [bounded region-grasp correction](docs/sphere-region-upper-return-v1.md) pas
 
 The owner will perform developer review first. Independent animator review and timed cleanup evidence remain release requirements.
 
+[Between-pose skin bounds](docs/skin-motion-intervals-v1.md) now account for native rotation interpolation and the full rig hierarchy when bounding vertex movement. A three-interval development audit bounds surface separation in one interval and leaves two unresolved. This supplements sampled collision measurements; continuous collision freedom and motion quality remain unproven.
+
 [Visual hand-region selection](docs/studio-hand-selection-v1.md) now connects selected hand triangles to saved contact-fitting requests, alongside object grip picking. Mesh identity, all eight skin weights, edit bounds and exported geometry are checked; this currently covers canonical SOMA scenes and is not general grasp or animation-quality approval.
 
 ## Using this source snapshot
