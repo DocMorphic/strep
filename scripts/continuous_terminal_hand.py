@@ -47,7 +47,8 @@ def solve(evaluate,scale,starts,*,iterations=100,observe=None):
     depth. Mesh clearance remains a separate fresh query after this solve.
     """
     scale=np.asarray(scale,float)
-    if scale.shape!=(5,) or not np.isfinite(scale).all() or np.any(scale<=0):raise ValueError('Five positive control scales required')
+    if scale.ndim!=1 or len(scale) not in [5,11] or not np.isfinite(scale).all() or np.any(scale<=0):raise ValueError('Five or eleven positive control scales required')
+    dimensions=len(scale)
     if type(iterations) is not int or iterations<1:raise ValueError('Positive iteration budget required')
     cache={};records=[];best=None
     def physical(x):
@@ -66,29 +67,29 @@ def solve(evaluate,scale,starts,*,iterations=100,observe=None):
         if feasible and (best is None or depth<best['witness_peak_m']):best=record.copy()
         if observe:observe(record,best)
         return float(depth),margins
-    baseline=physical(np.zeros(5))
+    baseline=physical(np.zeros(dimensions))
     if best is None:raise ValueError('Unchanged source must remain motion feasible')
     reports=[]
     for start in starts:
         normalized=np.asarray(start,float)/scale
-        if normalized.shape!=(5,) or not np.isfinite(normalized).all() or np.any(np.abs(normalized)>1):raise ValueError('Matching bounded finite start required')
+        if normalized.shape!=(dimensions,) or not np.isfinite(normalized).all() or np.any(np.abs(normalized)>1):raise ValueError('Matching bounded finite start required')
         depth,_=physical(normalized);initial=np.r_[normalized,min(10.,depth/.02)]
         def constraints(x):
-            measured,margins=physical(x[:5])
-            return np.r_[margins,x[5]-measured/.02]
-        result=minimize(lambda x:x[5]+1e-7*np.dot(x[:5],x[:5]),initial,
-            jac=lambda x:np.r_[2e-7*x[:5],1.],method='SLSQP',bounds=[(-1.,1.)]*5+[(0.,10.)],
+            measured,margins=physical(x[:dimensions])
+            return np.r_[margins,x[dimensions]-measured/.02]
+        result=minimize(lambda x:x[dimensions]+1e-7*np.dot(x[:dimensions],x[:dimensions]),initial,
+            jac=lambda x:np.r_[2e-7*x[:dimensions],1.],method='SLSQP',bounds=[(-1.,1.)]*dimensions+[(0.,10.)],
             constraints=[dict(type='ineq',fun=constraints)],options=dict(maxiter=iterations,ftol=1e-9,eps=1e-4))
-        measured,margins=physical(result.x[:5])
+        measured,margins=physical(result.x[:dimensions])
         backoff=None
         if np.any(margins<0):
             # Solver roundoff is not permission to relax a hard gate. Search
             # toward the known feasible source and re-evaluate actual margins.
             for factor in [.999,.99,.9,.75,.5,.25,.1,.01]:
-                candidate_depth,candidate_margins=physical(result.x[:5]*factor)
+                candidate_depth,candidate_margins=physical(result.x[:dimensions]*factor)
                 if np.all(candidate_margins>=0):
                     backoff=dict(factor=factor,witness_peak_m=candidate_depth);break
         reports.append(dict(start=np.asarray(start).tolist(),success=bool(result.success),status=int(result.status),message=str(result.message),
-            iterations=int(result.nit),function_evaluations=int(result.nfev),returned_controls=(result.x[:5]*scale).tolist(),
-            returned_witness_peak_m=measured,returned_minimum_margin=float(margins.min()),returned_epigraph_m=float(result.x[5]*.02),feasible_backoff=backoff))
+            iterations=int(result.nit),function_evaluations=int(result.nfev),returned_controls=(result.x[:dimensions]*scale).tolist(),
+            returned_witness_peak_m=measured,returned_minimum_margin=float(margins.min()),returned_epigraph_m=float(result.x[dimensions]*.02),feasible_backoff=backoff))
     return best,reports,records
