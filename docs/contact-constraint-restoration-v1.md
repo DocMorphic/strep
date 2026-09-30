@@ -18,4 +18,28 @@ Eighty-seven focused tests pass across bounded optimization, restoration, held/l
 
 The matched landing experiment uses the original source, warm seed, request, four fitting stages and 60 iterations per stage in both arms. Fixed-patch support stays enabled, the optional body fitting penalty stays disabled, and the restoration step independently checks the original raw/limb body limits. The only intervention is zero versus three restoration attempts after the fit. Before the experimental arm runs, the control must reproduce the previous default-scale NPZ, BVH, GLB and contact/body audits byte-for-byte. Every input, method and output is retained under ignored `reports/contact-constraint-restoration-v1` with hashes. Methods stay frozen until workers finish and their evidence is accounted for.
 
-No real-motion improvement is established at this publication. Full decoded export checks, original physical budgets and engine evidence determine the result. Both failures and successes will be retained; all fourteen release capabilities remain unapproved.
+The completed experiment below preserves both failures. Full decoded export checks remain decisive; all fourteen release capabilities remain unapproved.
+
+
+## Completed result: lower worst residual trades away other failed constraints
+
+Both fits finished and independent verification completed on 2026-09-30. The control reproduces the previous unit-scale NPZ, BVH, GLB and contact/body audits byte-for-byte. All original input, method snapshot, completion-artifact and paired-protocol checks pass. Full decoded GLB audits and native body/support measurements replay successfully, and original root/rotation/held-pose budgets pass for both outputs.
+
+| Measurement | Control | Three restoration attempts |
+| --- | ---: | ---: |
+| Total fit/correction seconds | 321.32 | 497.80 |
+| Maximum pin error, mm | 5.370261 | 5.336574 |
+| Pin samples exceeding 5 mm / 61 | 2 | 2 |
+| Approach speed excess, m/s | 0.000048219 | 0 |
+| Approach acceleration excess, m/s² | 0.000060311 | 0 |
+| Hold speed excess, m/s | 0.000035444 | 0 |
+| Hold acceleration excess, m/s² | 0.002034130 | 0.132427080 |
+| Release speed excess, m/s | 0.000250459 | 0.000518115 |
+| Release acceleration excess, m/s² | 0.000254704 | 0.052806606 |
+| Contact screen | Fail | Fail |
+
+The three accepted step fractions are 1/32, 1/16 and 1/16. Thirteen larger nonlinear proposals were rejected. The maximum normalized proxy violation falls from 0.074057656 to 0.067894001, and no previously passing vector entry becomes failing. However, the policy permits already-failed entries to worsen: the hold-acceleration residual grows from 0.001266881 to 0.067894001, while release speed and acceleration also deteriorate. The decoded output confirms the tradeoff. A lower minimax score is therefore insufficient evidence of a useful repair. The extra objective evaluation recorded in the recipe refreshes diagnostics; evaluation counts exclude restoration Jacobian and backtracking calls, so elapsed time is the relevant cost comparison.
+
+Global rate excess, added floor depth and all outside-window joint/basis/skin errors remain zero. Both body flag lists are empty and fixed raw/limb support allowances pass. Maximum physical root lifts are 0.747263 and 0.783682 mm; maximum rotation edits are 0.672750 and 0.704179 degrees. Both actual engine runs pass 284 pose observations, authored events at frames 85/100, automatic/reverse playback, callback and unloading checks. Independent verification rechecks these retained captures; it does not add new engine runs. These checks do not establish realism.
+
+Evidence is retained in `reports/contact-constraint-restoration-v1` and `reports/contact-constraint-restoration-verification-v1`. The experiment's method freeze is accounted for. Keep restoration disabled by default. Before another motion experiment, strengthen both linear proposal and nonlinear acceptance to prevent worsening existing constraint violations, and test that policy on this reproduced tradeoff. This is a search safeguard, not an infeasibility proof or assurance of eventual convergence. Broader scene/partner coverage, held-out fixtures and human evidence remain necessary; this landing case is not the release definition.

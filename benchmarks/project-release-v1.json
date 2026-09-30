@@ -2946,6 +2946,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-30T00:36:05.946085+00:00",
-  "last_progress": "Studio preflight now includes full-distance certificates for incompatible crawl-11 and kick-11 requests. The six-run support comparison is independently verified with one original numerical contact pass and six engine passes; a separate crawl-22 export repair passes its original limits without rewriting the comparison. Landing coordinate scaling leaves both contact screens failing, while original bounds and engine checks pass. A new optional coupled constraint-restoration implementation passes 87 focused tests and is under matched landing evaluation; its real-motion outcome is pending. No release capability or human-quality approval changed."
+  "last_progress_at": "2026-09-30T00:48:27.525623+00:00",
+  "last_progress": "Coupled contact restoration is terminal and independently verified. Default motion/audits reproduce the prior landing exactly. Three accepted steps slightly improve pins and clear approach/hold-speed failures, but worsen existing hold/release acceleration; both contact screens still fail. Original edit/support/floor/held/global bounds and 568 engine observations pass. Keep the optional method disabled and strengthen acceptance against trading failed constraints before further evaluation. Broad release fixtures and human/cleanup evidence remain open; all 14 capabilities are unapproved."
 }
