@@ -1,4 +1,4 @@
-"""Bake and audit a waypoint through the first collision cluster; retain later failures."""
+"""Bake and audit paired wrist guides with native keys and protected contact."""
 import argparse
 from pathlib import Path
 import shutil
@@ -56,6 +56,9 @@ def run(plan,output,path_plan=None):
     times=actors[0]['model'].times
     np.testing.assert_array_equal(times,[r['time_s'] for r in previous])
     window=peak_window(previous,protocol['sample'],prepared['authored']['window_s'])
+    if path_plan is not None and read(Path(path_plan)/'request.json').get('planning_interval_policy')=='guarded_precontact':
+        from native_waypoint_clock import guarded_approach_window
+        window=guarded_approach_window(prepared['authored']['window_s'],float(times[protocol['sample']]),prepared['protected_seconds'])
     for span in prepared['protected_seconds']:
         if window[0]<span[1] and window[2]>span[0]:raise ValueError('Approach interval crosses a protected contact')
     guide=axis=route=None
@@ -69,7 +72,8 @@ def run(plan,output,path_plan=None):
             channels=rotation_channels(native_rig.document,native_rig.binary)
             native_clocks.extend(channels[node][1] for node in protocol['chains'][actor['name']])
         guide,axis,route,path_files=load_path(path_plan,plan,window,files,
-            native_clocks=native_clocks,protected=prepared['protected_seconds']);files.update(path_files)
+            native_clocks=native_clocks,protected=prepared['protected_seconds'],authored_window=prepared['authored']['window_s'],
+            peak_time=float(times[protocol['sample']]));files.update(path_files)
     if [a['name'] for a in actors]!=[a['actor'] for a in waypoint['actors']]:raise ValueError('Waypoint actor order differs')
     if sha256(ROOT/'scripts/convex_partner_surface.py')!=request['implementation']['convex_partner_surface.py']:
         raise ValueError('Reused geometry method differs')
@@ -123,7 +127,7 @@ def run(plan,output,path_plan=None):
     save(output/'request.json',dict(at=now(),plan=str(plan),waypoint=waypoint['id'] if guide is None else None,
         path_plan=None if path_plan is None else str(Path(path_plan).resolve()),path_route=route,inputs=files,implementation=methods,
         window_s=list(window),protected_seconds=prepared['protected_seconds'],native_edit_budget_degrees=45.,
-        scope='New experimental approach for the first collision cluster only. Native clocks, frozen keys, outside-window and protected contact poses remain exact. Original-relative rates are measured and may fail; no relaxed motion approval is inferred. Full local-clock vertex geometry and engine audit follow; later source failures remain.',quality_approved=False))
+        scope='Experimental approach inside the recorded edit window. Native clocks, frozen keys, outside-window and protected contact poses remain exact. Original-relative rates are measured and may fail; no relaxed motion approval is inferred. Full local-clock vertex geometry and engine audit follow; all failures remain visible.',quality_approved=False))
     save(output/'decoded.json',records);save(output/'manifest.json',dict(cases=cases,quality_approved=False))
     print(dict(phase='decoded',window=window,waypoint=waypoint['id'] if guide is None else route['axis_name'],positional_failures=[r['positional']['failures'] for r in records]),flush=True)
     engine_run(output,output/'engine');rows=[];reused=0

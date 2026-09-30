@@ -7,7 +7,7 @@ from scipy.spatial.transform import Rotation
 from strep import ROOT,read,save,sha256,now
 
 
-def run(previous,output,native_clock=False):
+def run(previous,output,native_clock=False,full_approach=False):
     from diagnose_scene_pair_limits import load_bound_study
     from bound_evidence import bind_inputs
     from scene_pair_problem import load_actors
@@ -17,7 +17,7 @@ def run(previous,output,native_clock=False):
     from two_bone_waypoint import reach
     from elbow_swivel import capsule_radius,segment_distance,local_transforms
     from waypoint_lattice import shortest_path,LinearGuide
-    from native_waypoint_clock import guide_clock
+    from native_waypoint_clock import guide_clock,guarded_approach_window
     from paired_temporal_neighbor import rotation_channels
     previous,output=Path(previous).resolve(),Path(output).resolve()
     if output.exists():raise ValueError('Fresh waypoint path study required')
@@ -46,6 +46,10 @@ def run(previous,output,native_clock=False):
     prepared,actors=load_actors(Path(original['prepared_request']).parent)
     window=np.asarray(request['window_s'],float)
     if window.shape!=(3,) or not window[0]<window[1]<window[2]:raise ValueError('Valid prior approach window required')
+    if full_approach:
+        native_clock=True
+        window=np.asarray(guarded_approach_window(prepared['authored']['window_s'],
+            float(actors[0]['model'].times[protocol['sample']]),prepared['protected_seconds']))
     measured=read(previous/'geometry.json')
     returning=max((r for r in measured if window[0]<r['time_s']<window[2]),key=lambda r:r['candidate_depth_m'])
     times=np.unique(np.r_[np.linspace(window[0],window[2],9),window[1],returning['time_s']])
@@ -74,9 +78,11 @@ def run(previous,output,native_clock=False):
     save(output/'request.json',dict(at=now(),previous=str(previous),source_plan=str(plan),source_study=str(study),
         inputs=files,implementation=methods,window_s=window.tolist(),times_s=times.tolist(),
         clock_mode='native_shared' if native_clock else 'uniform_with_failure_times',
+        planning_interval_policy='guarded_precontact' if full_approach else 'first_cluster',
         states=states.tolist(),axes={name:axis.tolist() for name,axis in axes},guide_rate_limits=limits.tolist(),
         rates_units=['m/s','degrees/s','degrees/s'],native_pose_budget_degrees=45.,transition_weight=.1,
-        scope='Finite time-indexed guide search. Per-node forearm capsules rank geometry; they do not certify full-mesh or between-node clearance. Piecewise-linear parameter rates are bounded, not actual character rates or acceleration. First collision cluster only; protected poses and later failures remain in subsequent baking.',quality_approved=False))
+        scope='Finite time-indexed guide search. Per-node forearm capsules rank geometry; they do not certify full-mesh or between-node clearance. Piecewise-linear parameter rates are bounded, not actual character rates or acceleration. '+
+            ('Full guard-delimited native support inside the existing authored interval; protected poses remain fixed.' if full_approach else 'First collision cluster only; protected poses and later failures remain in subsequent baking.'),quality_approved=False))
     for ti,stamp in enumerate(times):
         caches=[]
         for actor_index,(actor,source) in enumerate(zip(actors,sources)):
@@ -131,5 +137,5 @@ if __name__=='__main__':
     from action_worker_lock import worker_lock
     from threadpoolctl import threadpool_limits
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('previous',type=Path);p.add_argument('output',type=Path)
-    p.add_argument('--native-clock',action='store_true');a=p.parse_args()
-    with worker_lock(),threadpool_limits(limits=1):run(a.previous,a.output,a.native_clock)
+    p.add_argument('--native-clock',action='store_true');p.add_argument('--full-approach',action='store_true');a=p.parse_args()
+    with worker_lock(),threadpool_limits(limits=1):run(a.previous,a.output,a.native_clock,a.full_approach)

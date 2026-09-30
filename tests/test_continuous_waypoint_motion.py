@@ -13,9 +13,11 @@ from rig_clip_import import AnimationSampler
 
 
 @pytest.mark.parametrize('actor',[0,1])
-def test_batch_continuous_replay_matches_export_between_keys_and_zero_pose(actor,tmp_path):
+@pytest.mark.parametrize('extended',[False,True])
+def test_batch_continuous_replay_matches_export_between_keys_and_zero_pose(actor,extended,tmp_path):
     rig,clock=rig_fixture();rig.document['skins']=[dict(joints=rig.joints)]
-    window=[.15,.5,.85];native=guide_clock([clock]*6,window,[]);times=np.arange(241)/120
+    window=[.15,.5,1.85 if extended else .85];native=guide_clock([clock]*6,window,[]);times=np.arange(241)/120
+    if extended:assert len(native)>12
     axis=np.array([0.,0.,1.]);model=ContinuousWaypointMotion(rig,[1,2,3],native,times,[],np.eye(3),axis,actor)
     controls=np.zeros((len(native),3));weights=np.sin(np.linspace(0,np.pi,len(native)))**2
     controls[1:-1]=weights[1:-1,None]*np.array([.0073,4.1,-3.2]);guide=LinearGuide(native,controls,[.8,300,300])

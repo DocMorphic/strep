@@ -4,12 +4,13 @@ from scipy.optimize import minimize
 from sampled_motion_caps import measures,features
 
 
-def project(models,caps,native,target,limits,*,max_evaluations=1200,observe=None,method='COBYLA'):
+def project(models,caps,native,target,limits,*,max_evaluations=1200,observe=None,method='COBYLA',start='source'):
     native=np.asarray(native,float);target=np.asarray(target,float);limits=np.asarray(limits,float)
     if target.shape!=(len(native),3) or np.any(target[[0,-1]]) or not np.isfinite(target).all():raise ValueError('Matching finite target guide required')
     if limits.shape!=(3,) or not np.isfinite(limits).all() or np.any(limits<=0):raise ValueError('Three positive guide rate limits required')
     if type(max_evaluations) is not int or max_evaluations<1:raise ValueError('Positive evaluation limit required')
     if method not in ['COBYLA','SLSQP']:raise ValueError('Declared projection method required')
+    if start not in ['source','target']:raise ValueError('Declared source or target initialization required')
     scale=np.array([.06,30.,30.]);desired=(target[1:-1]/scale).ravel();zero=np.zeros_like(desired)
     lower=np.tile([0.,-1.,-1.],len(native)-2);upper=np.ones_like(lower)
     cache={};best=None;records=[]
@@ -55,10 +56,10 @@ def project(models,caps,native,target,limits,*,max_evaluations=1200,observe=None
     options=(dict(rhobeg=.1,tol=1e-5,catol=1e-9,maxiter=max_evaluations) if method=='COBYLA'
              else dict(maxiter=max_evaluations,ftol=1e-9,eps=1e-4))
     kwargs={} if method=='COBYLA' else dict(jac=lambda x:2*(x-desired)/len(desired))
-    result=minimize(lambda x:evaluate(x)[0],zero,method=method,bounds=list(zip(lower,upper)),
+    result=minimize(lambda x:evaluate(x)[0],zero if start=='source' else desired,method=method,bounds=list(zip(lower,upper)),
         constraints=[dict(type='ineq',fun=lambda x:evaluate(x)[1])],options=options,**kwargs)
     evaluate(result.x)
     return best,dict(success=bool(result.success),status=int(result.status),message=str(result.message),
-        method=method,function_evaluations=int(result.nfev),recorded_evaluations=len(records),returned_objective=float(result.fun),
+        method=method,start=start,function_evaluations=int(result.nfev),recorded_evaluations=len(records),returned_objective=float(result.fun),
         returned_minimum_margin=float(evaluate(result.x)[1].min()),
         note='Only independently feasible observed controls are retained; optimizer success does not approve the motion.'),records

@@ -38,7 +38,8 @@ def run(plan,output):
         sampler=AnimationSampler(rig.document,rig.binary,0)
         sources.append(dict(rig=rig,chain=chain,rotation=actor['rotation']))
         worlds.append(np.array([sampler.sample(t) for t in times]))
-    guide,_,_,files=load_path(plan,source_plan,request['window_s'],required,native_clocks=clocks,protected=prepared['protected_seconds'])
+    guide,_,_,files=load_path(plan,source_plan,request['window_s'],required,native_clocks=clocks,protected=prepared['protected_seconds'],
+        authored_window=prepared['authored']['window_s'],peak_time=float(times[protocol['sample']]))
     parts=[features(w,s['rig'].joints) for w,s in zip(worlds,sources)]
     source={k:np.concatenate([p[k] for p in parts],axis=1) for k in ['positions','rotations']}
     caps=SampledMotionCaps(source,times,prepared['authored']['knots_s'])

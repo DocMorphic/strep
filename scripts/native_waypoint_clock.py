@@ -7,6 +7,21 @@ import numpy as np
 from timed_rotation_edit import editable_keys
 
 
+def guarded_approach_window(authored,peak,protected):
+    """Largest guard-delimited interval containing the requested editable peak."""
+    authored=np.asarray(authored,float);spans=np.asarray(protected,float).reshape(-1,2)
+    if authored.shape!=(2,) or not np.isfinite(authored).all() or not np.isfinite(peak) or not 0<=authored[0]<peak<authored[1]:
+        raise ValueError('Peak inside a finite authored edit interval required')
+    if not np.isfinite(spans).all() or np.any(spans<0) or np.any(spans[:,1]<spans[:,0]):
+        raise ValueError('Ordered finite protected intervals required')
+    start,end=authored
+    for first,last in spans:
+        if first<=peak<=last:raise ValueError('Requested approach peak is protected')
+        if last<peak:start=max(start,last)
+        if first>peak:end=min(end,first)
+    return float(start),float(peak),float(end)
+
+
 def guide_clock(clocks,window,protected):
     window=np.asarray(window,float)
     if window.shape!=(3,) or not np.isfinite(window).all() or not 0<=window[0]<window[1]<window[2]:

@@ -66,3 +66,23 @@ def test_native_clock_recomputed_from_sources_and_guards(tmp_path,fault):
     else:
         with pytest.raises((ValueError,AssertionError)):
             load_path(tmp_path,tmp_path/'plan',window,inputs,native_clocks=clocks,protected=protected)
+
+
+@pytest.mark.parametrize('fault',[None,'authored','guard','peak','missing','policy'])
+def test_full_interval_is_recomputed_from_bound_authored_request(tmp_path,fault):
+    inputs=fixture(tmp_path);window=[.8,2,3.3];request=read(tmp_path/'request.json')
+    request.update(window_s=window,clock_mode='native_shared',planning_interval_policy='guarded_precontact')
+    if fault=='policy':request['planning_interval_policy']='unbounded'
+    save(tmp_path/'request.json',request);result=read(tmp_path/'result.json')
+    result['request_sha256']=sha256(tmp_path/'request.json');save(tmp_path/'result.json',result)
+    authored=[.8,4];protected=[[3.3,3.3]];peak=2.
+    if fault=='authored':authored=[.9,4]
+    if fault=='guard':protected=[[3.1,3.1]]
+    if fault=='peak':peak=2.1
+    if fault=='missing':authored=None
+    kwargs=dict(native_clocks=[np.arange(5.)]*6,protected=protected,authored_window=authored,peak_time=peak)
+    if fault is None:
+        guide,_,_,_=load_path(tmp_path,tmp_path/'plan',window,inputs,**kwargs)
+        np.testing.assert_array_equal(guide.times,[1,2,3])
+    else:
+        with pytest.raises((ValueError,AssertionError)):load_path(tmp_path,tmp_path/'plan',window,inputs,**kwargs)

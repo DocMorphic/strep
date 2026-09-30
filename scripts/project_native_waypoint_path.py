@@ -1,11 +1,11 @@
-"""Project a collision-clearing guide toward original decoded motion limits."""
+"""Project a planned wrist guide toward original decoded motion limits."""
 import argparse,shutil
 from pathlib import Path
 import numpy as np
 from strep import ROOT,read,save,sha256,now
 
 
-def run(plan,output,method='COBYLA'):
+def run(plan,output,method='COBYLA',start='source'):
     from diagnose_scene_pair_limits import load_bound_study
     from scene_pair_problem import load_actors
     from rig_asset import RigAsset
@@ -40,7 +40,8 @@ def run(plan,output,method='COBYLA'):
         required[str(path)]=entry['sha256'];rig=RigAsset.load(path);chain=protocol['chains'][actor['name']]
         channels=rotation_channels(rig.document,rig.binary);clocks.extend(channels[n][1] for n in chain)
         sources.append(dict(path=path,rig=rig,chain=chain))
-    guide,axis,route,files=load_path(plan,source_plan,request['window_s'],required,native_clocks=clocks,protected=prepared['protected_seconds'])
+    guide,axis,route,files=load_path(plan,source_plan,request['window_s'],required,native_clocks=clocks,protected=prepared['protected_seconds'],
+        authored_window=prepared['authored']['window_s'],peak_time=float(times[protocol['sample']]))
     models=[ContinuousWaypointMotion(s['rig'],s['chain'],guide.times,times,prepared['protected_seconds'],a['rotation'],axis,i)
             for i,(s,a) in enumerate(zip(sources,actors))]
     parts=[features(m.model.source_world,m.rig.joints) for m in models]
@@ -57,9 +58,10 @@ def run(plan,output,method='COBYLA'):
         axis=axis.tolist(),native_times_s=guide.times.tolist(),sample_times_s=times.tolist(),target=route['parameters'],
         original_bins_s=prepared['authored']['knots_s'],guide_rate_limits=request['guide_rate_limits'],
         projection_gate_tolerance=9e-6,independent_export_tolerance=1e-5,
+        initialization=start,
         optimizer=(dict(method='COBYLA',max_evaluations=1200,rhobeg=.1,tol=1e-5,catol=1e-9) if method=='COBYLA'
                    else dict(method='SLSQP',max_iterations=100,ftol=1e-9,finite_difference_step=1e-4)),
-        scope='Nearest normalized wrist/swivel controls to the selected collision-clearing guide under unchanged sampled motion, guide-rate, domain and native-edit bounds. Feasible incumbents are independently gated, not inferred from optimizer success. Proximity to the target does not establish collision clearance.',quality_approved=False))
+        scope='Nearest normalized wrist/swivel controls to the selected planned guide under unchanged sampled motion, guide-rate, domain and native-edit bounds. Feasible incumbents are independently gated, not inferred from optimizer success. Proximity to the target does not establish collision clearance.',quality_approved=False))
     observed=[]
     def observe(record,best):
         observed.append(record)
@@ -68,7 +70,7 @@ def run(plan,output,method='COBYLA'):
             save(output/'progress.json',dict(evaluations=len(observed),best=best,current=record))
             print(dict(evaluations=len(observed),feasible=record['feasible'],best_objective=None if best is None else best['objective']),flush=True)
     best,solver,records=project(models,caps,guide.times,route['parameters'],request['guide_rate_limits'],observe=observe,
-        method=method,max_evaluations=1200 if method=='COBYLA' else 100)
+        method=method,start=start,max_evaluations=1200 if method=='COBYLA' else 100)
     save(output/'evaluations.json',records);save(output/'solver.json',solver);save(output/'selected.json',best)
     parameters=np.asarray(best['parameters']);changed=bool(np.any(parameters));decoded=[];engine=None;geometry=None
     if changed:
@@ -120,5 +122,6 @@ if __name__=='__main__':
     from action_worker_lock import worker_lock
     from threadpoolctl import threadpool_limits
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('plan',type=Path);parser.add_argument('output',type=Path)
-    parser.add_argument('--method',choices=['COBYLA','SLSQP'],default='COBYLA');args=parser.parse_args()
-    with worker_lock(),threadpool_limits(limits=1):run(args.plan,args.output,args.method)
+    parser.add_argument('--method',choices=['COBYLA','SLSQP'],default='COBYLA')
+    parser.add_argument('--start',choices=['source','target'],default='source');args=parser.parse_args()
+    with worker_lock(),threadpool_limits(limits=1):run(args.plan,args.output,args.method,args.start)

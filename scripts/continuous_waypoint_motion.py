@@ -11,13 +11,17 @@ class ContinuousWaypointMotion:
     def __init__(self,rig,chain,native,times,protected,placement,axis,actor):
         self.rig=rig;self.chain=chain;self.native=np.asarray(native,float);self.times=np.asarray(times,float)
         self.placement=np.asarray(placement,float);self.axis=np.asarray(axis,float);self.actor=actor
+        if self.native.ndim!=1 or len(self.native)<3 or not np.isfinite(self.native).all() or np.any(np.diff(self.native)<=0):
+            raise ValueError('Increasing finite native key clock required')
         if actor not in [0,1] or self.axis.shape!=(3,) or not np.isfinite(self.axis).all() or abs(np.linalg.norm(self.axis)-1)>1e-12:
             raise ValueError('Two-actor unit-axis waypoint required')
         if self.placement.shape!=(3,3) or not np.isfinite(self.placement).all() or not np.allclose(self.placement@self.placement.T,np.eye(3),atol=1e-10) or np.linalg.det(self.placement)<0:
             raise ValueError('Rigid placement required')
         names=[rig.document['nodes'][n]['name'] for n in chain]
+        # Reuse the source-pose/key cache, not its curve basis. Native controls
+        # below directly address every editable key, regardless of basis size.
         self.model=TimedRotationEdit(rig.document,rig.binary,names,times,self.native[[0,-1]],protected,
-            knots=self.native,limit_degrees=45)
+            knots=np.linspace(self.native[0],self.native[-1],3),limit_degrees=45)
         for entry in self.model.entries:
             np.testing.assert_array_equal(entry['clock'][entry['ids']],self.native[1:-1])
         reader=AnimationSampler(rig.document,rig.binary,0)

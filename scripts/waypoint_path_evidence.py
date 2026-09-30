@@ -6,7 +6,7 @@ from bound_evidence import bind_inputs
 from waypoint_lattice import shortest_path,LinearGuide
 
 
-def load_path(folder,source_plan,window,required,*,native_clocks=None,protected=None):
+def load_path(folder,source_plan,window,required,*,native_clocks=None,protected=None,authored_window=None,peak_time=None):
     folder=Path(folder).resolve();result=read(folder/'result.json')
     if result['status']!='complete' or not result['selected']:raise ValueError('Completed selected waypoint path required')
     files={str(folder/'result.json'):sha256(folder/'result.json')}
@@ -16,6 +16,13 @@ def load_path(folder,source_plan,window,required,*,native_clocks=None,protected=
     request=read(folder/'request.json')
     if Path(request['source_plan']).resolve()!=Path(source_plan).resolve():raise ValueError('Path uses a different source plan')
     np.testing.assert_array_equal(request['window_s'],window)
+    policy=request.get('planning_interval_policy','first_cluster')
+    if policy=='guarded_precontact':
+        from native_waypoint_clock import guarded_approach_window
+        if authored_window is None or peak_time is None or protected is None:raise ValueError('Bound authored interval, peak and guards required')
+        np.testing.assert_array_equal(window,guarded_approach_window(authored_window,peak_time,protected))
+        if request.get('clock_mode')!='native_shared':raise ValueError('Guarded approach requires native clocks')
+    elif policy!='first_cluster':raise ValueError('Unknown planning interval policy')
     files.update(bind_inputs(required,request['inputs']))
     for name,digest in request['implementation'].items():
         path=(folder/'implementation'/name).resolve()

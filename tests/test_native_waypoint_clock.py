@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-from native_waypoint_clock import guide_clock
+from native_waypoint_clock import guide_clock,guarded_approach_window
 from timed_rotation_edit import editable_keys
 
 
@@ -33,3 +33,20 @@ def test_unsupported_clocks_fail_explicitly(fault):
     if fault=='peak_boundary':window=[0,0,10]
     if fault=='nan':window=[0,np.nan,10]
     with pytest.raises(ValueError):guide_clock(clocks,window,protected)
+
+
+def test_full_approach_uses_existing_authored_window_and_nearest_guards():
+    assert guarded_approach_window([1,8],4,[[2,3],[6,7]])==(3.,4.,6.)
+    assert guarded_approach_window([1,8],4,[])==(1.,4.,8.)
+    assert guarded_approach_window([1,8],4,[[6,6],[20,21]])==(1.,4.,6.)
+    with pytest.raises(ValueError,match='protected'):guarded_approach_window([1,8],4,[[4,4]])
+    with pytest.raises(ValueError):guarded_approach_window([1,8],4,[[6,5]])
+    with pytest.raises(ValueError):guarded_approach_window([1,8],9,[])
+
+
+def test_float32_key_just_before_contact_remains_frozen_boundary():
+    clock=np.arange(21,dtype=np.float32)/10;contact=float(clock[14])+1e-7
+    window=guarded_approach_window([.15,1.9],.6,[[contact,contact]])
+    native=guide_clock([clock]*6,window,[[contact,contact]])
+    assert native[-1]==clock[14] and native[-1]<contact
+    assert 14 not in editable_keys(clock,[window[0],window[2]],[[contact,contact]])
