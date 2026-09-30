@@ -47,8 +47,11 @@ def test_every_edge_matches_actual_float32_glb_bake_and_shared_sampler(tmp_path,
         doc,binary=read_glb(path);readers.append(AnimationSampler(doc,binary,0))
     for layer,(a,b) in enumerate(zip(ids[:-1],ids[1:])):
         payload=decoder(layer,a,b)
+        decoded_ids,decoded_worlds=decoder.decode(layer,a,b)
+        np.testing.assert_array_equal(decoded_ids,payload['indices'])
         for actor,reader in enumerate(readers):
             worlds=np.array([reader.sample(t) for t in times[payload['indices']]])
+            np.testing.assert_array_equal(decoded_worlds[actor],worlds)
             start=actor*len(rig.joints);end=start+len(rig.joints)
             np.testing.assert_array_equal(payload['positions'][:,start:end],worlds[:,:,:3,3])
             np.testing.assert_array_equal(payload['rotations'][:,start:end],worlds[:,:,:3,:3])

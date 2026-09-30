@@ -58,7 +58,8 @@ class DecodedEdges:
             result=result.astype(np.float32)
         self.pose_cache[key]=result;return result
 
-    def __call__(self,layer,start,end):
+    def decode(self,layer,start,end):
+        """Return raw decoded worlds before any motion or geometry predicate."""
         ids=np.flatnonzero((self.times>=self.native[layer])&(self.times<self.native[layer+1]))
         if len(ids)<2:raise ValueError('At least two uniform samples per native interval required')
         worlds=[]
@@ -75,5 +76,10 @@ class DecodedEdges:
                     values=values.copy();values[keys[layer]]=first[number];values[keys[layer+1]]=last[number]
                 reader.channels.append((node,path,clock,values,mode))
             worlds.append(np.array([reader.sample(t) for t in self.times[ids]]))
-        payload=self.combine(worlds,ids)
+        return ids,worlds
+
+    def __call__(self,layer,start,end):
+        decoded=self.decode(layer,start,end)
+        if decoded is None:return None
+        ids,worlds=decoded;payload=self.combine(worlds,ids)
         return payload if self.caps.check(payload) else None
