@@ -18,7 +18,7 @@ def selected_controls(study, result):
     return controls
 
 
-def run(study, output):
+def run(study, output, reuse_current=None):
     from diagnose_scene_pair_limits import load_bound_study, constraint_population
     from scene_pair_problem import load_actors, ScenePairProblem
     from scene_pair_relinearization import refreshed_problem, angular_at, retain_original_surfaces
@@ -43,16 +43,27 @@ def run(study, output):
     samples = [read(study/'source'/n) for n in read(study/'source-index.json')]
     problem = ScenePairProblem(actors, samples); parts = problem.split(controls)
     worlds = [a['model'].world(p) for a,p in zip(actors,parts)]
+    recovered={}
+    if reuse_current is not None:
+        from recover_pair_geometry import recover_current
+        recovered,recovered_files=recover_current(reuse_current,study,controls,files,actors,worlds)
+        files.update(recovered_files)
     output.mkdir(); (output/'implementation').mkdir(); (output/'current').mkdir()
     methods = {}
     for name in sorted(set(METHODS)|{'study_scene_pair_relinearization.py','scene_pair_relinearization.py',
-            'refined_reserve_inputs.py','diagnose_scene_pair_refinement.py','diagnose_scene_pair_limits.py','bound_evidence.py','coupled_pair_reserve.py'}):
+            'refined_reserve_inputs.py','diagnose_scene_pair_refinement.py','diagnose_scene_pair_limits.py','bound_evidence.py','coupled_pair_reserve.py','recover_pair_geometry.py'}):
         shutil.copyfile(ROOT/'scripts'/name,output/'implementation'/name); methods[name]=sha256(output/'implementation'/name)
     save(output/'request.json',dict(at=now(),study=str(study),inputs=files,implementation=methods,
         cumulative_controls=controls.tolist(),incremental_trust_degrees=.5,scale=.025,regularizer=5e-8,
+        recovered_from=None if reuse_current is None else str(Path(reuse_current).resolve()),recovered_samples=len(recovered),
         scope='One continuation step with refreshed continuous-model witnesses. Original native budgets, motion bins, protected keys and surface bounds remain. Prior empirical margins are proposal aids only; every decoded trial is independently checked. No automatic publication or release approval.',quality_approved=False))
     current=[]; bindings={}; reused=0
     for index, source in enumerate(samples):
+        if index in recovered:
+            row,unchanged=recovered[index];reused+=int(unchanged)
+            path=output/'current'/f'sample-{index:03d}.json';save(path,row)
+            bindings[path.name]=sha256(path);current.append(row)
+            continue
         if all(np.array_equal(w[index],a['model'].source_world[index]) for a,w in zip(actors,worlds)):
             row=source; reused+=1
         else:
@@ -115,7 +126,8 @@ def run(study, output):
     save(output/'result.json',dict(at=now(),status='complete',request_sha256=sha256(output/'request.json'),
         current_index_sha256=sha256(output/'current-index.json'),linearization_sha256=sha256(output/'linearization.npz'),
         solver_sha256=sha256(output/'solver.json'),trials_sha256=sha256(output/'trials.json') if trials else None,
-        unchanged_samples_reused=reused,fresh_directional_queries=2*(len(samples)-reused),
+        unchanged_samples_reused=reused,recovered_samples=len(recovered),
+        fresh_directional_queries=2*sum(i not in recovered and not all(np.array_equal(w[i],a['model'].source_world[i]) for a,w in zip(actors,worlds)) for i in range(len(samples))),
         preliminary_passes=sum(t['preliminary_pass'] for t in trials),accepted_for_publication=False,quality_approved=False))
     save(output/'progress.json',dict(status='complete')); print(read(output/'result.json'),flush=True)
 
@@ -123,5 +135,6 @@ def run(study, output):
 if __name__=='__main__':
     from action_worker_lock import worker_lock
     from threadpoolctl import threadpool_limits
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('study',type=Path);p.add_argument('output',type=Path);a=p.parse_args()
-    with worker_lock(),threadpool_limits(limits=1): run(a.study,a.output)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('study',type=Path);p.add_argument('output',type=Path)
+    p.add_argument('--reuse-current',type=Path);a=p.parse_args()
+    with worker_lock(),threadpool_limits(limits=1): run(a.study,a.output,a.reuse_current)

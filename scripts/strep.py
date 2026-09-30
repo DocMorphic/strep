@@ -25,7 +25,16 @@ def save(path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_suffix(path.suffix + '.tmp')
     temp.write_text(json.dumps(data, indent=2, allow_nan=False) + '\n', encoding='utf-8')
-    temp.replace(path)
+    # Windows readers/virus scanners can briefly deny rename while holding a
+    # handle. Preserve atomic replacement and the old valid JSON throughout.
+    for attempt in range(6):
+        try:
+            temp.replace(path)
+            break
+        except PermissionError as exc:
+            if getattr(exc, 'winerror', None) not in (5, 32, 33) or attempt == 5:
+                raise
+            time.sleep(.05 * 2**attempt)
 
 
 def sha256(path):

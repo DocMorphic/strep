@@ -45,3 +45,23 @@ Replay now additionally binds the parent's completed result and selected trial, 
 `audit_scene_pair_continuation.py` accepts a completed study, its independent replay, a fresh output directory and `--trial INDEX`. Only an index passing both recorded and independently recomputed preliminary checks is eligible. It reconstructs the exact clips, runs native Godot import, then queries both complete decoded meshes across the unchanged local sample clock. It retains the original per-time depth caps and floor checks. Local acceptance requires at least one micrometre of peak improvement **over the selected previous correction**, whose full geometry file and clock are hash-checked; beating only the raw source is insufficient.
 
 This audit remains separate from publication and release approval. The live study has not yet produced a candidate for it. Thirty-four focused evidence/geometry tests pass in the minimal environment, with one optional native-GLB integration skip; all 23 evidence tests, including that integration, pass in the development environment. Tests cover parent identity, prior-correction regression, original depth/floor ceilings, missing replay bindings and false preliminary-pass claims. The actual full decoded geometry and engine command remain unexecuted pending an eligible candidate.
+
+## Windows write failure and recovered result
+
+The first refresh stopped with `PermissionError: WinError 5` while atomically replacing `progress.json`. Its process exited with code 1 after saving 121 sample files. The old request, method snapshots, samples, progress file and pending temporary JSON remain unchanged; a separate failure observation records the terminal exit.
+
+`strep.save` now retries only Windows access/sharing/lock denial codes 5, 32 and 33, for at most six replacement attempts and 1.55 seconds of total backoff. The previous valid JSON remains visible until replacement succeeds. Other errors fail immediately; permanent denial remains an error and retains the pending JSON. This does not make multiple writers to the same destination safe.
+
+The worker accepts `--reuse-current` only into a fresh output. Recovery binds the same parent, cumulative controls and source inputs; verifies the previous snapshots and unchanged geometry extraction block; and independently reconstructs saved surface witness positions, triangle membership, normals and signed gaps. The contiguous recovered sample population is explicitly recorded. This is verified reuse of recorded signed-distance results, not a second independent signed-distance query of the recovered population.
+
+```powershell
+.venv/Scripts/python.exe scripts/study_scene_pair_relinearization.py reports/scene-pair-refined-reserve-completed-v1 reports/scene-pair-relinearized-v2 --reuse-current reports/scene-pair-relinearized-v1
+```
+
+The recovered worker completed all 148 times: 121 saved samples recovered, 21 source-identical times reused in total, and 36 new directional queries. Its 8,557 surface rows and 35,778 norm rows produced an `AlmostSolved` incremental proposal that passes the explicit numerical hard checks. Predicted peak decreases from 22.522268 to 22.333486 mm; these are local-model predictions, not a decoded mesh result.
+
+The full increment fails four positional observations, three angular observations and retained/refreshed surface limits after export. Fractions 0.5, 0.25, 0.125 and 0.0625 each have zero decoded positional/angular failures and pass the original surface and refreshed-plane checks. Every attempted export is retained. Independent continuation replay and fresh full decoded geometry remain required before selecting a local correction; no animation has been approved by this study yet.
+
+Twenty-seven focused retry/recovery/relinearization tests pass. The complete minimal source-check suite passes **465 tests with five optional skips**. This includes transient and permanent write denials, preserved previous JSON, changed source/control/clock rejection, saved-witness reconstruction and unchanged extraction semantics. No active worker source was modified.
+
+The independent real-character replay has now completed: ten exact GLB reconstructions and 225,610 positional observations, with matching scalar angular results and all five original classifications preserved. Trial 1 (half the increment) is undergoing the fresh decoded geometry audit in `reports/scene-pair-relinearized-geometry-v2`. Godot has already checked four clips / 444 frames / 77 bones per clip; maximum position error is 5.366925e-7 m and maximum basis-element error is 6.851267e-7. Full-mesh depth, floor regression and improvement over the previous correction remain pending. No new Studio publication or release approval follows the engine result alone.
