@@ -1163,6 +1163,9 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/paired-stage-rates-v1.md",
+        "reports/paired-stage-rates-v1/result.json",
+        "reports/paired-stage-rates-review-v1/verification.json",
         "docs/scene-retime-v1.md",
         "reports/scene-retime-import-v1/completion.json",
         "reports/scene-retime-import-v1/current-runtime-check/verification.json",
@@ -2287,6 +2290,9 @@
       "status": "incomplete",
       "release_evidence": [],
       "development_evidence": [
+        "docs/paired-stage-rates-v1.md",
+        "reports/paired-stage-rates-v1/result.json",
+        "reports/paired-stage-rates-review-v1/verification.json",
         "docs/model-free-source-checks.md",
         "docs/offline-source-snapshot-v1.md",
         "reports/offline-source-snapshot-v1/verification.json",
@@ -2996,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-30T04:21:36.040165+00:00",
-  "last_progress": "Descendant-aware cylinder approach passes all 54 exported speed and 54 acceleration preservation comparisons, while retaining 717 geometry/edit-budget passes and grasp/guard contacts. Approach peak acceleration falls to 33.162127 m/s2; right index fingertip reaches 30.021892 m/s2, removing its measured regression. Release remains exact and whole-clip acceleration stays 39.769477 m/s2. Fourteen focused tests, independent chained replay and 180 Godot frames pass scoped checks. Next apply these checks to another development interaction without using reserved held-out trials; human review and broad release evidence remain open. All 14 release capabilities remain unapproved."
+  "last_progress_at": "2026-09-30T04:32:00.667980+00:00",
+  "last_progress": "High-five stage attribution now covers all five retained seeds, both actors and three stages: 30 exported clips and 17,910 actor samples. Independent direct-difference replay verifies 73,920 peak values and timestamps. Body correction increases per-joint event acceleration in all ten actors, with a 38.023338 m/s2 largest increase; finger authoring adds a separate 10.557579 m/s2 maximum increase. Whole-clip maxima mask local changes. Prior collision/floor failures and event passes remain hash-bound; no new animation or engine observation. Thirteen tests pass. Next coordinate body-and-hand temporal correction on the first declared development pair, preserving authored event evidence and full-scene failure reporting. All 14 release capabilities remain unapproved."
 }
