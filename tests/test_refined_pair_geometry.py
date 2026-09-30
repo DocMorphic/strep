@@ -63,3 +63,17 @@ def test_reserve_candidate_requires_both_motion_policies(tmp_path, fault):
     if fault is None: assert selected_trial(tmp_path, 0)[1] == trial
     else:
         with pytest.raises(ValueError): selected_trial(tmp_path, 0)
+
+
+@pytest.mark.parametrize('fault',[None,'missing','failed','clock_tolerance'])
+def test_angular_refinement_requires_complete_passing_rotation_review(tmp_path,fault):
+    trial=fixture(tmp_path)
+    trial['angular_rates']=[dict(actor=a['actor'],rates={k:dict(exceeding_observations=0,tolerance=1e-5) for k in ['angular_speed_rad_s','angular_acceleration_rad_s2']}) for a in trial['actors']]
+    if fault=='missing':trial['angular_rates'].pop()
+    if fault=='failed':trial['angular_rates'][0]['rates']['angular_speed_rad_s']['exceeding_observations']=1
+    if fault=='clock_tolerance':trial['angular_rates'][0]['rates']['angular_acceleration_rad_s2']['tolerance']=.1
+    save(tmp_path/'request.json',dict(angular_motion=True));save(tmp_path/'trials.json',[trial]);save(tmp_path/'trial-0/review.json',trial)
+    result=read(tmp_path/'result.json');result.update(request_sha256=sha256(tmp_path/'request.json'),trials_sha256=sha256(tmp_path/'trials.json'));save(tmp_path/'result.json',result)
+    if fault is None:assert selected_trial(tmp_path,0)[1]==trial
+    else:
+        with pytest.raises(ValueError):selected_trial(tmp_path,0)

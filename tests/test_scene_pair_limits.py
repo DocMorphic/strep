@@ -33,7 +33,7 @@ def test_zero_derivative_collision_cannot_be_removed_by_any_affine_step():
 
 
 def test_profiles_keep_matched_baseline_and_declare_every_relaxation():
-    for profile in ['norms', 'surface-caps']:
+    for profile in ['norms', 'surface-caps', 'angular-limits']:
         rows = variants_for(profile)
         assert rows[0]['name'] == 'original' and rows[0]['per_time_caps']
         assert rows[0]['omitted_norm_kinds'] == [] and rows[0]['regularizer'] == 1e-4
@@ -41,6 +41,25 @@ def test_profiles_keep_matched_baseline_and_declare_every_relaxation():
     capped = variants_for('surface-caps')[-1]
     assert not capped['per_time_caps'] and set(capped['omitted_norm_kinds']) == {'surface_distance', 'speed', 'acceleration'}
     with pytest.raises(ValueError): variants_for('unknown')
+
+
+def test_angular_profile_separates_motion_families_and_preserves_edit_budgets():
+    variants={v['name']:v for v in variants_for('angular-limits')}
+    assert variants['without_angular']['omitted_norm_kinds']==['angular_speed','angular_acceleration']
+    assert variants['without_positional']['omitted_norm_kinds']==['speed','acceleration']
+    assert set(variants['without_all_motion']['omitted_norm_kinds'])=={'speed','acceleration','angular_speed','angular_acceleration'}
+    assert all('edit' not in v['omitted_norm_kinds'] for v in variants.values())
+    assert variants['without_surface_distance']['per_time_caps']
+    assert not variants['without_local_surface_caps']['per_time_caps']
+    assert variants['tenfold_trust']['trust_multiplier']==10
+
+
+def test_original_checks_report_angular_violations_even_when_omitted_from_solve():
+    linear=example();linear['kinds']=np.array(['angular_acceleration','edit'])
+    result=original_checks(linear,constraint_population(linear),np.array([.01,0,0]),.02)
+    assert result['groups']['angular_acceleration']['failures']==1
+    assert result['groups']['angular_acceleration']['maximum_excess']==pytest.approx(.01)
+    assert result['groups']['angular_speed']['rows']==0
 
 
 def test_diagnostic_relaxation_still_reports_violation_of_original_limits():

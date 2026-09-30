@@ -7,7 +7,7 @@ from strep import ROOT, read, save, sha256, now
 from coupled_pair_proposal import solve
 
 
-KINDS = ('edit', 'speed', 'acceleration', 'surface_distance')
+KINDS = ('edit', 'speed', 'acceleration', 'angular_speed', 'angular_acceleration', 'surface_distance')
 
 
 def constraint_population(linear):
@@ -79,6 +79,18 @@ def load_bound_study(study):
 
 
 def variants_for(profile):
+    if profile == 'angular-limits':
+        positional = ['speed', 'acceleration']; angular = ['angular_speed', 'angular_acceleration']
+        specifications = [
+            ('original', 1., [], True),
+            ('tenfold_trust', 10., [], True),
+            ('without_angular', 1., angular, True),
+            ('without_positional', 1., positional, True),
+            ('without_all_motion', 1., positional+angular, True),
+            ('without_surface_distance', 1., ['surface_distance'], True),
+            ('without_local_surface_caps', 1., ['surface_distance'], False),
+            ('trust_and_edit_only', 1., positional+angular+['surface_distance'], False)]
+        return [dict(name=n, trust_multiplier=t, omitted_norm_kinds=k, per_time_caps=c, regularizer=1e-4) for n,t,k,c in specifications]
     if profile == 'norms':
         specifications = [('original', 1., ()), ('double_trust', 2., ()), ('tenfold_trust', 10., ()),
             ('without_speed', 1., ('speed',)), ('without_acceleration', 1., ('acceleration',)),
@@ -100,6 +112,8 @@ def run(study, output, profile='norms'):
     study, output = Path(study).resolve(), Path(output).resolve()
     if output.exists(): raise ValueError('Fresh diagnostic destination required')
     request, linear, files = load_bound_study(study)
+    if profile == 'angular-limits' and not {'angular_speed','angular_acceleration'} <= set(linear['kinds']):
+        raise ValueError('Matched angular constraint population required')
     original_trust = np.deg2rad(request['trust_degrees']); population = constraint_population(linear)
     variants = variants_for(profile)
     output.mkdir(); (output/'implementation').mkdir()
@@ -145,6 +159,6 @@ if __name__ == '__main__':
     from threadpoolctl import threadpool_limits
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('study', type=Path); parser.add_argument('output', type=Path)
-    parser.add_argument('--profile', choices=['norms', 'surface-caps'], default='norms')
+    parser.add_argument('--profile', choices=['norms', 'surface-caps', 'angular-limits'], default='norms')
     args = parser.parse_args()
     with worker_lock(), threadpool_limits(limits=1): run(args.study, args.output, args.profile)

@@ -48,20 +48,28 @@ def run(refinement, output):
     for name in sorted(set(request['implementation']) | {'audit_scene_pair_refinement.py', 'verify_scene_pair_fit.py', 'bound_evidence.py'}):
         shutil.copyfile(ROOT/'scripts'/name, output/'implementation'/name); methods[name] = sha256(output/'implementation'/name)
     save(output/'request.json', dict(at=now(), refinement=str(refinement), inputs=files, implementation=methods,
+        angular_motion=bool(original_request.get('angular_motion')),
         factors=[1., .5, .25, .125, .0625], scope='Export and independent original-bin motion checks only. Full fresh mesh/floor queries and engine import still required.', quality_approved=False))
     trials = []
     for index, factor in enumerate([1., .5, .25, .125, .0625]):
         folder = output/f'trial-{index}'
         records, worlds, surface = exported_motion(problem, step*factor, folder)
-        independent = []
+        independent = []; angular_records = []
         for actor, world, record in zip(actors, worlds, records):
             model = actor['model']; positions = actor['rates'].positions
             checked = rate_check(positions(model.source_world), positions(world), model.times, actor['original_knots'])
             if checked['failures'] != record['rate_failures']: raise ValueError('Independent all-joint replay disagrees')
             independent.append(dict(actor=actor['name'], **checked))
+            if original_request.get('angular_motion'):
+                from joint_angular_rates import compare_angular_rates
+                joints=actor['rig'].joints; names=[actor['rig'].document['nodes'][j]['name'] for j in joints]
+                angular=compare_angular_rates(model.source_world[:,joints][:,:,:3,:3],world[:,joints][:,:,:3,:3],model.times,
+                    actor['original_knots'],names,speed_tolerance=1e-5,acceleration_tolerance=1e-5)
+                angular_records.append(dict(actor=actor['name'],rates=angular))
         passed = all(r['preserved'] and not r['rate_failures'] for r in records) and max(surface.values()) <= 1e-6
+        passed = passed and all(v['exceeding_observations']==0 for a in angular_records for v in a['rates'].values())
         row = dict(factor=factor, controls=(step*factor).tolist(), actors=records, retained_surface=surface,
-            independent_rates=independent, preliminary_checks_pass=bool(passed), quality_approved=False)
+            independent_rates=independent, angular_rates=angular_records, preliminary_checks_pass=bool(passed), quality_approved=False)
         save(folder/'review.json', row); trials.append(row); save(output/'trials.json', trials)
         print(dict(factor=factor, preliminary_checks_pass=passed, motion_failures=[r['rate_failures'] for r in records]), flush=True)
     for name, digest in files.items():

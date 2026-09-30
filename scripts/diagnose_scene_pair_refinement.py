@@ -27,6 +27,10 @@ def run(study, output):
     request, original, files = load_bound_study(study)
     prepared = Path(request['prepared_request']).parent
     _, actors = load_actors(prepared)
+    angular_policies = None
+    if request.get('angular_motion'):
+        from angular_motion_rows import AngularMotionRows
+        angular_policies = [AngularMotionRows(a['model'], a['rig'].joints) for a in actors]
     rows = [read(study/'source'/name) for name in read(study/'source-index.json')]
     output.mkdir(); (output/'implementation').mkdir()
     names = set(request['implementation']) | {'diagnose_scene_pair_refinement.py', 'diagnose_scene_pair_limits.py'}
@@ -61,6 +65,10 @@ def run(study, output):
     problem = ScenePairProblem(actors, rows)
     print(dict(status='linearizing', controls=problem.size), flush=True)
     linear = problem.linearize(np.zeros(problem.size))
+    if angular_policies is not None:
+        from scene_pair_angular_constraints import linearize_angular
+        linear, angular_proofs = linearize_angular(actors, angular_policies, linear)
+        save(output/'angular-derivative-proof.json', angular_proofs)
     for key in ['surface_vectors', 'gaps', 'depth_caps', 'vectors', 'radii']:
         np.testing.assert_allclose(linear[key], original[key], atol=1e-12, rtol=0)
     np.testing.assert_array_equal(linear['kinds'], original['kinds'])

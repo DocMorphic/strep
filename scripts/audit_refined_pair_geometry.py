@@ -25,6 +25,12 @@ def selected_trial(audit, index):
         for review in trial['motion_reviews']:
             if set(review['angular']) != {'angular_speed_rad_s', 'angular_acceleration_rad_s2'} or any(v['exceeding_observations'] != 0 or v['tolerance'] != 1e-5 for v in review['angular'].values()):
                 raise ValueError('Passing original angular limits required')
+    elif request.get('angular_motion'):
+        angular=trial.get('angular_rates',[])
+        if [a['actor'] for a in angular]!=[a['actor'] for a in trial['actors']]: raise ValueError('Complete refined angular review required')
+        for actor in angular:
+            if set(actor['rates']) != {'angular_speed_rad_s','angular_acceleration_rad_s2'} or any(v['exceeding_observations']!=0 or v['tolerance']!=1e-5 for v in actor['rates'].values()):
+                raise ValueError('Refined angular limits failed')
     if trial['preliminary_checks_pass'] is not True or len(trial['actors']) != 2 or len(independent_rates) != 2:
         raise ValueError('Passing two-actor export review required')
     limits = list((trial['bound'] if reserved else trial['retained_surface']).values())
@@ -97,11 +103,12 @@ def run(audit, index, output):
         path = audit/f'trial-{index}'/record['path']; files[str(path)] = record['sha256']
         rig = RigAsset.load(copied); sampler = AnimationSampler(rig.document, rig.binary, 0)
         worlds.append(np.array([sampler.sample(t) for t in old.times]))
-        if reserved:
+        if reserved or audit_request.get('angular_motion'):
             from scalar_angular_replay import angular_replay, compare_saved
             joints = actor['rig'].joints
             replay = angular_replay(old.source_world[:,joints][:,:,:3,:3], worlds[-1][:,joints][:,:,:3,:3], old.times, old.knots)
-            compare_saved(replay, trial['motion_reviews'][number]['angular'])
+            saved=trial['motion_reviews'][number]['angular'] if reserved else trial['angular_rates'][number]['rates']
+            compare_saved(replay, saved)
             if any(v['exceeding_observations'] for v in replay.values()): raise ValueError('Independent angular motion failed')
             angular_reviews.append(dict(actor=actor['name'], rates=replay))
         for label, source in [('input', actor['source']), ('candidate', copied)]:
@@ -109,7 +116,7 @@ def run(audit, index, output):
             cases.append(dict(id=label+'-'+actor['name'], path=target.name, sha256=sha256(target),
                 frames=int(round(sampler.duration*30))+1, fps=30, sample_by_time=True))
     if offset != len(trial['controls']): raise ValueError('Unused refined controls')
-    if reserved: save(output/'angular-replay.json', angular_reviews)
+    if angular_reviews: save(output/'angular-replay.json', angular_reviews)
     save(output/'manifest.json', dict(cases=cases, quality_approved=False))
     save(output/'request.json', dict(at=now(), export_audit=str(audit), trial_index=index, factor=trial['factor'], inputs=files,
         implementation=methods, manifest_sha256=sha256(output/'manifest.json'),
@@ -131,7 +138,7 @@ def run(audit, index, output):
     save(output/'result.json', dict(at=now(), status='complete', geometry=summary, reasons=reasons, accepted_local_step=not reasons,
         request_sha256=sha256(output/'request.json'), manifest_sha256=sha256(output/'manifest.json'),
         engine_verification_sha256=sha256(output/'engine/verification.json'),
-        angular_replay_sha256=sha256(output/'angular-replay.json') if reserved else None, quality_approved=False))
+        angular_replay_sha256=sha256(output/'angular-replay.json') if angular_reviews else None, quality_approved=False))
     save(output/'pipeline.json', dict(status='complete', stage='Full mesh and engine review complete', accepted_local_step=not reasons, quality_approved=False))
     print(dict(status='complete', reasons=reasons, geometry=summary), flush=True)
 

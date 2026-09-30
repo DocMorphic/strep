@@ -37,3 +37,23 @@ def test_refinement_preserves_native_protected_keys_and_embedded_motion():
         np.testing.assert_array_equal(left['ids'], right['ids'])
         frozen = np.setdiff1d(np.arange(len(right['source'])), right['ids'])
         np.testing.assert_array_equal(fine.quaternions(mapping@control)[right['node']][frozen], right['source'][frozen])
+
+
+def test_refined_angular_rows_keep_original_spans_caps_and_coarse_motion():
+    from test_timed_rotation_edit import fixture
+    from timed_rotation_edit import TimedRotationEdit
+    from angular_motion_rows import AngularMotionRows
+    from scene_pair_angular_constraints import linearize_angular
+    doc,binary=fixture();times=np.arange(181)/120
+    old=TimedRotationEdit(doc,binary,['Arm','Twin'],times,[.1,1.3],[[.713,.713]])
+    policy=AngularMotionRows(old,doc['skins'][0]['joints'])
+    knots,mapping=refine_knots(old.knots,2)
+    fine=TimedRotationEdit(doc,binary,['Arm','Twin'],times,[.1,1.3],[[.713,.713]],knots=knots)
+    original_caps=policy.radii.copy();original_knots=policy.knots.copy()
+    empty=dict(gap_jacobian=np.zeros((1,fine.size)),vectors=np.empty((0,3)),jacobians=np.empty((0,3,fine.size)),radii=np.empty(0),kinds=np.array([],dtype='U24'))
+    linear,proof=linearize_angular([dict(name='actor',model=fine)],[policy],empty)
+    np.testing.assert_array_equal(linear['radii'],original_caps)
+    np.testing.assert_array_equal(policy.knots,original_knots)
+    assert len(policy.knots)<len(fine.knots) and proof[0]['rows']==len(original_caps)
+    controls=np.random.default_rng(27).normal(size=old.size)*.001
+    np.testing.assert_allclose(policy.values(old.world(controls))[0],policy.values(fine.world(mapping@controls))[0],atol=1e-9,rtol=0)
