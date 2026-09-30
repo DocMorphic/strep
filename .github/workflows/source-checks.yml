@@ -58,6 +58,7 @@ jobs:
           tests/test_coupled_surface_norms.py
           tests/test_coupled_continuation_policy.py
           tests/test_coupled_continuation_checkpoint.py
+          tests/test_coupled_clearance_policy.py
           tests/test_scene_joint_rates.py
           tests/test_lsmr_accuracy.py
           tests/test_inward_feasibility_step.py
