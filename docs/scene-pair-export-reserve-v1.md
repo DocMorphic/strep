@@ -2,7 +2,7 @@
 
 Follow-up: [independent angular publication checks](scene-angular-publication-v1.md) now gate new Studio candidates and flag the older historical candidate's failed rotation-rate review. The full-mesh audit described here remains separate.
 
-An empirical proposal margin produces a full-step candidate that passes the unchanged positional and angular limits after float32 export. Independent quaternion replay and Godot import also pass. Full sampled mesh validation is still running; no candidate is published or approved for release.
+An empirical proposal margin produces a full-step candidate that passes the unchanged positional and angular limits after float32 export. Independent quaternion replay and Godot import also pass. Follow-up: [full sampled mesh validation and Studio publication](scene-pair-reserve-publication-v1.md) are now complete, with only 0.014056 mm peak improvement and all 37 failing times retained. No release approval is claimed. The experiment-stage details below retain the earlier sequence.
 
 ## Diagnosis
 

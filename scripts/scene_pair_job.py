@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import shutil
 from strep import ROOT, read, save, sha256, now
-from paired_edit_request import JOBS, describe, compile_request, prepare as prepare_request
+JOBS = ROOT/'reports/paired-edit-jobs'
 
 METHODS = ['scene_pair_job.py', 'scene_pair_engine.py', 'publish_scene_pair_fit.py', 'verify_scene_pair_fit.py',
            'verify_scene_pair_angular.py', 'scalar_angular_replay.py', 'scene_angular_publication.py',
@@ -13,12 +13,14 @@ METHODS = ['scene_pair_job.py', 'scene_pair_engine.py', 'publish_scene_pair_fit.
 
 
 def metadata(url):
+    from paired_edit_request import describe
     data = describe(url)
     return {k: data[k] for k in ['source_url', 'revision', 'duration_s', 'contacts']} | dict(
         actors={name: dict(joints=entry['joints']) for name, entry in data['actors'].items()})
 
 
 def validate(payload):
+    from paired_edit_request import compile_request
     if not isinstance(payload, dict) or set(payload) != {'label', 'request'}:
         raise ValueError('Name and complete paired edit request required')
     if not isinstance(payload['label'], str) or not 1 <= len(payload['label'].strip()) <= 100:
@@ -27,6 +29,7 @@ def validate(payload):
 
 
 def prepare(payload, folder):
+    from paired_edit_request import prepare as prepare_request
     validate(payload); folder = Path(folder).resolve(); prepare_request(payload['request'], folder)
     attach_review_inputs(folder, payload['label'])
 

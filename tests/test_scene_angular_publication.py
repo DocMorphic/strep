@@ -66,6 +66,7 @@ def test_studio_worker_enables_angular_fit_and_replays_before_publication(tmp_pa
     monkeypatch.setitem(sys.modules,'action_worker_lock',SimpleNamespace(worker_lock=nullcontext,worker_busy=lambda:False))
     monkeypatch.setitem(sys.modules,'psutil',SimpleNamespace(Process=lambda:SimpleNamespace(create_time=lambda:1.)))
     monkeypatch.setitem(sys.modules,'threadpoolctl',SimpleNamespace(threadpool_limits=lambda **kwargs:nullcontext()))
+    monkeypatch.setitem(sys.modules,'study_scene_pair_fit',SimpleNamespace(run=lambda *args,**kwargs:None))
     import scene_pair_job as jobs
     import study_scene_pair_fit, verify_scene_pair_fit, run_godot_rig_import, publish_scene_pair_fit, action_worker_lock
     folder=tmp_path/'job'; folder.mkdir(); save(folder/'request.json',{})

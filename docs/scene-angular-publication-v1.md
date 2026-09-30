@@ -32,4 +32,4 @@ Local evidence:
 
 Thirty-three focused tests cover actual GLB replay with synthetic rigs, source-only handling, changed evidence, job orchestration, publication rejection and immutable display updates. A synthetic orchestration test isolates Windows locking and optional runtime packages; it does not claim model or engine integration.
 
-The newer full-step candidate with empirical export margins already passes independent angular replay and Godot import. Its existing 148-time mesh audit remains live under `reports/scene-pair-reserve-geometry-v1`; it has not been restarted or published. Its actual geometry result is the next decision point. All release capabilities remain unapproved, and no held-out population or human review has been consumed.
+Follow-up: the newer full-step candidate completes its 148-time mesh audit and [is published for local review](scene-pair-reserve-publication-v1.md), with a 0.014056 mm peak improvement and all 37 failing times retained. The original worker finished normally. All release capabilities remain unapproved, and no held-out population or human review has been consumed.
