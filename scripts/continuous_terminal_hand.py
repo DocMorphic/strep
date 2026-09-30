@@ -40,53 +40,65 @@ class HandWitnessObjective:
         return np.array(result)
 
 
-def solve(evaluate,scale,starts,*,iterations=100,observe=None):
+def solve(evaluate,scale,starts,*,iterations=100,observe=None,individual_witnesses=False):
     """Minimize measured witness depth; retain only physically feasible controls.
 
     The epigraph variable is an optimizer device, never accepted as a measured
     depth. Mesh clearance remains a separate fresh query after this solve.
+    With individual_witnesses, evaluate also returns every signed witness
+    depth. Each gets its own epigraph inequality; their maximum is never
+    differentiated. The measured nonnegative peak still ranks candidates.
     """
     scale=np.asarray(scale,float)
     if scale.ndim!=1 or not (len(scale)==5 or any(width<=len(scale)<=12*width and len(scale)%width==0 for width in [11,14])) or not np.isfinite(scale).all() or np.any(scale<=0):raise ValueError('Five legacy or up to twelve groups of eleven or fourteen positive control scales required')
     dimensions=len(scale)
     if type(iterations) is not int or iterations<1:raise ValueError('Positive iteration budget required')
-    cache={};records=[];best=None;cache_capacity=max(32,dimensions+3)
+    if type(individual_witnesses) is not bool:raise ValueError('Boolean witness mode required')
+    cache={};records=[];best=None;cache_capacity=max(32,dimensions+3);witness_count=None
     def physical(x):
-        nonlocal best
+        nonlocal best,witness_count
         key=np.asarray(x,float).tobytes()
         if key in cache:return cache[key]
-        control=np.asarray(x)*scale;depth,margins=evaluate(control)
+        control=np.asarray(x)*scale;values=evaluate(control)
+        if individual_witnesses:depth,margins,depths=values
+        else:depth,margins=values;depths=[depth]
         margins=np.asarray(margins,float)
         if not np.isfinite(depth) or depth<0 or margins.ndim!=1 or not len(margins) or not np.isfinite(margins).all():
             raise ValueError('Finite depth and physical margins required')
+        depths=np.asarray(depths,float)
+        if depths.ndim!=1 or not len(depths) or not np.isfinite(depths).all() or witness_count is not None and len(depths)!=witness_count:
+            raise ValueError('Fixed nonempty finite witness population required')
+        if not np.isclose(depth,max(0.,float(depths.max())),rtol=0,atol=1e-12):
+            raise ValueError('Measured depth differs from individual witness peak')
+        witness_count=len(depths)
         feasible=bool(np.all(margins>=0) and np.all(np.abs(x)<=1))
         record=dict(evaluation=len(records),controls=control.tolist(),witness_peak_m=float(depth),
                     minimum_margin=float(margins.min()),motion_domain_feasible=feasible)
-        records.append(record);cache[key]=(float(depth),margins)
+        records.append(record);cache[key]=(float(depth),margins,depths)
         if len(cache)>cache_capacity:del cache[next(iter(cache))]
         if feasible and (best is None or depth<best['witness_peak_m']):best=record.copy()
         if observe:observe(record,best)
-        return float(depth),margins
+        return float(depth),margins,depths
     baseline=physical(np.zeros(dimensions))
     if best is None:raise ValueError('Unchanged source must remain motion feasible')
     reports=[]
     for start in starts:
         normalized=np.asarray(start,float)/scale
         if normalized.shape!=(dimensions,) or not np.isfinite(normalized).all() or np.any(np.abs(normalized)>1):raise ValueError('Matching bounded finite start required')
-        depth,_=physical(normalized);initial=np.r_[normalized,min(10.,depth/.02)]
+        depth,_,_=physical(normalized);initial=np.r_[normalized,min(10.,depth/.02)]
         def constraints(x):
-            measured,margins=physical(x[:dimensions])
-            return np.r_[margins,x[dimensions]-measured/.02]
+            measured,margins,depths=physical(x[:dimensions])
+            return np.r_[margins,x[dimensions]-depths/.02]
         result=minimize(lambda x:x[dimensions]+1e-7*np.dot(x[:dimensions],x[:dimensions]),initial,
             jac=lambda x:np.r_[2e-7*x[:dimensions],1.],method='SLSQP',bounds=[(-1.,1.)]*dimensions+[(0.,10.)],
             constraints=[dict(type='ineq',fun=constraints)],options=dict(maxiter=iterations,ftol=1e-9,eps=1e-4))
-        measured,margins=physical(result.x[:dimensions])
+        measured,margins,_=physical(result.x[:dimensions])
         backoff=None
         if np.any(margins<0):
             # Solver roundoff is not permission to relax a hard gate. Search
             # toward the known feasible source and re-evaluate actual margins.
             for factor in [.999,.99,.9,.75,.5,.25,.1,.01]:
-                candidate_depth,candidate_margins=physical(result.x[:dimensions]*factor)
+                candidate_depth,candidate_margins,_=physical(result.x[:dimensions]*factor)
                 if np.all(candidate_margins>=0):
                     backoff=dict(factor=factor,witness_peak_m=candidate_depth);break
         reports.append(dict(start=np.asarray(start).tolist(),success=bool(result.success),status=int(result.status),message=str(result.message),

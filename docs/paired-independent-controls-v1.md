@@ -82,10 +82,10 @@ exactly zero error for both actors; expanded-support motion and guide checks
 pass. All 86 directional source queries were verified and reused. Both starts
 have 84 controls, and imported method hashes match the working source. The
 request hash is `8e63f4948ebd1e3038869a5ba3f4bb34c3f5d9f4995dde933f19e643f86352b7`.
-The completed solve and exported-motion results follow; fresh geometry is pending.
+The completed solve, exported-motion and fresh geometry results follow.
 
 
-## Completed solve; fresh geometry pending
+## Completed solve and geometry audit
 
 Both starts reached the 100-iteration limit (status 9). The recorded population
 contains 17,809 evaluations, including finite differences, and 93 feasible
@@ -98,8 +98,8 @@ clearance or animation-quality result by itself.
 The first optimizer return has minimum normalized motion/domain margin
 -0.222723; its 1% backoff is feasible but worse than the warm start. The second
 return has margin -0.464938; its 10% backoff is also feasible but worse. Neither
-returned proposal is accepted by relaxing the constraints. A completed bound
-return diagnostic is still needed to attribute the exact violations.
+returned proposal is accepted by relaxing the constraints. The completed bound
+return diagnostic attributes the exact violations below.
 
 The selected exported GLBs independently replay with zero batch error for both
 actors. All 148 original-clock poses have zero positional, angular-speed and
@@ -109,7 +109,104 @@ Actor B is byte-identical to the donor; actor A has changed:
 - A: `50394eb7d02ba969fe08bf3a69451928541f8cb64e3dbba8ad2bbca5e595d8ce`
 - B: `13adf945e5fe0537898c394106cabf94be21cfd0e0c409e61247c67ad9db2b5b`
 
-The same worker is now auditing all 43 hand times in both directions. Its method
-snapshots must remain unchanged until completion. Complete geometry comparison
-against the bound six-key donor is pending; no full-body, engine or Studio
-acceptance is inferred from these motion checks.
+The worker and bound return diagnostic both completed. All 43 matching hand
+sample times were checked in both directions against the six-key donor. The
+same 17 times fail: 42, 43 and 69 through 83. Peak penetration is 20.932823 mm,
+only 0.000024541 mm below the donor. Three directional observations worsen;
+the largest regression is 0.001667287 mm. No new failing time is introduced.
+This is effectively unchanged collision quality, despite the extra controls.
+
+The first returned proposal has 16 positional-acceleration, two angular-speed
+and two angular-acceleration violations on the full original clock. Its worst
+positional acceleration is actor A's left forearm at 1.991667 seconds:
+8.395963 m/s^2 versus the original 6.866606 m/s^2 cap. The second return has two
+positional-acceleration violations; actor B's left forearm reaches
+16.139893 m/s^2 at 2.041667 seconds versus an 11.017452 m/s^2 cap. Other
+motion categories pass for that return. These are actual decoded GLB results.
+
+The selected peak vertices retain predominantly hand-joint skin weights
+(94.17% for A's vertex 776 and 81.01% for B's vertex 6871). Skin weights do not
+establish an anatomical diagnosis. Failure of this finite search does not
+prove that contact correction is impossible.
+
+The unchanged Studio candidate remains published with quality approval false.
+This hand study has no full-body clearance, engine or human quality approval.
+
+Bound local evidence:
+
+- Main result: `reports/scene-pair-independent-hand-v1/result.json`.
+- Fresh geometry SHA-256: `c8d27bcc5c27dbc920e5f23aadf3e072d9aeb13e17904b1f6c3f0247fcc8c400`.
+- Diagnostic: `reports/scene-pair-independent-hand-diagnosis-v1/result.json`.
+- Return audit SHA-256: `f03cc8c7a2b3469e30ed1d802f3b1a09dd49bace1db5620a6f755b64b553ac14`.
+- Donor comparison SHA-256: `8b2d100b2199d6cd177526d03e793d35546cfb8a9c0fdf82d6f29e945ff630c7`.
+
+## Numerical derivative audit
+
+Before another optimization run, `audit_hand_derivatives.py` measured local
+finite differences at unchanged and selected controls. It verifies bound study
+methods and inputs, reproduces the saved selected objective and minimum margin,
+and preserves its own method snapshot. Each point received 513 evaluations:
+84 coordinate directions with positive/negative steps 1e-5, 1e-4 and 1e-3,
+plus four deterministic multidimensional directions at radii 1e-4 and 5e-4.
+No controls were selected or published by this audit.
+
+At the selected controls and the solver's existing 1e-4 step, the maximum
+forward prediction residual for depth/0.02 is 0.000677743, compared with a
+maximum actual probe change of 0.000710417. In depth units these are about
+0.013555 mm residual and 0.014208 mm change. Central differencing does not fix
+this: its maximum residual is 0.000707924. The corresponding forward/central
+coordinate derivative discrepancy reaches 1.624658. At zero controls, maximum
+forward depth residual at that step is only 0.000001801358 (0.000036027 mm).
+These are local probes of a fixed-witness surrogate, not fresh mesh results.
+
+The audit also reports each original motion family, native and guide limits
+separately. At zero controls the existing forward positional-acceleration
+linearization misses two negative rows across the eight probes; central misses
+none. This does not establish a universally better step or feasibility. Curvature,
+nonsmooth norms/maxima and float32 quantization can all cause discrepancies.
+No numerical tolerance has changed. Fifteen model-free diagnostic tests cover
+affine predictions, quantization hiding a negative margin, nonsmooth norms,
+invalid configurations and changing output populations.
+
+Audit: `reports/scene-pair-hand-derivative-audit-v1/result.json`;
+request SHA-256 `41fcec96bb3fc41a2dff45482feb7bb3f5883b3b5cea1f8d8385b3ea8346adb4`;
+selected report SHA-256 `06231c50acb64711f5f17758186767c6baf289ff1712e3ad10dd8c95a3cf6856`.
+
+## Individual witness epigraph
+
+The prior solver constrained one scalar maximum across all signed witness
+depths. Its next comparison uses `--individual-witnesses`: one inequality per
+signed witness against a common nonnegative epigraph variable. This is the
+same maximum-depth objective and feasible set, but finite differences no longer
+operate on the maximum across witnesses. Negative signed depths remain allowed;
+separated surfaces are not forced back into contact. The scalar measured peak
+still ranks candidates and every original motion/domain constraint is retained.
+
+The mode is persisted as `individual-signed-depths-v1` in the request. Legacy
+runs retain their scalar mode. A changing witness population, nonfinite depths
+or a scalar peak inconsistent with the individual depths is rejected. Tests
+verify all rows, signed separation, competing witnesses under a physical limit,
+and malformed populations. This does not remove all nonsmoothness or prove that
+the next numerical search will converge.
+
+The comparison keeps six native keys, 84 independent controls, zero and verified
+warm starts, 100 iterations each, the same 43-time collision audit and all
+original motion limits. Actual GLBs and fresh mesh queries remain the acceptance
+evidence. No failed candidate may replace Studio or approve a release gate.
+
+
+The connected comparison is running at
+`reports/scene-pair-witness-epigraph-v1`. Both warm-start GLB replays are exact,
+expanded support and guide checks pass, and all 86 original directional queries
+were verified and reused. Request SHA-256:
+`d4fcf8f23beada9d1e1a2d7f068067925fd82b0186681ed3cb0eb4c6c7d26f47`.
+No final candidate result is available yet. The focused new/affected suite has
+47 passing tests; the full minimal public Python suite has 721 passing tests.
+
+```powershell
+.venv/Scripts/python.exe -u scripts/fit_continuous_terminal_hand.py reports/scene-pair-terminal-hand-search-v1 reports/scene-pair-witness-epigraph-v1 --hand-orientation --independent-wrists --individual-witnesses --editable-keys 6 --witness-study reports/scene-pair-independent-hand-v1 --warm-start-study reports/scene-pair-independent-hand-v1
+```
+
+The derivative audit preceded the solver change and retains its original method
+snapshot. Its strict replay requires those bound method versions; a later source
+checkout is intentionally rejected when its methods differ.

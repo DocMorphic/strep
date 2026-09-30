@@ -5,7 +5,7 @@ import numpy as np
 from strep import ROOT,read,save,sha256,now
 
 
-def run(study,output,hand_orientation=False,witness_study=None,editable_key_count=1,warm_start_study=None,independent_wrists=False):
+def run(study,output,hand_orientation=False,witness_study=None,editable_key_count=1,warm_start_study=None,independent_wrists=False,individual_witnesses=False):
     from bound_evidence import bind_inputs
     from diagnose_scene_pair_limits import load_bound_study
     from scene_pair_problem import load_actors
@@ -115,7 +115,8 @@ def run(study,output,hand_orientation=False,witness_study=None,editable_key_coun
         warm_start_study=None if warm_start_study is None else str(Path(warm_start_study).resolve()),warm_start_replay=warm_replay,
         editable_key_count=editable_key_count,edit_native_times_s=edit_native.tolist(),
         source_directional_queries_reused=len(source_queries),
-        optimizer=dict(method='SLSQP',iterations_per_start=100,finite_difference_step=1e-4,ftol=1e-9),
+        optimizer=dict(method='SLSQP',iterations_per_start=100,finite_difference_step=1e-4,ftol=1e-9,
+            witness_constraints='individual-signed-depths-v1' if individual_witnesses else 'maximum-depth-v1'),
         witness_maximum_per_direction_time=32,hand_tolerance_m=.005,motion_gate_tolerance=9e-6,export_tolerance=1e-5,
         scope=(f'{width} continuous controls per editable native key ({control_layout}): wrist displacements, two elbow swivels and independent scene-hand rotations. Adjacent vector guide rates and frozen endpoint controls are bounded. Motion covers the full edit support and two frozen halo samples on each side; hand witnesses and fresh hand audits cover every affected native interval. ' if hand_orientation else
                'Five continuous symmetric wrist-vector/two-elbow controls at the final editable key. Motion is constrained on the final edge and two frozen suffix samples; incoming edge is not optimized. ')+
@@ -143,20 +144,22 @@ def run(study,output,hand_orientation=False,witness_study=None,editable_key_coun
             evaluated=[m.evaluate_vector(control) for m in models];world=[r[0] for r in evaluated]
         except ValueError as error:
             if 'outside two-bone reach' not in str(error):raise
-            return .2,np.r_[np.full(motion_count+1,-1.),domain]
+            failed=(.2,np.r_[np.full(motion_count+1,-1.),domain])
+            return (*failed,np.full(len(rows),.2)) if individual_witnesses else failed
         parts=[features(w,s['rig'].joints) for w,s in zip(world,sources)]
         payload=dict(indices=ids,**{k:np.concatenate([p[k] for p in parts],axis=1) for k in ['positions','rotations']})
         margins=[(bound[ids[0]:ids[0]+len(value)]+.9*caps.tolerance-value)/np.maximum(bound[ids[0]:ids[0]+len(value)],floor)
                  for value,bound,floor in zip(measures(payload,caps.dt),caps.caps,[.01,1.,.01,1.])]
-        depth=max(0.,float(-objective.gaps(world).min()))
-        return depth,np.r_[np.concatenate([v.ravel() for v in margins]),(45.+1e-4-max(r[1] for r in evaluated))/45.,domain]
+        depths=-objective.gaps(world);depth=max(0.,float(depths.max()))
+        result=(depth,np.r_[np.concatenate([v.ravel() for v in margins]),(45.+1e-4-max(r[1] for r in evaluated))/45.,domain])
+        return (*result,depths) if individual_witnesses else result
     observed=[]
     def observe(record,best):
         observed.append(record)
         if len(observed)%100==0:
             save(output/'evaluations.json',observed)
             print(dict(phase='solve',evaluations=len(observed),best_depth_m=best['witness_peak_m'],feasible=record['motion_domain_feasible']),flush=True)
-    best,solvers,records=solve(evaluate,scale,starts,observe=observe)
+    best,solvers,records=solve(evaluate,scale,starts,observe=observe,individual_witnesses=individual_witnesses)
     save(output/'selected.json',best);save(output/'solvers.json',solvers);save(output/'evaluations.json',records)
     control=np.array(best['controls'])
     if hand_orientation:
@@ -213,5 +216,6 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study',type=Path);parser.add_argument('output',type=Path)
     parser.add_argument('--hand-orientation',action='store_true');parser.add_argument('--witness-study',type=Path)
     parser.add_argument('--warm-start-study',type=Path);parser.add_argument('--independent-wrists',action='store_true')
+    parser.add_argument('--individual-witnesses',action='store_true')
     parser.add_argument('--editable-keys',type=int,default=1);args=parser.parse_args()
-    with worker_lock(),threadpool_limits(limits=1):run(args.study,args.output,args.hand_orientation,args.witness_study,args.editable_keys,args.warm_start_study,args.independent_wrists)
+    with worker_lock(),threadpool_limits(limits=1):run(args.study,args.output,args.hand_orientation,args.witness_study,args.editable_keys,args.warm_start_study,args.independent_wrists,args.individual_witnesses)
