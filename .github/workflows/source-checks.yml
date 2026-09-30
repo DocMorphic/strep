@@ -83,6 +83,7 @@ jobs:
           tests/test_refined_solver_scaling.py
           tests/test_refined_trust_limits.py
           tests/test_refined_surface_limits.py
+          tests/test_refined_peak_prediction.py
           tests/test_refined_reserve_inputs.py
           tests/test_bound_evidence.py
           tests/test_paired_window_feasibility.py
