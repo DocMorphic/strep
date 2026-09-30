@@ -47,3 +47,22 @@ def test_binding_and_independent_search_replay(tmp_path,fault):
         assert route['axis_name']=='Xplus' and str(tmp_path/'source.dat') in files
     else:
         with pytest.raises((ValueError,AssertionError)):load_path(tmp_path,tmp_path/'plan',[1,2,3],inputs)
+
+
+@pytest.mark.parametrize('fault',[None,'missing','shifted','protected','unknown'])
+def test_native_clock_recomputed_from_sources_and_guards(tmp_path,fault):
+    inputs=fixture(tmp_path);window=[.8,2,3.3]
+    request=read(tmp_path/'request.json');request['window_s']=window
+    request['clock_mode']='native_shared' if fault!='unknown' else 'guessed'
+    save(tmp_path/'request.json',request);result=read(tmp_path/'result.json')
+    result['request_sha256']=sha256(tmp_path/'request.json');save(tmp_path/'result.json',result)
+    clocks=[np.arange(5.)]*6;protected=[]
+    if fault=='missing':clocks=None
+    if fault=='shifted':clocks=[np.arange(5.)+.01]*6
+    if fault=='protected':protected=[[2,2]]
+    if fault is None:
+        guide,_,_,_=load_path(tmp_path,tmp_path/'plan',window,inputs,native_clocks=clocks,protected=protected)
+        np.testing.assert_array_equal(guide.times,[1,2,3])
+    else:
+        with pytest.raises((ValueError,AssertionError)):
+            load_path(tmp_path,tmp_path/'plan',window,inputs,native_clocks=clocks,protected=protected)

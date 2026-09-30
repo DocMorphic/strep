@@ -6,7 +6,7 @@ from bound_evidence import bind_inputs
 from waypoint_lattice import shortest_path,LinearGuide
 
 
-def load_path(folder,source_plan,window,required):
+def load_path(folder,source_plan,window,required,*,native_clocks=None,protected=None):
     folder=Path(folder).resolve();result=read(folder/'result.json')
     if result['status']!='complete' or not result['selected']:raise ValueError('Completed selected waypoint path required')
     files={str(folder/'result.json'):sha256(folder/'result.json')}
@@ -41,5 +41,12 @@ def load_path(folder,source_plan,window,required):
     axis=np.asarray(selected['axis'],float)
     if axis.shape!=(3,) or not np.isfinite(axis).all() or abs(np.linalg.norm(axis)-1)>1e-12:raise ValueError('Finite unit route axis required')
     guide=LinearGuide(data['times'],selected['parameters'],request['guide_rate_limits'])
-    if not np.array_equal(guide.times[[0,-1]],np.asarray(window)[[0,-1]]):raise ValueError('Guide window differs')
+    mode=request.get('clock_mode','uniform_with_failure_times')
+    if mode=='native_shared':
+        from native_waypoint_clock import guide_clock
+        if native_clocks is None or protected is None:raise ValueError('Bound native clocks and guards required')
+        np.testing.assert_array_equal(guide.times,guide_clock(native_clocks,window,protected))
+    elif mode=='uniform_with_failure_times':
+        if not np.array_equal(guide.times[[0,-1]],np.asarray(window)[[0,-1]]):raise ValueError('Guide window differs')
+    else:raise ValueError('Unknown waypoint clock mode')
     return guide,axis,selected,files

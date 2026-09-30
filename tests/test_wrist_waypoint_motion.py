@@ -25,7 +25,7 @@ def test_window_excludes_later_collision_cluster_instead_of_hiding_it():
     with pytest.raises(ValueError):peak_window(rows,3,[.1,1.])
 
 
-@pytest.mark.parametrize('scheduled',[False,True])
+@pytest.mark.parametrize('scheduled',[False,True,'native'])
 def test_native_waypoint_bake_protects_keys_shared_sampler_and_contact(tmp_path,scheduled):
     from types import SimpleNamespace
     from scipy.spatial.transform import Rotation
@@ -50,6 +50,11 @@ def test_native_waypoint_bake_protects_keys_shared_sampler_and_contact(tmp_path,
     window=[.2,.6,1.1];offset=np.array([-.01,0.,0.])
     from waypoint_lattice import LinearGuide
     guide=LinearGuide([.2,.5,.8,1.1],[[0,0,0],[.006,9,0],[.01,15,0],[0,0,0]],[.8,300,300])
+    if scheduled=='native':
+        from native_waypoint_clock import guide_clock
+        native=guide_clock([clock]*3,window,[[1.5,1.5]])
+        weights=np.array([bump(t,native[0],.6,native[-1]) for t in native])
+        guide=LinearGuide(native,weights[:,None]*np.array([.01,15,0]),[.8,300,300])
     curve=lambda t:np.r_[[-guide(t)[0],0,0],guide(t)[1]]
     report=bake(rig,[1,2,3],offset,np.eye(3),15.,window,[[1.5,1.5]],path,control_curve=curve if scheduled else None)
     changed,payload=read_glb(path);before=rotation_channels(doc,binary);after=rotation_channels(changed,payload)
@@ -60,6 +65,9 @@ def test_native_waypoint_bake_protects_keys_shared_sampler_and_contact(tmp_path,
     original=AnimationSampler(doc,binary,0);edited=AnimationSampler(changed,payload,0)
     for stamp in np.r_[np.linspace(0,.2,11),np.linspace(1.1,2,101),1.5]:
         np.testing.assert_array_equal(edited.sample(stamp),original.sample(stamp))
+    if scheduled=='native':
+        for stamp in guide.times[[0,-1]]:
+            np.testing.assert_array_equal(edited.sample(stamp),original.sample(stamp))
     for key in report['nodes']['1']:
         stamp=float(clock[key]);a=original.sample(stamp);b=edited.sample(stamp)
         target_offset=curve(stamp)[:3] if scheduled else offset*bump(stamp,*window)

@@ -7,7 +7,7 @@ from scipy.spatial.transform import Rotation
 from strep import ROOT,read,save,sha256,now
 
 
-def run(previous,output):
+def run(previous,output,native_clock=False):
     from diagnose_scene_pair_limits import load_bound_study
     from bound_evidence import bind_inputs
     from scene_pair_problem import load_actors
@@ -17,6 +17,8 @@ def run(previous,output):
     from two_bone_waypoint import reach
     from elbow_swivel import capsule_radius,segment_distance,local_transforms
     from waypoint_lattice import shortest_path,LinearGuide
+    from native_waypoint_clock import guide_clock
+    from paired_temporal_neighbor import rotation_channels
     previous,output=Path(previous).resolve(),Path(output).resolve()
     if output.exists():raise ValueError('Fresh waypoint path study required')
     result=read(previous/'result.json');request=read(previous/'request.json')
@@ -41,7 +43,7 @@ def run(previous,output):
     if len(rows)!=1 or not rows[0]['accepted_local_step'] or rows[0]['reasons']:raise ValueError('Accepted starting correction required')
     selected=rows[0];folder=(study/selected['folder']).resolve()
     if not folder.is_relative_to(study):raise ValueError('Source folder escapes study')
-    _,actors=load_actors(Path(original['prepared_request']).parent)
+    prepared,actors=load_actors(Path(original['prepared_request']).parent)
     window=np.asarray(request['window_s'],float)
     if window.shape!=(3,) or not window[0]<window[1]<window[2]:raise ValueError('Valid prior approach window required')
     measured=read(previous/'geometry.json')
@@ -51,21 +53,27 @@ def run(previous,output):
     amounts=[0.,.02,.04,.06];angles=[-30.,-15.,0.,15.,30.]
     states=np.array([[amount,a,b] for amount in amounts for a in angles for b in angles])
     axes=[(name+sign,axis*value) for name,axis in zip('XYZ',np.eye(3)) for sign,value in [('minus',-1),('plus',1)]]
-    limits=np.array([.8,300.,300.]);costs=np.full((len(axes),len(times),len(states)),np.inf)
-    gaps=np.full_like(costs,np.nan);valid_counts=[];sources=[]
+    limits=np.array([.8,300.,300.]);sources=[];clocks=[]
     for actor,entry in zip(actors,selected['actors']):
         path=(folder/entry['path']).resolve()
         if path.parent!=folder or sha256(path)!=entry['sha256']:raise ValueError('Source clip changed')
         files[str(path)]=entry['sha256'];rig=RigAsset.load(path);skin=BoundSkin(rig)
         chain=protocol['chains'][actor['name']];forearm=np.flatnonzero(np.any((skin.nodes==chain[1])&(skin.weights>0),axis=1))
+        channels=rotation_channels(rig.document,rig.binary)
+        clocks.extend(channels[node][1] for node in chain)
         sources.append(dict(rig=rig,skin=skin,chain=chain,forearm=forearm,sampler=AnimationSampler(rig.document,rig.binary,0)))
+    if native_clock:times=guide_clock(clocks,window,prepared['protected_seconds'])
+    costs=np.full((len(axes),len(times),len(states)),np.inf)
+    gaps=np.full_like(costs,np.nan);valid_counts=[]
     output.mkdir();(output/'implementation').mkdir();methods={}
     for name in ['plan_pair_waypoint_path.py','waypoint_lattice.py','two_bone_waypoint.py','elbow_swivel.py','strep.py',
             'diagnose_scene_pair_limits.py','bound_evidence.py','scene_pair_problem.py','rig_asset.py','rig_clip_import.py',
-            'paired_approach_basis.py','paired_guarded_temporal.py','gltf_tools.py']:
+            'paired_approach_basis.py','paired_guarded_temporal.py','gltf_tools.py',
+            'native_waypoint_clock.py','timed_rotation_edit.py','paired_temporal_neighbor.py']:
         shutil.copyfile(ROOT/'scripts'/name,output/'implementation'/name);methods[name]=sha256(output/'implementation'/name)
     save(output/'request.json',dict(at=now(),previous=str(previous),source_plan=str(plan),source_study=str(study),
         inputs=files,implementation=methods,window_s=window.tolist(),times_s=times.tolist(),
+        clock_mode='native_shared' if native_clock else 'uniform_with_failure_times',
         states=states.tolist(),axes={name:axis.tolist() for name,axis in axes},guide_rate_limits=limits.tolist(),
         rates_units=['m/s','degrees/s','degrees/s'],native_pose_budget_degrees=45.,transition_weight=.1,
         scope='Finite time-indexed guide search. Per-node forearm capsules rank geometry; they do not certify full-mesh or between-node clearance. Piecewise-linear parameter rates are bounded, not actual character rates or acceleration. First collision cluster only; protected poses and later failures remain in subsequent baking.',quality_approved=False))
@@ -122,5 +130,6 @@ def run(previous,output):
 if __name__=='__main__':
     from action_worker_lock import worker_lock
     from threadpoolctl import threadpool_limits
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('previous',type=Path);p.add_argument('output',type=Path);a=p.parse_args()
-    with worker_lock(),threadpool_limits(limits=1):run(a.previous,a.output)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('previous',type=Path);p.add_argument('output',type=Path)
+    p.add_argument('--native-clock',action='store_true');a=p.parse_args()
+    with worker_lock(),threadpool_limits(limits=1):run(a.previous,a.output,a.native_clock)

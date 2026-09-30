@@ -61,14 +61,23 @@ def run(plan,output,path_plan=None):
     guide=axis=route=None
     if path_plan is not None:
         from waypoint_path_evidence import load_path
-        guide,axis,route,path_files=load_path(path_plan,plan,window,files);files.update(path_files)
+        native_clocks=[]
+        for actor,entry in zip(actors,baseline['actors']):
+            source=(folder/entry['path']).resolve()
+            if source.parent!=folder or sha256(source)!=entry['sha256']:raise ValueError('Baseline clip changed')
+            files[str(source)]=entry['sha256'];native_rig=RigAsset.load(source)
+            channels=rotation_channels(native_rig.document,native_rig.binary)
+            native_clocks.extend(channels[node][1] for node in protocol['chains'][actor['name']])
+        guide,axis,route,path_files=load_path(path_plan,plan,window,files,
+            native_clocks=native_clocks,protected=prepared['protected_seconds']);files.update(path_files)
     if [a['name'] for a in actors]!=[a['actor'] for a in waypoint['actors']]:raise ValueError('Waypoint actor order differs')
     if sha256(ROOT/'scripts/convex_partner_surface.py')!=request['implementation']['convex_partner_surface.py']:
         raise ValueError('Reused geometry method differs')
     output.mkdir();(output/'implementation').mkdir();methods={}
     for name in sorted(set(protocol['implementation'])|{'fit_pair_wrist_waypoint.py','wrist_waypoint_motion.py',
             'timed_rotation_edit.py','paired_temporal_neighbor.py','verify_scene_pair_fit.py','scalar_angular_replay.py',
-            'run_godot_rig_import.py','godot_import_audit.gd','waypoint_path_evidence.py','waypoint_lattice.py','bound_evidence.py'}):
+            'run_godot_rig_import.py','godot_import_audit.gd','waypoint_path_evidence.py','waypoint_lattice.py',
+            'bound_evidence.py','native_waypoint_clock.py'}):
         shutil.copyfile(ROOT/'scripts'/name,output/'implementation'/name);methods[name]=sha256(output/'implementation'/name)
     records=[];worlds=[];originals=[];cases=[]
     for index,(actor,entry) in enumerate(zip(actors,baseline['actors'])):
