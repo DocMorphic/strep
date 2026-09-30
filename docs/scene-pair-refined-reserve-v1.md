@@ -48,6 +48,16 @@ The separate audit evaluates full partner meshes and floors at all 148 original 
 
 This prepares packaging only. The active mesh audit must finish, and independent all-trial replay still needs explicit refined-layout reconstruction before this candidate can use the ordinary publication pipeline. No candidate publication has been performed by this change. Twenty-eight assembly and geometry-summary tests pass, including complete synthetic refined assembly and malformed evidence cases. [Windows and Linux source checks](https://github.com/DocMorphic/strep/actions/runs/36709523306) passed for the preceding export-margin commit `c16fc42`; that hosted result does not cover this subsequent packaging change.
 
+The separate immutable review input is prepared with:
+
+```powershell
+.venv/Scripts/python.exe scripts/copy_prepared_pair_review.py reports/paired-edit-jobs/expanded-window-v1 reports/paired-edit-jobs/refined-reserve-v1
+```
+
+This copies only the declared request, prepared state, scene, two actors and implementation snapshots. It verifies their hashes and all declared original inputs before and after copying. It rejects existing destinations, changed evidence and paths outside the source. Solver outputs, prior reviews and publication state are not inherited. `review-origin.json` records the copied identities without implying approval.
+
+The real copy reloads both actors successfully under the original 72-control request, which remains byte-identical. The nine-knot/168-control refinement is applied separately from the bound proposal metadata. The earlier review still reports complete. Eight copy integrity tests pass; [hosted source checks](https://github.com/DocMorphic/strep/actions/runs/36709983220) passed for packaging commit `7af6def`, before this copy helper was added.
+
 ## Source validation
 
 The minimal dependency suite passed 345 tests with four optional skips after adding the reserve input checks. A subsequent focused run covering geometry reconstruction and refined input policies passed 34 tests, including three new cases for original models and refined curves. No browser rendering or animator approval is claimed.
