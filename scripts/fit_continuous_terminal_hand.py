@@ -5,7 +5,7 @@ import numpy as np
 from strep import ROOT,read,save,sha256,now
 
 
-def run(study,output,hand_orientation=False,witness_study=None):
+def run(study,output,hand_orientation=False,witness_study=None,editable_key_count=1):
     from bound_evidence import bind_inputs
     from diagnose_scene_pair_limits import load_bound_study
     from scene_pair_problem import load_actors
@@ -16,6 +16,7 @@ def run(study,output,hand_orientation=False,witness_study=None):
     from paired_approach_basis import BoundSkin
     from continuous_terminal_hand import VectorTerminalMotion,HandWitnessObjective,solve
     from oriented_terminal_hand import OrientedTerminalMotion,support_clock
+    from oriented_guide_domain import control_scales,margins as guide_margins
     from hand_witness_reuse import load_queries,rebuild_witnesses
     from build_guarded_pair_witnesses import query
     from waypoint_path_evidence import load_path
@@ -57,12 +58,15 @@ def run(study,output,hand_orientation=False,witness_study=None):
     guide,_,_,bound=load_path(plan,source_plan,path_request['window_s'],required,native_clocks=clocks,protected=prepared['protected_seconds'],
         authored_window=prepared['authored']['window_s'],peak_time=float(times[protocol['sample']]))
     files.update(bound);native=guide.times;np.testing.assert_array_equal(native,request['native_times_s'])
+    if type(editable_key_count) is not int or not 1<=editable_key_count<=len(native)-2 or editable_key_count>1 and not hand_orientation:
+        raise ValueError('Choose permitted native key count; multiple keys require oriented controls')
+    edit_native=native[-(editable_key_count+2):]
     edge=np.flatnonzero((times>=native[-2])&(times<native[-1]));suffix=np.flatnonzero(times>=native[-1])[:2]
     if len(edge)<2 or len(suffix)!=2:raise ValueError('Terminal edge and two frozen suffix samples required')
     ids=np.r_[edge,suffix];np.testing.assert_array_equal(np.diff(ids),1)
-    if hand_orientation:edge,ids=support_clock(times,native[-3:])
+    if hand_orientation:edge,ids=support_clock(times,edit_native)
     model_type=OrientedTerminalMotion if hand_orientation else VectorTerminalMotion
-    models=[model_type(s['rig'],s['chain'],native[-3:],times[ids],prepared['protected_seconds'],a['rotation'],i)
+    models=[model_type(s['rig'],s['chain'],edit_native,times[ids],prepared['protected_seconds'],a['rotation'],i)
             for i,(s,a) in enumerate(zip(sources,actors))]
     parts=[features(w,s['rig'].joints) for w,s in zip(reference,sources)]
     caps=SampledMotionCaps({k:np.concatenate([p[k] for p in parts],axis=1) for k in ['positions','rotations']},times,request['original_bins_s'])
@@ -70,26 +74,30 @@ def run(study,output,hand_orientation=False,witness_study=None):
     scale=np.r_[np.repeat(min(.06,limits[0]*dt),3),np.minimum(30.,limits[1:]*dt)]
     starts=[np.zeros(5),np.array([-.005,0,0,0,0]),np.array([0,0,-.02,0,0]),np.array([-.005,0,-.005,-1,-1])]
     if hand_orientation:
-        scale=np.r_[scale,np.repeat(min(30.,300.*dt),6)]
+        scale=control_scales(edit_native,limits)
         starts=[np.r_[v,np.zeros(6)] for v in starts]
         starts[2][5:]=[0,0,2.,0,0,-2.]
         starts[3][5:]=[0,2.,0,0,-2.,0]
+        if editable_key_count>1:
+            weights=np.sin(np.linspace(0,np.pi,editable_key_count+2)[1:-1])**2
+            starts=[np.zeros(len(scale)),(weights[:,None]*starts[3]).ravel()]
     source_queries=[]
     if witness_study is not None:
         source_queries,reused_files=load_queries(witness_study,files,[s['hand'] for s in sources],edge);files.update(reused_files)
     output.mkdir();(output/'implementation').mkdir();methods={}
     names=set(request['implementation'])|{'fit_continuous_terminal_hand.py','continuous_terminal_hand.py','continuous_waypoint_motion.py',
         'build_guarded_pair_witnesses.py','paired_surface_witness.py','verify_scene_pair_fit.py','scalar_angular_replay.py','wrist_waypoint_motion.py',
-        'oriented_terminal_hand.py','hand_witness_reuse.py'}
+        'oriented_terminal_hand.py','hand_witness_reuse.py','oriented_guide_domain.py'}
     for name in sorted(names):
         shutil.copyfile(ROOT/'scripts'/name,output/'implementation'/name);methods[name]=sha256(output/'implementation'/name)
     save(output/'request.json',dict(at=now(),study=str(study),inputs=files,implementation=methods,scale=scale.tolist(),starts=[v.tolist() for v in starts],
         sample_indices=ids.tolist(),hand_samples=edge.tolist(),native_times_s=native.tolist(),original_bins_s=request['original_bins_s'],
         hand_orientation=hand_orientation,witness_study=None if witness_study is None else str(Path(witness_study).resolve()),
+        editable_key_count=editable_key_count,edit_native_times_s=edit_native.tolist(),
         source_directional_queries_reused=len(source_queries),
         optimizer=dict(method='SLSQP',iterations_per_start=100,finite_difference_step=1e-4,ftol=1e-9),
         witness_maximum_per_direction_time=32,hand_tolerance_m=.005,motion_gate_tolerance=9e-6,export_tolerance=1e-5,
-        scope=('Eleven continuous wrist/elbow/independent scene-hand rotation controls. Motion covers the entire edited-key support and two frozen halo samples on each side; hand witnesses and fresh hand audits cover both native intervals. ' if hand_orientation else
+        scope=('Eleven continuous wrist/elbow/independent scene-hand rotation controls per editable native key. Adjacent vector guide rates and frozen endpoint controls are bounded. Motion covers the full edit support and two frozen halo samples on each side; hand witnesses and fresh hand audits cover every affected native interval. ' if hand_orientation else
                'Five continuous symmetric wrist-vector/two-elbow controls at the final editable key. Motion is constrained on the final edge and two frozen suffix samples; incoming edge is not optimized. ')+
               'Fixed hand witnesses guide search only; exact baked GLBs, full-clock motion and fresh hand meshes are audited afterwards. No full-body/engine acceptance inferred.',quality_approved=False))
     reused_samples={q['sample'] for q in source_queries}
@@ -109,8 +117,8 @@ def run(study,output,hand_orientation=False,witness_study=None):
     objective=HandWitnessObjective([s['skin'] for s in sources],actors,rows)
     motion_count=sum((len(ids)-o)*caps.joints for o in [1,2,1,2])
     def evaluate(control):
-        domain=np.r_[1-np.linalg.norm(control[:3])/scale[0],1-np.abs(control[3:5])/scale[3:5]]
-        if hand_orientation:domain=np.r_[domain,1-np.linalg.norm(control[5:8])/scale[5],1-np.linalg.norm(control[8:11])/scale[8]]
+        domain=(guide_margins(control,edit_native,limits) if hand_orientation else
+                np.r_[1-np.linalg.norm(control[:3])/scale[0],1-np.abs(control[3:5])/scale[3:5]])
         try:
             evaluated=[m.evaluate_vector(control) for m in models];world=[r[0] for r in evaluated]
         except ValueError as error:
@@ -130,8 +138,12 @@ def run(study,output,hand_orientation=False,witness_study=None):
             print(dict(phase='solve',evaluations=len(observed),best_depth_m=best['witness_peak_m'],feasible=record['motion_domain_feasible']),flush=True)
     best,solvers,records=solve(evaluate,scale,starts,observe=observe)
     save(output/'selected.json',best);save(output/'solvers.json',solvers);save(output/'evaluations.json',records)
-    control=np.array(best['controls']);amount=float(np.linalg.norm(control[:3]));axis=control[:3]/amount if amount else np.array([1.,0.,0.])
-    parameters=np.zeros((len(native),3));parameters[-2]=np.r_[amount,control[3:5]];fitted=LinearGuide(native,parameters,limits)
+    control=np.array(best['controls'])
+    if hand_orientation:
+        if np.any(guide_margins(control,edit_native,limits)<0):raise ValueError('Selected guide fails independent replay')
+    else:
+        amount=float(np.linalg.norm(control[:3]));axis=control[:3]/amount if amount else np.array([1.,0.,0.])
+        parameters=np.zeros((len(native),3));parameters[-2]=np.r_[amount,control[3:5]];fitted=LinearGuide(native,parameters,limits)
     decoded=[];worlds=[]
     for index,(s,a,m,old) in enumerate(zip(sources,actors,models,reference)):
         path=output/f'candidate-{index}.glb'
@@ -145,9 +157,9 @@ def run(study,output,hand_orientation=False,witness_study=None):
         before=rotation_channels(s['rig'].document,s['rig'].binary);after=rotation_channels(rig.document,rig.binary)
         for node,(_,clock,q) in before.items():
             np.testing.assert_array_equal(after[node][1],clock)
-            frozen=clock!=native[-2] if node in s['chain'] else np.ones(len(clock),bool)
+            frozen=~np.isin(clock,edit_native[1:-1]) if node in s['chain'] else np.ones(len(clock),bool)
             np.testing.assert_array_equal(after[node][2][frozen],q[frozen])
-        outside=(times<=native[-3])|(times>=native[-1]);np.testing.assert_array_equal(world[outside],old[outside])
+        outside=(times<=edit_native[0])|(times>=edit_native[-1]);np.testing.assert_array_equal(world[outside],old[outside])
         decoded.append(dict(actor=a['name'],path=path.name,sha256=sha256(path),maximum_batch_error=error,native_clocks_and_frozen_keys_exact=True,
             positional=rate_check(a['rates'].positions(old),a['rates'].positions(world),times,request['original_bins_s']),
             angular=angular_replay(old[:,rig.joints,:3,:3],world[:,rig.joints,:3,:3],times,request['original_bins_s'])))
@@ -166,6 +178,7 @@ def run(study,output,hand_orientation=False,witness_study=None):
         if sha256(ROOT/'scripts'/name)!=digest:raise ValueError('Continuous hand method changed')
     output_result=dict(at=now(),status='complete',nonzero_controls=bool(np.any(control)),terminal_motion_pass=True,
         hand_orientation=hand_orientation,whole_key_support_motion_constrained=hand_orientation,
+        editable_key_count=editable_key_count,
         full_clock_motion_pass=all(not a['positional']['failures'] and not any(v['exceeding_observations'] for v in a['angular'].values()) for a in decoded),
         witness_peak_m=best['witness_peak_m'],fresh_hand_peak_m=max(r['hand_peak_m'] for r in geometry),
         failed_hand_samples=sum(r['hand_peak_m']>.005 for r in geometry),full_mesh_clock_checked=False,accepted_for_publication=False,quality_approved=False)
@@ -178,5 +191,6 @@ if __name__=='__main__':
     from action_worker_lock import worker_lock
     from threadpoolctl import threadpool_limits
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study',type=Path);parser.add_argument('output',type=Path)
-    parser.add_argument('--hand-orientation',action='store_true');parser.add_argument('--witness-study',type=Path);args=parser.parse_args()
-    with worker_lock(),threadpool_limits(limits=1):run(args.study,args.output,args.hand_orientation,args.witness_study)
+    parser.add_argument('--hand-orientation',action='store_true');parser.add_argument('--witness-study',type=Path)
+    parser.add_argument('--editable-keys',type=int,default=1);args=parser.parse_args()
+    with worker_lock(),threadpool_limits(limits=1):run(args.study,args.output,args.hand_orientation,args.witness_study,args.editable_keys)

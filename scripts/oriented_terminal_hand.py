@@ -1,8 +1,9 @@
-"""One-key arm controls with independent intermediate hand orientations."""
+"""Native arm controls with independent intermediate hand orientations."""
 import copy
 import numpy as np
 from scipy.spatial.transform import Rotation
 from continuous_terminal_hand import VectorTerminalMotion
+from continuous_waypoint_motion import ContinuousWaypointMotion
 from two_bone_waypoint import reach
 from elbow_swivel import local_transforms
 from timed_rotation_edit import sampled_rotations
@@ -11,17 +12,22 @@ from gltf_tools import append_accessor,write_glb
 
 
 class OrientedTerminalMotion(VectorTerminalMotion):
+    def __init__(self,rig,chain,native,times,protected,placement,actor):
+        ContinuousWaypointMotion.__init__(self,rig,chain,native,times,protected,placement,np.array([1.,0.,0.]),actor)
+
     def quaternions_vector(self,controls):
         controls=np.asarray(controls,float)
-        if controls.shape!=(11,) or not np.isfinite(controls).all():raise ValueError('Eleven finite wrist/elbow/hand controls required')
+        count=len(self.native)-2
+        if controls.shape!=(11*count,) or not np.isfinite(controls).all():raise ValueError('Eleven finite controls per editable native key required')
         model=self.model;values={e['node']:e['source'].astype(float).copy() for e in model.entries}
-        hand=controls[5+3*self.actor:8+3*self.actor]
-        if np.any(controls[:3]) or controls[3+self.actor]!=0 or np.any(hand):
-            world=self.key_world[0];offset=controls[:3]*(1 if self.actor==0 else -1)
-            arm_changed=bool(np.any(offset) or controls[3+self.actor]!=0)
+        for frame,control in enumerate(controls.reshape(count,11)):
+            hand=control[5+3*self.actor:8+3*self.actor]
+            if not (np.any(control[:3]) or control[3+self.actor]!=0 or np.any(hand)):continue
+            world=self.key_world[frame];offset=control[:3]*(1 if self.actor==0 else -1)
+            arm_changed=bool(np.any(offset) or control[3+self.actor]!=0)
             if arm_changed:
                 moved,local=reach(world,self.rig.parents,*self.chain,world[self.chain[-1],:3,3]+offset@self.placement,
-                                  np.deg2rad(controls[3+self.actor]))
+                                  np.deg2rad(control[3+self.actor]))
             else:moved=world;local=local_transforms(world,self.rig.parents)
             if np.any(hand):
                 # Hand deltas are world-scene rotation vectors in degrees.
@@ -30,7 +36,7 @@ class OrientedTerminalMotion(VectorTerminalMotion):
             quaternions=Rotation.from_matrix(local[self.chain,:3,:3]).as_quat()
             for number,entry in enumerate(model.entries):
                 if not arm_changed and entry['node']!=self.chain[-1]:continue
-                key=entry['ids'][0];q=quaternions[number]
+                key=entry['ids'][frame];q=quaternions[number]
                 if q@entry['source'][key]<0:q=-q
                 values[entry['node']][key]=q.astype(np.float32)
         maximum=max(float(np.rad2deg((Rotation.from_quat(e['source']).inv()*Rotation.from_quat(values[e['node']])).magnitude()).max()) for e in model.entries)
@@ -59,8 +65,8 @@ class OrientedTerminalMotion(VectorTerminalMotion):
 
 def support_clock(times,native):
     times,native=np.asarray(times,float),np.asarray(native,float)
-    if times.ndim!=1 or native.shape!=(3,) or not np.isfinite(times).all() or not np.isfinite(native).all() or np.any(np.diff(times)<=0) or np.any(np.diff(native)<=0):
-        raise ValueError('Increasing finite sample clock and three native keys required')
+    if times.ndim!=1 or native.ndim!=1 or len(native)<3 or not np.isfinite(times).all() or not np.isfinite(native).all() or np.any(np.diff(times)<=0) or np.any(np.diff(native)<=0):
+        raise ValueError('Increasing finite sample clock and native support keys required')
     before=np.flatnonzero(times<native[0])[-2:];inside=np.flatnonzero((times>=native[0])&(times<native[-1]));after=np.flatnonzero(times>=native[-1])[:2]
     if len(before)!=2 or len(after)!=2 or len(inside)<4:raise ValueError('Complete support and two frozen halo samples on each side required')
     ids=np.r_[before,inside,after]

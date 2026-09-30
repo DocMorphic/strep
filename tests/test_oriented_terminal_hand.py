@@ -65,3 +65,63 @@ def test_eleven_dimensional_optimizer_uses_last_hand_component():
                    np.full(11,.04),[np.zeros(11)],iterations=25)
     assert len(best['controls'])==11 and 0<best['controls'][-1]<=.004
     assert .006<=best['witness_peak_m']<.0061
+
+
+@pytest.mark.parametrize('actor',[0,1])
+def test_three_editable_keys_preserve_other_keys_and_shared_sampler(actor,tmp_path):
+    rig,clock=rig_fixture();rig.document['skins']=[dict(joints=rig.joints)]
+    native=clock[3:8].astype(float);times=np.arange(241)/120
+    placement=Rotation.from_euler('xyz',[-17,43,8],degrees=True).as_matrix()
+    model=OrientedTerminalMotion(rig,[1,2,3],native,times,[],placement,actor)
+    rows=np.array([[.001,-.002,.003,1.,-2.,.3,-.7,.2,-.4,.8,-.6],
+                   [0.,0.,0.,0.,0.,-.7,.2,.1,.5,-.6,.3],
+                   [-.002,.001,-.001,-1.,1.,.9,.4,-.3,-.2,.6,.8]])
+    path=tmp_path/'three-key.glb';model.export_vector(rows.ravel(),path)
+    doc,binary=read_glb(path);reader=AnimationSampler(doc,binary,0)
+    source=AnimationSampler(rig.document,rig.binary,0)
+    np.testing.assert_allclose(model.evaluate_vector(rows.ravel())[0],[reader.sample(t) for t in times],atol=2e-12,rtol=0)
+    for t,row in zip(native[1:-1],rows):
+        old=source.sample(t);new=reader.sample(t)
+        delta=Rotation.from_rotvec(np.deg2rad(row[5+actor*3:8+actor*3])).as_matrix()
+        np.testing.assert_allclose(placement@new[3,:3,:3],delta@placement@old[3,:3,:3],atol=2e-7,rtol=0)
+        np.testing.assert_allclose(new[3,:3,3]@placement.T,old[3,:3,3]@placement.T+row[:3]*(1 if actor==0 else -1),atol=2e-7,rtol=0)
+    before=rotation_channels(rig.document,rig.binary);after=rotation_channels(doc,binary)
+    for node,(_,track,q) in before.items():
+        np.testing.assert_array_equal(track,after[node][1])
+        frozen=~np.isin(track,native[1:-1]) if node in [1,2,3] else np.ones(len(track),bool)
+        np.testing.assert_array_equal(q[frozen],after[node][2][frozen])
+        if node in [1,2]:np.testing.assert_array_equal(q[track==native[2]],after[node][2][track==native[2]])
+    # Fixture node 6 shares the original arm sampler and must stay untouched.
+    np.testing.assert_array_equal(before[6][2],after[6][2])
+    with pytest.raises(ValueError):model.evaluate_vector(np.zeros(11))
+
+
+def test_multikey_guide_bounds_reject_adjacent_direction_changes_and_diagonals():
+    from oriented_guide_domain import control_scales,margins
+    native=[0.,.1,.2,.3,.4];limits=[.8,300.,300.]
+    scale=control_scales(native,limits).reshape(3,11)
+    np.testing.assert_allclose(scale[:,0],.06)
+    for columns,amount in [([0],.06),([3],30.),([5],30.),([8],30.)]:
+        controls=np.zeros((3,11));controls[0,columns]=amount;controls[1,columns]=-amount
+        values=margins(controls.ravel(),native,limits)
+        assert np.min(values[:15])>=-1e-14 # Each key individually inside its envelope.
+        assert np.min(values[15:])<0 # Adjacent transition too fast.
+    for columns,amount in [([0,1],.05),([5,6],25.),([8,9],25.)]:
+        controls=np.zeros((3,11));controls[1,columns]=amount
+        assert np.all(np.abs(controls)<=scale)
+        assert np.min(margins(controls.ravel(),native,limits))<0
+    controls=np.zeros((3,11));controls[:,0]=[.01,.02,.01];controls[:,5]=[5.,10.,5.]
+    assert np.min(margins(controls.ravel(),native,limits))>0
+    with pytest.raises(ValueError):margins(np.zeros(11),native,limits)
+
+
+def test_multikey_support_includes_entire_edit_and_halos():
+    inside,ids=support_clock(np.arange(31)/10,[.7,.9,1.1,1.3,1.5])
+    np.testing.assert_array_equal(inside,np.arange(7,15));np.testing.assert_array_equal(ids,np.arange(5,17))
+
+
+def test_thirty_three_dimensional_optimizer_can_edit_last_key():
+    best,_,_=solve(lambda c:(max(0.,.01-c[-1]),np.array([.004-c[-1],c[-1]+.04])),
+                   np.full(33,.04),[np.zeros(33)],iterations=25)
+    assert len(best['controls'])==33 and 0<best['controls'][-1]<=.004
+    assert .006<=best['witness_peak_m']<.0061
