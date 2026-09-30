@@ -31,11 +31,15 @@ def run(study,output):
     from oriented_terminal_hand import OrientedTerminalMotion
     from oriented_guide_domain import margins
     from diagnose_terminal_hand_rates import explain
+    from hand_geometry_comparison import compare,load_warm_geometry
     study,output=Path(study).resolve(),Path(output).resolve()
     if output.exists():raise ValueError('Fresh return diagnosis required')
     request,files=load_evidence(study);terminal=read(Path(request['study'])/'request.json')
     plan=read(Path(terminal['plan'])/'request.json');protocol=read(Path(plan['source_plan'])/'request.json');baseline=Path(protocol['study'])
     original,_,required=load_bound_study(baseline);files.update(bind_inputs(required,request['inputs']))
+    warm_geometry=None
+    if request.get('warm_start_study'):
+        warm_geometry,warm_files=load_warm_geometry(request,files);files.update(warm_files)
     prepared,actors=load_actors(Path(original['prepared_request']).parent)
     selected=read(baseline/'result.json')['selected'];trial=next(r for r in read(baseline/'trials.json') if r['folder']==selected)
     times=np.asarray(terminal['sample_times_s']);native=np.asarray(request['edit_native_times_s']);ids=np.asarray(request['sample_indices'])
@@ -53,7 +57,7 @@ def run(study,output):
         return dict(indices=indices,**{k:np.concatenate([p[k] for p in parts],axis=1) for k in ['positions','rotations']})
     caps=SampledMotionCaps(payload(worlds,np.arange(len(times))),times,request['original_bins_s'])
     output.mkdir();(output/'implementation').mkdir();methods={}
-    for name in sorted(set(request['implementation'])|{'diagnose_oriented_hand_returns.py','diagnose_terminal_hand_rates.py'}):
+    for name in sorted(set(request['implementation'])|{'diagnose_oriented_hand_returns.py','diagnose_terminal_hand_rates.py','hand_geometry_comparison.py'}):
         shutil.copyfile(ROOT/'scripts'/name,output/'implementation'/name);methods[name]=sha256(output/'implementation'/name)
     save(output/'request.json',dict(at=now(),study=str(study),inputs=files,implementation=methods,
         scope='Selected controls and every final optimizer return, decoded from actual GLBs under original caps. No mesh query, tolerance change, source mutation or acceptance.',quality_approved=False))
@@ -108,6 +112,7 @@ def run(study,output):
         attribution.append(dict(actor=actors[actor]['name'],sample=peak['sample'],time_s=peak['time_s'],
             hand_peak_m=direction['max_depth_m'],deepest_source_vertex=vertex,source_skin_weights=weights))
     save(output/'geometry-attribution.json',attribution)
+    if warm_geometry is not None:save(output/'warm-start-comparison.json',compare(warm_geometry,geometry,request['hand_tolerance_m']))
     for path,digest in files.items():
         if sha256(path)!=digest:raise ValueError('Return diagnosis input changed')
     for name,digest in methods.items():
@@ -116,6 +121,7 @@ def run(study,output):
         returns_sha256=sha256(output/'returns.json'),geometry_attribution_sha256=sha256(output/'geometry-attribution.json'),
         hand_comparison_sha256=sha256(output/'hand-comparison.json'),
         accepted_for_publication=False,quality_approved=False)
+    if warm_geometry is not None:result['warm_start_comparison_sha256']=sha256(output/'warm-start-comparison.json')
     save(output/'result.json',result);print(result,flush=True)
 
 

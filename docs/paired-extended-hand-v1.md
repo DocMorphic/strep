@@ -69,7 +69,8 @@ The preceding commit `698d661` passed hosted CI.
 
 The real worker's warm-start replay completed with zero error for both actors,
 and its expanded-support motion and guide checks passed. It verified/reused all
-50 donor source queries and is measuring the additional source directions.
+50 donor source queries, completed the 36 additional directions, and entered
+the optimization phase.
 
 The experiment is running. No clearance improvement, publication or release
 approval is claimed. Once terminal, compare selected geometry at matching times
@@ -77,3 +78,27 @@ against both the unchanged source and the three-key donor where their measured
 clocks overlap. Record local regressions as well as peak depth, and diagnose
 actual exported motion failures before deciding the next step. Studio remains
 on its previously published evidence; all 14 release capabilities are unapproved.
+
+## Comparison with the previous correction
+
+The return diagnostic now also writes `warm-start-comparison.json` when a warm
+start is declared. `hand_geometry_comparison.py` requires the exact donor
+request/result already bound by the current study, verifies the donor geometry
+hash and complete clock, and compares equal sample IDs, timestamps and vertex
+populations. The 25 donor times must all remain present; the 18 additional
+candidate times are explicitly outside this comparison and still belong to
+the complete source-versus-candidate audit.
+
+Both ordered directional depths are compared separately, alongside each time's
+pair maximum. Thus a lower pair peak cannot conceal increased penetration for
+the other actor. The report includes new failing times, maximum per-time and
+per-direction increases, and the count of directional observations worsened
+by more than 1e-8 m. A real donor self-comparison reproduced its 20.932848 mm
+peak and 15 failing times with exactly zero directional changes.
+
+Focused comparison/return-evidence checks pass 29 tests, including rejection of
+duplicate/missing times, shifted timestamps, changed hand/full vertex counts,
+nonfinite or negative depths, modified/unbound donor geometry and incomplete
+studies. No new optimization or mesh outcome is inferred from these checks.
+
+The complete minimal public Python suite now passes 673 tests. Commit `531c60e` passed hosted CI. The running worker's imported method snapshots remain unchanged.
