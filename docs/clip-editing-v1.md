@@ -70,3 +70,12 @@ eligible in the finite runtime manifest. Maximum decoded matrix and skin
 errors are 1.34e-15 and 1.78e-15 m. Input geometry stays unchanged. This is an
 actual GLB/metadata export check, not a fresh Godot run or human timing review.
 Verification hash: `0963dd62bada00bab0bc2fc0a40e06125d54fca166a438d11c597756f90e66ef`.
+
+The Studio marker editor now shows the most recent recorded speed-edit rounding
+shift in milliseconds, labeled as a previous edit. A missing review flag stays
+unconfirmed when opening or saving the editor. Previewing a cue does not
+confirm it; the explicit confirmation button updates only the local draft.
+Rounding notes do not enter the strict four-field marker submission payload,
+and loading another source clears those notes. The desktop bundle was rebuilt.
+Nine Node UI scripts and four desktop build/preservation checks pass, including
+the new editor DOM simulation. No rendered-browser check is claimed.

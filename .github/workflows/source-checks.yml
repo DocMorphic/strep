@@ -137,3 +137,4 @@ jobs:
           node tests/test_scene_trim_editor.mjs
           node tests/test_scene_region_editor.mjs
           node tests/test_scene_feedback.mjs
+          node tests/test_rig_event_editor.mjs
