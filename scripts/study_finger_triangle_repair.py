@@ -21,6 +21,8 @@ def run(donor, output, iterations=3):
     from hand_norm_proposal import rate_vectors, measurement
     from hand_witness_envelope import limits
     from triangle_crossing import audit, classify
+    from sampled_surface_guard import SampledSurfaceGuard, snapshot, compare
+    from convex_partner_surface import penetration
     from triangle_separation_objective import choose_axes, TriangleSeparationObjective
     from iterated_hand_norm import solve
     from conic_root_descent import solver_module
@@ -123,7 +125,7 @@ def run(donor, output, iterations=3):
     methods = {}; output.mkdir(); (output/'implementation').mkdir()
     names = set(request['implementation']) | {'study_finger_triangle_repair.py', 'native_finger_motion.py', 'triangle_separation_objective.py',
         'swept_triangle_separation.py', 'swept_surface_boxes.py', 'triangle_crossing.py', 'hand_norm_proposal.py', 'hand_witness_envelope.py',
-        'iterated_hand_norm.py', 'conic_root_descent.py', 'conic_linear_screen.py', 'root_release_block.py', 'diagnose_oriented_hand_returns.py', 'diagnose_terminal_hand_rates.py'}
+        'iterated_hand_norm.py', 'sampled_surface_guard.py', 'convex_partner_surface.py', 'conic_root_descent.py', 'conic_linear_screen.py', 'root_release_block.py', 'diagnose_oriented_hand_returns.py', 'diagnose_terminal_hand_rates.py'}
     for name in sorted(names):
         source = ROOT/'scripts'/name; methods[name] = sha256(source); shutil.copyfile(source, output/'implementation'/name)
     save(output/'baseline-geometry.json', baseline_geometry)
@@ -134,6 +136,7 @@ def run(donor, output, iterations=3):
         initial_palm_centers_m=initial_centers.tolist(), initial_palm_normals=initial_normals.tolist(), initial_palm_gap_m=float(np.linalg.norm(initial_centers[0]-initial_centers[1])),
         baseline_geometry_sha256=sha256(output/'baseline-geometry.json'), active_crossing_pairs=len(crossing), axes=axes.tolist(),
         old_witness_depths_m=initial_old_depths.tolist(), old_witness_ceilings_m=ceiling.tolist(), iterations=iterations, trusts=[.1, .01, .001],
+        surface_guard=dict(method='fixed_baseline_sampled_mesh_v1', depth_slack_m=1e-8, audit_times_s=audit_times.tolist()),
         before=before, quality_approved=False, scope='Explicit finger-only alternative to whole-pose freezing: arm/wrist/body channels remain exact, actual palm points/relative vector and normals bounded. Original motion caps and old witness ceilings retained. Protected-time triangle objective; whole interaction quality unresolved.'))
     history = []
     def checkpoint(model, record):
@@ -141,7 +144,13 @@ def run(donor, output, iterations=3):
         history.append(record); save(output/'proposals.json', history)
     def observe(record):
         if record['phase'] != 'jacobian' or record['coordinates'] % 19 == 0: print(record, flush=True)
-    best, report = solve(exact, proposal, point, solver, iterations=iterations, trusts=(.1, .01, .001), checkpoint=checkpoint, observe=observe)
+    def guard_vertices(x):
+        worlds = worlds_for(x)
+        return [[rig.vertices(w[int(np.searchsorted(combined,t))])@a['rotation'].T+a['translation']
+                 for rig,w,a in zip(rigs,worlds,actors)] for t in audit_times]
+    guard = SampledSurfaceGuard([a['faces'] for a in actors], [len(p) for p in positions], audit_times, guard_vertices, point, observe=observe)
+    save(output/'surface-baseline.json', guard.original)
+    best, report = solve(exact, proposal, point, solver, iterations=iterations, trusts=(.1, .01, .001), checkpoint=checkpoint, observe=observe, acceptance_guard=guard)
     save(output/'iteration-summary.json', report); save(output/'selected.json', dict(controls=(best*scale).tolist(), **measurement(exact(best))))
     controls = np.split(best*scale, [sizes[0]]); decoded_worlds = []; clips = []
     for i, (model, control, path, rig, reader) in enumerate(zip(models, controls, input_paths, rigs, readers)):
@@ -168,19 +177,24 @@ def run(donor, output, iterations=3):
     labels = [actor['name']+':'+rig.document['nodes'][n]['name'] for actor, rig in zip(actors, rigs) for n in rig.joints]
     save(output/'decoded.json', dict(clips=clips, full_clock=explain(final_payload, caps, labels), palm_position_errors_m=point_error.tolist(),
         palm_normal_vector_errors=normal_error.tolist(), relative_palm_vector_error_m=float(gap_error), old_witness_envelope_pass=True))
-    geometry = []
+    geometry = []; surface_observations = []
     for stamp in audit_times:
         frame = int(np.searchsorted(combined, stamp)); points = [rig.vertices(w[frame])@a['rotation'].T+a['translation'] for rig,w,a in zip(rigs,decoded_worlds,actors)]
         value = audit(points[0], actors[0]['faces'], points[1], actors[1]['faces']); name = f'geometry-{len(geometry):02d}.json'; save(output/name, value)
-        geometry.append(dict(time_s=float(stamp), counts=value['counts'], path=name, sha256=sha256(output/name)))
+        depths = [penetration(points[a],points[b],actors[b]['faces']) for a,b in [(0,1),(1,0)]]
+        surface_observations.append(dict(time_s=float(stamp),surface=value,depths=depths))
+        geometry.append(dict(time_s=float(stamp), counts=value['counts'], full_vertex_depths=depths, path=name, sha256=sha256(output/name)))
         save(output/'geometry.json', geometry); print(dict(phase='fresh_geometry', completed=len(geometry), total=len(audit_times), counts=value['counts']), flush=True)
+    decoded_surface = compare(guard.original, snapshot(guard.meshes,surface_observations))
+    save(output/'decoded-surface-guard.json', decoded_surface)
+    if not decoded_surface['passed']: raise ValueError('Decoded mesh geometry regressed')
     for path, digest in files.items():
         if sha256(path) != digest: raise ValueError('Finger study input changed')
     for name, digest in methods.items():
         if sha256(ROOT/'scripts'/name) != digest: raise ValueError('Finger study method changed')
     outputs = {p.name: sha256(p) for p in output.iterdir() if p.is_file()}
     save(output/'result.json', dict(at=now(), status='complete', outputs=outputs, before=before, after=measurement(exact(best)),
-        original_motion_caps_pass=True, palm_preservation_pass=True, old_witness_envelope_pass=True,
+        original_motion_caps_pass=True, palm_preservation_pass=True, old_witness_envelope_pass=True, sampled_surface_guard_pass=True,
         protected_time_crossings_before=len(crossing), protected_time_crossings_after=next(r['counts'].get('proper_crossing',0) for r in geometry if r['time_s']==contact_time),
         total_pair_time_crossings=sum(r['counts'].get('proper_crossing',0) for r in geometry),
         collision_free_certified=False, accepted_for_publication=False, quality_approved=False))

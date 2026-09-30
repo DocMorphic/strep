@@ -55,6 +55,8 @@ The owner will perform developer review first. Independent animator review and t
 
 [Decoded finger diagnostics](docs/finger-proposal-replay-v1.md) confirm that a lower solver objective can still worsen actual mesh intersections. The quarter-step proposal passes motion/palm limits but remains rejected: 196 older witness bounds fail and sampled crossing counts rise from 3,344 to 3,346. All 876 minimal source tests pass.
 
+[Mesh checks before accepting corrections](docs/sampled-surface-guard-v1.md) now reject new sampled triangle crossings and deeper directional penetration after the existing motion/contact checks pass. The saved rejected proposal fails at six of fourteen times. All 888 minimal source tests pass; this guards future repairs and does not establish improved animation quality.
+
 ## Using this source snapshot
 
 Development currently uses Windows, Python 3.10, NVIDIA CUDA/PyTorch, Node.js for viewer dependencies, and a separately acquired Kimodo installation. Read the [baseline setup runbook](docs/baseline-runbook.md), [pinned source/model revisions](benchmarks/sources.lock.json), and [Studio workflow](docs/action-studio.md). Those documents include historical experiments; a fully verified clean-clone installer is still unfinished.

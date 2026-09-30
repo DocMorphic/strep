@@ -1,10 +1,10 @@
 """Rebuild bounded hand proposals without rebasing the original motion limits."""
 import numpy as np
-from hand_norm_proposal import validate, measurement, linearize, direction, backtrack
+from hand_norm_proposal import validate, measurement, linearize, direction, backtrack, check_guard
 
 
 def solve(exact, smooth, point, solver, *, iterations=6, trusts=(.01, .001, .0001),
-          step=1e-4, observe=None, checkpoint=None):
+          step=1e-4, observe=None, checkpoint=None, acceptance_guard=None):
     point = np.asarray(point, float).copy(); trusts = np.asarray(trusts, float)
     if (type(iterations) is not int or not 1 <= iterations <= 12 or point.ndim != 1
             or not len(point) or not np.isfinite(point).all() or np.any(np.abs(point) > 1)
@@ -25,6 +25,8 @@ def solve(exact, smooth, point, solver, *, iterations=6, trusts=(.01, .001, .000
     exact, smooth = bound(exact), bound(smooth)
     initial = measurement(original)
     if initial['minimum_margin'] < 0: raise ValueError('Motion-feasible initial controls required')
+    if acceptance_guard is not None and not check_guard(acceptance_guard, point)['passed']:
+        raise ValueError('Initial controls fail geometry guard')
     history = []; reason = 'iteration_budget'; current = initial
     for iteration in range(iterations):
         if current['witness_peak_m'] == 0:
@@ -42,7 +44,7 @@ def solve(exact, smooth, point, solver, *, iterations=6, trusts=(.01, .001, .000
         for trust in trusts:
             delta, report = direction(model, float(trust), solver)
             if delta is not None:
-                candidate, trials = backtrack(exact, point, delta, model['base'])
+                candidate, trials = backtrack(exact, point, delta, model['base'], acceptance_guard=acceptance_guard)
                 report['trials'] = trials
                 if candidate is not None:
                     metric = measurement(exact(candidate))
@@ -61,7 +63,10 @@ def solve(exact, smooth, point, solver, *, iterations=6, trusts=(.01, .001, .000
     final = measurement(exact(point))
     if final['minimum_margin'] < 0 or final['witness_peak_m'] > initial['witness_peak_m']:
         raise ValueError('Final exact replay lost feasibility or objective improvement')
-    return point, dict(method='iterated_vector_norm_proposal_v1', iterations_limit=iterations,
+    final_guard = None if acceptance_guard is None else check_guard(acceptance_guard, point)
+    if final_guard is not None and not final_guard['passed']:
+        raise ValueError('Final geometry guard failed')
+    return point, dict(geometry_guard=final_guard, method='iterated_vector_norm_proposal_v1', iterations_limit=iterations,
         trusts=trusts.tolist(), derivative_step=float(step), history=history, stop_reason=reason,
         before=initial, after=final, final_point=point.tolist(), original_caps_preserved=True,
         quality_approved=False, fresh_geometry_required=True)

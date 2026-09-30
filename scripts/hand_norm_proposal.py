@@ -111,7 +111,14 @@ def direction(model, trust, solver):
     return delta, record
 
 
-def backtrack(exact, point, delta, base, fractions=(1., .5, .25, .125, .0625, .03125, .015625, .0078125)):
+def check_guard(guard, point):
+    result = guard(np.asarray(point, float).copy())
+    if not isinstance(result, dict) or type(result.get("passed")) is not bool:
+        raise ValueError("Acceptance guard must return an explicit boolean passed field")
+    return result
+
+
+def backtrack(exact, point, delta, base, fractions=(1., .5, .25, .125, .0625, .03125, .015625, .0078125), *, acceptance_guard=None):
     point, delta = np.asarray(point, float), np.asarray(delta, float)
     fractions = np.asarray(fractions, float)
     if (point.ndim != 1 or delta.shape != point.shape or not np.isfinite(point).all() or not np.isfinite(delta).all()
@@ -133,6 +140,12 @@ def backtrack(exact, point, delta, base, fractions=(1., .5, .25, .125, .0625, .0
             raise ValueError('Acceptance population and caps changed')
         metric = measurement(value)
         accepted = metric['minimum_margin'] >= 0 and metric['witness_peak_m'] < before['witness_peak_m']-1e-9
-        records.append(dict(fraction=float(fraction), accepted=bool(accepted), **metric))
+        record = dict(fraction=float(fraction), accepted=bool(accepted), **metric)
+        if accepted and acceptance_guard is not None:
+            record['geometry_guard'] = check_guard(acceptance_guard, candidate)
+            accepted = record['geometry_guard']['passed']
+            record['accepted'] = accepted
+            if not accepted: record['reason'] = 'geometry regression'
+        records.append(record)
         if accepted: return candidate, records
     return None, records
