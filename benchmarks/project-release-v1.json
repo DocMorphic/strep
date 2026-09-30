@@ -809,7 +809,14 @@
         "docs/local-edit-preservation-v1.md",
         "docs/export-feedback-v1.md",
         "docs/contact-joint-restart-v1.md",
-        "docs/contact-export-review-v1.md"
+        "docs/contact-export-review-v1.md",
+        "docs/studio-export-feedback-v1.md",
+        "docs/contact-pose-sphere-v1.md",
+        "docs/studio-pose-check-v2.md",
+        "docs/native-support-constraints-v1.md",
+        "docs/native-support-breadth-v1.md",
+        "docs/landing-root-scale-v1.md",
+        "docs/contact-constraint-restoration-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -2188,7 +2195,9 @@
         "docs/carrier-edit-chain-v1.md",
         "reports/carrier-edit-chain-v1/completion.json",
         "reports/scene-timing-limits-v1/source-bounds-verification.json",
-        "reports/scene-timing-limits-engine-v2/completion.json"
+        "reports/scene-timing-limits-engine-v2/completion.json",
+        "docs/native-support-breadth-v1.md",
+        "docs/landing-root-scale-v1.md"
       ],
       "remaining": [
         "Extend GPU/rendered world-placement validation beyond144sampled silhouettes: materials, hidden surfaces, intermediate times, more rigs/backends and gameplay physics.",
@@ -2718,7 +2727,14 @@
         "docs/local-edit-preservation-v1.md",
         "docs/export-feedback-v1.md",
         "docs/contact-joint-restart-v1.md",
-        "docs/contact-export-review-v1.md"
+        "docs/contact-export-review-v1.md",
+        "docs/studio-export-feedback-v1.md",
+        "docs/contact-pose-sphere-v1.md",
+        "docs/studio-pose-check-v2.md",
+        "docs/native-support-constraints-v1.md",
+        "docs/native-support-breadth-v1.md",
+        "docs/landing-root-scale-v1.md",
+        "docs/contact-constraint-restoration-v1.md"
       ]
     }
   ],
@@ -2930,6 +2946,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-29T22:00:12.083175+00:00",
-  "last_progress": "New necessary-condition diagnostics preserve all original requests. All 24 component timing programs find no proved conflict, but a conservative rigid-skin bound proves crawl-11 cannot meet its pin and 22 cm native joint-change screen together (at least 53.65 cm required at frame 50; 13 conflicting frame/reference pairs). Kicking remains unresolved. Twenty-four focused tests, input/artifact hashes and replay of 316 pose calculations pass. Studio preflight integration is next; no motion, engine/human evidence or release approvals changed."
+  "last_progress_at": "2026-09-30T00:36:05.946085+00:00",
+  "last_progress": "Studio preflight now includes full-distance certificates for incompatible crawl-11 and kick-11 requests. The six-run support comparison is independently verified with one original numerical contact pass and six engine passes; a separate crawl-22 export repair passes its original limits without rewriting the comparison. Landing coordinate scaling leaves both contact screens failing, while original bounds and engine checks pass. A new optional coupled constraint-restoration implementation passes 87 focused tests and is under matched landing evaluation; its real-motion outcome is pending. No release capability or human-quality approval changed."
 }
