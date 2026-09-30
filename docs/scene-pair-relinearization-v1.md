@@ -83,3 +83,8 @@ The completed evidence was assembled in `reports/scene-pair-relinearized-complet
 Direct in-process handlers discover the collection and its editable source metadata; six scene/GLB routes return exact expected bytes. All recorded original file hashes remain valid for four comparisons, including the historically rejected one. Preview/native full-skin discrepancy is at most 3.297651e-7 m. These are source/handler and numerical checks; no rendered browser or human assessment is claimed. Local publication evidence is retained in `reports/scene-pair-relinearized-studio-v2.json`.
 
 An optimistic independent-row affine bound at five degrees is approximately 1.744 mm, both before and after refresh. This bound ignores shared constraints and does not establish a feasible motion. Together with the measured tiny improvement and earlier constraint ablations, it motivates testing a different collision-separating approach path; simply enlarging a trust radius is not demonstrated to solve the interaction. Original motion/contact protections and fresh full-mesh acceptance remain necessary. The fitting, replay, full-geometry and publication workers are terminal. All 14 release capabilities remain unapproved.
+
+The follow-up [six-direction forearm comparison](scene-pair-directional-v1.md)
+is complete. It produced no replacement candidate: the largest passing affine
+sideways proposal fails decoded constraints, and its half-step fresh mesh depth
+at 1.675 s is 22.454101 mm. The current published comparison remains unchanged.
