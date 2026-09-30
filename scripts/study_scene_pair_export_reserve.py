@@ -26,21 +26,31 @@ def actual_vectors(actors, policies, controls, worlds):
     return np.concatenate(values)
 
 
-def run(study, output):
+def run(study, output, refined_audit=None):
     study, output = Path(study).resolve(), Path(output).resolve()
     if output.exists(): raise ValueError('Fresh reserve experiment required')
     request, linear, files = load_bound_study(study)
     if request.get('angular_motion') is not True: raise ValueError('Angular-enabled parent required')
+    original_files = files.copy()
     result = read(study/'result.json'); trial_file = study/'trials.json'
     if sha256(trial_file) != result['trials_sha256']: raise ValueError('Parent trial evidence changed')
     files[str(trial_file)] = sha256(trial_file)
     methods = sorted(set(request['implementation']) | {'study_scene_pair_export_reserve.py', 'coupled_pair_reserve.py',
-        'diagnose_scene_pair_limits.py', 'verify_scene_pair_fit.py'})
+        'diagnose_scene_pair_limits.py', 'verify_scene_pair_fit.py', 'refined_reserve_inputs.py', 'bound_evidence.py',
+        'diagnose_scene_pair_refinement.py'})
     for name in methods:
         if name in request['implementation'] and sha256(ROOT/'scripts'/name) != request['implementation'][name]:
             raise ValueError('Parent method differs: '+name)
     _, actors = load_actors(Path(request['prepared_request']).parent)
     policies = [AngularMotionRows(a['model'], a['rig'].joints) for a in actors]
+    for actor in actors: actor['original_knots'] = actor['model'].knots.copy()
+    scaling = dict(scale=.005, regularizer=1e-4); curve_actors = None; trial_root = study
+    if refined_audit is not None:
+        from refined_reserve_inputs import load_refined_audit, install_refined_models
+        refined, linear, extra_files, scaling = load_refined_audit(refined_audit, study, linear, original_files)
+        files.update(extra_files); curve_actors = refined['actors']
+        install_refined_models(actors, curve_actors)
+        trial_root = Path(refined_audit).resolve(); trial_file = trial_root/'trials.json'
     problem = ScenePairProblem(actors, [read(study/'source'/n) for n in read(study/'source-index.json')])
     zero = np.zeros(problem.size)
     np.testing.assert_allclose(actual_vectors(actors, policies, zero, [a['model'].world(np.zeros(a['model'].size)) for a in actors]),
@@ -50,13 +60,15 @@ def run(study, output):
     saved_methods = {n:sha256(output/'implementation'/n) for n in methods}
     protocol = dict(at=now(), study=str(study), inputs=files, implementation=saved_methods, multiplier=2.,
         factors=[1., .5, .25, .125, .0625], motion_tolerance=1e-5,
+        curve_actors=curve_actors, refined_audit=None if refined_audit is None else str(trial_root), solver_scaling=scaling,
         scope='One proposal with empirically tightened motion radii. Original caps, surface constraints, trust and edit budget remain acceptance limits. Margins are not certified error bounds. No full mesh or engine validation here.', quality_approved=False)
     save(output/'request.json', protocol)
     predicted = []; observed = []
-    for trial in read(trial_file):
+    for index, trial in enumerate(read(trial_file)):
         controls = np.asarray(trial['controls']); worlds = []
+        problem.split(controls)
         for actor, report in zip(actors, trial['actors']):
-            path = study/trial['folder']/report['path']
+            path = trial_root/trial.get('folder', f'trial-{index}')/report['path']
             if sha256(path) != report['sha256']: raise ValueError('Parent export changed')
             files[str(path)] = report['sha256']; doc, binary = read_glb(path); sampler = AnimationSampler(doc, binary, 0)
             worlds.append(np.array([sampler.sample(t) for t in actor['model'].times]))
@@ -72,7 +84,7 @@ def run(study, output):
     population = constraint_population(dict(linear, radii=tightened))
     step, solver = solve(**{k:linear[k] for k in ['gaps', 'gap_jacobian', 'depth_caps']},
         **{k:population[k] for k in ['vectors', 'jacobians', 'radii']}, trust=np.deg2rad(request['trust_degrees']),
-        norm_tolerances=population['tolerances'])
+        norm_tolerances=population['tolerances'], **scaling)
     save(output/'solver.json', dict(solver=solver, step=None if step is None else step.tolist()))
     print(dict(phase='solve', **solver), flush=True)
     trials = []
@@ -82,11 +94,11 @@ def run(study, output):
             independent = []; reasons = []
             for actor, world, record in zip(actors, worlds, records):
                 model = actor['model']; positions = actor['rates'].positions; joints = actor['rig'].joints
-                positional = rate_check(positions(model.source_world), positions(world), model.times, model.knots)
+                positional = rate_check(positions(model.source_world), positions(world), model.times, actor['original_knots'])
                 if positional['failures'] != record['rate_failures']: raise ValueError('Independent positional replay differs')
                 names = [actor['rig'].document['nodes'][j]['name'] for j in joints]
                 angular = compare_angular_rates(model.source_world[:,joints][:,:,:3,:3], world[:,joints][:,:,:3,:3],
-                    model.times, model.knots, names, speed_tolerance=1e-5, acceleration_tolerance=1e-5)
+                    model.times, actor['original_knots'], names, speed_tolerance=1e-5, acceleration_tolerance=1e-5)
                 independent.append(dict(actor=actor['name'], positional=positional, angular=angular))
             if any(a['positional']['failures'] for a in independent): reasons.append('exported_motion')
             if any(v['exceeding_observations'] for a in independent for v in a['angular'].values()): reasons.append('exported_angular_motion')
@@ -110,5 +122,6 @@ def run(study, output):
 if __name__ == '__main__':
     from action_worker_lock import worker_lock
     from threadpoolctl import threadpool_limits
-    p = argparse.ArgumentParser(description=__doc__); p.add_argument('study', type=Path); p.add_argument('output', type=Path); a = p.parse_args()
-    with worker_lock(), threadpool_limits(limits=1): run(a.study, a.output)
+    p = argparse.ArgumentParser(description=__doc__); p.add_argument('study', type=Path); p.add_argument('output', type=Path)
+    p.add_argument('--refined-audit', type=Path); a = p.parse_args()
+    with worker_lock(), threadpool_limits(limits=1): run(a.study, a.output, a.refined_audit)

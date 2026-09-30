@@ -46,12 +46,21 @@ def selected_trial(audit, index):
     return request, trial
 
 
+def prepare_models(actors, reserved, request):
+    """Return original models for replay, applying only the declared curve layout."""
+    originals = [actor['model'] for actor in actors]
+    descriptions = request.get('curve_actors') if reserved else request['actors']
+    if descriptions is not None:
+        from refined_reserve_inputs import install_refined_models
+        install_refined_models(actors, descriptions)
+    return originals
+
+
 def run(audit, index, output):
     import numpy as np
     import psutil
     from diagnose_scene_pair_limits import load_bound_study
     from scene_pair_problem import load_actors, ScenePairProblem
-    from timed_rotation_edit import TimedRotationEdit
     from rig_asset import RigAsset
     from rig_clip_import import AnimationSampler
     from study_scene_pair_fit import exported_geometry
@@ -80,23 +89,19 @@ def run(audit, index, output):
     study = Path(refined_request['study']); original, _, bound_files = load_bound_study(study); files.update(bound_files)
     _, actors = load_actors(Path(original['prepared_request']).parent)
     if [a['name'] for a in actors] != [r['actor'] for r in trial['actors']]: raise ValueError('Scene actor order changed')
+    originals = prepare_models(actors, reserved, refined_request)
     step = np.asarray(read(refinement/'solver.json')['step'])
     np.testing.assert_array_equal(np.asarray(trial['controls']), step*trial['factor'])
     output.mkdir(); (output/'implementation').mkdir(); (output/'reconstruction').mkdir()
     methods = {}
-    for name in sorted(set(audit_request['implementation']) | {'audit_refined_pair_geometry.py', 'scalar_angular_replay.py', 'run_godot_rig_import.py', 'godot_import_audit.gd'}):
+    for name in sorted(set(audit_request['implementation']) | {'audit_refined_pair_geometry.py', 'refined_reserve_inputs.py', 'bound_evidence.py', 'diagnose_scene_pair_refinement.py', 'scalar_angular_replay.py', 'run_godot_rig_import.py', 'godot_import_audit.gd'}):
         shutil.copyfile(ROOT/'scripts'/name, output/'implementation'/name); methods[name] = sha256(output/'implementation'/name)
     save(output/'worker.json', dict(pid=os.getpid(), created_at=psutil.Process().create_time()))
     save(output/'pipeline.json', dict(status='processing', stage='Reconstructing reviewed exports'))
     worlds = []; cases = []; offset = 0
     angular_reviews = []
     for number, (actor, record) in enumerate(zip(actors, trial['actors'])):
-        old = actor['model']; model = old
-        if not reserved:
-            specification = refined_request['actors'][number]
-            np.testing.assert_array_equal(old.knots, specification['original_knots_s'])
-            model = TimedRotationEdit(old.document, old.binary, [old.document['nodes'][n]['name'] for n in old.nodes],
-                old.times, old.window, old.protected, knots=specification['refined_knots_s'], limit_degrees=old.limit_degrees)
+        old = originals[number]; model = actor['model']
         copied = output/'reconstruction'/f'actor-{number}.glb'
         model.export(np.asarray(trial['controls'])[offset:offset+model.size], copied); offset += model.size
         if sha256(copied) != record['sha256']: raise ValueError('Refined controls do not reconstruct reviewed export')

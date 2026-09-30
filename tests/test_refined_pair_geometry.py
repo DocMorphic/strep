@@ -6,6 +6,20 @@ from audit_refined_pair_geometry import selected_trial
 from strep import save, sha256, read
 
 
+@pytest.mark.parametrize('reserved,refined', [(True,False), (True,True), (False,True)])
+def test_geometry_reconstruction_keeps_original_models_for_angular_replay(reserved, refined):
+    from audit_refined_pair_geometry import prepare_models
+    from test_refined_reserve_inputs import actor_fixture
+    import numpy as np
+    actor, description = actor_fixture(); old = actor['model']; rates = actor['rates']
+    request = {'curve_actors' if reserved else 'actors': [description] if refined else None}
+    originals = prepare_models([actor], reserved, request)
+    assert originals[0] is old and actor['rates'] is rates
+    assert (actor['model'].size > old.size) == refined
+    np.testing.assert_array_equal(originals[0].knots, description['original_knots_s'])
+    if refined: np.testing.assert_array_equal(actor['model'].knots, description['refined_knots_s'])
+
+
 def fixture(root):
     folder = root/'trial-0'; folder.mkdir()
     actors = []
