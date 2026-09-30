@@ -20,6 +20,7 @@ const changed=structuredClone(source);changed.actors[1].glb_sha256='d'.repeat(64
 ui.bind(source);assert.equal(el('sceneReviewNote').value,draft.notes);
 el('sceneNoteEnd').value='';el('sceneNoteEnd').input();assert.equal(el('sceneExportFeedback').disabled,true);
 frame=60;el('sceneNoteHere').onclick();assert.equal(Number(el('sceneNoteStart').value),60);assert.equal(Number(el('sceneNoteEnd').value),60);
+frame=60.75;el('sceneNoteHere').onclick();assert.equal(Number(el('sceneNoteStart').value),60);assert.equal(Number(el('sceneNoteEnd').value),61);
 function glb(doc){const json=new TextEncoder().encode(JSON.stringify(doc));const bytes=new ArrayBuffer(json.length+20),v=new DataView(bytes);[0x46546c67,2,bytes.byteLength,json.length,0x4e4f534a].forEach((x,i)=>v.setUint32(i*4,x,true));new Uint8Array(bytes,20).set(json);return bytes;}
 assert.equal(ctx.sceneReviewEmbeddedGLB(glb({buffers:[{byteLength:4}]})),true);
 assert.equal(ctx.sceneReviewEmbeddedGLB(glb({buffers:[{uri:'external.bin'}]})),false);

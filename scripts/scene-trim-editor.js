@@ -11,8 +11,8 @@ export function createSceneTrimEditor({getContext,onComplete}){
  async function json(url,options){const response=await fetch(url,{cache:'no-store',...options}),data=await response.json();if(!response.ok)throw Error(data.error||'Request failed');return data;}
  function store(){if(source)storage.set('strep:trim:'+source.revision,JSON.stringify({first:by('First').value,last:by('Last').value,label:by('Label').value,mode:by('Mode').value,speed:by('Speed').value,actor:by('Actor').value,object:by('Object').value,reference:by('Reference').value}));}
  for(const name of ['First','Last','Label','Mode','Speed','Actor','Object','Reference'])by(name).addEventListener('input',()=>{store();enabled();});
- by('UseFirst').onclick=()=>{if(!source||busy)return;by('First').value=getContext().frame;store();};
- by('UseLast').onclick=()=>{if(!source||busy)return;by('Last').value=getContext().frame;store();};
+ by('UseFirst').onclick=()=>{if(!source||busy)return;by('First').value=Math.floor(getContext().frame);store();};
+ by('UseLast').onclick=()=>{if(!source||busy)return;by('Last').value=Math.ceil(getContext().frame);store();};
  async function poll(id){
   try{const result=await json('/api/scene-trim-jobs'),job=result.jobs.find(j=>j.id===id);
    if(!job){busy=false;storage.remove('strep:trim-active-job');enabled();status('Saved trim job is unavailable. No replacement was started.');return;}

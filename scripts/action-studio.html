@@ -780,6 +780,14 @@ import {createSceneTrimEditor} from '/scene-trim-editor.js';
 import {createSceneReleaseEditor} from '/scene-release-editor.js';
 import {createSceneRegionEditor,sceneRateDetails,sceneSupportDetails,sceneWindowDetails} from '/scene-region-editor.js';
 import {createSceneGripPicker,sceneObjectPose} from '/scene-grip-picker.js';
+// Markers have native-frame samples; actor animation still uses its exact GLB curve.
+function sceneContactSample(track,frame){
+ if(!Array.isArray(track)||!track.length||!Number.isFinite(frame)||frame<0||frame>track.length-1)throw Error('Contact marker time is outside its saved track.');
+ const first=Math.floor(frame),last=Math.ceil(frame),t=frame-first,a=track[first],b=track[last];
+ if(![a,b].every(p=>Array.isArray(p)&&p.length===3&&p.every(Number.isFinite)))throw Error('Contact marker track is invalid.');
+ if(first===last)return a.slice();
+ return a.map((v,i)=>v+(b[i]-v)*t);
+}
 const sceneStudio=(()=>{
  const by=id=>document.getElementById(id),base='/files/scene-preview-v1/';
  const world=new THREE.Scene(),camera=new THREE.PerspectiveCamera(42,1,.01,200),canvas=by('sceneCanvas');
@@ -790,8 +798,8 @@ const sceneStudio=(()=>{
  const vec=p=>new THREE.Vector3().fromArray(p),quat=q=>new THREE.Quaternion().fromArray(q);
  function transform(point,pose){return vec(point).applyQuaternion(quat(pose.rotation_xyzw)).add(vec(pose.translation_m));}
  const objectPose=(obj,f)=>sceneObjectPose(THREE,obj,f);
- function points(contact){const track=bundle.native_contact_tracks[contact.id];const actual=transform(track.actual[frame],spec.actors[contact.actor].transform),target=contact.target;let desired;
-  if(target.space==='world')desired=vec(target.point_m);else if(target.space==='object')desired=transform(target.point_m,objectPose(spec.objects[target.object],frame));else desired=transform(track.target[frame],spec.actors[target.actor].transform);
+ function points(contact){const track=bundle.native_contact_tracks[contact.id];const actual=transform(sceneContactSample(track.actual,frame),spec.actors[contact.actor].transform),target=contact.target;let desired;
+  if(target.space==='world')desired=vec(target.point_m);else if(target.space==='object')desired=transform(target.point_m,objectPose(spec.objects[target.object],frame));else desired=transform(sceneContactSample(track.target,frame),spec.actors[target.actor].transform);
   return{actual,desired};
  }
  function dispose(){bodyProxies=[];by('sceneBodyProxiesLabel').hidden=true;by('sceneBodyProxies').checked=false;for(const a of Object.values(actors)){a.mixer.stopAllAction();a.mixer.uncacheRoot(a.asset.scene);world.remove(a.group);cleanup(a.asset);}actors={};for(const item of Object.values(boxes)){world.remove(item);item.geometry.dispose();item.material.dispose();}boxes={};for(const m of Object.values(markers))for(const item of [m.actual,m.target,m.line]){world.remove(item);item.geometry.dispose();item.material.dispose();}markers={};}
@@ -809,7 +817,7 @@ const sceneStudio=(()=>{
   handPicker.update();
   for(const c of spec.contacts){const p=points(c),m=markers[c.id];m.actual.position.copy(p.actual);m.target.position.copy(p.desired);m.line.geometry.setFromPoints([p.actual,p.desired]);const active=frame>=c.start_frame&&frame<=c.end_frame;m.line.material.color.setHex(p.actual.distanceTo(p.desired)<=c.tolerance_m?0x228349:0xd64d44);m.line.material.opacity=active?1:.25;for(const item of [m.actual,m.target,m.line])item.visible=by('sceneMarkers').checked;}
   for(const proxy of bodyProxies)proxy.visible=by('sceneBodyProxies').checked;
-  const selected=spec.contacts.find(c=>c.id===by('sceneContact').value);if(selected){const p=points(selected),active=frame>=selected.start_frame&&frame<=selected.end_frame;by('sceneDistance').textContent=`${selected.actor} · ${selected.id}: ${(p.actual.distanceTo(p.desired)*100).toFixed(1)} cm point gap · ${active?'inside':'outside'} requested frames ${selected.start_frame}–${selected.end_frame}.`;}else by('sceneDistance').textContent='No contact targets in this scene.';
+  const selected=spec.contacts.find(c=>c.id===by('sceneContact').value);if(selected){const p=points(selected),active=frame>=selected.start_frame&&frame<=selected.end_frame;by('sceneDistance').textContent=`${selected.actor} · ${selected.id}: ${(p.actual.distanceTo(p.desired)*100).toFixed(1)} cm ${Number.isInteger(frame)?'point gap':'interpolated marker gap (approximate)'} · ${active?'inside':'outside'} requested frames ${selected.start_frame}–${selected.end_frame}.`;}else by('sceneDistance').textContent='No contact targets in this scene.';
   if(w<1||h<1)return;const size=new THREE.Vector2();renderer.getSize(size);if(size.x!==w||size.y!==h){renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}controls?.update();renderer.render(world,camera);by('sceneFrame').value=frame;by('sceneTime').textContent=(frame/30).toFixed(2)+'s';
  }
  function frameScene(){if(!spec)return;render(true);const bounds=new THREE.Box3();for(const a of Object.values(actors))bounds.expandByObject(a.group);for(const b of Object.values(boxes))bounds.expandByObject(b);const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3()),halfVertical=THREE.MathUtils.degToRad(camera.fov)/2,halfHorizontal=Math.atan(Math.tan(halfVertical)*camera.aspect),distance=Math.max(.75,size.length()/2)/Math.sin(Math.min(halfVertical,halfHorizontal))*1.12;camera.position.copy(center).add(new THREE.Vector3(.9,.5,1).normalize().multiplyScalar(distance));controls?.target.copy(center);camera.lookAt(center);render();}
@@ -1298,7 +1306,7 @@ function setupSceneFeedback(getFrame){
   el('ExportFeedback').disabled=!valid();
  }
  for(const id of fields)el(id).addEventListener('input',changed);
- el('NoteHere').onclick=()=>{el('NoteStart').value=el('NoteEnd').value=Math.floor(getFrame());changed();};
+ el('NoteHere').onclick=()=>{el('NoteStart').value=Math.floor(getFrame());el('NoteEnd').value=Math.ceil(getFrame());changed();};
  el('ExportFeedback').onclick=()=>{try{const result=sceneObservation(source,draft()),url=URL.createObjectURL(new Blob([JSON.stringify(result,null,2)+'\n'],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='scene-developer-feedback.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);status.textContent='Feedback downloaded. It does not count as an independent rating or timed cleanup test.';}catch(error){status.textContent=error.message;}};
  bind(null);return {bind};
 }

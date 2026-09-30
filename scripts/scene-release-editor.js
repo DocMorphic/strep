@@ -8,7 +8,7 @@ export function createSceneReleaseEditor({getContext,onComplete}){
  function storeDraft(){if(!source)return;const draft=Object.fromEntries(fields.map(n=>[n,by('sceneRelease'+n).value]));try{localStorage.setItem('strep:release:'+source.revision,JSON.stringify(draft));}catch{}}
  for(const name of fields)by('sceneRelease'+name).addEventListener('input',storeDraft);
  by('sceneReleaseObject').addEventListener('change',()=>{if(source)by('sceneReleaseFrame').value=source.earliest_release[by('sceneReleaseObject').value];storeDraft();});
- by('sceneReleaseSample').onclick=()=>{by('sceneReleaseFrame').value=getContext().frame;storeDraft();};
+ by('sceneReleaseSample').onclick=()=>{by('sceneReleaseFrame').value=Math.floor(getContext().frame);storeDraft();};
  async function addResult(row){await onComplete(row.collection);status('Release candidate saved. Review floor/contact failures and exports; completion is not quality approval.');}
  async function poll(id){
   try{const response=await json('/api/scene-release-jobs'),row=response.jobs.find(j=>j.id===id);

@@ -89,7 +89,7 @@ export function createSceneRegionEditor({getContext,onComplete,onDraft=()=>{},on
  for(const field of [...fields,'Include'])by(field).addEventListener('input',capture);
  by('LimitWindow').addEventListener('input',()=>{enabled();store();});for(const field of ['WindowStart','WindowEnd'])by(field).addEventListener('input',store);
  by('Label').addEventListener('input',store);by('Actor').onchange=actorContacts;by('Contact').onchange=fill;
- by('UseFrame').onclick=()=>{by('Start').value=getContext().frame;capture();};
+ by('UseFrame').onclick=()=>{by('Start').value=Math.floor(getContext().frame);capture();};
  by('Pick').onclick=()=>{if(source&&!busy)onPick();};
  by('FrameHand').onclick=()=>{if(source&&!busy)onHandFrame();};
  by('Paint').onclick=()=>{if(source&&!busy)onHandPick(false);};

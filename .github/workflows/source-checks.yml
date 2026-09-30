@@ -59,6 +59,7 @@ jobs:
           tests/test_coupled_continuation_policy.py
           tests/test_coupled_continuation_checkpoint.py
           tests/test_coupled_clearance_policy.py
+          tests/test_paired_review_summary.py
           tests/test_scene_joint_rates.py
           tests/test_lsmr_accuracy.py
           tests/test_inward_feasibility_step.py
@@ -75,3 +76,7 @@ jobs:
           node tests/test_contact_timing_editor.mjs
           node tests/test_contact_export_review.mjs
           node tests/test_scene_object_geometry.mjs
+          node tests/test_scene_fractional_preview.mjs
+          node tests/test_scene_trim_editor.mjs
+          node tests/test_scene_region_editor.mjs
+          node tests/test_scene_feedback.mjs

@@ -37,6 +37,8 @@ The [bounded region-grasp correction](docs/sphere-region-upper-return-v1.md) pas
 
 [Replication across all nine cases](docs/half-floor-population-v1.md) finds an additional benefit in two cases and matching scores in seven, with 6,360 engine actor-frame checks. Studio now includes the full 36-version developer comparison. Original root peaks remain unresolved; no motion-quality approval is inferred.
 
+[Paired corrections in Studio](docs/paired-studio-workflow-v1.md) now preserve exact before/after body and finger motion through saved-scene speed changes and trimming. Four paired versions pass 1,455 shared-scene Godot observations. Fractional collision-sample jumps are repaired; partner and floor failures remain visible.
+
 The owner will perform developer review first. Independent animator review and timed cleanup evidence remain release requirements.
 
 [Visual hand-region selection](docs/studio-hand-selection-v1.md) now connects selected hand triangles to saved contact-fitting requests, alongside object grip picking. Mesh identity, all eight skin weights, edit bounds and exported geometry are checked; this currently covers canonical SOMA scenes and is not general grasp or animation-quality approval.

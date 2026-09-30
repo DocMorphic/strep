@@ -34,7 +34,7 @@ function setupSceneFeedback(getFrame){
   el('ExportFeedback').disabled=!valid();
  }
  for(const id of fields)el(id).addEventListener('input',changed);
- el('NoteHere').onclick=()=>{el('NoteStart').value=el('NoteEnd').value=Math.floor(getFrame());changed();};
+ el('NoteHere').onclick=()=>{el('NoteStart').value=Math.floor(getFrame());el('NoteEnd').value=Math.ceil(getFrame());changed();};
  el('ExportFeedback').onclick=()=>{try{const result=sceneObservation(source,draft()),url=URL.createObjectURL(new Blob([JSON.stringify(result,null,2)+'\n'],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='scene-developer-feedback.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);status.textContent='Feedback downloaded. It does not count as an independent rating or timed cleanup test.';}catch(error){status.textContent=error.message;}};
  bind(null);return {bind};
 }
