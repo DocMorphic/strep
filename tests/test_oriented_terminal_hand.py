@@ -125,3 +125,29 @@ def test_thirty_three_dimensional_optimizer_can_edit_last_key():
                    np.full(33,.04),[np.zeros(33)],iterations=25)
     assert len(best['controls'])==33 and 0<best['controls'][-1]<=.004
     assert .006<=best['witness_peak_m']<.0061
+
+
+@pytest.mark.parametrize('damage',[None,'artifact','incomplete','snapshot','current_method'])
+def test_return_diagnosis_requires_complete_unchanged_evidence(tmp_path,monkeypatch,damage):
+    import json
+    import diagnose_oriented_hand_returns as diagnosis
+    from strep import sha256
+    root=tmp_path/'root';(root/'scripts').mkdir(parents=True)
+    folder=tmp_path/'study';(folder/'implementation').mkdir(parents=True)
+    method=root/'scripts'/'method.py';method.write_text('original')
+    snapshot=folder/'implementation'/'method.py';snapshot.write_text('original')
+    request=dict(hand_orientation=True,implementation={'method.py':sha256(method)})
+    result=dict(status='complete')
+    for name in ['request','witnesses','source-queries','selected','solvers','evaluations','decoded','geometry']:
+        path=folder/(name+'.json');path.write_text(json.dumps(request if name=='request' else []))
+        result[name.replace('-','_')+'_sha256']=sha256(path)
+    if damage=='incomplete':result['status']='running'
+    (folder/'result.json').write_text(json.dumps(result));monkeypatch.setattr(diagnosis,'ROOT',root)
+    if damage=='artifact':(folder/'solvers.json').write_text('[1]')
+    if damage=='snapshot':snapshot.write_text('changed')
+    if damage=='current_method':method.write_text('changed')
+    if damage:
+        with pytest.raises(ValueError):diagnosis.load_evidence(folder)
+    else:
+        loaded,files=diagnosis.load_evidence(folder)
+        assert loaded==request and files[str(snapshot)]==sha256(snapshot)
