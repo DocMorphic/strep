@@ -44,3 +44,22 @@ def test_failed_or_changed_trial_cannot_enter_geometry_audit(tmp_path, fault):
         save(tmp_path/'trials.json', [trial]); save(tmp_path/'trial-0/review.json', trial)
         result = read(tmp_path/'result.json'); result['trials_sha256'] = sha256(tmp_path/'trials.json'); save(tmp_path/'result.json', result)
     with pytest.raises((ValueError, TypeError)): selected_trial(tmp_path, 0)
+
+
+@pytest.mark.parametrize('fault', [None, 'angular_failure', 'angular_tolerance', 'angular_missing', 'reasons'])
+def test_reserve_candidate_requires_both_motion_policies(tmp_path, fault):
+    trial = fixture(tmp_path)
+    trial['bound'] = trial.pop('retained_surface')
+    trial['motion_reviews'] = [dict(actor=r['actor'], positional=dict(failures=0),
+        angular={k:dict(exceeding_observations=0, tolerance=1e-5) for k in ['angular_speed_rad_s', 'angular_acceleration_rad_s2']}) for r in trial.pop('independent_rates')]
+    trial['reasons'] = []
+    angular = trial['motion_reviews'][0]['angular']
+    if fault == 'angular_failure': angular['angular_acceleration_rad_s2']['exceeding_observations'] = 1
+    if fault == 'angular_tolerance': angular['angular_speed_rad_s']['tolerance'] = .1
+    if fault == 'angular_missing': angular.pop('angular_speed_rad_s')
+    if fault == 'reasons': trial['reasons'] = ['failed']
+    save(tmp_path/'trials.json', [trial]); save(tmp_path/'trial-0/review.json', trial)
+    result = read(tmp_path/'result.json'); result['trials_sha256'] = sha256(tmp_path/'trials.json'); save(tmp_path/'result.json', result)
+    if fault is None: assert selected_trial(tmp_path, 0)[1] == trial
+    else:
+        with pytest.raises(ValueError): selected_trial(tmp_path, 0)

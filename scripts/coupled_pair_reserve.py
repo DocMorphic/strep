@@ -1,6 +1,8 @@
 """Empirical proposal margins; final decoded acceptance limits stay unchanged."""
 import numpy as np
 
+KINDS = ['edit', 'speed', 'acceleration', 'angular_speed', 'angular_acceleration']
+
 
 def empirical_reserve(predicted, exported, kinds, multiplier=2.):
     predicted, exported = np.asarray(predicted, float), np.asarray(exported, float)
@@ -9,7 +11,7 @@ def empirical_reserve(predicted, exported, kinds, multiplier=2.):
         raise ValueError('Matching trial-by-constraint norm observations required')
     if not np.isfinite(predicted).all() or not np.isfinite(exported).all() or np.any(predicted < 0) or np.any(exported < 0):
         raise ValueError('Finite nonnegative norms required')
-    if not np.isfinite(multiplier) or multiplier < 1 or not np.isin(kinds, ['edit', 'speed', 'acceleration']).all():
+    if not np.isfinite(multiplier) or multiplier < 1 or not np.isin(kinds, KINDS).all():
         raise ValueError('Declared kinds and multiplier at least one required')
     error = np.maximum(exported - predicted, 0).max(axis=0)
     reserve = multiplier * error
@@ -23,7 +25,7 @@ def tightened_radii(radii, reserve, kinds):
         raise ValueError('Matching constraint rows required')
     if not np.isfinite(radii).all() or not np.isfinite(reserve).all() or np.any(radii < 0) or np.any(reserve < 0):
         raise ValueError('Finite nonnegative radii and reserves required')
-    if not np.isin(kinds, ['edit', 'speed', 'acceleration']).all() or np.any(reserve[kinds == 'edit'] != 0):
+    if not np.isin(kinds, KINDS).all() or np.any(reserve[kinds == 'edit'] != 0):
         raise ValueError('Native edit budgets must remain unchanged')
     if np.any(reserve > radii):
         raise ValueError('Empirical reserve exceeds a source cap; no silent clipping allowed')

@@ -51,3 +51,14 @@ def test_refresh_retains_old_margins_and_only_tightens_motion_rows():
 def test_refresh_rejects_a_prior_native_edit_margin():
     with pytest.raises(ValueError,match='prior motion'):
         conservative_refresh([.1],[[1.]],[[1.]],['edit'])
+
+
+def test_angular_margins_tighten_individual_rows_without_changing_edit_budget():
+    kinds = ['edit', 'angular_speed', 'angular_acceleration']
+    reserve, _ = empirical_reserve([[1., 2., 3.], [1., 2., 3.]], [[1.1, 2.001, 3.01], [1., 1.999, 3.02]], kinds)
+    np.testing.assert_allclose(reserve, [0., .002, .04])
+    caps = np.array([1., 2., 3.]); tightened = tightened_radii(caps, reserve, kinds)
+    np.testing.assert_allclose(tightened, [1., 1.998, 2.96])
+    np.testing.assert_array_equal(caps, [1., 2., 3.])
+    with pytest.raises(ValueError, match='exceeds'):
+        tightened_radii([.001], [.002], ['angular_speed'])

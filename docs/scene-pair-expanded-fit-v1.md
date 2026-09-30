@@ -1,5 +1,7 @@
 # Expanded edit window: no accepted export
 
+Follow-up: [export rounding diagnosis and proposal margins](scene-pair-export-reserve-v1.md) explain these failed attempts and describe a new full-step candidate under validation. The original five failed outputs remain unchanged.
+
 The earlier edit window removes the demonstrated fixed-collision obstruction, but does not produce an accepted correction. All five exported fractions fail both positional and angular motion screens. No candidate replaces the current Studio comparison, and no release capability is approved.
 
 ## Reproducible experiment
