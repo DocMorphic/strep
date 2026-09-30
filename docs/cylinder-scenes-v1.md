@@ -55,3 +55,6 @@ The second command requires the retained development actor/scene assets. These c
 Cylinder physics release, including use as a static or moving release collider, is explicitly rejected before simulation. Godot's official documentation warns of known cylinder collision bugs; the next dynamics study must test the actual chosen backend and collision geometry, preserving failures rather than silently switching to a box or capsule. [Godot CylinderShape3D documentation](https://docs.godotengine.org/en/stable/classes/class_cylindershape3d.html).
 
 Next measure real cylinder contact fitting and manipulation, including different orientations and grasp locations, then qualify release against floor/props/actor proxies. Handles, arbitrary meshes, articulated props, joint actor-object response and force/balance constraints remain open. No held-out reservations were consumed, no checkpoint was changed, and no release capability was approved. Human review and timed cleanup evidence are still missing.
+
+
+The subsequent [real-character cylinder grasp study](cylinder-contact-v1.md) is now measured: playback succeeds, but both hands retain failed patch clearance and the candidate worsens left-anchor and acceleration metrics. It is not a successful cylinder interaction. See the preserved input/candidate comparison and frozen-sample diagnosis before attempting another fit.

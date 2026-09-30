@@ -412,3 +412,6 @@ The [nonregressing restoration policy](contact-restoration-policy-v2.md#real-mot
 
 
 [Cylinder scene geometry](cylinder-scenes-v1.md) now spans sampled contact/clearance, analytic grip picking, bounded previews, floor placement, export and shared engine playback. 138 focused Python tests, 453 cross-language grip cases, 93 object-frame import observations and 405 runtime observations pass. Cylinder physics is explicitly unavailable pending qualification; no successful generated grasp or realism approval is claimed. Next measure cylinder manipulation and qualify dynamics without relaxing existing contact screens. All fourteen release capabilities remain unapproved.
+
+
+The [first cylinder grasp study](cylinder-contact-v1.md) is complete and rejected. Independent dense skin checks retain 482/482 contact failures; body/object penetration improves but the left anchor and peak acceleration regress. Original bounds and 822 actual engine observations pass. Frozen sample replay shows severe penetration already seen by the solver, so increasing collision coverage alone is insufficient. Next isolate whole-hand pose feasibility under the existing bounds before repeating coupled fitting. Source, candidate and failed checks remain visible in Studio. All fourteen release capabilities remain unapproved.

@@ -908,6 +908,9 @@
         "reports/object-geometry-core-v1/verification.json",
         "docs/primitive-scenes-v1.md",
         "docs/cylinder-scenes-v1.md",
+        "docs/cylinder-contact-v1.md",
+        "reports/cylinder-contact-review-v1/verification.json",
+        "reports/cylinder-contact-review-v1/diagnosis.json",
         "reports/cylinder-primitive-import-v1/verification.json",
         "reports/cylinder-scene-runtime-v1/verification.json",
         "docs/sphere-release-v1.md",
@@ -2951,6 +2954,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-30T01:15:49.347681+00:00",
-  "last_progress": "Closed cylinders now share analytic contact/clearance geometry, grip picking, bounded previews, floor placement, GLB export and actual shared Godot playback. 138 focused Python tests, 453 cross-language grip cases, 93 imported object-frame observations and 405 playback observations pass. Cylinder physics release remains explicitly unavailable pending backend qualification; realistic cylinder grasping and all human/held-out evidence remain unproven. All 14 release capabilities remain unapproved."
+  "last_progress_at": "2026-09-30T01:29:28.354235+00:00",
+  "last_progress": "The first cylinder grasp study is independently verified and rejected: both variants fail 482/482 regional contact samples. Candidate penetration drops from 58.877 to 36.358 mm, but the previously good left anchor worsens and peak joint acceleration rises from 27.445 to 39.105 m/s2. Original edit bounds and 822 new engine observations pass. Exact collision-sample replay shows 34.648 mm penetration already inside the optimization sample; coverage alone is insufficient. Next isolate whole-hand pose feasibility under existing bounds before another coupled fit. All 14 release capabilities remain unapproved."
 }
