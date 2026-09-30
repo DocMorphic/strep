@@ -57,6 +57,8 @@ jobs:
           tests/test_directional_pair_proposal.py
           tests/test_pair_direction_peak.py
           tests/test_elbow_swivel.py
+          tests/test_two_bone_waypoint.py
+          tests/test_wrist_waypoint_motion.py
           tests/test_coupled_pair_reserve.py
           tests/test_coupled_surface_norms.py
           tests/test_coupled_continuation_policy.py

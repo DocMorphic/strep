@@ -129,3 +129,8 @@ Local evidence:
 
 All 14 release capabilities remain unapproved. No new model, training data or
 third-party dependency was acquired.
+
+The follow-up [wrist-waypoint and native motion experiment](paired-wrist-waypoint-v1.md)
+finds four clear static targets, but its first baked trajectory still fails
+collision and motion-rate screens. The fixed-wrist experiment above remains
+unchanged.
