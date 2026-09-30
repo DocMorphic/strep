@@ -74,14 +74,16 @@ class GuardedEdit:
             q[self.free]=edited.astype(np.float32) if quantize else edited;result[node]=q
         return result
 
-    def positions(self,parameters):
+    def world(self,parameters):
         local=self.local.copy()
         for node,q in self.quaternions(parameters).items():
             clock=self.channels[node][1].astype(float)
             rotations=Slerp(clock,Rotation.from_quat(q))(self.frames/30).as_matrix()
             local[:,node,:3,:3]=rotations*self.scales[node][:,None,:]
-        world=world_from_local(local,self.parents)
-        return world[:,self.joints][:,:,:3,3]
+        return world_from_local(local,self.parents)
+
+    def positions(self,parameters):
+        return self.world(parameters)[:,self.joints][:,:,:3,3]
 
     def peaks(self,positions):
         rates=joint_rates(positions,self.frames)

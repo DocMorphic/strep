@@ -51,6 +51,8 @@ jobs:
           tests/test_paired_stage_rates.py
           tests/test_paired_temporal_neighbor.py
           tests/test_paired_guarded_temporal.py
+          tests/test_paired_surface_witness.py
+          tests/test_paired_approach_basis.py
           tests/test_scene_joint_rates.py
           tests/test_lsmr_accuracy.py
           tests/test_inward_feasibility_step.py
