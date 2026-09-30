@@ -581,3 +581,8 @@ Completed five refined motion-restriction comparisons. Removing positional/angul
 ## Cumulative paired relinearization, 2026-09-30
 
 Implemented cumulative paired relinearization with fresh nearest-surface witnesses, nonzero-control angular derivatives and unchanged original motion bins, native budgets, protected keys and depth caps. Original surface bounds remain alongside refreshed rows. Twenty-five focused tests pass. Started reports/scene-pair-relinearized-v1 from the accepted refined half-step; the worker is live and refreshing the complete 148-time population, with exact unchanged-pose reuse only. Solver/export outcomes are pending. No new accepted animation, engine validation or publication is claimed. Prior commit cc31e43 passed hosted Windows/Linux checks. Continue observing this worker, retain failures, and independently validate any promising decoded trial. All 14 release capabilities remain unapproved.
+
+
+## Independent continuation replay, 2026-09-30
+
+Added bound cumulative-continuation evidence loading and independent replay of all attempted GLBs, including rejected trials. Verify cumulative controls equal previous controls plus fraction times increment, clip identities, ordered actors, original-bin all-joint positional rates, scalar angular rates and preliminary classifications. Thirty-two focused tests pass; the real continuation replay remains pending its producer. The existing worker is confirmed live, refreshing reports/scene-pair-relinearized-v1 across 148 times; do not restart it or edit its method snapshots. Commit 4dc0dee passed hosted Windows/Linux checks. No new animation acceptance, engine validation or publication. All 14 release capabilities remain unapproved.

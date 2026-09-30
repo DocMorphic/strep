@@ -21,3 +21,17 @@ Every decoded trial checks original positional and angular motion limits, native
 ## Validation and current state
 
 Twenty-five focused tests pass across relinearization, angular constraints and scene problems. They cover unequal actor control counts, nonzero-pose angular derivatives, original cap preservation, retention of previous surface constraints and rejection of changed, duplicate, rejected or malformed starting trials. The real-character run has started; numerical and decoded outcomes remain pending. All release capabilities remain unapproved.
+
+## Independent continuation replay
+
+After the worker completes, run:
+
+```powershell
+.venv/Scripts/python.exe scripts/verify_scene_pair_continuation.py reports/scene-pair-relinearized-v1 reports/scene-pair-relinearized-replay-v1
+```
+
+The evidence loader verifies the completed request, solver, matrix, refreshed sample index and files, input bindings, implementation snapshots, trial records and actual clip hashes. It also checks that each trial uses `previous cumulative controls + fraction * increment`, with distinct finite fractions and matching ordered actors. Failed animation trials remain valid evidence to replay; they are not converted into passing trials.
+
+The replay reconstructs every attempted GLB and checks the saved preservation, native edit and retained-surface reports. It independently counts every joint's positional rate stencils in the original bins and uses scalar quaternion composition for angular rates. It recomputes the preliminary classification and fails if it differs from the recorded result. Even a preliminary pass still requires the full decoded mesh and engine checks described above.
+
+Thirty-two focused tests pass across continuation evidence binding, existing real-GLB replay and scalar angular replay. The new continuation replay command has not yet run on the real study because that study is still refreshing geometry. This testing does not establish a passing continuation animation. The preceding implementation commit `4dc0dee` passed hosted Windows/Linux checks.
