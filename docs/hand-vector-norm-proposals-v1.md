@@ -124,9 +124,8 @@ using the pinned solver made six accepted steps while preserving its initial
 norm cap; it is solver evidence, not an animation result.
 
 The connected six-iteration experiment starts at the same bound selected controls
-as the one-step experiment. It is running at
-`reports/scene-pair-hand-norm-iterations-v1`; no completed geometry result exists
-yet. Both source and method snapshots must remain unchanged while it runs.
+as the one-step experiment. It completed at
+`reports/scene-pair-hand-norm-iterations-v1`, with results below.
 
 ```powershell
 .venv/Scripts/python.exe -u scripts/study_hand_norm_proposal.py reports/scene-pair-witness-epigraph-v1 reports/scene-pair-hand-norm-iterations-v1 --iterations 6
@@ -134,7 +133,7 @@ yet. Both source and method snapshots must remain unchanged while it runs.
 
 No model was trained, no held-out prompt was used, and no release gate changed.
 
-## Six-step solver stage and trust-bound diagnostic; geometry pending
+## Completed six-step study and trust-bound diagnostic
 
 All six local iterations accepted their half-step proposals. The accepted
 fixed-witness peaks were 20.897778, 20.878440, 20.865582, 20.856424, 20.849231
@@ -145,8 +144,16 @@ certificate was obtained.
 
 Both final GLBs replay exactly, preserve frozen native keys and have zero
 violations in all four motion categories over the original 148-sample clock.
-Fresh 43-time hand geometry is still running, so no completed collision outcome
-or quality approval follows from this solve stage.
+Fresh geometry at all 43 hand times finds 16 failures, the same count as the
+one-step candidate. Peak penetration is 20.873814 mm, versus 20.901569 mm after
+one step and 20.932800 mm in the original donor. The 5 mm limit remains unmet.
+
+Compared with the original donor, 13 directional observations worsen, by up to
+0.836258 mm; the maximum two-direction peak regression at a sample is 0.234396 mm.
+Compared with the one-step candidate, 15 directional observations worsen, by up
+to 0.486688 mm; the maximum sample peak regression is 0.356611 mm. No newly
+failing sample appears against either reference. These tradeoffs remain visible;
+the candidate does not replace Studio or approve contact quality.
 
 A read-only diagnostic of the saved six local models finds that 11-19 controls
 per largest-trust proposal reach at least 99% of its normalized 0.01 step box.
@@ -157,12 +164,12 @@ worst witness changes between iterations. These shares are not a certificate
 about the whole max objective or the physical feasible region.
 
 The maximum accumulated normalized coordinate change after six accepted half
-steps is 0.03. This supports comparing larger proposal trust boxes after the
-current mesh audit, with the same original motion/domain limits and exact
+steps is 0.03. This supports comparing larger proposal trust boxes with the
+same original motion/domain limits and exact
 backoff acceptance. It does not justify widening any physical cap, increasing
 the iteration budget blindly or assuming that a larger proposal will be safe.
 
-Local solver-stage evidence (mesh stage pending):
+Completed local evidence:
 
 - Request: `cacc8c868ad9ef06f2343971a8b5eaf28f3c815ee347e1a51dfe7024f7def0a3`.
 - Iteration summary: `40dbcd9f7b502faca4e53a571c952ab0861115da14efc255347f854ec34e1c7c`.
@@ -171,9 +178,36 @@ Local solver-stage evidence (mesh stage pending):
 - Actor A GLB: `e546860ff4c3b295030dddeb50bf9363c3f7ba214ca3967d4d219101d92c555a`.
 - Actor B GLB: `b954be73555f661b1512abeb1199a76a6ba18c4a90cdfe89c681b230936b4401`.
 - Bound trust diagnostic: `reports/hand-norm-trust-diagnostic-v1/result.json`, SHA-256 `161e66610b3e09a8e067ed346624c43218e9890eaf126b0f3ac8ff57381326be`.
+- Geometry: `8637a065a5a74b5229fa255fa203178aea0a5238504059a261e1eb9474fc3190`.
+- Donor comparison: `82b7ab90ae6d724c57c73161642da1add50b5deab0b0f7d5b5e1131116f58e41`.
+- Completed result: `49acc46f3dfce006833c9f8cfa05f28d8392f395c7af8626336653002681d504`.
 
 The trust diagnostic records hashes of its input artifacts and its local audit
 script, reproduces each saved worst-witness prediction and verifies inputs again
 after reading. It does not change the running study or execute another solve.
 Commit 5910220 passed both hosted Windows and Linux checks, including the new
 iteration tests.
+
+## Larger proposal-step comparison
+
+The runner now accepts explicit validated `--trusts` values. The matched
+follow-up replaces `[0.01, 0.001, 0.0001]` with `[0.1, 0.01, 0.001]`, retaining
+six local iterations, three proposals per iteration, the same eight exact
+backoffs, derivative step, source poses, controls, scene geometry, witnesses,
+sample clocks, solver version, physical limits and export checks. This changes
+proposal size, not the allowed motion or penetration limits. The numerical
+proposal and acceptance modules are unchanged; 28 focused tests pass again.
+
+Request field/hash comparisons verify the matched configuration before reading
+results. The larger-trust request is
+`a7bdef9ad5d0d6c91f0ec9f32de5bebadf9526749653aaad27d835d693f29faa`;
+the comparison record is `reports/hand-norm-trust-matched-configuration-v1.json`.
+
+```powershell
+.venv/Scripts/python.exe -u scripts/study_hand_norm_proposal.py reports/scene-pair-witness-epigraph-v1 reports/scene-pair-hand-norm-larger-trust-v1 --iterations 6 --trusts .1 .01 .001
+```
+
+This follow-up is running. In its first iteration the smaller 0.01 proposal is
+still best after exact backoff; later iterations have accepted larger proposals.
+No final exported or fresh-geometry conclusion is available yet. Preserve this
+worker's methods until completion. All release capabilities remain unapproved.

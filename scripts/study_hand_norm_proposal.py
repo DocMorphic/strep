@@ -6,7 +6,7 @@ import numpy as np
 from strep import ROOT, read, save, sha256, now
 
 
-def run(study, output, iterations=1):
+def run(study, output, iterations=1, trusts=(.01, .001, .0001)):
     from diagnose_oriented_hand_returns import load_evidence
     from bound_evidence import bind_inputs
     from diagnose_scene_pair_limits import load_bound_study
@@ -21,6 +21,11 @@ def run(study, output, iterations=1):
     if output.exists(): raise ValueError('Fresh vector-norm study required')
     if type(iterations) is not int or not 1 <= iterations <= 12:
         raise ValueError('One to twelve local iterations required')
+    trusts = np.asarray(trusts, float)
+    if (trusts.ndim != 1 or not 1 <= len(trusts) <= 6 or not np.isfinite(trusts).all()
+            or np.any(trusts <= 0) or np.any(trusts > 1)):
+        raise ValueError('One to six finite trust radii in (0, 1] required')
+    trusts = trusts.tolist()
     request, files = load_evidence(study)
     terminal = read(Path(request['study']) / 'request.json')
     plan = read(Path(terminal['plan']) / 'request.json')
@@ -97,13 +102,13 @@ def run(study, output, iterations=1):
         digest = sha256(path)
         if str(path) in files and files[str(path)] != digest: raise ValueError('Bound ancestor changed')
         files[str(path)] = digest
-    trusts = [.01, .001, .0001]; derivative_step = 1e-4
+    derivative_step = 1e-4
     save(output/'request.json', dict(at=now(), study=str(study), inputs=files, implementation=methods,
         point=point.tolist(), scale=scale.tolist(), selected_measurement_reproduced=before,
         sample_indices=ids.tolist(), hand_samples=request['hand_samples'], original_bins_s=request['original_bins_s'],
         derivative_step=derivative_step, trusts=trusts, solver_version=solver.__version__, local_iterations=iterations,
         motion_gate_tolerance=.9*caps.tolerance, export_tolerance=caps.tolerance,
-        scope=f'Up to {iterations} local central-difference vector models, starting at the completed selected controls; three independent trust sizes per model, eight exact backoffs each. Actual float32 base values, float64 proposal Jacobians, all individual signed witnesses and fixed original motion/domain caps. Exact-feasible improvements relinearize for the next iteration; final motion is exported and freshly screened. No full-body, engine, human quality or Studio publication.', quality_approved=False))
+        scope=f'Up to {iterations} local central-difference vector models, starting at the completed selected controls; {len(trusts)} independent trust sizes per model, eight exact backoffs each. Actual float32 base values, float64 proposal Jacobians, all individual signed witnesses and fixed original motion/domain caps. Exact-feasible improvements relinearize for the next iteration; final motion is exported and freshly screened. No full-body, engine, human quality or Studio publication.', quality_approved=False))
     def observe(count, total):
         if count % 7 == 0: print(dict(phase='vector_jacobian', coordinates=count, total=total), flush=True)
     model = linearize(exact, proposal, point, derivative_step, observe)
@@ -196,5 +201,6 @@ if __name__ == '__main__':
     from threadpoolctl import threadpool_limits
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('study', type=Path); parser.add_argument('output', type=Path)
-    parser.add_argument('--iterations', type=int, default=1); args = parser.parse_args()
-    with worker_lock(), threadpool_limits(limits=1): run(args.study, args.output, args.iterations)
+    parser.add_argument('--iterations', type=int, default=1)
+    parser.add_argument('--trusts', type=float, nargs='+', default=[.01, .001, .0001]); args = parser.parse_args()
+    with worker_lock(), threadpool_limits(limits=1): run(args.study, args.output, args.iterations, args.trusts)
