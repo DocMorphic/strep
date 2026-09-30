@@ -186,6 +186,10 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(200,{'studies':studies,'busy':worker_busy() or external_pair_fit_busy() or (self.server.worker is not None and self.server.worker.poll() is None)})
         target=allowed_file(self.path)
         if target is None or not target.is_file():return self.respond(404,{'error':'File not found'})
+        if target.name=='manifest.json' and (target.parent/'review-update.json').is_file():
+            from scene_review_update import displayed_manifest
+            try:return self.respond(200,displayed_manifest(target))
+            except (ValueError,KeyError,TypeError,OSError) as exc:return self.respond(409,{'error':str(exc)})
         mime=mimetypes.guess_type(str(target))[0] or 'application/octet-stream'
         if target.suffix=='.js':mime='text/javascript'
         self.send_response(200);self.send_header('Content-Type',mime);self.send_header('Content-Length',str(target.stat().st_size))

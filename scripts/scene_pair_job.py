@@ -7,6 +7,7 @@ from strep import ROOT, read, save, sha256, now
 from paired_edit_request import JOBS, describe, compile_request, prepare as prepare_request
 
 METHODS = ['scene_pair_job.py', 'scene_pair_engine.py', 'publish_scene_pair_fit.py', 'verify_scene_pair_fit.py',
+           'verify_scene_pair_angular.py', 'scalar_angular_replay.py', 'scene_angular_publication.py',
            'run_godot_rig_import.py', 'godot_import_audit.gd', 'retime_scene.py', 'scene_constraints.py',
            'scene_region_job.py', 'floor_contact.py', 'inspect_motion.py']
 
@@ -116,11 +117,14 @@ def run(folder, completed_study=None, completed_engine=None):
             from publish_scene_pair_fit import publish
             save(folder/'pipeline.json', dict(status='processing', stage='Checking meshes and fitting both actors'))
             if completed_study is None:
-                fit(folder, folder/'fit')
+                fit(folder, folder/'fit', angular=True)
             else:
                 copy_completed_fit(folder, completed_study)
             save(folder/'pipeline.json', dict(status='processing', stage='Independently replaying exported motion'))
             replay(folder/'fit', folder/'replay')
+            from verify_scene_pair_angular import run as angular_replay
+            save(folder/'pipeline.json', dict(status='processing', stage='Independently checking angular motion'))
+            angular_replay(folder/'fit', folder/'angular-replay')
             save(folder/'pipeline.json', dict(status='processing', stage='Checking game-engine import'))
             if completed_engine is None:
                 engine(folder/'fit', folder/'engine')

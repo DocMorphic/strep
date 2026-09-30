@@ -40,7 +40,7 @@ def test_worker_failure_preserves_prepared_reference_and_terminal_state(director
     folder = directory/'failure'; jobs.prepare(dict(label='Failure test', request=payload()), folder)
     original = sha256(folder/'request.json')
     import study_scene_pair_fit
-    def fail(*args): raise ValueError('Deliberate fixture failure')
+    def fail(*args, **kwargs): raise ValueError('Deliberate fixture failure')
     monkeypatch.setattr(study_scene_pair_fit, 'run', fail)
     with pytest.raises(ValueError, match='fixture failure'): jobs.run(folder)
     assert sha256(folder/'request.json') == original

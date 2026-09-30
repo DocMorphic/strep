@@ -51,6 +51,8 @@ def reviewed_variants(folder):
         trial = selected[0]
         if set(a['actor'] for a in trial['actors']) != set(actors) or set(a['actor'] for a in reviewed[0]['actors']) != set(actors):
             raise ValueError('Replay participants differ')
+        from scene_angular_publication import require_angular_replay
+        require_angular_replay(folder, result, trial, prepared)
         candidate_paths = dict(records)['candidate']
         for actor in trial['actors']:
             if sha256(candidate_paths[actor['actor']]) != actor['sha256']:
@@ -128,6 +130,7 @@ def publish(folder):
     save(output/'manifest.json', dict(scenes=scenes, quality_approved=False))
     save(output/'provenance.json', dict(at=now(), fit_result_sha256=sha256(folder/'fit/result.json'),
         replay_sha256=sha256(folder/'replay/verification.json'), engine_sha256=sha256(folder/'engine/verification.json'), records=evidence,
+        angular_replay_sha256=sha256(folder/'angular-replay/verification.json') if result['selected'] else None,
         files={p.relative_to(output).as_posix(): sha256(p) for p in output.rglob('*') if p.is_file()}, quality_approved=False))
     save(output/'pipeline.json', dict(status='complete', stage='Paired correction comparison', quality_approved=False))
     return output.relative_to(ROOT/'reports').as_posix()

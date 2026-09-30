@@ -1,4 +1,5 @@
 import sys
+import json
 from pathlib import Path
 import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'scripts'))
@@ -20,7 +21,7 @@ def fixture(folder, accepted):
             checks.append(dict(id=identifier,source_sha256=digest,frames=3,bones=77,imported_skinned_surfaces=1,max_position_error_m=0,max_basis_element_error=0))
             if version=='input':actors[actor]=dict(sha256=digest)
             else:trial_actors.append(dict(actor=actor,sha256=digest))
-    save(folder/'request.json',dict(actors=actors)); save(fit/'manifest.json',dict(cases=cases))
+    save(folder/'request.json',dict(actors=actors, sample_times_seconds=[0., 1/120, 2/120])); save(fit/'manifest.json',dict(cases=cases))
     if accepted:
         (fit/'trial-0').mkdir(); save(fit/'trial-0/geometry.json', {'test_fixture':True})
         save(fit/'trials.json',[dict(folder='trial-0',accepted_local_step=True,reasons=[],actors=trial_actors,
@@ -32,6 +33,15 @@ def fixture(folder, accepted):
     save(folder/'replay/verification.json',dict(request_sha256=sha256(folder/'replay/request.json'),
         trials=[dict(folder='trial-0',actors=[dict(actor=a,rates=dict(failures=0)) for a in actors])] if accepted else []))
     save(folder/'engine/verification.json',dict(checks=checks))
+    if accepted:
+        evidence = folder/'angular-replay'; evidence.mkdir(); (evidence/'implementation').mkdir()
+        method = evidence/'implementation/fixture.py'; method.write_text('# test fixture\n')
+        save(evidence/'request.json', dict(study_request_sha256=sha256(fit/'request.json'), study_result_sha256=sha256(fit/'result.json'),
+            selected='trial-0', tolerance=1e-5, inputs={str(fit/c['path']):c['sha256'] for c in cases}, implementation={'fixture.py':sha256(method)}))
+        rows = [dict(actor=a['actor'], source_sha256=actors[a['actor']]['sha256'], candidate_sha256=a['sha256'], joints=77, samples=3,
+            rates={k:dict(observations=(3-order)*77, exceeding_observations=0, maximum_increase=0., tolerance=1e-5)
+                for order,k in enumerate(['angular_speed_rad_s','angular_acceleration_rad_s2'],start=1)}) for a in trial_actors]
+        save(evidence/'verification.json',dict(status='complete', request_sha256=sha256(evidence/'request.json'), selected='trial-0', passed=True, actors=rows))
 
 
 @pytest.mark.parametrize('accepted',[True,False])
@@ -54,3 +64,27 @@ def test_missing_or_changed_evidence_prevents_publication(tmp_path,failure):
     if failure=='motion_replay':
         path=tmp_path/'replay/verification.json'; value=read(path); value['trials'][0]['actors'][0]['rates']['failures']=1;save(path,value)
     with pytest.raises(ValueError):reviewed_variants(tmp_path)
+
+
+@pytest.mark.parametrize('fault', ['missing', 'failed', 'counts', 'peak', 'nan', 'tolerance', 'source', 'candidate', 'selection', 'snapshot', 'actor_order', 'samples', 'joints', 'metric'])
+def test_angular_evidence_is_required_for_every_new_candidate_publication(tmp_path, fault):
+    fixture(tmp_path, True); evidence = tmp_path/'angular-replay'
+    path = evidence/'verification.json'; value = read(path)
+    actor = value['actors'][0]; metric = actor['rates']['angular_acceleration_rad_s2']
+    if fault == 'missing': path.unlink()
+    elif fault == 'snapshot': (evidence/'implementation/fixture.py').write_text('changed')
+    else:
+        if fault == 'failed': value['passed'] = False
+        if fault == 'counts': metric['observations'] -= 1
+        if fault == 'peak': metric['maximum_increase'] = .001
+        if fault == 'nan': metric['maximum_increase'] = float('nan')
+        if fault == 'tolerance': metric['tolerance'] = 1.
+        if fault == 'source': actor['source_sha256'] = 'changed'
+        if fault == 'candidate': actor['candidate_sha256'] = 'changed'
+        if fault == 'selection': value['selected'] = 'trial-4'
+        if fault == 'actor_order': value['actors'].reverse()
+        if fault == 'samples': actor['samples'] = 2
+        if fault == 'joints': actor['joints'] = 4
+        if fault == 'metric': actor['rates'].pop('angular_speed_rad_s')
+        path.write_text(json.dumps(value), encoding='utf-8')  # Intentionally allow malformed NaN evidence.
+    with pytest.raises(ValueError): reviewed_variants(tmp_path)
