@@ -11,6 +11,7 @@ from rig_clip_import import AnimationSampler
 from convex_partner_surface import penetration
 from verify_palm_region import measure
 from audit_scene_joint_rates import compare_rates
+from paired_temporal_neighbor import placed_joint_positions
 
 
 def run(study,output):
@@ -23,7 +24,7 @@ def run(study,output):
         if sha256(study/'implementation'/name)!=digest:raise ValueError('Trial snapshot changed')
     scene=read(ROOT/protocol['source_scene'])['scene'];patch_path=ROOT/'reports/paired-guide-audit-v1/palm-region.json';patches=read(patch_path)
     output.mkdir();snapshot=output/'implementation';snapshot.mkdir()
-    methods=['audit_paired_temporal_neighbor.py','convex_partner_surface.py','verify_palm_region.py','audit_scene_joint_rates.py','rig_asset.py','rig_clip_import.py','gltf_tools.py']
+    methods=['audit_paired_temporal_neighbor.py','convex_partner_surface.py','verify_palm_region.py','audit_scene_joint_rates.py','rig_asset.py','rig_clip_import.py','gltf_tools.py','paired_temporal_neighbor.py']
     for name in methods:shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
     times=np.arange(597)/4;interval=np.arange(protocol['first'],protocol['last']+.001,.25)
     request=dict(at=now(),study=study.relative_to(ROOT).as_posix(),result_sha256=sha256(study/'result.json'),protocol_sha256=sha256(study/'protocol.json'),
@@ -37,12 +38,12 @@ def run(study,output):
             rig=RigAsset.load(path);sampler=AnimationSampler(rig.document,rig.binary,0);placement=scene['actors'][actor]['transform']
             r=Rotation.from_quat(placement['rotation_xyzw']).as_matrix();shift=np.array(placement['translation_m'])
             matrices=np.array([sampler.sample(t/30) for t in times])
-            positions[actor]=matrices[:,rig.joints,:3,3]@r.T+shift
+            positions[actor]=placed_joint_positions(matrices,rig.joints,r,shift)
             if variant=='input':input_matrices[actor]=matrices
             else:
                 locked=(times<protocol['first'])|(times>protocol['last'])|(times==protocol['event'])
-                np.testing.assert_array_equal(matrices[locked],input_matrices[actor][locked])
-                preservation[variant][actor]=dict(locked_sample_count=int(locked.sum()),locked_world_matrices_exact=True)
+                np.testing.assert_allclose(matrices[locked],input_matrices[actor][locked],atol=1e-12,rtol=0)
+                preservation[variant][actor]=dict(locked_sample_count=int(locked.sum()),world_matrix_max_error=float(np.abs(matrices[locked]-input_matrices[actor][locked]).max()),world_matrix_tolerance=1e-12)
             actors.append((rig,sampler,r,shift));names=[rig.document['nodes'][j]['name'] for j in rig.joints]
         if variant=='input':input_positions=positions
         else:
@@ -58,7 +59,9 @@ def run(study,output):
             if frame==protocol['event']:
                 if variant=='input':input_event=[v.copy() for v in points]
                 else:
-                    for actual,expected in zip(points,input_event):np.testing.assert_array_equal(actual,expected)
+                    drift=max(float(np.abs(actual-expected).max()) for actual,expected in zip(points,input_event))
+                    for actual,expected in zip(points,input_event):np.testing.assert_allclose(actual,expected,atol=1e-12,rtol=0)
+                    preservation[variant]['event_skin_max_error_m']=drift
             collision=[penetration(points[a],points[b],faces) for a,b in [(0,1),(1,0)]]
             row=dict(frame=float(frame),collision=collision,maximum_depth_m=max(c['max_depth_m'] for c in collision),
                 floor_depth_m=[max(0.,-float(v[:,1].min())) for v in points],palm_gap_m=float(np.linalg.norm(points[0][14712]-points[1][14712])))
@@ -82,7 +85,7 @@ def run(study,output):
         floor_maximum_m=max(max(r['floor_depth_m']) for r in rows),event=next(r for r in rows if r['frame']==75)) for v,rows in samples.items()}
     save(output/'verification.json',dict(at=now(),request_sha256=sha256(output/'request.json'),summaries=summaries,comparisons=comparisons,
         preservation=preservation,artifacts={p.name:sha256(p) for p in output.glob('*-*.json')},quality_approved=False,
-        scope='Fresh full-skin bilateral vertex queries at all 41 quarter-frame times in 70–80, all-joint rates on the complete clip, and exact protected world matrices/event skin. Existing outside collision/floor failures remain. No continuous triangle, self-collision, force, anatomy or human-quality approval.'))
+        scope='Fresh full-skin bilateral vertex queries at all 41 quarter-frame times in 70–80, all-joint rates on the complete clip, and protected world matrices/event skin within 1e-12 decode tolerance. Exact serialized keys are checked by the generation study. Existing outside collision/floor failures remain. No continuous triangle, self-collision, force, anatomy or human-quality approval.'))
     save(output/'progress.json',dict(status='complete'));print({k:{f:v[f] for f in ['maximum_depth_m','collision_failures','floor_maximum_m']} for k,v in summaries.items()},flush=True)
 
 

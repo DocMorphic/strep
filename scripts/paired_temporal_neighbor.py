@@ -7,6 +7,13 @@ from gltf_tools import read_glb,accessor,append_accessor,write_glb
 BODY=['Spine1','Spine2','Chest','Neck1','Neck2','Head','LeftShoulder','LeftArm','LeftForeArm','LeftHand']
 
 
+def placed_joint_positions(world,joints,rotation,translation):
+    """Keep time first when selecting a skin's joint list from node transforms."""
+    world=np.asarray(world)
+    if world.ndim!=4 or world.shape[-2:]!=(4,4):raise ValueError('Time by node world matrices required')
+    return world[:,joints][:,:,:3,3]@np.asarray(rotation).T+np.asarray(translation)
+
+
 def bounded_neighbor(previous,current,next_,weight,limit_radians):
     if not np.isfinite([weight,limit_radians]).all() or not 0<=weight<=1 or limit_radians<=0:raise ValueError('Bounded finite smoothing settings required')
     center=Rotation.from_matrix(current)

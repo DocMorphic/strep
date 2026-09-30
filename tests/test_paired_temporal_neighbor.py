@@ -6,6 +6,8 @@ from scipy.spatial.transform import Rotation
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from paired_temporal_neighbor import bounded_neighbor
 from paired_temporal_neighbor import BODY,smooth_export,rotation_channels
+from paired_temporal_neighbor import placed_joint_positions
+from audit_paired_temporal_rates import validate_engine
 from gltf_tools import append_accessor,write_glb,read_glb,accessor
 
 
@@ -57,3 +59,24 @@ def test_export_keeps_contact_and_unselected_channels_exact(tmp_path,include_fin
         else:np.testing.assert_array_equal(a[node][2],b[node][2])
     np.testing.assert_array_equal(accessor(before,raw,translations),accessor(after,payload,translations))
     assert before['nodes']==after['nodes']
+
+
+def test_placed_tracks_keep_time_first_with_list_or_array_joint_indices():
+    world=np.tile(np.eye(4),(7,5,1,1))
+    world[:,:,:3,3]=np.arange(105).reshape(7,5,3)
+    rotation=Rotation.from_euler('y',90,degrees=True).as_matrix();shift=np.array([2,3,4])
+    for joints in [[3,1],np.array([3,1])]:
+        positions=placed_joint_positions(world,joints,rotation,shift)
+        assert positions.shape==(7,2,3)
+        for t in range(7):
+            for j,node in enumerate(joints):np.testing.assert_allclose(positions[t,j],rotation@world[t,node,:3,3]+shift)
+
+
+def test_engine_binding_rejects_duplicate_or_wrong_asset_evidence():
+    exports={'input':{a:dict(sha256=a) for a in ['A','B']}}
+    checks=[dict(id='input-'+a,source_sha256=a,frames=150,bones=77,sampled_original_by_time=True,
+                 imported_loop_mode=0,imported_skinned_surfaces=1) for a in ['A','B']]
+    assert validate_engine(exports,checks)==300
+    with pytest.raises(ValueError,match='population'):validate_engine(exports,[checks[0],checks[0]])
+    checks[1]['source_sha256']='unrelated'
+    with pytest.raises(ValueError,match='identity'):validate_engine(exports,checks)
