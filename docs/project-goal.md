@@ -400,3 +400,6 @@ Studio now [uses the full-distance pose certificate](studio-pose-check-v2.md) be
 
 
 [Public model-free source checks](model-free-source-checks.md) now pass on actual GitHub Windows and Linux runners: 48 Python tests and both offline editor checks per OS. A fresh local tracked-files snapshot also passes without model, study or character assets. This is reproducible source regression coverage, not full installation or animation approval. The matched support comparison continues; its completed control retains foot sliding and a small release-rate failure. All fourteen release capabilities remain unapproved.
+
+
+The [landing coordinate-scale comparison](landing-root-scale-v1.md#completed-comparison-scaling-does-not-resolve-the-landing-failure) is terminal and independently verified. The default reproduces retained motion and audits byte-for-byte; scaling from 1 to 0.22 leaves both contact screens failing, slightly lowers maximum pin error but increases failing samples and worsens several rate residuals. Original edit/support/floor/held/global limits and 568 retained engine observations pass. Keep scale 1 as default and pursue pose-capable feasibility restoration rather than further scale-only retries. All fourteen release capabilities remain unapproved.

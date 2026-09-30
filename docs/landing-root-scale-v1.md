@@ -18,7 +18,7 @@ Thirteen optimizer tests pass, including finite-difference chain-rule checks, or
 
 The local matched experiment is `reports/landing-root-scale-v1`. It runs scale 1 followed by scale 0.22 with identical original landing source, warm seed, checked request, four outer stages and 60 iterations per stage. Fixed-patch support is enabled and the optional native-body objective is disabled in both arms. Each mode retains native/BVH/GLB outputs, complete audits, engine playback and source/method hashes.
 
-Before proceeding to the scaled arm, the unit-scale run must reproduce the previous support-enabled landing's NPZ, BVH, GLB and contact/body audits byte-for-byte. If it does not, the batch stops for diagnosis. Paired input/method snapshots and protocols must match except for the coordinate scale. At publication the unit-scale arm is running; no motion improvement, feasibility or quality outcome is established. All study methods stay frozen until both runs are terminal and independently verified.
+Before proceeding to the scaled arm, the unit-scale run must reproduce the previous support-enabled landing's NPZ, BVH, GLB and contact/body audits byte-for-byte. If it does not, the batch stops for diagnosis. Paired input/method snapshots and protocols must match except for the coordinate scale. Both arms are now terminal and independently verified. The completed results below establish compatibility and retained failures, not quality approval.
 
 Local diagnostic evidence is `reports/landing-coordinate-diagnosis-v1/diagnosis.json`; generated study data remains excluded from the public repository. If the measured landing failure persists, a pose-capable feasibility restoration with complete original constraint checks remains necessary. This experiment does not replace broader action/rig/interaction coverage or human review.
 
@@ -27,4 +27,29 @@ Local diagnostic evidence is `reports/landing-coordinate-diagnosis-v1/diagnosis.
 
 The unit-scale arm completed 381 evaluations in 324.98 seconds. Its saved NPZ, BVH, GLB, contact audit and body evaluation reproduce the prior support-enabled landing result byte-for-byte. Every original input, current/archived method and completion-artifact hash was independently rechecked, and its new engine run passes 284 pose observations and the authored event checks. The known pin/rate failures are unchanged; compatibility is not motion-quality approval.
 
-Evidence is retained as `default-compatibility.json` and `unit-verification.json` in the batch directory. The scale-0.22 arm has now started from the same original warm seed and request. Its result is not yet established; methods remain frozen through final paired verification.
+Evidence is retained as `default-compatibility.json` and `unit-verification.json` in the batch directory. The scale-0.22 arm also completed from the same original warm seed and request. Methods remained frozen through the final paired verification below.
+
+
+## Completed comparison: scaling does not resolve the landing failure
+
+| Measurement | Scale 1 | Scale 0.22 |
+| --- | ---: | ---: |
+| Fit time, seconds | 324.98 | 385.37 |
+| Objective evaluations | 381 | 449 |
+| Maximum exported pin error, mm | 5.370261 | 5.353967 |
+| Samples above the 5 mm limit / 61 | 2 | 3 |
+| Approach speed excess, m/s | 0.000048219 | 0.000039498 |
+| Approach acceleration excess, m/s² | 0.000060311 | 0.001900503 |
+| Hold speed excess, m/s | 0.000035444 | 0 |
+| Hold acceleration excess, m/s² | 0.002034130 | 0.000053459 |
+| Release speed excess, m/s | 0.000250459 | 0.000285887 |
+| Release acceleration excess, m/s² | 0.000254704 | 0.000461371 |
+| Contact screen | Fail | Fail |
+
+The scaled run reduces maximum pin error by about 0.0163 mm, but increases the number of failing samples and worsens approach acceleration and both release rates. Hold speed passes and hold acceleration improves. This is a mixed numerical result at greater evaluation cost, with no successful contact candidate. Keep the default scale at 1; further scale-only retries are not the next development step.
+
+Independent verification completed on 2026-09-30. It rechecked original inputs, archived/current methods, all completion-artifact hashes, matched protocols and default compatibility. Replaying the full decoded GLB audit reproduces both saved reports exactly. Recomputed native support metrics match within 1e-10, and every measured support allowance passes. Global rate excess, added floor depth and all outside-window joint/basis/skin errors remain zero. Original physical budgets pass: maximum root lifts are 0.747263/0.747561 mm and maximum rotation edits are 0.672750/0.855884 degrees, respectively.
+
+Both original engine captures pass 284 pose observations each, with authored pin events at frames 85 and 100, reverse/automatic playback, callback modes and unloading checks. The independent verifier rechecks those retained captures in separate output directories; it does not launch additional engine playback. Engine import is not contact or human-quality approval.
+
+Evidence: `reports/landing-root-scale-v1/comparison.json` and `reports/landing-root-scale-verification-v1/verification.json`. The workers are terminal and the method freeze is accounted for. Failed candidates remain immutable. A separate exploratory vector-norm point-track relaxation found no verified incompatibility certificate; it does not establish that a rigged animation can satisfy the request. Next investigate pose-capable feasibility restoration with the original bounds and full export checks, alongside broader workflow validation. All fourteen release capabilities remain unapproved.
