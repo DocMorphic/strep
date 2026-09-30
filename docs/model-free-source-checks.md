@@ -29,3 +29,6 @@ The dedicated environment is ignored by Git. The broader test suite still requir
 
 
 The current suite also includes nine authored contact-event timing regressions (57 Python tests total). Historical 48-test results above retain their original scope. These tests cover landing intervals, short clips, multiple regions, empty authored contacts and rejection of invalid clocks/intervals.
+
+
+The Phase-I feasibility adapter adds 11 model-free tests for normalized Jacobians, feasible and infeasible toy systems, hard constraints, variable bounds and malformed inputs. Positive diagnostic slack cannot turn solver success into contact acceptance. The real cylinder pose study remains an asset-dependent integration experiment.

@@ -40,3 +40,6 @@ With the separately acquired local assets and retained completed v14 fit:
 ```
 
 The output directory must be new. `pose.npz` contains one diagnostic frame, not a replacement animation.
+
+
+Follow-up: the [feasibility-first and bounded-coordinate comparison](cylinder-pose-phase-one-v1.md) retains both solver failures and explains the next constraint-preserving comparison. No diagnostic pose is promoted.

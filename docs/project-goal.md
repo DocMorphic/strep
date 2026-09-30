@@ -418,3 +418,6 @@ The [first cylinder grasp study](cylinder-contact-v1.md) is complete and rejecte
 
 
 The [cylinder single-pose diagnostic](cylinder-pose-witness-v1.md) is complete and rejected. Full-skin optimization at frame 96 ends in a local solver subproblem failure; penetration remains and both anchors exceed 5 mm. Sixteen focused tests and independent serialized-pose/provenance replay pass. Static feasibility remains unresolved, no clip is replaced, and all fourteen release capabilities remain unapproved.
+
+
+The [feasibility-first cylinder comparison](cylinder-pose-phase-one-v1.md) retains two rejected outcomes. Phase I ends at an infeasible trial; bounded coordinates then preserve all trial rotation limits and reduce penetration to 21.040 mm, but both hand contacts still fail. Independent replay and a near-tied collision probe distinguish numerical termination from a passing pose. The probe improves collision depth while worsening 11 failed rows, so no animation is replaced. Next handle simultaneous active collisions with protection for separate contacts. All fourteen release capabilities remain unapproved.

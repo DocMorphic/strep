@@ -47,6 +47,7 @@ jobs:
         run: >-
           python -m pytest -q
           tests/test_object_geometry_mesh.py
+          tests/test_pose_feasibility_phase.py
           tests/test_point_rate_reachability.py
           tests/test_contact_rate_feasibility.py
           tests/test_contact_engine_events.py

@@ -140,7 +140,8 @@ class RegionalPoseProblem(PoseProblem):
             minimum_floor_m=floor,objects=objects,contacts=rows),motion
 
 
-def run(fit,output,frame=96,iterations=150,seconds=180):
+def run(fit,output,frame=96,iterations=150,seconds=180,mode='nearest'):
+    if mode not in ['nearest','phase_one']:raise ValueError('Unknown pose solver mode')
     if type(iterations) is not int or not 1<=iterations<=500 or type(seconds) not in [int,float] or not np.isfinite(seconds) or not 0<seconds<=1200:
         raise ValueError('Bounded positive solve budget required')
     torch.set_num_threads(2);fit=Path(fit).resolve();output=Path(output).resolve()
@@ -149,7 +150,7 @@ def run(fit,output,frame=96,iterations=150,seconds=180):
     for pattern in ['*.py','*.gd']:
         for p in (ROOT/'scripts').glob(pattern):shutil.copyfile(p,snapshot/p.name)
     inputs=[fit/n for n in ['protocol.json','result.json','source-motion.npz','motion.npz','authored-scene.json','recipe.json']]+[ASSET]
-    protocol=dict(at=now(),fit=fit.relative_to(ROOT).as_posix(),frame=frame,iterations=iterations,seconds_budget=seconds,
+    protocol=dict(at=now(),fit=fit.relative_to(ROOT).as_posix(),frame=frame,iterations=iterations,seconds_budget=seconds,mode=mode,
         inputs={str(p):sha256(p) for p in inputs},methods={p.name:sha256(p) for p in snapshot.iterdir()},selections=problem.selections,
         rotation_limits_degrees=dict(zip([problem.names[j] for j in problem.editable],np.rad2deg(problem.limits))),max_root_lift_m=problem.config['max_root_lift_m'],
         scope='One native pose; original regions/anchors/full skin/floor and edit bounds. Temporal spline/rate/support constraints are relaxed. Fixed triangle witnesses may miss feasible correspondences. A failed local solve is not an infeasibility certificate; success is not a usable clip.',quality_approved=False)
@@ -165,7 +166,7 @@ def run(fit,output,frame=96,iterations=150,seconds=180):
     with torch.no_grad():fd=((problem.geometry_slack(problem.t(problem.seed+h*direction))-problem.geometry_slack(problem.t(problem.seed-h*direction)))/(2*h)).numpy()
     np.testing.assert_allclose(jac[:len(problem.labels)]@direction,fd,atol=2e-4,rtol=2e-4)
     save(output/'preflight.json',dict(seed=seed_audit,seed_fk_error=seed_error,directional_max_error=float(abs(jac[:len(fd)]@direction-fd).max()),constraint_count=len(values),labels=problem.labels))
-    started=time.monotonic();history=[];current=problem.seed.copy();peak=0
+    started=time.monotonic();history=[];current=problem.seed.copy();peak=0;phase=None;current_slack=None
     scale=np.r_[np.repeat(problem.limits,3),problem.config['max_root_lift_m']]
     def guard():
         nonlocal peak
@@ -176,19 +177,37 @@ def run(fit,output,frame=96,iterations=150,seconds=180):
         guard();delta=(x-problem.seed)/scale
         return .5*float(delta@delta),delta/scale
     def callback(x):
-        nonlocal current
+        nonlocal current,current_slack
+        if phase is not None:
+            current_slack=float(x[-1]);x=phase.physical(x)
         current=x.copy();slack=problem.pair(x)[0]
-        row=dict(iteration=len(history)+1,seconds=time.monotonic()-started,minimum_slack=float(slack.min()),failed_constraints=int((slack<0).sum()))
+        row=dict(iteration=len(history)+1,seconds=time.monotonic()-started,minimum_slack=float(slack.min()),failed_constraints=int((slack<0).sum()),phase_slack=current_slack)
         history.append(row);save(output/'progress.json',dict(status='running',pid=psutil.Process().pid,created_at=psutil.Process().create_time(),history=history))
         if len(history)%10==0:print(row,flush=True)
     lower=np.r_[-np.repeat(problem.limits,3),0.];upper=np.r_[np.repeat(problem.limits,3),problem.config['max_root_lift_m']]
     try:
-        result=minimize(objective,problem.seed,method='SLSQP',jac=True,bounds=list(zip(lower,upper)),
-            constraints=[dict(type='ineq',fun=lambda x:problem.pair(x)[0],jac=lambda x:problem.pair(x)[1])],callback=callback,
-            options=dict(maxiter=iterations,ftol=1e-10))
-        current=result.x;solver=dict(success=bool(result.success),message=str(result.message),iterations=int(result.nit),evaluations=int(result.nfev));status='complete'
+        if mode=='phase_one':
+            from pose_feasibility_phase import PhaseOne
+            phase=PhaseOne(problem.pair,problem.seed,scale,lower,upper,len(problem.labels))
+            current_slack=float(phase.initial[-1])
+            save(output/'phase-initial.json',dict(slack=current_slack,minimum_augmented_slack=float(phase.constraints(phase.initial)[0].min()),
+                scope='Geometry slack is diagnostic only; norm and variable bounds remain hard. Independent acceptance uses original limits.'))
+            result=minimize(phase.objective,phase.initial,method='SLSQP',jac=True,bounds=phase.bounds,
+                constraints=[dict(type='ineq',fun=lambda z:phase.constraints(z)[0],jac=lambda z:phase.constraints(z)[1])],callback=callback,
+                options=dict(maxiter=iterations,ftol=1e-10))
+            current=phase.physical(result.x);current_slack=float(result.x[-1])
+        else:
+            result=minimize(objective,problem.seed,method='SLSQP',jac=True,bounds=list(zip(lower,upper)),
+                constraints=[dict(type='ineq',fun=lambda x:problem.pair(x)[0],jac=lambda x:problem.pair(x)[1])],callback=callback,
+                options=dict(maxiter=iterations,ftol=1e-10))
+            current=result.x
+        solver=dict(success=bool(result.success),message=str(result.message),iterations=int(result.nit),evaluations=int(result.nfev));status='complete'
     except TimeoutError as exc:solver=dict(success=False,message=str(exc));status='interrupted_resource_guard'
     problem.guard=None
+    solver['phase_slack']=current_slack
+    final_slack=problem.pair(current)[0]
+    solver['original_minimum_geometric_slack']=float(final_slack[:len(problem.labels)].min())
+    solver['original_minimum_norm_slack']=float(final_slack[len(problem.labels):].min())
     audit,motion=problem.independent(current);np.savez(output/'pose.npz',**motion)
     with torch.no_grad():_,_,_,v=problem.fk(problem.t(current))
     vertices=problem.surface.vertices(motion['global_rot_mats'][0],motion['posed_joints'][0]);error=float(abs(vertices-v.numpy()).max())
@@ -206,5 +225,6 @@ def run(fit,output,frame=96,iterations=150,seconds=180):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('fit',type=Path);parser.add_argument('output',type=Path)
     parser.add_argument('--frame',type=int,default=96);parser.add_argument('--iterations',type=int,default=150);parser.add_argument('--seconds',type=float,default=180.)
+    parser.add_argument('--mode',choices=['nearest','phase_one'],default='nearest')
     a=parser.parse_args()
-    with threadpool_limits(limits=2):run(a.fit,a.output,a.frame,a.iterations,a.seconds)
+    with threadpool_limits(limits=2):run(a.fit,a.output,a.frame,a.iterations,a.seconds,a.mode)
