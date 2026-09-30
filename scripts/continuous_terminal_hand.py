@@ -50,7 +50,7 @@ def solve(evaluate,scale,starts,*,iterations=100,observe=None):
     if scale.ndim!=1 or not (len(scale)==5 or 11<=len(scale)<=132 and len(scale)%11==0) or not np.isfinite(scale).all() or np.any(scale<=0):raise ValueError('Five legacy or up to twelve groups of eleven positive control scales required')
     dimensions=len(scale)
     if type(iterations) is not int or iterations<1:raise ValueError('Positive iteration budget required')
-    cache={};records=[];best=None
+    cache={};records=[];best=None;cache_capacity=max(32,dimensions+3)
     def physical(x):
         nonlocal best
         key=np.asarray(x,float).tobytes()
@@ -63,7 +63,7 @@ def solve(evaluate,scale,starts,*,iterations=100,observe=None):
         record=dict(evaluation=len(records),controls=control.tolist(),witness_peak_m=float(depth),
                     minimum_margin=float(margins.min()),motion_domain_feasible=feasible)
         records.append(record);cache[key]=(float(depth),margins)
-        if len(cache)>32:del cache[next(iter(cache))]
+        if len(cache)>cache_capacity:del cache[next(iter(cache))]
         if feasible and (best is None or depth<best['witness_peak_m']):best=record.copy()
         if observe:observe(record,best)
         return float(depth),margins

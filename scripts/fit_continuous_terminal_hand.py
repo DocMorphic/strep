@@ -5,7 +5,7 @@ import numpy as np
 from strep import ROOT,read,save,sha256,now
 
 
-def run(study,output,hand_orientation=False,witness_study=None,editable_key_count=1):
+def run(study,output,hand_orientation=False,witness_study=None,editable_key_count=1,warm_start_study=None):
     from bound_evidence import bind_inputs
     from diagnose_scene_pair_limits import load_bound_study
     from scene_pair_problem import load_actors
@@ -18,6 +18,7 @@ def run(study,output,hand_orientation=False,witness_study=None,editable_key_coun
     from oriented_terminal_hand import OrientedTerminalMotion,support_clock
     from oriented_guide_domain import control_scales,margins as guide_margins
     from hand_witness_reuse import load_queries,rebuild_witnesses
+    from hand_control_reuse import load_controls
     from build_guarded_pair_witnesses import query
     from waypoint_path_evidence import load_path
     from paired_temporal_neighbor import rotation_channels
@@ -27,6 +28,7 @@ def run(study,output,hand_orientation=False,witness_study=None,editable_key_coun
     from scalar_angular_replay import angular_replay
     study,output=Path(study).resolve(),Path(output).resolve()
     if output.exists():raise ValueError('Fresh continuous terminal study required')
+    if warm_start_study is not None and not hand_orientation:raise ValueError('Warm start requires oriented controls')
     result=read(study/'result.json');request=read(study/'request.json');files={str(study/'result.json'):sha256(study/'result.json')}
     if result['status']!='complete':raise ValueError('Completed terminal search required')
     for name,key in [('request.json','request_sha256'),('candidates.json','candidates_sha256'),('geometry.json','geometry_sha256')]:
@@ -81,18 +83,32 @@ def run(study,output,hand_orientation=False,witness_study=None,editable_key_coun
         if editable_key_count>1:
             weights=np.sin(np.linspace(0,np.pi,editable_key_count+2)[1:-1])**2
             starts=[np.zeros(len(scale)),(weights[:,None]*starts[3]).ravel()]
-    source_queries=[]
+    source_queries=[];reuse_required=files.copy();warm_replay=None
+    if warm_start_study is not None:
+        warm,paths,warm_files=load_controls(warm_start_study,reuse_required,edit_native);files.update(warm_files)
+        evaluated=[m.evaluate_vector(warm) for m in models];warm_parts=[];errors=[]
+        for s,(world,maximum),path in zip(sources,evaluated,paths):
+            donor=RigAsset.load(path);reader=AnimationSampler(donor.document,donor.binary,0)
+            error=float(np.abs(world-np.array([reader.sample(t) for t in times[ids]])).max());errors.append(error)
+            if error>2e-10 or maximum>45.+1e-4:raise ValueError('Embedded controls differ from verified donor GLB')
+            warm_parts.append(features(world,s['rig'].joints))
+        if np.any(guide_margins(warm,edit_native,limits)<0) or not caps.check(dict(indices=ids,**{
+                k:np.concatenate([p[k] for p in warm_parts],axis=1) for k in ['positions','rotations']})):
+            raise ValueError('Embedded controls fail expanded support constraints')
+        starts=[np.zeros(len(scale)),warm]
+        warm_replay=dict(maximum_batch_errors=errors,expanded_support_motion_pass=True,guide_pass=True)
     if witness_study is not None:
-        source_queries,reused_files=load_queries(witness_study,files,[s['hand'] for s in sources],edge);files.update(reused_files)
+        source_queries,reused_files=load_queries(witness_study,reuse_required,[s['hand'] for s in sources],edge);files.update(reused_files)
     output.mkdir();(output/'implementation').mkdir();methods={}
     names=set(request['implementation'])|{'fit_continuous_terminal_hand.py','continuous_terminal_hand.py','continuous_waypoint_motion.py',
         'build_guarded_pair_witnesses.py','paired_surface_witness.py','verify_scene_pair_fit.py','scalar_angular_replay.py','wrist_waypoint_motion.py',
-        'oriented_terminal_hand.py','hand_witness_reuse.py','oriented_guide_domain.py'}
+        'oriented_terminal_hand.py','hand_witness_reuse.py','oriented_guide_domain.py','hand_control_reuse.py'}
     for name in sorted(names):
         shutil.copyfile(ROOT/'scripts'/name,output/'implementation'/name);methods[name]=sha256(output/'implementation'/name)
     save(output/'request.json',dict(at=now(),study=str(study),inputs=files,implementation=methods,scale=scale.tolist(),starts=[v.tolist() for v in starts],
         sample_indices=ids.tolist(),hand_samples=edge.tolist(),native_times_s=native.tolist(),original_bins_s=request['original_bins_s'],
         hand_orientation=hand_orientation,witness_study=None if witness_study is None else str(Path(witness_study).resolve()),
+        warm_start_study=None if warm_start_study is None else str(Path(warm_start_study).resolve()),warm_start_replay=warm_replay,
         editable_key_count=editable_key_count,edit_native_times_s=edit_native.tolist(),
         source_directional_queries_reused=len(source_queries),
         optimizer=dict(method='SLSQP',iterations_per_start=100,finite_difference_step=1e-4,ftol=1e-9),
@@ -192,5 +208,6 @@ if __name__=='__main__':
     from threadpoolctl import threadpool_limits
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study',type=Path);parser.add_argument('output',type=Path)
     parser.add_argument('--hand-orientation',action='store_true');parser.add_argument('--witness-study',type=Path)
+    parser.add_argument('--warm-start-study',type=Path)
     parser.add_argument('--editable-keys',type=int,default=1);args=parser.parse_args()
-    with worker_lock(),threadpool_limits(limits=1):run(args.study,args.output,args.hand_orientation,args.witness_study,args.editable_keys)
+    with worker_lock(),threadpool_limits(limits=1):run(args.study,args.output,args.hand_orientation,args.witness_study,args.editable_keys,args.warm_start_study)
