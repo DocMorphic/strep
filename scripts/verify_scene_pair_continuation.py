@@ -4,7 +4,7 @@ from pathlib import Path
 import shutil
 import numpy as np
 from strep import ROOT,read,save,sha256,now
-from continuation_evidence import load_continuation
+from continuation_evidence import load_continuation,parent_trial
 
 
 def run(study,output):
@@ -19,6 +19,7 @@ def run(study,output):
     study,output=Path(study).resolve(),Path(output).resolve()
     if output.exists(): raise ValueError('Fresh continuation replay required')
     request,solver,trials,files=load_continuation(study)
+    parent_trial(request)
     parent=Path(request['study']).resolve(); original,_,required=load_bound_study(parent)
     bind_inputs(required,request['inputs']);files.update(required)
     _,actors=load_actors(Path(original['prepared_request']).parent)

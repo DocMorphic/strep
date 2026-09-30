@@ -4,6 +4,23 @@ import numpy as np
 from strep import read, sha256
 
 
+def parent_trial(request):
+    parent=Path(request['study']).resolve();result=read(parent/'result.json')
+    for name,key in [('result.json',None),('trials.json','trials_sha256')]:
+        path=parent/name;digest=sha256(path)
+        if request['inputs'].get(str(path))!=digest or (key and result[key]!=digest):
+            raise ValueError('Selected parent trial is not bound')
+    if result['status']!='complete':raise ValueError('Completed parent required')
+    matches=[t for t in read(parent/'trials.json') if t['folder']==result['selected']]
+    if len(matches)!=1 or matches[0]['accepted_local_step'] is not True or matches[0]['reasons']:
+        raise ValueError('One accepted selected parent required')
+    base=np.asarray(request['cumulative_controls'],float);selected=np.asarray(matches[0]['controls'],float)
+    if base.ndim!=1 or not len(base) or base.shape!=selected.shape or not np.isfinite(base).all():
+        raise ValueError('Complete finite parent controls required')
+    np.testing.assert_array_equal(base,selected)
+    return matches[0]
+
+
 def cumulative_controls(request, solver, trial):
     base=np.asarray(request['cumulative_controls'],float)
     step=np.asarray(solver['increment'],float)

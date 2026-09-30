@@ -136,7 +136,10 @@ def test_continuation_replay_reconstructs_nonzero_glbs_and_keeps_failed_trials(t
         refreshed_plane_excess_m=excess,reasons=reasons,preliminary_pass=False)
     save(study/'trials.json',[trial]);save(study/'trial-0/review.json',trial)
     save(study/'solver.json',dict(increment=increment.tolist(),solver=dict(proposal_hard_checks=True)))
-    save(study/'request.json',dict(study=str(parent),inputs={},implementation={},cumulative_controls=base.tolist()))
+    save(parent/'trials.json',[dict(folder='selected',accepted_local_step=True,reasons=[],controls=base.tolist())])
+    save(parent/'result.json',dict(status='complete',selected='selected',trials_sha256=sha256(parent/'trials.json')))
+    inputs={str(parent/name):sha256(parent/name) for name in ['trials.json','result.json']}
+    save(study/'request.json',dict(study=str(parent),inputs=inputs,implementation={},cumulative_controls=base.tolist()))
     np.savez(study/'linearization.npz',gaps=gaps)
     result=dict(status='complete')
     for name in ['request.json','solver.json','linearization.npz','current-index.json','trials.json']:
@@ -151,3 +154,18 @@ def test_continuation_replay_reconstructs_nonzero_glbs_and_keeps_failed_trials(t
     assert verification['preliminary_passes']==0 and not verification['accepted_for_publication']
     assert reviews[0]['reasons']==reasons
     assert all(a['exact_export_reconstruction'] for a in reviews[0]['actors'])
+
+
+@pytest.mark.parametrize('fault',[None,'unbound','different','rejected','duplicate'])
+def test_continuation_must_start_from_selected_bound_parent(tmp_path,fault):
+    from continuation_evidence import parent_trial
+    row=dict(folder='candidate',accepted_local_step=True,reasons=[],controls=[.1,.2,.3])
+    if fault=='rejected':row['reasons']=['failed']
+    save(tmp_path/'trials.json',[row,row] if fault=='duplicate' else [row])
+    save(tmp_path/'result.json',dict(status='complete',selected='candidate',trials_sha256=sha256(tmp_path/'trials.json')))
+    request=dict(study=str(tmp_path),cumulative_controls=[.1,.2,.3],inputs={str(tmp_path/name):sha256(tmp_path/name) for name in ['result.json','trials.json']})
+    if fault=='unbound':request['inputs'].pop(str(tmp_path/'trials.json'))
+    if fault=='different':request['cumulative_controls'][0]+=.01
+    if fault is None:assert parent_trial(request)==row
+    else:
+        with pytest.raises((ValueError,AssertionError)):parent_trial(request)

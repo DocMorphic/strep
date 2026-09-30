@@ -586,3 +586,8 @@ Implemented cumulative paired relinearization with fresh nearest-surface witness
 ## Independent continuation replay, 2026-09-30
 
 Added bound cumulative-continuation evidence loading and independent replay of all attempted GLBs, including rejected trials. Verify cumulative controls equal previous controls plus fraction times increment, clip identities, ordered actors, original-bin all-joint positional rates, scalar angular rates and preliminary classifications. Thirty-two focused tests pass; the real continuation replay remains pending its producer. The existing worker is confirmed live, refreshing reports/scene-pair-relinearized-v1 across 148 times; do not restart it or edit its method snapshots. Commit 4dc0dee passed hosted Windows/Linux checks. No new animation acceptance, engine validation or publication. All 14 release capabilities remain unapproved.
+
+
+## Continuation geometry acceptance, 2026-09-30
+
+Strengthened continuation replay to bind starting controls to the selected accepted parent, and added a full decoded-mesh/native-engine audit entry point gated by independent replay. A local step must improve the previous correction peak by at least one micrometre, not merely beat the raw source; original per-time depth caps and floor limits remain. Parent geometry bytes and sample clock are checked. Thirty-four focused minimal tests pass with one optional integration skip; all 23 evidence tests pass in the development runtime. The existing relinearization worker remains live, refreshing the 148-time population. No eligible new candidate, real continuation replay, new mesh/engine audit or publication exists yet. All 14 release capabilities remain unapproved.
