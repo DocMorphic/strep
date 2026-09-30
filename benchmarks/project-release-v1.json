@@ -911,6 +911,9 @@
         "docs/cylinder-contact-v1.md",
         "docs/cylinder-pose-witness-v1.md",
         "docs/cylinder-pose-phase-one-v1.md",
+        "docs/cylinder-pose-bundle-v1.md",
+        "reports/cylinder-pose-bundle-review-v1/verification.json",
+        "reports/cylinder-pose-bundle-review-v1/inward-verification.json",
         "reports/cylinder-pose-phase-one-review-v1/verification.json",
         "reports/cylinder-pose-phase-one-review-v1/bounded-verification.json",
         "reports/cylinder-pose-phase-one-review-v1/tie-probe-v2.json",
@@ -2959,6 +2962,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-30T01:57:43.341133+00:00",
-  "last_progress": "Cylinder pose diagnostics retain all failures. Phase-I SLSQP hits its resource guard at an infeasible trial; bounded rotation coordinates then keep all evaluated trials within limits and reduce penetration to 21.040 mm, but both hand contacts fail. Independent replay verifies inputs, serialized poses and selection. A near-tied collision-gradient probe lowers penetration further but worsens 11 failed rows, so it is not promoted. Next address simultaneous active collision vertices while protecting individual contact constraints. 31 targeted tests and 69 public-suite Python tests pass locally. All 14 release capabilities remain unapproved."
+  "last_progress_at": "2026-09-30T02:11:17.004304+00:00",
+  "last_progress": "Simultaneous-collision restoration is measured and rejected. Near-tied active models reject 40 trials; the all-failing inward model rejects 20. Independent full-skin, serialized-pose and input/method replay preserves the starting pose byte-for-byte. Two identical continuous improvements fail strict serialized nonregression on nanometre-scale differences, while 21.040 mm penetration and failed hand contacts remain. Next use exploratory full-residual feasibility search with unchanged final quality gates, not a larger monotone-restoration budget. All 14 release capabilities remain unapproved."
 }

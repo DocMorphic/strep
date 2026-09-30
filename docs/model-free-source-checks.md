@@ -32,3 +32,6 @@ The current suite also includes nine authored contact-event timing regressions (
 
 
 The Phase-I feasibility adapter adds 11 model-free tests for normalized Jacobians, feasible and infeasible toy systems, hard constraints, variable bounds and malformed inputs. Positive diagnostic slack cannot turn solver success into contact acceptance. The real cylinder pose study remains an asset-dependent integration experiment.
+
+
+Eight inward-feasibility LP tests now cover common progress, conflicting constraints, protected passing rows, nonlinear curvature reserve and invalid input. The selected public Python suite now contains 77 tests. This is source verification, not animation approval.

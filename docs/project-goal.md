@@ -421,3 +421,6 @@ The [cylinder single-pose diagnostic](cylinder-pose-witness-v1.md) is complete a
 
 
 The [feasibility-first cylinder comparison](cylinder-pose-phase-one-v1.md) retains two rejected outcomes. Phase I ends at an infeasible trial; bounded coordinates then preserve all trial rotation limits and reduce penetration to 21.040 mm, but both hand contacts still fail. Independent replay and a near-tied collision probe distinguish numerical termination from a passing pose. The probe improves collision depth while worsening 11 failed rows, so no animation is replaced. Next handle simultaneous active collisions with protection for separate contacts. All fourteen release capabilities remain unapproved.
+
+
+The [simultaneous-collision restoration comparison](cylinder-pose-bundle-v1.md) completes with no accepted step. Both outputs preserve their failed input byte-for-byte. Independent replay covers 60 trials, distinguishing omitted constraints, nonlinear tangent regressions and nanometre-scale float32 differences. Including all 1,992 relevant derivative rows yields two identical continuous improvements that fail strict serialized nonregression. Do not repeat with only larger budgets; next separate exploratory feasibility search from candidate promotion while keeping the original final contact/geometry gates. All fourteen release capabilities remain unapproved.
