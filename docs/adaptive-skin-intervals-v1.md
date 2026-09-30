@@ -102,14 +102,51 @@ Completed local evidence:
 A separate immutable protocol includes every adjacent timestamp in the union
 of both clips' native channel clocks: 74 intervals over 0 to 3.6666667461395264
 seconds. It retains the same clips, placements, tolerances and budgets. This
-audit is running under `reports/adaptive-skin-full-audit-v1`; no final full-clock
-outcome is claimed yet. Preserve its bound implementation until it exits.
+audit completed under `reports/adaptive-skin-full-audit-v1`. Reconstructing the
+union from the bound clips verifies the complete 74-interval population.
+
+| Root interval outcome | Count |
+| --- | ---: |
+| Surface separation bound with sampled containment | 63 |
+| Observed crossing | 10 |
+| Unresolved | 1 |
+
+The complete terminal partition has 82 separation leaves, 10 crossing leaves
+and 16 unresolved leaves. It took 142 interval evaluations and retained 167 pose
+observations across roots (not necessarily unique timestamps). Maximum depth is
+four. Root 37, [1.8411632776, 1.8912750483] seconds, exhausts the depth limit with
+sixteen unresolved leaves. They are not silently omitted from the result.
 
 One completed root within that running audit, [1.5404924154, 1.5906041861]
 seconds, starts with 22,980,726 overlapping swept-box pairs. Seven interval
 evaluations partition it into four terminal intervals with zero swept pairs
 and clear sampled containment. This is actual decoded-character subdivision
-evidence; it does not imply that the remaining roots pass.
+evidence; it does not imply that the remaining roots pass. Root 43 and eight
+later roots also use subdivision. The ten crossing leaves retain individual
+witnesses rather than asserting that their entire intervals collide.
+
+Completed full-clock result: `50006a39c16a3065157b85fb3f6ae4158cb1e9b4207478e96216015857a7e771`.
+Intervals: `8218c08d07cf322b5743ff2a7d8176b343fffa553a12f339b3953c78818d83de`.
+The separate verification at `reports/adaptive-skin-full-proof-v1` is complete.
+All ten retained first-crossing witnesses pass the independent barycentric
+formulation; minimum interior weight is 0.005754 and maximum normalized equality
+residual is 2.78e-16. Full-vertex depth is also measured at those ten poses.
+Three remain below the 5 mm vertex-depth screen in both directions; none of
+these ten has both depths at or below 1e-8 m. The separate 1.94-second pose above
+continues to demonstrate the zero-vertex-depth crossing. These complementary
+measurements do not redefine quality thresholds after seeing the result.
+
+Full proof result: `beff489de792163a61a530b717cf70237c12aee45c6e8520a20aa5a7e64f7c83`.
+Checks: `596e9d943fdd83873b43c92a0f91b1ea8fda472d9ca0a3e851aad8b8c2932bee`.
+Both full-clock workers are terminal. The proof verifies retained positive
+witnesses and complete partitions, not every counted triangle pair or the
+absence of missed intersections.
+
+A [fixed-axis triangle refinement](swept-triangle-projections-v1.md) diagnoses one
+unresolved leaf without changing this completed audit or its limits. The sixteen
+inspected examples separate at the center pose but not under their movement
+balls. Tighter motion information requires new validation; the full-clock audit
+does not establish continuous solid clearance, self-collision safety or quality.
 
 No animation is changed, no model is trained, and no held-out prompt is used.
 Reliable contact correction, cubic/STEP-jump handling, moving placements,
