@@ -576,3 +576,8 @@ Completed four matched surface-restriction ablations on the refined five-degree/
 ## Refined motion restrictions and peak geometry, 2026-09-30
 
 Completed five refined motion-restriction comparisons. Removing positional/angular limits changes the affine peak only slightly; omitting motion and local surface restrictions predicts 21.822817 mm while violating original conditions. Exported that rejected proposal for a single-time diagnostic at 1.675 s: original mesh 22.568796 mm, affine 21.822817 mm, decoded retained witnesses 23.801354 mm, fresh mesh 20.917717 mm. Both actors fail original positional checks (1139/771); no full-timeline fresh geometry, engine check or publication. This motivates refreshed nonlinear geometry or changed approach paths, not relaxed acceptance. Both workers are terminal and 24 focused tests pass. All 14 release capabilities remain unapproved.
+
+
+## Cumulative paired relinearization, 2026-09-30
+
+Implemented cumulative paired relinearization with fresh nearest-surface witnesses, nonzero-control angular derivatives and unchanged original motion bins, native budgets, protected keys and depth caps. Original surface bounds remain alongside refreshed rows. Twenty-five focused tests pass. Started reports/scene-pair-relinearized-v1 from the accepted refined half-step; the worker is live and refreshing the complete 148-time population, with exact unchanged-pose reuse only. Solver/export outcomes are pending. No new accepted animation, engine validation or publication is claimed. Prior commit cc31e43 passed hosted Windows/Linux checks. Continue observing this worker, retain failures, and independently validate any promising decoded trial. All 14 release capabilities remain unapproved.
