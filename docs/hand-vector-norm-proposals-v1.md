@@ -207,7 +207,90 @@ the comparison record is `reports/hand-norm-trust-matched-configuration-v1.json`
 .venv/Scripts/python.exe -u scripts/study_hand_norm_proposal.py reports/scene-pair-witness-epigraph-v1 reports/scene-pair-hand-norm-larger-trust-v1 --iterations 6 --trusts .1 .01 .001
 ```
 
-This follow-up is running. In its first iteration the smaller 0.01 proposal is
-still best after exact backoff; later iterations have accepted larger proposals.
-No final exported or fresh-geometry conclusion is available yet. Preserve this
-worker's methods until completion. All release capabilities remain unapproved.
+The larger-trust experiment completed. Its six accepted fixed-witness peaks
+were 20.897778, 20.838088, 20.817434, 20.782150, 20.760885 and 20.749525 mm.
+Both exported GLBs reproduce exactly, preserve frozen keys and pass the original
+four motion categories at all 148 times. Fresh hand geometry still fails:
+
+| Candidate | Failing hand times / 43 | Peak penetration (mm) |
+| --- | ---: | ---: |
+| Original donor | 17 | 20.932800 |
+| Six steps, smaller trust range | 16 | 20.873814 |
+| Six steps, larger trust range | 17 | 20.791931 |
+
+Against the smaller-trust candidate, sample 69 fails again. Twenty-two
+directional observations worsen, by up to 3.444154 mm; the greatest per-time
+peak increase is 2.924551 mm. Against the original donor, 23 directional
+observations worsen by up to 2.864957 mm, with no newly failing time. The lower
+global peak is not a uniform contact improvement. No Studio replacement or
+quality approval follows.
+
+Bound completed evidence:
+
+- Larger-trust result: `a42a617a4995e89297c3b476682a6eaf2d31697448abc4f10908b8e7d8970f29`.
+- Geometry: `bf834916df71a1a566407e25517df6e7e44f0c3df048354b32261ca2d0c28017`.
+- Decoded audit: `067ff754b019fa0d23474f0b68e32407d31b49d1323e5afb950792088d98151a`.
+- Actor A: `28c01507ce0b4d063676e6a65583ad4a8633dc6c578d3fe4d3838cd61da5ee3d`.
+- Actor B: `f5cda40f1f24dec5d030175b894d8ec37bdc521e39c00df57fd1403c043e4d2a`.
+- Smaller-trust comparison: `reports/hand-contact-sections-v3/smaller-trust-comparison.json`, SHA-256 `8b53acfce89e9eb5b9d435945204f34a1ee4da15a13273cf6b77d5785f2f2f3d`.
+
+## Actual contact inspection and fixed witness envelopes
+
+`scripts/inspect_hand_contact.py` reads a completed norm study, verifies its
+bound inputs and outputs, loads serialized candidate GLBs and saved actor
+placements, and replays the deepest recorded vertices at selected times. It
+finds nearest target triangles, reports interpolated skin influences, and draws
+three actual surface-plane sections through each deepest point. It also replays
+every fixed witness in the objective's direction order, comparing against the
+initial model. This is a diagnostic of existing observations, not a new complete
+collision screen. It requires the existing development dependencies and Pillow.
+
+```powershell
+.venv/Scripts/python.exe scripts/inspect_hand_contact.py reports/scene-pair-hand-norm-larger-trust-v1 reports/hand-contact-sections-v3 --samples 69 77 81
+```
+
+All six deepest distances at these three times reproduce to 1e-10 m. At sample
+69, source influences are 99.7% and 94.2% LeftForeArm; nearest target influences
+are 98.8% and 99.7% LeftForeArm. Later sample 77/81 contacts have LeftHand as
+their strongest source and target influence (source weights 59.2%-94.2%). These
+weights describe deformation controls, not precise anatomy. The sections show
+substantial intersecting surfaces around the late contacts; adding finger
+controls alone is not supported as the next remedy by this evidence.
+
+The fixed-witness replay identifies 437 individual observations whose final
+signed depth exceeds max(5 mm, its own initial signed depth) by more than 1e-8 m.
+At sample 69, the maximum fixed depth grows from 5.381383 to 7.062145 mm even as
+the global peak falls. Many regressions are already visible to modeled contacts:
+improving only the worst depth leaves these unconstrained. Missing witnesses or
+surrogate error can still matter elsewhere. Empty witness times are recorded
+explicitly with zero count and null peaks, never as clearance.
+
+Diagnostic result: `reports/hand-contact-sections-v3/result.json`, SHA-256
+`a5bc38defd2a9cccae2209d7a24092ab9337d9feb009ce1140554fbede75d650`.
+Witness comparison: `345b9e39229a6e76a88dabf54ab599cf0b6b5e295b5d85af75f6f96fa1ea40e5`.
+Images and character payloads stay local and ignored.
+
+The next matched experiment adds `--preserve-witness-envelope`. Each original
+signed witness gets a fixed ceiling of max(5 mm, initial signed depth) + 1e-8 m.
+The explicit numerical slack is 0.00001 mm. Copied ceilings remain fixed for the
+whole solve, enter local proposals and are checked on every exact backoff; they
+are never rebased after an accepted step. Existing motion, domain, export and
+fresh geometry gates remain unchanged. This is a surrogate regression bound,
+not permission for intersections or evidence of full-body clearance. It can
+limit available correction directions and does not prove general infeasibility.
+
+Eight new tests cover exact rejection/backoff of a lower-peak proposal that
+worsens a previously safe contact, preservation across later local models,
+caller mutation, signed depths, malformed references and changed populations.
+All 36 focused checks and all 786 minimal public Python tests pass.
+
+```powershell
+.venv/Scripts/python.exe -u scripts/study_hand_norm_proposal.py reports/scene-pair-witness-epigraph-v1 reports/scene-pair-hand-witness-envelope-v1 --iterations 6 --trusts .1 .01 .001 --preserve-witness-envelope
+```
+
+The envelope study uses the same original donor, six-iteration limit, three
+proposal radii and eight backoffs. Its first iteration accepted no proposal;
+all 24 exact trials had a negative constraint margin. The solver stage stopped
+early and retained the donor. This finite local failure is not a proof that the
+problem has no solution. The fresh exported mesh audit is still running. No
+model training or held-out prompts are used; all 14 capabilities stay unapproved.

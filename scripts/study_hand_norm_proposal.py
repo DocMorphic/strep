@@ -6,7 +6,7 @@ import numpy as np
 from strep import ROOT, read, save, sha256, now
 
 
-def run(study, output, iterations=1, trusts=(.01, .001, .0001)):
+def run(study, output, iterations=1, trusts=(.01, .001, .0001), preserve_witness_envelope=False):
     from diagnose_oriented_hand_returns import load_evidence
     from bound_evidence import bind_inputs
     from diagnose_scene_pair_limits import load_bound_study
@@ -85,6 +85,16 @@ def run(study, output, iterations=1, trusts=(.01, .001, .0001)):
     if (abs(before['witness_peak_m']-chosen['witness_peak_m']) > 1e-10
             or abs(before['minimum_margin']-chosen['minimum_margin']) > 1e-10 or before['minimum_margin'] < 0):
         raise ValueError('Motion-feasible bound selected measurement must reproduce')
+    envelope = None
+    if preserve_witness_envelope:
+        from hand_witness_envelope import limits, guarded
+        original_depths = exact(point)['depths'].copy()
+        ceiling = limits(original_depths, request['hand_tolerance_m'])
+        envelope = dict(reference_depths_m=original_depths.tolist(), limits_m=ceiling.tolist(),
+                        tolerance_m=request['hand_tolerance_m'], numerical_slack_m=1e-8,
+                        scope='Fixed original per-witness max(tolerance, signed depth) plus numerical slack; no geometry clearance claim.')
+        exact, proposal = guarded(exact, ceiling), guarded(proposal, ceiling)
+        before = measurement(exact(point))
     solver = solver_module()
     solver_path = ROOT/'reports/conic-solver-bootstrap-v1.json'; solver_meta = read(solver_path)
     files[str(solver_path)] = sha256(solver_path)
@@ -94,6 +104,8 @@ def run(study, output, iterations=1, trusts=(.01, .001, .0001)):
         'smooth_hand_proposal.py', 'conic_root_descent.py', 'conic_linear_screen.py', 'root_release_block.py',
         'diagnose_oriented_hand_returns.py', 'diagnose_terminal_hand_rates.py', 'hand_geometry_comparison.py'}
     if iterations > 1: names.add('iterated_hand_norm.py')
+    if envelope is not None:
+        names.add('hand_witness_envelope.py'); save(output/'witness-envelope.json', envelope)
     for name in sorted(names):
         shutil.copyfile(ROOT/'scripts'/name, output/'implementation'/name)
         methods[name] = sha256(output/'implementation'/name)
@@ -108,6 +120,7 @@ def run(study, output, iterations=1, trusts=(.01, .001, .0001)):
         sample_indices=ids.tolist(), hand_samples=request['hand_samples'], original_bins_s=request['original_bins_s'],
         derivative_step=derivative_step, trusts=trusts, solver_version=solver.__version__, local_iterations=iterations,
         motion_gate_tolerance=.9*caps.tolerance, export_tolerance=caps.tolerance,
+        preserve_witness_envelope=preserve_witness_envelope,
         scope=f'Up to {iterations} local central-difference vector models, starting at the completed selected controls; {len(trusts)} independent trust sizes per model, eight exact backoffs each. Actual float32 base values, float64 proposal Jacobians, all individual signed witnesses and fixed original motion/domain caps. Exact-feasible improvements relinearize for the next iteration; final motion is exported and freshly screened. No full-body, engine, human quality or Studio publication.', quality_approved=False))
     def observe(count, total):
         if count % 7 == 0: print(dict(phase='vector_jacobian', coordinates=count, total=total), flush=True)
@@ -128,7 +141,7 @@ def run(study, output, iterations=1, trusts=(.01, .001, .0001)):
                 signed_depth_residual=float(np.abs(model['base']['depths']+model['jacobian']['depths']@delta-actual['depths']).max()/.02)))
     save(output/'prediction.json', prediction)
     best = point.copy(); metric = before; attempts = []
-    extra_outputs = []
+    extra_outputs = ['witness-envelope.json'] if envelope is not None else []
     if iterations == 1:
         for trust in trusts:
             delta, report = direction(model, trust, solver)
@@ -202,5 +215,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('study', type=Path); parser.add_argument('output', type=Path)
     parser.add_argument('--iterations', type=int, default=1)
-    parser.add_argument('--trusts', type=float, nargs='+', default=[.01, .001, .0001]); args = parser.parse_args()
-    with worker_lock(), threadpool_limits(limits=1): run(args.study, args.output, args.iterations, args.trusts)
+    parser.add_argument('--trusts', type=float, nargs='+', default=[.01, .001, .0001])
+    parser.add_argument('--preserve-witness-envelope', action='store_true'); args = parser.parse_args()
+    with worker_lock(), threadpool_limits(limits=1):
+        run(args.study, args.output, args.iterations, args.trusts, args.preserve_witness_envelope)
