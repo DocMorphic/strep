@@ -32,6 +32,15 @@ def rate_check(source, candidate, times, knots, tolerance=1e-5):
     return dict(failures=failures, checked=checked, maximum_excess=maximum, peaks=peaks)
 
 
+def trial_controls(trial, actors):
+    if [a['name'] for a in actors] != [r['actor'] for r in trial['actors']]:
+        raise ValueError('Replay actor population or order differs')
+    controls = np.asarray(trial['controls'], float)
+    if controls.shape != (sum(a['model'].size for a in actors),) or not np.isfinite(controls).all():
+        raise ValueError('Complete finite controls for every replay actor required')
+    return controls
+
+
 def run(study, output):
     study, output = Path(study).resolve(), Path(output).resolve()
     result, request = read(study/'result.json'), read(study/'request.json')
@@ -56,7 +65,9 @@ def run(study, output):
         raise ValueError('Geometry population differs from original request')
     output.mkdir(); implementation = output/'implementation'; implementation.mkdir()
     methods = ['verify_scene_pair_fit.py', 'timed_rotation_edit.py', 'rig_asset.py', 'rig_clip_import.py',
-               'paired_temporal_neighbor.py', 'paired_guarded_temporal.py', 'gltf_tools.py', 'strep.py']
+               'paired_temporal_neighbor.py', 'paired_guarded_temporal.py', 'gltf_tools.py', 'strep.py',
+               'refined_reserve_inputs.py', 'bound_evidence.py', 'diagnose_scene_pair_refinement.py',
+               'diagnose_scene_pair_limits.py', 'coupled_pair_proposal.py']
     for name in methods: shutil.copyfile(ROOT/'scripts'/name, implementation/name)
     protocol = dict(at=now(), study_request_sha256=sha256(study/'request.json'), study_result_sha256=sha256(study/'result.json'),
         implementation={n: sha256(implementation/n) for n in methods}, quality_approved=False)
@@ -68,6 +79,11 @@ def run(study, output):
         model = TimedRotationEdit(rig.document, rig.binary, authored['actors'][name]['joints'], times, authored['window_s'],
             record['protected_seconds'], knots=knots, limit_degrees=authored['limit_degrees'])
         actors.append(dict(name=name, model=model, rig=rig, world=worlds, rotation=rotation, shift=shift))
+    if request.get('curve_actors') is not None:
+        from refined_reserve_inputs import install_refined_models
+        install_refined_models(actors, request['curve_actors'])
+    # The outer `knots` remain the immutable prepared bins, regardless of the
+    # denser reconstruction basis installed above.
     # Full CPU skinning reconstructs every retained source point/target point.
     for sample in samples:
         index = sample['sample']; points = [a['rig'].vertices(a['world'][index])@a['rotation'].T+a['shift'] for a in actors]
@@ -82,9 +98,10 @@ def run(study, output):
         np.testing.assert_allclose(np.concatenate(gaps), linear['gaps'], atol=1e-8, rtol=0)
     trials = read(study/'trials.json') if result['trials'] else []; reviews = []
     for trial in trials:
+        all_controls = trial_controls(trial, actors)
         folder = output/trial['folder']; folder.mkdir(); offset = 0; records = []
         for index, (actor, report) in enumerate(zip(actors, trial['actors'])):
-            model = actor['model']; controls = np.asarray(trial['controls'])[offset:offset+model.size]; offset += model.size
+            model = actor['model']; controls = all_controls[offset:offset+model.size]; offset += model.size
             path = study/trial['folder']/report['path']
             if sha256(path) != report['sha256']: raise ValueError('Trial actor changed')
             reconstructed = folder/f'actor-{index}.glb'; model.export(controls, reconstructed)
