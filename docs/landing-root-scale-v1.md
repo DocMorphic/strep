@@ -1,0 +1,23 @@
+# Landing solver coordinate scaling
+
+The completed [support comparison](native-support-breadth-v1.md) leaves a horizontal landing pin error above 5 mm. Height-only correction cannot resolve it. The existing joint-and-root solver can change the pose, but its constraint penalties increase substantially while the pin residual barely decreases. Its last three stages hit their iteration limits; the recorded optimizer pin error closely matches the decoded GLB error.
+
+A read-only probe evaluates the objective and gradients once at each of two reconstructed warm starts, without taking an optimizer step or exporting a candidate. At the original warm start, rotation-control/root-height gradient infinity norms are 8.147/29.107; at the retained control they are 3.221/21.568. These derivatives have different coordinate units, so their ratio is not a condition-number estimate or proof of the cause. It motivates testing a different coordinate scale. Existing warm initialization raises very small free root heights to 22 micrometres; the probe preserves that existing behavior and records a maximum 22.054 micrometre round-trip joint difference. It does not claim to evaluate the exact original stored pose or the previous final-stage multipliers.
+
+## Change under test
+
+`BoxRootOptimizer` accepts an optional positive `root_scale_m`. SciPy sees `u = h / scale`, while the motion closure still sees physical height `h` in metres. The gradient returned to SciPy is multiplied by the scale and the box is transformed to `[0, original_limit / scale]`. Rotation coordinates, motion penalties, original physical budgets and final contact/rate/floor acceptance thresholds remain unchanged. The default scale is 1, preserving the previous optimizer coordinates.
+
+The test scale is the existing 0.22 m root budget: the solver then sees a root fraction in `[0, 1]`. This is a numerical preconditioner, not an enlarged edit allowance or a hard contact-feasibility solver. A solver point outside its transformed box is rejected. An in-box product that rounds beyond the physical endpoint is clamped to that original endpoint. Accepted optimizer coordinates are restored after rejected line-search probes. Diagnostics separately record physical and solver-coordinate projected gradients so the units remain visible.
+
+The [SciPy 1.15.3 L-BFGS-B documentation](https://docs.scipy.org/doc/scipy-1.15.3/reference/optimize.minimize-lbfgsb.html) defines distinct relative-objective and projected-gradient stopping criteria. Scaling changes the coordinates in which the gradient criterion is evaluated; successful solver termination still does not prove motion feasibility. Iteration limits, objective tolerances and independent acceptance checks remain explicit.
+
+## Verification and matched experiment
+
+Thirteen optimizer tests pass, including finite-difference chain-rule checks, original physical bounds under three coordinate scales, a known coupled constrained optimum, restoration after a rejected probe, invalid scales and rejection of a scale silently supplied to a different coordinate mode. Seventy-four focused tests pass across the optimizer, root coordinates, original edit budgets, held-pose preservation, root/export repair and support objectives. Seven existing Torch/HiGHS warnings remain. The study CLI exposes `--root-optimizer-scale-m`; Studio's default scale remains 1.
+
+The local matched experiment is `reports/landing-root-scale-v1`. It runs scale 1 followed by scale 0.22 with identical original landing source, warm seed, checked request, four outer stages and 60 iterations per stage. Fixed-patch support is enabled and the optional native-body objective is disabled in both arms. Each mode retains native/BVH/GLB outputs, complete audits, engine playback and source/method hashes.
+
+Before proceeding to the scaled arm, the unit-scale run must reproduce the previous support-enabled landing's NPZ, BVH, GLB and contact/body audits byte-for-byte. If it does not, the batch stops for diagnosis. Paired input/method snapshots and protocols must match except for the coordinate scale. At publication the unit-scale arm is running; no motion improvement, feasibility or quality outcome is established. All study methods stay frozen until both runs are terminal and independently verified.
+
+Local diagnostic evidence is `reports/landing-coordinate-diagnosis-v1/diagnosis.json`; generated study data remains excluded from the public repository. If the measured landing failure persists, a pose-capable feasibility restoration with complete original constraint checks remains necessary. This experiment does not replace broader action/rig/interaction coverage or human review.

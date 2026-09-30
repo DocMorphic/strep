@@ -130,9 +130,13 @@ def object_sampling_layout(selected,vertex_count,full):
     return ids,np.searchsorted(ids,original)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=(),edit_window=None,export_point_rate_guard=False,authored_point_scaling="metres",export_floor_guard=False,export_point_position_guard=False,native_body_references=None,native_support_references=None):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=(),edit_window=None,export_point_rate_guard=False,authored_point_scaling="metres",export_floor_guard=False,export_point_position_guard=False,native_body_references=None,native_support_references=None,root_optimizer_scale_m=1.):
     if authored_point_scaling not in ["metres","tolerance"]:raise ValueError("Unknown authored point scaling")
     if root_coordinate_mode not in ["legacy","scaled_initial","physical_box"]:raise ValueError("Unknown root coordinate mode")
+    if type(root_optimizer_scale_m) not in (int,float) or not np.isfinite(root_optimizer_scale_m) or root_optimizer_scale_m<=0:
+        raise ValueError('Positive finite root optimizer scale required')
+    if root_coordinate_mode!='physical_box' and root_optimizer_scale_m!=1.:
+        raise ValueError('Root optimizer scaling requires physical_box coordinates')
     if object_constraint_mode not in ["maximum","per_vertex"]:raise ValueError("Unknown object constraint mode")
     if object_constraint_mode!="maximum" and not object_inequalities:raise ValueError("Per-vertex constraints require object inequalities")
     if skin_backend not in ["gather","sparse"]:raise ValueError("Unknown skin backend")
@@ -410,7 +414,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     for stage in range(stage_count):
         if root_coordinate_mode=='physical_box':
             from box_root_optimizer import BoxRootOptimizer
-            optimizer=BoxRootOptimizer(delta,lift_parameters,CONFIG['max_root_lift_m'],iterations)
+            optimizer=BoxRootOptimizer(delta,lift_parameters,CONFIG['max_root_lift_m'],iterations,root_scale_m=root_optimizer_scale_m)
         else:
             optimizer=torch.optim.LBFGS([delta,lift_parameters],lr=.8,max_iter=iterations,history_size=12,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11)
         optimizer.step(closure)
@@ -484,6 +488,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     if position_objective is not None:recipe['export_point_positions']=position_objective.record()
     recipe['authored_point_scaling']=authored_point_scaling
     recipe['root_coordinate_mode']=root_coordinate_mode
+    recipe['root_optimizer_scale_m']=root_optimizer_scale_m
     if root_coordinates is not None:recipe['root_coordinate_reference']=root_coordinates.record()
     if finger_edits:
         recipe['finger_edits']=dict(budgets_degrees={names[j]:v for j,v in fingers.items()},
