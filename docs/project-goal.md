@@ -439,3 +439,6 @@ The [isolated cylinder hand-placement study](cylinder-hand-placement-v1.md) pres
 
 
 The [cylinder guide calibration and bounded pose](cylinder-guide-calibration-v1.md) yields a passing alternative-condition single pose. A declared 164,160-placement grid finds 75 local candidates; rank-zero guides 7148/11538 project onto disjoint original-bounded arms and pass full-skin/floor and regional contact checks together. Original guides still fail and remain recorded. All samples and projected arrays replay independently; 34 focused tests pass. Next freeze these alternative guides across a moving grasp and test dense time, approach and release. No clip or release capability is approved.
+
+
+The [moving cylinder grasp](cylinder-guide-track-v1.md) passes all 62 native keys but fails exported interpolation: 11 grasp geometry samples and 17 hand contacts fail; approach/release blends intersect the cylinder. Independent replay covers 84 changed/96 exact unchanged frames and all 717 decoded edit bounds. Godot verifies 360 actor-frames. Joint jumps up to 13 degrees and a 197.226 m/s2 sampled acceleration peak require physical temporal constraints before more clearance reserve. Thirty-nine focused tests pass; retain the failed trajectory and original guides, then recheck grasp, boundary paths and floor. No release capability is approved.
