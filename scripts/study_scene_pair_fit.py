@@ -1,5 +1,7 @@
 """Fit a prepared two-actor scene, retaining exported failures and mesh evidence."""
 import argparse
+import ast
+import inspect
 from pathlib import Path
 import shutil
 import time
@@ -87,7 +89,35 @@ def exported_geometry(problem, worlds, folder):
         maximum_floor_increase_m=max(r['floor_increase_m'] for r in rows), geometry_sha256=sha256(folder/'geometry.json'))
 
 
-def run(prepared, output):
+def reuse_source(previous, output, inputs, actors):
+    previous = Path(previous).resolve(); record = read(previous/'request.json')
+    if record['inputs'] != inputs:
+        raise ValueError('Reused geometry must bind the same original inputs')
+    driver = 'study_scene_pair_fit.py'
+    for name, digest in record['implementation'].items():
+        if sha256(previous/'implementation'/name) != digest:
+            raise ValueError('Previous implementation snapshot changed')
+        if name != driver and sha256(ROOT/'scripts'/name) != digest:
+            raise ValueError('Geometry/model dependency changed: '+name)
+    old = (previous/'implementation'/driver).read_text(encoding='utf-8')
+    function = next(n for n in ast.parse(old).body if isinstance(n, ast.FunctionDef) and n.name == 'source_samples')
+    if ast.get_source_segment(old, function).strip() != inspect.getsource(source_samples).strip():
+        raise ValueError('Geometry extraction method changed')
+    index = read(previous/'source-index.json'); rows = []; files = {}
+    for name, digest in index.items():
+        source = (previous/'source'/name).resolve()
+        if not source.is_relative_to((previous/'source').resolve()) or source.name != name or sha256(source) != digest:
+            raise ValueError('Saved geometry sample changed')
+        row = read(source); rows.append(row); files[str(source)] = digest
+        shutil.copyfile(source, output/name)
+    times = actors[0]['model'].times
+    if [r['sample'] for r in rows] != list(range(len(times))) or not np.array_equal([r['time_s'] for r in rows], times):
+        raise ValueError('Reused geometry has incomplete or different sample times')
+    files.update({str(previous/name): sha256(previous/name) for name in ['request.json', 'source-index.json']})
+    return rows, files
+
+
+def run(prepared, output, source_study=None):
     prepared, output = Path(prepared).resolve(), Path(output).resolve()
     if output.exists():
         raise ValueError('Fresh output directory required; preserve previous attempts')
@@ -103,7 +133,13 @@ def run(prepared, output):
         motion_tolerance=1e-5, surface_tolerance_m=1e-6, minimum_peak_improvement_m=1e-6,
         scope='One scene-derived coupled step. Complete source/candidate vertex-depth queries at the declared 120 Hz local clock, with up to 64 fitting witnesses per direction/time. No continuous collision, full-clip dynamics or naturalness certification.', quality_approved=False)
     save(output/'request.json', request); began = time.monotonic(); (output/'source').mkdir()
-    samples = source_samples(actors, output/'source'); problem = ScenePairProblem(actors, samples)
+    if source_study is None:
+        samples = source_samples(actors, output/'source')
+    else:
+        samples, files = reuse_source(source_study, output/'source', inputs, actors)
+        inputs.update(files); request['reused_source_geometry'] = str(Path(source_study).resolve())
+        save(output/'request.json', request)
+    problem = ScenePairProblem(actors, samples)
     save(output/'source-index.json', {p.name: sha256(p) for p in sorted((output/'source').glob('sample-*.json'))})
     zero = np.zeros(problem.size); save(output/'progress.json', dict(status='linearizing'))
     linear = problem.linearize(zero); np.savez_compressed(output/'linearization.npz', **linear)
@@ -122,7 +158,7 @@ def run(prepared, output):
         radii=np.r_[linear['radii'], linear['depth_caps'][inside]], trust=np.deg2rad(request['trust_degrees']),
         norm_tolerances=np.r_[np.where(linear['kinds'] == 'edit', 1e-8, 1e-6), np.full(inside.sum(), 1e-8)])
     save(output/'solver.json', dict(solver=solver, step=None if step is None else step.tolist(), derivative_error=derivative_error))
-    print(dict(status='solved', **solver), flush=True); trials = []; selected = None
+    print(dict(phase='solved', **solver), flush=True); trials = []; selected = None
     if step is not None:
         for index, factor in enumerate(request['factors']):
             folder = output/f'trial-{index}'; controls = step*factor
@@ -164,6 +200,7 @@ def run(prepared, output):
 
 if __name__ == '__main__':
     from threadpoolctl import threadpool_limits
-    p = argparse.ArgumentParser(description=__doc__); p.add_argument('prepared', type=Path); p.add_argument('output', type=Path); a = p.parse_args()
+    p = argparse.ArgumentParser(description=__doc__); p.add_argument('prepared', type=Path); p.add_argument('output', type=Path)
+    p.add_argument('--source-study', type=Path); a = p.parse_args()
     with threadpool_limits(limits=1):
-        run(a.prepared, a.output)
+        run(a.prepared, a.output, a.source_study)

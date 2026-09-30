@@ -1,0 +1,11 @@
+<details id="scenePairPanel"><summary>Correct partner overlap</summary>
+<p class="small">Adjust both characters within a short range while holding chosen contact poses. Originals and failed attempts are retained.</p>
+<label>Name<input id="scenePairLabel" maxlength="100" value="Partner correction"></label>
+<div class="contact-fields"><label>Start (seconds)<input id="scenePairStart" type="number" min="0" step=".01"></label><label>End (seconds)<input id="scenePairEnd" type="number" min="0" step=".01"></label></div>
+<div class="bar"><button class="btn" id="scenePairUseStart">Start at playhead</button><button class="btn" id="scenePairUseEnd">End at playhead</button></div>
+<div id="scenePairActors" class="contact-fields"></div><p class="small">Choose 1–8 joints per character. Hold Ctrl or Command to select multiple joints.</p>
+<fieldset id="scenePairContacts"><legend>Keep these contact poses</legend><div id="scenePairContactList"></div></fieldset>
+<label>Maximum rotation change (degrees)<input id="scenePairBudget" type="number" min=".01" max="45" step=".5" value="5"></label>
+<p class="small">One edit can cover up to five seconds. Mesh checks can take several minutes. A local improvement can still leave visible overlap or unnatural motion.</p>
+<button class="btn primary" id="scenePairApply">Fit partner correction</button>
+<p class="small" role="status" id="scenePairStatus">Select a saved scene with two characters.</p></details>
