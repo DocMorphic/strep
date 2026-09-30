@@ -42,6 +42,12 @@ The half step reconstructs both reviewed GLBs exactly. Independent scalar quater
 
 The separate audit evaluates full partner meshes and floors at all 148 original sample times. Its result must be complete before treating the half step as a locally accepted correction. This experiment has not changed the published Studio comparison, consumed held-out prompts, supplied human review, or approved any release capability.
 
+## Packaging preparation
+
+`assemble_scene_pair_reserve.py` now retains the bound refined matrix and curve descriptions instead of substituting the original coarse matrix. It checks unchanged source rows, caps and constraint kinds, and rejects solver controls that do not match the refined width. An optional `--prepared` points to a byte-identical prepared request copy for a separate review job; changed request bytes are rejected. Earlier comparisons remain intact.
+
+This prepares packaging only. The active mesh audit must finish, and independent all-trial replay still needs explicit refined-layout reconstruction before this candidate can use the ordinary publication pipeline. No candidate publication has been performed by this change. Twenty-eight assembly and geometry-summary tests pass, including complete synthetic refined assembly and malformed evidence cases. [Windows and Linux source checks](https://github.com/DocMorphic/strep/actions/runs/36709523306) passed for the preceding export-margin commit `c16fc42`; that hosted result does not cover this subsequent packaging change.
+
 ## Source validation
 
 The minimal dependency suite passed 345 tests with four optional skips after adding the reserve input checks. A subsequent focused run covering geometry reconstruction and refined input policies passed 34 tests, including three new cases for original models and refined curves. No browser rendering or animator approval is claimed.

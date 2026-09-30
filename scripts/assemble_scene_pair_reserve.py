@@ -29,7 +29,29 @@ def bind_completed(folder, artifacts, files, methods):
     return request,result
 
 
-def run(audit,geometry,output):
+def proposal_linearization(request, study, original):
+    """Keep the fitted basis while retaining original row identities and caps."""
+    if request.get('curve_actors') is None: return study/'linearization.npz', original
+    inputs = request['inputs']
+    audit_request = Path(request['refined_audit'])/'request.json'
+    if inputs.get(str(audit_request)) != sha256(audit_request): raise ValueError('Refined audit is unbound')
+    refinement = Path(read(audit_request)['refinement'])
+    path = refinement/'request.json'; linear_path = refinement/'linearization.npz'
+    if any(inputs.get(str(p)) != sha256(p) for p in [path, linear_path]): raise ValueError('Refined proposal is unbound')
+    parent = read(path)
+    if Path(parent['study']).resolve() != study.resolve() or parent['actors'] != request['curve_actors']:
+        raise ValueError('Refined curve description differs')
+    with np.load(linear_path, allow_pickle=False) as archive: linear = dict(archive)
+    for key in ['surface_vectors','gaps','depth_caps','vectors','radii']:
+        np.testing.assert_allclose(linear[key], original[key], atol=1e-12, rtol=0)
+    np.testing.assert_array_equal(linear['kinds'], original['kinds'])
+    width = sum(a['refined_controls'] for a in request['curve_actors'])
+    if any(linear[k].shape[-1] != width for k in ['gap_jacobian','surface_jacobians','jacobians']):
+        raise ValueError('Refined proposal control width differs')
+    return linear_path, linear
+
+
+def run(audit,geometry,output,prepared=None):
     audit,geometry,output=[Path(p).resolve() for p in [audit,geometry,output]]
     if output.exists(): raise ValueError('Fresh assembled fit required')
     files={}; methods={}
@@ -45,6 +67,14 @@ def run(audit,geometry,output):
         np.testing.assert_array_equal(np.asarray(trial['controls']),step*trial['factor'])
     study=Path(request['study']).resolve(); original,linear,bound=load_bound_study(study);files.update(bound)
     if not original.get('angular_motion'): raise ValueError('Original angular policy required')
+    linear_path,linear=proposal_linearization(request,study,linear)
+    if request.get('curve_actors') is not None and step.shape != (linear['gap_jacobian'].shape[-1],):
+        raise ValueError('Refined solver step does not match curve controls')
+    prepared_path=Path(original['prepared_request']).resolve()
+    if prepared is not None:
+        alias=Path(prepared).resolve()
+        if sha256(alias)!=sha256(prepared_path): raise ValueError('Prepared review copy differs from original request')
+        files[str(alias)]=sha256(alias);prepared_path=alias
     source=[read(study/'source'/n) for n in read(study/'source-index.json')]
     if sha256(geometry/'geometry.json')!=gresult['geometry']['geometry_sha256']: raise ValueError('Full geometry changed')
     files[str(geometry/'geometry.json')]=sha256(geometry/'geometry.json')
@@ -65,7 +95,8 @@ def run(audit,geometry,output):
     for name in ['assemble_scene_pair_reserve.py','reserve_publication_geometry.py']:
         path=ROOT/'scripts'/name;shutil.copyfile(path,output/'implementation'/name);methods[name]=(path,sha256(path))
     shutil.copytree(study/'source',output/'source')
-    for name in ['source-index.json','linearization.npz']:shutil.copyfile(study/name,output/name)
+    shutil.copyfile(study/'source-index.json',output/'source-index.json')
+    shutil.copyfile(linear_path,output/'linearization.npz')
     shutil.copyfile(audit/'solver.json',output/'solver.json');shutil.copyfile(audit/'margins.npz',output/'margins.npz')
     normalized=[]
     for i,trial in enumerate(trials):
@@ -90,6 +121,7 @@ def run(audit,geometry,output):
         files[str(path)]=case['sha256'];shutil.copyfile(path,output/case['path']);cases.append(case)
     save(output/'manifest.json',dict(cases=cases,quality_approved=False))
     protocol=dict(original,at=now(),inputs=files,implementation={n:digest for n,(_,digest) in methods.items()},
+        prepared_request=str(prepared_path),curve_actors=request.get('curve_actors'),
         assembly=dict(export_audit=str(audit),geometry_audit=str(geometry),trial_index=index,
             scope='Copies and reconciles completed measured evidence. No refitting, regenerated motion, new mesh queries or release approval. Proposal used saved empirical margins; original acceptance limits remain unchanged.'))
     save(output/'request.json',protocol)
@@ -105,5 +137,6 @@ def run(audit,geometry,output):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('audit',type=Path);p.add_argument('geometry',type=Path);p.add_argument('output',type=Path);a=p.parse_args()
-    run(a.audit,a.geometry,a.output)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('audit',type=Path);p.add_argument('geometry',type=Path);p.add_argument('output',type=Path)
+    p.add_argument('--prepared',type=Path,help='Byte-identical prepared request copy for a separate review job');a=p.parse_args()
+    run(a.audit,a.geometry,a.output,a.prepared)
