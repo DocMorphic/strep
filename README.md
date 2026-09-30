@@ -53,6 +53,8 @@ The owner will perform developer review first. Independent animator review and t
 
 [Visual hand-region selection](docs/studio-hand-selection-v1.md) now connects selected hand triangles to saved contact-fitting requests, alongside object grip picking. Mesh identity, all eight skin weights, edit bounds and exported geometry are checked; this currently covers canonical SOMA scenes and is not general grasp or animation-quality approval.
 
+[Decoded finger diagnostics](docs/finger-proposal-replay-v1.md) confirm that a lower solver objective can still worsen actual mesh intersections. The quarter-step proposal passes motion/palm limits but remains rejected: 196 older witness bounds fail and sampled crossing counts rise from 3,344 to 3,346. All 876 minimal source tests pass.
+
 ## Using this source snapshot
 
 Development currently uses Windows, Python 3.10, NVIDIA CUDA/PyTorch, Node.js for viewer dependencies, and a separately acquired Kimodo installation. Read the [baseline setup runbook](docs/baseline-runbook.md), [pinned source/model revisions](benchmarks/sources.lock.json), and [Studio workflow](docs/action-studio.md). Those documents include historical experiments; a fully verified clean-clone installer is still unfinished.
