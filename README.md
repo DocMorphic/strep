@@ -49,6 +49,8 @@ Development currently uses Windows, Python 3.10, NVIDIA CUDA/PyTorch, Node.js fo
 
 Model weights, gated text-encoder dependencies, character payloads, third-party source checkouts, environments, and generated study outputs are intentionally absent from this repository. Obtain required dependencies from their publishers under their respective terms. Authentication belongs in the local credential store, never source code.
 
+[Source preparation](docs/source-preparation-v1.md) now fetches and verifies the pinned Kimodo commit before package installation, preserves existing vendor edits, and saves new environment captures under ignored reports. This repairs one clean-clone setup gap; full setup validation remains unfinished.
+
 On an already provisioned development workspace, start Studio from the project root:
 
 ```powershell

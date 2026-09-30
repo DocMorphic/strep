@@ -102,6 +102,7 @@ jobs:
           tests/test_continuation_evidence.py
           tests/test_continuation_geometry.py
           tests/test_atomic_json_save.py
+          tests/test_prepare_vendor.py
           tests/test_pair_geometry_recovery.py
           tests/test_scene_geometry_reuse.py
           tests/test_scene_export_rates.py
