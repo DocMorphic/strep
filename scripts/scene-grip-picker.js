@@ -18,6 +18,20 @@ export function gripSurfaceNormal(THREE, object, point) {
   if(Math.abs(p.length()-primitive.scale[0]/2)>1e-6||p.length()<=1e-12)throw Error('Grip must lie on the sphere surface.');
   return p.normalize();
  }
+ if(primitive.shape==='cylinder'){
+  const radius=primitive.scale[0]/2,half=primitive.scale[1]/2,rho=Math.hypot(point[0],point[2]);
+  const side=rho-radius,cap=Math.abs(point[1])-half;
+  const outsideLength=Math.hypot(Math.max(0,side),Math.max(0,cap));
+  const distance=outsideLength+Math.min(Math.max(side,cap),0);
+  if(Math.abs(distance)>1e-6||(outsideLength<=1e-12&&Math.abs(side-cap)<=1e-12))throw Error('Choose the cylinder side or a cap, away from the rim.');
+  if(outsideLength>1e-12){
+   const radial=Math.max(0,side)/outsideLength,vertical=Math.max(0,cap)/outsideLength;
+   return new THREE.Vector3(radial?radial*point[0]/rho:0,vertical*Math.sign(point[1]),radial?radial*point[2]/rho:0);
+  }
+  if(side>cap){if(rho<=1e-12)throw Error('Cylinder side normal is undefined at the axis.');return new THREE.Vector3(point[0]/rho,0,point[2]/rho);}
+  if(Math.abs(point[1])<=1e-12)throw Error('Cylinder cap normal is undefined at the center.');
+  return new THREE.Vector3(0,Math.sign(point[1]),0);
+ }
  const q=point.map((x,i)=>Math.abs(x)-primitive.scale[i]/2),maximum=Math.max(...q);
  const distance=Math.hypot(...q.map(x=>Math.max(0,x)))+Math.min(maximum,0);
  const faces=q.map((x,i)=>Math.abs(x-maximum)<=1e-12?i:-1).filter(i=>i>=0);
@@ -29,11 +43,31 @@ export function pickObjectGrip(THREE, object, pose, ray) {
  const primitive=scenePrimitive(object),rotation=new THREE.Quaternion().fromArray(pose.rotation_xyzw);
  const inverse=new THREE.Matrix4().compose(new THREE.Vector3().fromArray(pose.translation_m),rotation,new THREE.Vector3(1,1,1)).invert();
  const localRay=ray.clone().applyMatrix4(inverse),point=new THREE.Vector3();
+ if(primitive.shape==='cylinder'){
+  const radius=primitive.scale[0]/2,half=primitive.scale[1]/2,o=localRay.origin,d=localRay.direction,hits=[];
+  const a=d.x*d.x+d.z*d.z,b=2*(o.x*d.x+o.z*d.z),c=o.x*o.x+o.z*o.z-radius*radius;
+  if(a>0){
+   const discriminant=b*b-4*a*c;
+   if(discriminant>=0){
+    // Stable quadratic roots even when the near intersection is very close.
+    const q=-.5*(b+(b>=0?1:-1)*Math.sqrt(discriminant));
+    const roots=q===0?[-b/(2*a)]:[q/a,c/q];
+    for(const t of roots)if(t>=0&&Math.abs(o.y+t*d.y)<=half+1e-12)hits.push(t);
+   }
+  }
+  if(d.y!==0)for(const y of [-half,half]){
+   const t=(y-o.y)/d.y;
+   if(t>=0&&Math.hypot(o.x+t*d.x,o.z+t*d.z)<=radius+1e-12)hits.push(t);
+  }
+  if(!hits.length)return null;
+  localRay.at(Math.min(...hits),point);
+  const local=point.toArray();gripSurfaceNormal(THREE,object,local);return local;
+ }
  const hit=primitive.shape==='sphere'
   ?localRay.intersectSphere(new THREE.Sphere(new THREE.Vector3(),primitive.scale[0]/2),point)
   :localRay.intersectBox(new THREE.Box3(new THREE.Vector3().fromArray(primitive.scale).multiplyScalar(-.5),new THREE.Vector3().fromArray(primitive.scale).multiplyScalar(.5)),point);
  if(!hit)return null;
- // Analytic intersection avoids placing a sphere grip inside its render triangles.
+ // Analytic intersections avoid placing grips inside inscribed render triangles.
  const local=point.toArray();gripSurfaceNormal(THREE,object,local);return local;
 }
 

@@ -14,6 +14,10 @@ def signed_distance(points, position, rotation, geometry):
     local = (points-position) @ rotation
     if geometry.shape == 'sphere':
         return torch.linalg.vector_norm(local, dim=-1)-geometry.dimensions[0]
+    if geometry.shape == 'cylinder':
+        q=torch.stack([torch.linalg.vector_norm(local[..., [0,2]],dim=-1)-geometry.dimensions[0],
+                       local[...,1].abs()-geometry.dimensions[1]/2],dim=-1)
+        return torch.linalg.vector_norm(torch.relu(q),dim=-1)+torch.minimum(q.amax(-1),q.new_tensor(0.))
     half = points.new_tensor(geometry.dimensions)/2
     q = local.abs()-half
     return torch.linalg.vector_norm(torch.relu(q), dim=-1)+torch.minimum(q.amax(-1), q.new_tensor(0.))

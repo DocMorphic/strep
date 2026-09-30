@@ -49,7 +49,7 @@ def test_solver_context_rotates_sphere_normals_to_actor_space():
     np.testing.assert_allclose(yaw.apply(item['positions_m'])+[2,0,-1],sample_object(sphere(),5)[0],atol=1e-12)
 
 
-@pytest.mark.parametrize('shape',[Geometry('sphere',(.3,)),Geometry('box',(.6,.8,1.))])
+@pytest.mark.parametrize('shape',[Geometry('sphere',(.3,)),Geometry('box',(.6,.8,1.)),Geometry('cylinder',(.3,1.2))])
 def test_tensor_clearance_has_correct_geometry_and_gradient(shape):
     origin=np.array([[1.,.5,-2.]])
     rotation=Rotation.from_euler('xyz',[.4,.3,.2]).as_matrix()[None]

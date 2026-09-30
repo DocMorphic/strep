@@ -24,6 +24,26 @@ def triangle_mesh(geometry, tolerance_m=0.001, max_subdivisions=6):
                 for indices in ([[0,1,2],[0,2,3]] if sign>0 else [[0,2,1],[0,3,2]]):
                     triangles.append(np.array(points)[indices]);normals.append([normal]*3)
         return np.array(triangles),np.array(normals),dict(max_radial_inset_m=0.,subdivisions=0)
+    if geometry.shape=='cylinder':
+        radius,height=geometry.dimensions
+        # Match the angular resolution budget of the subdivided sphere.
+        limit=4*2**max_subdivisions
+        segments=4
+        while radius*(1-np.cos(np.pi/segments))>tolerance_m:
+            segments*=2
+            if segments>limit:raise ValueError('Mesh tolerance exceeds subdivision resource limit')
+        angles=np.arange(segments)*2*np.pi/segments
+        radial=np.stack([np.cos(angles),np.zeros(segments),np.sin(angles)],axis=1)
+        top=radial*radius;top[:,1]=height/2
+        bottom=top.copy();bottom[:,1]=-height/2
+        triangles=[];normals=[]
+        for i in range(segments):
+            j=(i+1)%segments
+            triangles.extend([[bottom[i],top[i],top[j]],[bottom[i],top[j],bottom[j]],
+                              [[0,height/2,0],top[j],top[i]],[[0,-height/2,0],bottom[i],bottom[j]]])
+            normals.extend([[radial[i],radial[i],radial[j]],[radial[i],radial[j],radial[j]],
+                            [[0,1,0]]*3,[[0,-1,0]]*3])
+        return np.array(triangles),np.array(normals),dict(max_radial_inset_m=float(radius*(1-np.cos(np.pi/segments))),radial_segments=segments)
     # Octahedron faces cover the sphere. Normalized midpoint subdivision retains
     # that coverage; each planar face is inside the analytic sphere. Its plane
     # distance bounds the radial inset everywhere on the corresponding patch.

@@ -12,4 +12,13 @@ for (const obj of [
   {geometry:{schema:'strep-object-geometry-v1',shape:'sphere',radius_m:1},size_m:[2,2,2]},
   {geometry:{schema:'strep-object-geometry-v1',shape:'box',size_m:[1,2,Infinity]}},
 ]) assert.throws(() => scenePrimitive(obj));
-console.log('Scene primitive preview dimensions: 7 checks passed.');
+assert.deepEqual(scenePrimitive({geometry:{schema:'strep-object-geometry-v1',shape:'cylinder',radius_m:.3,height_m:1.2}}), {shape:'cylinder',scale:[.6,1.2,.6]});
+for(const geometry of [
+  {schema:'strep-object-geometry-v1',shape:'cylinder',radius_m:.3},
+  {schema:'strep-object-geometry-v1',shape:'cylinder',radius_m:true,height_m:1.2},
+  {schema:'strep-object-geometry-v1',shape:'cylinder',radius_m:.3,height_m:-1},
+  {schema:'strep-object-geometry-v1',shape:'cylinder',radius_m:.3,height_m:Infinity},
+  {schema:'strep-object-geometry-v1',shape:'cylinder',radius_m:.3,height_m:1,size_m:[1,1,1]},
+])assert.throws(()=>scenePrimitive({geometry}));
+assert.throws(()=>scenePrimitive({shape:'box',size_m:[1,1,1],height_m:1}));
+console.log('Scene primitive preview dimensions: box, sphere, cylinder and strict field rejection pass.');

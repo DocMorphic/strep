@@ -38,3 +38,6 @@ The first actual Godot import, retained in `reports/primitive-scene-import-v1`, 
 At this study's snapshot, physics release accepted only legacy box scenes and rejected versioned primitive requests before simulation. The subsequent [sphere release study](sphere-release-v1.md) connects matching engine collision shapes, inertia, release validation and dynamics audits, retaining its measured failures. Arbitrary meshes, handles, articulated/deformable props, force allocation, reaction motion and full generated interactions remain incomplete. No held-out reservations were used, no new checkpoint was trained, and no release gate was approved.
 
 Raw outputs and implementation snapshots stay in ignored local reports. The source repository contains the methods and this result summary. Earlier box-only gap and geometry-core documents describe their original snapshots; this document records the subsequent integration.
+
+
+Subsequent extension: [closed cylinder scene geometry](cylinder-scenes-v1.md) adds cap/side grips, Euclidean clearance and bounded meshes, with actual imported geometry and shared actor playback checks. Cylinder physics release remains unqualified.

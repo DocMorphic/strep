@@ -7,7 +7,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 from strep import ROOT,read,save,sha256,now
 from object_dynamics import finite_array
-from release_geometry import body_geometry,geometry_fields,check_installed_geometry
+from release_geometry import body_geometry,geometry_fields,check_installed_geometry,require_release_geometry
 
 ENGINE=ROOT/'.cache/godot/4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe'
 
@@ -23,7 +23,7 @@ def validate(request):
     tolerance=request.get('contact_max_allowed_penetration_m',.01)
     if type(tolerance) not in (int,float) or not np.isfinite(tolerance) or not 0<tolerance<=.01:raise ValueError('Invalid contact solver tolerance')
     result['contact_max_allowed_penetration_m']=tolerance
-    geometry=body_geometry(request)
+    geometry=require_release_geometry(body_geometry(request))
     for name in ['position_m','linear_velocity_m_s','angular_velocity_rad_s']:
         result[name]=finite_array(request[name],(3,),name).tolist()
     q=finite_array(request['rotation_xyzw'],(4,),'rotation')

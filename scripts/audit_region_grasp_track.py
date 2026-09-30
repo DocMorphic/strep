@@ -335,6 +335,8 @@ def run(study, output, approach_patch=None, floor_patch=None, release_patch=None
         sampled_r=Slerp(np.arange(count),Rotation.from_matrix(rotations))(times).as_matrix()
         originals[obj['id']]=(geometry,sampled_p,sampled_r,positions,rotations)
     geometry,op,orr,object_p,object_r=originals[protocol['object_id']]
+    if geometry.shape!='sphere' or any(g.shape not in ['box','sphere'] for g,*_ in originals.values()):
+        raise ValueError('This historical regional grasp audit requires a sphere target and box/sphere obstacles')
     for binding,rp in zip(bindings,regions):
         hand=binding['hand']; contact=next(c for c in p0.contacts if c['region']==hand)
         # p0 contacts retain frame-start authored targets; transport through the same object track.

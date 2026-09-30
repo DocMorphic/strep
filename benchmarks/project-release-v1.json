@@ -907,6 +907,9 @@
         "docs/object-geometry-core-v1.md",
         "reports/object-geometry-core-v1/verification.json",
         "docs/primitive-scenes-v1.md",
+        "docs/cylinder-scenes-v1.md",
+        "reports/cylinder-primitive-import-v1/verification.json",
+        "reports/cylinder-scene-runtime-v1/verification.json",
         "docs/sphere-release-v1.md",
         "docs/sphere-contact-fit-v1.md",
         "docs/object-floor-placement-v1.md",
@@ -2948,6 +2951,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-30T01:01:44.933769+00:00",
-  "last_progress": "The stronger per-entry contact restoration policy is independently evaluated: every trial worsens existing violations and is rejected. All five saved motion/audit files reproduce the control byte-for-byte. Original bounds/support/floor/held/global checks and 284 new engine observations pass; the original pin/rate failure remains. Keep the optional method disabled and broaden object geometry/scene coverage rather than increasing this case iteration budget. All 14 release capabilities remain unapproved; human/cleanup and held-out fixture evidence is still incomplete."
+  "last_progress_at": "2026-09-30T01:15:49.347681+00:00",
+  "last_progress": "Closed cylinders now share analytic contact/clearance geometry, grip picking, bounded previews, floor placement, GLB export and actual shared Godot playback. 138 focused Python tests, 453 cross-language grip cases, 93 imported object-frame observations and 405 playback observations pass. Cylinder physics release remains explicitly unavailable pending backend qualification; realistic cylinder grasping and all human/held-out evidence remain unproven. All 14 release capabilities remain unapproved."
 }

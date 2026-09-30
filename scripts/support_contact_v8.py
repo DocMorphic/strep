@@ -72,17 +72,21 @@ def torch_box_depth(points,position,rotation,size,clearance=0.):
 
 
 def torch_primitive_depth(points,position,rotation,geometry,clearance=0.):
-    """Preserve legacy box-face inflation; use exact radial sphere clearance."""
+    """Preserve box-face inflation; use Euclidean sphere/cylinder clearance."""
     if geometry.shape=='box':
         size=torch.as_tensor(geometry.dimensions,dtype=points.dtype,device=points.device)
         return torch_box_depth(points,position,rotation,size,clearance)
-    return torch.relu(geometry.dimensions[0]+clearance-torch.linalg.vector_norm(points-position[:,None,:],dim=-1))
+    return torch.relu(torch_primitive_clearance_violation(points,position,rotation,geometry,clearance))
 
 
 def torch_primitive_clearance_violation(points,position,rotation,geometry,clearance):
     """Signed violation of the existing inflated primitive (negative outside)."""
     if geometry.shape=='sphere':
         return geometry.dimensions[0]+clearance-torch.linalg.vector_norm(points-position[:,None,:],dim=-1)
+    if geometry.shape=='cylinder':
+        local=torch.einsum('fvi,fij->fvj',points-position[:,None,:],rotation)
+        q=torch.stack([torch.linalg.vector_norm(local[..., [0,2]],dim=-1)-geometry.dimensions[0],local[...,1].abs()-geometry.dimensions[1]/2],dim=-1)
+        return clearance-torch.linalg.vector_norm(torch.relu(q),dim=-1)-torch.minimum(q.amax(-1),q.new_tensor(0.))
     size=torch.as_tensor(geometry.dimensions,dtype=points.dtype,device=points.device)
     local=torch.einsum('fvi,fij->fvj',points-position[:,None,:],rotation)
     return (size/2+clearance-local.abs()).amin(-1)

@@ -44,6 +44,7 @@ def selected_vertices(base,previous,skin,recipe):
 
 
 def inflated_depth(points,position,rotation,geometry,clearance):
+    if geometry.shape=='cylinder':return np.maximum(0,clearance-geometry.distance_gradient(points,position,rotation)[0])
     if geometry.shape=='sphere':return np.maximum(0,geometry.dimensions[0]+clearance-np.linalg.norm(points-position,axis=-1))
     return np.maximum(0,(np.array(geometry.dimensions)/2+clearance-np.abs((points-position)@rotation)).min(-1))
 

@@ -3,9 +3,10 @@ import * as THREE from '../assets/viewer/node_modules/three/build/three.module.j
 import {sceneObjectPose,gripSurfaceNormal,pickObjectGrip,createSceneGripPicker} from '../scripts/scene-grip-picker.js';
 
 const box={geometry:{schema:'strep-object-geometry-v1',shape:'box',size_m:[.4,.6,.8]}},sphere={geometry:{schema:'strep-object-geometry-v1',shape:'sphere',radius_m:.27}};
+const cylinder={geometry:{schema:'strep-object-geometry-v1',shape:'cylinder',radius_m:.3,height_m:1.2}};
 const identity={frame:0,translation_m:[0,0,0],rotation_xyzw:[0,0,0,1]};
 const moved={frame:20,translation_m:[2,1,-3],rotation_xyzw:new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI/2).toArray()};
-box.keyframes=[identity,moved];sphere.keyframes=[identity,moved];
+box.keyframes=[identity,moved];sphere.keyframes=[identity,moved];cylinder.keyframes=[identity,{...moved,rotation_xyzw:new THREE.Quaternion().setFromEuler(new THREE.Euler(.8,.3,-.9)).toArray()}];
 const near=(a,b)=>assert(new THREE.Vector3().fromArray(a).distanceTo(new THREE.Vector3().fromArray(b))<1e-10,`${a} != ${b}`);
 const middle=sceneObjectPose(THREE,box,10);near(middle.translation_m,[1,.5,-1.5]);
 assert(Math.abs(new THREE.Quaternion().fromArray(middle.rotation_xyzw).angleTo(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI/4)))<1e-7);
@@ -13,11 +14,15 @@ assert.deepEqual(sceneObjectPose(THREE,box,30),moved);assert.deepEqual(sceneObje
 assert.deepEqual(sceneObjectPose(THREE,{keyframes:[moved]},30),moved);
 
 const cases=[];
-for(const object of [box,sphere])for(const frame of [0,5,10,20,30])for(let i=0;i<30;i++){
+for(const object of [box,sphere,cylinder])for(const frame of [0,5,10,20,30])for(let i=0;i<30;i++){
  const pose=sceneObjectPose(THREE,object,frame),q=new THREE.Quaternion().fromArray(pose.rotation_xyzw),t=new THREE.Vector3().fromArray(pose.translation_m);
  const target=object===box?new THREE.Vector3(.1*Math.cos(i),.2*Math.sin(i),.3*Math.cos(i)):new THREE.Vector3(Math.cos(i),.4,Math.sin(i)).normalize().multiplyScalar(.27);
  if(object===box)target.setComponent(i%3,box.geometry.size_m[i%3]/2*(i%2?1:-1));
- const outward=object===box?new THREE.Vector3().setComponent(i%3,i%2?1:-1):target.clone().normalize();
+ if(object===cylinder){
+  if(i%3===0)target.set(.12*Math.cos(i),i%2?.6:-.6,.12*Math.sin(i));
+  else target.set(.3*Math.cos(i),.4*Math.sin(i*2),.3*Math.sin(i));
+ }
+ const outward=object===cylinder?(i%3===0?new THREE.Vector3(0,i%2?1:-1,0):new THREE.Vector3(Math.cos(i),0,Math.sin(i))):object===box?new THREE.Vector3().setComponent(i%3,i%2?1:-1):target.clone().normalize();
  const ray=new THREE.Ray(target.clone().add(outward).applyQuaternion(q).add(t),outward.clone().negate().applyQuaternion(q));
  const point=pickObjectGrip(THREE,object,pose,ray);near(point,target.toArray());
  const normal=gripSurfaceNormal(THREE,object,point);near(normal.toArray(),outward.toArray());cases.push({geometry:object.geometry,point,normal:normal.toArray()});
@@ -28,6 +33,20 @@ assert.throws(()=>pickObjectGrip(THREE,box,identity,new THREE.Ray(new THREE.Vect
 assert.throws(()=>gripSurfaceNormal(THREE,sphere,[0,0,0]),/surface/);
 assert.throws(()=>gripSurfaceNormal(THREE,box,[NaN,0,0]),/finite/);
 near(pickObjectGrip(THREE,box,identity,new THREE.Ray(new THREE.Vector3(),new THREE.Vector3(1,0,0))),[.2,0,0]);
+
+near(pickObjectGrip(THREE,cylinder,identity,new THREE.Ray(new THREE.Vector3(0,2,0),new THREE.Vector3(0,-1,0))),[0,.6,0]);
+near(pickObjectGrip(THREE,cylinder,identity,new THREE.Ray(new THREE.Vector3(),new THREE.Vector3(1,0,0))),[.3,0,0]);
+near(pickObjectGrip(THREE,cylinder,identity,new THREE.Ray(new THREE.Vector3(),new THREE.Vector3(0,-1,0))),[0,-.6,0]);
+near(pickObjectGrip(THREE,cylinder,identity,new THREE.Ray(new THREE.Vector3(.3,0,1),new THREE.Vector3(0,0,-1))),[.3,0,0]);
+assert.equal(pickObjectGrip(THREE,cylinder,identity,new THREE.Ray(new THREE.Vector3(1,1,0),new THREE.Vector3(0,-1,0))),null);
+assert.equal(pickObjectGrip(THREE,cylinder,identity,new THREE.Ray(new THREE.Vector3(1,1,0),new THREE.Vector3(-1,0,0))),null);
+assert.throws(()=>pickObjectGrip(THREE,cylinder,identity,new THREE.Ray(new THREE.Vector3(1,.6,0),new THREE.Vector3(-1,0,0))),/rim/);
+assert.throws(()=>gripSurfaceNormal(THREE,cylinder,[0,0,0]));
+assert.throws(()=>gripSurfaceNormal(THREE,cylinder,[.3,.6,0]),/rim/);
+// The backend accepts sub-micrometre surface tolerance and uses its SDF gradient.
+for(const point of [[.3000003,.6000004,0],[.3000001,.6000001,0],[0,-.6000001,0]]){
+ const normal=gripSurfaceNormal(THREE,cylinder,point).toArray();cases.push({geometry:cylinder.geometry,point,normal});
+}
 
 // Exercise interaction with real Three geometry, but no browser/WebGL/network.
 const events={},canvas={style:{},addEventListener:(n,f)=>events[n]=f,removeEventListener:n=>delete events[n],focus(){},getBoundingClientRect:()=>({left:0,top:0,width:400,height:400})};

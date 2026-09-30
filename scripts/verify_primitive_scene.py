@@ -20,7 +20,8 @@ def run(output):
           dict(frame=frames-1,translation_m=[.8,1.1,-.4],rotation_xyzw=Rotation.from_euler('xyz',[1.3,-.5,.8]).as_quat().tolist())]
     scene=dict(id='primitive-import-development',fps=30,frame_count=frames,objects={
         'ball':dict(geometry=dict(schema='strep-object-geometry-v1',shape='sphere',radius_m=.3),keyframes=keys),
-        'crate':dict(shape='box',size_m=[.4,.6,.8],keyframes=keys)})
+        'crate':dict(shape='box',size_m=[.4,.6,.8],keyframes=keys),
+        'can':dict(geometry=dict(schema='strep-object-geometry-v1',shape='cylinder',radius_m=.23,height_m=.7),keyframes=keys)})
     save(output/'scene.json',scene);export_objects(scene,output/'objects.glb')
     project=output/'project';project.mkdir()
     (project/'project.godot').write_text('config_version=5\n[rendering]\nrenderer/rendering_method="gl_compatibility"\n')
@@ -31,6 +32,7 @@ def run(output):
     for name in sources:shutil.copyfile(ROOT/'scripts'/name,output/'implementation'/name)
     save(output/'pipeline.json',dict(status='importing',at=now()))
     engine=ROOT/'.cache/godot/4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe'
+    if sha256(engine)!=read(engine.parent/'acquisition.json')['executables'][engine.name]:raise ValueError('Engine changed')
     with (output/'engine.log').open('w') as log:
         result=subprocess.run([str(engine),'--headless','--path',str(project),'--script',str(ROOT/'scripts/godot_scene_import_audit.gd'),'--',str(output/'request.json'),str(output/'engine-output.json')],stdout=log,stderr=subprocess.STDOUT,creationflags=subprocess.CREATE_NO_WINDOW,timeout=120)
     if result.returncode:raise RuntimeError('Godot primitive import failed; inspect retained engine.log')
@@ -54,7 +56,7 @@ def run(output):
         surface_error=float(abs(geometry.distance_gradient(vertices,np.zeros(3),np.eye(3))[0]).max())
         # A material point on the sphere must rotate with it even though its
         # silhouette and inertia are rotation invariant.
-        point=[geometry.dimensions[0],0,0] if geometry.shape=='sphere' else [geometry.dimensions[0]/2,0,0]
+        point=[geometry.dimensions[0],0,0] if geometry.shape!='box' else [geometry.dimensions[0]/2,0,0]
         target=target_track(dict(space='object',object=name,point_m=point),{},{name:(p,r)},frames)
         engine_grip=positions+np.einsum('fij,j->fi',rotations,point)
         grip_error=float(np.linalg.norm(engine_grip-target,axis=1).max())
@@ -62,9 +64,9 @@ def run(output):
         checks.append(dict(object=name,shape=geometry.shape,frames=frames,engine_vertices=len(vertices),position_error_m=pe,rotation_element_error=re,
             mesh_hausdorff_vertex_error_m=mesh_error,analytic_vertex_surface_error_m=surface_error,normal_unit_error=normal_unit_error,
             attached_material_point_error_m=grip_error,preview_mesh=node['extras']['strep_preview_mesh'],passed=passed))
-    verification=dict(at=now(),engine=report['engine'],checks=checks,all_passed=all(row['passed'] for row in checks),quality_approved=False,
+    verification=dict(at=now(),engine=report['engine'],engine_sha256=sha256(engine),engine_output_sha256=sha256(output/'engine-output.json'),checks=checks,all_passed=all(row['passed'] for row in checks),quality_approved=False,
         implementation={name:sha256(output/'implementation'/name) for name in sources},scene_sha256=sha256(output/'scene.json'),glb_sha256=sha256(output/'objects.glb'),
-        scope='Two authored primitive tracks, 62 object-frame observations, actual imported meshes and material-point transforms. No actor fitting, generated interaction, physics release, browser rendering or human quality approval.')
+        scope='Three authored primitive tracks, 93 object-frame observations, actual imported meshes and material-point transforms. No actor fitting, generated interaction, physics release, browser rendering or human quality approval.')
     save(output/'verification.json',verification);save(output/'pipeline.json',dict(status='complete',all_checks_passed=verification['all_passed'],quality_approved=False))
     print(checks,flush=True)
     if not verification['all_passed']:raise RuntimeError('Primitive engine import checks failed')

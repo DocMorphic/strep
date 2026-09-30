@@ -409,3 +409,6 @@ The [coupled contact restoration experiment](contact-constraint-restoration-v1.m
 
 
 The [nonregressing restoration policy](contact-restoration-policy-v2.md#real-motion-evaluation-proposals-rejected-original-output-retained) rejects every nonlinear proposal on the matched landing and preserves all five control motion/audit files byte-for-byte. Independent native/export/hash/budget checks and 284 new engine observations pass, while the original contact failure remains. The optional method stays disabled. Next broaden object geometry and scene coverage; further identical landing iteration retries are not justified. All fourteen release capabilities remain unapproved.
+
+
+[Cylinder scene geometry](cylinder-scenes-v1.md) now spans sampled contact/clearance, analytic grip picking, bounded previews, floor placement, export and shared engine playback. 138 focused Python tests, 453 cross-language grip cases, 93 object-frame import observations and 405 runtime observations pass. Cylinder physics is explicitly unavailable pending qualification; no successful generated grasp or realism approval is claimed. Next measure cylinder manipulation and qualify dynamics without relaxing existing contact screens. All fourteen release capabilities remain unapproved.

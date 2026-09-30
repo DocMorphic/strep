@@ -70,3 +70,6 @@ Official SciPy [rotation-spline source](https://github.com/scipy/scipy/blob/main
 ### Contact feasibility certificates (2026-09-29)
 
 Official [SciPy HiGHS interface](https://docs.scipy.org/doc/scipy/reference/optimize.linprog-highs.html) checked for inequality form, status, residuals and marginals. Existing SciPy 1.15.3 retained; no dependency acquisition. The project independently derives and exactly verifies bounded-domain contradiction certificates, and a separate conservative skin/joint displacement bound. Results and assumptions: [contact feasibility diagnosis](contact-feasibility-diagnosis-v1.md).
+
+
+2026-09-30: [Godot CylinderShape3D](https://docs.godotengine.org/en/stable/classes/class_cylindershape3d.html) identifies a physics cylinder with radius/height and warns about known cylinder collision bugs. Strep adds analytic cylinder authoring/export with verified baked playback; physics release remains explicitly unavailable until its own backend/collider study. See [cylinder scene evidence](cylinder-scenes-v1.md).

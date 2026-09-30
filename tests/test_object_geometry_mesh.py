@@ -7,7 +7,7 @@ from object_geometry import Geometry
 from object_geometry_mesh import triangle_mesh
 
 
-@pytest.mark.parametrize('geometry',[Geometry('box',(.4,.6,.8)),Geometry('sphere',(.3,))])
+@pytest.mark.parametrize('geometry',[Geometry('box',(.4,.6,.8)),Geometry('sphere',(.3,)),Geometry('cylinder',(.3,1.2))])
 def test_closed_outward_mesh_matches_analytic_surface_and_declared_inset(geometry):
     triangles,normals,report=triangle_mesh(geometry,tolerance_m=.001)
     flat=triangles.reshape(-1,3)

@@ -17,7 +17,7 @@ def test_picked_grips_meet_backend_surface_contract():
     if not node:pytest.skip('Node is required for the actual browser geometry cross-check')
     result=subprocess.run([node,'tests/test_scene_grip_picker.mjs','--fixture-json'],cwd=ROOT,capture_output=True,text=True,check=True)
     rows=json.loads(result.stdout)
-    assert len(rows)==300
+    assert len(rows)==453
     for row in rows:
         normal=Geometry.parse(row['geometry']).local_surface_normal(row['point'])
         np.testing.assert_allclose(normal,row['normal'],atol=1e-12)

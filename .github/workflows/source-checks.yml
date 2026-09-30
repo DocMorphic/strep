@@ -58,3 +58,4 @@ jobs:
         run: |
           node tests/test_contact_timing_editor.mjs
           node tests/test_contact_export_review.mjs
+          node tests/test_scene_object_geometry.mjs

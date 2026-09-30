@@ -116,7 +116,8 @@ class PoseProblem:
         objects=[]
         for geometry,name,position,rotation in self.objects:
             # Same face-inflation semantics for boxes; radial clearance for spheres.
-            if geometry.shape=='sphere':clearance=np.linalg.norm(v-position.numpy()[0],axis=1).min()-geometry.dimensions[0]
+            if geometry.shape=='cylinder':clearance=geometry.distance_gradient(v,position.numpy()[0],rotation.numpy()[0])[0].min()
+            elif geometry.shape=='sphere':clearance=np.linalg.norm(v-position.numpy()[0],axis=1).min()-geometry.dimensions[0]
             else:clearance=(np.abs((v-position.numpy()[0])@rotation.numpy()[0])-np.array(geometry.dimensions)/2).max(-1).min()
             objects.append(dict(id=name,minimum_clearance_m=float(clearance),maximum_penetration_m=float(geometry.penetration_depth(v,position.numpy()[0],rotation.numpy()[0]).max())))
         actual=Rotation.from_matrix(self.previous['local_rot_mats'][frame].transpose(0,2,1)@motion['local_rot_mats'][0]).magnitude()

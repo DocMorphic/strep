@@ -55,7 +55,7 @@ def source_metadata(url,*,allow_native_runs=False,allow_actor_only=False,frame_l
             if arrays['posed_joints'].shape!=(frames,77,3) or arrays['global_rot_mats'].shape!=(frames,77,3,3):raise ValueError('Release currently requires native 77-joint scene actors')
     for name,obj in scene['objects'].items():
         name_check(name);sample_object(obj,frames)
-        geometry=scene_geometry(obj);dimensions=np.array(geometry.dimensions)*(2 if geometry.shape=='sphere' else 1)
+        geometry=scene_geometry(obj);dimensions=geometry.local_size()
         if min(dimensions)<.01 or max(dimensions)>10:raise ValueError('Primitive dimensions/diameter must be 0.01–10 metres')
     license_path=base/'SOMA-preview-LICENSE.txt'
     if not license_path.exists():license_path=ROOT/'vendor/kimodo/LICENSE'

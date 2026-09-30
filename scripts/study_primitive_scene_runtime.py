@@ -8,7 +8,8 @@ from study_scene_runtime import verify
 from probe_godot_render import run_engine
 
 
-def run(output):
+def run(output,shape='sphere'):
+    if shape not in ['sphere','cylinder']:raise ValueError('Unsupported playback fixture shape')
     output=Path(output).resolve();output.mkdir(parents=True,exist_ok=False)
     source=ROOT/'reports/scene-runtime-v2/release';authored=output/'authored';authored.mkdir()
     scene=read(source/'portable-scene.json');scene['id']='primitive-shared-clock-development'
@@ -16,8 +17,8 @@ def run(output):
     # Reuse only the recorded rigid track; it is no longer a simulation result.
     for name,obj in scene['objects'].items():
         obj.pop('shape',None);obj.pop('size_m',None)
-        obj['geometry']=dict(schema='strep-object-geometry-v1',shape='sphere',radius_m=.25)
-        obj['trajectory_provenance']='Authored playback fixture reusing a box trajectory; not spherical dynamics or generated contact.'
+        obj['geometry']=dict(schema='strep-object-geometry-v1',shape=shape,radius_m=.25,**(dict(height_m=.6) if shape=='cylinder' else {}))
+        obj['trajectory_provenance']='Authored playback fixture reusing a box trajectory; not '+shape+' dynamics or generated contact.'
     scene.pop('objects_glb',None);scene['contacts']=[]
     save(authored/'portable-scene.json',scene)
     save(authored/'events.json',dict(fps=30,events=[dict(type='authored_preview_marker',object=next(iter(scene['objects'])),frame=30,time_s=1.)]))
@@ -29,8 +30,10 @@ def run(output):
     for name in ['godot_scene_clock.gd','godot_scene_clock_audit.gd']:shutil.copyfile(ROOT/'scripts'/name,project/name)
     request=dict(cases=[dict(id='primitive',folder=str(folder),frames=metadata['frames'],metadata_sha256=sha256(folder/'scene-runtime.json'),package_sha256=sha256(folder/'scene-runtime.zip'))],controls=[],
         implementation={n:sha256(implementation/n) for n in names},source_scene_sha256=sha256(source/'portable-scene.json'),
-        limits=dict(actor_matrix=1e-4,object_matrix=1e-5),scope='Existing actor and newly authored sphere fixture. Playback/packaging test only; no sphere interaction or physics success claimed.')
+        limits=dict(actor_matrix=1e-4,object_matrix=1e-5),scope='Existing actor and newly authored '+shape+' fixture. Playback/packaging test only; no interaction or physics success claimed.',geometry=next(iter(scene['objects'].values()))['geometry'])
     engine=ROOT/'.cache/godot/4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe'
+    if sha256(engine)!=read(engine.parent/'acquisition.json')['executables'][engine.name]:raise ValueError('Engine changed')
+    request['engine_sha256']=sha256(engine)
     command=[str(engine),'--headless','--path',str(project),'--fixed-fps','60','--script','godot_scene_clock_audit.gd','--',str(output/'request.json'),str(output/'engine-output.json')]
     save(output/'request.json',request);save(output/'pipeline.json',dict(status='engine_running',at=now()))
     run_engine(command,output/'engine.log',timeout=120)
@@ -41,4 +44,4 @@ def run(output):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('output',type=Path);args=parser.parse_args();run(args.output)
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('output',type=Path);parser.add_argument('--shape',choices=['sphere','cylinder'],default='sphere');args=parser.parse_args();run(args.output,args.shape)

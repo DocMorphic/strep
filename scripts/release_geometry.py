@@ -16,11 +16,21 @@ def geometry_fields(record):
 
 def floor_gaps(geometry,positions,rotations,height=0.):
     positions=np.asarray(positions);rotations=np.asarray(rotations)
-    half=np.full(len(positions),geometry.dimensions[0]) if geometry.shape=='sphere' else abs(rotations[:,1,:])@(np.asarray(geometry.dimensions)/2)
+    if geometry.shape=='cylinder':
+        axis=rotations[:,1,1];radius,height_cylinder=geometry.dimensions
+        half=radius*np.sqrt(np.maximum(0,1-axis**2))+height_cylinder/2*abs(axis)
+    else:half=np.full(len(positions),geometry.dimensions[0]) if geometry.shape=='sphere' else abs(rotations[:,1,:])@(np.asarray(geometry.dimensions)/2)
     return positions[:,1]-half-height
 
 
+def require_release_geometry(geometry):
+    if geometry.shape not in ['box','sphere']:
+        raise ValueError('Cylinder physics release is not qualified; authored cylinder tracks remain supported')
+    return geometry
+
+
 def primitive_gap(first,p,r,second,other_p,other_r):
+    require_release_geometry(first);require_release_geometry(second)
     if first.shape=='sphere':
         if second.shape=='sphere':return float(np.linalg.norm(np.asarray(p)-other_p)-first.dimensions[0]-second.dimensions[0])
         return float(second.distance_gradient(np.asarray(p)[None],other_p,other_r)[0][0]-first.dimensions[0])

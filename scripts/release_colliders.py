@@ -4,7 +4,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 from object_dynamics import finite_array
 from scene_constraints import sample_object
-from release_geometry import body_geometry,geometry_fields,primitive_gap,floor_gaps
+from release_geometry import body_geometry,geometry_fields,primitive_gap,floor_gaps,require_release_geometry
 
 
 def validate_colliders(values):
@@ -15,7 +15,7 @@ def validate_colliders(values):
         if not isinstance(item,dict) or set(item)!={'id','position_m','rotation_xyzw',geometry_key,'friction','restitution'}:raise ValueError('Invalid static collider fields')
         name=item['id']
         if not isinstance(name,str) or not re.fullmatch('[A-Za-z][A-Za-z0-9_:-]{0,80}',name) or name=='floor' or name in seen:raise ValueError('Invalid or duplicate collider ID')
-        seen.add(name);p=finite_array(item['position_m'],(3,),'collider position');geometry=body_geometry(item);q=finite_array(item['rotation_xyzw'],(4,),'collider rotation')
+        seen.add(name);p=finite_array(item['position_m'],(3,),'collider position');geometry=require_release_geometry(body_geometry(item));q=finite_array(item['rotation_xyzw'],(4,),'collider rotation')
         if max(geometry.dimensions)*(2 if geometry.shape=='sphere' else 1)>100 or abs(np.linalg.norm(q)-1)>1e-6:raise ValueError('Invalid collider shape or orientation')
         for field in ['friction','restitution']:
             if type(item[field]) not in (int,float) or not np.isfinite(item[field]) or not 0<=item[field]<=1:raise ValueError('Invalid collider material')
@@ -50,7 +50,7 @@ def box_separation(p,r,size,other_p,other_r,other_size):
 
 def audit_collisions(request,observations,release_frame):
     rows=[];p=np.array([o['position_m'] for o in observations]);r=Rotation.from_quat([o['rotation_xyzw'] for o in observations]).as_matrix()
-    geometry=body_geometry(request)
+    geometry=require_release_geometry(body_geometry(request))
     moving=request.get('moving_colliders',[])
     for item in request.get('static_colliders',[])+moving:
         is_moving='positions_m' in item
