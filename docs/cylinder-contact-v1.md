@@ -63,3 +63,6 @@ The source repository includes the study driver and this result summary; model, 
 ```
 
 No held-out prompt/seed reservation was consumed, no checkpoint was changed, and no release capability was approved. Naturalness, independent review, cleanup time, dynamic reactions and force/balance remain unverified. The full-project goal remains active.
+
+
+Follow-up: the [single-pose diagnostic](cylinder-pose-witness-v1.md) at frame 96 also fails independent contact acceptance. The local solver termination does not establish infeasibility; its isolated output is retained without replacing the clip.
