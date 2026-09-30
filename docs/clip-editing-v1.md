@@ -31,3 +31,42 @@ Full regression suite: 273 tests passed with four upstream Torch deprecation war
 ## Remaining scope
 
 No physical realism, animator, semantic, force balance, continuous collision or scene-contact approval is implied. Pose/time changes may create invalid support or dynamics. Loops, transition preservation, object/partner time synchronization, prompt-based semantic editing, a broader independently selected clip/rig set, and measured animator cleanup time are still required. These implementation fixtures are not held-out release evidence.
+
+
+## Event timing after speed edits
+
+Clip edits retain the frame-based event contract: nearest output frame, with
+half ties rounded up. A confirmed event can therefore move away from its ideal
+retimed timestamp. The editor now records the ideal frame, chosen frame and
+signed timing error for each retained event in `clip-edit-audit.json`, and appends
+the input GLB hash and mapping to the event lineage. Every shifted event requires
+explicit timing reconfirmation before runtime dispatch. Only numerical residue
+within 1e-9 frame is ignored. Missing confirmation remains unknown. Exact
+mappings preserve existing review state; later edits cannot clear an earlier
+review requirement. Events outside the inclusive trim remain listed as omitted.
+
+For example, source frame 11 in a trim starting at frame 10 and played at 2x
+ideally becomes output frame 0.5. The frame-based exporter chooses frame 1,
+16.667 ms later, and marks the cue for review. Source frame 12 becomes frame 1
+exactly and can retain its prior timing confirmation. A creator can reconfirm
+through the existing event editor; that confirms intent timing, not contact
+correctness or physical realism.
+
+This change makes frame quantization explicit; it does not implement fractional
+single-character event authoring or eliminate quantization. Shared-scene timing
+has a separate fractional-marker schema. No motion quality or release gate is
+approved by event eligibility.
+
+Thirteen focused tests cover shifts in both directions, half ties, exact
+slowdowns, trim endpoints, stable simultaneous-event order, omitted events,
+missing confirmation, explicit reconfirmation and repeated-edit lineage. The
+complete minimal public Python suite passes 698 tests.
+
+The local `reports/clip-event-retiming-v2` check edits an existing imported rig
+clip from source frames 10-40 at 2x into 16 poses. Eight synthetic test cues
+include two outside the trim, two half-frame shifts, one missing confirmation
+and one prior review flag. Only the two exactly mapped, confirmed cues remain
+eligible in the finite runtime manifest. Maximum decoded matrix and skin
+errors are 1.34e-15 and 1.78e-15 m. Input geometry stays unchanged. This is an
+actual GLB/metadata export check, not a fresh Godot run or human timing review.
+Verification hash: `0963dd62bada00bab0bc2fc0a40e06125d54fca166a438d11c597756f90e66ef`.

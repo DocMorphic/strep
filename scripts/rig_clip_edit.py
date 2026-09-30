@@ -126,15 +126,11 @@ def run(folder):
     annotations.setdefault('origin','none_supplied' if report.get('source_kind')=='gltf_animation' else 'source_model_predictions')
     annotations['timeline_provenance']='Intervals resampled using the exact source-frame mapping; original prediction/authorship provenance retained. Support must be reviewed after pose/time edits.'
     save(out/'contacts.json',annotations)
-    dropped_events=[]
+    dropped_events=[];event_retiming=None
     if (folder/'input/events.json').exists():
-        events=read(folder/'input/events.json');mapped=[]
-        for i,event in enumerate(events['events']):
-            f=event['frame']
-            if not source_frames[0]<=f<=source_frames[-1]:dropped_events.append(i);continue
-            index=int(np.floor(np.interp(f,source_frames,np.arange(len(times)))+.5))
-            mapped.append({**event,'source_frame':f,'frame':index,'time_s':index/30})
-        events.update(events=mapped,retiming='Nearest output frame, half ties round up; events outside the inclusive trim are omitted and listed in the edit audit.')
+        from rig_event_retime import retime
+        events,event_retiming=retime(read(folder/'input/events.json'),source_frames,sha256(input))
+        dropped_events=event_retiming['dropped_event_indices']
         save(out/'events.json',events)
     if (folder/'input/contact-review.json').exists():
         review=read(folder/'input/contact-review.json')
@@ -160,7 +156,7 @@ def run(folder):
     save(out/'timeline.json',dict(**clock,source_frames=source_frames.tolist(),source_times_s=source_times.tolist(),input_frames=report['frames'],input_sha256=sha256(input),input_variant=request['input_variant']))
     check=dict(created_at=now(),source_glb_sha256=sha256(input),glb_sha256=sha256(out/'character.glb'),recipe_sha256=sha256(folder/'clip-edit.json'),timeline=clock,pose_curves=curves,
         max_local_translation_change_m=float(np.abs(local[:,:,:3,3]-original_local[:,:,:3,3]).max()),floor_before_pose_max_m=max(before_floor),floor_after_pose_max_m=max(floor),floor_failed_frames=sum(v>.005 for v in floor),
-        roundtrip_max_matrix_error=matrix_error,roundtrip_max_skin_error_m=skin_error,dropped_annotation_indices=dropped,dropped_authored_contact_indices=dropped_authored,dropped_event_indices=dropped_events,
+        roundtrip_max_matrix_error=matrix_error,roundtrip_max_skin_error_m=skin_error,dropped_annotation_indices=dropped,dropped_authored_contact_indices=dropped_authored,dropped_event_indices=dropped_events,event_retiming=event_retiming,
         scope='Source-frame sampling, smooth local pose rotation curves, root tracks and discrete contact remapping. Timing changes alter dynamics; no physical, semantic, continuous-collision or animator approval.',human_approved=False)
     save(out/'clip-edit-audit.json',check)
     report.update(frames=len(times),fps=30,glb_sha256=sha256(out/'character.glb'),timeline_edited=True,contact_annotations_file=str((out/'contacts.json').resolve()),contact_annotations_sha256=sha256(out/'contacts.json'),

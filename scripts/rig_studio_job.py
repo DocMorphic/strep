@@ -40,7 +40,7 @@ def run(folder):
             snapshot=folder/'source/implementation';snapshot.mkdir(exist_ok=False)
             for name in ['rig_studio_job.py','retarget_rig.py','rig_asset.py','gltf_tools.py','target_rig_contact.py','audit_rig_ground.py','rig_contact_authoring.py','rig_clip_import.py','inspect_rig_contacts.py','rig_clip_edit.py','rig_contact_tracks.py','rig_transition.py','rig_loop.py','rig_runtime_cycle.py','godot_cycle_adapter.gd','godot_cycle_blend.gd']:
                 shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
-            for name in ('rig_events.py','rig_event_edit.py','rig_periodic_contact.py'):shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
+            for name in ('rig_events.py','rig_event_retime.py','rig_event_edit.py','rig_periodic_contact.py'):shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
             for name in ('rig_runtime_finite.py','godot_finite_adapter.gd','godot_event_object_body.gd'):shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
             shutil.copyfile(ROOT/'scripts/motion_origin.py',snapshot/'motion_origin.py')
             shutil.copyfile(ROOT/'scripts/motion_origin_inventory.py',snapshot/'motion_origin_inventory.py')
