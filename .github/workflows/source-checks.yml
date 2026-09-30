@@ -62,6 +62,8 @@ jobs:
           tests/test_waypoint_lattice.py
           tests/test_waypoint_path_evidence.py
           tests/test_native_waypoint_clock.py
+          tests/test_motion_lattice.py
+          tests/test_decoded_motion_edges.py
           tests/test_coupled_pair_reserve.py
           tests/test_coupled_surface_norms.py
           tests/test_coupled_continuation_policy.py
