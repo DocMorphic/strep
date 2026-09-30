@@ -20,7 +20,8 @@ METHODS = ['study_scene_pair_fit.py', 'scene_pair_problem.py', 'timed_rotation_e
     'build_guarded_pair_witnesses.py', 'convex_partner_surface.py', 'coupled_pair_proposal.py',
     'coupled_surface_norms.py', 'paired_surface_witness.py', 'paired_approach_basis.py',
     'paired_guarded_temporal.py', 'paired_temporal_neighbor.py', 'rig_clip_import.py', 'rig_asset.py',
-    'gltf_tools.py', 'conic_root_descent.py', 'strep.py']
+    'gltf_tools.py', 'conic_root_descent.py', 'strep.py', 'scene_geometry_reuse.py',
+    'angular_motion_rows.py', 'joint_angular_rates.py', 'scene_pair_angular_constraints.py', 'paired_window_feasibility.py']
 
 
 def source_samples(actors, output):
@@ -117,10 +118,11 @@ def reuse_source(previous, output, inputs, actors):
     return rows, files
 
 
-def run(prepared, output, source_study=None):
+def run(prepared, output, source_study=None, geometry_donor=None, angular=False):
     prepared, output = Path(prepared).resolve(), Path(output).resolve()
     if output.exists():
         raise ValueError('Fresh output directory required; preserve previous attempts')
+    if source_study is not None and geometry_donor is not None: raise ValueError('Choose one geometry reuse mode')
     record, actors = load_actors(prepared); output.mkdir(); implementation = output/'implementation'; implementation.mkdir()
     for name in METHODS:
         shutil.copyfile(ROOT/'scripts'/name, implementation/name)
@@ -130,10 +132,15 @@ def run(prepared, output, source_study=None):
     bootstrap = ROOT/'reports/conic-solver-bootstrap-v1.json'; inputs[str(bootstrap)] = sha256(bootstrap)
     request = dict(at=now(), prepared_request=str(prepared/'request.json'), inputs=inputs,
         implementation={n: sha256(implementation/n) for n in METHODS}, trust_degrees=.1, factors=[1., .5, .25, .125, .0625],
-        motion_tolerance=1e-5, surface_tolerance_m=1e-6, minimum_peak_improvement_m=1e-6,
+        motion_tolerance=1e-5, angular_motion=angular, angular_tolerance=1e-5, surface_tolerance_m=1e-6, minimum_peak_improvement_m=1e-6,
         scope='One scene-derived coupled step. Complete source/candidate vertex-depth queries at the declared 120 Hz local clock, with up to 64 fitting witnesses per direction/time. No continuous collision, full-clip dynamics or naturalness certification.', quality_approved=False)
     save(output/'request.json', request); began = time.monotonic(); (output/'source').mkdir()
-    if source_study is None:
+    if geometry_donor is not None:
+        from scene_geometry_reuse import expanded_source
+        samples, files = expanded_source(geometry_donor, record, actors, output/'source', source_samples)
+        inputs.update(files); request['geometry_donor'] = str(Path(geometry_donor).resolve())
+        request['geometry_reuse_sha256'] = sha256(output/'geometry-reuse.json'); save(output/'request.json', request)
+    elif source_study is None:
         samples = source_samples(actors, output/'source')
     else:
         samples, files = reuse_source(source_study, output/'source', inputs, actors)
@@ -142,7 +149,16 @@ def run(prepared, output, source_study=None):
     problem = ScenePairProblem(actors, samples)
     save(output/'source-index.json', {p.name: sha256(p) for p in sorted((output/'source').glob('sample-*.json'))})
     zero = np.zeros(problem.size); save(output/'progress.json', dict(status='linearizing'))
-    linear = problem.linearize(zero); np.savez_compressed(output/'linearization.npz', **linear)
+    linear = problem.linearize(zero)
+    if angular:
+        from angular_motion_rows import AngularMotionRows
+        from scene_pair_angular_constraints import linearize_angular
+        from paired_window_feasibility import fixed_collision_floor
+        policies = [AngularMotionRows(a['model'], a['rig'].joints) for a in actors]
+        linear, proofs = linearize_angular(actors, policies, linear)
+        save(output/'angular-derivative-proof.json', proofs)
+        save(output/'window-feasibility.json', fixed_collision_floor([a['model'] for a in actors], samples))
+    np.savez_compressed(output/'linearization.npz', **linear)
     extracted = np.concatenate([[r['gap_m'] for row in samples for r in row['directions'][s]['records']] for s in [0, 1]])
     np.testing.assert_allclose(linear['gaps'], extracted, atol=1e-8, rtol=0)
     # Check every row's derivative along an independent combined direction.
@@ -167,13 +183,23 @@ def run(prepared, output, source_study=None):
             if any(r['rate_failures'] for r in records): reasons.append('exported_motion')
             if any(not r['preserved'] for r in records): reasons.append('preservation_or_budget')
             if max(bound.values()) > 1e-6: reasons.append('retained_surface_bounds')
+            angular_records = []
+            if angular:
+                from joint_angular_rates import compare_angular_rates
+                for actor, world in zip(actors, worlds):
+                    model = actor['model']; joints = actor['rig'].joints
+                    names = [actor['rig'].document['nodes'][j]['name'] for j in joints]
+                    rates = compare_angular_rates(model.source_world[:, joints][:, :, :3, :3], world[:, joints][:, :, :3, :3],
+                        model.times, model.knots, names, speed_tolerance=request['angular_tolerance'], acceleration_tolerance=request['angular_tolerance'])
+                    angular_records.append(dict(actor=actor['name'], rates=rates))
+                if any(v['exceeding_observations'] for a in angular_records for v in a['rates'].values()): reasons.append('exported_angular_motion')
             geometry = None
             if not reasons:
                 geometry = exported_geometry(problem, worlds, folder)
                 if geometry['maximum_cap_excess_m'] > 1e-6: reasons.append('fresh_surface_caps')
                 if geometry['maximum_floor_increase_m'] > 1e-6: reasons.append('floor_regression')
                 if geometry['source_peak_m']-geometry['candidate_peak_m'] < 1e-6: reasons.append('no_peak_improvement')
-            trial = dict(factor=factor, controls=controls.tolist(), actors=records, bound=bound, geometry=geometry,
+            trial = dict(factor=factor, controls=controls.tolist(), actors=records, angular_rates=angular_records, bound=bound, geometry=geometry,
                          accepted_local_step=not reasons, reasons=reasons, quality_approved=False)
             save(folder/'review.json', trial); trials.append(dict(folder=folder.name, **trial)); save(output/'trials.json', trials)
             print(dict(factor=factor, reasons=reasons, geometry=geometry), flush=True)
@@ -202,6 +228,7 @@ if __name__ == '__main__':
     from action_worker_lock import worker_lock
     from threadpoolctl import threadpool_limits
     p = argparse.ArgumentParser(description=__doc__); p.add_argument('prepared', type=Path); p.add_argument('output', type=Path)
-    p.add_argument('--source-study', type=Path); a = p.parse_args()
+    group = p.add_mutually_exclusive_group(); group.add_argument('--source-study', type=Path); group.add_argument('--geometry-donor', type=Path)
+    p.add_argument('--angular', action='store_true'); a = p.parse_args()
     with worker_lock(), threadpool_limits(limits=1):
-        run(a.prepared, a.output, a.source_study)
+        run(a.prepared, a.output, a.source_study, a.geometry_donor, a.angular)

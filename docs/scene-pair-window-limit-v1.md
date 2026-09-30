@@ -35,6 +35,8 @@ The export loader now permits additional parent-evidence bindings while requirin
 
 ## Prepared next request
 
+Follow-up: this request has now been evaluated. The full source population has no fixed failures, but all five exports fail motion guards. See [expanded-window results](scene-pair-expanded-fit-v1.md). The preparation details below describe the evidence available before that run.
+
 The new immutable request uses the same original actors, placements, joints and 5-degree edit budget. Its start moves to **1.408333333 seconds**, giving 0.2 seconds before the first known fixed collision; its end remains 2.591722595 seconds. The exact protected contact stays at 2.091722595 seconds. The wider local sampling clock contains 148 times.
 
 The request is saved as `reports/scene-pair-expanded-window-v1-request.json` and prepared under `reports/paired-edit-jobs/expanded-window-v1`. Its source-bound plan is `reports/scene-pair-expanded-window-v1-plan.json`. On the previously measured time population, the new control support has **zero fixed failing samples**. This removes the demonstrated obstruction but does not establish a feasible correction. Earlier newly included times still need geometry and motion evaluation.
