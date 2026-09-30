@@ -72,8 +72,9 @@ and its expanded-support motion and guide checks passed. It verified/reused all
 50 donor source queries, completed the 36 additional directions, and entered
 the optimization phase.
 
-The experiment is running. No clearance improvement, publication or release
-approval is claimed. Once terminal, compare selected geometry at matching times
+The optimization phase has finished; the fresh mesh audit is still running.
+No clearance improvement, publication or release approval is claimed. Once
+terminal, compare selected geometry at matching times
 against both the unchanged source and the three-key donor where their measured
 clocks overlap. Record local regressions as well as peak depth, and diagnose
 actual exported motion failures before deciding the next step. Studio remains
@@ -102,3 +103,28 @@ nonfinite or negative depths, modified/unbound donor geometry and incomplete
 studies. No new optimization or mesh outcome is inferred from these checks.
 
 The complete minimal public Python suite now passes 673 tests. Commit `531c60e` passed hosted CI. The running worker's imported method snapshots remain unchanged.
+
+## Completed optimization; mesh audit pending
+
+Both starts reached their 100-iteration limit (status 9). The solver recorded
+14,423 evaluations, including finite differences, with 69 motion/domain-feasible
+observations. It selected evaluation 7,204: the embedded three-key warm start,
+whose measured witness peak remains 20.927519 mm. The first return has a minimum
+normalized margin of -0.070409 and no passing tested backoff. The second return
+has a -0.009725 minimum margin; its 1% backoff passes but is worse than the warm
+start. Neither return is a new accepted correction.
+
+The selected A/B exports exactly match the prior candidate file hashes:
+
+- A: `8df9ecace1cec2b7c2cd3be67a8820e4f60e323ced323d6b7284843287edd64f`
+- B: `13adf945e5fe0537898c394106cabf94be21cfd0e0c409e61247c67ad9db2b5b`
+
+The complete 148-pose decoded motion audit has zero positional, angular-speed
+or angular-acceleration violations for either actor, and zero batched replay
+error. Those passes retain the prior correction; they do not demonstrate that
+the six-key search improved it. Fresh 43-time hand geometry and the bound return
+diagnosis are not yet complete. The existing worker must finish before its
+imported sources change or an independent-wrist experiment is launched.
+
+The [updated interaction-model survey](interaction-research-v4.md) records why
+the inspected alternatives do not establish a qualified replacement model.

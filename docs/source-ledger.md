@@ -78,3 +78,8 @@ Official [SciPy HiGHS interface](https://docs.scipy.org/doc/scipy/reference/opti
 ### Partner approach waypoint planning (2026-09-30)
 
 CMU's [goal-set constrained trajectory optimization](https://publications.ri.cmu.edu/manipulation-planning-with-goal-sets-using-constrained-trajectory-optimization) and Berkeley's [TrajOpt documentation](https://rll.berkeley.edu/trajopt/doc/sphinx_build/html/) were checked as primary planning references. They motivate separating task constraints from collision avoidance and testing alternate configurations; no planner implementation or robotics performance claim is imported. Strep independently implements and tests rigid two-bone swivels, then checks actual decoded character meshes. See [waypoint evidence](paired-swivel-waypoint-v1.md). No model, data or dependency acquired.
+
+
+### Interaction availability recheck (2026-09-30)
+
+Primary repository documentation and licenses for PhysiGen, Human-X Interaction, GNOCHI and InterGen were inspected at captured revisions. Missing pipeline/checkpoint releases and noncommercial terms remain material distinctions; no replacement is qualified by this limited survey. Source links, exact revisions, local manifest and next-experiment decision are in [interaction research v4](interaction-research-v4.md). No model, dataset, body asset or dependency acquired, and no third-party code executed.
