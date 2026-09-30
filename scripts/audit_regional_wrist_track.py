@@ -67,14 +67,20 @@ def run(study,output,boundary_patch=None,floor_patch=None,path_patch=None):
         from regional_boundary_audit import verify_floor
         candidate,floor_verification=verify_floor(study,boundary_patch,floor_patch,p,candidate)
         audit_study=Path(floor_patch).resolve()
-    path_verification=None;path_comparison=None
+    path_verification=None;path_comparison=None;path_chain=[]
     if path_patch is not None:
         if floor_patch is None:raise ValueError('Boundary path requires its verified floor input')
         from audit_regional_boundary_path import verify,compare
-        candidate,path_verification=verify(audit_study,path_patch,p,candidate)
-        path_comparison=compare(audit_study,path_patch,output,p.names)
+        patches=path_patch if isinstance(path_patch,(list,tuple)) else [path_patch]
+        for index,patch in enumerate(patches):
+            candidate,path_verification=verify(audit_study,patch,p,candidate)
+            comparison_output=output if len(patches)==1 else output/('path-'+str(index+1))
+            comparison_output.mkdir(exist_ok=True)
+            path_comparison=compare(audit_study,patch,comparison_output,p.names)
+            path_chain.append(dict(verification=path_verification,comparison=path_comparison))
+            audit_study=Path(patch).resolve()
         shutil.copyfile(ROOT/'scripts/audit_regional_boundary_path.py',output/'audit_regional_boundary_path.py')
-        audit_study=Path(path_patch).resolve()
+        shutil.copyfile(ROOT/'scripts/boundary_motion.py',output/'boundary_motion.py')
     # Existing independent auditor verifies native FK and GLB keys, samples all
     # full-skin geometry and authored contacts, and reports speed/acceleration.
     geometry_audit(audit_study,output/'geometry');dense=read(output/'geometry/verification.json')
@@ -132,7 +138,7 @@ def run(study,output,boundary_patch=None,floor_patch=None,path_patch=None):
     report=dict(at=now(),study=study.relative_to(ROOT).as_posix(),result_sha256=sha256(study/'result.json'),auditor_sha256=sha256(__file__),
         native_replayed_frames=len(track),native_bounds_passes=native_bounds,base_unchanged_frames=len(untouched),
         unchanged_frames=sum(all(np.array_equal(source[key][frame],candidate[key][frame]) for key in source) for frame in range(protocol['frame_count'])),
-        boundary_patch=boundary_verification,floor_patch=floor_verification,path_patch=path_verification,
+        boundary_patch=boundary_verification,floor_patch=floor_verification,path_patch=path_verification,path_chain=path_chain,
         path_comparison=None if path_comparison is None else path_comparison['variants'],geometry_audit_sha256=sha256(output/'geometry/verification.json'),
         dense_bounds=bounds,dense_bound_failures=sum(not r['passed'] for r in bounds),original_guides=original_rows,
         native_arm_steps=native_steps,maximum_native_arm_step_degrees=max(r['maximum_step_degrees'] for r in native_steps),
@@ -146,5 +152,5 @@ def run(study,output,boundary_patch=None,floor_patch=None,path_patch=None):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study',type=Path);parser.add_argument('output',type=Path)
-    parser.add_argument('--boundary-patch',type=Path);parser.add_argument('--floor-patch',type=Path);parser.add_argument('--path-patch',type=Path)
+    parser.add_argument('--boundary-patch',type=Path);parser.add_argument('--floor-patch',type=Path);parser.add_argument('--path-patch',type=Path,action='append')
     args=parser.parse_args();run(args.study,args.output,args.boundary_patch,args.floor_patch,args.path_patch)

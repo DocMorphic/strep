@@ -73,9 +73,13 @@ class BoundaryPath:
                                      source['posed_joints'][self.support,j]-source['posed_joints'][self.support,parent])
         self.offsets = problem.t(offsets)
         self.native_positions = problem.t(source['posed_joints'][self.support][:,self.arms])
+        self.motion_caps=settings.get('motion_caps',{}).get(str(frames[0]))
         # Four samples per edge plus the final key, including both protected joins.
         self.times = np.arange(frames[0]-1,frames[-1]+1.001,.25)
-        self.left = np.minimum(np.floor(self.times).astype(int),frames[-1])-self.support[0]
+        if self.motion_caps is not None:self.times=np.arange(self.support[0],self.support[-1]+.001,.25)
+        self.geometry_mask=(self.times>=frames[0]-1)&(self.times<=frames[-1]+1)
+        last_edge=frames[-1] if self.motion_caps is None else self.support[-1]-1
+        self.left = np.minimum(np.floor(self.times).astype(int),last_edge)-self.support[0]
         self.fractions = problem.t(self.times-(self.left+self.support[0]))
         self.object_geometry, positions, rotations = object_track
         if self.object_geometry.shape!='cylinder': raise ValueError('Cylinder path study required')
@@ -100,13 +104,24 @@ class BoundaryPath:
         sampled=interpolate_rotations(local[self.left],local[self.left+1],self.fractions[:,None])
         offsets=(1-self.fractions[:,None,None])*self.offsets[self.left]+self.fractions[:,None,None]*self.offsets[self.left+1]
         r,p=kinematics(sampled,offsets,self.problem.parents)
+        extra={}
+        if self.motion_caps is not None:
+            caps=self.motion_caps;points=p[:,caps['joints']]
+            speed=torch.linalg.vector_norm((points[1:]-points[:-1])*120,dim=-1)
+            acceleration=torch.linalg.vector_norm((points[2:]-2*points[1:-1]+points[:-2])*120**2,dim=-1)
+            lo,hi=self.frames[0]-1,self.frames[-1]+1
+            sm=(self.times[:-1]>=lo)&(self.times[1:]<=hi);am=(self.times[1:-1]>=lo)&(self.times[1:-1]<=hi)
+            sv=torch.relu(speed[sm]-self.problem.t(caps['fitting_speed_caps_m_s']))/self.settings['speed_excess_scale_m_s']
+            av=torch.relu(acceleration[am]-self.problem.t(caps['fitting_acceleration_caps_m_s2']))/self.settings['acceleration_excess_scale_m_s2']
+            extra=dict(descendant_speed=sv.square().sum(),descendant_acceleration=av.square().sum())
+        r,p=r[self.geometry_mask],p[self.geometry_mask]
         # All vertices and eight skin influences; never just hand guide points.
         vertices=(((r[:,self.problem.indices]@self.problem.bind[None,:,:,:,None]).squeeze(-1)+p[:,self.problem.indices])*self.problem.weights[None,:,:,None]).sum(2)
-        gaps=cylinder_distance(vertices,self.centers,self.object_rotations,self.object_geometry.dimensions)
+        gaps=cylinder_distance(vertices,self.centers[self.geometry_mask],self.object_rotations[self.geometry_mask],self.object_geometry.dimensions)
         collision=torch.relu(self.problem.config['object_clearance_m']+self.settings['clearance_reserve_m']-gaps.amin(1))/self.settings['geometry_scale_m']
         floor=torch.relu(self.problem.config['clearance_m']-vertices[:,:,1].amin(1))/self.settings['geometry_scale_m']
         return dict(rotation_curvature=angular.square().sum(),position_curvature=cartesian.square().sum(),
-                    position_reference=fidelity.square().sum(),object_clearance=collision.square().sum(),floor=floor.square().sum())
+                    position_reference=fidelity.square().sum(),object_clearance=collision.square().sum(),floor=floor.square().sum(),**extra)
 
     def pair(self, raw):
         variable=self.problem.t(raw).requires_grad_(); terms=self.terms(variable); loss=sum(terms.values())

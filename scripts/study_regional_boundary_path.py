@@ -16,7 +16,7 @@ from build_soma_preview import make_preview
 from gltf_tools import write_glb
 
 
-def run(study,output,saved_fit=None):
+def run(study,output,saved_fit=None,phase="both",motion_reference=None):
     torch.set_num_threads(2); study,output=Path(study).resolve(),Path(output).resolve()
     prior,result=read(study/'protocol.json'),read(study/'result.json')
     if result['status']!='complete' or result['candidate_sha256']!=sha256(study/'motion.npz') or result['protocol_sha256']!=sha256(study/'protocol.json'):
@@ -32,10 +32,24 @@ def run(study,output,saved_fit=None):
     if len(objects)!=1:raise ValueError('One cylinder required for this path experiment')
     geometry,obj=objects[0];track=(geometry,np.array(obj['positions_m']),np.array(obj['rotations']))
     left,right=prior['edited_interval'];start,end=prior['projection_interval']
+    if phase not in ['both','approach','release']:raise ValueError('Unknown boundary phase')
     windows=[list(range(left+1,start)),list(range(end+1,right))]
+    if phase!='both':windows=[windows[0 if phase=='approach' else 1]]
     settings=dict(rotation_curvature_scale=.02,position_curvature_scale_m=.002,position_reference_scale_m=.05,
                   geometry_scale_m=.00005,clearance_reserve_m=.0001,maximum_iterations=120,maximum_evaluations=180,
                   maximum_seconds_per_window=180.,maximum_rss_bytes=3*1024**3,minimum_available_bytes=768*1024**2)
+    if motion_reference is not None:
+        from boundary_motion import affected_positions,make_caps
+        motion_reference=Path(motion_reference).resolve();ref_result=read(motion_reference/'result.json')
+        if ref_result['candidate_glb_sha256']!=sha256(motion_reference/'candidate.glb'):raise ValueError('Motion reference export changed')
+        for name in ['source-motion.npz','authored-scene.json']:
+            if sha256(study/name)!=sha256(motion_reference/name):raise ValueError('Motion reference changes source or authored scene')
+        arms=[p.names.index(s+n) for s in ['Left','Right'] for n in ['Shoulder','Arm','ForeArm','Hand']]
+        joints=affected_positions(p.parents,arms)
+        settings.update(speed_excess_scale_m_s=.001,acceleration_excess_scale_m_s2=.1,
+            motion_caps={str(f[0]):make_caps(study/'candidate.glb',motion_reference/'candidate.glb',f,joints,p.names) for f in windows})
+        inputs.update({str(motion_reference/n):sha256(motion_reference/n) for n in ['protocol.json','result.json','candidate.glb']})
+        inputs[str(study/'candidate.glb')]=sha256(study/'candidate.glb')
     saved_rows=None
     if saved_fit is not None:
         saved_fit=Path(saved_fit).resolve();old=read(saved_fit/'protocol.json')
@@ -50,9 +64,9 @@ def run(study,output,saved_fit=None):
         inputs.update({str(saved_fit/n):sha256(saved_fit/n) for n in ['protocol.json','windows.json']})
     output.mkdir(parents=True,exist_ok=False);snap=output/'implementation';snap.mkdir()
     for file in (ROOT/'scripts').glob('*.py'):shutil.copyfile(file,snap/file.name)
-    protocol={**prior,**dict(at=now(),path_input=study.relative_to(ROOT).as_posix(),path_windows=windows,path_settings=settings,optimization_origin=None if saved_fit is None else saved_fit.relative_to(ROOT).as_posix(),
+    protocol={**prior,**dict(at=now(),path_input=study.relative_to(ROOT).as_posix(),path_windows=windows,path_phase=phase,motion_reference=None if motion_reference is None else motion_reference.relative_to(ROOT).as_posix(),path_settings=settings,optimization_origin=None if saved_fit is None else saved_fit.relative_to(ROOT).as_posix(),
         inputs=inputs,implementation={q.name:sha256(q) for q in snap.iterdir()},
-        scope='Joint temporal fit of each boundary with two protected neighbor keys. Only eight arm joints on declared free keys change; grasp/guard/non-arm rotations/root exact. Source-relative native arm norms by construction. Full-skin quarter-frame cylinder/floor and native position/rotation curvature are soft objectives, not guaranteed feasibility or exact endpoint velocity constraints. Fresh exported audit required.',quality_approved=False)}
+        scope='Joint temporal fit of each boundary with two protected neighbor keys. Only eight arm joints on declared free keys change; grasp/guard/non-arm rotations/root exact. Source-relative native arm norms by construction. Full-skin quarter-frame cylinder/floor and native position/rotation curvature are soft objectives, not guaranteed feasibility or exact endpoint velocity constraints. Optional per-descendant speed/acceleration caps are soft objectives based on decoded prior clips; fresh exported audit required.',quality_approved=False)}
     save(output/'protocol.json',protocol);candidate={k:v.copy() for k,v in source.items()};rows=[];total=time.monotonic()
     for frames in windows:
         path=BoundaryPath(p,source,frames,track,settings);began=time.monotonic();peak=0;history=[];best=None;last=None
@@ -115,5 +129,5 @@ def run(study,output,saved_fit=None):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study',type=Path);parser.add_argument('output',type=Path);parser.add_argument('--saved-fit',type=Path);args=parser.parse_args()
-    with threadpool_limits(limits=2):run(args.study,args.output,args.saved_fit)
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study',type=Path);parser.add_argument('output',type=Path);parser.add_argument('--saved-fit',type=Path);parser.add_argument('--phase',choices=['both','approach','release'],default='both');parser.add_argument('--motion-reference',type=Path);args=parser.parse_args()
+    with threadpool_limits(limits=2):run(args.study,args.output,args.saved_fit,args.phase,args.motion_reference)

@@ -921,6 +921,10 @@
         "docs/cylinder-guide-continuity-v1.md",
         "docs/cylinder-guide-boundaries-v1.md",
         "docs/cylinder-boundary-path-v1.md",
+        "docs/cylinder-descendant-path-v1.md",
+        "reports/cylinder-descendant-path-review-v1/verification.json",
+        "reports/cylinder-descendant-path-review-v1/path-2/path-comparison.json",
+        "reports/cylinder-descendant-path-engine-v1/verification.json",
         "reports/cylinder-boundary-path-review-v1/verification.json",
         "reports/cylinder-boundary-path-review-v1/path-comparison.json",
         "reports/cylinder-boundary-path-engine-v1/verification.json",
@@ -2992,6 +2996,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-30T04:09:53.274385+00:00",
-  "last_progress": "Coupled cylinder boundary paths pass all 717 exported geometry/edit bounds and preserve grasp/guard contacts. Peak speed falls to 1.306499 m/s and acceleration to 39.769477 m/s2, while 33 approach joints retain per-joint acceleration regressions above 0.01 m/s2. Both optimizations hit time limits. Frozen-rotation assembly was repaired from saved parameters; independent replay and 180 Godot frames pass. Next preserve geometry and contacts while including hand descendants and boundary velocities in temporal comparisons. All 14 release capabilities remain unapproved."
+  "last_progress_at": "2026-09-30T04:21:36.040165+00:00",
+  "last_progress": "Descendant-aware cylinder approach passes all 54 exported speed and 54 acceleration preservation comparisons, while retaining 717 geometry/edit-budget passes and grasp/guard contacts. Approach peak acceleration falls to 33.162127 m/s2; right index fingertip reaches 30.021892 m/s2, removing its measured regression. Release remains exact and whole-clip acceleration stays 39.769477 m/s2. Fourteen focused tests, independent chained replay and 180 Godot frames pass scoped checks. Next apply these checks to another development interaction without using reserved held-out trials; human review and broad release evidence remain open. All 14 release capabilities remain unapproved."
 }

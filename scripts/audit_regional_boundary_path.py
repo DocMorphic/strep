@@ -22,10 +22,19 @@ def verify(study,patch,problem,source):
         if sha256(patch/name)!=sha256(study/name):raise ValueError('Path changed source or scene')
     left,right=prior['edited_interval'];start,end=prior['projection_interval']
     windows=[list(range(left+1,start)),list(range(end+1,right))]
+    phase=protocol.get('path_phase','both')
+    if phase not in ['both','approach','release']:raise ValueError('Unknown audited boundary phase')
+    if phase!='both':windows=[windows[0 if phase=='approach' else 1]]
     assert protocol['path_windows']==windows and [r['frames'] for r in result['windows']]==windows
     assert read(patch/'recipe.json')['windows']==result['windows']
     arms=[problem.names.index(s+p) for s in ['Left','Right'] for p in ['Shoulder','Arm','ForeArm','Hand']]
     limits=problem.limits[[problem.lookup[j] for j in arms]]
+    if protocol.get('motion_reference') is not None:
+        from boundary_motion import make_caps,affected_positions
+        reference=ROOT/protocol['motion_reference']
+        joints=affected_positions(problem.parents,arms)
+        caps={str(f[0]):make_caps(study/'candidate.glb',reference/'candidate.glb',f,joints,problem.names) for f in windows}
+        assert caps==protocol['path_settings']['motion_caps']
     expected={k:v.copy() for k,v in source.items()}
     for frames,row in zip(windows,result['windows']):
         raw=np.array(row['best_raw']).reshape(len(frames),8,3)
@@ -84,5 +93,19 @@ def compare(study,patch,output,names):
             input_peak_acceleration_m_s2=float(a),candidate_peak_acceleration_m_s2=float(b),increased=bool(b>a+1e-5)) for name,a,b in zip(names,before,after)]))
     report=dict(input_glb_sha256=sha256(Path(study)/'candidate.glb'),candidate_glb_sha256=sha256(Path(patch)/'candidate.glb'),
                 variants=variants,windows=windows,quality_approved=False)
+    if protocol.get('motion_reference') is not None:
+        from boundary_motion import sample_positions,window_peaks
+        checks=[]
+        for caps in protocol['path_settings']['motion_caps'].values():
+            times,positions=sample_positions(Path(patch)/'candidate.glb',caps['frames'])
+            speed,acceleration=window_peaks(times,positions,caps['frames']);rows=[]
+            for index,joint in enumerate(caps['joints']):
+                rows.append(dict(joint=names[joint],speed_m_s=float(speed[joint]),acceleration_m_s2=float(acceleration[joint]),
+                    speed_cap_m_s=caps['speed_caps_m_s'][index],acceleration_cap_m_s2=caps['acceleration_caps_m_s2'][index],
+                    speed_passed=bool(speed[joint]<=caps['speed_caps_m_s'][index]+1e-5),
+                    acceleration_passed=bool(acceleration[joint]<=caps['acceleration_caps_m_s2'][index]+1e-5)))
+            checks.append(dict(frames=caps['frames'],rows=rows,speed_failures=sum(not r['speed_passed'] for r in rows),
+                               acceleration_failures=sum(not r['acceleration_passed'] for r in rows)))
+        report['motion_preservation']=checks
     save(Path(output)/'path-comparison.json',report)
     return report
