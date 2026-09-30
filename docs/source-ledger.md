@@ -73,3 +73,8 @@ Official [SciPy HiGHS interface](https://docs.scipy.org/doc/scipy/reference/opti
 
 
 2026-09-30: [Godot CylinderShape3D](https://docs.godotengine.org/en/stable/classes/class_cylindershape3d.html) identifies a physics cylinder with radius/height and warns about known cylinder collision bugs. Strep adds analytic cylinder authoring/export with verified baked playback; physics release remains explicitly unavailable until its own backend/collider study. See [cylinder scene evidence](cylinder-scenes-v1.md).
+
+
+### Partner approach waypoint planning (2026-09-30)
+
+CMU's [goal-set constrained trajectory optimization](https://publications.ri.cmu.edu/manipulation-planning-with-goal-sets-using-constrained-trajectory-optimization) and Berkeley's [TrajOpt documentation](https://rll.berkeley.edu/trajopt/doc/sphinx_build/html/) were checked as primary planning references. They motivate separating task constraints from collision avoidance and testing alternate configurations; no planner implementation or robotics performance claim is imported. Strep independently implements and tests rigid two-bone swivels, then checks actual decoded character meshes. See [waypoint evidence](paired-swivel-waypoint-v1.md). No model, data or dependency acquired.
