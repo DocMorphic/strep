@@ -45,6 +45,8 @@ The owner will perform developer review first. Independent animator review and t
 
 [Adaptive interval checks](docs/adaptive-skin-intervals-v1.md) now combine subdivision, triangle crossings and containment observations. A retained character pose has an independently confirmed surface crossing while both full-vertex depth tests report zero. Full native-clock follow-up records 63 intervals with surface-separation bounds, ten with observed crossings and one unresolved; none of these results approves motion quality.
 
+[Directional motion bounds](docs/skin-taylor-bounds-v1.md) resolve all sixteen previously uncertain subintervals on the same saved paired motion, checking 10,836 triangle pairs. The ten confirmed crossing intervals still require motion repair. This improves between-pose evaluation without changing animations or quality thresholds.
+
 [Visual hand-region selection](docs/studio-hand-selection-v1.md) now connects selected hand triangles to saved contact-fitting requests, alongside object grip picking. Mesh identity, all eight skin weights, edit bounds and exported geometry are checked; this currently covers canonical SOMA scenes and is not general grasp or animation-quality approval.
 
 ## Using this source snapshot
