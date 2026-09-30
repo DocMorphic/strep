@@ -130,7 +130,11 @@ def object_sampling_layout(selected,vertex_count,full):
     return ids,np.searchsorted(ids,original)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=(),edit_window=None,export_point_rate_guard=False,authored_point_scaling="metres",export_floor_guard=False,export_point_position_guard=False,native_body_references=None,native_support_references=None,root_optimizer_scale_m=1.):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=(),edit_window=None,export_point_rate_guard=False,authored_point_scaling="metres",export_floor_guard=False,export_point_position_guard=False,native_body_references=None,native_support_references=None,root_optimizer_scale_m=1.,constraint_restore_steps=0):
+    if type(constraint_restore_steps) is not int or not 0<=constraint_restore_steps<=20:
+        raise ValueError('Constraint restoration steps must be an integer in [0,20]')
+    if constraint_restore_steps and (root_coordinate_mode!='physical_box' or not all([export_rate_guard,export_point_rate_guard,export_floor_guard,export_point_position_guard]) or native_support_references is None or scene_context is not None or finger_edits or region_fitting is not None or release_endpoint_guards or shared_pose or preserve_support_regions or object_inequalities):
+        raise ValueError('Constraint restoration requires stationary body contacts, physical_box, all export guards and native support references')
     if authored_point_scaling not in ["metres","tolerance"]:raise ValueError("Unknown authored point scaling")
     if root_coordinate_mode not in ["legacy","scaled_initial","physical_box"]:raise ValueError("Unknown root coordinate mode")
     if type(root_optimizer_scale_m) not in (int,float) or not np.isfinite(root_optimizer_scale_m) or root_optimizer_scale_m<=0:
@@ -452,6 +456,29 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
                 object_penalty*=CONFIG['penalty_growth']
             if cuts:cut_multiplier=torch.relu(cut_multiplier+cut_penalty*last_cuts)
             point_penalty*=CONFIG['penalty_growth'];normal_penalty*=CONFIG['penalty_growth'];cut_penalty*=CONFIG['penalty_growth']
+    restoration=None
+    if constraint_restore_steps:
+        from constraint_restoration import restore
+        from native_contact_constraints import residuals
+        from native_body_objective import NativeBodyObjective
+        body_guard=body_objective if body_objective is not None else NativeBodyObjective({name:tensor(motion['posed_joints']) for name,motion in native_support_references.items()})
+        def constraints():
+            r,p,_=fk()
+            return residuals(r,p,position_objective,point_rate_objective,rate_objective,floor_objective,body_guard,support_objective)
+        with torch.no_grad():before_constraints=constraints().detach().numpy().copy()
+        count=delta.numel();root_count=lift_parameters.numel()
+        restoration=restore([delta,lift_parameters],constraints,
+            np.r_[np.full(count,-np.inf),np.zeros(root_count)],
+            np.r_[np.full(count,np.inf),np.full(root_count,CONFIG['max_root_lift_m'])],
+            np.r_[np.full(count,.01),np.full(root_count,.0005)],steps=constraint_restore_steps,
+            progress=None if progress is None else lambda record:progress(dict(constraint_restoration=record)))
+        restoration.update(rotation_control_trust=.01,root_trust_m=.0005,
+            scope='Experimental minimax linearization with full nonlinear stationary pin, point/global rate, full-skin floor, native body and fixed-patch support checks. No newly failing proxy group accepted. Original root/rotation bounds and held keys remain enforced. Export rounding and human quality require independent review.')
+        with torch.no_grad():
+            r,p,_=fk()
+            after_constraints,labels=residuals(r,p,position_objective,point_rate_objective,rate_objective,floor_objective,body_guard,support_objective,with_labels=True)
+        restoration['constraints']=[dict(label=label,before=float(a),after=float(b)) for label,a,b in zip(labels,before_constraints,after_constraints)]
+        closure()
     with torch.no_grad():
         _,_,local=fk()
         lift=root_lift()
@@ -489,6 +516,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     recipe['authored_point_scaling']=authored_point_scaling
     recipe['root_coordinate_mode']=root_coordinate_mode
     recipe['root_optimizer_scale_m']=root_optimizer_scale_m
+    if restoration is not None:recipe['constraint_restoration']=restoration
     if root_coordinates is not None:recipe['root_coordinate_reference']=root_coordinates.record()
     if finger_edits:
         recipe['finger_edits']=dict(budgets_degrees={names[j]:v for j,v in fingers.items()},
