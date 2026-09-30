@@ -12,7 +12,7 @@ def run(output,prior=None):
     output=Path(output).resolve();output.mkdir(parents=True,exist_ok=False)
     source=ROOT/'reports/rig-jobs/20260926-222539-831f5a06';variant=source/'transfer'
     original=read(variant/'events.json')
-    markers=[dict(id=e['id'],name=e['name'],frame=e['frame'],confirmed=not e.get('requires_review',True)) for e in original['events'] if e.get('kind')=='authored']
+    markers=[dict(id=e['id'],name=e['name'],frame=e['frame'],confirmed=e.get('requires_review') is False) for e in original['events'] if e.get('kind')=='authored']
     payload=dict(schema='strep-rig-events-v1',job=source.name,variant='transfer',glb_sha256=sha256(variant/'character.glb'),label='Authored cycle with reverse runtime support',markers=markers)
     save(output/'pipeline.json',dict(status='submitting',at=now()))
     try:

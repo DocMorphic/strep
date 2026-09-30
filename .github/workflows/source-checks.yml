@@ -124,6 +124,7 @@ jobs:
           tests/test_point_rate_reachability.py
           tests/test_contact_rate_feasibility.py
           tests/test_contact_engine_events.py
+          tests/test_event_confirmation.py
           tests/test_rig_event_retime.py
           tests/test_contact_pose_reachability.py
           tests/test_contact_pose_sphere_bound.py

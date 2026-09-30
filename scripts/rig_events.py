@@ -45,7 +45,7 @@ def remap(documents,clocks,boundaries):
                 if e['frame']!=c['frame']:continue
                 used.add((source,index));identity=hashlib.sha256(f'{source}:{index}:{e.get("id","")}:{f}'.encode()).hexdigest()[:24]
                 partial=c['weight']<1-1e-9
-                events.append({**e,'id':identity,'origin_id':e.get('origin_id',e.get('id',str(index))),'frame':f,'time_s':f/30,'requires_review':bool(e.get('requires_review',e.get('kind')!='authored') or partial),
+                events.append({**e,'id':identity,'origin_id':e.get('origin_id',e.get('id',str(index))),'frame':f,'time_s':f/30,'requires_review':e.get('requires_review') is not False or partial,
                     'lineage':e.get('lineage',[])+[dict(operation='source_contribution',source=source,source_event_id=e.get('id'),source_frame=e['frame'],output_frame=f,weight=c['weight'],cycle_offset=c.get('cycle_offset'))]})
     for source,doc in enumerate(documents):
         for i,e in enumerate(doc['events']):
@@ -57,7 +57,7 @@ def remap(documents,clocks,boundaries):
 def runtime_markers(document,period):
     markers=[dict(name='cycle_boundary',phase_frame=0,first_cycle=1)];excluded=[]
     for e in document['events']:
-        if e.get('kind')=='authored' and not e.get('requires_review',True) and 0<=e['frame']<period:
+        if e.get('kind')=='authored' and e.get('requires_review') is False and 0<=e['frame']<period:
             markers.append(dict(name=e['name'],phase_frame=e['frame'],first_cycle=0,event_id=e['id'],source_event=e))
         else:excluded.append(dict(event=e,reason='Only timing-confirmed authored events inside the first period dispatch; boundaries are generated separately'))
     markers.sort(key=lambda e:e['phase_frame'])

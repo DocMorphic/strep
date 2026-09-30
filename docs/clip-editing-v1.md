@@ -79,3 +79,32 @@ Rounding notes do not enter the strict four-field marker submission payload,
 and loading another source clears those notes. The desktop bundle was rebuilt.
 Nine Node UI scripts and four desktop build/preservation checks pass, including
 the new editor DOM simulation. No rendered-browser check is claimed.
+
+
+## Confirmation through loops, transitions and runtime export
+
+The same explicit-confirmation rule now applies to source-contribution remapping
+and finite/cycle runtime metadata. Previously a fully weighted authored event
+with a missing review flag could acquire `requires_review: false` during a loop
+or transition; direct runtime export also treated null, zero and empty values as
+confirmation. Only the boolean `false` now preserves confirmed timing. Missing,
+non-boolean and pending-review states remain excluded from runtime dispatch.
+Partial contributions still require review, and the marker editor can explicitly
+reconfirm them without losing their source history. The reverse-export study
+helper uses the same explicit confirmation rule when building its editor request.
+
+Eleven additional model-free tests exercise missing/malformed flags, repeated
+loop contributions, an exact retime followed by a transition, source immutability,
+lineage and explicit reconfirmation. The combined confirmation/retiming suite
+passes 24 tests. This repairs eligibility; it does not validate contact semantics.
+
+`reports/event-confirmation-export-v1` checks both actual runtime metadata writers
+using existing cycle and finite character GLBs. Seven synthetic cues exercise
+explicit false, missing, null, zero, empty text, text `false` and true review flags.
+Only the explicitly confirmed cue is eligible; all six others are preserved in
+the exclusion audit. The cycle case includes full-weight remapping first. Both
+GLBs remain byte-identical to their sources. No new engine, browser, physics or
+human-review result is claimed. Verification SHA-256:
+`19607804d3441833ee183f584b4b26c3ed2d38d96196fe75a0505079dbd03116`.
+
+The complete minimal public Python suite passes 732 tests after this fix.
