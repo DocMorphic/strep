@@ -914,6 +914,8 @@
         "docs/cylinder-pose-bundle-v1.md",
         "docs/cylinder-pose-full-residual-v1.md",
         "docs/cylinder-inner-solve-v1.md",
+        "docs/cylinder-trust-comparison-v1.md",
+        "reports/cylinder-trust-comparison-review-v1/verification.json",
         "reports/cylinder-inner-solve-review-v1/verification.json",
         "reports/cylinder-pose-full-residual-review-v2/verification.json",
         "reports/cylinder-pose-full-residual-review-v2/conditioning.json",
@@ -2969,6 +2971,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-30T02:34:55.655344+00:00",
-  "last_progress": "Actual TRF inner-system replay confirms the 30-iteration LSMR cap truncates a solve that meets its stopping criterion in 107 iterations. An explicit hash-bound continuation with cap 175 reduces weighted cost from 7.208 to 6.725 and gradient infinity norm from 9.074 to 0.794, but every retained pose still fails hand contact. Independent variants, limits and selection replay pass. Local Jacobian columns vary by about 129,000 in norm and contain near-dependent directions; next test conditioning-aware steps under unchanged physical bounds. No clip is promoted and all 14 release capabilities remain unapproved."
+  "last_progress_at": "2026-09-30T02:46:43.563228+00:00",
+  "last_progress": "Matched matrix-free LSMR versus dense SVD trust-region comparison retains all failed outputs. The same starting pose, targets, weights, edit bounds and budget ceilings produce similar failing hand contacts. Dense/operator derivatives and all six serialized variants replay independently. The control uses 150 evaluations/69.203 seconds; dense hits its time guard at 76 evaluations/181.656 seconds including final audit. No default or clip is promoted. Next isolate hand-shape/contact geometry under original finger budgets and binding before bounded wrist projection; all 14 release capabilities remain unapproved."
 }

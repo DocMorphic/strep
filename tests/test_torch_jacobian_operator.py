@@ -29,15 +29,39 @@ def test_constant_function_has_zero_products():
     np.testing.assert_array_equal(op.T@np.ones(3),np.zeros(2))
 
 
-def test_least_squares_uses_operator_without_dense_jacobian():
+@pytest.mark.parametrize('solver',['lsmr','exact'])
+def test_least_squares_uses_equivalent_operator_or_dense_jacobian(solver):
     a=torch.tensor([[1.,2.],[3.,-1.],[2.,1.]],dtype=torch.float64)
     target=a@torch.tensor([.2,.4],dtype=torch.float64)
     f=lambda x:a@x-target
+    def jac(x):
+        op=TorchJacobianOperator(f,x)
+        return op if solver=='lsmr' else op.to_dense()
     fit=least_squares(lambda x:f(torch.tensor(x,dtype=torch.float64)).numpy(),[0.,0.],
-        jac=lambda x:TorchJacobianOperator(f,x),method='trf',tr_solver='lsmr',bounds=([-1.,-1.],[1.,1.]),
+        jac=jac,method='trf',tr_solver=solver,bounds=([-1.,-1.],[1.,1.]),
         ftol=1e-12,xtol=1e-12,gtol=1e-12)
     assert fit.success
     np.testing.assert_allclose(fit.x,[.2,.4],atol=1e-10)
+
+
+def test_dense_columns_match_analytic_matrix_and_respect_allocation_limit():
+    op=TorchJacobianOperator(residual,[.3,-.4])
+    with pytest.raises(MemoryError):op.to_dense(47)
+    assert op.products['forward']==0
+    dense=op.to_dense(48)
+    np.testing.assert_allclose(dense,[[.6,3.],[np.cos(.3),.8],[0.,0.]],atol=1e-13)
+    assert dense.flags.f_contiguous and op.products['forward']==2
+    with pytest.raises(ValueError):op.to_dense(True)
+
+
+def test_dense_materialization_obeys_guard_between_columns():
+    checks=[]
+    def guard():
+        checks.append(1)
+        if len(checks)>5:raise TimeoutError('stop while constructing columns')
+    op=TorchJacobianOperator(residual,[.3,-.4],guard)
+    with pytest.raises(TimeoutError):op.to_dense()
+    assert op.products['forward']==1
 
 
 def test_guard_interrupts_products():

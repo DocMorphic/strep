@@ -59,3 +59,15 @@ class TorchJacobianOperator(LinearOperator):
     def _matmat(self,values):
         values=np.asarray(values)
         return np.column_stack([self._matvec(v) for v in values.T])
+
+    def to_dense(self,max_bytes=128*1024**2):
+        """Materialize columns with a preallocation limit and per-product guards."""
+        if type(max_bytes) is not int or max_bytes<1:raise ValueError('Positive integer allocation limit required')
+        required=self.shape[0]*self.shape[1]*np.dtype('float64').itemsize
+        if required>max_bytes:raise MemoryError('Dense Jacobian exceeds the allocation limit')
+        self.check()
+        matrix=np.empty(self.shape,dtype=np.float64,order='F')
+        basis=np.zeros(self.shape[1])
+        for column in range(self.shape[1]):
+            basis[column]=1.;matrix[:,column]=self._matvec(basis);basis[column]=0.
+        self.check();return matrix

@@ -58,3 +58,6 @@ With separately acquired assets and retained studies, use new output directories
 ```
 
 Eighteen targeted tests pass locally, covering Jacobian products, full-residual layout, warm-start binding and linear residual diagnostics. The three pure LSMR diagnostic tests join public Windows/Linux source CI. Raw evidence is retained under `reports/cylinder-inner-solve-v1`, `reports/cylinder-inner-solve-review-v1`, `reports/cylinder-pose-full-residual-v2`, and `reports/cylinder-pose-full-residual-review-v2`. There is no new engine, visual, temporal, dynamics, human-review or cleanup-time approval. All fourteen release capabilities remain unapproved.
+
+
+Follow-up: the [matched dense trust-region comparison](cylinder-trust-comparison-v1.md) tests a different step calculation with the same saved start, original limits and budget ceilings. Both methods retain failed hand contacts.

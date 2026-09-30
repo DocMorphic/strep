@@ -430,3 +430,6 @@ The [full-residual cylinder search](cylinder-pose-full-residual-v1.md) uses auto
 
 
 The [inner-solve accuracy probe and continuation](cylinder-inner-solve-v1.md) identify a concrete 30-iteration LSMR bottleneck on the actual augmented TRF system. A hash-bound continuation with cap 175 lowers the weighted cost and objective gradient further, but all variants remain rejected. Independent replay verifies linear solutions, serialized poses, original limits and selection. Local Jacobian analysis exposes disparate sensitivities and near-dependent directions; next compare conditioning-aware steps before changing physical budgets. Eighteen focused tests pass; all fourteen release capabilities remain unapproved.
+
+
+The [matched iterative-versus-dense trust-region comparison](cylinder-trust-comparison-v1.md) is complete. Identical inputs, derivatives, physical limits and budget ceilings produce similar failed contacts; dense SVD uses more time/memory without a passing pose. Independent replay covers all six variants and confirms dense/operator product agreement. Next isolate original hand-shape/contact geometry and use bounded wrist projection only after finding a feasible local placement; do not assume sphere symmetry for the cylinder or change the binding silently. Twenty-one focused tests pass; all fourteen release capabilities remain unapproved.

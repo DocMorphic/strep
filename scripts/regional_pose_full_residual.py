@@ -53,10 +53,11 @@ def read_warm_start(path,variant,study,prior):
     return selected,inputs,dict(study=path.relative_to(ROOT).as_posix(),variant=variant,result_sha256=sha256(path/'result.json'))
 
 
-def run(study,output,evaluations=150,seconds=180.,lsmr_iterations=30,warm_start=None,variant='best_cost'):
+def run(study,output,evaluations=150,seconds=180.,lsmr_iterations=30,warm_start=None,variant='best_cost',linear_solver='lsmr'):
     if type(evaluations) is not int or not 1<=evaluations<=500 or type(seconds) not in [int,float] or not np.isfinite(seconds) or not 0<seconds<=1200:
         raise ValueError('Bounded solve budgets required')
     if type(lsmr_iterations) is not int or not 1<=lsmr_iterations<=500:raise ValueError('Bounded positive LSMR iteration cap required')
+    if linear_solver not in ['lsmr','exact']:raise ValueError('Unknown trust-region linear solver')
     torch.set_num_threads(2);study=Path(study).resolve();output=Path(output).resolve()
     previous=read(study/'result.json');prior=read(study/'protocol.json')
     if previous['status']!='complete' or not previous['candidate']['bounds_passed']:raise ValueError('Completed bounded study required')
@@ -78,7 +79,9 @@ def run(study,output,evaluations=150,seconds=180.,lsmr_iterations=30,warm_start=
     inputs={**prior['inputs'],**warm_inputs,**{str(study/n):sha256(study/n) for n in ['protocol.json','result.json','pose.npz']}}
     protocol=dict(at=now(),study=study.relative_to(ROOT).as_posix(),inputs=inputs,methods={q.name:sha256(q) for q in snap.iterdir()},
         selections=prior['selections'],rotation_limits_degrees=prior['rotation_limits_degrees'],max_root_lift_m=prior['max_root_lift_m'],
-        evaluations=evaluations,seconds_budget=seconds,lsmr_maxiter=lsmr_iterations,warm_start=warm_descriptor,full_residual_count=b.count,
+        evaluations=evaluations,seconds_budget=seconds,linear_solver=linear_solver,
+        lsmr_maxiter=lsmr_iterations if linear_solver=='lsmr' else None,dense_allocation_limit_bytes=128*1024**2,
+        warm_start=warm_descriptor,full_residual_count=b.count,
         weighting='Squared residual means per full-skin/patch clearance family; means per gap/radius/spacing triple; unit weight for area/centroid/normal/anchor. Every row has positive weight; zero residual requires all original modeled inequalities.',
         selection='Retain lexicographically smallest (maximum unweighted violation, weighted squared residual), smallest weighted squared residual, and terminal point separately; include seed. No variant is promoted automatically.',
         scope='Exploratory single-pose feasibility; intermediate regression allowed. Original independent serialized contact/geometry/edit thresholds unchanged. No temporal, anatomy, balance, support, engine or human-review approval.',quality_approved=False)
@@ -125,11 +128,12 @@ def run(study,output,evaluations=150,seconds=180.,lsmr_iterations=30,warm_start=
             for key in products:products[key]+=active_operator.products[key]
         active_operator=None
         active_operator=TorchJacobianOperator(residual,z,guard);operators+=1
-        return active_operator
+        return active_operator if linear_solver=='lsmr' else active_operator.to_dense(protocol['dense_allocation_limit_bytes'])
     lower=np.r_[np.full(len(initial)-1,-np.inf),0.];upper=np.r_[np.full(len(initial)-1,np.inf),1.]
     try:
-        fit=least_squares(fun,initial,jac=jac,bounds=(lower,upper),method='trf',tr_solver='lsmr',
-            tr_options=dict(maxiter=protocol['lsmr_maxiter']),max_nfev=evaluations,ftol=1e-12,xtol=1e-12,gtol=1e-10)
+        fit=least_squares(fun,initial,jac=jac,bounds=(lower,upper),method='trf',tr_solver=linear_solver,
+            tr_options=dict(maxiter=protocol['lsmr_maxiter']) if linear_solver=='lsmr' else {},
+            max_nfev=evaluations,ftol=1e-12,xtol=1e-12,gtol=1e-10)
         last=fit.x;solver=dict(success=bool(fit.success),message=str(fit.message),evaluations=int(fit.nfev));status='complete'
     except TimeoutError as exc:solver=dict(success=False,message=str(exc));status='interrupted_resource_guard'
     if active_operator is not None:
@@ -159,5 +163,6 @@ if __name__=='__main__':
     parser.add_argument('--evaluations',type=int,default=150);parser.add_argument('--seconds',type=float,default=180.)
     parser.add_argument('--lsmr-iterations',type=int,default=30);parser.add_argument('--warm-start',type=Path)
     parser.add_argument('--variant',choices=['best_peak','best_cost','terminal'],default='best_cost')
+    parser.add_argument('--linear-solver',choices=['lsmr','exact'],default='lsmr')
     a=parser.parse_args()
-    with threadpool_limits(limits=2):run(a.study,a.output,a.evaluations,a.seconds,a.lsmr_iterations,a.warm_start,a.variant)
+    with threadpool_limits(limits=2):run(a.study,a.output,a.evaluations,a.seconds,a.lsmr_iterations,a.warm_start,a.variant,a.linear_solver)
