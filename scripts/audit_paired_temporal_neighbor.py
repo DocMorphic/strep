@@ -71,7 +71,7 @@ def run(study,output):
             if len(rows)%10==0:print(dict(variant=variant,completed=len(rows),total=len(interval)),flush=True)
         samples[variant]=rows
     comparisons={}
-    for variant in ['body','body_fingers']:
+    for variant in protocol['variants'][1:]:
         deltas=[dict(frame=a['frame'],depth_change_m=b['maximum_depth_m']-a['maximum_depth_m'],
                      new_failure=bool(a['maximum_depth_m']<=.005 and b['maximum_depth_m']>.005),
                      floor_change_m=max(b['floor_depth_m'])-max(a['floor_depth_m'])) for a,b in zip(samples['input'],samples[variant])]
@@ -85,7 +85,7 @@ def run(study,output):
         floor_maximum_m=max(max(r['floor_depth_m']) for r in rows),event=next(r for r in rows if r['frame']==75)) for v,rows in samples.items()}
     save(output/'verification.json',dict(at=now(),request_sha256=sha256(output/'request.json'),summaries=summaries,comparisons=comparisons,
         preservation=preservation,artifacts={p.name:sha256(p) for p in output.glob('*-*.json')},quality_approved=False,
-        scope='Fresh full-skin bilateral vertex queries at all 41 quarter-frame times in 70–80, all-joint rates on the complete clip, and protected world matrices/event skin within 1e-12 decode tolerance. Exact serialized keys are checked by the generation study. Existing outside collision/floor failures remain. No continuous triangle, self-collision, force, anatomy or human-quality approval.'))
+        scope=f'Fresh full-skin bilateral vertex queries at all {len(interval)} quarter-frame times in {protocol["first"]}–{protocol["last"]}, all-joint rates on the complete clip, and protected world matrices/event skin within 1e-12 decode tolerance. Exact serialized keys are checked by the generation study. Existing outside collision/floor failures remain. No continuous triangle, self-collision, force, anatomy or human-quality approval.'))
     save(output/'progress.json',dict(status='complete'));print({k:{f:v[f] for f in ['maximum_depth_m','collision_failures','floor_maximum_m']} for k,v in summaries.items()},flush=True)
 
 
