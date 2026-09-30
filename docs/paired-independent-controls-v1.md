@@ -58,7 +58,7 @@ public Python suite passes 685 tests.
 
 The completed symmetric six-key experiment selected its prior warm start
 unchanged. It still has 17 failing hand times out of 43 and a 20.932848 mm peak.
-The next comparison keeps its exact six-key clock, original 120 Hz support and
+The independent comparison keeps its exact six-key clock, original 120 Hz support and
 motion bins, individual guide budgets, 45-degree native limit and final contact
 pose. Zero controls and the converted verified candidate are the two starts,
 with at most 100 iterations each. All 86 source directional queries can be
@@ -77,9 +77,39 @@ is claimed from representation tests. All 14 release capabilities remain
 unapproved. See [the completed symmetric audit](paired-extended-hand-v1.md).
 
 
-The real worker is now in optimization. The verified warm-start replay has
+The real worker entered optimization after verifying its inputs. The verified warm-start replay has
 exactly zero error for both actors; expanded-support motion and guide checks
 pass. All 86 directional source queries were verified and reused. Both starts
 have 84 controls, and imported method hashes match the working source. The
 request hash is `8e63f4948ebd1e3038869a5ba3f4bb34c3f5d9f4995dde933f19e643f86352b7`.
-Fresh selected geometry and final exported-motion checks remain pending.
+The completed solve and exported-motion results follow; fresh geometry is pending.
+
+
+## Completed solve; fresh geometry pending
+
+Both starts reached the 100-iteration limit (status 9). The recorded population
+contains 17,809 evaluations, including finite differences, and 93 feasible
+observations. The selected observation is 8,968, a finite-difference perturbation
+of the verified warm start: actor A wrist X changes by 0.000006 m at native time
+1.991499066 seconds. Other controls are unchanged. The fixed-witness peak changes
+from 20.927519 to 20.927482 mm, about 0.000037 mm. This is not a meaningful
+clearance or animation-quality result by itself.
+
+The first optimizer return has minimum normalized motion/domain margin
+-0.222723; its 1% backoff is feasible but worse than the warm start. The second
+return has margin -0.464938; its 10% backoff is also feasible but worse. Neither
+returned proposal is accepted by relaxing the constraints. A completed bound
+return diagnostic is still needed to attribute the exact violations.
+
+The selected exported GLBs independently replay with zero batch error for both
+actors. All 148 original-clock poses have zero positional, angular-speed and
+angular-acceleration violations under the existing comparison tolerances.
+Actor B is byte-identical to the donor; actor A has changed:
+
+- A: `50394eb7d02ba969fe08bf3a69451928541f8cb64e3dbba8ad2bbca5e595d8ce`
+- B: `13adf945e5fe0537898c394106cabf94be21cfd0e0c409e61247c67ad9db2b5b`
+
+The same worker is now auditing all 43 hand times in both directions. Its method
+snapshots must remain unchanged until completion. Complete geometry comparison
+against the bound six-key donor is pending; no full-body, engine or Studio
+acceptance is inferred from these motion checks.
