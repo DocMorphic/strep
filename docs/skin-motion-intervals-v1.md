@@ -100,8 +100,8 @@ The protocol contains one or two actors with `name`, `path`, `sha256`, unit
 resolve relative to the protocol. Local character payloads and reports remain
 excluded from the public repository.
 
-Next combine bounded subdivision with the existing triangle-crossing and
-containment diagnostics, retaining unresolved intervals when the budget or
-numerical assumptions prevent a conclusion. Full-clock, cubic/jump handling,
+The [adaptive follow-up](adaptive-skin-intervals-v1.md) now combines bounded
+subdivision with existing crossing and containment diagnostics, retaining
+unresolved intervals when budgets prevent a conclusion. Full-clock, cubic/jump handling,
 moving placements, self-collision and contact-quality policy remain open.
 No new animation, training, held-out use or release approval is claimed.

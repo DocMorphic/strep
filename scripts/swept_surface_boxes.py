@@ -1,6 +1,7 @@
 """Continuous-interval broad phase from skin speed bounds, never a depth test."""
 import numpy as np
 from rtree import index
+from itertools import islice
 
 
 def boxes(bound, faces):
@@ -29,9 +30,10 @@ def audit(left, left_faces, right, right_faces, tolerance_m=1e-8):
     count = 0; examples = []
     try:
         for i, (lo, hi) in enumerate(zip(alo, ahi)):
-            for j in tree.intersection((*(lo-tolerance_m), *(hi+tolerance_m))):
-                count += 1
-                if len(examples) < 16: examples.append([i, int(j)])
+            bounds = (*(lo-tolerance_m), *(hi+tolerance_m))
+            count += int(tree.count(bounds))
+            if len(examples) < 16:
+                examples.extend([i, int(j)] for j in islice(tree.intersection(bounds), 16-len(examples)))
     finally:
         tree.close()
     return dict(start_s=left['start_s'], end_s=left['end_s'], candidate_pairs=count,

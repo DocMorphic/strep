@@ -11,9 +11,8 @@ from skin_motion_bounds import SkinMotionBounds
 from swept_surface_boxes import audit
 
 
-def run(protocol_path, output):
-    protocol_path, output = Path(protocol_path).resolve(), Path(output).resolve()
-    if output.exists(): raise ValueError('Fresh output directory required')
+def load_protocol(protocol_path):
+    protocol_path = Path(protocol_path).resolve()
     protocol = read(protocol_path); inputs = {str(protocol_path): sha256(protocol_path)}
     intervals = np.asarray(protocol['intervals_s'], float)
     if intervals.ndim != 2 or intervals.shape[1:] != (2,) or not len(intervals) or not np.isfinite(intervals).all():
@@ -37,6 +36,13 @@ def run(protocol_path, output):
         if np.any(intervals[:, 0] < 0) or np.any(intervals[:, 1] > sampler.duration) or np.any(intervals[:, 0] >= intervals[:, 1]):
             raise ValueError('Intervals must be increasing and inside every clip')
     if len(set(names)) != len(names): raise ValueError('Unique actor names required')
+    return protocol, inputs, intervals, names, actors
+
+
+def run(protocol_path, output):
+    output = Path(output).resolve()
+    if output.exists(): raise ValueError('Fresh output directory required')
+    protocol, inputs, intervals, names, actors = load_protocol(protocol_path)
     output.mkdir(); (output/'implementation').mkdir()
     methods = ['audit_interval_skin.py', 'skin_motion_bounds.py', 'swept_surface_boxes.py',
                'rig_asset.py', 'rig_clip_import.py', 'gltf_tools.py', 'strep.py']
