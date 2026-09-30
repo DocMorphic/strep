@@ -8,6 +8,7 @@ from rig_asset import RigAsset
 from paired_approach_basis import ApproachActor,BoundSkin
 from paired_surface_witness import moving_gap,moving_gap_jacobian
 from coupled_pair_proposal import motion_rows
+from coupled_surface_norms import separation_rows
 
 
 class PairProblem:
@@ -40,7 +41,7 @@ class PairProblem:
                 ids=np.array([r['vertex'] for r in records]),triangles=np.array([r['target_vertices'] for r in records]),
                 bary=np.array([r['barycentric'] for r in records]),normals=np.array([r['normal'] for r in records]),caps=np.array([r['cap'] for r in records])))
 
-    def linearize(self,controls):
+    def linearize(self,controls,include_surface_vectors=False):
         parts=np.split(controls,[self.sizes[0]]);world=[];derivatives=[];vectors=[];jacobians=[];radii=[];kinds=[]
         for number,(actor,part) in enumerate(zip(self.actors,parts)):
             model=actor['model'];w,j=model.world_pair(part);world.append(w);derivatives.append(j);offset=sum(self.sizes[:number])
@@ -56,7 +57,7 @@ class PairProblem:
             value,jac,cap,order=motion_rows(positions,pj,reference,self.frames,self.windows,model.base.affected,active)
             full=np.zeros((len(value),3,self.size));full[:,:,offset:offset+model.size]=jac
             vectors.append(value);jacobians.append(full);radii.append(cap);kinds.extend(['speed' if n==1 else 'acceleration' for n in order])
-        gaps=[];gap_jacobian=[];caps=[]
+        gaps=[];gap_jacobian=[];caps=[];surface_vectors=[];surface_jacobians=[]
         for group in self.groups:
             source,target=group['source'],group['target'];a,b=self.actors[source],self.actors[target]
             frames=group['frames'];ids=group['ids'];triangles=group['triangles'];bary=group['bary'];normals=group['normals']
@@ -66,7 +67,12 @@ class PairProblem:
             jp=np.einsum('ij,njd->nid',a['rotation'],a['skin'].derivative(derivatives[source],frames,ids))
             jq=np.einsum('ij,njd->nid',b['rotation'],b['skin'].derivative(derivatives[target],target_frames,triangles.ravel())).reshape(-1,3,3,self.sizes[target])
             gap=moving_gap(points,triangle_points,bary,normals);derivative=moving_gap_jacobian(jp,jq,bary,normals)
+            if include_surface_vectors:
+                vector,jacobian=separation_rows(points,triangle_points,bary,jp,jq,source)
+                surface_vectors.append(vector);surface_jacobians.append(jacobian)
             if source==1:derivative=np.c_[derivative[:,self.sizes[source]:],derivative[:,:self.sizes[source]]]
             gaps.append(gap);gap_jacobian.append(derivative);caps.append(group['caps'])
-        return dict(gaps=np.concatenate(gaps),gap_jacobian=np.vstack(gap_jacobian),depth_caps=np.concatenate(caps),
+        result=dict(gaps=np.concatenate(gaps),gap_jacobian=np.vstack(gap_jacobian),depth_caps=np.concatenate(caps),
                     vectors=np.concatenate(vectors),jacobians=np.concatenate(jacobians),radii=np.concatenate(radii),kinds=np.array(kinds))
+        if include_surface_vectors:result.update(surface_vectors=np.concatenate(surface_vectors),surface_jacobians=np.concatenate(surface_jacobians))
+        return result

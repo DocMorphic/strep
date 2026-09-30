@@ -11,19 +11,20 @@ from paired_temporal_neighbor import rotation_channels,placed_joint_positions
 from coupled_pair_problem import PairProblem
 from coupled_pair_proposal import solve
 from coupled_pair_reserve import tightened_radii
+from coupled_surface_norms import penetrating_rows
 from study_paired_guarded_temporal import decoded,motion_guard
 from study_paired_temporal_neighbor import preservation
 from audit_scene_joint_rates import compare_rates
 from verify_paired_stage_rates import verify_rates
 
 
-def run(witnesses,output,reserve=None):
+def run(witnesses,output,reserve=None,surface_norms=False):
     output=Path(output).resolve()
     if output.exists():raise ValueError('Preserve previous proposal')
     problem=PairProblem(witnesses);output.mkdir();snapshot=output/'implementation';snapshot.mkdir()
     names=['study_coupled_pair_proposal.py','coupled_pair_problem.py','coupled_pair_proposal.py','paired_approach_basis.py','paired_surface_witness.py',
            'paired_guarded_temporal.py','paired_temporal_neighbor.py','study_paired_guarded_temporal.py','study_paired_temporal_neighbor.py',
-           'audit_scene_joint_rates.py','verify_paired_stage_rates.py','rig_asset.py','rig_clip_import.py','gltf_tools.py','conic_root_descent.py','coupled_pair_reserve.py','strep.py']
+           'audit_scene_joint_rates.py','verify_paired_stage_rates.py','rig_asset.py','rig_clip_import.py','gltf_tools.py','conic_root_descent.py','coupled_pair_reserve.py','coupled_surface_norms.py','strep.py']
     for name in names:shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
     bootstrap=ROOT/'reports/conic-solver-bootstrap-v1.json';inputs={**problem.inputs,str(bootstrap):sha256(bootstrap)}
     reserve_result=None
@@ -38,10 +39,15 @@ def run(witnesses,output,reserve=None):
     request=dict(at=now(),inputs=inputs,implementation={n:sha256(snapshot/n) for n in names},trust_degrees=.2,line_factors=[1.,.5,.25,.125,.0625],
         windows=problem.windows,free_frames=list(range(64,75)),selected_joints=['LeftShoulder','LeftArm','LeftForeArm','LeftHand'],
         original_edit_limit_degrees=5.,export_edit_tolerance_degrees=1e-4,fit_edit_limit_degrees=5.00005,
-        motion_tolerance=1e-5,fitting_reserve=None if reserve is None else str(reserve),quality_approved=False,
+        motion_tolerance=1e-5,fitting_reserve=None if reserve is None else str(reserve),penetrating_surface_norms=bool(surface_norms),surface_norm_tolerance_m=1e-8,quality_approved=False,
         scope='One simultaneous two-actor conic step. Existing per-time depths or 5 mm, whichever larger, are local nonregression allowances; 5 mm remains the clearance screen. Original-reference edit balls and current candidate per-joint phase peaks constrain the proposal. Export and fresh complete meshes must decide acceptance.')
     save(output/'request.json',request);save(output/'progress.json',dict(status='linearizing'))
-    started=time.monotonic();linear=problem.linearize(np.zeros(problem.size));np.savez_compressed(output/'linearization.npz',**linear)
+    started=time.monotonic();linear=problem.linearize(np.zeros(problem.size),include_surface_vectors=surface_norms)
+    surfaces=None
+    if surface_norms:
+        surfaces=penetrating_rows(linear.pop('surface_vectors'),linear.pop('surface_jacobians'),linear['gaps'],linear['depth_caps'])
+        np.savez_compressed(output/'surface-norms.npz',**surfaces)
+    np.savez_compressed(output/'linearization.npz',**linear)
     fitting_radii=linear['radii']
     if reserve_result is not None:
         path=Path(reserve_result['linearization_path'])
@@ -53,9 +59,14 @@ def run(witnesses,output,reserve=None):
             fitting_radii=tightened_radii(linear['radii'],calibration['reserve'],linear['kinds'])
             np.testing.assert_array_equal(fitting_radii,calibration['tightened_radii'])
         np.savez_compressed(output/'fitting-radii.npz',radii=fitting_radii)
-    controls,solver=solve(**{k:linear[k] for k in ['gaps','gap_jacobian','depth_caps','vectors','jacobians']},radii=fitting_radii,trust=np.deg2rad(.2),
-        norm_tolerances=np.where(linear['kinds']=='edit',1e-8,1e-6))
+    fitting_vectors=linear['vectors'];fitting_jacobians=linear['jacobians'];norm_tolerances=np.where(linear['kinds']=='edit',1e-8,1e-6)
+    if surfaces is not None:
+        fitting_vectors=np.concatenate([fitting_vectors,surfaces['vectors']]);fitting_jacobians=np.concatenate([fitting_jacobians,surfaces['jacobians']])
+        fitting_radii=np.r_[fitting_radii,surfaces['radii']];norm_tolerances=np.r_[norm_tolerances,np.full(len(surfaces['radii']),request['surface_norm_tolerance_m'])]
+    controls,solver=solve(**{k:linear[k] for k in ['gaps','gap_jacobian','depth_caps']},vectors=fitting_vectors,jacobians=fitting_jacobians,radii=fitting_radii,trust=np.deg2rad(.2),
+        norm_tolerances=norm_tolerances)
     save(output/'solver.json',dict(at=now(),linearization_sha256=sha256(output/'linearization.npz'),elapsed_seconds=time.monotonic()-started,
+        surface_norms_sha256=None if surfaces is None else sha256(output/'surface-norms.npz'),
         controls=None if controls is None else controls.tolist(),solver=solver));print(solver,flush=True)
     trials=[];cases=[];selected=None;verified=0;replay_error=0.
     if controls is not None:
@@ -103,5 +114,5 @@ def run(witnesses,output,reserve=None):
 
 if __name__=='__main__':
     from threadpoolctl import threadpool_limits
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('witnesses',type=Path);p.add_argument('output',type=Path);p.add_argument('--reserve',type=Path);a=p.parse_args()
-    with threadpool_limits(limits=1):run(a.witnesses,a.output,a.reserve)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('witnesses',type=Path);p.add_argument('output',type=Path);p.add_argument('--reserve',type=Path);p.add_argument('--surface-norms',action='store_true');a=p.parse_args()
+    with threadpool_limits(limits=1):run(a.witnesses,a.output,a.reserve,a.surface_norms)
