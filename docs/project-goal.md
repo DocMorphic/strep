@@ -433,3 +433,6 @@ The [inner-solve accuracy probe and continuation](cylinder-inner-solve-v1.md) id
 
 
 The [matched iterative-versus-dense trust-region comparison](cylinder-trust-comparison-v1.md) is complete. Identical inputs, derivatives, physical limits and budget ceilings produce similar failed contacts; dense SVD uses more time/memory without a passing pose. Independent replay covers all six variants and confirms dense/operator product agreement. Next isolate original hand-shape/contact geometry and use bounded wrist projection only after finding a feasible local placement; do not assume sphere symmetry for the cylinder or change the binding silently. Twenty-one focused tests pass; all fourteen release capabilities remain unapproved.
+
+
+The [isolated cylinder hand-placement study](cylinder-hand-placement-v1.md) preserves original finger norms, guides and patches while relaxing arm reach. Four axial-twist starts per hand produce distributed triangles but still fail full hand/patch clearance; all sixteen retained variants replay independently. The next condition should test explicitly labelled guide-point alternatives inside the same authored palm regions, without changing numeric gates or reclassifying original failures. Twenty-seven focused tests pass; no clip is promoted and all fourteen release capabilities remain unapproved.
