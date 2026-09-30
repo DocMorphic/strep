@@ -86,3 +86,29 @@ def test_full_interval_is_recomputed_from_bound_authored_request(tmp_path,fault)
         np.testing.assert_array_equal(guide.times,[1,2,3])
     else:
         with pytest.raises((ValueError,AssertionError)):load_path(tmp_path,tmp_path/'plan',window,inputs,**kwargs)
+
+
+@pytest.mark.parametrize('fault',[None,'missing_route','forged_optimum','other_route_score'])
+def test_explicit_route_audit_preserves_and_replays_original_optimum(tmp_path,fault):
+    inputs=fixture(tmp_path);request=read(tmp_path/'request.json');routes=read(tmp_path/'routes.json')
+    with np.load(tmp_path/'lattice.npz') as data:states=data['states'];times=data['times'];costs=data['costs'][0]
+    alternative=costs+2
+    parameters,report=shortest_path(times,states,alternative,request['guide_rate_limits'],.1)
+    request['axes']['Zminus']=[0.,0.,-1.]
+    routes.append(dict(axis_name='Zminus',axis=[0.,0.,-1.],parameters=parameters.tolist(),solver=report))
+    if fault=='other_route_score':routes[0]['solver']['total_cost']=100
+    save(tmp_path/'request.json',request);save(tmp_path/'routes.json',routes)
+    np.savez(tmp_path/'lattice.npz',states=states,times=times,costs=np.stack([costs,alternative]))
+    result=read(tmp_path/'result.json')
+    for name,key in [('request.json','request_sha256'),('routes.json','routes_sha256'),('lattice.npz','lattice_sha256')]:
+        result[key]=sha256(tmp_path/name)
+    if fault=='forged_optimum':result['selected']='Zminus'
+    save(tmp_path/'result.json',result);original=(tmp_path/'result.json').read_bytes()
+    name='missing' if fault=='missing_route' else 'Zminus'
+    if fault is None:
+        guide,axis,chosen,_=load_path(tmp_path,tmp_path/'plan',[1,2,3],inputs,route_name=name)
+        assert chosen['axis_name']=='Zminus';np.testing.assert_array_equal(axis,[0,0,-1])
+        assert (tmp_path/'result.json').read_bytes()==original
+        assert load_path(tmp_path,tmp_path/'plan',[1,2,3],inputs)[2]['axis_name']=='Xplus'
+    else:
+        with pytest.raises(ValueError):load_path(tmp_path,tmp_path/'plan',[1,2,3],inputs,route_name=name)

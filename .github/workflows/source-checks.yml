@@ -61,6 +61,7 @@ jobs:
           tests/test_wrist_waypoint_motion.py
           tests/test_waypoint_lattice.py
           tests/test_waypoint_path_evidence.py
+          tests/test_hand_surface_screen.py
           tests/test_native_waypoint_clock.py
           tests/test_motion_lattice.py
           tests/test_decoded_motion_edges.py

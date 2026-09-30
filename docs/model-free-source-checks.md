@@ -1,6 +1,6 @@
 # Public source checks
 
-The public repository now defines a GitHub Actions workflow for a small suite that needs no motion checkpoint, gated text encoder, character payload, saved study or Godot executable. It runs on Windows and Linux with Python 3.10, pinned NumPy/SciPy/pytest requirements and Node 24. Both push and pull-request events run it; manual dispatch is also available.
+The public repository now defines a GitHub Actions workflow for a suite that needs no motion checkpoint, gated text encoder, character payload, saved study or Godot executable. It runs on Windows and Linux with Python 3.10, pinned NumPy/SciPy/pytest/Trimesh/Rtree requirements and Node 24. Both push and pull-request events run it; manual dispatch is also available.
 
 The suite checks primitive preview geometry, endpoint travel bounds, exact rate/pose conflict certificates, reproducibility of the Studio HTML build and offline contact-editor behavior. This is software regression coverage, not a full-suite, inference, engine, visual or animation-quality approval. The legacy geometry/scene comparison test imports the full Torch-based pipeline and remains outside this model-free suite.
 

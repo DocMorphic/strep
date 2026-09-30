@@ -6,7 +6,7 @@ from bound_evidence import bind_inputs
 from waypoint_lattice import shortest_path,LinearGuide
 
 
-def load_path(folder,source_plan,window,required,*,native_clocks=None,protected=None,authored_window=None,peak_time=None):
+def load_path(folder,source_plan,window,required,*,native_clocks=None,protected=None,authored_window=None,peak_time=None,route_name=None):
     folder=Path(folder).resolve();result=read(folder/'result.json')
     if result['status']!='complete' or not result['selected']:raise ValueError('Completed selected waypoint path required')
     files={str(folder/'result.json'):sha256(folder/'result.json')}
@@ -45,6 +45,12 @@ def load_path(folder,source_plan,window,required,*,native_clocks=None,protected=
     if not feasible:raise ValueError('No independently feasible path')
     selected=min(feasible,key=lambda r:(r['solver']['total_cost'],r['axis_name']))
     if selected['axis_name']!=result['selected']:raise ValueError('Selected path is not the declared optimum')
+    # An explicit audit may inspect another replayed route without rewriting
+    # the historical proxy optimum or trusting a caller-supplied trajectory.
+    if route_name is not None:
+        matches=[r for r in feasible if r['axis_name']==route_name]
+        if len(matches)!=1:raise ValueError('Requested route is not independently feasible')
+        selected=matches[0]
     axis=np.asarray(selected['axis'],float)
     if axis.shape!=(3,) or not np.isfinite(axis).all() or abs(np.linalg.norm(axis)-1)>1e-12:raise ValueError('Finite unit route axis required')
     guide=LinearGuide(data['times'],selected['parameters'],request['guide_rate_limits'])
