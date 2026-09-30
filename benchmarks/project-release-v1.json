@@ -919,6 +919,10 @@
         "docs/cylinder-guide-calibration-v1.md",
         "docs/cylinder-guide-track-v1.md",
         "docs/cylinder-guide-continuity-v1.md",
+        "docs/cylinder-guide-boundaries-v1.md",
+        "reports/cylinder-guide-boundaries-review-v1/verification.json",
+        "reports/cylinder-guide-boundaries-review-v1/diagnosis.json",
+        "reports/cylinder-guide-boundaries-engine-v1/verification.json",
         "reports/cylinder-guide-track-review-v2/verification.json",
         "reports/cylinder-guide-track-review-v2/comparison.json",
         "reports/cylinder-guide-track-engine-v2/verification.json",
@@ -2984,6 +2988,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-30T03:36:28.426826+00:00",
-  "last_progress": "Physical local-joint continuity preserves matched cylinder targets/guides/thresholds and yields zero exported grasp and release-guard contact/geometry failures. All 62 native keys and 717 dense edit bounds pass; maximum active arm step is 1.927 degrees. Full clip remains failed: 21 approach, 26 release and 125 inherited floor samples; peak speed worsens while acceleration improves to 43.072 m/s2. Forty-three focused tests and 180 Godot actor frames pass. Next preserve the grasp and replace unsafe boundary paths, then correct outer floor clearance. All 14 release capabilities remain unapproved."
+  "last_progress_at": "2026-09-30T03:50:13.952909+00:00",
+  "last_progress": "Cylinder boundary guidance plus a root-only prefix floor lift preserves all passing grasp/guard samples and original edit bounds. Exported approach/floor failures are eliminated; eight release subframes still fail clearance. Motion worsens to 1.878 m/s speed and 155.945 m/s2 acceleration with boundary joins implicated. Independent patch replay, 57 focused tests and 180 Godot actor frames pass scoped checks. Next solve coupled boundary trajectories with protected endpoint pose/velocity conditions, preserving the verified floor lift and fixed guides. All 14 release capabilities remain unapproved."
 }

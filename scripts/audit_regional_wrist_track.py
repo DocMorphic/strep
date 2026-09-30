@@ -18,7 +18,7 @@ from scene_region_contact import compile_region,measure_frame
 def quintic(t):return 6*t**5-15*t**4+10*t**3
 
 
-def run(study,output):
+def run(study,output,boundary_patch=None,floor_patch=None):
     study,output=Path(study).resolve(),Path(output).resolve();protocol,result=read(study/'protocol.json'),read(study/'result.json')
     if result['status']!='complete' or not result['motion_generated']:raise ValueError('Complete wrist trajectory required')
     output.mkdir(parents=True,exist_ok=False);shutil.copyfile(__file__,output/Path(__file__).name)
@@ -56,13 +56,24 @@ def run(study,output):
             expected=not protocol.get('continuity_weight',0) or bool(angles.max()<=protocol['maximum_step_degrees'])
             assert expected==row['sampled_step_passed']
         native_steps.append(dict(frame=frame,maximum_step_degrees=float(angles.max())))
+    boundary_verification=None;audit_study=study
+    if boundary_patch is not None:
+        from regional_boundary_audit import verify
+        candidate,boundary_verification=verify(study,boundary_patch,p,candidate,{r['frame']:r['parameters'] for r in track})
+        audit_study=Path(boundary_patch).resolve()
+    floor_verification=None
+    if floor_patch is not None:
+        if boundary_patch is None:raise ValueError('Floor correction requires its boundary patch')
+        from regional_boundary_audit import verify_floor
+        candidate,floor_verification=verify_floor(study,boundary_patch,floor_patch,p,candidate)
+        audit_study=Path(floor_patch).resolve()
     # Existing independent auditor verifies native FK and GLB keys, samples all
     # full-skin geometry and authored contacts, and reports speed/acceleration.
-    geometry_audit(study,output/'geometry');dense=read(output/'geometry/verification.json')
+    geometry_audit(audit_study,output/'geometry');dense=read(output/'geometry/verification.json')
     scene=read(study/'authored-scene.json');original=read(study/'original-scene.json');origin,placement=pose(scene['actors'][protocol['actor']]['transform'])
     samples={};channels={}
     for label in ['source','candidate']:
-        doc,binary=read_glb(study/(label+'.glb'));sampler=AnimationSampler(doc,binary,0);joints=doc['skins'][0]['joints']
+        doc,binary=read_glb(audit_study/(label+'.glb'));sampler=AnimationSampler(doc,binary,0);joints=doc['skins'][0]['joints']
         samples[label]=(sampler,joints);channels[label]={j:c for c in sampler.channels for j in [c[0]] if c[1]=='rotation'}
         assert len([j for j in joints if j in channels[label]])==len(p.names)
     limits=np.zeros(len(p.names));limits[p.editable]=np.rad2deg(p.limits)
@@ -111,7 +122,9 @@ def run(study,output):
                 minimum_floor_m=min(r['minimum_floor_m'] for r in selected),minimum_object_clearance_m=min(v for r in selected for v in r['object_clearances_m'].values()))
         phases[label]=summary
     report=dict(at=now(),study=study.relative_to(ROOT).as_posix(),result_sha256=sha256(study/'result.json'),auditor_sha256=sha256(__file__),
-        native_replayed_frames=len(track),native_bounds_passes=native_bounds,unchanged_frames=len(untouched),geometry_audit_sha256=sha256(output/'geometry/verification.json'),
+        native_replayed_frames=len(track),native_bounds_passes=native_bounds,base_unchanged_frames=len(untouched),
+        unchanged_frames=sum(all(np.array_equal(source[key][frame],candidate[key][frame]) for key in source) for frame in range(protocol['frame_count'])),
+        boundary_patch=boundary_verification,floor_patch=floor_verification,geometry_audit_sha256=sha256(output/'geometry/verification.json'),
         dense_bounds=bounds,dense_bound_failures=sum(not r['passed'] for r in bounds),original_guides=original_rows,
         native_arm_steps=native_steps,maximum_native_arm_step_degrees=max(r['maximum_step_degrees'] for r in native_steps),
         dense_active_arm_steps=dense_steps,maximum_dense_active_arm_speed_degrees_s=max(r['maximum_step_degrees'] for r in dense_steps)*120,
@@ -123,4 +136,5 @@ def run(study,output):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study',type=Path);parser.add_argument('output',type=Path);args=parser.parse_args();run(args.study,args.output)
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study',type=Path);parser.add_argument('output',type=Path)
+    parser.add_argument('--boundary-patch',type=Path);parser.add_argument('--floor-patch',type=Path);args=parser.parse_args();run(args.study,args.output,args.boundary_patch,args.floor_patch)
