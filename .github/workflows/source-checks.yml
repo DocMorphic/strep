@@ -64,6 +64,7 @@ jobs:
           tests/test_hand_surface_screen.py
           tests/test_terminal_hand_search.py
           tests/test_terminal_rate_diagnosis.py
+          tests/test_continuous_terminal_hand.py
           tests/test_native_waypoint_clock.py
           tests/test_motion_lattice.py
           tests/test_decoded_motion_edges.py
