@@ -473,7 +473,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             np.r_[np.full(count,.01),np.full(root_count,.0005)],steps=constraint_restore_steps,
             progress=None if progress is None else lambda record:progress(dict(constraint_restoration=record)))
         restoration.update(rotation_control_trust=.01,root_trust_m=.0005,
-            scope='Experimental minimax linearization with full nonlinear stationary pin, point/global rate, full-skin floor, native body and fixed-patch support checks. No newly failing proxy group accepted. Original root/rotation bounds and held keys remain enforced. Export rounding and human quality require independent review.')
+            scope='Experimental minimax linearization with full nonlinear stationary pin, point/global rate, full-skin floor, native body and fixed-patch support checks. No newly failing proxy entry or increase in an existing proxy violation accepted. Original root/rotation bounds and held keys remain enforced. Export rounding and human quality require independent review.')
         with torch.no_grad():
             r,p,_=fk()
             after_constraints,labels=residuals(r,p,position_objective,point_rate_objective,rate_objective,floor_objective,body_guard,support_objective,with_labels=True)

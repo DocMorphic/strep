@@ -1,0 +1,11 @@
+# Prevent trading existing contact failures
+
+The [first coupled restoration experiment](contact-constraint-restoration-v1.md#completed-result-lower-worst-residual-trades-away-other-failed-constraints) reduces the worst normalized residual while worsening three already-failed phase-rate entries. Both exported candidates remain rejected. That outcome motivates changing the search policy, not raising acceptance limits.
+
+The linear proposal now requires `g + J*step <= max(g, 0)` entry by entry, in addition to minimizing the common violation. This preserves each failed entry's starting ceiling and permits passing entries to use their remaining slack. The minimum-step tie-break also retains these ceilings. Complete nonlinear acceptance requires strict improvement of the worst violation, no new failed entry and no increase of an existing violation. There is no added acceptance tolerance, including at one floating-point step above an existing ceiling. Rejected proposals and exceptions restore the last accepted parameters.
+
+This is deliberately conservative. It can stop at a point where every useful route requires a temporary tradeoff; stopping is not proof that the original animation request is infeasible. Point-phase/global/body/floor entries still use maxima, so this protects each recorded metric rather than every individual sample within an already-failed maximum group. Final decoded audits still check all samples. The method remains experimental and disabled by default.
+
+Ninety-four focused tests pass. New cases cover conflicting failed constraints in the proposal, direct rejection of the reproduced landing tradeoff, useful passing slack, fully repaired vectors, invalid vectors and a one-ULP regression. A read-only replay uses all 82 entries from the hash-verified previous recipe and identifies exactly three worsened entries: hold acceleration, release speed and release acceleration. It rejects that historical correction while preserving every original result. Evidence is `reports/contact-restoration-policy-v2/verification.json`.
+
+The replay creates no animation and proves no improvement in fitting. A new fixed-budget motion evaluation must retain the original source, warm seed, targets, physical bounds and exported checks. No model, data, training or release approval changes.

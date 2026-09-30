@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'scripts'))
-from constraint_restoration import minimax_step, restore
+from constraint_restoration import minimax_step, restore, assess_trial
 
 
 def tensor(x):
@@ -83,3 +83,34 @@ def test_refine_rejects_incomplete_or_unsupported_restoration_context(kwargs):
     from support_contact_v8 import refine
     with pytest.raises(ValueError, match='restoration'):
         refine(None, None, None, **kwargs)
+
+
+def test_recorded_landing_tradeoff_is_rejected_despite_lower_maximum():
+    before = [.07405765637412305, .0012668805683820974, .01142330636831698, .0004555099181607463]
+    after = [.06730418363364542, .06789400071487467, .02376859189512129, .052348496447060786]
+    result = assess_trial(before, after)
+    assert result['maximum_violation'] < max(before)
+    assert result['new_failures'] == 0 and result['worsened_existing_failures'] == 3
+    assert not result['accepted']
+
+
+def test_linear_proposal_cannot_trade_two_existing_failures():
+    step, record = minimax_step([0.], [1., .1], [[-1.], [1.]], [-1.], [1.], [1.])
+    assert record['success'] and np.array_equal(step, [0.])
+    x = tensor([0.])
+    report = restore([x], lambda: torch.cat([1.-x, .1+x]), [-1.], [1.], [1.])
+    assert x.item() == 0 and not report['proxy_feasible']
+    assert report['acceptance_policy'] == 'no_increased_violation_per_entry'
+
+
+def test_passing_slack_can_be_used_and_existing_failures_can_be_repaired():
+    assert assess_trial([1., .1, -2.], [.8, 0., -1.])['accepted']
+    assert assess_trial([1., .1, -2.], [0., 0., 0.])['accepted']
+    assert not assess_trial([1., .1, -2.], [.8, .1, 1e-15])['accepted']
+    assert not assess_trial([1., .1], [.8, np.nextafter(.1, np.inf)])['accepted']
+
+
+@pytest.mark.parametrize('after', [[1.], [np.nan, 0.], [np.inf, 0.], [[0., 0.]]])
+def test_trial_policy_rejects_invalid_vectors(after):
+    with pytest.raises(ValueError, match='vectors'):
+        assess_trial([1., .1], after)

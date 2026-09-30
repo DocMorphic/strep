@@ -24,7 +24,12 @@ def minimax_step(x, residuals, jacobian, lower, upper, trust):
     # Dimensionless step z, common nonnegative violation t. Passing rows get
     # no elastic slack, so the model cannot trade them for failed rows.
     a = hstack([csr_matrix(j*trust), csr_matrix(-(g > 0).astype(float)[:, None])], format='csr')
-    fit = linprog(np.r_[np.zeros(x.size), 1.], A_ub=a, b_ub=-g,
+    # Failed entries also retain their individual starting ceilings. Without
+    # these rows, reducing a large pin residual could worsen acceleration.
+    nonregression = hstack([csr_matrix(j*trust), csr_matrix((g.size, 1))], format='csr')
+    ceilings = np.maximum(g, 0.)-g
+    fit = linprog(np.r_[np.zeros(x.size), 1.], A_ub=vstack([a, nonregression], format='csr'),
+                  b_ub=np.r_[-g, ceilings],
                   bounds=bounds+[(0., None)], method='highs')
     record = dict(success=bool(fit.success), status=int(fit.status), message=str(fit.message))
     if not fit.success:
@@ -36,7 +41,7 @@ def minimax_step(x, residuals, jacobian, lower, upper, trust):
     a2 = vstack([hstack([csr_matrix(j*trust), csr_matrix((g.size, 1))]),
                  hstack([identity, csr_matrix(-np.ones((x.size, 1)))]),
                  hstack([-identity, csr_matrix(-np.ones((x.size, 1)))])], format='csr')
-    b2 = np.r_[-g+(g > 0)*(target+1e-10), np.zeros(2*x.size)]
+    b2 = np.r_[np.minimum(-g+(g > 0)*(target+1e-10), ceilings), np.zeros(2*x.size)]
     small = linprog(np.r_[np.zeros(x.size), 1.], A_ub=a2, b_ub=b2,
                     bounds=bounds+[(0., 1.)], method='highs')
     z = (small.x if small.success else fit.x)[:-1]
@@ -45,6 +50,21 @@ def minimax_step(x, residuals, jacobian, lower, upper, trust):
     record.update(predicted_maximum_violation=max(0., float((g+j@step).max())),
                   minimum_step_solve=bool(small.success), scaled_step_inf=float(np.max(np.abs(step/trust))))
     return step, record
+
+
+def assess_trial(before, after):
+    """Require progress without introducing or enlarging a failed entry."""
+    before, after = [np.asarray(a, dtype=float) for a in [before, after]]
+    if (before.ndim != 1 or not before.size or after.shape != before.shape or
+            not np.isfinite(before).all() or not np.isfinite(after).all()):
+        raise ValueError('Matching finite nonempty constraint vectors required')
+    peak = max(0., float(before.max())); worst = max(0., float(after.max()))
+    new_failures = int(np.count_nonzero((before <= 0) & (after > 0)))
+    worsened = int(np.count_nonzero((before > 0) & (after > before)))
+    improves = worst == 0. or worst < peak-1e-10
+    return dict(maximum_violation=worst, new_failures=new_failures,
+                worsened_existing_failures=worsened,
+                accepted=bool(improves and not new_failures and not worsened))
 
 
 def restore(parameters, residuals, lower, upper, trust, *, steps=3, backtracks=10, progress=None):
@@ -98,13 +118,9 @@ def restore(parameters, residuals, lower, upper, trust, *, steps=3, backtracks=1
                         after = evaluate().numpy().copy()
                     if after.shape != before.shape:
                         raise ValueError('Constraint layout changed during restoration')
-                    worst = max(0., float(after.max()))
-                    new_failures = int(np.count_nonzero((before <= 0) & (after > 0)))
-                    improves = worst == 0. or worst < peak-1e-10
-                    ok = bool(improves and not new_failures)
-                    record['trials'].append(dict(fraction=fraction, maximum_violation=worst,
-                                                  new_failures=new_failures, accepted=ok))
-                    if ok:
+                    assessment = assess_trial(before, after)
+                    record['trials'].append(dict(fraction=fraction, **assessment))
+                    if assessment['accepted']:
                         accepted = candidate; selected = fraction; break
             assign(accepted)
             record['selected_fraction'] = selected; history.append(record)
@@ -118,6 +134,7 @@ def restore(parameters, residuals, lower, upper, trust, *, steps=3, backtracks=1
         # Rejected probes and exceptions must not leave a trial in live tensors.
         assign(accepted)
     return dict(history=history, steps_requested=steps,
+                acceptance_policy='no_increased_violation_per_entry',
                 maximum_parameter_change=float(np.abs(accepted-initial).max()),
                 final_maximum_violation=max(0., float(final.max())),
                 proxy_feasible=bool((final <= 0).all()), quality_approved=False)
