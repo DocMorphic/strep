@@ -26,10 +26,15 @@ def test_proposal_rounds_to_actual_native_keys_and_keeps_frozen_motion(actor, ha
     smooth, _ = proposal.model.quaternions_vector(mapped)
     for node in rounded:
         np.testing.assert_array_equal(smooth[node].astype(np.float32), rounded[node])
+    for entry in exact.model.model.entries:
+        frozen = np.ones(len(entry['source']), bool); frozen[entry['ids']] = False
+        np.testing.assert_array_equal(smooth[entry['node']][frozen], entry['source'][frozen])
     world, _ = proposal.evaluate_vector(control)
     original, _ = exact.evaluate_vector(np.zeros(42))
     outside = (times <= native[0]) | (times >= native[-1])
-    np.testing.assert_array_equal(world[outside], original[outside])
+    # Stored frozen keys are exact above. Rebuilding the same transforms through
+    # batched FK versus the cached source can differ by a few float64 ULPs.
+    np.testing.assert_allclose(world[outside], original[outside], atol=1e-14, rtol=0)
     np.testing.assert_array_equal(proposal.evaluate_vector(np.zeros(42))[0], original)
     path = tmp_path/'actual.glb'; exact.export_vector(control, path)
     document, binary = read_glb(path); reader = AnimationSampler(document, binary, 0)
