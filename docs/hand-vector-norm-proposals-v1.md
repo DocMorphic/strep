@@ -133,3 +133,47 @@ yet. Both source and method snapshots must remain unchanged while it runs.
 ```
 
 No model was trained, no held-out prompt was used, and no release gate changed.
+
+## Six-step solver stage and trust-bound diagnostic; geometry pending
+
+All six local iterations accepted their half-step proposals. The accepted
+fixed-witness peaks were 20.897778, 20.878440, 20.865582, 20.856424, 20.849231
+and 20.843009 mm. Every full step was rejected by actual motion/domain checks.
+The first accepted controls exactly match the completed one-step experiment.
+The fixed six-iteration budget ended the solve; no convergence or infeasibility
+certificate was obtained.
+
+Both final GLBs replay exactly, preserve frozen native keys and have zero
+violations in all four motion categories over the original 148-sample clock.
+Fresh 43-time hand geometry is still running, so no completed collision outcome
+or quality approval follows from this solve stage.
+
+A read-only diagnostic of the saved six local models finds that 11-19 controls
+per largest-trust proposal reach at least 99% of its normalized 0.01 step box.
+Five or six of those controls have nonzero derivatives for that proposal's
+locally predicted worst witness. Their share of absolute per-coordinate linear
+contributions for that one witness ranges from 14.6% to 55.3%. The predicted
+worst witness changes between iterations. These shares are not a certificate
+about the whole max objective or the physical feasible region.
+
+The maximum accumulated normalized coordinate change after six accepted half
+steps is 0.03. This supports comparing larger proposal trust boxes after the
+current mesh audit, with the same original motion/domain limits and exact
+backoff acceptance. It does not justify widening any physical cap, increasing
+the iteration budget blindly or assuming that a larger proposal will be safe.
+
+Local solver-stage evidence (mesh stage pending):
+
+- Request: `cacc8c868ad9ef06f2343971a8b5eaf28f3c815ee347e1a51dfe7024f7def0a3`.
+- Iteration summary: `40dbcd9f7b502faca4e53a571c952ab0861115da14efc255347f854ec34e1c7c`.
+- Selected controls: `7fac6a705d8ebb52e9e78b350d2a045d39d4fc4c62137747f470f0943c5afc34`.
+- Decoded audit: `3c4116de8de04c80549c2162886113626fc3d62a3415ed760457af02f46b7635`.
+- Actor A GLB: `e546860ff4c3b295030dddeb50bf9363c3f7ba214ca3967d4d219101d92c555a`.
+- Actor B GLB: `b954be73555f661b1512abeb1199a76a6ba18c4a90cdfe89c681b230936b4401`.
+- Bound trust diagnostic: `reports/hand-norm-trust-diagnostic-v1/result.json`, SHA-256 `161e66610b3e09a8e067ed346624c43218e9890eaf126b0f3ac8ff57381326be`.
+
+The trust diagnostic records hashes of its input artifacts and its local audit
+script, reproduces each saved worst-witness prediction and verifies inputs again
+after reading. It does not change the running study or execute another solve.
+Commit 5910220 passed both hosted Windows and Linux checks, including the new
+iteration tests.
