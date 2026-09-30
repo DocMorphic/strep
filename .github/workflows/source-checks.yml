@@ -68,6 +68,9 @@ jobs:
           tests/test_scene_pair_engine.py
           tests/test_scene_pair_limits.py
           tests/test_scene_pair_refinement.py
+          tests/test_refined_pair_geometry.py
+          tests/test_joint_angular_rates.py
+          tests/test_angular_motion_rows.py
           tests/test_scene_joint_rates.py
           tests/test_lsmr_accuracy.py
           tests/test_inward_feasibility_step.py
