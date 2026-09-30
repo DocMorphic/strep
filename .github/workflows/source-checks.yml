@@ -61,6 +61,8 @@ jobs:
           tests/test_coupled_clearance_policy.py
           tests/test_paired_review_summary.py
           tests/test_timed_rotation_edit.py
+          tests/test_scene_pair_problem.py
+          tests/test_scene_pair_replay.py
           tests/test_scene_joint_rates.py
           tests/test_lsmr_accuracy.py
           tests/test_inward_feasibility_step.py
