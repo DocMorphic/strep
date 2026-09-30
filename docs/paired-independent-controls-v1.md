@@ -195,12 +195,12 @@ original motion limits. Actual GLBs and fresh mesh queries remain the acceptance
 evidence. No failed candidate may replace Studio or approve a release gate.
 
 
-The connected comparison is running at
+The connected comparison completed at
 `reports/scene-pair-witness-epigraph-v1`. Both warm-start GLB replays are exact,
 expanded support and guide checks pass, and all 86 original directional queries
 were verified and reused. Request SHA-256:
 `d4fcf8f23beada9d1e1a2d7f068067925fd82b0186681ed3cb0eb4c6c7d26f47`.
-No final candidate result is available yet. The focused new/affected suite has
+The completed result follows below. The focused new/affected suite has
 47 passing tests; the full minimal public Python suite has 721 passing tests.
 
 ```powershell
@@ -212,7 +212,7 @@ snapshot. Its strict replay requires those bound method versions; a later source
 checkout is intentionally rejected when its methods differ.
 
 
-## Individual-witness solve outcome; fresh geometry pending
+## Completed individual-witness solve and geometry
 
 Both 100-iteration starts reached status 9. The search recorded 17,637
 observations, including finite differences, of which 90 passed the motion/domain
@@ -224,9 +224,8 @@ warm start. Its fixed-witness peak is 20.927446 mm versus the donor's
 The final proposals from the two starts reach lower fixed-witness peaks of
 20.737698 and 20.737694 mm, but their minimum normalized margins are negative
 (-0.000779853 and -0.000217156). Neither has a feasible tested backoff. They
-remain rejected. The completed-return diagnostic must attribute the actual
-motion violations after this worker finishes; optimizer margin alone does not
-identify the joints or physical excesses.
+remain rejected. The completed-return diagnostic attributes the actual violations below;
+optimizer margin alone does not identify the joints or physical excesses.
 
 The selected GLBs replay exactly for both actors, retain all frozen native keys,
 and have zero positional/angular-speed/angular-acceleration violations over the
@@ -238,7 +237,89 @@ original 148-pose clock. Actor B is unchanged from the donor:
 - Solver returns: `e0f66624d24becab2e70479976137c040a29f231cb1f42e39e6921c36d97b4db`.
 - Export audit: `c6cca0262345c9fab43ebffe2e32c2841b8a4994e985c0af6bc1867cb8cc5e8e`.
 
-The existing worker is auditing all 43 hand times against fresh full partner
-meshes. Its first two times still exceed the 5 mm threshold. Keep its loaded
-methods unchanged until completion. No Studio replacement, full-body clearance,
-engine acceptance or release approval follows from these partial results.
+Both the main worker and return diagnostic completed successfully. All 43 hand
+times were freshly checked against full partner meshes. The same 17 sample
+times fail, with peak penetration 20.932800 mm. Improvement over the independent
+donor is only 0.000023117 mm. Three directional observations worsen, by up to
+0.001667355 mm; no new failing sample is introduced. The result is effectively
+unchanged collision quality. Full-body clearance, engine and human quality are
+unapproved, and the failed candidate does not replace Studio.
+
+The first returned proposal has eight positional-acceleration, five angular-speed
+and eight angular-acceleration violations on the decoded original clock. Worst
+physical excesses are 0.001138 m/s^2 at B's left forearm, 0.000265570 rad/s at
+B's left thumb second joint, and 0.077347304 rad/s^2 at B's left index fourth
+joint. The second return has four, three and seven violations respectively;
+its worst excesses are 0.001989409 m/s^2, 0.000193321 rad/s and
+0.018314857 rad/s^2 at those same joint labels (times differ). Both returns pass
+positional-speed checks, and neither passes all motion categories. The smaller
+violations do not justify changing the acceptance tolerances.
+
+Completed local evidence:
+
+- Main: `reports/scene-pair-witness-epigraph-v1/result.json`.
+- Geometry SHA-256: `0de5059470998ae0d5ba7e827117d81ff3a5cb8b095d5f288986c70b4d0aa6b9`.
+- Diagnostic: `reports/scene-pair-witness-epigraph-diagnosis-v1/result.json`.
+- Return audit SHA-256: `2f0dcea65f7c1062dcd1322c9fce7053ac91dec5033d5f0bf89fedb9066aeb24`.
+- Donor comparison SHA-256: `8fbdc102db3b251268d6ee926b07a462c90b3e79cee59ea6725b74c2c723f63d`.
+
+## Proposal precision study
+
+`smooth_hand_proposal.py` constructs double-precision native rotations for local
+proposal evaluation. It retains the original IK, elbow swivel, hand orientation,
+control layouts, native timestamps and frozen endpoints; it omits rounding each
+edited quaternion component to float32. The bound editor and exporter are
+unchanged. The proposal class rejects export calls, so this diagnostic path
+cannot silently become an acceptance path.
+
+Four fixture comparisons cover both actors, oblique scene placement, combined
+arm/hand and hand-only edits. Proposal quaternions round to exactly the existing
+editor's native values; zero controls and outside-window poses remain exact.
+Actual exported GLBs are independently decoded and compared. A fifth test checks
+explicit layout selection. Together with the existing control/derivative suites,
+40 focused tests pass. These fixtures do not prove real-motion quality.
+
+The next matched audit compares serialized-float32 and proposal-float64 models
+at the unchanged and selected controls. It uses individual signed witness depths,
+the same normalized steps (1e-5, 1e-4, 1e-3) and separate deterministic probes.
+It also reports pointwise value differences per motion family: smoother local
+predictions must never be mistaken for agreement with the serialized motion.
+The original selected measurement is reproduced before the comparison starts.
+
+Run with the bound local studies/assets and a fresh output folder:
+
+```powershell
+.venv/Scripts/python.exe -u scripts/audit_hand_derivatives.py reports/scene-pair-witness-epigraph-v1 reports/scene-pair-hand-precision-audit-v1 --individual-witnesses --compare-precision
+```
+
+This derivative experiment completed, with 513 evaluations at each of four
+precision/point combinations (2,052 total). No new optimizer, collision correction
+or model training was run. All 737 minimal public Python tests pass.
+
+At the selected controls, normalized step 1e-4 and the same eight directional
+probes, maximum forward-prediction residuals are:
+
+| Output family | Serialized float32 | Proposal float64 |
+| --- | ---: | ---: |
+| Individual signed depths / 0.02 m | 0.000006981541 | 0.000000203715 |
+| Normalized positional-acceleration margins | 0.001296021 | 0.001307007 |
+| Normalized angular-acceleration margins | 0.000142577 | 0.000135978 |
+
+The signed-depth residual improves by about 34 times, while the acceleration
+residuals do not materially improve. Thus rounding affects witness derivatives,
+but removing it alone is not supported as a fix for the motion-constraint stalls.
+These are local prediction errors, not improvements to an animation.
+
+At zero controls both precision models have exactly matching values. At selected
+controls they differ by up to 2.306047e-6 in normalized positional acceleration
+and 1.630940e-6 in normalized angular acceleration. Actual float32 motion must
+therefore remain the acceptance evidence. The next method to investigate is a
+trust-bounded local model that retains velocity and acceleration vector norms,
+rather than linearizing their scalar magnitudes. Exact serialized re-evaluation
+must reject any inaccurate proposal; no motion cap or collision threshold changes.
+This next optimizer is not implemented by the precision audit.
+
+Evidence: `reports/scene-pair-hand-precision-audit-v1/result.json`.
+Request SHA-256: `7118479a61255648d415a11621e24ab62635b4dabeaa32c96a8e63177ee542ec`.
+Float32 selected report: `067d1f94c49196bc32e18a51f26bd831136f02ae58e186cef8e3fde54947d698`.
+Float64 selected report: `fe6a66911f8de05d7644603f553724088ad568185767aa1a69905bcca85df8fb`.

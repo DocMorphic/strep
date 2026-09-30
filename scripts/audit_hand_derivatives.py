@@ -6,7 +6,7 @@ import numpy as np
 from strep import ROOT, read, save, sha256, now
 
 
-def run(study, output):
+def run(study, output, individual_witnesses=False, compare_precision=False):
     from diagnose_oriented_hand_returns import load_evidence
     from bound_evidence import bind_inputs
     from diagnose_scene_pair_limits import load_bound_study
@@ -47,49 +47,66 @@ def run(study, output):
     parts = [features(w, rig.joints) for w, rig in zip(reference, sources)]
     caps = SampledMotionCaps({key: np.concatenate([part[key] for part in parts], axis=1)
                              for key in ['positions', 'rotations']}, times, request['original_bins_s'])
-    objective = HandWitnessObjective([BoundSkin(rig) for rig in sources], actors, read(study / 'witnesses.json'))
-    def evaluate(normalized):
+    rows = read(study / 'witnesses.json')
+    objective = HandWitnessObjective([BoundSkin(rig) for rig in sources], actors, rows)
+    def evaluate(model_set, normalized):
         controls = normalized * scale
-        evaluated = [model.evaluate_vector(controls) for model in models]
+        evaluated = [model.evaluate_vector(controls) for model in model_set]
         world = [entry[0] for entry in evaluated]
         parts = [features(w, rig.joints) for w, rig in zip(world, sources)]
         payload = {key: np.concatenate([part[key] for part in parts], axis=1) for key in ['positions', 'rotations']}
         values = [(bound[ids[0]:ids[0]+len(value)] + .9*caps.tolerance - value)
                   / np.maximum(bound[ids[0]:ids[0]+len(value)], floor)
                   for value, bound, floor in zip(measures(payload, caps.dt), caps.caps, [.01, 1., .01, 1.])]
-        depth = max(0., float(-objective.gaps(world).min()))
+        depths = -objective.gaps(world)
+        depth = depths if individual_witnesses else np.array([max(0., float(depths.max()))])
         return np.r_[np.concatenate([v.ravel() for v in values]),
                      (45.+1e-4-max(row[1] for row in evaluated))/45.,
                      margins(controls, native, plan['guide_rate_limits']), depth/.02]
     chosen = read(study / 'selected.json'); point = np.asarray(chosen['controls']) / scale
-    replay = evaluate(point)
-    if abs(replay[-1]*.02-chosen['witness_peak_m']) > 1e-10 or abs(replay[:-1].min()-chosen['minimum_margin']) > 1e-10:
+    replay = evaluate(models, point); witness_count = len(rows) if individual_witnesses else 1
+    if abs(max(0., float(replay[-witness_count:].max()))*.02-chosen['witness_peak_m']) > 1e-10 or abs(replay[:-witness_count].min()-chosen['minimum_margin']) > 1e-10:
         raise ValueError('Reconstructed diagnostic differs from selected optimizer measurement')
     groups = []; cursor = 0
     for name, order in zip(['positional_speed', 'positional_acceleration', 'angular_speed', 'angular_acceleration'], [1, 2, 1, 2]):
         stop = cursor + (len(ids)-order)*caps.joints
         groups.append(dict(name=name, start=cursor, stop=stop, is_margin=True)); cursor = stop
-    for name, stop, margin in [('native_edit', cursor+1, True), ('guide', len(replay)-1, True), ('witness_depth', len(replay), False)]:
+    for name, stop, margin in [('native_edit', cursor+1, True), ('guide', len(replay)-witness_count, True), ('signed_witness_depths' if individual_witnesses else 'witness_depth', len(replay), False)]:
         groups.append(dict(name=name, start=cursor, stop=stop, is_margin=margin)); cursor = stop
     directions = np.random.default_rng(230930).normal(size=(4, len(scale)))
     directions /= np.max(np.abs(directions), axis=1)[:, None]
     steps = [1e-5, 1e-4, 1e-3]; radii = [1e-4, 5e-4]
     output.mkdir(); (output / 'implementation').mkdir(); methods = {}
-    for name in sorted(set(request['implementation']) | {'audit_hand_derivatives.py', 'finite_difference_audit.py', 'diagnose_oriented_hand_returns.py'}):
+    for name in sorted(set(request['implementation']) | {'audit_hand_derivatives.py', 'finite_difference_audit.py', 'diagnose_oriented_hand_returns.py'} | ({'smooth_hand_proposal.py'} if compare_precision else set())):
         shutil.copyfile(ROOT / 'scripts' / name, output / 'implementation' / name)
         methods[name] = sha256(output / 'implementation' / name)
     points = dict(zero=np.zeros(len(scale)), selected=point)
+    model_sets = {'serialized_float32': models}
+    if compare_precision:
+        from smooth_hand_proposal import proposal_type
+        smooth_type = proposal_type(request.get('control_layout', SYMMETRIC_LAYOUT))
+        model_sets['proposal_float64'] = [smooth_type(rig, protocol['chains'][actor['name']], native,
+            times[ids], prepared['protected_seconds'], actor['rotation'], i) for i, (rig, actor) in enumerate(zip(sources, actors))]
+    differences = {}
+    for name, point in points.items():
+        exact = evaluate(models, point)
+        if compare_precision:
+            smooth = evaluate(model_sets['proposal_float64'], point)
+            differences[name] = {g['name']: float(np.abs(smooth[g['start']:g['stop']]-exact[g['start']:g['stop']]).max()) for g in groups}
     save(output / 'request.json', dict(at=now(), study=str(study), inputs=files, implementation=methods,
         points={name: value.tolist() for name, value in points.items()}, scale=scale.tolist(),
         steps=steps, radii=radii, directions=directions.tolist(), groups=groups,
-        selected_measurement_reproduced=True,
-        scope='Fixed-point derivative stability and separate directional predictions through float32-authored native rotations. Normalized margins and depth/0.02; no solve, geometry query, gate change or publication.', quality_approved=False))
+        selected_measurement_reproduced=True, individual_witnesses=individual_witnesses,
+        precision_modes=list(model_sets), proposal_value_differences=differences,
+        scope='Fixed-point derivative stability and separate directional predictions, using declared native rotation precision. Float64 is proposal-only. Normalized margins and depths/0.02; no solve, geometry query, gate change or publication.', quality_approved=False))
     outputs = {}
-    for name, point in points.items():
-        def observe(count):
-            if count % 50 == 0: print(dict(phase='derivative_audit', point=name, evaluations=count), flush=True)
-        report = audit(evaluate, point, steps, directions, radii, groups, observe)
-        save(output / (name+'.json'), report); outputs[name] = sha256(output / (name+'.json'))
+    for precision, model_set in model_sets.items():
+        for point_name, point in points.items():
+            name = precision+'-'+point_name if compare_precision else point_name
+            def observe(count):
+                if count % 50 == 0: print(dict(phase='derivative_audit', point=name, evaluations=count), flush=True)
+            report = audit(lambda x: evaluate(model_set, x), point, steps, directions, radii, groups, observe)
+            save(output / (name+'.json'), report); outputs[name] = sha256(output / (name+'.json'))
     for path, digest in files.items():
         if sha256(path) != digest: raise ValueError('Derivative audit input changed')
     for name, digest in methods.items():
@@ -104,5 +121,7 @@ if __name__ == '__main__':
     from threadpoolctl import threadpool_limits
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('study', type=Path); parser.add_argument('output', type=Path)
+    parser.add_argument('--individual-witnesses', action='store_true')
+    parser.add_argument('--compare-precision', action='store_true')
     args = parser.parse_args()
-    with worker_lock(), threadpool_limits(limits=1): run(args.study, args.output)
+    with worker_lock(), threadpool_limits(limits=1): run(args.study, args.output, args.individual_witnesses, args.compare_precision)

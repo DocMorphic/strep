@@ -71,6 +71,7 @@ jobs:
           tests/test_hand_geometry_comparison.py
           tests/test_witness_epigraph.py
           tests/test_finite_difference_audit.py
+          tests/test_smooth_hand_proposal.py
           tests/test_independent_hand_motion.py
           tests/test_native_waypoint_clock.py
           tests/test_motion_lattice.py
