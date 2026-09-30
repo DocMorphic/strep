@@ -44,3 +44,6 @@ With the separately acquired assets and retained bounded study:
 The source includes active-row and LP regression tests. Eight pure NumPy/SciPy inward-step tests are included in public Windows/Linux CI. Asset-dependent tests also cover equivalence between the full vector and the original maximum-based constraints, bounded seed reconstruction, tied-row descent, and rejection of a per-vertex tradeoff hidden by a better maximum.
 
 Local evidence stays in `reports/cylinder-pose-bundle-v1`, `reports/cylinder-pose-inward-v1` and `reports/cylinder-pose-bundle-review-v1`. The repository publishes methodology and concise results; generated pose/character payloads remain excluded. No held-out prompt/seed is consumed, no checkpoint changes, no new engine or human-review evidence is claimed, and all fourteen release capabilities remain unapproved.
+
+
+Follow-up: the [full-residual feasibility experiment](cylinder-pose-full-residual-v1.md) permits exploratory intermediate tradeoffs while retaining the original final quality gates. It improves several measurements but all retained poses remain rejected.
