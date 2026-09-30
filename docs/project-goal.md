@@ -436,3 +436,6 @@ The [matched iterative-versus-dense trust-region comparison](cylinder-trust-comp
 
 
 The [isolated cylinder hand-placement study](cylinder-hand-placement-v1.md) preserves original finger norms, guides and patches while relaxing arm reach. Four axial-twist starts per hand produce distributed triangles but still fail full hand/patch clearance; all sixteen retained variants replay independently. The next condition should test explicitly labelled guide-point alternatives inside the same authored palm regions, without changing numeric gates or reclassifying original failures. Twenty-seven focused tests pass; no clip is promoted and all fourteen release capabilities remain unapproved.
+
+
+The [cylinder guide calibration and bounded pose](cylinder-guide-calibration-v1.md) yields a passing alternative-condition single pose. A declared 164,160-placement grid finds 75 local candidates; rank-zero guides 7148/11538 project onto disjoint original-bounded arms and pass full-skin/floor and regional contact checks together. Original guides still fail and remain recorded. All samples and projected arrays replay independently; 34 focused tests pass. Next freeze these alternative guides across a moving grasp and test dense time, approach and release. No clip or release capability is approved.

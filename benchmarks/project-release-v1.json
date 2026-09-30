@@ -916,6 +916,9 @@
         "docs/cylinder-inner-solve-v1.md",
         "docs/cylinder-trust-comparison-v1.md",
         "docs/cylinder-hand-placement-v1.md",
+        "docs/cylinder-guide-calibration-v1.md",
+        "reports/cylinder-guide-points-review-v1/verification.json",
+        "reports/cylinder-guide-projection-review-v1/verification.json",
         "reports/cylinder-hand-placement-review-v1/verification.json",
         "reports/cylinder-trust-comparison-review-v1/verification.json",
         "reports/cylinder-inner-solve-review-v1/verification.json",
@@ -2973,6 +2976,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-30T03:03:34.656311+00:00",
-  "last_progress": "Isolated cylinder hand placement preserves original guide binding, patches and source-relative finger budgets while relaxing body reach and retaining explicit axial twist. Eight local searches and sixteen saved variants independently replay; all still fail clearance despite feasible distributed triangles. Next test separately labelled guide-point alternatives inside the existing palm regions before any bounded wrist projection. Twenty-seven focused tests pass. No clip is promoted; all 14 release capabilities remain unapproved."
+  "last_progress_at": "2026-09-30T03:13:59.320569+00:00",
+  "last_progress": "Cylinder guide sensitivity enumeration independently replays all 164,160 placements and 75 passing alternative local contacts. Frozen rank-zero guides 7148/11538 project to a combined single pose that passes original numeric contact, full-skin cylinder/floor and source-relative edit gates. Original guide errors remain failed at 30.453/26.075 mm. All serialized projection arrays and disjoint edits replay; 34 focused tests pass. Next freeze alternative bindings across the moving grasp, approach and release. No clip or release capability is approved; all 14 remain unapproved."
 }
