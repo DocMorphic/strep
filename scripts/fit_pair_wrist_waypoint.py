@@ -6,7 +6,7 @@ import numpy as np
 from strep import ROOT,read,save,sha256,now
 
 
-def run(plan,output):
+def run(plan,output,path_plan=None):
     from diagnose_scene_pair_limits import load_bound_study
     from scene_pair_problem import load_actors
     from rig_asset import RigAsset
@@ -58,13 +58,17 @@ def run(plan,output):
     window=peak_window(previous,protocol['sample'],prepared['authored']['window_s'])
     for span in prepared['protected_seconds']:
         if window[0]<span[1] and window[2]>span[0]:raise ValueError('Approach interval crosses a protected contact')
+    guide=axis=route=None
+    if path_plan is not None:
+        from waypoint_path_evidence import load_path
+        guide,axis,route,path_files=load_path(path_plan,plan,window,files);files.update(path_files)
     if [a['name'] for a in actors]!=[a['actor'] for a in waypoint['actors']]:raise ValueError('Waypoint actor order differs')
     if sha256(ROOT/'scripts/convex_partner_surface.py')!=request['implementation']['convex_partner_surface.py']:
         raise ValueError('Reused geometry method differs')
     output.mkdir();(output/'implementation').mkdir();methods={}
     for name in sorted(set(protocol['implementation'])|{'fit_pair_wrist_waypoint.py','wrist_waypoint_motion.py',
             'timed_rotation_edit.py','paired_temporal_neighbor.py','verify_scene_pair_fit.py','scalar_angular_replay.py',
-            'run_godot_rig_import.py','godot_import_audit.gd'}):
+            'run_godot_rig_import.py','godot_import_audit.gd','waypoint_path_evidence.py','waypoint_lattice.py','bound_evidence.py'}):
         shutil.copyfile(ROOT/'scripts'/name,output/'implementation'/name);methods[name]=sha256(output/'implementation'/name)
     records=[];worlds=[];originals=[];cases=[]
     for index,(actor,entry) in enumerate(zip(actors,baseline['actors'])):
@@ -72,8 +76,11 @@ def run(plan,output):
         if source.parent!=folder or sha256(source)!=entry['sha256']:raise ValueError('Baseline clip changed')
         files[str(source)]=entry['sha256'];rig=RigAsset.load(source);sampler=AnimationSampler(rig.document,rig.binary,0)
         chain=protocol['chains'][actor['name']];candidate=output/f'candidate-{index}.glb'
+        def curve(t):
+            parameters=guide(t)
+            return np.r_[axis*parameters[0]*(1 if index==0 else -1),parameters[index+1]]
         details=bake(rig,chain,waypoint['world_wrist_offsets_m'][index],actor['rotation'],waypoint['angles_degrees'][index],
-            window,prepared['protected_seconds'],candidate)
+            window,prepared['protected_seconds'],candidate,control_curve=None if guide is None else curve)
         decoded=RigAsset.load(candidate);reader=AnimationSampler(decoded.document,decoded.binary,0)
         before=rotation_channels(rig.document,rig.binary);after=rotation_channels(decoded.document,decoded.binary)
         maximum_edit=0.;frozen_keys=0
@@ -92,7 +99,8 @@ def run(plan,output):
         positional=rate_check(pos(old),pos(new),times,actor['model'].knots)
         angular=angular_replay(old[:,joints,:3,:3],new[:,joints,:3,:3],times,actor['model'].knots)
         expected=old[:,chain[2],:3,3]@actor['rotation'].T+actor['translation']
-        expected+=np.array([bump(t,*window) for t in times])[:,None]*np.array(waypoint['world_wrist_offsets_m'][index])
+        expected+=(np.array([bump(t,*window) for t in times])[:,None]*np.array(waypoint['world_wrist_offsets_m'][index])
+                   if guide is None else np.array([curve(t)[:3] for t in times]))
         actual=new[:,chain[2],:3,3]@actor['rotation'].T+actor['translation']
         records.append(dict(actor=actor['name'],path=candidate.name,sha256=sha256(candidate),bake=details,
             maximum_joint_edit_degrees=maximum_edit,frozen_quaternion_keys=frozen_keys,protected_pose_samples=len(frozen_clock),
@@ -103,11 +111,12 @@ def run(plan,output):
         for label in ['source','candidate']:
             path=output/f'{label}-{index}.glb'
             cases.append(dict(id=label+'-'+actor['name'],path=path.name,sha256=sha256(path),frames=int(round(sampler.duration*30))+1,fps=30,sample_by_time=True))
-    save(output/'request.json',dict(at=now(),plan=str(plan),waypoint=waypoint['id'],inputs=files,implementation=methods,
+    save(output/'request.json',dict(at=now(),plan=str(plan),waypoint=waypoint['id'] if guide is None else None,
+        path_plan=None if path_plan is None else str(Path(path_plan).resolve()),path_route=route,inputs=files,implementation=methods,
         window_s=list(window),protected_seconds=prepared['protected_seconds'],native_edit_budget_degrees=45.,
         scope='New experimental approach for the first collision cluster only. Native clocks, frozen keys, outside-window and protected contact poses remain exact. Original-relative rates are measured and may fail; no relaxed motion approval is inferred. Full local-clock vertex geometry and engine audit follow; later source failures remain.',quality_approved=False))
     save(output/'decoded.json',records);save(output/'manifest.json',dict(cases=cases,quality_approved=False))
-    print(dict(phase='decoded',window=window,waypoint=waypoint['id'],positional_failures=[r['positional']['failures'] for r in records]),flush=True)
+    print(dict(phase='decoded',window=window,waypoint=waypoint['id'] if guide is None else route['axis_name'],positional_failures=[r['positional']['failures'] for r in records]),flush=True)
     engine_run(output,output/'engine');rows=[];reused=0
     for i,prior in enumerate(previous):
         unchanged=all(np.array_equal(a[i],b[i]) for a,b in zip(worlds,originals))
@@ -140,5 +149,6 @@ def run(plan,output):
 if __name__=='__main__':
     from action_worker_lock import worker_lock
     from threadpoolctl import threadpool_limits
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('plan',type=Path);p.add_argument('output',type=Path);a=p.parse_args()
-    with worker_lock(),threadpool_limits(limits=1):run(a.plan,a.output)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('plan',type=Path);p.add_argument('output',type=Path)
+    p.add_argument('--path-plan',type=Path);a=p.parse_args()
+    with worker_lock(),threadpool_limits(limits=1):run(a.plan,a.output,a.path_plan)

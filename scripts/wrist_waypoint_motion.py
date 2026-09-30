@@ -34,7 +34,7 @@ def peak_window(geometry,sample,window):
     return start,peak,end
 
 
-def bake(rig,chain,world_offset,placement_rotation,angle_degrees,window,protected,output,budget_degrees=45.):
+def bake(rig,chain,world_offset,placement_rotation,angle_degrees,window,protected,output,budget_degrees=45.,control_curve=None):
     times=np.asarray(window,float)
     if times.shape!=(3,):raise ValueError('Start, peak and end required')
     bump(times[1],*times)
@@ -55,16 +55,21 @@ def bake(rig,chain,world_offset,placement_rotation,angle_degrees,window,protecte
         indices=editable_keys(clock,[times[0],times[2]],protected)
         for key in indices:
             stamp=float(clock[key]);factor=bump(stamp,*times)
-            if factor==0:continue
+            desired=np.r_[offset*factor,angle_degrees*factor] if control_curve is None else np.asarray(control_curve(stamp),float)
+            if desired.shape!=(4,) or not np.isfinite(desired).all():raise ValueError('Finite 3D offset and swivel curve required')
+            if np.linalg.norm(desired[:3])>.06+1e-12 or abs(desired[3])>45+1e-12:raise ValueError('Curve exceeds guide domain')
+            if not np.any(desired):continue
             if stamp not in cache:
-                world=source.sample(stamp);target=world[chain[2],:3,3]+offset@rotation*factor
-                _,local=reach(world,rig.parents,*chain,target,np.deg2rad(angle_degrees)*factor)
+                world=source.sample(stamp);target=world[chain[2],:3,3]+desired[:3]@rotation
+                _,local=reach(world,rig.parents,*chain,target,np.deg2rad(desired[3]))
                 before=local_transforms(world,rig.parents)
                 edits=Rotation.from_matrix(before[:,:3,:3]).inv()*Rotation.from_matrix(local[:,:3,:3])
                 magnitude=float(np.rad2deg(edits.magnitude()).max())
                 if magnitude>budget_degrees+1e-4:raise ValueError('Waypoint exceeds native pose budget')
                 cache[stamp]=local
-                observations.append(dict(time_s=stamp,factor=factor,maximum_edit_degrees=magnitude))
+                observation=dict(time_s=stamp,factor=factor if control_curve is None else None,maximum_edit_degrees=magnitude)
+                if control_curve is not None:observation['guide']=desired.tolist()
+                observations.append(observation)
             q=Rotation.from_matrix(cache[stamp][node,:3,:3]).as_quat()
             if q@original[key]<0:q=-q
             values[key]=q.astype(np.float32)

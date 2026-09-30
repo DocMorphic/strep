@@ -25,7 +25,8 @@ def test_window_excludes_later_collision_cluster_instead_of_hiding_it():
     with pytest.raises(ValueError):peak_window(rows,3,[.1,1.])
 
 
-def test_native_waypoint_bake_protects_keys_shared_sampler_and_contact(tmp_path):
+@pytest.mark.parametrize('scheduled',[False,True])
+def test_native_waypoint_bake_protects_keys_shared_sampler_and_contact(tmp_path,scheduled):
     from types import SimpleNamespace
     from scipy.spatial.transform import Rotation
     from test_elbow_swivel import arm
@@ -47,7 +48,10 @@ def test_native_waypoint_bake_protects_keys_shared_sampler_and_contact(tmp_path)
     animation['channels'].append(dict(sampler=0,target=dict(node=6,path='rotation')))
     rig=SimpleNamespace(document=doc,binary=binary,parents=parents);path=tmp_path/'motion.glb'
     window=[.2,.6,1.1];offset=np.array([-.01,0.,0.])
-    report=bake(rig,[1,2,3],offset,np.eye(3),15.,window,[[1.5,1.5]],path)
+    from waypoint_lattice import LinearGuide
+    guide=LinearGuide([.2,.5,.8,1.1],[[0,0,0],[.006,9,0],[.01,15,0],[0,0,0]],[.8,300,300])
+    curve=lambda t:np.r_[[-guide(t)[0],0,0],guide(t)[1]]
+    report=bake(rig,[1,2,3],offset,np.eye(3),15.,window,[[1.5,1.5]],path,control_curve=curve if scheduled else None)
     changed,payload=read_glb(path);before=rotation_channels(doc,binary);after=rotation_channels(changed,payload)
     for node,(_,times,q) in before.items():
         np.testing.assert_array_equal(after[node][1],times)
@@ -58,6 +62,7 @@ def test_native_waypoint_bake_protects_keys_shared_sampler_and_contact(tmp_path)
         np.testing.assert_array_equal(edited.sample(stamp),original.sample(stamp))
     for key in report['nodes']['1']:
         stamp=float(clock[key]);a=original.sample(stamp);b=edited.sample(stamp)
-        np.testing.assert_allclose(b[3,:3,3],a[3,:3,3]+offset*bump(stamp,*window),atol=2e-7,rtol=0)
+        target_offset=curve(stamp)[:3] if scheduled else offset*bump(stamp,*window)
+        np.testing.assert_allclose(b[3,:3,3],a[3,:3,3]+target_offset,atol=2e-7,rtol=0)
         np.testing.assert_allclose(b[3,:3,:3],a[3,:3,:3],atol=2e-7,rtol=0)
     assert max(r['maximum_edit_degrees'] for r in report['observations'])>10
