@@ -80,6 +80,7 @@ jobs:
           tests/test_adaptive_surface_intervals.py
           tests/test_swept_triangle_separation.py
           tests/test_skin_taylor_bounds.py
+          tests/test_triangle_separation_objective.py
           tests/test_independent_hand_motion.py
           tests/test_native_waypoint_clock.py
           tests/test_motion_lattice.py

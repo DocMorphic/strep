@@ -47,6 +47,8 @@ The owner will perform developer review first. Independent animator review and t
 
 [Directional motion bounds](docs/skin-taylor-bounds-v1.md) resolve all sixteen previously uncertain subintervals on the same saved paired motion, checking 10,836 triangle pairs. The ten confirmed crossing intervals still require motion repair. This improves between-pose evaluation without changing animations or quality thresholds.
 
+[Triangle-based repair](docs/triangle-hand-repair-v1.md) now targets actual surface crossings under the original motion limits, with a broader editable approach window. Its first trial accepts no change. A separately verified crossing at the protected contact involves finger-dominated triangles, motivating a finger-posture experiment with explicit palm/contact preservation.
+
 [Visual hand-region selection](docs/studio-hand-selection-v1.md) now connects selected hand triangles to saved contact-fitting requests, alongside object grip picking. Mesh identity, all eight skin weights, edit bounds and exported geometry are checked; this currently covers canonical SOMA scenes and is not general grasp or animation-quality approval.
 
 ## Using this source snapshot
