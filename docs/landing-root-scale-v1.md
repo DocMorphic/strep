@@ -21,3 +21,10 @@ The local matched experiment is `reports/landing-root-scale-v1`. It runs scale 1
 Before proceeding to the scaled arm, the unit-scale run must reproduce the previous support-enabled landing's NPZ, BVH, GLB and contact/body audits byte-for-byte. If it does not, the batch stops for diagnosis. Paired input/method snapshots and protocols must match except for the coordinate scale. At publication the unit-scale arm is running; no motion improvement, feasibility or quality outcome is established. All study methods stay frozen until both runs are terminal and independently verified.
 
 Local diagnostic evidence is `reports/landing-coordinate-diagnosis-v1/diagnosis.json`; generated study data remains excluded from the public repository. If the measured landing failure persists, a pose-capable feasibility restoration with complete original constraint checks remains necessary. This experiment does not replace broader action/rig/interaction coverage or human review.
+
+
+## Default-coordinate compatibility verified
+
+The unit-scale arm completed 381 evaluations in 324.98 seconds. Its saved NPZ, BVH, GLB, contact audit and body evaluation reproduce the prior support-enabled landing result byte-for-byte. Every original input, current/archived method and completion-artifact hash was independently rechecked, and its new engine run passes 284 pose observations and the authored event checks. The known pin/rate failures are unchanged; compatibility is not motion-quality approval.
+
+Evidence is retained as `default-compatibility.json` and `unit-verification.json` in the batch directory. The scale-0.22 arm has now started from the same original warm seed and request. Its result is not yet established; methods remain frozen through final paired verification.
