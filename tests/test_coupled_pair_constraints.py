@@ -33,3 +33,15 @@ def test_each_time_keeps_its_own_collision_allowance():
                       np.array([.01,.005]),np.zeros((0,3)),np.zeros((0,3,3)),np.zeros(0),.003)
     assert result['predicted_peak_m']==pytest.approx(.008)
     assert result['per_frame_cap_excess_m']==pytest.approx(.001)
+
+
+def test_full_separation_norm_detects_depth_hidden_by_frozen_normal():
+    # A point already 20 mm inside moves tangentially to the old gap direction.
+    # Scalar projection is unchanged while its distance to the retained target
+    # point grows; this is the failure measured on the moving high-five surface.
+    step=np.array([.001,0,0]);gap=np.array([-.02]);gj=np.zeros((1,3))
+    separation=np.array([[0.,-.02,0.]])
+    result=check_step(step,gap,gj,np.array([.02]),separation,np.eye(3)[None],np.array([.02]),.002)
+    assert result['per_frame_cap_excess_m']==0
+    assert result['norm_excess']==pytest.approx(np.hypot(.02,.001)-.02)
+    assert result['norm_excess']>2e-5
