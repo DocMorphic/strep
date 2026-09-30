@@ -816,7 +816,8 @@
         "docs/native-support-constraints-v1.md",
         "docs/native-support-breadth-v1.md",
         "docs/landing-root-scale-v1.md",
-        "docs/contact-constraint-restoration-v1.md"
+        "docs/contact-constraint-restoration-v1.md",
+        "docs/contact-restoration-policy-v2.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -2734,7 +2735,8 @@
         "docs/native-support-constraints-v1.md",
         "docs/native-support-breadth-v1.md",
         "docs/landing-root-scale-v1.md",
-        "docs/contact-constraint-restoration-v1.md"
+        "docs/contact-constraint-restoration-v1.md",
+        "docs/contact-restoration-policy-v2.md"
       ]
     }
   ],
@@ -2946,6 +2948,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-09-30T00:48:27.525623+00:00",
-  "last_progress": "Coupled contact restoration is terminal and independently verified. Default motion/audits reproduce the prior landing exactly. Three accepted steps slightly improve pins and clear approach/hold-speed failures, but worsen existing hold/release acceleration; both contact screens still fail. Original edit/support/floor/held/global bounds and 568 engine observations pass. Keep the optional method disabled and strengthen acceptance against trading failed constraints before further evaluation. Broad release fixtures and human/cleanup evidence remain open; all 14 capabilities are unapproved."
+  "last_progress_at": "2026-09-30T01:01:44.933769+00:00",
+  "last_progress": "The stronger per-entry contact restoration policy is independently evaluated: every trial worsens existing violations and is rejected. All five saved motion/audit files reproduce the control byte-for-byte. Original bounds/support/floor/held/global checks and 284 new engine observations pass; the original pin/rate failure remains. Keep the optional method disabled and broaden object geometry/scene coverage rather than increasing this case iteration budget. All 14 release capabilities remain unapproved; human/cleanup and held-out fixture evidence is still incomplete."
 }

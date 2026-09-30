@@ -406,3 +406,6 @@ The [landing coordinate-scale comparison](landing-root-scale-v1.md#completed-com
 
 
 The [coupled contact restoration experiment](contact-constraint-restoration-v1.md#completed-result-lower-worst-residual-trades-away-other-failed-constraints) is independently verified and remains rejected. Three safeguarded steps reduce landing pin error from 5.370261 to 5.336574 mm and clear approach/hold-speed excesses, but substantially worsen already-failed hold/release acceleration. Both exports retain original edit/support/floor/held/global bounds and pass 568 engine observations. The minimax acceptance policy needs protection against trading existing failures; keep the optional method off by default. All fourteen release capabilities remain unapproved.
+
+
+The [nonregressing restoration policy](contact-restoration-policy-v2.md#real-motion-evaluation-proposals-rejected-original-output-retained) rejects every nonlinear proposal on the matched landing and preserves all five control motion/audit files byte-for-byte. Independent native/export/hash/budget checks and 284 new engine observations pass, while the original contact failure remains. The optional method stays disabled. Next broaden object geometry and scene coverage; further identical landing iteration retries are not justified. All fourteen release capabilities remain unapproved.
