@@ -17,7 +17,7 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
-The latest [palm-region contact experiment](docs/palm-contact-region-v1.md) produces a clean inter-character contact pose on the actual rigs and preserves it in native GLB exports, with a 1 mm gap and original joint limits. The approach still collides in 9 of 53 geometry samples and motion-rate checks fail. Next constrain the approach path. No candidate is selected for Studio; all 1,039 model-free source tests pass.
+The latest [contact-preserving path export](docs/contact-locked-path-v1.md) retains a clean 1 mm contact pose and original joint limits. A pose guide clears all 53 sampled inter-character mesh checks, but native interpolation reintroduces three failures, with 1.059083 mm maximum penetration. All four motion-rate cap groups still fail. No candidate is selected for Studio; all 1,050 model-free source tests pass.
 
 The development breadth study generated 390 actor clips across 72 cases, 12 action families, and five seeds. Those categories measure coverage; they do not prove support for every requested motion. Release acceptance remains open in [the release matrix](benchmarks/project-release-v1.json).
 

@@ -94,6 +94,8 @@ jobs:
           tests/test_rigid_contact_initialization.py
           tests/test_palm_contact_region.py
           tests/test_oriented_two_bone.py
+          tests/test_hand_plane_retraction.py
+          tests/test_contact_locked_native.py
           tests/test_edit_interval_clock.py
           tests/test_hand_witness_envelope.py
           tests/test_skin_motion_bounds.py
