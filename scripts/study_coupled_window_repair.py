@@ -6,7 +6,7 @@ import numpy as np
 from strep import ROOT, read, save, sha256, now
 
 
-def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, restoration_of=None):
+def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, restoration_of=None, temporal_of=None):
     from rig_asset import RigAsset
     from rig_clip_import import AnimationSampler
     from scene_pair_problem import load_actors
@@ -29,7 +29,7 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, resto
     window_audit,arm_study,output=map(lambda p:Path(p).resolve(),[window_audit,arm_study,output])
     if output.exists():raise ValueError('Fresh coupled study required')
     if type(iterations) is not int or not 1<=iterations<=12:raise ValueError('One to twelve iterations required')
-    if diagnostic_of is not None and restoration_of is not None:raise ValueError('Choose diagnostic or restoration mode')
+    if sum(v is not None for v in [diagnostic_of,restoration_of,temporal_of])>1:raise ValueError('Choose diagnostic, restoration or temporal mode')
     files={}
     def bind_study(folder):
         result=read(folder/'result.json')
@@ -74,7 +74,7 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, resto
     native=np.asarray(ar['native_times_s']);arm_scale=np.asarray(ar['scale'])
     arm_start=np.asarray(bound(arm_study/'selected.json')['controls'])
     finger_scale=np.asarray(fr['scale']);scale=np.r_[arm_scale,finger_scale];point=np.r_[arm_start/arm_scale,np.zeros(len(finger_scale))]
-    models=[];rigs=[];donors=[];reference=[];source_worlds=[];skins=[];neighborhoods=[];finger_sizes=[]
+    legacy_models=[];models=[];rigs=[];donors=[];reference=[];source_worlds=[];skins=[];neighborhoods=[];finger_sizes=[]
     for i,(actor,entry,clip) in enumerate(zip(actors,trial['actors'],bound(finger_folder/'decoded.json')['clips'])):
         path=(baseline/br['selected']/entry['path']).resolve()
         if files.get(str(path))!=entry['sha256']:raise ValueError('Original clip binding required')
@@ -88,10 +88,21 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, resto
         arm=IndependentHandMotion(rig,protocol['chains'][actor['name']],native,combined,prepared['protected_seconds'],actor['rotation'],i)
         target=contact['effector'] if i==0 else contact['target'];hand=next(n for n,node in enumerate(rig.document['nodes']) if node.get('name')==target['joint'])
         finger=NativeFingerMotion(donor_rig,hand,fr['selected_nodes'][i],fr['edit_limits_degrees'][i],combined,fr['window_s'],fr['contact_time_s'])
-        models.append(CoupledHandFingerMotion(arm,finger));finger_sizes.append(finger.size);skins.append(BoundSkin(rig))
+        legacy_models.append(CoupledHandFingerMotion(arm,finger))
+        if temporal_of is not None:
+            from release_finger_motion import ReleaseFingerMotion, ReleaseCoupledHandFingerMotion, expand_controls
+            finger=ReleaseFingerMotion(finger,fr['contact_time_s'],(fr['contact_time_s']+fr['window_s'][1])/2)
+            models.append(ReleaseCoupledHandFingerMotion(arm,finger))
+        else:models.append(legacy_models[-1])
+        finger_sizes.append(finger.size);skins.append(BoundSkin(rig))
         faces=actor['faces'][np.any(actor['faces']==target['surface_vertex'],axis=1)];ids,remap=np.unique(faces,return_inverse=True)
         neighborhoods.append((ids,remap.reshape(-1,3),int(np.flatnonzero(ids==target['surface_vertex'])[0])))
-    verify_scale(finger_scale,np.concatenate([np.repeat(m.finger.limits/np.sqrt(3),3) for m in models]))
+    verify_scale(finger_scale,np.concatenate([np.repeat(m.finger.limits/np.sqrt(3),3) for m in legacy_models]))
+    old_point=point.copy();old_scale=scale.copy();old_sizes=[m.finger.size for m in legacy_models]
+    if temporal_of is not None:
+        point=expand_controls(point,len(arm_scale),old_sizes)
+        blocks=[np.repeat(block.reshape(-1,1,3),2,axis=1).ravel() for block in np.split(finger_scale,[old_sizes[0]])]
+        scale=np.r_[arm_scale,np.concatenate(blocks)]
     def split(x):
         values=np.asarray(x)*scale
         return values[:len(arm_scale)],np.split(values[len(arm_scale):],[finger_sizes[0]])
@@ -123,14 +134,36 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, resto
         centers=np.array(centers);normals=np.array(normals)
         return np.vstack([centers-centers0,(centers[0]-centers[1])-(centers0[0]-centers0[1]),normals-normals0])
     def evaluate(x,quantize=True):
-        values=evaluate_worlds(x,quantize);worlds=[v[0] for v in values];arm,_=split(x)
+        values=evaluate_worlds(x,quantize);worlds=[v[0] for v in values];arm,fingers=split(x)
+        temporal_margins=np.concatenate([m.finger.margins(f) for m,f in zip(models,fingers)]) if temporal_of is not None else np.empty(0)
         vectors=np.concatenate([v.reshape(-1,3) for v in rate_vectors(payload([w[uniform] for w in worlds]),caps.dt)]+[palm_vectors(worlds)])
         return dict(vectors=vectors,caps=fixed_caps,scales=fixed_scales,
-            margins=np.r_[(45.+1e-4-max(v[1] for v in values))/45.,arm_margins(arm,native,plan['guide_rate_limits']),(ceilings+old.gaps(worlds))/.02],
+            margins=np.r_[(45.+1e-4-max(v[1] for v in values))/45.,arm_margins(arm,native,plan['guide_rate_limits']),(ceilings+old.gaps(worlds))/.02,temporal_margins],
             depths=objective.depths(worlds))
     exact=lambda x:evaluate(x);smooth=lambda x:evaluate(x,False);before=measurement(exact(point))
     if before['minimum_margin']<0:raise ValueError('Coupled donor must retain original feasibility')
     restoration_seed=None;seed_record=None
+    if temporal_of is not None:
+        prior=Path(temporal_of).resolve();pr=bind_study(prior)
+        if pr['window_audit']!=str(window_audit) or pr['arm_study']!=str(arm_study):raise ValueError('Matching temporal source required')
+        np.testing.assert_array_equal(pr['point'],old_point);np.testing.assert_array_equal(pr['scale'],old_scale)
+        for name,digest in pr['implementation'].items():
+            archived=prior/'implementation'/name
+            if sha256(archived)!=digest:raise ValueError('Temporal source archive changed')
+            files[str(archived)]=digest
+            if name!='study_coupled_window_repair.py' and sha256(ROOT/'scripts'/name)!=digest:raise ValueError('Temporal reference method changed')
+        previous=bound(prior/'iteration-summary.json')
+        if previous['method']!='serialized_feasibility_restoration_v1':raise ValueError('Restoration final state required')
+        old_seed=np.asarray(previous['final_point']);restoration_seed=expand_controls(old_seed,len(arm_scale),old_sizes)
+        values=old_seed*old_scale;old_fingers=np.split(values[len(arm_scale):],[old_sizes[0]])
+        new_arm,new_fingers=split(restoration_seed)
+        for legacy,model,old_f,new_f in zip(legacy_models,models,old_fingers,new_fingers):
+            old_q,_=legacy.quaternions(values[:len(arm_scale)],old_f);new_q,_=model.quaternions(new_arm,new_f)
+            for node in old_q:np.testing.assert_array_equal(old_q[node],new_q[node])
+        actual=measurement(exact(restoration_seed))
+        for key in ['witness_peak_m','minimum_margin']:np.testing.assert_allclose(actual[key],previous['final'][key],rtol=0,atol=1e-12)
+        seed_record=dict(policy='exact_final_internal_state_with_zero_release_controls',prior=str(prior),metric=actual,
+            serialized_keys_identical=True,release_peaks_s=[float(m.finger.release_knots[1]) for m in models])
     if restoration_of is not None:
         prior=Path(restoration_of).resolve();pr=bind_study(prior)
         if pr['window_audit']!=str(window_audit) or pr['arm_study']!=str(arm_study):raise ValueError('Matching restoration source required')
@@ -197,11 +230,13 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, resto
     names=set(ar['implementation'])|set(fr['implementation'])|{'study_coupled_window_repair.py','coupled_hand_finger_motion.py',
         'window_triangle_objective.py','sampled_surface_guard.py','convex_partner_surface.py','replay_finger_proposal.py',
         'edit_interval_clock.py','restore_hand_feasibility.py'}
+    if temporal_of is not None:names|={'release_finger_motion.py','coupled_constraint_report.py'}
     for name in sorted(names):
         path=ROOT/'scripts'/name;methods[name]=sha256(path);shutil.copyfile(path,output/'implementation'/name)
     save(output/'request.json',dict(at=now(),inputs=files,implementation=methods,window_audit=str(window_audit),arm_study=str(arm_study),
         uniform_times_s=times.tolist(),audit_times_s=audit_times.tolist(),scale=scale.tolist(),point=point.tolist(),
         guard_times_s=guard_times.tolist(),guard_clock=guard_plan,restoration_of=None if restoration_of is None else str(Path(restoration_of).resolve()),restoration_seed=seed_record,
+        temporal_of=None if temporal_of is None else str(Path(temporal_of).resolve()),
         native_arm_times_s=native.tolist(),finger_window_s=fr['window_s'],before=before,iterations=iterations,
         all_crossing_pairs=len(rows),controls=len(point),trusts=[.1,.01,.001],quality_approved=False,
         scope='All observed crossing pairs across the window; original arm reference, guide limits, motion caps, palm geometry and old signed-witness ceilings retained. Full mesh guard before acceptance.'))
@@ -229,6 +264,13 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, resto
             guard=make_guard();decision=guard(candidate);save(output/'restored-candidate-surface.json',decision)
             if decision['passed']:best=candidate
         report['mesh_guard_run']=guard is not None
+    if temporal_of is not None:
+        from coupled_constraint_report import breakdown
+        final=exact(np.asarray(report['final_point']));guide_rows=len(arm_margins(arm_start,native,plan['guide_rate_limits']))
+        original_rows=1+guide_rows+len(ceilings);labels=[a['name']+':'+r.document['nodes'][n]['name'] for a,r in zip(actors,rigs) for n in r.joints]
+        extra_margins=final['margins'][original_rows:]
+        save(output/'final-constraints.json',dict(original=breakdown(dict(final,margins=final['margins'][:original_rows]),labels,len(times),guide_rows,len(ceilings)),
+            temporal=dict(rows=len(extra_margins),failed_rows=int(np.count_nonzero(extra_margins<0)),minimum_margin=float(extra_margins.min()))))
     save(output/'iteration-summary.json',report);save(output/'selected.json',dict(controls=(best*scale).tolist(),**measurement(exact(best))))
     arm,fingers=split(best);decoded=[];clips=[]
     for i,(model,finger,rig) in enumerate(zip(models,fingers,rigs)):
@@ -271,5 +313,5 @@ if __name__=='__main__':
     from action_worker_lock import worker_lock
     from threadpoolctl import threadpool_limits
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('window_audit',type=Path);parser.add_argument('arm_study',type=Path);parser.add_argument('output',type=Path)
-    parser.add_argument('--iterations',type=int,default=3);parser.add_argument('--diagnose-study',type=Path);parser.add_argument('--restore-study',type=Path);args=parser.parse_args()
-    with worker_lock(),threadpool_limits(limits=1):run(args.window_audit,args.arm_study,args.output,args.iterations,args.diagnose_study,args.restore_study)
+    parser.add_argument('--iterations',type=int,default=3);parser.add_argument('--diagnose-study',type=Path);parser.add_argument('--restore-study',type=Path);parser.add_argument('--temporal-study',type=Path);args=parser.parse_args()
+    with worker_lock(),threadpool_limits(limits=1):run(args.window_audit,args.arm_study,args.output,args.iterations,args.diagnose_study,args.restore_study,args.temporal_study)

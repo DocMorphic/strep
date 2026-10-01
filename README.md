@@ -61,6 +61,8 @@ The owner will perform developer review first. Independent animator review and t
 
 [Serialized feasibility restoration](docs/serialized-feasibility-restoration-v1.md) reduces a rejected candidate's constraint deficit, but still accepts no changed animation. Mesh checks now cover the complete edit interval when a numerically feasible candidate exists. Exact replay points to post-contact finger acceleration as a remaining issue; all 926 minimal source tests pass.
 
+[Independent finger return controls](docs/release-finger-controls-v1.md) produce an internal candidate that passes the original motion-rate and palm limits. Seven surface-witness constraints still fail, so no changed animation is accepted. All 936 distinct minimal source tests pass.
+
 ## Using this source snapshot
 
 Development currently uses Windows, Python 3.10, NVIDIA CUDA/PyTorch, Node.js for viewer dependencies, and a separately acquired Kimodo installation. Read the [baseline setup runbook](docs/baseline-runbook.md), [pinned source/model revisions](benchmarks/sources.lock.json), and [Studio workflow](docs/action-studio.md). Those documents include historical experiments; a fully verified clean-clone installer is still unfinished.

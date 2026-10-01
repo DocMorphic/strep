@@ -86,6 +86,7 @@ jobs:
           tests/test_triangle_separation_objective.py
           tests/test_window_triangle_objective.py
           tests/test_native_finger_motion.py
+          tests/test_release_finger_motion.py
           tests/test_coupled_hand_finger_motion.py
           tests/test_coupled_constraint_report.py
           tests/test_replay_finger_proposal.py
