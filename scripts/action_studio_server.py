@@ -32,6 +32,10 @@ def allowed_file(url_path):
     if path=='/scene-pair-editor.js':return ROOT/'scripts/scene-pair-editor.js'
     if path in ['/pose-guide-editor.js','/soma-preview-skin.js','/rig-joint-editor.js','/rig-posture-editor.js','/scene-release-editor.js','/scene-region-editor.js','/scene-grip-picker.js','/scene-object-geometry.js','/scene-hand-patch.js','/scene-trim-editor.js']:return ROOT/'scripts'/path[1:]
     if path=='/native-review-panel.mjs':return ROOT/'scripts/native-review-panel.mjs'
+    if path in ('/native-grey-loader.mjs','/native-support-editor.mjs','/native-support-viewer.mjs','/native-support-viewer.html','/native-contact-clock.mjs'):return ROOT/'scripts'/path[1:]
+    if path.startswith('/files/native-support-jobs/'):
+        from studio_native_support import served_file
+        return served_file(path.removeprefix('/files/'))
     if path.startswith('/files/native-contact-reviews/'):
         from native_review_publication import served_file
         return served_file(path.removeprefix('/files/'))
@@ -86,6 +90,18 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.headers.get('Host') not in self.server.allowed_hosts:return self.respond(403,{'error':'Loopback host required'})
         route=urlsplit(self.path).path
+        if route=='/api/native-support-jobs':
+            from studio_native_support import listing
+            return self.respond(200,listing())
+        if route in ('/api/native-support-source','/api/native-support-review'):
+            from studio_native_support import metadata,manifest
+            try:
+                query=parse_qs(urlsplit(self.path).query)
+                fields={'job','variant'} if route.endswith('-source') else {'id'}
+                if set(query)!=fields or any(len(v)!=1 for v in query.values()):raise ValueError('Exact native support selection required')
+                data=metadata(query['job'][0],query['variant'][0]) if route.endswith('-source') else manifest(query['id'][0])
+                return self.respond(200,data)
+            except (ValueError,TypeError,KeyError,OSError) as exc:return self.respond(400,{'error':str(exc)})
         if route=='/api/native-contact-reviews':
             from native_review_publication import listing
             return self.respond(200,listing())
@@ -214,7 +230,7 @@ class Handler(BaseHTTPRequestHandler):
         except (BrokenPipeError,ConnectionResetError):pass
 
     def do_POST(self):
-        if self.path not in ['/api/jobs','/api/scene-pair-fits','/api/scene-trims','/api/scene-releases','/api/scene-region-fits','/api/pose-target','/api/motion-brief','/api/contact-edits','/api/characters/import','/api/characters/sample','/api/characters/profile','/api/rig-jobs','/api/rig-contact-edits','/api/rig-contact-inspect','/api/rig-clip-edits','/api/rig-joint-edits','/api/rig-posture-edits','/api/rig-mirror-edits','/api/rig-transitions','/api/rig-loops','/api/rig-loop-search','/api/rig-events','/api/rig-prompt-edits','/api/rig-dynamics-edits']:return self.respond(404,{'error':'Unknown endpoint'})
+        if self.path not in ['/api/jobs','/api/scene-pair-fits','/api/scene-trims','/api/scene-releases','/api/scene-region-fits','/api/pose-target','/api/motion-brief','/api/contact-edits','/api/characters/import','/api/characters/sample','/api/characters/profile','/api/rig-jobs','/api/rig-contact-edits','/api/rig-contact-inspect','/api/native-support-edits','/api/rig-clip-edits','/api/rig-joint-edits','/api/rig-posture-edits','/api/rig-mirror-edits','/api/rig-transitions','/api/rig-loops','/api/rig-loop-search','/api/rig-events','/api/rig-prompt-edits','/api/rig-dynamics-edits']:return self.respond(404,{'error':'Unknown endpoint'})
         host=self.headers.get('Host');origin=self.headers.get('Origin')
         if host not in self.server.allowed_hosts or origin!=f'http://{host}':return self.respond(403,{'error':'Submit from the local studio page'})
         if self.path=='/api/characters/import':
@@ -297,6 +313,9 @@ class Handler(BaseHTTPRequestHandler):
             elif self.path=='/api/rig-clip-edits':
                 from rig_clip_edit import validate
                 validate(payload)
+            elif self.path=='/api/native-support-edits':
+                from studio_native_support import validate_request
+                validate_request(payload)
             elif self.path=='/api/rig-contact-edits':
                 from rig_contact_authoring import validate_request
                 validate_request(payload)
@@ -315,6 +334,20 @@ class Handler(BaseHTTPRequestHandler):
         with self.server.job_lock:
             if worker_busy() or external_pair_fit_busy() or (self.server.worker is not None and self.server.worker.poll() is None):return self.respond(409,{'error':'A local request is already running; wait for it to finish'})
             job=datetime.now().strftime('%Y%m%d-%H%M%S')+'-'+uuid.uuid4().hex[:8]
+            if self.path=='/api/native-support-edits':
+                from studio_native_support import folder_for,prepare
+                folder=folder_for(job)
+                try:
+                    prepare(payload,folder)
+                    with (folder/'supervisor.log').open('w',encoding='utf8') as log:
+                        self.server.worker=subprocess.Popen([sys.executable,str(ROOT/'scripts/studio_native_support.py'),str(folder)],cwd=ROOT,env=offline_environment(),stdout=log,stderr=subprocess.STDOUT,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+                    import psutil
+                    try:save(folder/'worker.json',dict(pid=self.server.worker.pid,created_at=psutil.Process(self.server.worker.pid).create_time()))
+                    except psutil.NoSuchProcess:pass
+                except (ValueError,OSError) as exc:
+                    if folder.exists():save(folder/'pipeline.json',dict(status='failed',error=str(exc)))
+                    return self.respond(400,dict(error=str(exc)))
+                return self.respond(202,dict(id=job,status='starting'))
             if self.path in ('/api/scene-releases','/api/scene-region-fits','/api/scene-trims','/api/scene-pair-fits'):
                 if self.path=='/api/scene-pair-fits':from scene_pair_job import JOBS,prepare
                 elif self.path=='/api/scene-trims':from scene_trim_job import JOBS,prepare

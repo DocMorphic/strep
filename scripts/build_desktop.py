@@ -8,6 +8,7 @@ def render():
     html=html.replace('<details id="sceneTrimPanel">',(scripts/'native-review-panel.html').read_text(encoding='utf8')+'<details id="sceneTrimPanel">')
     html=html.replace('__CHARACTER_STUDIO__',(scripts/'character-studio.html').read_text(encoding='utf8'))
     html=html.replace('__CORRECTION_REVIEW__',(scripts/'correction-review.html').read_text(encoding='utf8'))
+    html=html.replace('__NATIVE_SUPPORT_EDITOR__',(scripts/'native-support-editor.html').read_text(encoding='utf8'))
     html=html.replace('__CHARACTER_CONTACTS__',(scripts/'character-contacts.html').read_text(encoding='utf8'))
     html=html.replace('__CHARACTER_CLIP_EDIT__',(scripts/'character-clip-edit.html').read_text(encoding='utf8'))
     html=html.replace('__CHARACTER_TRANSITION__',(scripts/'character-transition.html').read_text(encoding='utf8'))

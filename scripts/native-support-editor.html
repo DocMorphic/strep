@@ -1,0 +1,21 @@
+<details id="nativeSupportPanel" class="rig-panel">
+ <summary>Native foot supports</summary>
+ <p class="small">Select a character result and version, then load its exact GLB. Stance times use seconds; edit boundaries use that clip’s existing rotation keys. Free phases and boundary poses stay unchanged.</p>
+ <button class="btn" id="nativeSupportBind" type="button">Use selected character clip</button>
+ <p id="nativeSupportBinding" class="small" role="status">No clip selected.</p>
+ <fieldset id="nativeSupportFields" disabled>
+  <div id="nativeSupportMapping" class="rig-map-list"></div>
+  <div class="rig-offsets"><label>Foot<select id="nativeSupportFoot"><option value="LeftFoot">Left foot</option><option value="RightFoot">Right foot</option></select></label><label>Interval name<input id="nativeSupportName" value="stance-1" maxlength="64"></label></div>
+  <div class="rig-offsets"><label>Stance start (s)<input id="nativeSupportStart" type="number" step="any" min="0"></label><label>Stance end (s)<input id="nativeSupportEnd" type="number" step="any" min="0"></label></div>
+  <div class="rig-offsets"><label>Frozen start key<select id="nativeSupportFirst"></select></label><label>Frozen end key<select id="nativeSupportLast"></select></label></div>
+  <div class="rig-offsets"><label>Plane normal X<input id="nativeSupportNX" type="number" step="any" value="0"></label><label>Y<input id="nativeSupportNY" type="number" step="any" value="1"></label><label>Z<input id="nativeSupportNZ" type="number" step="any" value="0"></label><label>Plane offset (m)<input id="nativeSupportPlane" type="number" step="any" value="0"></label></div>
+  <div class="rig-offsets"><label>Clearance (mm)<input id="nativeSupportClearance" type="number" step="any" min="0.25" max="4.5" value="0.25"></label><label>Maximum gap (mm)<input id="nativeSupportGap" type="number" step="any" max="5" value="5"></label><label>Ankle edit limit (mm)<input id="nativeSupportDisplacement" type="number" step="any" min="0.001" max="30" value="30"></label><label>Rotation edit limit (°)<input id="nativeSupportAngle" type="number" step="any" min="0.0001" max="45" value="45"></label></div>
+  <p class="small">Plane equation: normal · point = offset, in GLB world coordinates. Enter a unit normal. Separate stance and edit intervals allow fades; same-foot edit windows cannot overlap. Direct thigh → knee → foot chains only. The floor screen uses fully foot-owned vertices, not whole-sole planting.</p>
+  <div class="rig-toolbar"><button class="btn" id="nativeSupportAdd" type="button">Add / replace interval</button><button class="btn" id="nativeSupportClear" type="button">Clear intervals</button></div>
+  <div id="nativeSupportIntervals" class="rig-contact-list"></div>
+  <button class="btn primary" id="nativeSupportFit" type="button">Try bounded native correction</button>
+ </fieldset>
+ <p id="nativeSupportStatus" class="small" role="status">Proposals must pass sampled support heights, edit limits and source-relative motion-rate caps. A finished job can retain the unchanged input.</p>
+ <div class="rig-toolbar"><button class="btn" id="nativeSupportRefresh" type="button">Refresh saved jobs</button><select id="nativeSupportJobs" aria-label="Native support result" disabled></select><button class="btn" id="nativeSupportReview" type="button" disabled>Compare input and proposals</button></div>
+ <iframe id="nativeSupportFrame" title="Native foot-support clip comparison" style="width:100%;height:780px;border:1px solid var(--border,#cbd4df);border-radius:12px" hidden></iframe>
+</details>

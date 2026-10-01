@@ -1,0 +1,12 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Strep · Native foot supports</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#e9edf2;color:#253141;font:14px system-ui}main{padding:16px}p{line-height:1.45}.bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}button,select,input{font:inherit}button,select{padding:7px 10px;border:1px solid #b7c3d0;border-radius:8px;background:white;color:inherit}button:disabled{opacity:.45}canvas{display:block;width:100%;height:390px;border-radius:12px;margin:12px 0}input[type=range]{flex:1;min-width:100px}output{font-variant-numeric:tabular-nums}.links{display:flex;gap:18px;flex-wrap:wrap}table{border-collapse:collapse;width:100%;font-size:12px}td,th{padding:6px;text-align:left;border-bottom:1px solid #cbd4df}.notice{background:#fff1d6;padding:10px;border-radius:10px}a{color:#245a98}</style>
+<main><div class="bar"><label>Version <select id="version" disabled></select></label><button id="fit" disabled>Fit view</button><label>Support <select id="support" disabled></select></label></div>
+<canvas id="preview" aria-label="Grey character at native animation time"></canvas>
+<div class="bar"><button id="play" disabled>Play</button><input id="time" type="range" min="0" step="any" value="0" disabled aria-label="Native clip time in seconds"><output id="clock"></output><button id="start" disabled>Stance start</button><button id="end" disabled>Stance end</button><button id="worst" disabled>Worst support</button></div>
+<p id="status" role="status">Loading bound support comparison…</p><p class="notice" id="decision"></p>
+<div style="overflow:auto"><table><thead><tr><th>Proposal</th><th>Support heights</th><th>Failed rate rows: speed / acceleration / angular speed / angular acceleration</th></tr></thead><tbody id="metrics"></tbody></table></div>
+<div class="links"><a id="glb">Selected GLB</a><a id="audit">Result audit</a><a id="events">Authored support markers</a><a id="root">Root motion</a></div>
+<p>Times remain in seconds when switching versions. The translucent patch shows the chosen static GLB-world support plane. Diagnostics cover finite samples, not whole-sole planting, physics, continuous collision, engine import or human quality approval.</p></main>
+<script type="importmap">{"imports":{"three":"/assets/build/three.module.js","three/addons/":"/assets/examples/jsm/"}}</script>
+<script type="module" src="/native-support-viewer.mjs"></script></html>
