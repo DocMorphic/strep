@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-01T01:56:35.126324+00:00",
-  "last_progress": "Completed three relinearizations with empirical serialization headroom. The internal final state passes all hard motion/palm/edit limits and all 2,448 new projection rows; 206 old signed witnesses still fail (maximum excess about 5.87e-8 m). Its fixed-axis objective is only 0.001393 mm better than the donor; no useful physical contact improvement is established. Selected GLBs remain unchanged and no new mesh guard runs. A separate contract diagnosis proves the preserved palm anchors cannot approach closer than 22.613660 mm under the current relative lock; a hypothetical 2 mm meeting goal requires a separately authored contact target. Donor geometry still reaches about 21 mm depth. All 987 minimal source tests pass. No training, held-out use or release approval; all 14 capabilities remain unapproved."
+  "last_progress_at": "2026-10-01T02:18:36.981828+00:00",
+  "last_progress": "Completed a separately authored shared palm meeting experiment. Decoded anchors reach a 1.000019 mm gap, but original motion caps fail and 14/53 mesh samples regress. The contact pose itself has about 18.455 mm penetration and 560 crossing triangle pairs; interval maximum depth is 21.532285 mm. No Studio promotion or quality approval. Next address distributed hand geometry at contact and fit approach/departure under original motion limits. All 992 model-free source tests pass. No training or held-out use; all 14 capabilities remain unapproved."
 }

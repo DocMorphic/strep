@@ -17,7 +17,7 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
-The latest [continued repair and contact-contract diagnosis](docs/continued-motion-headroom-v1.md) clears the new projection constraints but leaves old witness failures and no established contact-quality gain. More fundamentally, the current preservation lock keeps palm anchors over 22 mm apart. The next experiment must author a shared meeting target and reassess approach geometry; output clips remain unchanged.
+The latest [shared palm meeting experiment](docs/shared-palm-meeting-v1.md) reaches an explicitly authored 1 mm anchor gap, but fails original motion limits and full-mesh checks. The meeting pose itself has about 18.455 mm penetration; fourteen of 53 interval samples fail the mesh regression guard. Distributed hand geometry and the approach/departure motion still need repair. The diagnostic clips are not selected for Studio; all 992 model-free source tests pass.
 
 The development breadth study generated 390 actor clips across 72 cases, 12 action families, and five seeds. Those categories measure coverage; they do not prove support for every requested motion. Release acceptance remains open in [the release matrix](benchmarks/project-release-v1.json).
 
