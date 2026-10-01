@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-01T03:39:37.745302+00:00",
-  "last_progress": "Completed 48 rigid hand-shape contact screens: 24 twists each for animated and rest shapes, with exact unchanged authored marker positions/normals. None pass the selected-hand crossing/containment screen. Fewest crossings are 188 animated and 284 rest; this finite grid does not prove infeasibility. Hash-bound mesh inspections show roughly 5.1 mm animated palm relief within 20 mm of the marker. Next test explicitly authored palm contact regions and collision-aware point selection, then fit and validate the full rig/motion; preserve old marker failures. All 1,028 model-free source tests pass. No Studio change, training or held-out use; all 14 release capabilities remain unapproved."
+  "last_progress_at": "2026-10-01T04:01:42.919945+00:00",
+  "last_progress": "Completed explicit 40 mm palm contact regions, geometric support-point selection, original-limit arm-chain reach and native GLB fitting. All 24 rigid region arrangements pass hand screens; actual rig and decoded native contact pose have no detected inter-actor crossings/penetration with a 0.999988 mm gap. The full motion still fails 9 of 53 geometry samples before contact, with 22.110409 mm maximum penetration, and all four original motion-cap groups fail. Next enforce supporting-surface clearance along the approach while preserving the clean contact pose, original limits and old fixed-marker benchmark. All 1,039 model-free source tests pass. No Studio promotion, training or held-out use; all 14 release capabilities remain unapproved."
 }

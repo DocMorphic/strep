@@ -6,7 +6,7 @@ import numpy as np
 from strep import ROOT, read, save, sha256, now
 
 
-def run(source, prepared_folder, output, contact_id, pose_source='animated'):
+def run(source, prepared_folder, output, contact_id, pose_source='animated', region_radius_m=None):
     from rig_asset import RigAsset
     from rig_clip_import import AnimationSampler
     from scene_pair_problem import load_actors
@@ -16,6 +16,9 @@ def run(source, prepared_folder, output, contact_id, pose_source='animated'):
     from rigid_contact_initialization import place, summarize
     from triangle_crossing import audit
     from convex_partner_surface import penetration
+    if region_radius_m is not None:
+        from palm_contact_region import candidates, rebind_surface_point
+        if not np.isfinite(region_radius_m) or region_radius_m <= 0: raise ValueError('Positive explicit contact-region radius required')
     if pose_source not in ('animated', 'rest'): raise ValueError('Explicit animated or rest hand shape required')
     source, prepared_folder, output = [Path(p).resolve() for p in (source, prepared_folder, output)]
     if output.exists(): raise ValueError('Fresh diagnostic output required')
@@ -42,7 +45,7 @@ def run(source, prepared_folder, output, contact_id, pose_source='animated'):
     if [a['name'] for a in actors] != [contact['actor'], contact['target']['actor']]:
         raise ValueError('Contact actor order must match source')
     event, target = request['event_time_s'], request['target']
-    points = []; patches = []; regions = []; faces = []; centers = []; normals = []
+    points = []; patches = []; regions = []; faces = []; centers = []; normals = []; contact_regions = []
     for i, actor in enumerate(actors):
         path = source/f'candidate-{i}.glb'
         if files.get(str(path)) != sha256(path): raise ValueError('Unbound candidate')
@@ -50,23 +53,37 @@ def run(source, prepared_folder, output, contact_id, pose_source='animated'):
         world = sampler.sample(event) if pose_source == 'animated' else rig.reference
         p = rig.vertices(world)@actor['rotation'].T+actor['translation']; points.append(p)
         item = contact['effector'] if i == 0 else contact['target']; vertex = item['surface_vertex']
-        patch = actor['faces'][np.any(actor['faces'] == vertex, axis=1)]
-        c, n = palm_geometry(p, patch, vertex); centers.append(c); normals.append(n); patches.append(patch)
         hand = next(j for j in rig.joints if rig.document['nodes'][j]['name'] == item['joint'])
         primitive = rig.primitives[0]
         ids, face_ids = hand_region(rig.parents, hand, np.asarray(rig.joints)[primitive['joints']], primitive['weights'], actor['faces'])
         np.testing.assert_array_equal(ids, request['actors'][i]['vertices'])
         np.testing.assert_array_equal(face_ids, request['actors'][i]['triangles'])
         regions.append(ids); faces.append(actor['faces'][face_ids])
+        chosen = None
+        if region_radius_m is not None:
+            declared = candidates(p, faces[-1], vertex, region_radius_m,
+                normal_tolerance_degrees=target['normal_tolerance_degrees'])
+            if not declared['candidates']: raise ValueError('No support point in the explicitly declared contact region')
+            chosen = declared['candidates'][0]; declared['selected'] = chosen; contact_regions.append(declared)
+            vertex = chosen['vertex']; replacement = rebind_surface_point(item, vertex)
+            item.clear(); item.update(replacement)
+        patch = actor['faces'][np.any(actor['faces'] == vertex, axis=1)]
+        c, n = palm_geometry(p, patch, vertex); centers.append(c)
+        normals.append(n if chosen is None else np.asarray(chosen['support_normal'])); patches.append(patch)
     output.mkdir(); (output/'implementation').mkdir(); methods = {}
+    if region_radius_m is not None: contact['tolerance_m'] = target['maximum_gap_m']
     for name in sorted(set(request['implementation']) | {'rigid_contact_initialization.py', 'study_rigid_contact_initialization.py'}):
         methods[name] = sha256(ROOT/'scripts'/name); shutil.copyfile(ROOT/'scripts'/name, output/'implementation'/name)
+    if region_radius_m is not None:
+        name = 'palm_contact_region.py'; methods[name] = sha256(ROOT/'scripts'/name)
+        shutil.copyfile(ROOT/'scripts'/name, output/'implementation'/name)
     angles = list(range(0, 360, 15))
     save(output/'request.json', dict(at=now(), source=str(source), prepared=str(prepared_folder), inputs=files,
         implementation=methods, contact_id=contact_id, event_time_s=event, target=target, twists_degrees=angles, pose_source=pose_source,
+        contact_regions=contact_regions, selected_contact=contact, new_authored_condition=region_radius_m is not None,
         original_centers_m=np.asarray(centers).tolist(), original_normals=np.asarray(normals).tolist(),
         region_vertices=[v.tolist() for v in regions], region_faces=[f.tolist() for f in faces],
-        policy='Rigidly align each source hand anchor and normal exactly, keep actor A twist zero, sweep actor B. Triangle tests cover both hand regions; directional containment checks every region vertex against the complete closed partner mesh under the same rigid transform. This is a geometry screen with relaxed rig reachability, original angle and temporal constraints, not an animation export or an infeasibility proof.',
+        policy='Rigidly align each selected anchor and placement normal, keep actor A twist zero, sweep actor B. Region mode explicitly replaces seed vertices with nearest surface-path support candidates and aligns support normals; actual surface normals must still pass the authored cone. Triangle tests cover both hand regions; directional containment checks every region vertex against the complete closed partner mesh under the same rigid transform. This is a geometry screen with relaxed rig reachability, original angle and temporal constraints, not an animation export or an infeasibility proof.',
         rig_feasibility_verified=False, diagnostic_only=True, quality_approved=False))
     rows = []; best_key = None
     for angle in angles:
@@ -104,5 +121,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('source', 'prepared', 'output'): parser.add_argument(name, type=Path)
     parser.add_argument('--contact', required=True)
-    parser.add_argument('--pose-source', choices=['animated', 'rest'], default='animated'); args = parser.parse_args()
-    with worker_lock(), threadpool_limits(limits=1): run(args.source, args.prepared, args.output, args.contact, args.pose_source)
+    parser.add_argument('--pose-source', choices=['animated', 'rest'], default='animated')
+    parser.add_argument('--contact-region-radius-m', type=float); args = parser.parse_args()
+    with worker_lock(), threadpool_limits(limits=1): run(args.source, args.prepared, args.output, args.contact, args.pose_source, args.contact_region_radius_m)

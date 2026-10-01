@@ -92,6 +92,8 @@ jobs:
           tests/test_vertex_exit_witnesses.py
           tests/test_contact_pair_barriers.py
           tests/test_rigid_contact_initialization.py
+          tests/test_palm_contact_region.py
+          tests/test_oriented_two_bone.py
           tests/test_edit_interval_clock.py
           tests/test_hand_witness_envelope.py
           tests/test_skin_motion_bounds.py
