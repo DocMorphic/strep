@@ -18,6 +18,8 @@ def run(study, output):
     study, output = Path(study).resolve(), Path(output).resolve()
     if output.exists(): raise ValueError('Fresh proposal diagnosis required')
     q, result = read(study/'request.json'), read(study/'result.json')
+    if 'temporal_refinement' in q:
+        from refined_contact_rate_path import RefinedContactRatePath as ContactRatePath
     if result['status'] != 'complete' or 'dual_peak_guards_pass' not in result:
         raise ValueError('Completed dual-guard fit required')
     files = dict(q['inputs']); files[str(study/'result.json')] = sha256(study/'result.json')
@@ -60,6 +62,9 @@ def run(study, output):
         source_rates = measures(features(source_world[ids], rig.joints), caps.dt)
         affected = np.flatnonzero(descendants(rig.parents, nodes[0])[rig.joints])
         fit = bound(study/f'actor-{i}-fit.json')
+        if 'control_dimension' in fit:
+            if fit['control_dimension'] != edit.size: raise ValueError('Control dimension differs')
+            np.testing.assert_array_equal(fit['temporal_knots_s'], edit.knots)
         if 'immutable_sample_rows' in fit:
             from rotation_rate_support import SupportedDualRatePeakGuard, rate_support
             support = rate_support(rig.parents, rig.joints, edit.model.entries, uniform)

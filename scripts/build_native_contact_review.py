@@ -53,12 +53,12 @@ def run(studies, output):
         d = bound(study/'decoded.json'); floor = bound(study/'floor.json')
         floor_mm = max(max(v['exported_m']) for v in floor)*1000
         audit = f'audits/{index}-result.json'; copies.extend([(study/'result.json', audit), (study/'decoded.json', f'audits/{index}-decoded.json')])
-        versions.append(dict(id=str(index), label=study.name.replace('-', ' '), actors=actors, duration_s=durations[0],
+        versions.append(dict(id=str(index), label=study.name.replace('-', ' ')+(' (diagnostic only)' if r.get('diagnostic_only') else ''), actors=actors, duration_s=durations[0],
             event_time_s=q['event_time_s'], contact_gap_m=d['contact']['gap_m'], guard_samples=r['guard_samples'],
             failed_geometry_samples=r['failed_geometry_samples'], maximum_depth_m=r['maximum_vertex_depth_m'],
             rate_failed_rows=[v['failed_rows'] for v in d['motion_rates']], motion_rates=d['motion_rates'],
             audit=audit, source_result_sha256=sha256(study/'result.json'), quality_approved=False,
-            note=f"Recorded floor penetration: {floor_mm:.3f} mm. Original rate caps: {'pass' if r['original_motion_caps_pass'] else 'FAIL'}. Mesh evidence covers only the declared samples. No human quality approval or engine-import claim is made by this report."))
+            note=('Diagnostic replay; not selected by the solver. ' if r.get('diagnostic_only') else '')+f"Auxiliary hand-plane check: {('pass' if r['proposal_plane_clearance_pass'] else 'FAIL') if 'proposal_plane_clearance_pass' in r else 'not recorded'}. Recorded floor penetration: {floor_mm:.3f} mm. Original rate caps: {'pass' if r['original_motion_caps_pass'] else 'FAIL'}. Mesh evidence covers only the declared samples. No human quality approval or engine-import claim is made by this report."))
     output.mkdir(); (output/'assets').mkdir(); (output/'audits').mkdir()
     for path, relative in copies:
         shutil.copyfile(path, output/relative)

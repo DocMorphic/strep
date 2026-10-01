@@ -17,7 +17,7 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
-A [dual-peak guarded contact fit](docs/dual-guarded-contact-v1.md) now reduces its weighted motion objectives by 4.96% and 12.36%, with all 53 sampled inter-character mesh checks passing and no per-joint absolute or reference-excess peak regression. A replay exposed and removed impossible proposal reserves on structurally frozen motion; final acceptance still checks every joint. All four original motion-limit groups still fail, including increased position-acceleration failure counts. Five native comparison versions are available locally; browser rendering and human quality remain unverified. No candidate is selected for Studio.
+A [finer temporal contact fit](docs/refined-guard-contact-v1.md) reduces weighted motion objectives by 63.82% and 91.25% against matched starting clips, with all 53 sampled inter-character mesh checks passing. Original motion-limit counts and worst excesses improve over the coarse fit, but all four groups still fail and two absolute acceleration peaks increase relative to that alternative. A separate full-proposal replay passes sampled mesh checks despite a failed auxiliary plane, with mixed failure-count tradeoffs. The local comparison preserves all versions and labels the diagnostic explicitly. Browser rendering and human quality remain unverified; nothing is selected for Studio.
 
 The development breadth study generated 390 actor clips across 72 cases, 12 action families, and five seeds. Those categories measure coverage; they do not prove support for every requested motion. Release acceptance remains open in [the release matrix](benchmarks/project-release-v1.json).
 
