@@ -4,6 +4,8 @@ import {scenePrimitive,scenePrimitiveMesh} from '/scene-object-geometry.js';
 import {createSceneTrimEditor} from '/scene-trim-editor.js';
 import {createScenePairEditor} from '/scene-pair-editor.js';
 import {createSceneReleaseEditor} from '/scene-release-editor.js';
+import {createNativeReviewPanel} from '/native-review-panel.mjs';
+createNativeReviewPanel();
 import {createSceneRegionEditor,sceneRateDetails,sceneSupportDetails,sceneWindowDetails} from '/scene-region-editor.js';
 import {createSceneGripPicker,sceneObjectPose} from '/scene-grip-picker.js';
 // Markers have native-frame samples; actor animation still uses its exact GLB curve.

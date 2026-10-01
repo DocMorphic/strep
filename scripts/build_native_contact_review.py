@@ -63,7 +63,7 @@ def run(studies, output):
     for path, relative in copies:
         shutil.copyfile(path, output/relative)
         if sha256(output/relative) != sha256(path): raise ValueError('Copied asset changed')
-    for name, destination in [('native-contact-review.html', 'viewer.html'), ('native-contact-clock.mjs', 'native-contact-clock.mjs'), ('soma-preview-skin.js', 'soma-preview-skin.js')]:
+    for name, destination in [('native-contact-review.html', 'viewer.html'), ('native-contact-clock.mjs', 'native-contact-clock.mjs'), ('soma-preview-skin.js', 'soma-preview-skin.js'), ('native-contact-feedback.mjs', 'native-contact-feedback.mjs')]:
         shutil.copyfile(ROOT/'scripts'/name, output/destination)
     shutil.copyfile(ROOT/'vendor/kimodo/LICENSE', output/'SOMA-preview-LICENSE.txt')
     save(output/'viewer-manifest.json', dict(at=now(), versions=versions,

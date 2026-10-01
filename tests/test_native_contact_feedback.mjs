@@ -1,0 +1,23 @@
+// Synthetic in-memory notes test binding; no human review is submitted.
+import assert from 'node:assert/strict';
+import {observation,createFeedback} from '../scripts/native-contact-feedback.mjs';
+const source={comparison_url:'/files/native-contact-reviews/synthetic/viewer.html',build_sha256:'a'.repeat(64),manifest_sha256:'b'.repeat(64),source_result_sha256:'c'.repeat(64),version:'0',duration_s:3.6666667461395264,event_time_s:2.0917225950783,actors:[0,1].map(i=>({url:`assets/0-${i}.glb`,sha256:String(i).repeat(64),placement:{translation_m:[0,0,0],rotation_xyzw:[0,0,0,1]}}))};
+const draft={reviewer:'Synthetic',notes:'Synthetic observation only',start_s:source.event_time_s,end_s:source.event_time_s};
+const note=observation(source,draft);assert.deepEqual(note.interval_s,[source.event_time_s,source.event_time_s]);assert.deepEqual(note.source,source);
+for(const k of ['independent_human','cleanup_test_performed','quality_approved'])assert.equal(note[k],false);
+note.source.actors[0].placement.translation_m[0]=1;assert.equal(source.actors[0].placement.translation_m[0],0);
+for(const change of [{start_s:-1},{end_s:4},{start_s:true},{start_s:3,end_s:2},{end_s:NaN},{reviewer:''},{notes:' '},{notes:'x'.repeat(10001)}])assert.throws(()=>observation(source,{...draft,...change}));
+for(const change of [{version:'8'},{build_sha256:'x'},{manifest_sha256:''},{event_time_s:4},{duration_s:Infinity},{comparison_url:'http://other/page'}])assert.throws(()=>observation({...source,...change},draft));
+const wrong=structuredClone(source);wrong.actors[0].url='assets/1-0.glb';assert.throws(()=>observation(wrong,draft));
+const nodes=new Map(),store=new Map();const el=id=>{if(!nodes.has(id))nodes.set(id,{value:'',disabled:false,textContent:'',addEventListener(type,fn){this[type]=fn;}});return nodes.get(id);};
+let time=source.event_time_s,exported=null;
+const ui=createFeedback({document:{getElementById:el},storage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)},getTime:()=>time,download:n=>exported=n});
+ui.bind(null);assert.equal(el('nativeFeedbackFields').disabled,true);
+ui.bind(source);el('nativeReviewer').value=draft.reviewer;el('nativeReviewNote').value=draft.notes;el('nativeReviewNote').input();
+assert.equal(el('nativeExportFeedback').disabled,false);el('nativeExportFeedback').onclick();assert.equal(exported.source.event_time_s,source.event_time_s);
+ui.bind(null);assert.equal(el('nativeExportFeedback').disabled,true);
+ui.bind(source);assert.equal(el('nativeReviewNote').value,draft.notes);
+const changed=structuredClone(source);changed.actors[1].sha256='d'.repeat(64);ui.bind(changed);assert.equal(el('nativeReviewNote').value,'');assert.equal(el('nativeExportFeedback').disabled,true);
+ui.bind(source);el('nativeNoteStart').value='';el('nativeNoteStart').input();assert.equal(el('nativeExportFeedback').disabled,true);
+time=2.066666841506958;el('nativeNoteHere').onclick();assert.equal(Number(el('nativeNoteStart').value),time);assert.equal(Number(el('nativeNoteEnd').value),time);
+console.log('Native developer notes: exact fractional time, asset/placement isolation, guards and unapproved export pass.');

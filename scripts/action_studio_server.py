@@ -25,9 +25,14 @@ def allowed_file(url_path):
     if path=='/motion-profile-editor.js':return ROOT/'scripts/motion-profile-editor.js'
     if path=='/scene-pair-editor.js':return ROOT/'scripts/scene-pair-editor.js'
     if path in ['/pose-guide-editor.js','/soma-preview-skin.js','/rig-joint-editor.js','/rig-posture-editor.js','/scene-release-editor.js','/scene-region-editor.js','/scene-grip-picker.js','/scene-object-geometry.js','/scene-hand-patch.js','/scene-trim-editor.js']:return ROOT/'scripts'/path[1:]
+    if path=='/native-review-panel.mjs':return ROOT/'scripts/native-review-panel.mjs'
+    if path.startswith('/files/native-contact-reviews/'):
+        from native_review_publication import served_file
+        return served_file(path.removeprefix('/files/'))
     if path.startswith('/assets/'):
         root=(ROOT/'assets/viewer/node_modules/three').resolve()
         target=(root/path.removeprefix('/assets/')).resolve()
+        if target.parent==root and target.name=='LICENSE':return target
     elif path.startswith('/files/'):
         relative=path.removeprefix('/files/')
         prefixes=['character-assets','rig-jobs','rig-loop-searches','scene-preview-v1','scene-fitting-v1','scene-fitting-v2','scene-fitting-v3','scene-fitting-v4','scene-fitting-v5','scene-fitting-v6','scene-fitting-v7','hand-frame-fit-v1','partner-clearance-fit-v1','object-attachment-v1','action-coverage-v1','action-jobs','contact-jobs',*CORRECTION_STUDIES]
@@ -75,6 +80,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.headers.get('Host') not in self.server.allowed_hosts:return self.respond(403,{'error':'Loopback host required'})
         route=urlsplit(self.path).path
+        if route=='/api/native-contact-reviews':
+            from native_review_publication import listing
+            return self.respond(200,listing())
         if route=='/api/scene-collections':
             names=['scene-preview-v1',*[f'scene-fitting-v{i}' for i in range(1,8)],
                    'hand-frame-fit-v1','partner-clearance-fit-v1','object-attachment-v1',
@@ -191,7 +199,7 @@ class Handler(BaseHTTPRequestHandler):
             try:return self.respond(200,displayed_manifest(target))
             except (ValueError,KeyError,TypeError,OSError) as exc:return self.respond(409,{'error':str(exc)})
         mime=mimetypes.guess_type(str(target))[0] or 'application/octet-stream'
-        if target.suffix=='.js':mime='text/javascript'
+        if target.suffix in ('.js','.mjs'):mime='text/javascript'
         self.send_response(200);self.send_header('Content-Type',mime);self.send_header('Content-Length',str(target.stat().st_size))
         self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff');self.end_headers()
         try:

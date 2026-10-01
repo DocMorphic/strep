@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {createNativeReviewPanel} from '../scripts/native-review-panel.mjs';
+const nodes=new Map();const el=id=>{if(!nodes.has(id))nodes.set(id,{value:'',disabled:false,textContent:'',hidden:true,open:false,children:[],addEventListener(type,fn){this[type]=fn;},replaceChildren(...items){this.children=items;this.value=items[0]?.value||'';},removeAttribute(name){delete this[name];}});return nodes.get(id);};
+let response,pending=null;
+const api=()=>pending||Promise.resolve({ok:true,json:async()=>response});
+const panel=el('nativeReviewPanel');panel.open=true;
+const review={id:'synthetic',viewer_url:'/files/native-contact-reviews/synthetic/viewer.html',build_sha256:'a'.repeat(64),label:'Synthetic',versions:3,quality_approved:false};
+response={reviews:[review,{...review,id:'escape',viewer_url:'https://other/viewer.html'}],rejected:[]};
+const ui=createNativeReviewPanel({document:{getElementById:el},fetch:api,Option:function(text,value){return{text,value};},MutationObserver:null});
+await ui.refresh();assert.equal(el('nativeReviewSelect').children.length,1);assert.equal(el('nativeReviewFrame').src,undefined);
+el('nativeReviewOpen').onclick();assert.equal(el('nativeReviewFrame').src,review.viewer_url+'?build='+review.build_sha256);assert.equal(el('nativeReviewFrame').hidden,false);
+panel.open=false;panel.toggle();assert.equal(el('nativeReviewFrame').src,undefined);assert.equal(el('nativeReviewFrame').hidden,true);
+panel.open=true;response={reviews:[],rejected:[{id:'failed'}]};await ui.refresh();assert.equal(el('nativeReviewOpen').disabled,true);
+let resolve;pending=new Promise(r=>resolve=r);const wait=ui.refresh();panel.open=false;panel.toggle();resolve({ok:true,json:async()=>({reviews:[review],rejected:[]})});await wait;assert.equal(el('nativeReviewFrame').src,undefined);assert.equal(el('nativeReviewOpen').disabled,true);
+pending=null;panel.open=true;response={reviews:[review],rejected:[{id:'failed'}]};await ui.refresh();assert.match(el('nativeReviewStatus').textContent,/failed integrity/);
+console.log('Native Studio panel: lazy opening, URL bounds, hash selection, unload and stale-response guards pass.');

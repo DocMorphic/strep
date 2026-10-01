@@ -5,6 +5,7 @@ def render():
     scripts=ROOT/'scripts';html=(scripts/'desktop-shell.html').read_text(encoding='utf8')
     html=html.replace('__CONTROL_CENTER__',(scripts/'control-center.html').read_text(encoding='utf8'))
     html=html.replace('<details id="sceneRegionPanel">',(scripts/'scene-pair-editor.html').read_text(encoding='utf8')+'<details id="sceneRegionPanel">')
+    html=html.replace('<details id="sceneTrimPanel">',(scripts/'native-review-panel.html').read_text(encoding='utf8')+'<details id="sceneTrimPanel">')
     html=html.replace('__CHARACTER_STUDIO__',(scripts/'character-studio.html').read_text(encoding='utf8'))
     html=html.replace('__CORRECTION_REVIEW__',(scripts/'correction-review.html').read_text(encoding='utf8'))
     html=html.replace('__CHARACTER_CONTACTS__',(scripts/'character-contacts.html').read_text(encoding='utf8'))
