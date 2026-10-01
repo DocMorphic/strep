@@ -17,7 +17,7 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
-A [four-stage native motion comparison](docs/peak-guarded-contact-v1.md) now includes per-joint rate-excess guards. The latest fit preserves all 53 sampled inter-character mesh passes and lowers its objective, but original rate limits still fail. An independent check also finds increased absolute angular-acceleration peaks despite passing the excess guards. Eight copied GLBs pass offline format/loader checks; browser rendering and human quality remain unverified. No candidate is selected for Studio.
+A [dual-peak guarded contact fit](docs/dual-guarded-contact-v1.md) now reduces its weighted motion objectives by 4.96% and 12.36%, with all 53 sampled inter-character mesh checks passing and no per-joint absolute or reference-excess peak regression. A replay exposed and removed impossible proposal reserves on structurally frozen motion; final acceptance still checks every joint. All four original motion-limit groups still fail, including increased position-acceleration failure counts. Five native comparison versions are available locally; browser rendering and human quality remain unverified. No candidate is selected for Studio.
 
 The development breadth study generated 390 actor clips across 72 cases, 12 action families, and five seeds. Those categories measure coverage; they do not prove support for every requested motion. Release acceptance remains open in [the release matrix](benchmarks/project-release-v1.json).
 
