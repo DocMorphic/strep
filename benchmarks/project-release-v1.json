@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-01T22:48:28.262384+00:00",
-  "last_progress": "Added experimental simultaneous native support/source-rate search over bounded knee bends, with sparse derivative support and independently decoded float32 acceptance. Two fixed-seed studies at 80/320 evaluations retain raw inputs and eight failed proposals: all foot-height screens pass at 142 stance samples per foot and outside motion is exact across 701 times, but every search hits its budget and every source-rate screen fails. No accepted motion or solver feasibility claim; next add bounded knee-plane/swivel freedom and re-audit unchanged constraints. 1,241 model-free Python tests and 14 JS suites pass; 49ade88 hosted Windows/Linux checks passed. No training, held-out use, browser/engine/GPU/human approval or release-gate changes; all 14 release capabilities remain unapproved."
+  "last_progress_at": "2026-10-01T23:17:42.023694+00:00",
+  "last_progress": "Added bounded native knee-plane/swivel freedom to joint support/source-rate search. All four 320-evaluation proposals pass sampled support heights and preserve native/outside motion, but exhaust their budgets and fail unchanged source-rate acceptance; exact input retained. 1,251 Python tests and 14 JS suites pass; 47 evidence bindings rehash. A separately frozen 2000-evaluation four-trial study remains live (session 78635); no terminal result claimed. Public DocMorphic/strep verified and continuing commits authorized. No training, held-out use, new engine/GPU/browser/human approval or release-gate changes; all 14 release capabilities remain unapproved. Full-project goal remains active."
 }

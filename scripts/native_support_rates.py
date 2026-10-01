@@ -36,7 +36,7 @@ def aligned(a,b):
     return Rotation.from_rotvec(vectors).as_matrix()
 
 
-def reach_rotations(worlds,parents,chain,amounts,up,original):
+def reach_rotations(worlds,parents,chain,amounts,up,original,swivels=None):
     """Source-plane two-bone reach with retained native foot world orientation."""
     upper,knee,foot=chain;points=worlds[:,:,:3,3][:,chain]
     shoulder,old_knee,old_foot=points.transpose(1,0,2)
@@ -49,7 +49,11 @@ def reach_rotations(worlds,parents,chain,amounts,up,original):
     fallback=np.linalg.norm(bend,axis=1)<1e-10
     bend[fallback]=np.cross(old_axis[fallback],np.eye(3)[np.argmin(abs(old_axis[fallback]),axis=1)])
     bend/=np.linalg.norm(bend,axis=1)[:,None]
-    transported=aligned(old_axis,axis);along=(a*a-b*b+d*d)/(2*d)
+    swivel=np.zeros(len(worlds)) if swivels is None else np.asarray(swivels,float)
+    if swivel.shape!=(len(worlds),) or not np.isfinite(swivel).all() or np.any(abs(swivel)>np.pi):raise ValueError('Finite matching swivel angles within pi required')
+    transported=aligned(old_axis,axis)
+    if np.any(swivel):transported=Rotation.from_rotvec(axis*swivel[:,None]).as_matrix()@transported
+    along=(a*a-b*b+d*d)/(2*d)
     new_knee=shoulder+axis*along[:,None]+np.einsum('nij,nj->ni',transported,bend)*np.sqrt(np.maximum(0,a*a-along*along))[:,None]
     rotation_u=aligned(np.einsum('nij,nj->ni',transported,u),new_knee-shoulder)@transported@worlds[:,upper,:3,:3]
     rotation_k=aligned(np.einsum('nij,nj->ni',transported,v),target-new_knee)@transported@worlds[:,knee,:3,:3]
@@ -57,7 +61,8 @@ def reach_rotations(worlds,parents,chain,amounts,up,original):
     local=np.stack([parent_rotation.transpose(0,2,1)@rotation_u,rotation_u.transpose(0,2,1)@rotation_k,rotation_k.transpose(0,2,1)@worlds[:,foot,:3,:3]],axis=1)
     q=Rotation.from_matrix(local.reshape(-1,3,3)).as_quat().reshape(len(worlds),3,4)
     q*=np.where(np.sum(q*original,axis=2)<0,-1.,1.)[:,:,None]
-    q[np.abs(amounts)<=1e-12]=original[np.abs(amounts)<=1e-12]
+    unchanged=(np.abs(amounts)<=1e-12)&(swivel==0)
+    q[unchanged]=original[unchanged]
     return q
 
 
@@ -135,6 +140,9 @@ class SupportRateProblem:
             parts.extend([np.maximum(0,movement-r['displacement'])/.001,np.maximum(0,angle-r['angle']).ravel()])
         return np.concatenate(parts)
 
+    def dependencies(self,d):
+        return zip(d['free'],d['ids'])
+
     def sparsity(self):
         """Every row is supported by its neighboring native keys and branch."""
         size=len(self.residual(self.initial));matrix=lil_matrix((size,len(self.initial)),dtype=int)
@@ -143,7 +151,7 @@ class SupportRateProblem:
             count=len(uniform)-order
             for d in self.data:
                 branch=descendants(self.rig.parents,d['row']['chain'][0]);columns=np.flatnonzero(branch[np.asarray(self.rig.joints)[self.columns]])
-                for key,col in zip(d['free'],d['ids']):
+                for key,col in self.dependencies(d):
                     a,b=d['clock'][max(0,key-1)],d['clock'][min(len(d['clock'])-1,key+1)]
                     relevant=np.flatnonzero((uniform[:count]<=b)&(uniform[order:]>=a))
                     ids=offset+(relevant[:,None]*len(self.columns)+columns).ravel();matrix[ids,col]=1
@@ -151,7 +159,7 @@ class SupportRateProblem:
         for d in self.data:
             r=d['row'];stance=self.times[(self.times>=r['stance_s'][0])&(self.times<=r['stance_s'][1])]
             edit=self.times[(self.times>=r['edit_s'][0])&(self.times<=r['edit_s'][1])]
-            for key,col in zip(d['free'],d['ids']):
+            for key,col in self.dependencies(d):
                 a,b=d['clock'][max(0,key-1)],d['clock'][min(len(d['clock'])-1,key+1)]
                 ids=np.flatnonzero((stance>=a)&(stance<=b));matrix[offset+ids,col]=1;matrix[offset+len(stance)+ids,col]=1
                 ids=np.flatnonzero((edit>=a)&(edit<=b));matrix[offset+2*len(stance)+ids,col]=1
