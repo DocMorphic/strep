@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-01T03:28:26.141740+00:00",
-  "last_progress": "Completed preventive triangle-pair constraints with frozen source axes and hard contact/joint limits. Three bounded rounds accumulate 130 to 157 pairs; two retained corrections pass the complete source contact-pose mesh-regression guard after independent export. Crossings remain 220 and maximum depth falls only from 10.212648 to 10.106972 mm. All four original motion-cap groups still fail; no Studio promotion or collision-free claim. Next assess collision-free initialization and rig-space untangling before extending this local search. All 1,022 model-free source tests pass; no training or held-out use; all 14 release capabilities remain unapproved."
+  "last_progress_at": "2026-10-01T03:39:37.745302+00:00",
+  "last_progress": "Completed 48 rigid hand-shape contact screens: 24 twists each for animated and rest shapes, with exact unchanged authored marker positions/normals. None pass the selected-hand crossing/containment screen. Fewest crossings are 188 animated and 284 rest; this finite grid does not prove infeasibility. Hash-bound mesh inspections show roughly 5.1 mm animated palm relief within 20 mm of the marker. Next test explicitly authored palm contact regions and collision-aware point selection, then fit and validate the full rig/motion; preserve old marker failures. All 1,028 model-free source tests pass. No Studio change, training or held-out use; all 14 release capabilities remain unapproved."
 }

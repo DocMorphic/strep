@@ -17,7 +17,7 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
-The latest [preventive contact-pair study](docs/contact-pair-prevention-v1.md) passes the full source contact-pose mesh-regression guard with no new intersections. Maximum penetration decreases only from 10.213 to 10.107 mm and 220 crossings remain; original motion caps still fail. Next assess collision-free initialization and rig-space untangling. No candidate is selected for Studio; all 1,022 model-free source tests pass.
+The latest [hand contact initialization study](docs/rigid-contact-initialization-v1.md) tests 48 rigid placements across animated and rest hand shapes. None passes the hand geometry screen despite exact marker contact. Mesh inspection shows local palm relief that the single-marker constraint misses. Next test explicit palm contact regions with collision-aware point selection; this finite sweep does not prove infeasibility. No candidate is selected for Studio; all 1,028 model-free source tests pass.
 
 The development breadth study generated 390 actor clips across 72 cases, 12 action families, and five seeds. Those categories measure coverage; they do not prove support for every requested motion. Release acceptance remains open in [the release matrix](benchmarks/project-release-v1.json).
 
