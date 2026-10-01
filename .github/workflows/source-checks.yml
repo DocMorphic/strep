@@ -113,6 +113,7 @@ jobs:
           tests/test_native_support.py
           tests/test_native_support_rates.py
           tests/test_native_support_swivel.py
+          tests/test_native_support_orientation.py
           tests/test_studio_native_support.py
           tests/test_imported_skin_evidence.py
           tests/test_imported_skin_reconstruction.py

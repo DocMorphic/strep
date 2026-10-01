@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-01T23:17:42.023694+00:00",
-  "last_progress": "Added bounded native knee-plane/swivel freedom to joint support/source-rate search. All four 320-evaluation proposals pass sampled support heights and preserve native/outside motion, but exhaust their budgets and fail unchanged source-rate acceptance; exact input retained. 1,251 Python tests and 14 JS suites pass; 47 evidence bindings rehash. A separately frozen 2000-evaluation four-trial study remains live (session 78635); no terminal result claimed. Public DocMorphic/strep verified and continuing commits authorized. No training, held-out use, new engine/GPU/browser/human approval or release-gate changes; all 14 release capabilities remain unapproved. Full-project goal remains active."
+  "last_progress_at": "2026-10-01T23:44:48.887454+00:00",
+  "last_progress": "Added bounded native foot-orientation freedom and preserved numerical controls; four actual GLBs replay byte-for-byte. Completed both the 2000-evaluation knee-plane study and the matched 320-evaluation orientation study. All sampled support-height/preservation screens pass, but all source-rate screens fail and exact inputs remain selected. Float32 diagnostics distinguish serialization changes from still-failing continuous proposals. 1,273 Python tests and 14 JS suites pass; faa8ba6 hosted Windows/Linux checks passed. Both heavy workers and all checks are terminal; next warm-start explicit serialized feasibility repair from saved controls. No training, held-out use, new engine/GPU/browser/human approval or release-gate changes; all 14 capabilities remain unapproved. The full-project goal remains active."
 }

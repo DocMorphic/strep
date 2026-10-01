@@ -43,15 +43,18 @@ def describe(source, output):
     save(output, record); return record
 
 
-def run(source, spec_path, output, *, joint_rates=False, joint_evaluations=80, joint_swivel=False):
+def run(source, spec_path, output, *, joint_rates=False, joint_evaluations=80, joint_swivel=False, joint_foot_orientation=False):
     if type(joint_rates) is not bool: raise ValueError('Explicit joint-rate mode required')
     if type(joint_evaluations) is not int or not 1 <= joint_evaluations <= 2000 or not joint_rates and joint_evaluations != 80: raise ValueError('Joint-search budget requires joint-rate mode and 1–2000 evaluations')
     if type(joint_swivel) is not bool or joint_swivel and not joint_rates: raise ValueError('Knee-plane search requires joint-rate mode')
+    if type(joint_foot_orientation) is not bool or joint_foot_orientation and not (joint_rates and joint_swivel): raise ValueError('Foot orientation search requires joint-rate and knee-plane modes')
     propose_solver = propose
     if joint_rates:
         from native_support_rates import propose as joint_propose
         if joint_swivel:
             from native_support_swivel import propose as joint_propose
+        if joint_foot_orientation:
+            from native_support_orientation import propose as joint_propose
         from functools import partial
         propose_solver = partial(joint_propose, maximum_evaluations=joint_evaluations)
     source, spec_path, output = [Path(p).resolve() for p in (source, spec_path, output)]
@@ -78,12 +81,14 @@ def run(source, spec_path, output, *, joint_rates=False, joint_evaluations=80, j
              'native_engine_clock.py', 'absolute_rate_peaks.py'}
     if joint_rates: names |= {'native_support_rates.py', 'timed_rotation_edit.py'}
     if joint_swivel: names.add('native_support_swivel.py')
+    if joint_foot_orientation: names.add('native_support_orientation.py')
     for name in sorted(names):
         p = SOURCE_DIR/name; methods[name] = sha256(p); shutil.copyfile(p, archive/name)
     save(output/'request.json', dict(at=now(), spec=spec, inputs=inputs, implementation=methods,
         joint_search_maximum_evaluations=joint_evaluations if joint_rates else None,
-        proposal_method='joint_support_source_rate_swivel_search' if joint_swivel else 'joint_support_source_rate_search' if joint_rates else 'bounded_bend_smoothing',
+        proposal_method='joint_support_source_rate_orientation_search' if joint_foot_orientation else 'joint_support_source_rate_swivel_search' if joint_swivel else 'joint_support_source_rate_search' if joint_rates else 'bounded_bend_smoothing',
         joint_swivel_limit_degrees=5. if joint_swivel else None,
+        joint_foot_orientation_limit_degrees=1. if joint_foot_orientation else None,
         source_rate_reference='Selected input clip, full uniform 120Hz samples and four equal time bins; not a replacement for independent benchmark caps',
         rate_tolerance=caps.tolerance, excluded_derivative_tail_s=reader.duration-float(uniform[-1]),
         quality_approved=False))
@@ -190,12 +195,13 @@ if __name__ == '__main__':
     parser.add_argument('--joint-rates', action='store_true', help='Experimental simultaneous sampled support/source-rate search')
     parser.add_argument('--joint-evaluations', type=int, default=80, help='1–2000 evaluations per experimental joint-rate trial')
     parser.add_argument('--joint-swivel', action='store_true', help='Add bounded knee-plane freedom to joint-rate search')
+    parser.add_argument('--joint-foot-orientation', action='store_true', help='Allow up to 1 degree native foot-world orientation edits; requires joint-rate and knee-plane modes')
     args = parser.parse_args()
     if args.describe is not None:
-        if args.spec is not None or args.output is not None or args.joint_rates or args.joint_evaluations != 80 or args.joint_swivel: parser.error('Description does not use a support draft or fit output')
+        if args.spec is not None or args.output is not None or args.joint_rates or args.joint_evaluations != 80 or args.joint_swivel or args.joint_foot_orientation: parser.error('Description does not use a support draft or fit output')
         describe(args.source, args.describe)
     else:
         if args.spec is None or args.output is None: parser.error('Support draft and fresh fit output required')
         from action_worker_lock import worker_lock
         from threadpoolctl import threadpool_limits
-        with worker_lock(), threadpool_limits(limits=1): run(args.source, args.spec, args.output, joint_rates=args.joint_rates, joint_evaluations=args.joint_evaluations, joint_swivel=args.joint_swivel)
+        with worker_lock(), threadpool_limits(limits=1): run(args.source, args.spec, args.output, joint_rates=args.joint_rates, joint_evaluations=args.joint_evaluations, joint_swivel=args.joint_swivel, joint_foot_orientation=args.joint_foot_orientation)

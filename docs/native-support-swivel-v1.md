@@ -74,11 +74,32 @@ All **47** bound/input/output/archive files rehash without mismatch. Failed
 proposals, raw input, support samples, root/event tracks and method archives
 remain local under ignored `reports/`.
 
-A separate **2000-evaluation** four-trial study is still running at this
-publication (`reports/native-support-swivel-rates-v2`, session 78635). Its
-input and implementation hashes still match the frozen request. No completed
-result or acceptance is claimed for that study; it must be inspected before
-further edits to its imported implementation.
+A separate **2000-evaluation** four-trial study
+(`reports/native-support-swivel-rates-v2`, session 78635) is now terminal.
+All four proposals again pass support heights and fail source rates. Trial 2
+stops on the optimizer's `xtol` condition at 1812 evaluations; the other three
+exhaust 2000 evaluations. Optimizer termination does not mean the constraints
+passed. The exact input is retained.
+
+| Trial | Failed rows at budget 2000 | Final proxy squared residual | Evaluations |
+| --- | --- | --- | --- |
+| 1 | 44 / 13 / 18 / 9 | 0.0003091243 | 2000 |
+| 2 | 40 / 16 / 11 / 11 | 0.0000213899 | 1812 |
+| 3 | 52 / 18 / 15 / 15 | 0.0006204151 | 2000 |
+| 4 | 36 / 11 / 13 / 10 | 0.0001375205 | 2000 |
+
+The v2 result SHA-256 is
+`f80e758f6ba2932767386d63f3cf85f09a18be345ebcfeb3327106b48d573ade`;
+all 47 input/output/archive bindings rehash without mismatch. No preceding
+trial, draft or archived implementation was modified.
+
+An independently decoded v1 diagnosis locates residual failures in both knee
+motion and foot/toe motion. Native foot orientation differs from the source by
+at most 1.104e-7 radians, while full audit-time differences reach approximately
+5.826e-6 radians. Retaining orientation at native keys therefore does not retain
+it exactly between keys under local-track interpolation. This motivates the
+separate [bounded foot-orientation experiment](native-support-orientation-v1.md),
+without attributing every rate failure to interpolation or claiming infeasibility.
 
 ## Validation and remaining work
 
