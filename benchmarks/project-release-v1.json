@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-01T04:21:12.004988+00:00",
-  "last_progress": "Completed hand-plane retraction and contact-preserving native key export under original pose/key budgets. The pose guide passes all 53 full inter-actor geometry samples; a 30 nm frozen-contact plane residual remains explicit. Native interpolation reintroduces 3/53 geometry failures with 1.059083 mm maximum depth, down from source 9/53 and 22.110409 mm. Contact target and contact mesh remain clean, but all four original motion-cap groups fail. Next constrain actual interpolated skin and smoothness while retaining exact contact and original budgets. All 1,050 model-free source tests pass. No Studio promotion, training or held-out use; all 14 release capabilities remain unapproved."
+  "last_progress_at": "2026-10-01T04:34:01.662778+00:00",
+  "last_progress": "Completed native-key wrist retraction with contact-bracketing keys frozen. Both exported clips pass all 53 full inter-actor geometry samples, retain exact contact and original joint budgets, and clear 85 editable plane samples per actor; frozen nanometre plane residuals remain explicit. Maximum extra retraction is 3.640390/6.720503 mm. All four original rate-cap groups still fail and several excesses worsen. A separate read-only diagnosis locates sharp near-contact marker velocity changes; next permit contact-preserving endpoint changes and constrain rates plus skin clearance. All 1,056 model-free source tests pass. No Studio promotion, training or held-out use; all 14 release capabilities remain unapproved."
 }
