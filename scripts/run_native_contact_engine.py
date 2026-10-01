@@ -11,10 +11,11 @@ from native_engine_clock import audit_clock, compare_poses, clock_echo_matches
 from native_godot_payload import payload
 
 
-def run(study, output, native_tracks=False):
+def run(study, output, native_tracks=False, authoring_seek=False):
     study, output = Path(study).resolve(), Path(output).resolve()
     if output.exists() or output.parent != ROOT/'reports':
         raise ValueError('Fresh immediate reports folder required')
+    if authoring_seek and not native_tracks: raise ValueError('Authoring seek requires native tracks')
     q, result = read(study/'request.json'), read(study/'result.json')
     if result['status'] != 'complete' or not result['native_animation_exported']:
         raise ValueError('Completed native exports required')
@@ -46,7 +47,7 @@ def run(study, output, native_tracks=False):
         names = [rig.document['nodes'][j].get('name') for j in rig.joints]
         if any(not n for n in names) or len(set(names)) != len(names): raise ValueError('Unique named joints required')
         times = audit_clock(sampler.duration, [c[2] for c in sampler.channels], declared, q['event_time_s'])
-        cases.append(dict(id=f'actor-{i}', path=str(path), frames=len(times), sample_times_s=times.tolist()))
+        cases.append(dict(id=f'actor-{i}', path=str(path), frames=len(times), sample_times_s=times.tolist(), authoring_seek=authoring_seek))
         if native_tracks:
             cases[-1].update(native_payload=payload(rig, sampler, sha256(path)),
                             native_animation_output=str(output/f'actor-{i}-animation.res'))
@@ -56,6 +57,7 @@ def run(study, output, native_tracks=False):
     methods = {}
     for path in [Path(__file__), ROOT/'scripts/native_engine_clock.py', ROOT/'scripts/native_godot_import_audit.gd',
                  ROOT/'scripts/native_godot_payload.py', ROOT/'scripts/native_godot_tracks.gd',
+                 ROOT/'scripts/native_godot_preview.gd',
                  ROOT/'scripts/rig_asset.py', ROOT/'scripts/rig_clip_import.py', ROOT/'scripts/gltf_tools.py', ROOT/'scripts/strep.py']:
         methods[path] = sha256(path)
     output.mkdir(); project = output/'project'; project.mkdir()
@@ -67,8 +69,9 @@ def run(study, output, native_tracks=False):
     (project/'project.godot').write_text('config_version=5\n[application]\nconfig/name="Strep native clock audit"\n[rendering]\nrenderer/rendering_method="gl_compatibility"\n', encoding='utf8')
     shutil.copyfile(ROOT/'scripts/native_godot_import_audit.gd', project/'audit.gd')
     shutil.copyfile(ROOT/'scripts/native_godot_tracks.gd', project/'native_godot_tracks.gd')
+    shutil.copyfile(ROOT/'scripts/native_godot_preview.gd', project/'native_godot_preview.gd')
     save(output/'request.json', dict(at=now(), study=str(study), inputs=files, cases=cases, tolerance=1e-4,
-        event_time_s=q['event_time_s'], bake_fps=30, native_tracks=native_tracks,
+        event_time_s=q['event_time_s'], bake_fps=30, native_tracks=native_tracks, authoring_seek=authoring_seek,
         seek_scope='Explicit full-clip 120Hz, native keys/midpoints and authored event/window/guard/plane/protected clock; exact deduplication only.'))
     save(output/'pipeline.json', dict(status='processing'))
     try:
@@ -107,7 +110,8 @@ def run(study, output, native_tracks=False):
         passed = all(c['engine_pose_pass'] for c in checks)
         save(output/'verification.json', dict(at=now(), engine=actual['engine'], checks=checks, engine_pose_pass=passed,
             native_tracks=native_tracks,
-            scope='Actual headless Godot import and world-joint seek at explicit native/fractional/full-clip samples.'+(' Default baked animation replaced by original LINEAR bone keys and saved/reloaded binary Animation resources.' if native_tracks else ' Default fixed-rate Godot import retained.')+' Imported GPU skin, contact/collision correctness, human quality and Studio selection are not established.',
+            authoring_seek=authoring_seek,
+            scope='Actual headless Godot import and world-joint seek at explicit native/fractional/full-clip samples.'+(' Default baked animation replaced by original LINEAR bone keys and saved/reloaded binary Animation resources.' if native_tracks else ' Default fixed-rate Godot import retained.')+(' Direct native-track authoring scrubbing; ordinary AnimationPlayer playback and event dispatch are separate.' if authoring_seek else ' Ordinary AnimationPlayer seek.')+' Imported GPU skin, contact/collision correctness, human quality and Studio selection are not established.',
             quality_approved=False, selected_for_studio=False, gpu_skin_verified=False))
         save(output/'result.json', dict(at=now(), status='complete', engine_pose_pass=passed,
             outputs={p.relative_to(output).as_posix(): sha256(p) for p in output.rglob('*') if p.is_file() and p.name != 'pipeline.json'},
@@ -124,5 +128,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('study', type=Path); parser.add_argument('output', type=Path)
     parser.add_argument('--native-tracks', action='store_true')
+    parser.add_argument('--authoring-seek', action='store_true')
     args = parser.parse_args()
-    if not run(args.study, args.output, args.native_tracks): raise SystemExit(2)
+    if not run(args.study, args.output, args.native_tracks, args.authoring_seek): raise SystemExit(2)

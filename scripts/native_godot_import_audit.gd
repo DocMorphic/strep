@@ -1,5 +1,6 @@
 extends SceneTree
 const NativeTracks = preload("res://native_godot_tracks.gd")
+const NativePreview = preload("res://native_godot_preview.gd")
 
 func vec(v: Vector3) -> Array:
 	return [v.x, v.y, v.z]
@@ -85,7 +86,13 @@ func run_audit() -> void:
 		var frames: Array = []
 		for frame in range(item.frames):
 			var sample_time: float = float(item.sample_times_s[frame]) if item.has("sample_times_s") else float(frame) / 30.0
-			player.seek(sample_time, true)
+			if item.get("authoring_seek", false):
+				if NativePreview.seek(player, skeleton, player.get_animation(selected), sample_time) != OK:
+					push_error("Native authoring seek failed")
+					quit(7)
+					return
+			else:
+				player.seek(sample_time, true)
 			var transforms: Array = []
 			for bone in range(skeleton.get_bone_count()):
 				transforms.append(matrix(skeleton.global_transform * skeleton.get_bone_global_pose(bone)))
