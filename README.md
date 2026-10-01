@@ -17,7 +17,7 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
-The latest [shared palm meeting experiment](docs/shared-palm-meeting-v1.md) reaches an explicitly authored 1 mm anchor gap, but fails original motion limits and full-mesh checks. The meeting pose itself has about 18.455 mm penetration; fourteen of 53 interval samples fail the mesh regression guard. Distributed hand geometry and the approach/departure motion still need repair. The diagnostic clips are not selected for Studio; all 992 model-free source tests pass.
+The latest [distributed hand-plane experiment](docs/contact-plane-pose-v1.md) retains the authored contact screen while reducing contact-pose crossings from 560 to 204 and maximum penetration from 18.455 to 11.689 mm. Collision and original motion checks still fail. A control-limit diagnosis identifies excluded rotations within the existing angle budgets for the next trial. The diagnostic clips are not selected for Studio; all 998 model-free source tests pass.
 
 The development breadth study generated 390 actor clips across 72 cases, 12 action families, and five seeds. Those categories measure coverage; they do not prove support for every requested motion. Release acceptance remains open in [the release matrix](benchmarks/project-release-v1.json).
 

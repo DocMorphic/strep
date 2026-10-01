@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-01T02:18:36.981828+00:00",
-  "last_progress": "Completed a separately authored shared palm meeting experiment. Decoded anchors reach a 1.000019 mm gap, but original motion caps fail and 14/53 mesh samples regress. The contact pose itself has about 18.455 mm penetration and 560 crossing triangle pairs; interval maximum depth is 21.532285 mm. No Studio promotion or quality approval. Next address distributed hand geometry at contact and fit approach/departure under original motion limits. All 992 model-free source tests pass. No training or held-out use; all 14 capabilities remain unapproved."
+  "last_progress_at": "2026-10-01T02:31:03.957419+00:00",
+  "last_progress": "Completed distributed hand-plane fitting with unchanged original edit budgets. The exported authored contact screen passes; at the contact pose, proper triangle crossings fall from 560 to 204 and maximum penetration from 18.455 to 11.689 mm. Collision and all four original motion-cap groups still fail; no Studio promotion. A bound-control diagnosis identifies the inscribed component box as a restriction inside the allowed joint rotation ball. Next use joint-vector norm constraints without raising angle budgets or relaxing contact/motion/geometry checks. All 998 model-free source tests pass. No training or held-out use; all 14 capabilities remain unapproved."
 }
