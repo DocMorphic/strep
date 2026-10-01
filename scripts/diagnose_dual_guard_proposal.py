@@ -79,6 +79,24 @@ def run(study, output):
         variants = []
         proposals = [('source', zero, True, None), ('double_proposal', np.asarray(fit['proposed_controls']), False, None)]
         proposals += [(f"serialized_{a['fraction']}", np.asarray(fit['proposed_controls'])*a['fraction'], True, a) for a in fit['serialized_attempts']]
+        if 'selected_checkpoint' in fit:
+            checkpoints = bound(study/f'actor-{i}-checkpoints.json')
+            if checkpoints['status'] != 'selection_complete': raise ValueError('Completed checkpoint selection required')
+            feasible_costs = [fit['initial_objective']]
+            for record in checkpoints['records']:
+                for attempt in record['serialized_attempts']:
+                    feasible = attempt['minimum_constraint'] >= 0 and attempt['contact_matrix_drift'] <= 1e-6
+                    if feasible != attempt['feasible']: raise ValueError('Checkpoint feasibility flag differs from margins')
+                    if feasible: feasible_costs.append(attempt['objective'])
+            if fit['selected_objective'] > min(feasible_costs)+1e-10:
+                raise ValueError('Selected checkpoint is not lowest recorded feasible objective')
+            if fit['selected_checkpoint'] == 'source': expected = zero
+            else:
+                recorded = next(r for r in checkpoints['records'] if r['label'] == fit['selected_checkpoint'])
+                expected = np.asarray(recorded['proposed_controls'])*fit['selected_fraction']
+            np.testing.assert_array_equal(expected, fit['controls'])
+            np.testing.assert_array_equal(expected, checkpoints['selected_controls'])
+            proposals.append(('selected_checkpoint', expected, True, None))
         for label, x, quantize, saved in proposals:
             world = edit.world(x, quantize); values = measures(features(world[ids], rig.joints), caps.dt)
             proposal = not quantize
@@ -88,6 +106,8 @@ def run(study, output):
             margins = guard.sample_margins(values, proposal=True) if proposal else guard.margins(values)
             minimum = float(min(plane_margin.min(), angle_margin.min(), margins.min()))
             cost = sum(float(np.mean((np.maximum(v-c-caps.tolerance, 0)/s)**2)) for v, c, s in zip(values, caps.caps, guard.scales))
+            if label == 'selected_checkpoint' and (abs(cost-fit['selected_objective']) > 1e-10 or abs(minimum-fit['minimum_constraint']) > 1e-10):
+                raise ValueError('Selected checkpoint replay differs from completed fit')
             if saved and (abs(cost-saved['objective']) > 1e-10 or abs(minimum-saved['minimum_constraint']) > 1e-10):
                 raise ValueError('Replay differs from saved serialized attempt')
             rate_rows = []

@@ -17,7 +17,7 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
-A [finer temporal contact fit](docs/refined-guard-contact-v1.md) reduces weighted motion objectives by 63.82% and 91.25% against matched starting clips, with all 53 sampled inter-character mesh checks passing. Original motion-limit counts and worst excesses improve over the coarse fit, but all four groups still fail and two absolute acceleration peaks increase relative to that alternative. A separate full-proposal replay passes sampled mesh checks despite a failed auxiliary plane, with mixed failure-count tradeoffs. The local comparison preserves all versions and labels the diagnostic explicitly. Browser rendering and human quality remain unverified; nothing is selected for Studio.
+A [checkpoint selector for contact fitting](docs/checkpoint-guard-contact-v1.md) preserves feasible intermediate proposals after float32 serialization. On the matched case, it lowers actor A's selected objective by 77.31% over the previous export without changing the optimizer trajectory. All 53 sampled mesh checks and source-anchored peak guards pass, but original rate limits still fail, failure counts are mixed, and several peaks regress against the previous alternative. Six comparison GLBs pass offline loader checks. Native engine-clock validation and Studio integration are next; browser rendering and human quality remain unverified.
 
 The development breadth study generated 390 actor clips across 72 cases, 12 action families, and five seeds. Those categories measure coverage; they do not prove support for every requested motion. Release acceptance remains open in [the release matrix](benchmarks/project-release-v1.json).
 
