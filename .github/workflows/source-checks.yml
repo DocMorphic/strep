@@ -105,6 +105,8 @@ jobs:
           tests/test_rotation_rate_support.py
           tests/test_refined_contact_rate_path.py
           tests/test_serialized_checkpoint_selection.py
+          tests/test_native_engine_clock.py
+          tests/test_native_godot_payload.py
           tests/test_edit_interval_clock.py
           tests/test_hand_witness_envelope.py
           tests/test_skin_motion_bounds.py
