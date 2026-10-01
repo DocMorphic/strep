@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {clampTime, advanceTime} from '../scripts/native-contact-clock.mjs';
+const event = 2.0917225950783, duration = 3.6666667461395264;
+assert.equal(clampTime(event, duration), event);
+assert.equal(clampTime(-1, duration), 0);
+assert.deepEqual(advanceTime(duration-.01, .05, duration), {time: duration, finished: true});
+assert.deepEqual(advanceTime(event, 0, duration), {time: event, finished: false});
+assert.equal(clampTime(event, 1), 1);
+assert.throws(()=>advanceTime(0, -.1, duration));
+assert.throws(()=>clampTime(NaN, duration));
+assert.throws(()=>clampTime(0, 0));
+console.log('Native contact clock: fractional seek, full duration and terminal playback pass.');
