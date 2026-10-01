@@ -6,7 +6,7 @@ import numpy as np
 from strep import ROOT, read, save, sha256, now
 
 
-def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None):
+def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, restoration_of=None):
     from rig_asset import RigAsset
     from rig_clip_import import AnimationSampler
     from scene_pair_problem import load_actors
@@ -25,9 +25,11 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None):
     from iterated_hand_norm import solve
     from conic_root_descent import solver_module
     from replay_finger_proposal import verify_scale
+    from edit_interval_clock import edit_interval_clock
     window_audit,arm_study,output=map(lambda p:Path(p).resolve(),[window_audit,arm_study,output])
     if output.exists():raise ValueError('Fresh coupled study required')
     if type(iterations) is not int or not 1<=iterations<=12:raise ValueError('One to twelve iterations required')
+    if diagnostic_of is not None and restoration_of is not None:raise ValueError('Choose diagnostic or restoration mode')
     files={}
     def bind_study(folder):
         result=read(folder/'result.json')
@@ -57,7 +59,16 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None):
     scene=bound(prepared_folder/prepared['scene_snapshot']['path'])['scene']
     contact=next(c for c in scene['contacts'] if c['id'] in prepared['authored']['protected_contact_ids'])
     br=bound(baseline/'result.json');trial=next(r for r in bound(baseline/'trials.json') if r['folder']==br['selected'])
-    times=np.asarray(fr['uniform_times_s']);audit_times=np.asarray(wr['audit_times_s']);combined=np.unique(np.r_[times,audit_times])
+    times=np.asarray(fr['uniform_times_s']);audit_times=np.asarray(wr['audit_times_s'])
+    guard_times=audit_times;guard_plan=None
+    if diagnostic_of is None:
+        clocks=[]
+        for clip in wr['clips']:
+            if files.get(clip['path'])!=clip['sha256']:raise ValueError('Bound donor clock required')
+            asset=RigAsset.load(clip['path']);reader=AnimationSampler(asset.document,asset.binary,0)
+            clocks.extend(channel[2] for channel in reader.channels)
+        guard_times,guard_plan=edit_interval_clock(fr['window_s'],clocks,audit_times)
+    combined=np.unique(np.r_[times,audit_times,guard_times])
     if not np.array_equal(audit_times,fr['audit_times_s']):raise ValueError('Complete original audit clock required')
     uniform=np.searchsorted(combined,times);event=int(np.searchsorted(combined,fr['contact_time_s']))
     native=np.asarray(ar['native_times_s']);arm_scale=np.asarray(ar['scale'])
@@ -119,6 +130,28 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None):
             depths=objective.depths(worlds))
     exact=lambda x:evaluate(x);smooth=lambda x:evaluate(x,False);before=measurement(exact(point))
     if before['minimum_margin']<0:raise ValueError('Coupled donor must retain original feasibility')
+    restoration_seed=None;seed_record=None
+    if restoration_of is not None:
+        prior=Path(restoration_of).resolve();pr=bind_study(prior)
+        if pr['window_audit']!=str(window_audit) or pr['arm_study']!=str(arm_study):raise ValueError('Matching restoration source required')
+        np.testing.assert_array_equal(pr['point'],point);np.testing.assert_array_equal(pr['scale'],scale)
+        for name,digest in pr['implementation'].items():
+            archived=prior/'implementation'/name
+            if sha256(archived)!=digest:raise ValueError('Restoration source archive changed')
+            files[str(archived)]=digest
+            if name!='study_coupled_window_repair.py' and sha256(ROOT/'scripts'/name)!=digest:raise ValueError('Restoration decoder or constraint method changed')
+        choices=[]
+        for iteration in bound(prior/'proposals.json'):
+            for attempt in iteration['attempts']:
+                if 'delta' not in attempt:continue
+                for trial in attempt.get('trials',[]):
+                    if trial.get('minimum_margin',0)>=0 or trial.get('witness_peak_m',np.inf)>=before['witness_peak_m']-1e-9:continue
+                    x=np.asarray(iteration['point_before'])+trial['fraction']*np.asarray(attempt['delta'])
+                    choices.append((trial['witness_peak_m'],abs(trial['minimum_margin']),x,dict(iteration=iteration['iteration'],trust=attempt['trust'],fraction=trial['fraction'],metric=trial)))
+        if not choices:raise ValueError('Rejected improving seed required')
+        _,_,restoration_seed,seed_record=min(choices,key=lambda row:row[:2])
+        actual=measurement(exact(restoration_seed))
+        for key in ['witness_peak_m','minimum_margin']:np.testing.assert_allclose(actual[key],seed_record['metric'][key],rtol=0,atol=1e-12)
     if diagnostic_of is not None:
         from coupled_constraint_report import breakdown
         prior=Path(diagnostic_of).resolve();pr=bind_study(prior)
@@ -162,25 +195,40 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None):
         return
     solver=solver_module();output.mkdir();(output/'implementation').mkdir();methods={}
     names=set(ar['implementation'])|set(fr['implementation'])|{'study_coupled_window_repair.py','coupled_hand_finger_motion.py',
-        'window_triangle_objective.py','sampled_surface_guard.py','convex_partner_surface.py','replay_finger_proposal.py'}
+        'window_triangle_objective.py','sampled_surface_guard.py','convex_partner_surface.py','replay_finger_proposal.py',
+        'edit_interval_clock.py','restore_hand_feasibility.py'}
     for name in sorted(names):
         path=ROOT/'scripts'/name;methods[name]=sha256(path);shutil.copyfile(path,output/'implementation'/name)
     save(output/'request.json',dict(at=now(),inputs=files,implementation=methods,window_audit=str(window_audit),arm_study=str(arm_study),
         uniform_times_s=times.tolist(),audit_times_s=audit_times.tolist(),scale=scale.tolist(),point=point.tolist(),
+        guard_times_s=guard_times.tolist(),guard_clock=guard_plan,restoration_of=None if restoration_of is None else str(Path(restoration_of).resolve()),restoration_seed=seed_record,
         native_arm_times_s=native.tolist(),finger_window_s=fr['window_s'],before=before,iterations=iterations,
         all_crossing_pairs=len(rows),controls=len(point),trusts=[.1,.01,.001],quality_approved=False,
         scope='All observed crossing pairs across the window; original arm reference, guide limits, motion caps, palm geometry and old signed-witness ceilings retained. Full mesh guard before acceptance.'))
     def observe(row):
-        if row['phase']!='jacobian' or row['coordinates']%19==0:print(row,flush=True)
+        if row['phase'] not in ['jacobian','restoration_jacobian'] or row['coordinates']%19==0:print(row,flush=True)
     def mesh_points(worlds):
-        return [[rig.vertices(w[int(np.searchsorted(combined,t))])@a['rotation'].T+a['translation'] for rig,w,a in zip(rigs,worlds,actors)] for t in audit_times]
-    guard=SampledSurfaceGuard([a['faces'] for a in actors],[len(r.vertices(r.reference)) for r in rigs],audit_times,
-        lambda x:mesh_points([v[0] for v in evaluate_worlds(x)]),point,observe=observe)
-    save(output/'surface-baseline.json',guard.original);history=[]
+        return [[rig.vertices(w[int(np.searchsorted(combined,t))])@a['rotation'].T+a['translation'] for rig,w,a in zip(rigs,worlds,actors)] for t in guard_times]
+    def make_guard():
+        guard=SampledSurfaceGuard([a['faces'] for a in actors],[len(r.vertices(r.reference)) for r in rigs],guard_times,
+            lambda x:mesh_points(source_worlds if np.array_equal(x,point) else [v[0] for v in evaluate_worlds(x)]),point,observe=observe)
+        save(output/'surface-baseline.json',guard.original);return guard
+    guard=None;history=[]
     def checkpoint(model,row):
         np.savez_compressed(output/f'iteration-{row["iteration"]:02d}.npz',point=model['point'],**model['base'],**{k+'_jacobian':v for k,v in model['jacobian'].items()})
+        if 'proposal' in row:row=dict(row,attempts=[dict(row['proposal'],trials=row['trials'])])
         history.append(row);save(output/'proposals.json',history)
-    best,report=solve(exact,smooth,point,solver,iterations=iterations,trusts=(.1,.01,.001),observe=observe,checkpoint=checkpoint,acceptance_guard=guard)
+    if restoration_seed is None:
+        guard=make_guard()
+        best,report=solve(exact,smooth,point,solver,iterations=iterations,trusts=(.1,.01,.001),observe=observe,checkpoint=checkpoint,acceptance_guard=guard)
+    else:
+        from restore_hand_feasibility import restore
+        candidate,report=restore(exact,smooth,point,restoration_seed,solver,iterations=iterations,trust=.001,observe=observe,checkpoint=checkpoint)
+        best=point.copy()
+        if candidate is not None:
+            guard=make_guard();decision=guard(candidate);save(output/'restored-candidate-surface.json',decision)
+            if decision['passed']:best=candidate
+        report['mesh_guard_run']=guard is not None
     save(output/'iteration-summary.json',report);save(output/'selected.json',dict(controls=(best*scale).tolist(),**measurement(exact(best))))
     arm,fingers=split(best);decoded=[];clips=[]
     for i,(model,finger,rig) in enumerate(zip(models,fingers,rigs)):
@@ -200,20 +248,22 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None):
     if np.any(-old.gaps(decoded)>ceilings):raise ValueError('Decoded old witness ceilings failed')
     save(output/'decoded.json',dict(clips=clips,motion_caps_pass=True,palm_bounds_pass=True,old_witness_pass=True,quality_approved=False))
     observations=[]
-    for t,points in zip(audit_times,mesh_points(decoded)):
+    for t,points in ([] if restoration_seed is not None and np.array_equal(best,point) else zip(guard_times,mesh_points(decoded))):
         surface=audit(points[0],actors[0]['faces'],points[1],actors[1]['faces'])
         depths=[penetration(points[a],points[b],actors[b]['faces']) for a,b in [(0,1),(1,0)]]
         name=f'geometry-{len(observations):02d}.json';save(output/name,dict(time_s=float(t),surface=surface,depths=depths))
-        observations.append(dict(time_s=float(t),surface=surface,depths=depths));print(dict(phase='decoded_geometry',completed=len(observations),total=len(audit_times)),flush=True)
-    decision=compare(guard.original,snapshot(guard.meshes,observations));save(output/'decoded-surface-guard.json',decision)
-    if not decision['passed']:raise ValueError('Decoded mesh guard failed')
+        observations.append(dict(time_s=float(t),surface=surface,depths=depths));print(dict(phase='decoded_geometry',completed=len(observations),total=len(guard_times)),flush=True)
+    decision=compare(guard.original,snapshot(guard.meshes,observations)) if observations else dict(passed=None,reason='Unchanged donor retained; no new decoded mesh audit claimed')
+    save(output/'decoded-surface-guard.json',decision)
+    if decision['passed'] is False:raise ValueError('Decoded mesh guard failed')
     for path,digest in files.items():
         if sha256(path)!=digest:raise ValueError('Coupled input changed')
     for name,digest in methods.items():
         if sha256(ROOT/'scripts'/name)!=digest:raise ValueError('Coupled implementation changed')
     save(output/'result.json',dict(at=now(),status='complete',outputs={p.name:sha256(p) for p in output.iterdir() if p.is_file()},
-        before=before,after=measurement(exact(best)),sampled_surface_guard_pass=True,
-        total_pair_time_crossings=sum(r['surface']['counts'].get('proper_crossing',0) for r in observations),
+        before=before,after=measurement(exact(best)),sampled_surface_guard_pass=decision['passed'],donor_retained=bool(np.array_equal(best,point)),
+        total_pair_time_crossings=sum(r['surface']['counts'].get('proper_crossing',0) for r in observations) if observations else None,
+        historical_pair_time_crossings=len(rows),guard_sample_count=len(guard_times),
         collision_free_certified=False,accepted_for_publication=False,quality_approved=False))
 
 
@@ -221,5 +271,5 @@ if __name__=='__main__':
     from action_worker_lock import worker_lock
     from threadpoolctl import threadpool_limits
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('window_audit',type=Path);parser.add_argument('arm_study',type=Path);parser.add_argument('output',type=Path)
-    parser.add_argument('--iterations',type=int,default=3);parser.add_argument('--diagnose-study',type=Path);args=parser.parse_args()
-    with worker_lock(),threadpool_limits(limits=1):run(args.window_audit,args.arm_study,args.output,args.iterations,args.diagnose_study)
+    parser.add_argument('--iterations',type=int,default=3);parser.add_argument('--diagnose-study',type=Path);parser.add_argument('--restore-study',type=Path);args=parser.parse_args()
+    with worker_lock(),threadpool_limits(limits=1):run(args.window_audit,args.arm_study,args.output,args.iterations,args.diagnose_study,args.restore_study)

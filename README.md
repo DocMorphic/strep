@@ -59,6 +59,8 @@ The owner will perform developer review first. Independent animator review and t
 
 [Combined arm/finger repair](docs/coupled-window-repair-v1.md) now targets every observed crossing across fourteen times. The control audit proves that finger-only edits leave 647 pairs unaffected. The combined trial retains the original animation after sixteen constraint failures; exact replay identifies acceleration limits and a precision difference in the unrounded baseline. All 910 minimal source tests pass; interaction quality remains unresolved.
 
+[Serialized feasibility restoration](docs/serialized-feasibility-restoration-v1.md) reduces a rejected candidate's constraint deficit, but still accepts no changed animation. Mesh checks now cover the complete edit interval when a numerically feasible candidate exists. Exact replay points to post-contact finger acceleration as a remaining issue; all 926 minimal source tests pass.
+
 ## Using this source snapshot
 
 Development currently uses Windows, Python 3.10, NVIDIA CUDA/PyTorch, Node.js for viewer dependencies, and a separately acquired Kimodo installation. Read the [baseline setup runbook](docs/baseline-runbook.md), [pinned source/model revisions](benchmarks/sources.lock.json), and [Studio workflow](docs/action-studio.md). Those documents include historical experiments; a fully verified clean-clone installer is still unfinished.
