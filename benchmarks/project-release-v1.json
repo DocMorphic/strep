@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-01T04:34:01.662778+00:00",
-  "last_progress": "Completed native-key wrist retraction with contact-bracketing keys frozen. Both exported clips pass all 53 full inter-actor geometry samples, retain exact contact and original joint budgets, and clear 85 editable plane samples per actor; frozen nanometre plane residuals remain explicit. Maximum extra retraction is 3.640390/6.720503 mm. All four original rate-cap groups still fail and several excesses worsen. A separate read-only diagnosis locates sharp near-contact marker velocity changes; next permit contact-preserving endpoint changes and constrain rates plus skin clearance. All 1,056 model-free source tests pass. No Studio promotion, training or held-out use; all 14 release capabilities remain unapproved."
+  "last_progress_at": "2026-10-01T04:46:54.871732+00:00",
+  "last_progress": "Completed contact-preserving native rate fitting. Both fits converge and full-strength serialized candidates reduce weighted rate-violation objectives by 49.23%/64.26%; all 53 full inter-actor mesh samples still pass. Contact matrix drift stays below 4.9e-8 and original joint budgets/clocks/protected poses pass. Estimated near-contact marker velocity jumps fall from 0.817/0.943 to 0.349/0.449 m/s. All four original rate-cap groups still fail; angular-speed and position-acceleration failure counts increase, and earlier approach peaks remain. Next test bounded continuation within unchanged original acceptance limits because 8/11 proposal components saturate. All 1,059 model-free source tests pass. No Studio promotion, training or held-out use; all 14 release capabilities remain unapproved."
 }

@@ -17,7 +17,7 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
-The latest [native wrist clearance correction](docs/native-wrist-retraction-v1.md) passes all 53 sampled inter-character mesh checks in the exported clips while retaining the exact 1 mm contact pose and original joint limits. Speed and acceleration still fail, with sharp motion changes near contact. Next fit the approach and departure together. No candidate is selected for Studio; all 1,056 model-free source tests pass.
+The latest [contact-preserving rate fit](docs/contact-rate-path-v1.md) reduces near-contact hand velocity jumps and retains all 53 sampled inter-character mesh passes, the 1 mm contact target and original joint limits. All four rate-cap groups still fail, with some failure counts increasing. Further approach/departure correction and human review remain necessary. No candidate is selected for Studio; all 1,059 model-free source tests pass.
 
 The development breadth study generated 390 actor clips across 72 cases, 12 action families, and five seeds. Those categories measure coverage; they do not prove support for every requested motion. Release acceptance remains open in [the release matrix](benchmarks/project-release-v1.json).
 
