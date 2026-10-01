@@ -17,7 +17,7 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
-A [three-stage native motion comparison](docs/contact-rate-continuation-v1.md) now exposes the recent contact corrections, exact-time playback and their remaining failures. All versions pass 53 sampled inter-character mesh checks, but rate limits still fail and continuation worsens the angular-speed peak. Six copied GLBs pass offline format/loader checks; browser rendering and human quality remain unverified. No candidate is selected for Studio.
+A [four-stage native motion comparison](docs/peak-guarded-contact-v1.md) now includes per-joint rate-excess guards. The latest fit preserves all 53 sampled inter-character mesh passes and lowers its objective, but original rate limits still fail. An independent check also finds increased absolute angular-acceleration peaks despite passing the excess guards. Eight copied GLBs pass offline format/loader checks; browser rendering and human quality remain unverified. No candidate is selected for Studio.
 
 The development breadth study generated 390 actor clips across 72 cases, 12 action families, and five seeds. Those categories measure coverage; they do not prove support for every requested motion. Release acceptance remains open in [the release matrix](benchmarks/project-release-v1.json).
 

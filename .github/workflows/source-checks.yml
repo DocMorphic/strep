@@ -98,6 +98,9 @@ jobs:
           tests/test_contact_locked_native.py
           tests/test_native_wrist_retraction.py
           tests/test_contact_rate_path.py
+          tests/test_rate_peak_guard.py
+          tests/test_sample_rate_peak_guard.py
+          tests/test_absolute_rate_peaks.py
           tests/test_edit_interval_clock.py
           tests/test_hand_witness_envelope.py
           tests/test_skin_motion_bounds.py
