@@ -17,7 +17,7 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
-The latest [continued witness repair](docs/continued-witness-repair-v1.md) stalls, and a separate [full-interval mesh audit](docs/rejected-coupled-mesh-v1.md) rejects its candidate at 12 of 53 samples despite passing motion and palm limits. New crossings and increased penetration remain visible; the clip is not promoted.
+The latest [mesh regression repair](docs/mesh-regression-cuts-v1.md) adds constraints for all 272 new crossing pairs found by the [full-interval audit](docs/rejected-coupled-mesh-v1.md). One internal step reduces the worst violation by 56.68%, but old witness and new projection failures remain. Every tested step of the next direction violates motion limits, so output clips stay unchanged.
 
 The development breadth study generated 390 actor clips across 72 cases, 12 action families, and five seeds. Those categories measure coverage; they do not prove support for every requested motion. Release acceptance remains open in [the release matrix](benchmarks/project-release-v1.json).
 

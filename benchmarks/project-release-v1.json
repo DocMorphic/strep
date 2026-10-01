@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-01T01:16:26.486304+00:00",
-  "last_progress": "Continued witness repair stalls after one new linearization and 256 exact replay fractions; the same three old witnesses still fail while original motion and palm limits pass. A separate full-mesh audit independently decodes the rejected candidate at all 53 edit-interval samples. It fails 12 samples, introduces 272 proper triangle pair-time crossings, and increases directional maximum depth in seven observations (largest increase 0.258332 mm). Aggregate crossings fall from 4,780 to 4,757, which does not establish improvement or acceptance. No candidate is promoted. The 962-test minimal suite plus three additional diagnostic tests pass (965 distinct tests). No training, held-out use or release approval; all 14 capabilities remain unapproved."
+  "last_progress_at": "2026-10-01T01:30:03.101210+00:00",
+  "last_progress": "Added 2,448 frozen donor-axis constraints for all 272 newly observed triangle pair-time crossings. A coupled repair takes one hard-motion-feasible internal step, reducing the worst normalized violation by 56.68%, but leaves 273 old witness and 391 new projection rows failing. Its second proposal fails hard motion limits at all eight backoffs and all 256 exact ray fractions. All shared backoff metrics reproduce within 1e-12. Selected GLBs remain unchanged donors; no new mesh pass or Studio promotion. All 970 minimal source tests pass. No training, held-out use or release approval; all 14 capabilities remain unapproved."
 }
