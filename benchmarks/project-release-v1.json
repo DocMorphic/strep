@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-01T01:30:03.101210+00:00",
-  "last_progress": "Added 2,448 frozen donor-axis constraints for all 272 newly observed triangle pair-time crossings. A coupled repair takes one hard-motion-feasible internal step, reducing the worst normalized violation by 56.68%, but leaves 273 old witness and 391 new projection rows failing. Its second proposal fails hard motion limits at all eight backoffs and all 256 exact ray fractions. All shared backoff metrics reproduce within 1e-12. Selected GLBs remain unchanged donors; no new mesh pass or Studio promotion. All 970 minimal source tests pass. No training, held-out use or release approval; all 14 capabilities remain unapproved."
+  "last_progress_at": "2026-10-01T01:40:42.133975+00:00",
+  "last_progress": "Diagnosed eight stalled mesh-repair backoffs: seven preserve affine and recentered nonlinear motion limits but fail after serialization, mainly finger angular acceleration. Added empirical proposal headroom on seven measured failing rows without changing actual caps. Of 256 exact replay steps, 202 now preserve every hard motion/palm/edit limit, versus zero previously. Best fraction 255/256 reduces the starting worst violation by 97.44%, but 251 old witness and 21 new projection rows still fail. Selected GLBs remain unchanged donors; no fresh mesh pass or Studio promotion. All 980 minimal source tests pass. No training, held-out use or release approval; all 14 capabilities remain unapproved."
 }
