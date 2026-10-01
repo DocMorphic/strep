@@ -17,7 +17,7 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
-[Native foot-support intervals](docs/native-support-intervals-v1.md) now connect to [Studio authoring and native previews](docs/studio-native-support-v1.md), with explicit rig mappings, static support planes and unchanged free phases. Failed and unreachable corrections retain their inputs and diagnostics. Combined rate/contact solving remains open; no quality approval is inferred.
+[Native foot-support intervals](docs/native-support-intervals-v1.md) now connect to [Studio authoring and native previews](docs/studio-native-support-v1.md), with explicit rig mappings, static support planes and unchanged free phases. Failed and unreachable corrections retain their inputs and diagnostics. An experimental [joint support/rate search](docs/native-support-joint-rates-v1.md) reduces diagnostic error but still fails the rate screen, including at a larger recorded budget. Combined feasibility remains open; no quality approval is inferred.
 
 [Native knee smoothing](docs/native-leg-smoothing-v1.md) reduces the added leg-rate excess on the matched floor-correction case while retaining sampled floor, hand contact and native engine timing. An imported-skin stance audit also bounds the foot regions' lowest points to 5 mm at all 642 samples per actor. Original rate limits and full-clip absolute peak guards still fail; the input, minimal lifts and smoothed lifts are available as an unapproved Studio comparison.
 

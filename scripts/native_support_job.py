@@ -43,7 +43,14 @@ def describe(source, output):
     save(output, record); return record
 
 
-def run(source, spec_path, output):
+def run(source, spec_path, output, *, joint_rates=False, joint_evaluations=80):
+    if type(joint_rates) is not bool: raise ValueError('Explicit joint-rate mode required')
+    if type(joint_evaluations) is not int or not 1 <= joint_evaluations <= 2000 or not joint_rates and joint_evaluations != 80: raise ValueError('Joint-search budget requires joint-rate mode and 1–2000 evaluations')
+    propose_solver = propose
+    if joint_rates:
+        from native_support_rates import propose as joint_propose
+        from functools import partial
+        propose_solver = partial(joint_propose, maximum_evaluations=joint_evaluations)
     source, spec_path, output = [Path(p).resolve() for p in (source, spec_path, output)]
     if output.exists() or output.parent != ROOT/'reports': raise ValueError('Fresh immediate reports output required')
     inputs = {str(p): sha256(p) for p in (source, spec_path)}
@@ -66,9 +73,12 @@ def run(source, spec_path, output):
              'paired_temporal_neighbor.py', 'elbow_swivel.py', 'two_bone_waypoint.py',
              'paired_guarded_temporal.py', 'gltf_tools.py', 'strep.py', 'sampled_motion_caps.py',
              'native_engine_clock.py', 'absolute_rate_peaks.py'}
+    if joint_rates: names |= {'native_support_rates.py', 'timed_rotation_edit.py'}
     for name in sorted(names):
         p = SOURCE_DIR/name; methods[name] = sha256(p); shutil.copyfile(p, archive/name)
     save(output/'request.json', dict(at=now(), spec=spec, inputs=inputs, implementation=methods,
+        joint_search_maximum_evaluations=joint_evaluations if joint_rates else None,
+        proposal_method='joint_support_source_rate_search' if joint_rates else 'bounded_bend_smoothing',
         source_rate_reference='Selected input clip, full uniform 120Hz samples and four equal time bins; not a replacement for independent benchmark caps',
         rate_tolerance=caps.tolerance, excluded_derivative_tail_s=reader.duration-float(uniform[-1]),
         quality_approved=False))
@@ -88,7 +98,7 @@ def run(source, spec_path, output):
         for trial, (tau, mu) in enumerate(( (.05, .5), (.05, 5.), (.15, .5), (.15, 5.) )):
             path = output/f'trial-{trial}.glb'; report = dict(trial=trial, acceleration_time_s=tau, reference_weight_per_s2=mu)
             try:
-                proposal = propose(rig, reader, rows, path, tau, mu)
+                proposal = propose_solver(rig, reader, rows, path, tau, mu)
                 exported = RigAsset.load(path); current = AnimationSampler(exported.document, exported.binary, 0)
                 new_channels = rotation_channels(exported.document, exported.binary)
                 assert len(current.channels) == len(reader.channels) and current.duration == reader.duration
@@ -172,12 +182,14 @@ if __name__ == '__main__':
     parser.add_argument('source', type=Path)
     for name in ('spec', 'output'): parser.add_argument(name, type=Path, nargs='?')
     parser.add_argument('--describe', type=Path, help='Save joint identities and exact clocks instead of fitting')
+    parser.add_argument('--joint-rates', action='store_true', help='Experimental simultaneous sampled support/source-rate search')
+    parser.add_argument('--joint-evaluations', type=int, default=80, help='1–2000 evaluations per experimental joint-rate trial')
     args = parser.parse_args()
     if args.describe is not None:
-        if args.spec is not None or args.output is not None: parser.error('Description does not use a support draft or fit output')
+        if args.spec is not None or args.output is not None or args.joint_rates or args.joint_evaluations != 80: parser.error('Description does not use a support draft or fit output')
         describe(args.source, args.describe)
     else:
         if args.spec is None or args.output is None: parser.error('Support draft and fresh fit output required')
         from action_worker_lock import worker_lock
         from threadpoolctl import threadpool_limits
-        with worker_lock(), threadpool_limits(limits=1): run(args.source, args.spec, args.output)
+        with worker_lock(), threadpool_limits(limits=1): run(args.source, args.spec, args.output, joint_rates=args.joint_rates, joint_evaluations=args.joint_evaluations)

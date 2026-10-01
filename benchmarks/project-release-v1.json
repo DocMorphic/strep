@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-01T22:22:28.331419+00:00",
-  "last_progress": "Studio now authors source-bound native foot-support intervals, explicit mappings, static planes and hard edit limits, with a separate seconds-clock input/proposal viewer and failure-retaining jobs. Real Studio ground-zero request is unreachable; explicit offset-plane proposals pass sampled heights but fail source-relative rates, retaining identical input. 1,229 model-free Python tests and 14 JS suites pass; six offline GLB loads preserve native clocks/repeated seeks, zero errors and one inherited skin-node warning each. No fresh browser/engine/human approval, training or held-out use; all 14 release capabilities remain unapproved. Next solve serialized contact/rates/orientation together and broaden rig/scene support."
+  "last_progress_at": "2026-10-01T22:48:28.262384+00:00",
+  "last_progress": "Added experimental simultaneous native support/source-rate search over bounded knee bends, with sparse derivative support and independently decoded float32 acceptance. Two fixed-seed studies at 80/320 evaluations retain raw inputs and eight failed proposals: all foot-height screens pass at 142 stance samples per foot and outside motion is exact across 701 times, but every search hits its budget and every source-rate screen fails. No accepted motion or solver feasibility claim; next add bounded knee-plane/swivel freedom and re-audit unchanged constraints. 1,241 model-free Python tests and 14 JS suites pass; 49ade88 hosted Windows/Linux checks passed. No training, held-out use, browser/engine/GPU/human approval or release-gate changes; all 14 release capabilities remain unapproved."
 }
