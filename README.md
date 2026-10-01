@@ -17,7 +17,7 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
-The latest [serialization-aware proposal study](docs/motion-proposal-headroom-v1.md) diagnoses why mesh corrections failed motion limits and adds proposal headroom without changing acceptance caps. It finds 202 admissible internal steps out of 256 and reduces the starting worst constraint violation by 97.44%, but geometry witness failures remain; output clips stay unchanged.
+The latest [continued repair and contact-contract diagnosis](docs/continued-motion-headroom-v1.md) clears the new projection constraints but leaves old witness failures and no established contact-quality gain. More fundamentally, the current preservation lock keeps palm anchors over 22 mm apart. The next experiment must author a shared meeting target and reassess approach geometry; output clips remain unchanged.
 
 The development breadth study generated 390 actor clips across 72 cases, 12 action families, and five seeds. Those categories measure coverage; they do not prove support for every requested motion. Release acceptance remains open in [the release matrix](benchmarks/project-release-v1.json).
 

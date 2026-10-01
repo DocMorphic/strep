@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-01T01:40:42.133975+00:00",
-  "last_progress": "Diagnosed eight stalled mesh-repair backoffs: seven preserve affine and recentered nonlinear motion limits but fail after serialization, mainly finger angular acceleration. Added empirical proposal headroom on seven measured failing rows without changing actual caps. Of 256 exact replay steps, 202 now preserve every hard motion/palm/edit limit, versus zero previously. Best fraction 255/256 reduces the starting worst violation by 97.44%, but 251 old witness and 21 new projection rows still fail. Selected GLBs remain unchanged donors; no fresh mesh pass or Studio promotion. All 980 minimal source tests pass. No training, held-out use or release approval; all 14 capabilities remain unapproved."
+  "last_progress_at": "2026-10-01T01:56:35.126324+00:00",
+  "last_progress": "Completed three relinearizations with empirical serialization headroom. The internal final state passes all hard motion/palm/edit limits and all 2,448 new projection rows; 206 old signed witnesses still fail (maximum excess about 5.87e-8 m). Its fixed-axis objective is only 0.001393 mm better than the donor; no useful physical contact improvement is established. Selected GLBs remain unchanged and no new mesh guard runs. A separate contract diagnosis proves the preserved palm anchors cannot approach closer than 22.613660 mm under the current relative lock; a hypothetical 2 mm meeting goal requires a separately authored contact target. Donor geometry still reaches about 21 mm depth. All 987 minimal source tests pass. No training, held-out use or release approval; all 14 capabilities remain unapproved."
 }

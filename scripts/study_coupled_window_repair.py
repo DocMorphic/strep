@@ -6,7 +6,7 @@ import numpy as np
 from strep import ROOT, read, save, sha256, now
 
 
-def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, restoration_of=None, temporal_of=None, witness_of=None, ray_of=None, refine_of=None, continue_of=None, geometry_of=None, mesh_repair_of=None, mesh_ray_of=None, probe_motion=False, motion_headroom_of=None):
+def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, restoration_of=None, temporal_of=None, witness_of=None, ray_of=None, refine_of=None, continue_of=None, geometry_of=None, mesh_repair_of=None, mesh_ray_of=None, probe_motion=False, motion_headroom_of=None, continue_headroom_of=None):
     from rig_asset import RigAsset
     from rig_clip_import import AnimationSampler
     from scene_pair_problem import load_actors
@@ -29,8 +29,8 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, resto
     window_audit,arm_study,output=map(lambda p:Path(p).resolve(),[window_audit,arm_study,output])
     if output.exists():raise ValueError('Fresh coupled study required')
     if type(iterations) is not int or not 1<=iterations<=12:raise ValueError('One to twelve iterations required')
-    if sum(v is not None for v in [diagnostic_of,restoration_of,temporal_of,witness_of,ray_of,refine_of,continue_of,geometry_of,mesh_repair_of,mesh_ray_of])>1:raise ValueError('Choose one study mode')
-    expanded=any(v is not None for v in [temporal_of,witness_of,ray_of,refine_of,continue_of,geometry_of,mesh_repair_of,mesh_ray_of])
+    if sum(v is not None for v in [diagnostic_of,restoration_of,temporal_of,witness_of,ray_of,refine_of,continue_of,geometry_of,mesh_repair_of,mesh_ray_of,continue_headroom_of])>1:raise ValueError('Choose one study mode')
+    expanded=any(v is not None for v in [temporal_of,witness_of,ray_of,refine_of,continue_of,geometry_of,mesh_repair_of,mesh_ray_of,continue_headroom_of])
     if type(probe_motion) is not bool or probe_motion and mesh_ray_of is None:raise ValueError('Motion probe requires a saved mesh-repair direction')
     if motion_headroom_of is not None and (mesh_ray_of is None or probe_motion):raise ValueError('Headroom requires a saved mesh direction and separate diagnostic')
     files={}
@@ -48,6 +48,12 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, resto
             if path in files and files[path]!=digest:raise ValueError('Conflicting input bindings')
             files[path]=digest
         return request
+    continuation_source=None;continuation_request=None
+    if continue_headroom_of is not None:
+        continuation_source=Path(continue_headroom_of).resolve();continuation_request=bind_study(continuation_source)
+        if continuation_request.get('mesh_ray_of') is None or continuation_request.get('motion_headroom_of') is None:
+            raise ValueError('Completed headroom repair required')
+        mesh_ray_of=Path(continuation_request['mesh_ray_of']);motion_headroom_of=Path(continuation_request['motion_headroom_of'])
     mesh_ray_source=None;mesh_ray_request=None
     if mesh_ray_of is not None:
         mesh_ray_source=Path(mesh_ray_of).resolve();mesh_ray_request=bind_study(mesh_ray_source)
@@ -283,6 +289,23 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, resto
             for key in ['witness_peak_m','minimum_margin']:np.testing.assert_allclose(actual[key],previous['final'][key],rtol=0,atol=1e-12)
             ray_delta=np.asarray(last['proposal']['delta'])
             seed_record=dict(policy='exact_stalled_mesh_repair_final_state',prior=str(mesh_ray_source),metric=actual)
+        if continuation_source is not None:
+            if continuation_request['window_audit']!=str(window_audit) or continuation_request['arm_study']!=str(arm_study):
+                raise ValueError('Matching completed headroom repair required')
+            for key,value in [('point',point),('scale',scale),('uniform_times_s',times),('guard_times_s',guard_times)]:
+                np.testing.assert_array_equal(continuation_request[key],value)
+            for name,digest in continuation_request['implementation'].items():
+                archived=continuation_source/'implementation'/name
+                if sha256(archived)!=digest:raise ValueError('Headroom continuation archive changed')
+                files[str(archived)]=digest
+                if name!='study_coupled_window_repair.py' and sha256(ROOT/'scripts'/name)!=digest:raise ValueError('Headroom continuation method changed')
+            if bound(continuation_source/'mesh-cuts.json')['rows']!=mesh_cut_record['rows']:raise ValueError('Original mesh cuts changed')
+            previous=bound(continuation_source/'iteration-summary.json')
+            if previous['method'] not in ['motion_headroom_replay_v1','iterated_motion_headroom_v1']:
+                raise ValueError('Exact headroom final state required')
+            restoration_seed=np.asarray(previous['final_point']);actual=measurement(exact(restoration_seed))
+            for key in ['witness_peak_m','minimum_margin']:np.testing.assert_allclose(actual[key],previous['final'][key],rtol=0,atol=1e-12)
+            seed_record=dict(policy='exact_final_headroom_internal_state',prior=str(continuation_source),metric=actual)
         mesh_seed_metric=measurement(exact(restoration_seed))
         geometry_of=None
     if diagnostic_of is not None:
@@ -340,6 +363,7 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, resto
     if mesh_ray_of is not None:names.add('scan_serialized_witness_ray.py')
     if probe_motion:names.add('motion_proposal_diagnostic.py')
     if headroom_source is not None:names|=set(headroom_request['implementation'])|{'motion_proposal_headroom.py'}
+    if continuation_source is not None:names|=set(continuation_request['implementation'])|{'iterated_motion_headroom.py'}
     for name in sorted(names):
         path=ROOT/'scripts'/name;methods[name]=sha256(path);shutil.copyfile(path,output/'implementation'/name)
     save(output/'request.json',dict(at=now(),inputs=files,implementation=methods,window_audit=str(window_audit),arm_study=str(arm_study),
@@ -354,6 +378,7 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, resto
         mesh_repair_of=None if mesh_source is None else str(mesh_source),
         mesh_ray_of=None if mesh_ray_source is None else str(mesh_ray_source),probe_motion=probe_motion,
         motion_headroom_of=None if headroom_source is None else str(headroom_source),
+        continue_headroom_of=None if continuation_source is None else str(continuation_source),
         native_arm_times_s=native.tolist(),finger_window_s=fr['window_s'],before=before,iterations=iterations,
         all_crossing_pairs=len(rows),controls=len(point),trusts=[.1,.01,.001],quality_approved=False,
         scope='All observed crossing pairs across the window; original arm reference, guide limits, motion caps, palm geometry and old signed-witness ceilings retained. Full mesh guard before acceptance.'))
@@ -451,7 +476,12 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, resto
         else:
             from restore_hand_feasibility import restore
             settings={}
-        if headroom_source is not None:
+        if continuation_source is not None:
+            from iterated_motion_headroom import solve as continue_headroom
+            candidate,report=continue_headroom(exact,smooth,point,restoration_seed,
+                bound(headroom_source/'motion-proposal-diagnostic.json'),solver,iterations=iterations,
+                observe=observe,checkpoint=checkpoint,**settings)
+        elif headroom_source is not None:
             from motion_proposal_headroom import solve as solve_headroom
             model_path=mesh_ray_source/f'iteration-{last["iteration"]:02d}.npz'
             if files.get(str(model_path))!=sha256(model_path):raise ValueError('Bound saved mesh proposal required')
@@ -530,5 +560,5 @@ if __name__=='__main__':
     from action_worker_lock import worker_lock
     from threadpoolctl import threadpool_limits
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('window_audit',type=Path);parser.add_argument('arm_study',type=Path);parser.add_argument('output',type=Path)
-    parser.add_argument('--iterations',type=int,default=3);parser.add_argument('--diagnose-study',type=Path);parser.add_argument('--restore-study',type=Path);parser.add_argument('--temporal-study',type=Path);parser.add_argument('--witness-study',type=Path);parser.add_argument('--ray-study',type=Path);parser.add_argument('--refine-study',type=Path);parser.add_argument('--continue-study',type=Path);parser.add_argument('--geometry-study',type=Path);parser.add_argument('--mesh-repair-study',type=Path);parser.add_argument('--mesh-ray-study',type=Path);parser.add_argument('--probe-motion',action='store_true');parser.add_argument('--motion-headroom-study',type=Path);args=parser.parse_args()
-    with worker_lock(),threadpool_limits(limits=1):run(args.window_audit,args.arm_study,args.output,args.iterations,args.diagnose_study,args.restore_study,args.temporal_study,args.witness_study,args.ray_study,args.refine_study,args.continue_study,args.geometry_study,args.mesh_repair_study,args.mesh_ray_study,args.probe_motion,args.motion_headroom_study)
+    parser.add_argument('--iterations',type=int,default=3);parser.add_argument('--diagnose-study',type=Path);parser.add_argument('--restore-study',type=Path);parser.add_argument('--temporal-study',type=Path);parser.add_argument('--witness-study',type=Path);parser.add_argument('--ray-study',type=Path);parser.add_argument('--refine-study',type=Path);parser.add_argument('--continue-study',type=Path);parser.add_argument('--geometry-study',type=Path);parser.add_argument('--mesh-repair-study',type=Path);parser.add_argument('--mesh-ray-study',type=Path);parser.add_argument('--probe-motion',action='store_true');parser.add_argument('--motion-headroom-study',type=Path);parser.add_argument('--continue-headroom-study',type=Path);args=parser.parse_args()
+    with worker_lock(),threadpool_limits(limits=1):run(args.window_audit,args.arm_study,args.output,args.iterations,args.diagnose_study,args.restore_study,args.temporal_study,args.witness_study,args.ray_study,args.refine_study,args.continue_study,args.geometry_study,args.mesh_repair_study,args.mesh_ray_study,args.probe_motion,args.motion_headroom_study,args.continue_headroom_study)
