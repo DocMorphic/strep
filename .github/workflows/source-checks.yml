@@ -75,6 +75,9 @@ jobs:
           tests/test_hand_norm_proposal.py
           tests/test_iterated_hand_norm.py
           tests/test_restore_hand_feasibility.py
+          tests/test_restore_witness_feasibility.py
+          tests/test_scan_serialized_witness_ray.py
+          tests/test_refine_serialized_witness_ray.py
           tests/test_sampled_surface_guard.py
           tests/test_edit_interval_clock.py
           tests/test_hand_witness_envelope.py
