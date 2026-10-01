@@ -51,7 +51,7 @@ def corridor(worlds, parents, chain, heights, *, up=(0., 1., 0.),
                 horizontal_squared=horizontal_squared, lengths=lengths)
 
 
-def smooth(times, lower, upper, *, acceleration_time=.15, reference_weight=.5):
+def smooth(times, lower, upper, *, acceleration_time=.15, reference_weight=.5, reference=None):
     """Minimize integrated velocity, acceleration and minimal-lift deviation.
 
     The physical clock weights include irregular native intervals. Endpoints are
@@ -65,21 +65,24 @@ def smooth(times, lower, upper, *, acceleration_time=.15, reference_weight=.5):
     if (not np.isfinite([acceleration_time, reference_weight]).all()
             or acceleration_time < 0 or reference_weight <= 0):
         raise ValueError('Nonnegative acceleration time and positive reference weight required')
+    reference = lower.copy() if reference is None else np.asarray(reference, float)
+    if reference.shape != times.shape or not np.isfinite(reference).all() or np.any(reference < lower) or np.any(reference > upper):
+        raise ValueError('Finite reference bends inside their boxes required')
     n = len(times); dt = np.diff(times); midpoint_dt = (dt[:-1]+dt[1:])/2
     velocity = np.zeros((n-1, n)); rows = np.arange(n-1)
     velocity[rows, rows] = -1/dt; velocity[rows, rows+1] = 1/dt
     acceleration = np.diff(velocity, axis=0)/midpoint_dt[:, None]
     weights = np.r_[dt[0]/2, midpoint_dt, dt[-1]/2]
-    reference = reference_weight*weights
+    reference_diagonal = reference_weight*weights
     hessian = (velocity.T@(dt[:, None]*velocity)
                + acceleration_time**2*acceleration.T@(midpoint_dt[:, None]*acceleration)
-               + np.diag(reference))
-    linear = reference*lower
+               + np.diag(reference_diagonal))
+    linear = reference_diagonal*reference
     # Scale the numerical objective only; its physical minimizer is unchanged.
     scale = float(np.diag(hessian).max()); h = hessian/scale; b = linear/scale
     def value(x):
         return float(x@h@x-2*b@x), 2*(h@x-b)
-    result = minimize(value, lower.copy(), jac=True, method='L-BFGS-B',
+    result = minimize(value, reference.copy(), jac=True, method='L-BFGS-B',
                       bounds=list(zip(lower, upper)),
                       options=dict(ftol=1e-15, gtol=1e-11, maxiter=5000, maxls=40))
     x = result.x; gradient = value(x)[1]
@@ -88,7 +91,7 @@ def smooth(times, lower, upper, *, acceleration_time=.15, reference_weight=.5):
         raise ValueError(f'Bend optimization did not converge: {result.message}; residual={residual}')
     velocity_term = float(np.sum(dt*(velocity@x)**2))
     acceleration_term = float(acceleration_time**2*np.sum(midpoint_dt*(acceleration@x)**2))
-    reference_term = float(np.sum(reference*(x-lower)**2))
+    reference_term = float(np.sum(reference_diagonal*(x-reference)**2))
     return x, dict(success=True, message=str(result.message), iterations=int(getattr(result, 'nit', 0)),
                    projected_gradient_residual=residual, numerical_scale=scale,
                    acceleration_time_s=acceleration_time, reference_weight_per_s2=reference_weight,
