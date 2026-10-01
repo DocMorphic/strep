@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-01T02:43:35.094747+00:00",
-  "last_progress": "Completed matched SLSQP component-box and joint-ball contact-pose trials under identical inputs, target, objective, original edit budgets and 80-iteration limits. Both marker contact screens pass. Joint balls reduce maximum penetration from 11.963172 to 10.212648 mm but increase proper crossings from 214 to 220; all four original motion-cap groups still fail. No candidate selected. Next guide correction with actual intersecting triangle surfaces and contact constraints together, updating partner geometry rather than treating plane-residual improvements as physical acceptance. All 1,005 model-free source tests pass. No training or held-out use; all 14 release capabilities remain unapproved."
+  "last_progress_at": "2026-10-01T03:07:43.276260+00:00",
+  "last_progress": "Completed coupled contact-pose correction with hard authored contacts, original joint balls and serialized replay. Triangle-only repair is rejected at all four fractions and retains source GLBs. Adding penetrating-vertex witnesses yields two internal steps: contact-pose crossings decrease from 220 to 216 and maximum depth from 10.212648 to 9.070073 mm. Exported contact, original edits and protected channels pass; 130 newly intersecting pairs still fail the unchanged mesh-regression guard, and all four original motion-cap groups fail. Next add preventive constraints from separated source geometry for new crossing pairs and accumulate them across rounds. No Studio promotion. All 1,016 model-free source tests pass; no training or held-out use; all 14 release capabilities remain unapproved."
 }

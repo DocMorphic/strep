@@ -17,7 +17,7 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
-The latest [matched joint-angle constraint experiment](docs/contact-plane-joint-balls-v1.md) removes restrictive component bounds without raising angle budgets. Compared with the matched control, maximum contact-pose penetration falls from 11.963 to 10.213 mm, but proper crossings rise from 214 to 220. Both contact-marker screens pass; collision and original motion limits still fail. Next use the actual intersecting surfaces to guide correction. No candidate is selected for Studio; all 1,005 model-free source tests pass.
+The latest [coupled triangle and vertex repair](docs/contact-triangle-pose-v1.md) preserves hard marker contacts and original joint limits while reducing contact-pose crossings from 220 to 216 and maximum penetration from 10.213 to 9.070 mm. The stricter mesh guard still finds 130 newly intersecting pairs, and original motion caps fail. Next add preventive collision constraints; the contact pose is not yet valid. No candidate is selected for Studio; all 1,016 model-free source tests pass.
 
 The development breadth study generated 390 actor clips across 72 cases, 12 action families, and five seeds. Those categories measure coverage; they do not prove support for every requested motion. Release acceptance remains open in [the release matrix](benchmarks/project-release-v1.json).
 
