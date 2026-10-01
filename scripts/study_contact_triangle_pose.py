@@ -7,8 +7,9 @@ import numpy as np
 from strep import ROOT, read, save, sha256, now
 
 
-def run(source, output, with_vertices=False):
+def run(source, output, with_vertices=False, prevent_from=None):
     if type(with_vertices) is not bool: raise ValueError("Explicit vertex-witness mode required")
+    if prevent_from is not None and not with_vertices: raise ValueError("Prevention requires combined triangle/vertex repair")
     from rig_asset import RigAsset
     from rig_clip_import import AnimationSampler
     from scene_pair_problem import load_actors
@@ -40,6 +41,26 @@ def run(source, output, with_vertices=False):
     for name, digest in request['implementation'].items():
         files[str(source/'implementation'/name)] = digest
         if sha256(ROOT/'scripts'/name) != digest: raise ValueError('Source implementation changed')
+    previous = None
+    if prevent_from is not None:
+        previous = Path(prevent_from).resolve()
+        previous_result, previous_request = read(previous/'result.json'), read(previous/'request.json')
+        if (previous_result['status'] != 'complete' or previous_request['source'] != str(source)
+                or not previous_request.get('vertex_witnesses_enabled')
+                or any(previous_request[k] != request[k] for k in ['target', 'event_time_s', 'window_s', 'actors'])):
+            raise ValueError('Matching completed collision diagnostic required')
+        for path, digest in previous_request['inputs'].items():
+            if path in files and files[path] != digest: raise ValueError('Conflicting original evidence')
+            files[path] = digest
+        files[str(previous/'result.json')] = sha256(previous/'result.json')
+        for name, digest in previous_result['outputs'].items():
+            path = (previous/name).resolve()
+            if path.parent != previous: raise ValueError('Escaping diagnostic output')
+            files[str(path)] = digest
+        for name, digest in previous_request['implementation'].items():
+            path = (previous/'implementation'/name).resolve()
+            if path.parent != previous/'implementation': raise ValueError('Escaping method archive')
+            files[str(path)] = digest
     for path, digest in files.items():
         if sha256(path) != digest: raise ValueError('Changed source evidence')
     def bound(path):
@@ -100,11 +121,15 @@ def run(source, output, with_vertices=False):
     output.mkdir(); (output/'implementation').mkdir(); methods = {}
     extras = {'coupled_contact_proposal.py', 'study_contact_triangle_pose.py'}
     if with_vertices: extras.add('vertex_exit_witnesses.py')
+    if previous is not None: extras.add('contact_pair_barriers.py')
     for name in sorted(set(request['implementation']) | extras):
         methods[name] = sha256(ROOT/'scripts'/name); shutil.copyfile(ROOT/'scripts'/name, output/'implementation'/name)
+    rounds = 3 if previous is not None else 2
     save(output/'request.json', dict(at=now(), source=str(source), inputs=files, implementation=methods,
+        prevention_diagnostic=None if previous is None else str(previous), require_mesh_regression_pass=previous is not None,
+        prevention_policy=None if previous is None else 'Freeze separated source axes at positive 1e-8 m clearance; accumulate new pairs after complete audits. Every retained and decoded result must pass the unchanged complete source mesh guard. Restart at the original feasible pose if newly added barriers invalidate the retained iterate.',
         target=target, event_time_s=event, window_s=window, actors=request['actors'], initial_controls=point.tolist(),
-        rounds=2, solver_iterations_per_round=40, proposal_clearance_m=1e-8, vertex_witnesses_enabled=with_vertices,
+        rounds=rounds, solver_iterations_per_round=40, proposal_clearance_m=1e-8, vertex_witnesses_enabled=with_vertices,
         internal_selection='Authored contact and joint limits pass after serialization; no directional maximum-depth increase beyond 1e-8 m, no crossing-count increase or new uncertain/degenerate outcomes, and a strict depth/count improvement. This is internal search, not mesh-regression or animation approval.',
         full_interval_geometry_audited=False, quality_approved=False))
     mesh_topology = topology([a['faces'] for a in actors], [len(r.vertices(r.reference)) for r in rigs])
@@ -116,9 +141,27 @@ def run(source, output, with_vertices=False):
         return observation, positions
     def audit_point(x): return audit_worlds(worlds(x, True))
     current, positions = audit_point(point); original_observation = current
-    save(output/'geometry-initial.json', current); history = []
-    for iteration in range(2):
+    save(output/'geometry-initial.json', current); history = []; barriers = None; accumulated = {}
+    original_positions = [v.copy() for v in positions]
+    if previous is not None:
+        from contact_pair_barriers import SeparatedPairBarriers
+        np.testing.assert_array_equal(previous_request['initial_controls'], point)
+        diagnostic = bound(previous/'geometry-decoded-final.json')
+        differences = compare(snapshot(mesh_topology, [original_observation]), snapshot(mesh_topology, [diagnostic]))
+        known = bound(previous/'final-mesh-comparison.json')
+        pairs = differences['samples'][0]['new_proper_pairs']
+        if set(map(tuple, pairs)) != set(map(tuple, known['samples'][0]['new_proper_pairs'])):
+            raise ValueError('Previous new-crossing population changed')
+        barriers = SeparatedPairBarriers(skins, actors, [a['faces'] for a in actors], worlds(initial, True))
+        barriers.add(pairs); save(output/'barriers-initial.json', barriers.record())
+        if np.any(barriers.margins(worlds(point)) < 0) or np.any(barriers.margins(worlds(point, True)) < 0):
+            raise ValueError('Original pose must satisfy every preventive constraint')
+    for iteration in range(rounds):
         pairs = [v for v in current['surface']['records'] if v['kind'] in ('proper_crossing', 'coplanar_or_near_parallel_overlap')]
+        if barriers is not None:
+            accumulated.update({(v['left_triangle'], v['right_triangle']): v for v in pairs})
+            pairs = [accumulated[k] for k in sorted(accumulated)]
+            save(output/f'barriers-{iteration}.json', barriers.record())
         vertex_data = [extract_vertices(positions[a], positions[b], actors[b]['faces']) for a, b in [(0, 1), (1, 0)]] if with_vertices else []
         if not pairs and not any(v['witnesses'] for v in vertex_data): break
         vertices = np.array([[a['faces'][r['left_triangle' if i == 0 else 'right_triangle']] for r in pairs] for i, a in enumerate(actors)]).reshape(2, -1, 3)
@@ -131,14 +174,21 @@ def run(source, output, with_vertices=False):
             triangle_rows = np.maximum(objective.depths(value), 0)/.001 if objective is not None else np.empty(0)
             vertex_rows = np.maximum(vertex_objective.depths(value), 0)/.001 if vertex_objective is not None else np.empty(0)
             return np.r_[triangle_rows, vertex_rows, x*.001*np.sqrt(3)]
-        def hard(x, quantized=False): return contact_margins(*palms(worlds(x, quantized)), target)
+        def hard(x, quantized=False):
+            values = worlds(x, quantized); contact_rows = contact_margins(*palms(values), target)
+            return contact_rows if barriers is None else np.r_[contact_rows, barriers.margins(values)]
         def observe(row):
             if row['iteration'] % 10 == 0:
                 print(dict(phase='coupled_triangle_proposal', round=iteration, iteration=row['iteration'], cost=row['best_cost']), flush=True)
         proposal, solver = solve(residual, hard, point, replay_residual=lambda x: residual(x, True),
             replay_hard=lambda x: hard(x, True), iterations=40, observe=observe)
+        if barriers is not None:
+            solver['minimum_hard_margin'] = solver['minimum_contact_margin']
+            solver['minimum_contact_margin'] = float(contact_margins(*palms(worlds(proposal, True)), target).min())
+            solver['minimum_barrier_margin'] = float(barriers.margins(worlds(proposal, True)).min())
         save(output/f'solver-{iteration}.json', dict(**solver, final_controls=proposal.tolist()))
         record = dict(round=iteration, witnesses=len(pairs), vertex_witnesses=sum(len(v['witnesses']) for v in vertex_data), accepted=False, trials=[])
+        pending_pairs = set()
         for trial_id, fraction in enumerate([1., .5, .25, .125]):
             candidate = point+fraction*(proposal-point)
             if np.any(hard(candidate, True) < 0):
@@ -147,10 +197,13 @@ def run(source, output, with_vertices=False):
             save(output/f'geometry-{iteration}-{trial_id}.json', observed)
             counts = [o['surface']['counts'].get('proper_crossing', 0) for o in [current, observed]]
             depths = np.array([[d['max_depth_m'] for d in o['depths']] for o in [current, observed]])
-            regression = compare(snapshot(mesh_topology, [current]), snapshot(mesh_topology, [observed]))
+            regression = compare(snapshot(mesh_topology, [original_observation if barriers is not None else current]), snapshot(mesh_topology, [observed]))
+            if barriers is not None:
+                pending_pairs.update(map(tuple, regression['samples'][0]['new_proper_pairs']))
             uncertain_ok = not any(s['new_uncertain_pairs'] or any(s['new_degenerate_faces']) for s in regression['samples'])
             accepted = (observed['contact']['contact_target_pass'] and uncertain_ok and counts[1] <= counts[0]
                 and np.all(depths[1] <= depths[0]+1e-8) and (counts[1] < counts[0] or np.any(depths[1] < depths[0]-1e-8)))
+            if barriers is not None: accepted = accepted and regression['passed']
             record['trials'].append(dict(fraction=fraction, contact_pass=observed['contact']['contact_target_pass'],
                 proper_counts=counts, directional_depths_m=depths.tolist(), mesh_regression=regression, retained_internally=bool(accepted)))
             print(dict(phase='coupled_triangle_geometry', round=iteration, fraction=fraction, accepted=bool(accepted),
@@ -158,8 +211,16 @@ def run(source, output, with_vertices=False):
             if accepted:
                 point, current, positions = candidate.copy(), observed, proposed_positions
                 record['accepted'] = True; break
+        added = 0
+        if barriers is not None:
+            added = barriers.add(sorted(pending_pairs)); record['new_barrier_pairs'] = added
+            if np.any(hard(point) < 0) or np.any(hard(point, True) < 0):
+                point = initial.copy(); current = original_observation; positions = [v.copy() for v in original_positions]
+                record['reset_to_original_for_new_barriers'] = True
+                if np.any(hard(point) < 0) or np.any(hard(point, True) < 0): raise ValueError('Original contact/cut feasibility lost')
+            save(output/'barriers-final.json', barriers.record())
         history.append(record); save(output/'history.json', history)
-        if not record['accepted']: break
+        if not record['accepted'] and not added: break
     uniform = np.asarray(fr['uniform_times_s']); full = np.unique(np.r_[uniform, window, event, 0.,
         [AnimationSampler(r.document, r.binary, 0).duration for r in rigs]])
     decoded = []; exports = []
@@ -197,8 +258,12 @@ def run(source, output, with_vertices=False):
     current, _ = audit_worlds([w[[0, event_index, len(full)-1]] for w in decoded])
     if not current['contact']['contact_target_pass']: raise ValueError('Independent export lost hard contact')
     save(output/'geometry-decoded-final.json', current)
-    save(output/'decoded.json', dict(exports=exports, motion_rates=rates, contact=current['contact']))
+    barrier_margins = None if barriers is None else barriers.margins([w[[0, event_index, len(full)-1]] for w in decoded])
+    if barrier_margins is not None and np.any(barrier_margins < 0): raise ValueError('Independent export lost preventive constraints')
+    save(output/'decoded.json', dict(exports=exports, motion_rates=rates, contact=current['contact'],
+        minimum_preventive_margin=None if barrier_margins is None else float(barrier_margins.min())))
     final_guard = compare(snapshot(mesh_topology, [original_observation]), snapshot(mesh_topology, [current]))
+    if barriers is not None and not final_guard['passed']: raise ValueError('Independent export lost complete mesh regression guard')
     save(output/'final-mesh-comparison.json', final_guard)
     for path, digest in files.items():
         if sha256(path) != digest: raise ValueError('Input changed during study')
@@ -216,6 +281,6 @@ if __name__ == '__main__':
     from action_worker_lock import worker_lock
     from threadpoolctl import threadpool_limits
     parser = argparse.ArgumentParser(description=__doc__); parser.add_argument('source', type=Path); parser.add_argument('output', type=Path)
-    parser.add_argument('--with-vertices', action='store_true')
+    parser.add_argument('--with-vertices', action='store_true'); parser.add_argument('--prevent-from', type=Path)
     args = parser.parse_args()
-    with worker_lock(), threadpool_limits(limits=1): run(args.source, args.output, args.with_vertices)
+    with worker_lock(), threadpool_limits(limits=1): run(args.source, args.output, args.with_vertices, args.prevent_from)
