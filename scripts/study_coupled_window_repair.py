@@ -6,7 +6,7 @@ import numpy as np
 from strep import ROOT, read, save, sha256, now
 
 
-def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, restoration_of=None, temporal_of=None, witness_of=None, ray_of=None, refine_of=None):
+def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, restoration_of=None, temporal_of=None, witness_of=None, ray_of=None, refine_of=None, continue_of=None, geometry_of=None):
     from rig_asset import RigAsset
     from rig_clip_import import AnimationSampler
     from scene_pair_problem import load_actors
@@ -29,8 +29,8 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, resto
     window_audit,arm_study,output=map(lambda p:Path(p).resolve(),[window_audit,arm_study,output])
     if output.exists():raise ValueError('Fresh coupled study required')
     if type(iterations) is not int or not 1<=iterations<=12:raise ValueError('One to twelve iterations required')
-    if sum(v is not None for v in [diagnostic_of,restoration_of,temporal_of,witness_of,ray_of,refine_of])>1:raise ValueError('Choose one study mode')
-    expanded=any(v is not None for v in [temporal_of,witness_of,ray_of,refine_of])
+    if sum(v is not None for v in [diagnostic_of,restoration_of,temporal_of,witness_of,ray_of,refine_of,continue_of,geometry_of])>1:raise ValueError('Choose one study mode')
+    expanded=any(v is not None for v in [temporal_of,witness_of,ray_of,refine_of,continue_of,geometry_of])
     files={}
     def bind_study(folder):
         result=read(folder/'result.json')
@@ -165,9 +165,10 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, resto
         for key in ['witness_peak_m','minimum_margin']:np.testing.assert_allclose(actual[key],previous['final'][key],rtol=0,atol=1e-12)
         seed_record=dict(policy='exact_final_internal_state_with_zero_release_controls',prior=str(prior),metric=actual,
             serialized_keys_identical=True,release_peaks_s=[float(m.finger.release_knots[1]) for m in models])
-    if any(v is not None for v in [witness_of,ray_of,refine_of]):
-        prior=Path(next(v for v in [witness_of,ray_of,refine_of] if v is not None)).resolve();pr=bind_study(prior)
-        source_key='ray_of' if refine_of is not None else ('witness_of' if ray_of is not None else 'temporal_of')
+    if any(v is not None for v in [witness_of,ray_of,refine_of,continue_of,geometry_of]):
+        prior=Path(next(v for v in [witness_of,ray_of,refine_of,continue_of,geometry_of] if v is not None)).resolve();pr=bind_study(prior)
+        source_key=('continue_of' if pr.get('continue_of') else 'refine_of') if continue_of is not None else ('ray_of' if refine_of is not None else ('witness_of' if ray_of is not None else 'temporal_of'))
+        if geometry_of is not None:source_key='continue_of'
         if pr['window_audit']!=str(window_audit) or pr['arm_study']!=str(arm_study) or pr.get(source_key) is None:
             raise ValueError('Matching completed release-control study required')
         for key,value in [('point',point),('scale',scale),('uniform_times_s',times),('guard_times_s',guard_times)]:
@@ -179,7 +180,9 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, resto
             if name!='study_coupled_window_repair.py' and sha256(ROOT/'scripts'/name)!=digest:raise ValueError('Witness reference method changed')
         previous=bound(prior/'iteration-summary.json')
         expected_method='serialized_witness_ray_v1' if refine_of is not None else ('serialized_feasibility_restoration_v1' if ray_of is None else 'hard_motion_witness_restoration_v1')
-        if previous['method']!=expected_method:raise ValueError('Prior restoration final state required')
+        expected_methods=['refined_serialized_witness_ray_v1','iterated_serialized_witness_repair_v1'] if continue_of is not None else [expected_method]
+        if geometry_of is not None:expected_methods=['iterated_serialized_witness_repair_v1']
+        if previous['method'] not in expected_methods:raise ValueError('Prior restoration final state required')
         restoration_seed=np.asarray(previous['final_point']);actual=measurement(exact(restoration_seed))
         for key in ['witness_peak_m','minimum_margin']:np.testing.assert_allclose(actual[key],previous['final'][key],rtol=0,atol=1e-12)
         seed_record=dict(policy='exact_final_expanded_internal_state',prior=str(prior),metric=actual)
@@ -253,14 +256,16 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, resto
             trials=len(records),serialized_passes=sum(r['serialized']['passed'] for r in records),
             unrounded_passes=sum(r['unrounded']['passed'] for r in records),quality_approved=False,accepted_for_publication=False))
         return
-    solver=solver_module();output.mkdir();(output/'implementation').mkdir();methods={}
+    solver=None if geometry_of is not None else solver_module();output.mkdir();(output/'implementation').mkdir();methods={}
     names=set(ar['implementation'])|set(fr['implementation'])|{'study_coupled_window_repair.py','coupled_hand_finger_motion.py',
         'window_triangle_objective.py','sampled_surface_guard.py','convex_partner_surface.py','replay_finger_proposal.py',
         'edit_interval_clock.py','restore_hand_feasibility.py'}
     if expanded:names|={'release_finger_motion.py','coupled_constraint_report.py'}
-    if any(v is not None for v in [witness_of,ray_of,refine_of]):names.add('restore_witness_feasibility.py')
-    if ray_of is not None or refine_of is not None:names.add('scan_serialized_witness_ray.py')
+    if any(v is not None for v in [witness_of,ray_of,refine_of,continue_of,geometry_of]):names.add('restore_witness_feasibility.py')
+    if ray_of is not None or refine_of is not None or continue_of is not None:names.add('scan_serialized_witness_ray.py')
+    if continue_of is not None:names.add('iterated_witness_repair.py')
     if refine_of is not None:names.add('refine_serialized_witness_ray.py')
+    if geometry_of is not None:names|=set(pr['implementation'])|{'diagnostic_mesh_comparison.py'}
     for name in sorted(names):
         path=ROOT/'scripts'/name;methods[name]=sha256(path);shutil.copyfile(path,output/'implementation'/name)
     save(output/'request.json',dict(at=now(),inputs=files,implementation=methods,window_audit=str(window_audit),arm_study=str(arm_study),
@@ -270,6 +275,8 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, resto
         witness_of=None if witness_of is None else str(Path(witness_of).resolve()),
         ray_of=None if ray_of is None else str(Path(ray_of).resolve()),
         refine_of=None if refine_of is None else str(Path(refine_of).resolve()),
+        continue_of=None if continue_of is None else str(Path(continue_of).resolve()),
+        geometry_of=None if geometry_of is None else str(Path(geometry_of).resolve()),
         native_arm_times_s=native.tolist(),finger_window_s=fr['window_s'],before=before,iterations=iterations,
         all_crossing_pairs=len(rows),controls=len(point),trusts=[.1,.01,.001],quality_approved=False,
         scope='All observed crossing pairs across the window; original arm reference, guide limits, motion caps, palm geometry and old signed-witness ceilings retained. Full mesh guard before acceptance.'))
@@ -277,6 +284,40 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, resto
         if row['phase'] not in ['jacobian','restoration_jacobian'] or row['coordinates']%19==0:print(row,flush=True)
     def mesh_points(worlds):
         return [[rig.vertices(w[int(np.searchsorted(combined,t))])@a['rotation'].T+a['translation'] for rig,w,a in zip(rigs,worlds,actors)] for t in guard_times]
+    if geometry_of is not None:
+        from diagnostic_mesh_comparison import run as inspect_meshes
+        arm,fingers=split(restoration_seed);decoded=[];clips=[]
+        for i,(model,finger,rig) in enumerate(zip(models,fingers,rigs)):
+            path=output/f'rejected-diagnostic-{i}.glb';model.export(arm,finger,path)
+            asset=RigAsset.load(path);reader=AnimationSampler(asset.document,asset.binary,0)
+            world=np.array([reader.sample(t) for t in combined]);decoded.append(world)
+            np.testing.assert_allclose(world,model.evaluate(arm,finger)[0],rtol=0,atol=2e-10)
+            prior_channels=rotation_channels(rig.document,rig.binary);current_channels=rotation_channels(asset.document,asset.binary)
+            for node,(_,clock,q) in prior_channels.items():
+                np.testing.assert_array_equal(clock,current_channels[node][1])
+                if node not in model.channels:np.testing.assert_array_equal(q,current_channels[node][2])
+            outside=(combined<=fr['window_s'][0])|(combined>=fr['window_s'][1])
+            np.testing.assert_array_equal(world[outside],source_worlds[i][outside])
+            clips.append(dict(path=path.name,sha256=sha256(path),native_clocks_and_unselected_channels_exact=True,diagnostic_only=True))
+        decoded_vectors=np.concatenate([v.reshape(-1,3) for v in rate_vectors(payload([w[uniform] for w in decoded]),caps.dt)]+[palm_vectors(decoded)])
+        witness_margins=(ceilings+old.gaps(decoded))/.02
+        save(output/'decoded-diagnostic.json',dict(clips=clips,
+            original_export_motion_caps_pass=bool(caps.check(dict(indices=np.arange(len(times)),**payload([w[uniform] for w in decoded])))),
+            proposal_motion_and_palm_pass=bool(np.all(np.linalg.norm(decoded_vectors,axis=1)<=fixed_caps)),
+            failed_old_witnesses=int(np.count_nonzero(witness_margins<0)),minimum_old_witness_margin=float(witness_margins.min()),
+            diagnostic_only=True,accepted_for_publication=False,quality_approved=False,selected_for_studio=False))
+        def vertices(label,index):
+            frame=int(np.searchsorted(combined,guard_times[index]));worlds=source_worlds if label=='baseline' else decoded
+            return [rig.vertices(w[frame])@actor['rotation'].T+actor['translation'] for rig,w,actor in zip(rigs,worlds,actors)]
+        geometry=inspect_meshes([a['faces'] for a in actors],[len(r.vertices(r.reference)) for r in rigs],guard_times,vertices,
+            lambda name,value:save(output/name,value),observe)
+        for path,digest in files.items():
+            if sha256(path)!=digest:raise ValueError('Diagnostic source changed')
+        for name,digest in methods.items():
+            if sha256(ROOT/'scripts'/name)!=digest:raise ValueError('Diagnostic method changed')
+        save(output/'result.json',dict(at=now(),status='complete',outputs={p.name:sha256(p) for p in output.iterdir() if p.is_file()},
+            source_numeric_metric=measurement(exact(restoration_seed)),**geometry))
+        return
     def make_guard():
         guard=SampledSurfaceGuard([a['faces'] for a in actors],[len(r.vertices(r.reference)) for r in rigs],guard_times,
             lambda x:mesh_points(source_worlds if np.array_equal(x,point) else [v[0] for v in evaluate_worlds(x)]),point,observe=observe)
@@ -290,13 +331,16 @@ def run(window_audit, arm_study, output, iterations=3, diagnostic_of=None, resto
         guard=make_guard()
         best,report=solve(exact,smooth,point,solver,iterations=iterations,trusts=(.1,.01,.001),observe=observe,checkpoint=checkpoint,acceptance_guard=guard)
     else:
-        if any(v is not None for v in [witness_of,ray_of,refine_of]):
+        if any(v is not None for v in [witness_of,ray_of,refine_of,continue_of,geometry_of]):
             from restore_witness_feasibility import restore
             settings=dict(witness_start=1+len(arm_margins(arm_start,native,plan['guide_rate_limits'])),witness_count=len(ceilings))
         else:
             from restore_hand_feasibility import restore
             settings={}
-        if refine_of is not None:
+        if continue_of is not None:
+            from iterated_witness_repair import solve as continue_repair
+            candidate,report=continue_repair(exact,smooth,point,restoration_seed,solver,iterations=iterations,trust=.001,observe=observe,checkpoint=checkpoint,**settings)
+        elif refine_of is not None:
             from refine_serialized_witness_ray import refine
             candidate,report=refine(exact,point,restoration_seed,ray_delta,coarse_divisions=coarse_divisions,observe=observe,**settings)
         elif ray_of is not None:
@@ -358,5 +402,5 @@ if __name__=='__main__':
     from action_worker_lock import worker_lock
     from threadpoolctl import threadpool_limits
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('window_audit',type=Path);parser.add_argument('arm_study',type=Path);parser.add_argument('output',type=Path)
-    parser.add_argument('--iterations',type=int,default=3);parser.add_argument('--diagnose-study',type=Path);parser.add_argument('--restore-study',type=Path);parser.add_argument('--temporal-study',type=Path);parser.add_argument('--witness-study',type=Path);parser.add_argument('--ray-study',type=Path);parser.add_argument('--refine-study',type=Path);args=parser.parse_args()
-    with worker_lock(),threadpool_limits(limits=1):run(args.window_audit,args.arm_study,args.output,args.iterations,args.diagnose_study,args.restore_study,args.temporal_study,args.witness_study,args.ray_study,args.refine_study)
+    parser.add_argument('--iterations',type=int,default=3);parser.add_argument('--diagnose-study',type=Path);parser.add_argument('--restore-study',type=Path);parser.add_argument('--temporal-study',type=Path);parser.add_argument('--witness-study',type=Path);parser.add_argument('--ray-study',type=Path);parser.add_argument('--refine-study',type=Path);parser.add_argument('--continue-study',type=Path);parser.add_argument('--geometry-study',type=Path);args=parser.parse_args()
+    with worker_lock(),threadpool_limits(limits=1):run(args.window_audit,args.arm_study,args.output,args.iterations,args.diagnose_study,args.restore_study,args.temporal_study,args.witness_study,args.ray_study,args.refine_study,args.continue_study,args.geometry_study)

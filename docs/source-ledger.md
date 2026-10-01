@@ -83,3 +83,10 @@ CMU's [goal-set constrained trajectory optimization](https://publications.ri.cmu
 ### Interaction availability recheck (2026-09-30)
 
 Primary repository documentation and licenses for PhysiGen, Human-X Interaction, GNOCHI and InterGen were inspected at captured revisions. Missing pipeline/checkpoint releases and noncommercial terms remain material distinctions; no replacement is qualified by this limited survey. Source links, exact revisions, local manifest and next-experiment decision are in [interaction research v4](interaction-research-v4.md). No model, dataset, body asset or dependency acquired, and no third-party code executed.
+
+
+### Interaction constraints and replacement availability recheck (2026-10-01)
+
+[NVIDIA's constraint concepts](https://research.nvidia.com/labs/sil/projects/kimodo/docs/key_concepts/constraints.html) still describe sparse pose/end-effector guidance and conversion from SOMA77 to SOMA30 before model conditioning. This supports keeping joint-constraint accuracy separate from full-mesh contact validation; it does not establish scene-aware generation.
+
+The [Uni-Inter author repository](https://github.com/Darkdawner/Uni-Inter) still lists CC BY-NC-SA 4.0 and describes inference using a checkpoint obtained after training. Its [paper](https://arxiv.org/html/2511.13032v2) presents joint human/object/scene conditioning, but supplies no evidence that this specific Strep rig/contact problem is solved. The earlier decision remains unchanged: no product integration, model/data acquisition or third-party execution from this recheck. Continue measured geometry diagnosis before choosing a replacement or new training programme.
