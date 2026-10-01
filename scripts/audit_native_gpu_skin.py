@@ -10,6 +10,7 @@ from rig_clip_import import AnimationSampler
 from probe_godot_render import engine_command, run_engine, project_file
 from audit_godot_gpu_skin import masks
 from imported_skin_evidence import compare_surface
+from native_engine_clock import clock_echo_matches
 
 
 def run(engine_audit, output):
@@ -43,11 +44,12 @@ def run(engine_audit, output):
     output.mkdir(); project = output/'project'; project.mkdir(); project_file(project/'project.godot')
     archive = output/'implementation'; archive.mkdir()
     method_names = ('audit_native_gpu_skin.py','native_gpu_skin_audit.gd','imported_skin_evidence.py','audit_godot_gpu_skin.py',
-                    'probe_godot_render.py','rig_asset.py','rig_clip_import.py','gltf_tools.py','strep.py')
+                    'probe_godot_render.py','rig_asset.py','rig_clip_import.py','gltf_tools.py','strep.py','native_engine_clock.py','native_godot_preview.gd')
     methods = {ROOT/'scripts'/n:sha256(ROOT/'scripts'/n) for n in method_names}
     for path, digest in methods.items():
         target = archive/path.name; shutil.copyfile(path,target); files[str(target)] = digest
     shutil.copyfile(archive/'native_gpu_skin_audit.gd',project/'native_gpu_skin_audit.gd')
+    shutil.copyfile(archive/'native_godot_preview.gd',project/'native_godot_preview.gd')
     for i, actor in enumerate(('A','B')):
         path = Path(eq['cases'][i]['path']); animation = engine_audit/f'actor-{i}-animation.res'
         if any(files.get(str(p)) != sha256(p) for p in (path,animation)): raise ValueError('Unbound native asset')
@@ -64,7 +66,7 @@ def run(engine_audit, output):
             samples.append(dict(index=index,time_s=time,is_event=time == intent['event_time_s'],vertices=points.tolist(),
                 body_center=((lo+hi)/2).tolist(),body_size=float(np.linalg.norm(hi-lo)*1.2),hand_center=points[vertex].tolist()))
         reference = output/f'actor-{i}-reference.json'; save(reference,dict(samples=samples,indices=indices)); files[str(reference)] = sha256(reference)
-        cases.append(dict(id=f'actor-{i}',path=str(path),animation=str(animation),reference=str(reference),placement=placement))
+        cases.append(dict(id=f'actor-{i}',path=str(path),animation=str(animation),reference=str(reference),placement=placement,authoring_seek=bool(eq.get('authoring_seek',False))))
         names = [rig.document['nodes'][j]['name'] for j in rig.joints]
         weights = np.zeros((len(primitive['positions']),len(names)))
         for column in range(primitive['joints'].shape[1]): np.add.at(weights,(np.arange(len(weights)),primitive['joints'][:,column]),primitive['weights'][:,column])
@@ -87,6 +89,7 @@ def run(engine_audit, output):
             found = {(r['sample'],r['framing'],r['view'],r['broken']) for r in actual['records']}
             if found != expected: raise ValueError('Missing/duplicate GPU comparisons')
             for row in actual['records']:
+                if case['authoring_seek'] and not clock_echo_matches(row['time_s'],row['actual_time_s']): raise ValueError('GPU authoring seek clock differs')
                 prefix = row['prefix']
                 if '/' in prefix or '\\' in prefix or not prefix.startswith(case['id']+'-'): raise ValueError('Invalid image path')
                 metric = masks(output/(prefix+'-gpu.png'),output/(prefix+'-reference.png'))
@@ -98,7 +101,7 @@ def run(engine_audit, output):
         if any(sha256(path) != digest for path,digest in methods.items()): raise ValueError('GPU method changed during run')
         save(output/'verification.json',dict(at=now(),passed=bool(passed),checks=checks,skin_checks=skin_checks,
             positive_comparisons=len(positives),negative_controls=len(negatives),gpu_skin_scope='Only declared sampled, finite-resolution silhouettes on the recorded OpenGL backend. Hand framing intentionally crops the body. No continuous 3D vertex/contact/collision or human-quality guarantee.',
-            engine_clock_failure_unchanged=True,quality_approved=False,selected_for_studio=False))
+            source_engine_pose_pass=er['engine_pose_pass'],authoring_seek=bool(eq.get('authoring_seek',False)),quality_approved=False,selected_for_studio=False))
         save(output/'result.json',dict(at=now(),status='complete',passed=bool(passed),
             outputs={p.relative_to(output).as_posix():sha256(p) for p in output.rglob('*') if p.is_file() and p.name != 'pipeline.json'},quality_approved=False,selected_for_studio=False))
         save(output/'pipeline.json',dict(status='complete',passed=bool(passed)))

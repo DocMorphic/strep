@@ -1,4 +1,5 @@
 extends SceneTree
+const NativePreview = preload("res://native_godot_preview.gd")
 
 func nodes(node: Node) -> Array:
 	var result: Array = [node]
@@ -69,7 +70,10 @@ func run() -> void:
 			player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL; player.play("Native")
 			for sample in reference_data.samples:
 				if broken and not sample.is_event: continue
-				player.seek(float(sample.time_s),true)
+				if item.get("authoring_seek",false):
+					assert(NativePreview.seek(player,skeleton,animation,float(sample.time_s)) == OK)
+				else:
+					player.seek(float(sample.time_s),true)
 				var arrays: Array = []; arrays.resize(Mesh.ARRAY_MAX)
 				var vertices := PackedVector3Array()
 				for p in sample.vertices: vertices.append(vector(p))
