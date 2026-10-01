@@ -58,6 +58,14 @@ def run(studies, output):
             peak_flags = [v.get('absolute_peak_comparison', {}).get('absolute_peak_guard_pass') for v in d['clips']]
             rate_note = 'Leg rate peaks regress against this source.' if False in peak_flags else ('Absolute rate peak comparisons pass.' if peak_flags and all(v is True for v in peak_flags) else 'Absolute rate peak comparison not recorded.')
             extra_floor = f" Full-clip leg floor correction: {min(v['minimum_exported_height_m'] for v in full_floor)*1000:.3f} mm minimum height across {full_floor[0]['samples']} sampled times per actor. Lower-body endpoint poses change; root and non-leg motion remain exact. {rate_note}"
+        if 'sampled_maximum_lowest_foot_height_m' in q.get('floor_condition', {}):
+            maximum=q['floor_condition']['sampled_maximum_lowest_foot_height_m']*1000
+            scores=[]
+            for i in range(2):
+                grid=bound(study/f'actor-{i}-grid.json')
+                control=grid['candidates'][0]['diagnostic']['score']
+                scores.append(100*(1-grid['score']/control) if control>0 else 0.)
+            extra_floor+=f" New authored stance corridor: each foot region's lowest point is bounded above by {maximum:.3f} mm at the audit samples. This is not whole-sole planting or balance. Leg-only diagnostic excess falls {scores[0]:.2f}% / {scores[1]:.2f}% against minimal floor lifts; this does not pass the original motion caps."
         audit = f'audits/{index}-result.json'; copies.extend([(study/'result.json', audit), (study/'decoded.json', f'audits/{index}-decoded.json')])
         versions.append(dict(id=str(index), label=study.name.replace('-', ' ')+(' (diagnostic only)' if r.get('diagnostic_only') else ''), actors=actors, duration_s=durations[0],
             event_time_s=q['event_time_s'], contact_gap_m=d['contact']['gap_m'], guard_samples=r['guard_samples'],
