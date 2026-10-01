@@ -13,8 +13,14 @@ from pathlib import Path
 from urllib.parse import urlsplit,unquote,parse_qs
 from strep import ROOT,read,save,offline_environment
 from action_requests import validate_batch
-from action_worker_lock import worker_busy
+
 from scene_pair_activity import external_pair_fit_busy
+
+def worker_busy():
+    # Read-only serving does not load the Windows-only generation lock.
+    from action_worker_lock import worker_busy as query_busy
+    return query_busy()
+
 
 CORRECTION_STUDIES = ['contact-authoring-v2', 'support-contact-v1', 'body-contact-v1', 'body-contact-holdout-v1', 'floor-contact-v1-reviewed', 'floor-contact-holdout-v1']
 
