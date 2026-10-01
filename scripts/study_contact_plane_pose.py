@@ -7,7 +7,9 @@ from scipy.optimize import least_squares
 from strep import ROOT, read, save, sha256, now
 
 
-def run(source, output):
+def run(source, output, optimizer="least_squares_box"):
+    if optimizer not in ("least_squares_box", "slsqp_box", "slsqp_ball"):
+        raise ValueError("Explicit supported contact-pose optimizer required")
     from rig_asset import RigAsset
     from rig_clip_import import AnimationSampler
     from scene_pair_problem import load_actors
@@ -57,7 +59,9 @@ def run(source, output):
     midpoint = np.asarray(spec['midpoint_m']); axis = np.asarray(spec['normals'][0])
     uniform = np.asarray(fr['uniform_times_s']); protected = request['remaining_protected_spans']
     output.mkdir(); (output/'implementation').mkdir(); methods = {}
-    for name in sorted(set(request['implementation']) | {'hand_contact_plane.py', 'study_contact_plane_pose.py'}):
+    extras = {'hand_contact_plane.py', 'study_contact_plane_pose.py'}
+    if optimizer != 'least_squares_box': extras.add('joint_ball_least_squares.py')
+    for name in sorted(set(request['implementation']) | extras):
         methods[name] = sha256(ROOT/'scripts'/name)
         shutil.copyfile(ROOT/'scripts'/name, output/'implementation'/name)
     rigs = []; references = []; models = []; regions = []; patches = []; skins = []; scales = []
@@ -83,7 +87,7 @@ def run(source, output):
             remaining = min(15. if j < 3 else budget, budget-used)
             if remaining <= 1e-6: raise ValueError('No conservative original edit headroom')
             extra.append(remaining)
-        scale = np.repeat(np.deg2rad(extra)/np.sqrt(3), 3)
+        scale = np.repeat(np.deg2rad(extra)/(np.sqrt(3) if optimizer == 'least_squares_box' else 1.), 3)
         primitive = rig.primitives[0]; nodes = np.asarray(rig.joints)[primitive['joints']]
         hand_node = next(n for n in rig.joints if rig.document['nodes'][n]['name'] == hand)
         ids, face_ids = hand_region(rig.parents, hand_node, nodes, primitive['weights'], actor['faces'])
@@ -94,7 +98,9 @@ def run(source, output):
         layouts.append(dict(nodes=model.nodes, original_budgets_degrees=budgets,
             additional_control_limits_degrees=extra, vertices=ids.tolist(), triangles=face_ids.tolist()))
     save(output/'request.json', dict(at=now(), source=str(source), inputs=files, implementation=methods,
-        target=spec, event_time_s=event, window_s=window, actors=layouts, max_nfev_per_actor=80,
+        target=spec, event_time_s=event, window_s=window, actors=layouts, optimizer=optimizer,
+        max_nfev_per_actor=80 if optimizer == 'least_squares_box' else None,
+        max_iterations_per_actor=80 if optimizer != 'least_squares_box' else None,
         policy='Fixed meeting plane is a conservative proposal surrogate. Original arm/finger budgets retained. Contact-pose full mesh and full-window original motion caps audited separately. No motion or collision acceptance inferred from least squares.',
         diagnostic_only=True, quality_approved=False))
     def geometry(i, world, frame=1):
@@ -114,17 +120,29 @@ def run(source, output):
             if calls[0] % 1000 == 0:
                 print(dict(phase='plane_pose_fit', actor=i, residual_calls=calls[0]), flush=True)
             return np.r_[(center-spec['centers_m'][i])/1e-5, (normal-spec['normals'][i])/.05,
-                np.maximum(plane_excess(points, midpoint, axis, i), 0)/.001, x*.001]
+                np.maximum(plane_excess(points, midpoint, axis, i), 0)/.001, x*.001*(1. if optimizer == 'least_squares_box' else np.sqrt(3))]
         initial = geometry(i, model.source_world)
-        fit = least_squares(residual, np.zeros(model.size), bounds=(-1., 1.), max_nfev=80,
-            ftol=1e-9, xtol=1e-9, gtol=1e-9)
-        controls.append(fit.x*scales[i]); final = geometry(i, model.world(controls[-1]))
-        fits.append(dict(actor=i, success=bool(fit.success), message=fit.message, nfev=int(fit.nfev),
-            cost=float(fit.cost), residual_calls=calls[0], controls_radians=controls[-1].tolist(),
+        if optimizer == 'least_squares_box':
+            fit = least_squares(residual, np.zeros(model.size), bounds=(-1., 1.), max_nfev=80,
+                ftol=1e-9, xtol=1e-9, gtol=1e-9)
+            point = fit.x
+            fit_record = dict(success=bool(fit.success), message=fit.message, nfev=int(fit.nfev), cost=float(fit.cost))
+        else:
+            from joint_ball_least_squares import solve
+            def observe(row):
+                if row['iteration'] % 10 == 0:
+                    print(dict(phase='joint_constraint_fit', actor=i, **row), flush=True)
+            point, solver_record = solve(residual, np.zeros(model.size), ball=optimizer == 'slsqp_ball',
+                iterations=80, observe=observe)
+            save(output/f'solver-{i}.json', solver_record)
+            fit_record = dict(success=solver_record['optimizer_success'], message=solver_record['message'],
+                iterations=solver_record['iterations'], cost=solver_record['final_cost'])
+        controls.append(point*scales[i]); final = geometry(i, model.world(controls[-1]))
+        fits.append(dict(actor=i, **fit_record, residual_calls=calls[0], controls_radians=controls[-1].tolist(),
             initial_plane=plane_measure(initial[2], midpoint, axis, i),
             unrounded_plane=plane_measure(final[2], midpoint, axis, i)))
         save(output/'fits.json', fits)
-        print(dict(phase='plane_pose_actor_complete', actor=i, nfev=int(fit.nfev), cost=float(fit.cost)), flush=True)
+        print(dict(phase='plane_pose_actor_complete', actor=i, **fit_record), flush=True)
     full = np.unique(np.r_[uniform, window, event, 0., [AnimationSampler(r.document, r.binary, 0).duration for r in rigs]])
     worlds = []; centers = []; normals = []; decoded_planes = []; positions = []; exports = []
     for i, (rig, ref, model, values) in enumerate(zip(rigs, references, models, controls)):
@@ -188,5 +206,7 @@ if __name__ == '__main__':
     from action_worker_lock import worker_lock
     from threadpoolctl import threadpool_limits
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('source', type=Path); parser.add_argument('output', type=Path); args = parser.parse_args()
-    with worker_lock(), threadpool_limits(limits=1): run(args.source, args.output)
+    parser.add_argument('source', type=Path); parser.add_argument('output', type=Path)
+    parser.add_argument('--optimizer', choices=['least_squares_box', 'slsqp_box', 'slsqp_ball'], default='least_squares_box')
+    args = parser.parse_args()
+    with worker_lock(), threadpool_limits(limits=1): run(args.source, args.output, args.optimizer)

@@ -87,6 +87,7 @@ jobs:
           tests/test_iterated_motion_headroom.py
           tests/test_shared_palm_meeting.py
           tests/test_hand_contact_plane.py
+          tests/test_joint_ball_least_squares.py
           tests/test_edit_interval_clock.py
           tests/test_hand_witness_envelope.py
           tests/test_skin_motion_bounds.py

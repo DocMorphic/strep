@@ -17,7 +17,7 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
-The latest [distributed hand-plane experiment](docs/contact-plane-pose-v1.md) retains the authored contact screen while reducing contact-pose crossings from 560 to 204 and maximum penetration from 18.455 to 11.689 mm. Collision and original motion checks still fail. A control-limit diagnosis identifies excluded rotations within the existing angle budgets for the next trial. The diagnostic clips are not selected for Studio; all 998 model-free source tests pass.
+The latest [matched joint-angle constraint experiment](docs/contact-plane-joint-balls-v1.md) removes restrictive component bounds without raising angle budgets. Compared with the matched control, maximum contact-pose penetration falls from 11.963 to 10.213 mm, but proper crossings rise from 214 to 220. Both contact-marker screens pass; collision and original motion limits still fail. Next use the actual intersecting surfaces to guide correction. No candidate is selected for Studio; all 1,005 model-free source tests pass.
 
 The development breadth study generated 390 actor clips across 72 cases, 12 action families, and five seeds. Those categories measure coverage; they do not prove support for every requested motion. Release acceptance remains open in [the release matrix](benchmarks/project-release-v1.json).
 
