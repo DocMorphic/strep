@@ -146,7 +146,8 @@ rounded-model differences within 1e-8. They budget normalized floating roundoff
 as `64 * float64_epsilon / dt²` and propagate the independently measured endpoint
 errors into the exported finite difference. No production solver, clip gate or
 acceptance tolerance changes. The revised full local suite passes all 1,316
-Python tests and 14 JavaScript suites; hosted verification of the fix is pending.
+Python tests and 14 JavaScript suites. Subsequent hosted run 36952881401 for
+commit `23e5b3d` passes both Windows and Linux, confirming the fix.
 
 The passing proposal still needs stricter peak, engine, geometry, broad
 rig/action/scene and human cleanup validation. The other starts retain larger

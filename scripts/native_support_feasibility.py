@@ -14,6 +14,7 @@ from native_leg_floor import export_rotations
 from native_support_clock import NativeSupportSampler
 from paired_temporal_neighbor import rotation_channels
 from rig_asset import RigAsset
+from native_support_peak_limits import limits, STRICT_PEAK_TOLERANCE
 from sampled_motion_caps import features, measures
 from strep import read, save, sha256
 
@@ -21,8 +22,10 @@ from strep import read, save, sha256
 def signed_constraints(problem, values, world):
     """Same ordered rows as the parent residual, without clipping interior rows."""
     rates=measures(features(world[problem.rate_ids],problem.rig.joints),problem.caps.dt);parts=[]
-    for actual,cap,floor in zip(rates,problem.caps.caps,(.05,.5,.1,1.)):
-        parts.append(((actual[:,problem.columns]-cap[:,problem.columns]-problem.caps.tolerance)/np.maximum(cap[:,problem.columns],floor)).ravel())
+    strict_limits=getattr(problem,'strict_rate_limits',None)
+    for group,(actual,cap,floor) in enumerate(zip(rates,problem.caps.caps,(.05,.5,.1,1.))):
+        excess=actual[:,problem.columns]-cap[:,problem.columns]-problem.caps.tolerance if strict_limits is None else actual[:,problem.columns]-strict_limits[group][:,problem.columns]
+        parts.append((excess/np.maximum(cap[:,problem.columns],floor)).ravel())
     for d in problem.data:
         r=d['row'];a,b=r['edit_keys'];q=np.stack([values[n][a:b+1] for n in r['chain']],axis=1)
         angle=np.rad2deg((Rotation.from_quat(d['original'].reshape(-1,4)).inv()*Rotation.from_quat(q.reshape(-1,4))).magnitude()).reshape(-1,3)
@@ -197,12 +200,16 @@ def seed_inputs(folder,source,spec_path,root):
     return seeds,bindings
 
 
-def propose(rig,reader,rows,path,tau=.05,mu=.5,*,controls_path,iterations=8,trust=.0002,quantized=False,coordinates=False):
+def propose(rig,reader,rows,path,tau=.05,mu=.5,*,controls_path,iterations=8,trust=.0002,quantized=False,coordinates=False,strict_peaks=False):
     if type(coordinates) is not bool:raise ValueError('Explicit coordinate repair mode required')
+    if type(strict_peaks) is not bool:raise ValueError('Explicit strict peak repair mode required')
     controls_path=Path(controls_path);controls=read(controls_path)
     if controls.get('acceleration_time_s')!=tau or controls.get('reference_weight_per_s2')!=mu or controls.get('orientation_limit_degrees')!=1. or controls.get('swivel_limit_degrees')!=5.:
         raise ValueError('Warm seed settings differ from requested trial')
     problem=SupportOrientationProblem(rig,reader,rows,tau,mu);start=check_controls(problem,controls);path=Path(path);prefix=path.stem
+    if strict_peaks:
+        source_rates=measures(features(problem.raw[problem.rate_ids],problem.rig.joints),problem.caps.dt)
+        problem.strict_rate_limits=limits(source_rates,problem.caps)
     probes=[]
     def evaluate(x,label):
         values,_=problem.rotations(x);file=path.with_name(prefix+'.repair-'+label+'.glb')
@@ -230,4 +237,5 @@ def propose(rig,reader,rows,path,tau=.05,mu=.5,*,controls_path,iterations=8,trus
     saved=path.with_suffix('.controls.json');save(saved,final_controls)
     return [dict(report,method='serialized_native_support_coordinate_repair' if coordinates else 'serialized_native_support_feasibility_repair',variables=len(x),
         warm_controls_sha256=sha256(controls_path),controls_file=saved.name,controls_sha256=sha256(saved),
+        strict_peak_limits=strict_peaks,absolute_peak_tolerance=STRICT_PEAK_TOLERANCE if strict_peaks else None,
         maximum_parameter_change=float(abs(x-start).max(initial=0)),probes=probes)]
