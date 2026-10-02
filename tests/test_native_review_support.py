@@ -154,6 +154,37 @@ def test_real_serialized_screens_override_mock_fitter_pass_and_retain_input(nati
     assert result['proposal_preview']['selection']['candidate_motion']==result['proposal']
 
 
+def test_actual_converted_contact_failure_overrides_mock_support_pass(native,monkeypatch):
+    folder,request,output=conversion_fixture(native)
+    from native_studio_plant import policy
+    request['planting']=dict(maximum_patch_anchor_error_m=0.,maximum_patch_speed_m_s=0.)
+    save(folder/'plant-policy.json',policy(folder/'source.glb',folder/'draft.json',request['planting']))
+    request['plant_policy_sha256']=sha256(folder/'plant-policy.json')
+    # A support-only fixture stub isolates the new branch. Actual exported
+    # native geometry and fixed-patch position/speed are still independently
+    # measured; this is not a successful physical-animation assertion.
+    monkeypatch.setattr(bridge,'serialized_screens',lambda *args:dict(passed=True,support_samples_pass=True,source_rates_pass=True,
+        supports=[dict(minimum_height_m=.001)]))
+    result=bridge.convert(folder,request,output)
+    assert result['retained_input'] and result['retention_reason']=='native_serialized_planting_gates_failed'
+    assert not result['proposal_planting_audit']['contact_samples_pass']
+    assert not result['proposal_planting_audit']['passed']
+    with np.load(result['candidate_motion']['path'],allow_pickle=False) as converted,np.load(result['selection']['candidate_motion']['path'],allow_pickle=False) as source:
+        np.testing.assert_array_equal(converted['local_rot_mats'],source['local_rot_mats'])
+    assert result['selected_planting_audit'] is not None
+
+
+def test_native_conversion_rejects_changed_plant_policy_before_export(native):
+    folder,request,output=conversion_fixture(native)
+    from native_studio_plant import policy
+    request['planting']=dict(maximum_patch_anchor_error_m=.001,maximum_patch_speed_m_s=.005)
+    save(folder/'plant-policy.json',policy(folder/'source.glb',folder/'draft.json',request['planting']))
+    request['plant_policy_sha256']=sha256(folder/'plant-policy.json')
+    changed=read(folder/'plant-policy.json');changed['supports'][0]['maximum_patch_anchor_error_m']=.002;save(folder/'plant-policy.json',changed)
+    with pytest.raises(ValueError,match='planting policy'):bridge.convert(folder,request,output)
+    assert not (folder/'native-proposal.npz').exists()
+
+
 def test_studio_native_decision_and_markers_follow_conversion_not_mock_fitter_pass(native,monkeypatch):
     setup,selection,preview,body=native
     original=fitter.run

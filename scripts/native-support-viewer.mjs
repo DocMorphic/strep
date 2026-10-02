@@ -4,7 +4,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {enableEightWeights} from '/soma-preview-skin.js';
 import {clampTime,advanceTime} from '/native-contact-clock.mjs';
 import {useGreyMaterials} from '/native-grey-loader.mjs';
-import {formatNativeContactDiagnostics,nativeSupportAuditUrl} from '/native-contact-diagnostics.mjs';
+import {formatNativeContactDiagnostics,formatNativePlanting,nativeSupportAuditUrl} from '/native-contact-diagnostics.mjs';
 const el=id=>document.getElementById(id),world=new THREE.Scene(),loader=new GLTFLoader();
 useGreyMaterials(loader,THREE);
 const renderer=new THREE.WebGLRenderer({canvas:el('preview'),antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setClearColor(0xe3e8ed);
@@ -39,7 +39,17 @@ try{const params=new URLSearchParams(location.search),id=params.get('id');if(!/^
  el('version').replaceChildren(...review.versions.map(v=>new Option(v.label,v.id)));el('support').replaceChildren(...review.supports.map(s=>new Option(s.id,s.id)));time=review.supports[0].stance_s[0];el('audit').href=nativeSupportAuditUrl(review);el('events').href=review.events_url;el('root').href=review.root_url;el('decision').textContent=review.retained_input?(review.preparation?'Prepared input retained: ':'Original input retained: ')+review.retention_reason+'. '+(review.output_support_samples_pass?'Its sampled support screen already passes.':'The final output does not meet the authored support screen.'):'A proposal met the sampled support and source-relative rate screens. Animation quality is still unapproved.';
  if(review.preparation){el('preparation').hidden=false;el('preparation').textContent=`Prepared ${review.preparation.changes} rig nodes. Largest sampled mesh change: ${(review.preparation.maximum_vertex_distance_m*1e6).toPrecision(4)} µm. The original clip remains available.`;el('preparationAudit').hidden=false;el('preparationAudit').href=review.preparation.comparison_url;}
  if(review.refinement){el('refinement').hidden=false;el('refinement').textContent=`Between-key refinement used a ${review.refinement.iterations}-iteration limit. Starting and final proposals remain available; passing contact checks can still fail motion checks.`;}
- const contactText=formatNativeContactDiagnostics(review.native_review_candidate);el('contacts').hidden=!contactText;el('contacts').textContent=contactText;
+ const contactText=[formatNativeContactDiagnostics(review.native_review_candidate),formatNativePlanting(review.planting)].filter(Boolean).join(' ');el('contacts').hidden=!contactText;el('contacts').textContent=contactText;
  if(review.joint_search){el('refinement').hidden=false;el('refinement').textContent=`Joint support/rate search used up to ${review.joint_search.maximum_evaluations} evaluations per proposal, with knee-plane freedom up to ${review.joint_search.swivel_limit_degrees} degrees and native foot orientation freedom up to ${review.joint_search.orientation_limit_degrees} degree. Final serialized checks remain separate.`;}
- for(const r of review.trials){const tr=document.createElement('tr');for(const text of [`Proposal ${r.trial+1} · ${r.status}`,(r.supports||[]).map(s=>`${s.id}: ${(s.minimum_height_m*1000).toFixed(3)}–${(s.maximum_lowest_height_m*1000).toFixed(3)} mm`).join('; ')||r.reason||'Not recorded',r.source_rate_failed_rows?.join(' / ')||'Not recorded']){const td=document.createElement('td');td.textContent=text;tr.append(td);}const detail=document.createElement('td');detail.textContent=r.joint_search?`${r.joint_search.evaluations} / ${r.joint_search.maximum_evaluations} evaluations `:r.refinement?`${r.refinement.accepted_steps} accepted steps · ${r.refinement.attempts} attempts `:review.refinement||review.joint_search?'Not completed':'Not requested';if(r.joint_search){const link=document.createElement('a');link.href=r.joint_search.controls_url;link.textContent='Saved motion controls';detail.append(link);}else if(r.refinement){const link=document.createElement('a');link.href=r.refinement.audit_url;link.textContent='Audit';detail.append(link);}tr.append(detail);el('metrics').append(tr);}await load();
+ for(const r of review.trials){
+  const tr=document.createElement('tr');
+  for(const text of [`Proposal ${r.trial+1} · ${r.status}`,(r.supports||[]).map(s=>`${s.id}: ${(s.minimum_height_m*1000).toFixed(3)}–${(s.maximum_lowest_height_m*1000).toFixed(3)} mm`).join('; ')||r.reason||'Not recorded',r.source_rate_failed_rows?.join(' / ')||'Not recorded']){const td=document.createElement('td');td.textContent=text;tr.append(td);}
+  const detail=document.createElement('td');
+  detail.textContent=r.planting?`${r.planting.method} · ${r.planting.iterations} steps · ${r.planting.contact_samples_pass?'contact gates pass':'contact gates fail'} `:r.joint_search?`${r.joint_search.evaluations} / ${r.joint_search.maximum_evaluations} evaluations `:r.refinement?`${r.refinement.accepted_steps} accepted steps · ${r.refinement.attempts} attempts `:review.refinement||review.joint_search||review.planting?'Not completed':'Not requested';
+  if(r.planting){for(const [label,url] of [['Planting audit',r.planting.audit_url],['Saved motion controls',r.planting.controls_url]]){const link=document.createElement('a');link.href=url;link.textContent=label;detail.append(link,document.createTextNode(' '));}}
+  else if(r.joint_search){const link=document.createElement('a');link.href=r.joint_search.controls_url;link.textContent='Saved motion controls';detail.append(link);}
+  else if(r.refinement){const link=document.createElement('a');link.href=r.refinement.audit_url;link.textContent='Audit';detail.append(link);}
+  tr.append(detail);el('metrics').append(tr);
+ }
+ await load();
 }catch(error){el('status').textContent=error.message;}

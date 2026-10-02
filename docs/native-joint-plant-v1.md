@@ -138,3 +138,5 @@ submissions. All 14 release capabilities remain unapproved, the formal 72-by-fiv
 population is untouched and the full-project goal remains active. General
 actions/styles, scene/object/partner/finger targets, rig transfer, reviewed
 licensed learning data and human cleanup/release evidence remain required.
+
+A later bounded coordinate follow-up accepts the historical wave after actual native conversion. [Studio planted-contact authoring](studio-native-plant-v1.md) documents that separate result and exposes the guarded operation in both authoring panels. Earlier failures above remain unchanged.

@@ -62,6 +62,16 @@ await editor.bind();assert.equal(el('PrepareRig').disabled,true);assert.match(el
 el('PrepareRig').checked=true;posted=null;await el('Fit').onclick();assert.equal(posted,null);assert.match(el('Status').textContent,/preparation is unavailable/);
 el('Refine').checked=true;editor.reset();assert.equal(el('Preparation').hidden,true);assert.equal(el('PrepareRig').checked,false);assert.equal(el('Refine').checked,false);
 await editor.bind();el('PrepareRig').checked=false;el('JointSearch').checked=true;el('JointSearch').onchange();assert.equal(el('Refine').disabled,true);posted=null;await el('Fit').onclick();assert.equal(posted.joint_source_rate_search,true);assert.equal(posted.joint_search_evaluations,undefined);assert.equal(posted.sampled_support_repair,undefined);jobData={jobs:[{id:'fit1',status:'complete',review:{retained_input:true,retention_reason:'no_proposal_satisfies_all_bounds',result_sha256:'c'.repeat(64)}}]};await editor.refresh();el('Refine').checked=true;posted=null;await el('Fit').onclick();assert.equal(posted,null);assert.match(el('Status').textContent,/one support proposal method/);editor.reset();assert.equal(el('JointSearch').checked,false);assert.equal(el('Refine').disabled,false);assert.equal(el('JointSearch').disabled,false);
+await editor.bind();el('Plant').checked=true;el('Plant').onchange();assert.equal(el('Refine').disabled,true);assert.equal(el('JointSearch').disabled,true);assert.equal(el('PrepareRig').checked,false);assert.equal(el('PrepareRig').disabled,true);assert.equal(el('PlantLimits').hidden,false);
+el('PlantAnchor').value='0.5';el('PlantSpeed').value='3';posted=null;await el('Fit').onclick();
+assert.deepEqual(posted.planting,{maximum_patch_anchor_error_m:.0005,maximum_patch_speed_m_s:.003});
+assert.equal(posted.planting_iterations,undefined);assert.equal(posted.joint_source_rate_search,undefined);
+assert.equal(JSON.parse(storage.get('strep:native-support:'+metadata.glb_sha256)).planting,undefined);
+jobData={jobs:[{id:'fit1',status:'complete',review:{retained_input:true,retention_reason:'joint_plant_proposal_failed_gates',result_sha256:'f'.repeat(64)}}]};await editor.refresh();
+el('PlantAnchor').value='';posted=null;await el('Fit').onclick();assert.equal(posted,null);assert.match(el('Status').textContent,/finite PlantAnchor/);
+el('PlantAnchor').value='31';await el('Fit').onclick();assert.equal(posted,null);assert.match(el('Status').textContent,/0 to 30 mm/);
+el('PlantAnchor').value='1';el('Refine').checked=true;await el('Fit').onclick();assert.equal(posted,null);assert.match(el('Status').textContent,/one support proposal method/);
+editor.reset();assert.equal(el('Plant').checked,false);assert.equal(el('PlantLimits').hidden,true);assert.equal(el('PlantAnchor').value,1);assert.equal(el('PlantSpeed').value,5);
 editor.dispose();
 console.log('Native supports: original clocks, source/version isolation, explicit preparation/refinement, immutable submission, original draft persistence, retained failures and stale responses pass. DOM simulation only.');
 

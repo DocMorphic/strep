@@ -101,6 +101,17 @@ def convert(folder,request,output):
     from gltf_tools import read_glb
     from native_support_clock import NativeSupportSampler
     folder,output=Path(folder),Path(output)
+    plant_limits=None
+    if 'planting' in request:
+        from native_studio_plant import policy
+        from native_foot_plant import policy_rows
+        from native_support_spec import validate
+        from rig_asset import RigAsset
+        if sha256(folder/'plant-policy.json')!=request.get('plant_policy_sha256') or read(folder/'plant-policy.json')!=policy(folder/'source.glb',folder/'draft.json',request['planting']):
+            raise ValueError('Changed native planting policy')
+        rig=RigAsset.load(folder/'source.glb');reader=NativeSupportSampler(rig.document,rig.binary,0)
+        _,rows=validate(read(folder/'draft.json'),rig,reader,sha256(folder/'source.glb'))
+        plant_limits=policy_rows(read(folder/'plant-policy.json'),folder/'source.glb',folder/'source.glb',folder/'draft.json',rows)
     selection=request['native_review_selection'];data=metadata(selection['draft_id'],selection['draft_sha256'],selection['item_id'],
                     selection['candidate_motion']['path'],selection['candidate_start_frame'])
     if data['recipe']['candidate_motion']!=selection['candidate_motion']:raise ValueError('Native support source changed')
@@ -145,7 +156,7 @@ def convert(folder,request,output):
     maximum=0.
     for f,t in enumerate(expected):maximum=max(maximum,float(np.abs(new.sample(float(t))[1:78]-world[f]).max()))
     if maximum>1e-5:raise ValueError('Native support conversion differs from fitted GLB')
-    proposal_preview=None;screens=None;proposal_contacts=None
+    proposal_preview=None;screens=None;proposal_contacts=None;proposal_planting=None
     if not retained:
         proposal_preview=preview_request(dict(selection,candidate_motion=dict(path=str(proposal.resolve()),sha256=sha256(proposal)),candidate_start_frame=0))
         from studio_correction_review import served_preview
@@ -155,6 +166,10 @@ def convert(folder,request,output):
         from native_contact_diagnostics import measure
         proposal_contacts=measure(folder/'source.glb',checked,spec)
         if not screens['passed']:retained=True;reason='native_serialized_support_screens_failed'
+        if plant_limits is not None:
+            from native_joint_plant_job import authored_audit
+            proposal_planting=authored_audit(folder/'source.glb',checked,spec,plant_limits)
+            if not proposal_planting['passed']:retained=True;reason='native_serialized_planting_gates_failed'
     chosen_local=local if retained else candidate
     chosen_world=native_world(chosen_local,roots,offsets,parents)
     path=folder/'native-candidate.npz'
@@ -172,10 +187,15 @@ def convert(folder,request,output):
     if not retained and not selected_screens['passed']:raise ValueError('Selected native support serialization failed its independent screens')
     from native_contact_diagnostics import measure
     selected_contacts=measure(folder/'source.glb',checked,spec)
+    selected_planting=None
+    if plant_limits is not None:
+        from native_joint_plant_job import authored_audit
+        selected_planting=authored_audit(folder/'source.glb',checked,spec,plant_limits)
+        if not retained and not selected_planting['passed']:raise ValueError('Selected native planting serialization failed its independent gates')
     events=folder/'native-support-events.json'
     save(events,dict(source='Explicit authored stance intervals, not measured contact force',
         target_clip_sha256=preview['preview_sha256'],
-        constraint_status='satisfied_at_samples' if selected_screens['passed'] else 'unverified_on_retained_input',
+        constraint_status='satisfied_at_samples' if selected_screens['passed'] and (selected_planting is None or selected_planting['passed']) else 'unverified_on_retained_input',
         intervals=[dict(id=row['id'],foot=row['foot'],start_s=row['stance_s'][0],end_s=row['stance_s'][1]) for row in spec['supports']],
         quality_approved=False))
     report=dict(schema='strep-native-support-conversion-v1',selection=selection,candidate_motion=ref,
@@ -186,8 +206,9 @@ def convert(folder,request,output):
                 proposal_preview=proposal_preview,proposal_serialized_screens=screens,selected_serialized_screens=selected_screens,
                 selected_support_samples_pass=selected_screens['support_samples_pass'],
                 selected_contact_diagnostics=selected_contacts,proposal_contact_diagnostics=proposal_contacts,
+                selected_planting_audit=selected_planting,proposal_planting_audit=proposal_planting,
                 selected_support_events=dict(path=str(events.resolve()),sha256=sha256(events)),
                 proposal=dict(path=str(proposal.resolve()),sha256=sha256(proposal)),
                 quality_approved=False,training_admitted=False,release_approved=False,
-                scope='Native geometry conversion and inherited sampled support screens; no planted-contact, physics or human approval')
+                scope='Native conversion with explicit fixed-patch contact, support and rate gates; no continuous contact, physics or human approval' if plant_limits is not None else 'Native geometry conversion and inherited sampled support screens; no planted-contact, physics or human approval')
     save(folder/'native-conversion.json',report);return report

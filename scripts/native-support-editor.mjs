@@ -6,8 +6,8 @@ export function createNativeSupportEditor({getContext,prefix='nativeSupport',onN
  const api=async(url,body)=>{const r=await fetch(url,body===undefined?{cache:'no-store'}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),data=await r.json();if(!r.ok)throw Error(data.error||'Request failed');return data;};
  const safe=fn=>async()=>{try{await fn();}catch(e){el('Status').textContent=e.message;}};
  function unload(){el('Frame').removeAttribute('src');el('Frame').hidden=true;}
- function methodState(){el('Refine').disabled=el('JointSearch').checked;el('JointSearch').disabled=el('Refine').checked;}
- function reset(){++epoch;++revision;binding=null;spec=null;el('Fields').disabled=true;el('PrepareRig').checked=false;el('Refine').checked=false;el('JointSearch').checked=false;methodState();el('PrepareRig').disabled=true;el('Preparation').hidden=true;el('Binding').textContent='No clip selected.';unload();}
+ function methodState(){const planted=el('Plant').checked;el('Refine').disabled=el('JointSearch').checked||planted;el('JointSearch').disabled=el('Refine').checked||planted;el('Plant').disabled=el('Refine').checked||el('JointSearch').checked;el('PlantLimits').hidden=!planted;el('PrepareRig').disabled=planted||!binding?.rigid_preparation?.eligible||!binding.rigid_preparation.static_node_changes;}
+ function reset(){++epoch;++revision;binding=null;spec=null;el('Fields').disabled=true;el('PrepareRig').checked=false;el('Refine').checked=false;el('JointSearch').checked=false;el('Plant').checked=false;el('PlantAnchor').value=1;el('PlantSpeed').value=5;methodState();el('PrepareRig').disabled=true;el('Preparation').hidden=true;el('Binding').textContent='No clip selected.';unload();}
  function key(){return 'strep:native-support:'+binding.glb_sha256;}
  function persist(){revision++;if(!binding||!spec)return;try{storage?.setItem(key(),JSON.stringify(spec));}catch{el('Status').textContent='Browser storage is full. The draft is still usable; submitting saves a snapshot.';}}
  function numeric(id){const text=String(el(id).value).trim(),n=Number(text);if(!text||!Number.isFinite(n))throw Error('Enter a finite '+id+' value');return n;}
@@ -30,13 +30,15 @@ export function createNativeSupportEditor({getContext,prefix='nativeSupport',onN
   const preparation=data.rigid_preparation;el('Preparation').hidden=!preparation||(preparation.eligible&&!preparation.static_node_changes);el('PrepareRig').disabled=!preparation?.eligible||!preparation.static_node_changes;el('PreparationHint').textContent=preparation?.eligible?'This rig has tiny scale differences. Preparation creates a separate version, measures the mesh change and keeps your original clip.':'This rig needs a separate conversion before rigid foot editing. Tiny-scale preparation is unavailable.';
   try{const saved=JSON.parse(storage?.getItem(key())||'null');if(saved?.schema===spec.schema&&saved.glb_sha256===spec.glb_sha256&&saved.duration_s===spec.duration_s&&saved.root_node===spec.root_node&&Array.isArray(saved.supports)&&saved.mapping&&typeof saved.mapping==='object')spec=saved;}catch{}
   mapping=new Map();el('Mapping').replaceChildren();for(const role of roles){const label=document.createElement('label'),select=document.createElement('select');label.textContent=role.replace('Leg',' thigh').replace('Shin',' knee').replace('Foot',' foot');select.setAttribute('aria-label','Native support '+role);select.replaceChildren(new Option('Unmapped',''),...data.joints.map(j=>new Option(`${j.name||'Joint'} · ${j.node}`,String(j.node))));select.value=spec.mapping[role]===undefined?'':String(spec.mapping[role]);select.onchange=syncMapping;mapping.set(role,select);label.append(select);el('Mapping').append(label);}
-  el('Start').value=data.duration_s*.4;el('End').value=data.duration_s*.6;clock();intervals();el('Fields').disabled=!!pending;el('Binding').textContent=`${data.label} · ${variant} · ${data.duration_s.toPrecision(9)} s · ${data.glb_sha256.slice(0,12)}`;
+  el('Start').value=data.duration_s*.4;el('End').value=data.duration_s*.6;clock();intervals();methodState();el('Fields').disabled=!!pending;el('Binding').textContent=`${data.label} · ${variant} · ${data.duration_s.toPrecision(9)} s · ${data.glb_sha256.slice(0,12)}`;
   el('Status').textContent='Edit the draft, then try correction. These are the selected exported GLB’s keys; a prepared rough clip may already have been resampled.';
  }
  el('Bind').onclick=safe(bind);el('Foot').onchange=()=>{revision++;clock();};
  el('PrepareRig').onchange=()=>{revision++;};
  el('Refine').onchange=()=>{revision++;methodState();};
  el('JointSearch').onchange=()=>{revision++;methodState();};
+ el('Plant').onchange=()=>{revision++;if(el('Plant').checked)el('PrepareRig').checked=false;methodState();};
+ for(const id of ['PlantAnchor','PlantSpeed'])el(id).oninput=()=>{revision++;};
  el('Add').onclick=safe(async()=>{
   if(!spec)throw Error('Load a clip first');
   const id=el('Name').value.trim();if(!/^[A-Za-z0-9_-]{1,64}$/.test(id))throw Error('Use a short interval name with letters, digits, underscores or hyphens.');
@@ -60,9 +62,10 @@ export function createNativeSupportEditor({getContext,prefix='nativeSupport',onN
   if(pending)throw Error('A native support job is already running.');
   const token=epoch,draft=revision,body={source_job:binding.source_job,variant:binding.variant,spec:clone(spec)};
   if(el('PrepareRig').checked){if(el('PrepareRig').disabled)throw Error('Rig preparation is unavailable for this source.');body.prepare_rigid_input=true;}
-  if(el('Refine').checked&&el('JointSearch').checked)throw Error('Choose one support proposal method');
+  if([el('Refine').checked,el('JointSearch').checked,el('Plant').checked].filter(Boolean).length>1)throw Error('Choose one support proposal method');
   if(el('Refine').checked)body.sampled_support_repair=true;
   if(el('JointSearch').checked)body.joint_source_rate_search=true;
+  if(el('Plant').checked){const anchor=numeric('PlantAnchor')/1000,speed=numeric('PlantSpeed')/1000;if(anchor<0||anchor>.03||speed<0||speed>.1)throw Error('Use patch anchor error from 0 to 30 mm and speed from 0 to 100 mm/s');body.planting={maximum_patch_anchor_error_m:anchor,maximum_patch_speed_m_s:speed};}
   el('Fields').disabled=true;try{const job=await api('/api/native-support-edits',body);pending=job.id;if(token===epoch&&draft===revision)el('Status').textContent='Native correction started; source and draft are frozen. A completed fit can retain the input.';await refresh();}finally{el('Fields').disabled=!!pending||!binding;}
  });
  function nativeChoice(){const report=jobs.find(j=>j.id===el('Jobs').value)?.review?.native_review_candidate;el('UseCorrection').hidden=!onNativeCandidate;el('UseCorrection').disabled=!onNativeCandidate||!report||!!pending||applying;return report;}
