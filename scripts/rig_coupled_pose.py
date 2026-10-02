@@ -5,6 +5,7 @@ the search dimension; they do not guarantee convergence or target feasibility.
 """
 import numpy as np
 from scipy.optimize import minimize
+from scipy.spatial.transform import Rotation
 from strep import save
 
 
@@ -85,6 +86,20 @@ class CoupledPoseFitter:
             derivative=(ga[:,None,:]*self.basis[frame,None,:,None]+gb[:,None,:]*self.basis[frame+1,None,:,None])/denom[:,None,None]
             rows.append(derivative.reshape(len(f.nodes),-1))
         return np.concatenate(parts),np.vstack(rows)
+
+    def inequality_values(self, controls):
+        """The same complete limits without allocating their dense Jacobian."""
+        f=self.fitter;values=self.parameters(controls);x=values[self.active].ravel()
+        parts=[1-x/self.limits,1+x/self.limits]
+        edges=np.any(self.basis[:-1]!=0,axis=1)|np.any(self.basis[1:]!=0,axis=1)
+        delta=np.diff(values,axis=0)
+        root=1-np.sum(delta[:,:3]**2,axis=1)/f.spec['limits']['root_step_m']**2
+        joint=1-np.sum(delta[:,3:].reshape(len(delta),-1,3)**2,axis=2)/np.radians(f.spec['limits']['joint_step_degrees'])**2
+        rotations=f.local[:,f.nodes,:3,:3]@Rotation.from_rotvec(values[:,3:].reshape(-1,3)).as_matrix().reshape(len(values),len(f.nodes),3,3)
+        limits=f.rotation_limits;denom=np.maximum(2*(1-np.cos(limits)),1e-8)
+        actual=(np.sum(rotations[:-1]*rotations[1:],axis=(2,3))-1-2*np.cos(limits))/denom
+        parts.append(np.c_[root,joint,actual][edges].ravel())
+        return np.concatenate(parts)
 
     def solve(self, output, max_iterations=100):
         if type(max_iterations)is not int or not 1<=max_iterations<=1000:
