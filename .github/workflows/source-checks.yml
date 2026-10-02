@@ -146,6 +146,7 @@ jobs:
           tests/test_native_support_roundtrip.py
           tests/test_native_contact_diagnostics.py
           tests/test_native_foot_plant.py
+          tests/test_native_joint_plant.py
           tests/test_native_support_peak_limits.py
           tests/test_native_support_engine.py
           tests/test_native_support_skin.py

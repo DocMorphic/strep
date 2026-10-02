@@ -110,6 +110,8 @@ def merit(g):
 
 def constraint_model(problem,x,*,quantized=False):
     """Finite-difference proxy; round stored keys before float64 interpolation."""
+    custom=getattr(problem,'native_constraint_model',None)
+    if custom is not None:return custom(x,quantized=quantized)
     values,_=problem.rotations(x)
     native=getattr(problem,'native_roundtrip',False)
     if quantized or native:values={n:q.astype(np.float32).astype(float) for n,q in values.items()}
