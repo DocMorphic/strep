@@ -17,6 +17,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
+[Studio now offers between-key refinement](docs/studio-sampled-support-v1.md) with bound starting/final proposals and unchanged input-retention feedback. The [crawl hand/shin diagnostic](docs/crawl-body-contact-probes-v1.md) records the existing mesh-contact workflow's failed first pilot and its next trajectory experiment.
+
 [Between-key support refinement](docs/native-support-sampled-repair-v1.md) repairs the measured dance/get-up contact-bound failures with exact replay and actual engine checks. All final motion-rate selections still fail and inputs remain retained; this is opt-in CLI development evidence.
 
 [Explicit Studio rig preparation](docs/studio-support-preparation-v1.md) keeps original and derived clips separate and measures tiny static-scale changes before fitting. [Broader support diagnostics](docs/native-support-action-breadth-v1.md) cover six existing development actions on three assets; failed authoring, support and rate checks remain visible.

@@ -1,0 +1,738 @@
+{
+  "schema": "strep-development-contact-probes-v1",
+  "status": "unapproved",
+  "scope": "Previously examined seed-77 crawl clips, three character assets/two rig families. Fixed geometry proxies and short ground-zero targets; no independent anatomy/contact annotation, new generation, formal release held-out evaluation or human quality evidence.",
+  "selection_rule": "Three reference vertices nearest each mapped joint, among vertices with >=.65 total skin weight on the shin joint or hand subtree; stable index tie break. Targets retain frame-54 centroid XZ and use ground Y=0. Frames 54..56 fixed before inspection. Geometry proxies, not reviewed anatomical knees/palms, force supports, independent contact annotations or action correctness.",
+  "original_inspection_result_sha256": "bfd3be88af7c0be3def4ac0bf1155267e95b03a34593032cbc0d8d8bca4ed89b",
+  "cases": [
+    {
+      "id": "rig-diversity-height-v1-02",
+      "rig_family": "cesium",
+      "source_glb_sha256": "393337840a57d4290731779668996be2588e79414af7882196e7113e2c8037bf",
+      "spec": {
+        "schema": "strep-target-contact-v1",
+        "glb_sha256": "393337840a57d4290731779668996be2588e79414af7882196e7113e2c8037bf",
+        "fps": 30,
+        "frames": 120,
+        "provenance": "Fixed frame-54..56 geometric shin/hand proxy diagnostics on a previously examined crawl clip; ground-zero XZ anchors, not independent anatomy/contact annotation or a claim that simultaneous stationary support is appropriate.",
+        "root_node": 3,
+        "patches": {
+          "LeftShin": {
+            "vertices": [
+              204,
+              426,
+              428
+            ]
+          },
+          "RightShin": {
+            "vertices": [
+              423,
+              1287,
+              1288
+            ]
+          },
+          "LeftHand": {
+            "vertices": [
+              343,
+              357,
+              1263
+            ]
+          },
+          "RightHand": {
+            "vertices": [
+              2403,
+              2392,
+              2967
+            ]
+          }
+        },
+        "contacts": [
+          {
+            "patch": "LeftShin",
+            "start_frame": 54,
+            "end_frame_exclusive": 57,
+            "target_position_m": [
+              0.05870187713890646,
+              0.0,
+              0.46368939947086324
+            ]
+          },
+          {
+            "patch": "RightShin",
+            "start_frame": 54,
+            "end_frame_exclusive": 57,
+            "target_position_m": [
+              -0.09914655593609249,
+              0.0,
+              0.2505219748562911
+            ]
+          },
+          {
+            "patch": "LeftHand",
+            "start_frame": 54,
+            "end_frame_exclusive": 57,
+            "target_position_m": [
+              0.0596190489943213,
+              0.0,
+              0.6530067012497559
+            ]
+          },
+          {
+            "patch": "RightHand",
+            "start_frame": 54,
+            "end_frame_exclusive": 57,
+            "target_position_m": [
+              -0.16707312559895812,
+              0.0,
+              0.837040550078425
+            ]
+          }
+        ],
+        "edit_joints": {
+          "LeftLeg": {
+            "node": 8,
+            "limit_degrees": 25
+          },
+          "LeftShin": {
+            "node": 9,
+            "limit_degrees": 35
+          },
+          "LeftFoot": {
+            "node": 10,
+            "limit_degrees": 25
+          },
+          "LeftToeBase": {
+            "node": 11,
+            "limit_degrees": 15
+          },
+          "RightLeg": {
+            "node": 4,
+            "limit_degrees": 25
+          },
+          "RightShin": {
+            "node": 5,
+            "limit_degrees": 35
+          },
+          "RightFoot": {
+            "node": 6,
+            "limit_degrees": 25
+          },
+          "RightToeBase": {
+            "node": 7,
+            "limit_degrees": 15
+          },
+          "LeftArm": {
+            "node": 17,
+            "limit_degrees": 25.0
+          },
+          "LeftForeArm": {
+            "node": 18,
+            "limit_degrees": 25.0
+          },
+          "LeftHand": {
+            "node": 19,
+            "limit_degrees": 25.0
+          },
+          "RightArm": {
+            "node": 14,
+            "limit_degrees": 25.0
+          },
+          "RightForeArm": {
+            "node": 15,
+            "limit_degrees": 25.0
+          },
+          "RightHand": {
+            "node": 16,
+            "limit_degrees": 25.0
+          }
+        },
+        "limits": {
+          "root_horizontal_m": 0.04,
+          "root_vertical_m": 0.12,
+          "root_step_m": 0.015,
+          "joint_step_degrees": 5
+        },
+        "screen": {
+          "floor_depth_m": 0.005,
+          "contact_error_m": 0.02
+        },
+        "objective": {
+          "contact_weight": 12.0,
+          "floor_weight": 4.0,
+          "rotation_prior_m_per_radian": 0.15,
+          "root_prior": 1.0,
+          "temporal_weight": 0.5
+        },
+        "max_nfev": 120
+      },
+      "selection": [
+        {
+          "role": "LeftShin",
+          "node": 9,
+          "vertices": [
+            204,
+            426,
+            428
+          ],
+          "eligible_vertices": 37,
+          "reference_joint_distance_m": [
+            0.044635162351936465,
+            0.0564991004459598,
+            0.05885138688836121
+          ],
+          "target_position_m": [
+            0.05870187713890646,
+            0.0,
+            0.46368939947086324
+          ]
+        },
+        {
+          "role": "RightShin",
+          "node": 5,
+          "vertices": [
+            423,
+            1287,
+            1288
+          ],
+          "eligible_vertices": 37,
+          "reference_joint_distance_m": [
+            0.0537406661979889,
+            0.05681127643523669,
+            0.05838439600225827
+          ],
+          "target_position_m": [
+            -0.09914655593609249,
+            0.0,
+            0.2505219748562911
+          ]
+        },
+        {
+          "role": "LeftHand",
+          "node": 19,
+          "vertices": [
+            343,
+            357,
+            1263
+          ],
+          "eligible_vertices": 50,
+          "reference_joint_distance_m": [
+            0.025142663286299514,
+            0.02528113945571656,
+            0.02528113945571656
+          ],
+          "target_position_m": [
+            0.0596190489943213,
+            0.0,
+            0.6530067012497559
+          ]
+        },
+        {
+          "role": "RightHand",
+          "node": 16,
+          "vertices": [
+            2403,
+            2392,
+            2967
+          ],
+          "eligible_vertices": 50,
+          "reference_joint_distance_m": [
+            0.023204766897646553,
+            0.02719994454144244,
+            0.02719994454144244
+          ],
+          "target_position_m": [
+            -0.16707312559895812,
+            0.0,
+            0.837040550078425
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rig-diversity-height-v1-09",
+      "rig_family": "quaternius-base",
+      "source_glb_sha256": "7d600da872311045f165ffe3c1b7e7ab8c4da0a69b42cbb9fc861ae98b31f34f",
+      "spec": {
+        "schema": "strep-target-contact-v1",
+        "glb_sha256": "7d600da872311045f165ffe3c1b7e7ab8c4da0a69b42cbb9fc861ae98b31f34f",
+        "fps": 30,
+        "frames": 120,
+        "provenance": "Fixed frame-54..56 geometric shin/hand proxy diagnostics on a previously examined crawl clip; ground-zero XZ anchors, not independent anatomy/contact annotation or a claim that simultaneous stationary support is appropriate.",
+        "root_node": 63,
+        "patches": {
+          "LeftShin": {
+            "vertices": [
+              7666,
+              7665,
+              7740
+            ]
+          },
+          "RightShin": {
+            "vertices": [
+              8689,
+              8688,
+              8754
+            ]
+          },
+          "LeftHand": {
+            "vertices": [
+              3276,
+              3295,
+              2991
+            ]
+          },
+          "RightHand": {
+            "vertices": [
+              5461,
+              5480,
+              5176
+            ]
+          }
+        },
+        "contacts": [
+          {
+            "patch": "LeftShin",
+            "start_frame": 54,
+            "end_frame_exclusive": 57,
+            "target_position_m": [
+              0.058273056478777875,
+              0.0,
+              0.8467969091600837
+            ]
+          },
+          {
+            "patch": "RightShin",
+            "start_frame": 54,
+            "end_frame_exclusive": 57,
+            "target_position_m": [
+              -0.16061472928769996,
+              0.0,
+              0.5222020158979727
+            ]
+          },
+          {
+            "patch": "LeftHand",
+            "start_frame": 54,
+            "end_frame_exclusive": 57,
+            "target_position_m": [
+              0.09644198034145209,
+              0.0,
+              1.0133930973346588
+            ]
+          },
+          {
+            "patch": "RightHand",
+            "start_frame": 54,
+            "end_frame_exclusive": 57,
+            "target_position_m": [
+              -0.21883389436991474,
+              0.0,
+              1.21178620908859
+            ]
+          }
+        ],
+        "edit_joints": {
+          "LeftLeg": {
+            "node": 57,
+            "limit_degrees": 25
+          },
+          "LeftShin": {
+            "node": 56,
+            "limit_degrees": 35
+          },
+          "LeftFoot": {
+            "node": 55,
+            "limit_degrees": 25
+          },
+          "LeftToeBase": {
+            "node": 54,
+            "limit_degrees": 15
+          },
+          "RightLeg": {
+            "node": 62,
+            "limit_degrees": 25
+          },
+          "RightShin": {
+            "node": 61,
+            "limit_degrees": 35
+          },
+          "RightFoot": {
+            "node": 60,
+            "limit_degrees": 25
+          },
+          "RightToeBase": {
+            "node": 59,
+            "limit_degrees": 15
+          },
+          "LeftArm": {
+            "node": 24,
+            "limit_degrees": 25.0
+          },
+          "LeftForeArm": {
+            "node": 23,
+            "limit_degrees": 25.0
+          },
+          "LeftHand": {
+            "node": 22,
+            "limit_degrees": 25.0
+          },
+          "RightArm": {
+            "node": 48,
+            "limit_degrees": 25.0
+          },
+          "RightForeArm": {
+            "node": 47,
+            "limit_degrees": 25.0
+          },
+          "RightHand": {
+            "node": 46,
+            "limit_degrees": 25.0
+          }
+        },
+        "limits": {
+          "root_horizontal_m": 0.04,
+          "root_vertical_m": 0.12,
+          "root_step_m": 0.015,
+          "joint_step_degrees": 5
+        },
+        "screen": {
+          "floor_depth_m": 0.005,
+          "contact_error_m": 0.02
+        },
+        "objective": {
+          "contact_weight": 12.0,
+          "floor_weight": 4.0,
+          "rotation_prior_m_per_radian": 0.15,
+          "root_prior": 1.0,
+          "temporal_weight": 0.5
+        },
+        "max_nfev": 120
+      },
+      "selection": [
+        {
+          "role": "LeftShin",
+          "node": 56,
+          "vertices": [
+            7666,
+            7665,
+            7740
+          ],
+          "eligible_vertices": 263,
+          "reference_joint_distance_m": [
+            0.04300445631227018,
+            0.04474043502507534,
+            0.044749954433456265
+          ],
+          "target_position_m": [
+            0.058273056478777875,
+            0.0,
+            0.8467969091600837
+          ]
+        },
+        {
+          "role": "RightShin",
+          "node": 61,
+          "vertices": [
+            8689,
+            8688,
+            8754
+          ],
+          "eligible_vertices": 263,
+          "reference_joint_distance_m": [
+            0.04300447201458374,
+            0.04474044383728171,
+            0.04474997207905415
+          ],
+          "target_position_m": [
+            -0.16061472928769996,
+            0.0,
+            0.5222020158979727
+          ]
+        },
+        {
+          "role": "LeftHand",
+          "node": 22,
+          "vertices": [
+            3276,
+            3295,
+            2991
+          ],
+          "eligible_vertices": 956,
+          "reference_joint_distance_m": [
+            0.021934972447251264,
+            0.022261525308398214,
+            0.022632349917534836
+          ],
+          "target_position_m": [
+            0.09644198034145209,
+            0.0,
+            1.0133930973346588
+          ]
+        },
+        {
+          "role": "RightHand",
+          "node": 46,
+          "vertices": [
+            5461,
+            5480,
+            5176
+          ],
+          "eligible_vertices": 956,
+          "reference_joint_distance_m": [
+            0.021934900232052287,
+            0.022261452517535554,
+            0.022632567952814424
+          ],
+          "target_position_m": [
+            -0.21883389436991474,
+            0.0,
+            1.21178620908859
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rig-diversity-height-v1-16",
+      "rig_family": "quaternius-base",
+      "source_glb_sha256": "a827652b4bc5ab930500f5ce353c624a11291c1226489fe2f663f83d034979a1",
+      "spec": {
+        "schema": "strep-target-contact-v1",
+        "glb_sha256": "a827652b4bc5ab930500f5ce353c624a11291c1226489fe2f663f83d034979a1",
+        "fps": 30,
+        "frames": 120,
+        "provenance": "Fixed frame-54..56 geometric shin/hand proxy diagnostics on a previously examined crawl clip; ground-zero XZ anchors, not independent anatomy/contact annotation or a claim that simultaneous stationary support is appropriate.",
+        "root_node": 63,
+        "patches": {
+          "LeftShin": {
+            "vertices": [
+              2328,
+              2329,
+              2812
+            ]
+          },
+          "RightShin": {
+            "vertices": [
+              4089,
+              4090,
+              4569
+            ]
+          },
+          "LeftHand": {
+            "vertices": [
+              5198,
+              4988,
+              4941
+            ]
+          },
+          "RightHand": {
+            "vertices": [
+              6395,
+              6185,
+              6144
+            ]
+          }
+        },
+        "contacts": [
+          {
+            "patch": "LeftShin",
+            "start_frame": 54,
+            "end_frame_exclusive": 57,
+            "target_position_m": [
+              0.04778852424468113,
+              0.0,
+              0.8828187081940654
+            ]
+          },
+          {
+            "patch": "RightShin",
+            "start_frame": 54,
+            "end_frame_exclusive": 57,
+            "target_position_m": [
+              -0.1539612316105743,
+              0.0,
+              0.5459216562899322
+            ]
+          },
+          {
+            "patch": "LeftHand",
+            "start_frame": 54,
+            "end_frame_exclusive": 57,
+            "target_position_m": [
+              0.15746172606402795,
+              0.0,
+              1.079086686346276
+            ]
+          },
+          {
+            "patch": "RightHand",
+            "start_frame": 54,
+            "end_frame_exclusive": 57,
+            "target_position_m": [
+              -0.28172104231303785,
+              0.0,
+              1.2777079738066917
+            ]
+          }
+        ],
+        "edit_joints": {
+          "LeftLeg": {
+            "node": 57,
+            "limit_degrees": 25
+          },
+          "LeftShin": {
+            "node": 56,
+            "limit_degrees": 35
+          },
+          "LeftFoot": {
+            "node": 55,
+            "limit_degrees": 25
+          },
+          "LeftToeBase": {
+            "node": 54,
+            "limit_degrees": 15
+          },
+          "RightLeg": {
+            "node": 62,
+            "limit_degrees": 25
+          },
+          "RightShin": {
+            "node": 61,
+            "limit_degrees": 35
+          },
+          "RightFoot": {
+            "node": 60,
+            "limit_degrees": 25
+          },
+          "RightToeBase": {
+            "node": 59,
+            "limit_degrees": 15
+          },
+          "LeftArm": {
+            "node": 24,
+            "limit_degrees": 25.0
+          },
+          "LeftForeArm": {
+            "node": 23,
+            "limit_degrees": 25.0
+          },
+          "LeftHand": {
+            "node": 22,
+            "limit_degrees": 25.0
+          },
+          "RightArm": {
+            "node": 48,
+            "limit_degrees": 25.0
+          },
+          "RightForeArm": {
+            "node": 47,
+            "limit_degrees": 25.0
+          },
+          "RightHand": {
+            "node": 46,
+            "limit_degrees": 25.0
+          }
+        },
+        "limits": {
+          "root_horizontal_m": 0.04,
+          "root_vertical_m": 0.12,
+          "root_step_m": 0.015,
+          "joint_step_degrees": 5
+        },
+        "screen": {
+          "floor_depth_m": 0.005,
+          "contact_error_m": 0.02
+        },
+        "objective": {
+          "contact_weight": 12.0,
+          "floor_weight": 4.0,
+          "rotation_prior_m_per_radian": 0.15,
+          "root_prior": 1.0,
+          "temporal_weight": 0.5
+        },
+        "max_nfev": 120
+      },
+      "selection": [
+        {
+          "role": "LeftShin",
+          "node": 56,
+          "vertices": [
+            2328,
+            2329,
+            2812
+          ],
+          "eligible_vertices": 267,
+          "reference_joint_distance_m": [
+            0.04286727667627268,
+            0.04286727667627268,
+            0.04953553504531521
+          ],
+          "target_position_m": [
+            0.04778852424468113,
+            0.0,
+            0.8828187081940654
+          ]
+        },
+        {
+          "role": "RightShin",
+          "node": 61,
+          "vertices": [
+            4089,
+            4090,
+            4569
+          ],
+          "eligible_vertices": 267,
+          "reference_joint_distance_m": [
+            0.04286723414692437,
+            0.04286723414692437,
+            0.04953551041707764
+          ],
+          "target_position_m": [
+            -0.1539612316105743,
+            0.0,
+            0.5459216562899322
+          ]
+        },
+        {
+          "role": "LeftHand",
+          "node": 22,
+          "vertices": [
+            5198,
+            4988,
+            4941
+          ],
+          "eligible_vertices": 1064,
+          "reference_joint_distance_m": [
+            0.018913365991672895,
+            0.019600957417610497,
+            0.02530754074839275
+          ],
+          "target_position_m": [
+            0.15746172606402795,
+            0.0,
+            1.079086686346276
+          ]
+        },
+        {
+          "role": "RightHand",
+          "node": 46,
+          "vertices": [
+            6395,
+            6185,
+            6144
+          ],
+          "eligible_vertices": 1064,
+          "reference_joint_distance_m": [
+            0.01891337684650396,
+            0.019600990770954257,
+            0.025307582162305407
+          ],
+          "target_position_m": [
+            -0.28172104231303785,
+            0.0,
+            1.2777079738066917
+          ]
+        }
+      ]
+    }
+  ]
+}

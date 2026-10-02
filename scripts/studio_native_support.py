@@ -51,9 +51,10 @@ def validate_request(payload):
     from native_support_clock import NativeSupportSampler
     from native_support_spec import validate
     fields={'source_job','variant','spec'}
-    if not isinstance(payload, dict) or set(payload) not in (fields,fields|{'prepare_rigid_input'}):
+    if not isinstance(payload, dict) or not fields<=set(payload) or set(payload)-fields-{'prepare_rigid_input','sampled_support_repair'}:
         raise ValueError('Selected source job, version and native support draft required')
     if type(payload.get('prepare_rigid_input',False)) is not bool:raise ValueError('Explicit rig preparation choice required')
+    if type(payload.get('sampled_support_repair',False)) is not bool:raise ValueError('Explicit sampled support choice required')
     _, _, _, report, glb = source(payload['source_job'], payload['variant'])
     spec = copy.deepcopy(payload['spec']); digest = sha256(glb); rig = RigAsset.load(glb)
     if len(rig.document.get('animations', [])) != 1: raise ValueError('One chosen animation required')
@@ -81,6 +82,8 @@ def prepare(payload, folder):
     request = dict(at=now(), source_job=payload['source_job'], variant=payload['variant'],
         source_sha256=spec['glb_sha256'], draft_sha256=sha256(folder/'draft.json'),
         prepare_rigid_input=payload.get('prepare_rigid_input',False),
+        sampled_support_repair=payload.get('sampled_support_repair',False),
+        sampled_support_iterations=8 if payload.get('sampled_support_repair',False) else None,
         fit_folder='native-support-fit-'+folder.name, quality_approved=False)
     save(folder/'request.json', request)
     archive=folder/'implementation';archive.mkdir()
@@ -96,6 +99,8 @@ def frozen(folder):
         raise ValueError('Changed native support request')
     if request['fit_folder'] != 'native-support-fit-'+folder.name: raise ValueError('Invalid support output')
     if type(request.get('prepare_rigid_input',False)) is not bool:raise ValueError('Changed rig preparation choice')
+    refinement=request.get('sampled_support_repair',False)
+    if type(refinement) is not bool or request.get('sampled_support_iterations')!=(8 if refinement else None) or refinement and type(request.get('sampled_support_iterations')) is not int:raise ValueError('Changed sampled support choice or budget')
     if sha256(folder/'source.glb') != request['source_sha256'] or sha256(folder/'draft.json') != request['draft_sha256']:
         raise ValueError('Changed native support snapshot')
     if sha256(folder/'implementation/studio_native_support.py')!=prepared['wrapper_sha256']:
@@ -161,7 +166,8 @@ def run(folder):
                 save(folder/'prepared-draft.json',spec)
                 save(folder/'preparation-binding.json',dict(folder=preparation.name,result_sha256=sha256(preparation/'result.json'),draft_sha256=sha256(folder/'prepared-draft.json')))
             source,draft,preparation=fitting_binding(folder,request)
-            fit(source,draft,output)
+            options=dict(sampled_support_repair=True,sampled_support_iterations=8) if request.get('sampled_support_repair',False) else {}
+            fit(source,draft,output,**options)
         frozen(folder)
         fitting_binding(folder,request)
         if sha256(__file__)!=method:raise ValueError('Support wrapper changed during fitting')
@@ -193,6 +199,13 @@ def manifest(job):
         if not isinstance(name, str) or Path(name).name != name or '/' in name or '\\' in name or sha256(output/name) != digest:
             raise ValueError('Changed support evidence')
     spec = read(draft); base = f'/files/{NAMESPACE}/{job}/'
+    fit_request=read(output/'request.json');refined=request.get('sampled_support_repair',False)
+    if fit_request['spec']!=spec or fit_request['inputs']!={str(source):sha256(source),str(draft):sha256(draft)}:
+        raise ValueError('Changed fitting source or authoring draft binding')
+    if fit_request['proposal_method']!=('serialized_sampled_support_corridor_refinement' if refined else 'bounded_bend_smoothing') or fit_request.get('sampled_support_iterations')!=(8 if refined else None):
+        raise ValueError('Changed fitting refinement mode')
+    for name,digest in fit_request['implementation'].items():
+        if Path(name).name!=name or '/' in name or '\\' in name or sha256(output/'implementation'/name)!=digest:raise ValueError('Changed fitting method archive')
     def asset(name, label, **extra):
         digest = result['outputs'].get(name)
         if not digest: raise ValueError('Unbound support clip')
@@ -207,12 +220,23 @@ def manifest(job):
     trial_screens=[]
     for trial in result['trials']:
         screen={k:trial[k] for k in ('trial','status','reason','supports','source_rates_pass','support_samples_pass','source_rate_failed_rows') if k in trial}
+        if refined and trial['status']=='complete':
+            evidence=trial['proposal'][0];index=trial['trial'];audit=f'trial-{index}-support-repair.json'
+            if evidence['method']!='serialized_sampled_support_corridor_refinement' or evidence['iterations_limit']!=8 or evidence['quality_approved'] is not False or read(output/audit)!=evidence:
+                raise ValueError('Changed decoded refinement evidence')
+            seed=f'trial-{index}-support-seed.glb'
+            if evidence['seed_file']!=seed or evidence['seed_sha256']!=result['outputs'][seed]:raise ValueError('Changed refinement seed binding')
+            versions.append(asset(seed,f'Proposal {index+1} · before refinement'))
+            screen['refinement']=dict(iterations=8,initial_score=evidence['initial_score'],final_score=evidence['final_score'],
+                attempts=len(evidence['history']),accepted_steps=sum(h['status']=='accepted' for h in evidence['history']),
+                audit_url=base+audit,seed_sha256=evidence['seed_sha256'],sampled_support_pass=evidence['sampled_support_pass'])
         trial_screens.append(screen)
         name = f"trial-{trial['trial']}.glb"
         if name not in result['outputs']: continue
         if trial.get('sha256') and result['outputs'][name] != trial['sha256']: raise ValueError('Changed proposal binding')
         versions.append(asset(name,f"Proposal {trial['trial']+1} · "+('screens met' if trial.get('source_rates_pass') and trial.get('support_samples_pass') else 'failed / rejected checks'), trial=screen))
     return dict(id=job, duration_s=spec['duration_s'], supports=spec['supports'], versions=versions,preparation=preparation,
+        refinement=dict(iterations=8) if refined else None,
         result_sha256=completion['result_sha256'], result_url=base+'result.json',
         events_url=base+'support-events.json', root_url=base+'root-motion.json',
         retained_input=result['retained_input'], retention_reason=result['retention_reason'],

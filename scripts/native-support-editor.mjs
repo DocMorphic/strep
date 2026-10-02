@@ -6,7 +6,7 @@ export function createNativeSupportEditor({getContext,document=globalThis.docume
  const api=async(url,body)=>{const r=await fetch(url,body===undefined?{cache:'no-store'}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),data=await r.json();if(!r.ok)throw Error(data.error||'Request failed');return data;};
  const safe=fn=>async()=>{try{await fn();}catch(e){el('Status').textContent=e.message;}};
  function unload(){el('Frame').removeAttribute('src');el('Frame').hidden=true;}
- function reset(){++epoch;++revision;binding=null;spec=null;el('Fields').disabled=true;el('PrepareRig').checked=false;el('PrepareRig').disabled=true;el('Preparation').hidden=true;el('Binding').textContent='No clip selected.';unload();}
+ function reset(){++epoch;++revision;binding=null;spec=null;el('Fields').disabled=true;el('PrepareRig').checked=false;el('Refine').checked=false;el('PrepareRig').disabled=true;el('Preparation').hidden=true;el('Binding').textContent='No clip selected.';unload();}
  function key(){return 'strep:native-support:'+binding.glb_sha256;}
  function persist(){revision++;if(!binding||!spec)return;try{storage?.setItem(key(),JSON.stringify(spec));}catch{el('Status').textContent='Browser storage is full. The draft is still usable; submitting saves a snapshot.';}}
  function numeric(id){const text=String(el(id).value).trim(),n=Number(text);if(!text||!Number.isFinite(n))throw Error('Enter a finite '+id+' value');return n;}
@@ -34,6 +34,7 @@ export function createNativeSupportEditor({getContext,document=globalThis.docume
  }
  el('Bind').onclick=safe(bind);el('Foot').onchange=()=>{revision++;clock();};
  el('PrepareRig').onchange=()=>{revision++;};
+ el('Refine').onchange=()=>{revision++;};
  el('Add').onclick=safe(async()=>{
   if(!spec)throw Error('Load a clip first');
   const id=el('Name').value.trim();if(!/^[A-Za-z0-9_-]{1,64}$/.test(id))throw Error('Use a short interval name with letters, digits, underscores or hyphens.');
@@ -57,6 +58,7 @@ export function createNativeSupportEditor({getContext,document=globalThis.docume
   if(pending)throw Error('A native support job is already running.');
   const token=epoch,draft=revision,body={source_job:binding.source_job,variant:binding.variant,spec:clone(spec)};
   if(el('PrepareRig').checked){if(el('PrepareRig').disabled)throw Error('Rig preparation is unavailable for this source.');body.prepare_rigid_input=true;}
+  if(el('Refine').checked)body.sampled_support_repair=true;
   el('Fields').disabled=true;try{const job=await api('/api/native-support-edits',body);pending=job.id;if(token===epoch&&draft===revision)el('Status').textContent='Native correction started; source and draft are frozen. A completed fit can retain the input.';await refresh();}finally{el('Fields').disabled=!!pending||!binding;}
  });
  el('Refresh').onclick=safe(refresh);el('Jobs').onchange=()=>{unload();el('Review').disabled=!jobs.find(j=>j.id===el('Jobs').value)?.review;};

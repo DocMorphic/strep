@@ -6,7 +6,8 @@
 <div class="bar"><button id="play" disabled>Play</button><input id="time" type="range" min="0" step="any" value="0" disabled aria-label="Native clip time in seconds"><output id="clock"></output><button id="start" disabled>Stance start</button><button id="end" disabled>Stance end</button><button id="worst" disabled>Worst support</button></div>
 <p id="status" role="status">Loading bound support comparison…</p><p class="notice" id="decision"></p>
 <p id="preparation" hidden></p><a id="preparationAudit" hidden>Rig preparation comparison</a>
-<div style="overflow:auto"><table><thead><tr><th>Proposal</th><th>Support heights</th><th>Failed rate rows: speed / acceleration / angular speed / angular acceleration</th></tr></thead><tbody id="metrics"></tbody></table></div>
+<p id="refinement" hidden></p>
+<div style="overflow:auto"><table><thead><tr><th>Proposal</th><th>Support heights</th><th>Failed rate rows: speed / acceleration / angular speed / angular acceleration</th><th>Between-key refinement</th></tr></thead><tbody id="metrics"></tbody></table></div>
 <div class="links"><a id="glb">Selected GLB</a><a id="audit">Result audit</a><a id="events">Authored support markers</a><a id="root">Root motion</a></div>
 <p>Times remain in seconds when switching versions. The translucent patch shows the chosen static GLB-world support plane. Diagnostics cover finite samples, not whole-sole planting, physics, continuous collision, engine import or human quality approval.</p></main>
 <script type="importmap">{"imports":{"three":"/assets/build/three.module.js","three/addons/":"/assets/examples/jsm/"}}</script>

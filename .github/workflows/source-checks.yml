@@ -127,6 +127,7 @@ jobs:
           tests/test_native_support_sampled_repair.py
           tests/test_studio_native_support.py
           tests/test_studio_support_preparation.py
+          tests/test_studio_sampled_support.py
           tests/test_imported_skin_evidence.py
           tests/test_imported_skin_reconstruction.py
           tests/test_edit_interval_clock.py

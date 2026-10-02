@@ -12,7 +12,9 @@ of general animation authoring, not a complete motion model.
 
 Use a fresh immediate reports directory. This mode uses the original smoothing
 proposal, with 1–16 refinement iterations; it cannot be combined with the
-separate joint-rate/warm-repair modes. Studio does not yet expose this option.
+separate joint-rate/warm-repair modes.
+The subsequent [Studio integration](studio-sampled-support-v1.md) exposes it
+as an unchecked eight-iteration choice and retains starting/final proposals.
 
 ## Method and evidence
 
