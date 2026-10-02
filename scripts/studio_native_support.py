@@ -26,6 +26,8 @@ def metadata(job, variant):
     digest = sha256(glb); rig = RigAsset.load(glb)
     if len(rig.document.get('animations', [])) != 1: raise ValueError('One chosen animation required')
     reader = NativeSupportSampler(rig.document, rig.binary, 0)
+    from native_support_rigid_input import assessment
+    preparation = assessment(rig,reader)
     clocks = []; ids = {}; tracks = {}
     for node, path, times, _, mode in reader.channels:
         if path != 'rotation': continue
@@ -36,6 +38,7 @@ def metadata(job, variant):
     if sha256(glb) != digest: raise ValueError('Selected animation changed')
     return dict(source_job=job, variant=variant, label=result['label'], glb_sha256=digest,
         duration_s=reader.duration, animation_index=0, clocks=clocks,
+        primitive_count=len(rig.primitives), rigid_preparation=preparation,
         joints=[dict(node=n, name=rig.document['nodes'][n].get('name'), parent=rig.parents[n], **tracks.get(n, {})) for n in rig.joints],
         root_node=report['root_node'], mapping={k:v for k,v in report['mapping'].items() if k in
             {s+n for s in ('Left','Right') for n in ('Leg','Shin','Foot')}},
@@ -47,8 +50,10 @@ def validate_request(payload):
     from rig_asset import RigAsset
     from native_support_clock import NativeSupportSampler
     from native_support_spec import validate
-    if not isinstance(payload, dict) or set(payload) != {'source_job','variant','spec'}:
+    fields={'source_job','variant','spec'}
+    if not isinstance(payload, dict) or set(payload) not in (fields,fields|{'prepare_rigid_input'}):
         raise ValueError('Selected source job, version and native support draft required')
+    if type(payload.get('prepare_rigid_input',False)) is not bool:raise ValueError('Explicit rig preparation choice required')
     _, _, _, report, glb = source(payload['source_job'], payload['variant'])
     spec = copy.deepcopy(payload['spec']); digest = sha256(glb); rig = RigAsset.load(glb)
     if len(rig.document.get('animations', [])) != 1: raise ValueError('One chosen animation required')
@@ -56,6 +61,11 @@ def validate_request(payload):
     if not isinstance(spec, dict) or spec.get('root_node') != report['root_node']:
         raise ValueError('Use the selected clip mapped root')
     validate(spec, rig, reader, digest)
+    if payload.get('prepare_rigid_input',False):
+        from native_support_rigid_input import assessment
+        eligibility=assessment(rig,reader)
+        if not eligibility['eligible'] or not eligibility['static_node_changes']:
+            raise ValueError('Selected rig has no eligible static scale roundoff to prepare')
     if sha256(glb) != digest: raise ValueError('Selected animation changed')
     return glb, spec
 
@@ -70,6 +80,7 @@ def prepare(payload, folder):
         raise ValueError('Source changed during snapshot')
     request = dict(at=now(), source_job=payload['source_job'], variant=payload['variant'],
         source_sha256=spec['glb_sha256'], draft_sha256=sha256(folder/'draft.json'),
+        prepare_rigid_input=payload.get('prepare_rigid_input',False),
         fit_folder='native-support-fit-'+folder.name, quality_approved=False)
     save(folder/'request.json', request)
     archive=folder/'implementation';archive.mkdir()
@@ -84,11 +95,45 @@ def frozen(folder):
     if sha256(folder/'request.json') != prepared['request_sha256'] or request['quality_approved'] is not False:
         raise ValueError('Changed native support request')
     if request['fit_folder'] != 'native-support-fit-'+folder.name: raise ValueError('Invalid support output')
+    if type(request.get('prepare_rigid_input',False)) is not bool:raise ValueError('Changed rig preparation choice')
     if sha256(folder/'source.glb') != request['source_sha256'] or sha256(folder/'draft.json') != request['draft_sha256']:
         raise ValueError('Changed native support snapshot')
     if sha256(folder/'implementation/studio_native_support.py')!=prepared['wrapper_sha256']:
         raise ValueError('Changed support wrapper archive')
     return request
+
+
+def fitting_binding(folder,request):
+    """Separate original snapshot from explicitly prepared fitting input."""
+    if not request.get('prepare_rigid_input',False):
+        return folder/'source.glb',folder/'draft.json',None
+    receipt=read(folder/'preparation-binding.json')
+    expected='native-support-rigid-'+folder.name
+    if receipt['folder']!=expected:raise ValueError('Invalid rig preparation folder')
+    prepared=ROOT/'reports'/expected
+    if sha256(prepared/'result.json')!=receipt['result_sha256'] or sha256(folder/'prepared-draft.json')!=receipt['draft_sha256']:
+        raise ValueError('Changed rig preparation result or draft')
+    q,r=read(prepared/'request.json'),read(prepared/'result.json')
+    if r['status']!='complete' or r['quality_approved'] is not False or r['source_sha256']!=request['source_sha256'] or q['inputs']!={str(folder/'source.glb'):request['source_sha256']}:
+        raise ValueError('Misbound rig preparation')
+    for name,digest in r['outputs'].items():
+        if Path(name).name!=name or '/' in name or '\\' in name or sha256(prepared/name)!=digest:raise ValueError('Changed rig preparation evidence')
+    for name,digest in q['implementation'].items():
+        if Path(name).name!=name or '/' in name or '\\' in name or sha256(prepared/'implementation'/name)!=digest:raise ValueError('Changed rig preparation method archive')
+    from native_support_rigid_input import STATIC_SCALE_ROUNDOFF,GEOMETRY_CHANGE_LIMIT_M
+    comparison=read(prepared/'comparison.json')
+    if q['static_scale_roundoff_limit']!=STATIC_SCALE_ROUNDOFF or q['maximum_geometry_change_m']!=GEOMETRY_CHANGE_LIMIT_M or not 0<=r['maximum_vertex_distance_m']<=GEOMETRY_CHANGE_LIMIT_M or comparison['maximum_vertex_distance_m']!=r['maximum_vertex_distance_m'] or comparison['quality_approved'] is not False:
+        raise ValueError('Changed rig preparation bounds')
+    if not all(comparison[k] is True for k in ('inverse_binds_preserved','mesh_data_preserved','native_animation_bytes_preserved')) or len(comparison['changes'])!=r['changes']:
+        raise ValueError('Changed rig preparation preservation evidence')
+    source=prepared/'prepared.glb'
+    if sha256(source)!=r['prepared_sha256'] or sha256(prepared/'input.glb')!=request['source_sha256']:raise ValueError('Changed prepared or original rig')
+    expected_spec=read(folder/'draft.json');expected_spec['glb_sha256']=r['prepared_sha256']
+    if read(folder/'prepared-draft.json')!=expected_spec:raise ValueError('Prepared draft changed authoring bounds')
+    return source,folder/'prepared-draft.json',dict(folder=expected,original_sha256=request['source_sha256'],
+        prepared_sha256=r['prepared_sha256'],result_sha256=receipt['result_sha256'],
+        comparison_sha256=r['outputs']['comparison.json'],changes=r['changes'],
+        maximum_vertex_distance_m=r['maximum_vertex_distance_m'],sampled_poses=r['sampled_poses'])
 
 
 def run(folder):
@@ -101,11 +146,28 @@ def run(folder):
         if method!=read(folder/'prepared.json')['wrapper_sha256']:raise ValueError('Support wrapper changed before fitting')
         save(folder/'pipeline.json', dict(status='processing'))
         from native_support_job import run as fit
+        # Load numerical libraries before setting their limits. A context
+        # entered before those DLLs load cannot constrain the new pools.
+        from threadpoolctl import threadpool_limits,threadpool_info
         output = ROOT/'reports'/request['fit_folder']
-        fit(folder/'source.glb', folder/'draft.json', output)
+        with threadpool_limits(limits=1):
+            save(folder/'numerical-runtime.json',dict(configured_limit=1,
+                pools=[dict(internal_api=p['internal_api'],num_threads=p['num_threads']) for p in threadpool_info()]))
+            if request.get('prepare_rigid_input',False):
+                from native_support_rigid_input import prepare as prepare_rig
+                preparation=ROOT/'reports'/('native-support-rigid-'+folder.name)
+                result=prepare_rig(folder/'source.glb',preparation)
+                spec=read(folder/'draft.json');spec['glb_sha256']=result['prepared_sha256']
+                save(folder/'prepared-draft.json',spec)
+                save(folder/'preparation-binding.json',dict(folder=preparation.name,result_sha256=sha256(preparation/'result.json'),draft_sha256=sha256(folder/'prepared-draft.json')))
+            source,draft,preparation=fitting_binding(folder,request)
+            fit(source,draft,output)
         frozen(folder)
+        fitting_binding(folder,request)
         if sha256(__file__)!=method:raise ValueError('Support wrapper changed during fitting')
         save(folder/'completion.json', dict(result_sha256=sha256(output/'result.json'),
+            preparation_binding_sha256=sha256(folder/'preparation-binding.json') if preparation else None,
+            numerical_runtime_sha256=sha256(folder/'numerical-runtime.json'),
             request_sha256=sha256(folder/'request.json'), quality_approved=False))
         save(folder/'pipeline.json', dict(status='complete',finished_at=now()))
     except Exception as exc:
@@ -116,6 +178,12 @@ def manifest(job):
     folder = folder_for(job)
     if read(folder/'pipeline.json')['status'] != 'complete': raise ValueError('Support job is not complete')
     request = frozen(folder); completion = read(folder/'completion.json')
+    source,draft,preparation=fitting_binding(folder,request)
+    if completion.get('numerical_runtime_sha256'):
+        if sha256(folder/'numerical-runtime.json')!=completion['numerical_runtime_sha256']:raise ValueError('Changed numerical runtime evidence')
+        runtime=read(folder/'numerical-runtime.json')
+        if runtime['configured_limit']!=1 or any(p['num_threads']!=1 for p in runtime['pools']):raise ValueError('Unbounded numerical runtime')
+    if preparation and completion.get('preparation_binding_sha256')!=sha256(folder/'preparation-binding.json'):raise ValueError('Changed rig preparation binding')
     output = ROOT/'reports'/request['fit_folder']
     if completion['request_sha256'] != sha256(folder/'request.json') or completion['quality_approved'] is not False or sha256(output/'result.json') != completion['result_sha256']:
         raise ValueError('Changed support completion')
@@ -124,15 +192,18 @@ def manifest(job):
     for name, digest in result['outputs'].items():
         if not isinstance(name, str) or Path(name).name != name or '/' in name or '\\' in name or sha256(output/name) != digest:
             raise ValueError('Changed support evidence')
-    spec = read(folder/'draft.json'); base = f'/files/{NAMESPACE}/{job}/'
+    spec = read(draft); base = f'/files/{NAMESPACE}/{job}/'
     def asset(name, label, **extra):
         digest = result['outputs'].get(name)
         if not digest: raise ValueError('Unbound support clip')
         return dict(id=name,url=base+name,sha256=digest,label=label,**extra)
-    versions = [asset('input.glb','Preserved input'), asset('candidate.glb',
+    versions = [asset('input.glb','Prepared input' if preparation else 'Preserved input'), asset('candidate.glb',
         'Retained input' if result['retained_input'] else 'Bounded candidate')]
-    if versions[0]['sha256'] != request['source_sha256'] or versions[1]['sha256'] != result['candidate_sha256']:
+    if versions[0]['sha256'] != sha256(source) or versions[1]['sha256'] != result['candidate_sha256']:
         raise ValueError('Support candidate binding changed')
+    if preparation:
+        versions.insert(0,dict(id='original.glb',url=base+'original.glb',sha256=request['source_sha256'],label='Original input'))
+        preparation.update(comparison_url=base+'rigid-comparison.json',result_url=base+'rigid-preparation.json')
     trial_screens=[]
     for trial in result['trials']:
         screen={k:trial[k] for k in ('trial','status','reason','supports','source_rates_pass','support_samples_pass','source_rate_failed_rows') if k in trial}
@@ -141,7 +212,7 @@ def manifest(job):
         if name not in result['outputs']: continue
         if trial.get('sha256') and result['outputs'][name] != trial['sha256']: raise ValueError('Changed proposal binding')
         versions.append(asset(name,f"Proposal {trial['trial']+1} · "+('screens met' if trial.get('source_rates_pass') and trial.get('support_samples_pass') else 'failed / rejected checks'), trial=screen))
-    return dict(id=job, duration_s=spec['duration_s'], supports=spec['supports'], versions=versions,
+    return dict(id=job, duration_s=spec['duration_s'], supports=spec['supports'], versions=versions,preparation=preparation,
         result_sha256=completion['result_sha256'], result_url=base+'result.json',
         events_url=base+'support-events.json', root_url=base+'root-motion.json',
         retained_input=result['retained_input'], retention_reason=result['retention_reason'],
@@ -171,6 +242,10 @@ def served_file(relative):
         _, job, name = parts; folder = folder_for(job)
         review = manifest(job); request = frozen(folder); output = ROOT/'reports'/request['fit_folder']
         result = read(output/'result.json')
+        if review['preparation'] and name in ('original.glb','rigid-comparison.json','rigid-preparation.json'):
+            if name=='original.glb':return folder/'source.glb'
+            prepared=ROOT/'reports'/review['preparation']['folder']
+            return prepared/('comparison.json' if name=='rigid-comparison.json' else 'result.json')
         allowed = set(result['outputs']) | {'result.json'}
         if name not in allowed: return None
         target = output/name

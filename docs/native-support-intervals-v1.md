@@ -25,6 +25,9 @@ rigid transforms and a nonempty fully foot-bound skin region. Intermediate helpe
 bones and unmatched clocks within a chain are explicitly rejected.
 The [multi-surface rig study](native-support-rigs-v1.md) documents current
 fitting/import evidence and explicit preparation for static scale roundoff.
+The subsequent [Studio preparation](studio-support-preparation-v1.md) preserves
+original and prepared versions; [broader action diagnostics](native-support-action-breadth-v1.md)
+record authored-bound and rate failures across previously examined clips.
 The ankle must remain below the thigh origin along the plane normal throughout
 the edit window; folded or above-hip poses need a broader solver.
 

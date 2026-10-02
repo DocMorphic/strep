@@ -13,14 +13,8 @@ GEOMETRY_CHANGE_LIMIT_M=1e-5
 SOURCE_DIR=Path(__file__).resolve().parent
 
 
-def prepare(source,output):
-    source,output=Path(source).resolve(),Path(output).resolve()
-    if output.exists() or output.parent!=ROOT/'reports':raise ValueError('Fresh immediate reports output required')
-    names=('native_support_rigid_input.py','rig_asset.py','native_support_clock.py','rig_clip_import.py','native_engine_clock.py','gltf_tools.py','strep.py')
-    methods={n:sha256(SOURCE_DIR/n) for n in names}
-    digest=sha256(source);rig=RigAsset.load(source)
-    if len(rig.document.get('animations',[]))!=1:raise ValueError('One chosen native animation required')
-    reader=NativeSupportSampler(rig.document,rig.binary,0)
+def normalized_document(rig,reader):
+    """Static eligibility only; full sampled geometry is checked by prepare."""
     if reader.scale_key_drift or any(p=='scale' and np.any(v!=1.) for _,p,_,v,_ in reader.channels):
         raise ValueError('Animated scale cannot be normalized by static input preparation')
     document=copy.deepcopy(rig.document);changes=[]
@@ -35,6 +29,27 @@ def prepare(source,output):
         if np.any(scale!=1.):
             changes.append(dict(node=i,name=node.get('name'),original_scale=scale.tolist(),prepared_scale=[1.,1.,1.]))
             node['scale']=[1.,1.,1.]
+    return document,changes
+
+
+def assessment(rig,reader):
+    try:
+        _,changes=normalized_document(rig,reader)
+        return dict(eligible=True,static_node_changes=len(changes),geometry_check_pending=True,
+            maximum_geometry_change_m=GEOMETRY_CHANGE_LIMIT_M)
+    except ValueError as exc:
+        return dict(eligible=False,static_node_changes=None,geometry_check_pending=False,reason=str(exc))
+
+
+def prepare(source,output):
+    source,output=Path(source).resolve(),Path(output).resolve()
+    if output.exists() or output.parent!=ROOT/'reports':raise ValueError('Fresh immediate reports output required')
+    names=('native_support_rigid_input.py','rig_asset.py','native_support_clock.py','rig_clip_import.py','native_engine_clock.py','gltf_tools.py','strep.py')
+    methods={n:sha256(SOURCE_DIR/n) for n in names}
+    digest=sha256(source);rig=RigAsset.load(source)
+    if len(rig.document.get('animations',[]))!=1:raise ValueError('One chosen native animation required')
+    reader=NativeSupportSampler(rig.document,rig.binary,0)
+    document,changes=normalized_document(rig,reader)
     normalized=RigAsset(document,rig.binary);current=NativeSupportSampler(document,rig.binary,0)
     times=audit_clock(reader.duration,[c[2] for c in reader.channels],[],0.)
     diagnostics=[]

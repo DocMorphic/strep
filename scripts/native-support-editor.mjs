@@ -6,7 +6,7 @@ export function createNativeSupportEditor({getContext,document=globalThis.docume
  const api=async(url,body)=>{const r=await fetch(url,body===undefined?{cache:'no-store'}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),data=await r.json();if(!r.ok)throw Error(data.error||'Request failed');return data;};
  const safe=fn=>async()=>{try{await fn();}catch(e){el('Status').textContent=e.message;}};
  function unload(){el('Frame').removeAttribute('src');el('Frame').hidden=true;}
- function reset(){++epoch;++revision;binding=null;spec=null;el('Fields').disabled=true;el('Binding').textContent='No clip selected.';unload();}
+ function reset(){++epoch;++revision;binding=null;spec=null;el('Fields').disabled=true;el('PrepareRig').checked=false;el('PrepareRig').disabled=true;el('Preparation').hidden=true;el('Binding').textContent='No clip selected.';unload();}
  function key(){return 'strep:native-support:'+binding.glb_sha256;}
  function persist(){revision++;if(!binding||!spec)return;try{storage?.setItem(key(),JSON.stringify(spec));}catch{el('Status').textContent='Browser storage is full. The draft is still usable; submitting saves a snapshot.';}}
  function numeric(id){const text=String(el(id).value).trim(),n=Number(text);if(!text||!Number.isFinite(n))throw Error('Enter a finite '+id+' value');return n;}
@@ -26,12 +26,14 @@ export function createNativeSupportEditor({getContext,document=globalThis.docume
   const data=await api(`/api/native-support-source?job=${encodeURIComponent(job.id)}&variant=${encodeURIComponent(variant)}`);
   const current=getContext();if(token!==epoch||current.job?.id!==job.id||current.variant!==variant)return;
   binding=data;spec={schema:'strep-native-support-v1',glb_sha256:data.glb_sha256,animation_index:0,duration_s:data.duration_s,root_node:data.root_node,mapping:clone(data.mapping),supports:[]};
+  const preparation=data.rigid_preparation;el('Preparation').hidden=!preparation||(preparation.eligible&&!preparation.static_node_changes);el('PrepareRig').disabled=!preparation?.eligible||!preparation.static_node_changes;el('PreparationHint').textContent=preparation?.eligible?'This rig has tiny scale differences. Preparation creates a separate version, measures the mesh change and keeps your original clip.':'This rig needs a separate conversion before rigid foot editing. Tiny-scale preparation is unavailable.';
   try{const saved=JSON.parse(storage?.getItem(key())||'null');if(saved?.schema===spec.schema&&saved.glb_sha256===spec.glb_sha256&&saved.duration_s===spec.duration_s&&saved.root_node===spec.root_node&&Array.isArray(saved.supports)&&saved.mapping&&typeof saved.mapping==='object')spec=saved;}catch{}
   mapping=new Map();el('Mapping').replaceChildren();for(const role of roles){const label=document.createElement('label'),select=document.createElement('select');label.textContent=role.replace('Leg',' thigh').replace('Shin',' knee').replace('Foot',' foot');select.setAttribute('aria-label','Native support '+role);select.replaceChildren(new Option('Unmapped',''),...data.joints.map(j=>new Option(`${j.name||'Joint'} · ${j.node}`,String(j.node))));select.value=spec.mapping[role]===undefined?'':String(spec.mapping[role]);select.onchange=syncMapping;mapping.set(role,select);label.append(select);el('Mapping').append(label);}
   el('Start').value=data.duration_s*.4;el('End').value=data.duration_s*.6;clock();intervals();el('Fields').disabled=!!pending;el('Binding').textContent=`${data.label} · ${variant} · ${data.duration_s.toPrecision(9)} s · ${data.glb_sha256.slice(0,12)}`;
   el('Status').textContent='Edit the draft, then try correction. These are the selected exported GLB’s keys; a prepared rough clip may already have been resampled.';
  }
  el('Bind').onclick=safe(bind);el('Foot').onchange=()=>{revision++;clock();};
+ el('PrepareRig').onchange=()=>{revision++;};
  el('Add').onclick=safe(async()=>{
   if(!spec)throw Error('Load a clip first');
   const id=el('Name').value.trim();if(!/^[A-Za-z0-9_-]{1,64}$/.test(id))throw Error('Use a short interval name with letters, digits, underscores or hyphens.');
@@ -46,7 +48,7 @@ export function createNativeSupportEditor({getContext,document=globalThis.docume
   if(el('Frame').src&&oldReview!==jobs.find(j=>j.id===selected)?.review?.result_sha256)unload();
   el('Jobs').replaceChildren(...jobs.map(j=>new Option(`${j.id} · ${j.status}${j.review?.retained_input?' · input retained':''}`,j.id)));if(jobs.some(j=>j.id===selected))el('Jobs').value=selected;
   el('Jobs').disabled=!jobs.length;el('Review').disabled=!jobs.find(j=>j.id===el('Jobs').value)?.review;
-  if(pending){const j=jobs.find(j=>j.id===pending);if(j&&['complete','failed'].includes(j.status)){pending=null;el('Fields').disabled=!binding;el('Jobs').value=j.id;el('Review').disabled=!j.review;el('Status').textContent=j.status==='failed'?'Support job failed: '+j.error:j.review.retained_input?'Input retained: '+j.review.retention_reason+'. Failed proposals remain available.':'Candidate met the sampled support and source-rate screens. Naturalness and other release checks remain unapproved.';}}
+  if(pending){const j=jobs.find(j=>j.id===pending);if(j&&['complete','failed'].includes(j.status)){pending=null;el('Fields').disabled=!binding;el('Jobs').value=j.id;el('Review').disabled=!j.review;el('Status').textContent=j.status==='failed'?'Support job failed: '+j.error:j.review.retained_input?(j.review.preparation?'Prepared input retained: ':'Input retained: ')+j.review.retention_reason+'. Failed proposals remain available.':'Candidate met the sampled support and source-rate screens. Naturalness and other release checks remain unapproved.';}}
   return data;
  }
  el('Fit').onclick=safe(async()=>{
@@ -54,6 +56,7 @@ export function createNativeSupportEditor({getContext,document=globalThis.docume
   const current=getContext();if(current.job?.id!==binding.source_job||current.variant!==binding.variant)throw Error('Selected clip changed. Load it again before submitting.');
   if(pending)throw Error('A native support job is already running.');
   const token=epoch,draft=revision,body={source_job:binding.source_job,variant:binding.variant,spec:clone(spec)};
+  if(el('PrepareRig').checked){if(el('PrepareRig').disabled)throw Error('Rig preparation is unavailable for this source.');body.prepare_rigid_input=true;}
   el('Fields').disabled=true;try{const job=await api('/api/native-support-edits',body);pending=job.id;if(token===epoch&&draft===revision)el('Status').textContent='Native correction started; source and draft are frozen. A completed fit can retain the input.';await refresh();}finally{el('Fields').disabled=!!pending||!binding;}
  });
  el('Refresh').onclick=safe(refresh);el('Jobs').onchange=()=>{unload();el('Review').disabled=!jobs.find(j=>j.id===el('Jobs').value)?.review;};

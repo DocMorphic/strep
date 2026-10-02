@@ -44,5 +44,19 @@ waitMetadata=null;context.variant='transfer';await editor.bind();assert.equal(el
 await el('Fit').onclick();assert.match(el('Status').textContent,/Add a stance interval/);
 // Close/reset while a metadata request is in flight: no stale draft is installed.
 waitMetadata=new Promise(r=>resolve=r);const closing=editor.bind();editor.reset();resolve({ok:true,json:async()=>metadata});await closing;assert.equal(el('Fields').disabled,true);assert.equal(el('Binding').textContent,'No clip selected.');
+// Preparation is an explicit submission choice; the original draft stays bound.
+waitMetadata=null;metadata.rigid_preparation={eligible:true,static_node_changes:1,geometry_check_pending:true};
+await editor.bind();assert.equal(el('Preparation').hidden,false);assert.equal(el('PrepareRig').checked,false);assert.equal(el('PrepareRig').disabled,false);
+el('Name').value='prepared-stance';el('First').value='1';el('Last').value='9';el('Start').value='.8';el('End').value='1.2';await el('Add').onclick();
+el('PrepareRig').checked=true;el('PrepareRig').onchange();posted=null;jobData={jobs:[]};await el('Fit').onclick();
+assert.equal(posted.prepare_rigid_input,true);assert.equal(posted.spec.glb_sha256,metadata.glb_sha256);
+assert.equal(JSON.parse(storage.get('strep:native-support:'+metadata.glb_sha256)).prepare_rigid_input,undefined);
+jobData={jobs:[{id:'fit1',status:'complete',review:{preparation:{changes:1},retained_input:true,retention_reason:'no_proposal_satisfies_all_bounds',result_sha256:'c'.repeat(64)}}]};
+await editor.refresh();assert.match(el('Status').textContent,/Prepared input retained/);
+await editor.bind();assert.equal(el('PrepareRig').checked,false);
+metadata.rigid_preparation={eligible:false,static_node_changes:null,reason:'Scale exceeds limit'};
+await editor.bind();assert.equal(el('PrepareRig').disabled,true);assert.match(el('PreparationHint').textContent,/separate conversion/);
+el('PrepareRig').checked=true;posted=null;await el('Fit').onclick();assert.equal(posted,null);assert.match(el('Status').textContent,/preparation is unavailable/);
+editor.reset();assert.equal(el('Preparation').hidden,true);assert.equal(el('PrepareRig').checked,false);
 editor.dispose();
-console.log('Native supports: original fractional clocks, source/version isolation, immutable submission, retained failures, draft persistence and stale responses pass.');
+console.log('Native supports: original clocks, source/version isolation, explicit preparation, immutable submission, original draft persistence, retained failures and stale responses pass. DOM simulation only.');

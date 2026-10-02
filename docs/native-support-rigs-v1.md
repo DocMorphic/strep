@@ -126,5 +126,7 @@ does not establish planted sole patches, reduced sliding, continuous collision,
 force/balance, engine derivative preservation or human usability. Other actions,
 scenes, held-out rigs and timed cleanup remain open. These studies do not train
 or run a new model. All 14 release capabilities remain unapproved and the
-full-project goal stays active. Next extend these tests across the existing
-action families and connect explicit input preparation to the Studio workflow.
+full-project goal stays active. The subsequent
+[action-family diagnostics](native-support-action-breadth-v1.md) and
+[explicit Studio preparation](studio-support-preparation-v1.md) record that
+follow-up, including retained failures and measured scope.
