@@ -166,3 +166,47 @@ def test_record_only_policy_cannot_disable_other_validation(setup):
     result=studio.save_review(review(setup))
     with pytest.raises(ValueError,match='policy'):
         corpus.validate(result['submission']['path'],setup.reservations,NAMES,require_training=1)
+
+
+def preview_fixture(f,monkeypatch):
+    from test_native_candidate_preview import native_fixture
+    names,parents,source,path,_=native_fixture(f.root)
+    monkeypatch.setattr(inspect_motion,'skeleton_metadata',lambda _: (names,parents,[]))
+    draft=read(f.draft);item=draft['items'][0]
+    np.savez(item['source_motion'],**source);Path(item['source_preview']).write_bytes(path.read_bytes())
+    item['source_motion_sha256']=sha256(item['source_motion']);item['source_preview_sha256']=sha256(item['source_preview'])
+    audit_path=Path(draft['audit_result']);audit=read(audit_path);audit['inputs_sha256'][item['source_motion']]=item['source_motion_sha256'];save(audit_path,audit)
+    draft['audit_result_sha256']=sha256(audit_path);save(f.draft,draft);f.digest=sha256(f.draft)
+    candidate=f.root/'reports/edited.npz';roots=source['root_positions'].copy();roots[:,0]+=.2
+    np.savez(candidate,local_rot_mats=source['local_rot_mats'],root_positions=roots)
+    data=studio.metadata(f.identifier,f.digest,'segment0',str(candidate),0)
+    return dict(draft_id=f.identifier,draft_sha256=f.digest,item_id='segment0',candidate_motion=data['recipe']['candidate_motion'],candidate_start_frame=0)
+
+
+def test_preview_api_exports_actual_candidate_without_admitting_contacts(setup,monkeypatch):
+    payload=preview_fixture(setup,monkeypatch);result=studio.preview_request(payload)
+    assert result['selection']==payload and result['preview_start_s']==0 and not result['training_admitted']
+    relative=result['preview_url'].removeprefix('/files/');path=studio.served_preview(relative)
+    assert path.is_file() and server.allowed_file(result['preview_url'])==path
+    for invalid in [relative.replace('candidate.glb','result.json'),relative.replace('candidate.glb','../candidate.glb')]:
+        assert studio.served_preview(invalid) is None
+    path.write_bytes(path.read_bytes()+b'changed');assert studio.served_preview(relative) is None
+
+
+def test_preview_requires_current_candidate_hash_and_offline_route_lock(setup,monkeypatch):
+    payload=preview_fixture(setup,monkeypatch)
+    monkeypatch.setitem(sys.modules,'action_worker_lock',SimpleNamespace(worker_lock=lambda:nullcontext()))
+    h=handler('/api/correction-review-preview',payload);h.do_POST();assert h.response[0]==201
+    payload['candidate_motion']['sha256']='f'*64
+    h=handler('/api/correction-review-preview',payload);h.do_POST();assert h.response[0]==400
+
+
+def test_failed_preview_is_retained_and_never_served(setup,monkeypatch):
+    payload=preview_fixture(setup,monkeypatch)
+    import native_candidate_preview
+    def failed(*args):raise ValueError('Numerical export failure')
+    monkeypatch.setattr(native_candidate_preview,'export_candidate',failed)
+    with pytest.raises(ValueError,match='export failure'):studio.preview_request(payload)
+    files=list((setup.root/'reports/native-correction-previews').glob('*/result.json'))
+    assert len(files)==1 and read(files[0])['status']=='failed'
+    assert studio.served_preview('native-correction-previews/'+files[0].parent.name+'/candidate.glb') is None

@@ -9,6 +9,7 @@ from strep import ROOT,read,save,sha256,now
 
 NAME=re.compile(r'[A-Za-z0-9_-]{1,100}')
 NAMESPACE='native-correction-packs'
+PREVIEWS='native-correction-previews'
 
 
 def _draft(identifier):
@@ -83,6 +84,60 @@ def first(identifier,expected_hash):
     _,draft=_draft(identifier)
     if not draft['items']:raise ValueError('Draft has no segments')
     return metadata(identifier,expected_hash,draft['items'][0]['id'])
+
+
+def preview_request(payload):
+    """Export a selected candidate's real pose tracks; no contacts are inferred."""
+    import numpy as np
+    from inspect_motion import skeleton_metadata
+    from pack_native_correction import selected,_motion
+    from native_candidate_preview import export_candidate
+    fields={'draft_id','draft_sha256','item_id','candidate_motion','candidate_start_frame'}
+    if not isinstance(payload,dict) or set(payload)!=fields or not isinstance(payload['candidate_motion'],dict) or set(payload['candidate_motion'])!={'path','sha256'}:
+        raise ValueError('Bound candidate preview selection required')
+    data=metadata(payload['draft_id'],payload['draft_sha256'],payload['item_id'],payload['candidate_motion']['path'],payload['candidate_start_frame'])
+    if data['recipe']['candidate_motion']!=payload['candidate_motion']:raise ValueError('Selected candidate changed; bind it again')
+    inputs={};item=selected(Path(data['draft']['path']),payload['item_id'],inputs)
+    inputs[payload['candidate_motion']['path']]=payload['candidate_motion']['sha256']
+    local,roots=_motion(payload['candidate_motion']['path'],payload['candidate_start_frame'],data['frames'])
+    path=Path(data['draft']['path']);source=(path.parent/item['source_motion']).resolve();reference=(path.parent/item['source_preview']).resolve()
+    with np.load(source,allow_pickle=False) as archive:
+        original={key:archive[key][item['source_start_frame']:item['source_end_frame_exclusive']].copy() for key in ('local_rot_mats','root_positions','posed_joints','global_rot_mats')}
+    names,parents,_=skeleton_metadata(77)
+    identifier=uuid.uuid4().hex;folder=ROOT/'reports'/PREVIEWS/identifier;folder.mkdir(parents=True)
+    record={'schema':'strep-native-candidate-preview-result-v1','status':'running','at':now(),
+            'selection':payload,'inputs_sha256':inputs,'quality_approved':False,'training_admitted':False,'release_approved':False}
+    save(folder/'result.json',record)
+    try:
+        methods={}
+        for name in ('native_candidate_preview.py','studio_correction_review.py','gltf_tools.py','pack_native_correction.py','inspect_motion.py'):
+            method=Path(__file__).parent/name;digest=sha256(method);dest=folder/'methods'/name
+            dest.parent.mkdir(exist_ok=True);dest.write_bytes(method.read_bytes());inputs[str(method)]=digest;methods[name]=digest
+        report=export_candidate(reference,original,local.numpy(),roots.numpy(),names,parents,folder/'candidate.glb')
+        if any(sha256(p)!=h for p,h in inputs.items()):raise ValueError('Preview source or method changed during export')
+        record.update(status='complete',report=report,methods_sha256=methods,
+                      preview={'path':'candidate.glb','sha256':sha256(folder/'candidate.glb')})
+        save(folder/'result.json',record)
+        return {'id':identifier,'item_id':data['item_id'],'selection':payload,
+                'preview_url':'/files/'+PREVIEWS+'/'+identifier+'/candidate.glb','preview_sha256':record['preview']['sha256'],
+                'preview_start_s':0.,'preview_end_s':report['duration_s'],'preview_scope':'Selected candidate geometry; human review remains pending',
+                'quality_approved':False,'training_admitted':False}
+    except Exception as exc:
+        record.update(status='failed',error=str(exc));save(folder/'result.json',record);raise
+
+
+def served_preview(relative):
+    parts=relative.split('/')
+    if len(parts)!=3 or parts[0]!=PREVIEWS or not NAME.fullmatch(parts[1]) or parts[2]!='candidate.glb':return None
+    folder=(ROOT/'reports'/PREVIEWS/parts[1]).resolve()
+    if folder.parent!=(ROOT/'reports'/PREVIEWS).resolve():return None
+    try:
+        record=read(folder/'result.json');path=folder/'candidate.glb'
+        if record.get('schema')!='strep-native-candidate-preview-result-v1' or record.get('status')!='complete' or record.get('quality_approved') is not False:
+            return None
+        if record['preview']['path']!='candidate.glb' or sha256(path)!=record['preview']['sha256']:return None
+        return path
+    except (ValueError,KeyError,OSError,TypeError):return None
 
 
 def pack_request(payload):

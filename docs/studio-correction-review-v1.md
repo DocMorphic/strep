@@ -2,7 +2,8 @@
 
 The Scene window now contains **Developer correction review**. It loads the
 existing native target-review packet, displays its original grey reference
-character and lets a developer record segment decisions, explicit foot-contact
+character, supports a checked [candidate preview](native-candidate-preview-v1.md),
+and lets a developer record segment decisions, explicit foot-contact
 labels, measured cleanup time and correction-specific permission evidence.
 Saving a review never starts training or approves release quality.
 
@@ -15,9 +16,11 @@ Saving a review never starts training or approves release quality.
    contain SOMA77 FP32 rotations and root positions at the original 30 fps;
    no rig conversion or resampling is performed. Candidates are limited to
    32 MiB and segments to 2–300 frames.
-3. Inspect an edited candidate in its authoring tool. **The canvas always shows
-   the original reference**, even when a different candidate is selected.
-   It is not a preview of the edited candidate.
+3. Use **Build candidate preview** to view the selected candidate geometry,
+   then switch **Preview version** between candidate and original. Original
+   playback uses its source clock; the cropped candidate starts at zero.
+   The displayed frame index stays local to the selected segment. You can
+   also inspect a candidate in its authoring tool.
 4. Mark planted and free intervals for each foot/toe channel. All channels
    begin unknown. Frame indices are local to the segment and interval ends
    are exclusive. Packing requires complete explicit on/off coverage.
@@ -64,7 +67,7 @@ alternating contact channels round-trip exactly. These contact labels are
 attestation, training admission, optimizer update, new generation or formal
 held-out trial was produced. Inputs and run methods are hashed and archived.
 
-The grey reference player preserves the native eight skin weights, uses the
+The original/candidate player preserves the native eight skin weights, uses the
 existing grey material override and frames the selected segment. It pauses
 when its panel/window is hidden and the tab is hidden. Browser appearance and
 GPU rendering have not been verified in this change; offline checks do not

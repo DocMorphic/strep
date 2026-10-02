@@ -29,15 +29,15 @@ const packet={draft_id:'kimodo-target-review-fixture',draft_sha256:'a'.repeat(64
 function metadata(id,candidate='reports/original.npz',start=0){return {...packet,item_id:id,prompt:id,frames:3,fps:30,source_start_frame:id==='one'?0:90,
  recipe:{schema:'strep-native-correction-pack-recipe-v1',item_id:id,candidate_motion:{path:candidate,sha256:'b'.repeat(64)},candidate_start_frame:start,
  contacts:joints.map(joint=>({joint,intervals:[{start_frame:0,end_frame_exclusive:3,contact:null}]}))},
- candidate_relative:candidate,quality_approved:false,training_admitted:false,preview_scope:'Original only',preview_start_s:0,preview_end_s:2/30};}
-let posts=[],calls=[],pending=null,playerLoads=0,pauses=0,timeCallback;
+ candidate_relative:candidate,quality_approved:false,training_admitted:false,preview_scope:'Original only',preview_start_s:id==='one'?0:3,preview_end_s:(id==='one'?0:3)+2/30};}
+let posts=[],calls=[],pending=null,playerLoads=0,pauses=0,timeCallback,loaded=[];
 const fetch=async(url,options)=>{
  calls.push(url);if(pending)return pending;
  let data;
  if(url==='/api/correction-review-drafts')data={drafts:[{id:packet.draft_id,sha256:packet.draft_sha256,segments:2,quality_approved:false}]};
  else if(url.startsWith('/api/correction-review-packet?'))data=metadata('one');
  else if(url.startsWith('/api/correction-review-source?')){const q=new URLSearchParams(url.split('?')[1]);data=metadata(q.get('item'),q.get('candidate')||undefined,Number(q.get('start')||0));}
- else {const body=JSON.parse(options.body);posts.push({url,body});data=url.endsWith('-pack')?{id:'packed',item_id:body.recipe.item_id,folder:'reports/packed',training_admitted:false,quality_approved:false}:
+ else {const body=JSON.parse(options.body);posts.push({url,body});data=url.endsWith('-preview')?{selection:body,item_id:body.item_id,preview_url:'/files/native-correction-previews/synthetic/candidate.glb',preview_sha256:'c'.repeat(64),preview_start_s:0,preview_end_s:2/30,preview_scope:'Selected candidate',training_admitted:false,quality_approved:false}:url.endsWith('-pack')?{id:'packed',item_id:body.recipe.item_id,folder:'reports/packed',training_admitted:false,quality_approved:false}:
  {submission:{path:'fixture-submission.json'},reviewed_corrections:1,training_admitted:false};}
  return {ok:true,json:async()=>data};
 };
@@ -45,7 +45,7 @@ const panel=el('correctionReviewPanel');panel.open=true;
 el('correctionContactJoint').value='0';el('correctionContactState').value='free';el('correctionReviewerRole').value='developer';
 const ui=createCorrectionReviewPanel({document:{getElementById:el,createElement(){return {textContent:''};}},fetch,
  Option:function(text,value){return {text,value};},MutationObserver:null,now:()=> '2026-10-02T12:00:00+00:00',
- createPlayer:async({onTime})=>{timeCallback=onTime;return {pause(){pauses++;},async load(){playerLoads++;},seek(){},toggle(){},fit(){}};}});
+ createPlayer:async({onTime})=>{timeCallback=onTime;return {pause(){pauses++;},async load(data){playerLoads++;loaded.push(data);},seek(){},toggle(){},fit(){}};}});
 assert.equal(calls.length,0,'No automatic requests before opening');
 await ui.refresh();await ui.load();
 assert.equal(playerLoads,1);
@@ -84,7 +84,23 @@ assert.equal(el('correctionReviewDecision').value,'unreviewed','Changed candidat
 assert.equal(el('correctionRightsPermitted').checked,false);
 el('correctionReviewDecision').value='exclude';el('correctionReviewNotes').value='Synthetic excluded';
 await ui.save();assert.equal(posts.length,4);assert(posts[3].body.items.every(i=>i.pack_id===null));
-let resolve;pending=new Promise(r=>resolve=r);const waiting=ui.bind('two');panel.open=false;panel.toggle();
-resolve({ok:true,json:async()=>metadata('two')});await waiting;assert.equal(el('correctionReviewItem').value,'one');
+await ui.buildPreview();assert.equal(posts.length,5);assert.equal(posts[4].url,'/api/correction-review-preview');
+assert.equal(el('correctionPreviewVersion').value,'candidate');
+assert.equal(loaded.at(-1).preview_url,'/files/native-correction-previews/synthetic/candidate.glb');
+assert.equal(el('correctionRightsPermitted').checked,false,'Preview does not authorize data');
+assert.equal(el('correctionReviewDecision').value,'exclude','Preview preserves an explicit decision');
+assert.match(el('correctionContactCoverage').textContent,/0 \/ 12/,'Preview does not guess contacts');
+await ui.bind('two');await ui.buildPreview();timeCallback(0);
+assert.match(el('correctionReviewClock').textContent,/Frame 0/);assert.equal(el('correctionReviewTime').min,0);
+await ui.showPreview('original');timeCallback(3);
+assert.match(el('correctionReviewClock').textContent,/Frame 0/);assert.equal(el('correctionReviewTime').min,3);
+await ui.bind('one','reports/another-edited.npz',0);await ui.showPreview('candidate');
+assert.match(el('correctionReviewStatus').textContent,/Build the selected/,'Changed candidate does not reuse a stale preview');
+let resolve;pending=new Promise(r=>resolve=r);const before=playerLoads,waiting=ui.buildPreview();panel.open=false;panel.toggle();
+resolve({ok:true,json:async()=>({selection:{},preview_url:'/files/native-correction-previews/stale/candidate.glb'})});await waiting;
+assert.equal(playerLoads,before,'Closed panel ignores a late candidate export');pending=null;panel.open=true;
+const previous=el('correctionReviewItem').value;
+pending=new Promise(r=>resolve=r);const binding=ui.bind('two');panel.open=false;panel.toggle();
+resolve({ok:true,json:async()=>metadata('two')});await binding;assert.equal(el('correctionReviewItem').value,previous);
 assert(pauses>0);
-console.log('Correction review: markup bindings, explicit contacts, segment state, candidate reset, human fields, exclusions and stale responses pass.');
+console.log('Correction review: explicit human fields, original/candidate switching, exact preview binding, separate clocks, candidate reset and stale responses pass.');
