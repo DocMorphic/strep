@@ -1,15 +1,15 @@
 """Inspect explicit contact timing on decoded full-mesh centroid tracks."""
 from pathlib import Path
 import numpy as np
-from mesh_contact_clock import layout,validate_clock
+from mesh_contact_clock import layout,validate_clock,validate_overrides
 from rig_asset import RigAsset
 from native_support_clock import NativeSupportSampler
 from target_rig_contact import validate
 from strep import sha256
 
 
-def inspect(path,spec,contact_clock='authored-keys',hz=120):
-    validate_clock(contact_clock)
+def inspect(path,spec,contact_clock='authored-keys',hz=120,contact_clock_overrides=None):
+    validate_clock(contact_clock);overrides=validate_overrides(contact_clock_overrides,len(spec['contacts']))
     if type(hz) is not int or not 1<=hz<=1000:raise ValueError('Integer sampling frequency from 1 to 1000 required')
     path=Path(path);digest=sha256(path)
     if digest!=spec['glb_sha256']:raise ValueError('Inspection draft belongs to a different mesh clip')
@@ -21,7 +21,7 @@ def inspect(path,spec,contact_clock='authored-keys',hz=120):
     groups=[np.arange(int(np.floor(sampler.duration*hz))+1,dtype=float)/hz,np.array([sampler.duration]),keys[keys<=sampler.duration]]
     for channel in sampler.channels:
         times=np.asarray(channel[2],float);groups.extend([times,(times[:-1]+times[1:])/2])
-    times=np.unique(np.concatenate(groups));selected,indices=layout(spec,times,contact_clock)
+    times=np.unique(np.concatenate(groups));selected,indices=layout(spec,times,contact_clock,overrides)
     tracks={}
     for time in np.unique(selected):
         points=rig.vertices(sampler.sample(float(time)))
@@ -32,11 +32,11 @@ def inspect(path,spec,contact_clock='authored-keys',hz=120):
         samples=selected[indices==index]
         points=np.array([tracks[float(t)][target['patch']] for t in samples])
         error=np.linalg.norm(points-target['target_position_m'],axis=1);peak=int(np.argmax(error))
-        contacts.append(dict(index=index,**target,samples=len(samples),error_max_m=float(error[peak]),
+        contacts.append(dict(index=index,**target,contact_clock=overrides.get(str(index),contact_clock),samples=len(samples),error_max_m=float(error[peak]),
             failed_samples=int(np.sum(error>cap)),times_s=samples.tolist(),positions_m=points.tolist(),
             worst_time_s=float(samples[peak]),worst_position_m=points[peak].tolist()))
     if sha256(path)!=digest:raise ValueError('Contact inspection source changed')
-    return dict(schema='strep-decoded-contact-clock-v1',glb_sha256=digest,contact_clock=contact_clock,sampling_hz=hz,
+    return dict(schema='strep-decoded-contact-clock-v1',glb_sha256=digest,contact_clock=contact_clock,contact_clock_overrides=overrides,sampling_hz=hz,
         duration_s=sampler.duration,contact_error_cap_m=float(cap),contacts=contacts,samples=len(selected),
         unique_sampled_poses=len(tracks),failed_intervals=sum(c['failed_samples']>0 for c in contacts),
         sampled_contacts_passed=all(c['failed_samples']==0 for c in contacts),quality_approved=False,

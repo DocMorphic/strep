@@ -6,11 +6,11 @@ Finite clocks, lowest-vertex branches and finite differences are not proofs.
 import numpy as np
 from scipy.spatial.transform import Rotation
 from gltf_tools import local_matrix
-from mesh_contact_clock import layout,validate_clock
+from mesh_contact_clock import layout,validate_clock,validate_overrides
 
 
 class MeshPlaybackFloor:
-    def __init__(self,coupled,hz=120,contact_clock='authored-keys'):
+    def __init__(self,coupled,hz=120,contact_clock='authored-keys',contact_clock_overrides=None):
         self.contact_clock=validate_clock(contact_clock)
         self.coupled=coupled;self.f=coupled.fitter
         f=self.f;self.animated=sorted({c['target']['node'] for c in f.rig.document['animations'][0]['channels']}|set(f.nodes)|{f.spec['root_node']})
@@ -30,7 +30,8 @@ class MeshPlaybackFloor:
             points.append(np.pad(p,((0,0),(0,pad),(0,0))))
             weights.append(np.pad(w,((0,0),(0,pad))))
         self.nodes=np.concatenate(nodes);self.points=np.concatenate(points);self.weights=np.concatenate(weights)
-        self.contact_times,self.contact_groups=layout(f.spec,self.times,self.contact_clock)
+        self.contact_clock_overrides=validate_overrides(contact_clock_overrides,len(f.spec['contacts']))
+        self.contact_times,self.contact_groups=layout(f.spec,self.times,self.contact_clock,self.contact_clock_overrides)
         self.contact_indices=np.searchsorted(self.times,self.contact_times)
         if np.any(self.contact_indices>=len(self.times)) or not np.array_equal(self.times[self.contact_indices],self.contact_times):
             raise ValueError('Contact keys must belong to playback clock')

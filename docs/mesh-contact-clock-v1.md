@@ -24,6 +24,10 @@ request and trial metadata. A key contact and a held contact are different
 conditions; switching clocks is not a like-for-like performance comparison.
 Neither clock establishes anatomy, intended support or action correctness.
 
+[Per-interval timing choices](mesh-interval-clocks-v1.md) now allow both meanings
+in one finite-clip job. The default clock remains unchanged for unlisted
+intervals; choices are saved separately from the geometry draft.
+
 ## Fitting and export
 
 Every `--playback-guards` fit now adds quantized contact constraints, including

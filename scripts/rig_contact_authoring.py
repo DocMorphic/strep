@@ -20,7 +20,7 @@ def inspect_request(payload):
         if 'fit_options' in payload:
             from rig_subframe_contacts import inspect as playback_contacts
             from rig_subframe_floor import inspect as playback_floor
-            result['playback_contacts']=playback_contacts(glb,spec,payload['fit_options']['contact_clock'])
+            result['playback_contacts']=playback_contacts(glb,spec,payload['fit_options']['contact_clock'],contact_clock_overrides=payload['fit_options'].get('contact_clock_overrides'))
             result['playback_floor']=playback_floor(glb,spec['screen']['floor_depth_m'])
         return result
     finally:INSPECTION_LOCK.release()
@@ -80,11 +80,17 @@ def metadata(job_id,variant):
     timeline_path=glb.parent/'timeline.json'
     timeline=read(timeline_path) if timeline_path.exists() else {}
     periodic=timeline.get('period_frames')
-    from rig_contact_fit_options import defaults
+    from rig_contact_fit_options import defaults,validate as validate_fit
+    saved_options=None
+    if request.get('contact_fit') is not None and request['kind']=='contact_edit' and variant in ('transfer','corrected'):
+        saved=folder/'contact-fit.json'
+        if sha256(saved)!=request.get('contact_fit_sha256') or read(saved)!=request['contact_fit'] or sha256(folder/'contact-spec.json')!=request['authored_spec_sha256']:
+            raise ValueError('Saved contact fitting choice or draft changed')
+        saved_options=validate_fit(request['contact_fit'],glb,spec)
     return dict(job_id=job_id,variant=variant,glb_sha256=report['glb_sha256'],frames=report['frames'],fps=report['fps'],period_frames=periodic,events=load_events(glb.parent if (glb.parent/'events.json').exists() or variant!='corrected' else folder/'transfer'),
         asset_id=request['asset_id'],spec=spec,primitives=primitives,vertex_count=offset,
         verification_vertices=[dict(index=i,position_m=vertices[i].tolist()) for i in checks],
-        playback_fit=dict(available='period_frames' not in timeline,defaults=defaults(),
+        playback_fit=dict(available='period_frames' not in timeline,defaults=defaults(),saved_options=saved_options,
             reason='Whole-clip playback fitting does not preserve cycle closure.' if 'period_frames' in timeline else None),
         editable_joints=[dict(node=n,label=aliases.get(n,rig.document['nodes'][n].get('name','Bone')+' · '+str(n)))
             for n in rig.joints if n!=report['root_node'] and descendant(n)])
@@ -110,7 +116,7 @@ def validate_request(payload):
     validate(spec,RigAsset.load(glb))
     if 'fit_options' in payload:
         from rig_contact_fit_options import validate as validate_fit
-        validate_fit(payload['fit_options'],glb)
+        validate_fit(payload['fit_options'],glb,spec)
     return folder,request,report,glb,copy.deepcopy(spec)
 
 
@@ -137,7 +143,7 @@ def prepare(payload,folder):
         authored_spec_sha256=sha256(folder/'contact-spec.json'))
     if 'fit_options' in payload:
         from rig_contact_fit_options import validate as validate_fit,bind
-        options=validate_fit(payload['fit_options'],target/'character.glb');save(folder/'contact-fit.json',options)
+        options=validate_fit(payload['fit_options'],target/'character.glb',spec);save(folder/'contact-fit.json',options)
         request.update(contact_fit=options,contact_fit_sha256=sha256(folder/'contact-fit.json'),contact_fit_implementation=bind())
     save(folder/'request.json',request);save(folder/'pipeline.json',dict(status='starting'))
     return request

@@ -19,7 +19,7 @@ from inspect_rig_contacts import inspect
 from strep import read, save, sha256, now
 from rig_subframe_floor import inspect as inspect_subframe_floor
 from rig_subframe_contacts import inspect as inspect_subframe_contacts
-from mesh_contact_clock import CONTACT_CLOCKS,validate_clock
+from mesh_contact_clock import CONTACT_CLOCKS,validate_clock,validate_overrides
 
 
 class MeshContactTrajectoryFitter(TrajectoryFitter):
@@ -83,7 +83,7 @@ METHODS = ('rig_mesh_trajectory.py', 'rig_coupled_pose.py', 'rig_trajectory_fit.
            'rig_subframe_floor.py', 'native_support_clock.py', 'rig_clip_import.py', 'mesh_contact_playback.py', 'mesh_contact_clock.py', 'rig_subframe_contacts.py', 'strep.py')
 
 
-def _run(source, draft, output, spacing=10, max_iterations=60, feasibility=False, floor_iterations=30, guarded_trials=False, playback_guards=False, contact_clock='authored-keys', _owned_output=None):
+def _run(source, draft, output, spacing=10, max_iterations=60, feasibility=False, floor_iterations=30, guarded_trials=False, playback_guards=False, contact_clock='authored-keys', _owned_output=None,contact_clock_overrides=None):
     source, draft, output = map(lambda p: Path(p).resolve(), (source, draft, output))
     if type(spacing) is not int or not 1<=spacing<=120:
         raise ValueError('Control spacing must be 1–120 frames')
@@ -98,6 +98,8 @@ def _run(source, draft, output, spacing=10, max_iterations=60, feasibility=False
         raise ValueError('Floor iteration budget must be 1–200')
     inputs = {str(source): sha256(source), str(draft): sha256(draft)}
     spec = read(draft)
+    contact_clock_overrides=validate_overrides(contact_clock_overrides,len(spec['contacts']))
+    if contact_clock_overrides and not playback_guards:raise ValueError('Explicit contact clocks require playback guards')
     if inputs[str(source)] != spec['glb_sha256']: raise ValueError('Contact draft source changed')
     output.mkdir(parents=True, exist_ok=False)
     if _owned_output is not None:_owned_output['created']=True
@@ -120,6 +122,7 @@ def _run(source, draft, output, spacing=10, max_iterations=60, feasibility=False
          guarded_trials=guarded_trials,
          playback_guards=playback_guards,
          contact_clock=contact_clock,decoded_contact_sampling_hz=120,
+         contact_clock_overrides=contact_clock_overrides,
          decoded_floor_sampling_hz=120,
          objective=('Restore floor, then pursue contact feasibility with floor held hard; original energy reported only'
                     if feasibility else 'Original mesh contact/floor/edit priors and adjacent edit differences, all frames coupled'),
@@ -129,7 +132,7 @@ def _run(source, draft, output, spacing=10, max_iterations=60, feasibility=False
         save(output/'numerical-runtime.json', dict(pools=threadpool_info()))
         if feasibility:
             from mesh_contact_feasibility import MeshContactFeasibility
-            values,trace,summary=MeshContactFeasibility(coupled,guarded_trials,playback_guards,contact_clock=contact_clock).solve(output,floor_iterations,max_iterations)
+            values,trace,summary=MeshContactFeasibility(coupled,guarded_trials,playback_guards,contact_clock=contact_clock,contact_clock_overrides=contact_clock_overrides).solve(output,floor_iterations,max_iterations)
         else:values, trace, summary = coupled.solve(output, max_iterations=max_iterations)
     evidence = audit(rig, spec, before, fitter.world, values, [dict(success=summary['solver_success'])])
     animated = {c['target']['node'] for c in rig.document['animations'][0]['channels']} | set(fitter.nodes)
@@ -137,7 +140,7 @@ def _run(source, draft, output, spacing=10, max_iterations=60, feasibility=False
                               output/'candidate.glb', 'Experimental coupled mesh contact candidate')
     decoded_spec = copy.deepcopy(spec); decoded_spec['glb_sha256'] = sha256(output/'candidate.glb')
     independent = inspect(output/'candidate.glb', decoded_spec)
-    playback_contacts=inspect_subframe_contacts(output/'candidate.glb',decoded_spec,contact_clock)
+    playback_contacts=inspect_subframe_contacts(output/'candidate.glb',decoded_spec,contact_clock,contact_clock_overrides=contact_clock_overrides)
     save(output/'playback-contact-inspection.json',playback_contacts)
     subframe_floor = inspect_subframe_floor(output/'candidate.glb', spec['screen']['floor_depth_m'])
     save(output/'subframe-floor-inspection.json', subframe_floor)
@@ -179,9 +182,9 @@ def _run(source, draft, output, spacing=10, max_iterations=60, feasibility=False
     return result
 
 
-def run(source, draft, output, spacing=10, max_iterations=60, feasibility=False, floor_iterations=30, guarded_trials=False, playback_guards=False, contact_clock='authored-keys'):
+def run(source, draft, output, spacing=10, max_iterations=60, feasibility=False, floor_iterations=30, guarded_trials=False, playback_guards=False, contact_clock='authored-keys',contact_clock_overrides=None):
     output=Path(output).resolve();owned={}
-    try:return _run(source,draft,output,spacing,max_iterations,feasibility,floor_iterations,guarded_trials,playback_guards,contact_clock,owned)
+    try:return _run(source,draft,output,spacing,max_iterations,feasibility,floor_iterations,guarded_trials,playback_guards,contact_clock,owned,contact_clock_overrides)
     except Exception as exc:
         if owned.get('created'):
             save(output/'failure.json',dict(at=now(),error_type=type(exc).__name__,error=str(exc),quality_approved=False))
@@ -201,6 +204,7 @@ if __name__ == '__main__':
     parser.add_argument('--guarded-trials',action='store_true')
     parser.add_argument('--playback-guards',action='store_true')
     parser.add_argument('--contact-clock',choices=CONTACT_CLOCKS,default='authored-keys')
+    parser.add_argument('--contact-clock-overrides',type=Path,help='JSON map of zero-based interval indices to authored-keys or frame-hold')
     args = parser.parse_args()
     from action_worker_lock import worker_lock
-    with worker_lock(): run(args.source, args.spec, args.output, args.spacing, args.iterations,args.feasibility,args.floor_iterations,args.guarded_trials,args.playback_guards,args.contact_clock)
+    with worker_lock(): run(args.source, args.spec, args.output, args.spacing, args.iterations,args.feasibility,args.floor_iterations,args.guarded_trials,args.playback_guards,args.contact_clock,read(args.contact_clock_overrides) if args.contact_clock_overrides else None)

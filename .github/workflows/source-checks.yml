@@ -134,6 +134,7 @@ jobs:
           tests/test_rig_subframe_floor.py
           tests/test_mesh_playback_guards.py
           tests/test_mesh_contact_clock.py
+          tests/test_mesh_interval_clocks.py
           tests/test_studio_mesh_playback.py
           tests/test_temporal_basis.py
           tests/test_imported_skin_evidence.py

@@ -31,6 +31,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Playback contact fitting is now available in Studio](docs/studio-mesh-playback-v1.md) for finite clips, with explicit contact timing, saved fitting budgets, decoded diagnostics and preserved failed candidates. Loops retain the existing cycle fitter; passing sampled geometry does not approve motion quality.
 
+[Individual interval timing](docs/mesh-interval-clocks-v1.md) now combines sustained holds and authored-key targets in one clip. Saved choices survive interval edits and deletion; independent checks on three existing crawl rigs reproduce the failures without substituting contact meanings.
+
 [Between-key support refinement](docs/native-support-sampled-repair-v1.md) repairs the measured dance/get-up contact-bound failures with exact replay and actual engine checks. All final motion-rate selections still fail and inputs remain retained; the option is available in Studio and the CLI.
 
 [Explicit Studio rig preparation](docs/studio-support-preparation-v1.md) keeps original and derived clips separate and measures tiny static-scale changes before fitting. [Broader support diagnostics](docs/native-support-action-breadth-v1.md) cover six existing development actions on three assets; failed authoring, support and rate checks remain visible.

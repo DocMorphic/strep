@@ -58,11 +58,35 @@ await open();assert.equal(C('rigFitMode').value,'sequential');assert(C('rigFitPl
 C('rigFitMode').value='playback';await C('rigContactFit').onclick();assert.equal(calls.length,count);assert.match(messages.at(-1),/unavailable/);
 // Storage failure keeps a usable choice; an obsolete metadata response cannot reopen a different source.
 metadata={...metadata,period_frames:null,playback_fit:{available:true,defaults}};failStorage=true;await open();
+C('rigFitFloorIterations').value='30';
 C('rigFitMode').value='playback';C('rigFitClock').value='frame-hold';await C('rigFitClock').onchange();assert.match(messages.at(-1),/storage is unavailable/);
 await C('rigContactFit').onclick();assert.equal(calls.at(-1).payload.fit_options.contact_clock,'frame-hold');
+// Different interval choices survive edits, deletion/remapping and reopening.
+failStorage=false;C('rigIntervals').children[0].children[1].onclick();
+C('rigIntervalClock').value='frame-hold';await C('rigContactAdd').onclick();
+C('rigContactStart').value=4;C('rigContactEnd').value=4;C('rigIntervalClock').value='authored-keys';await C('rigContactAdd').onclick();
+await C('rigContactFit').onclick();assert.equal(JSON.stringify(calls.at(-1).payload.fit_options.contact_clock_overrides),JSON.stringify({'0':'frame-hold','1':'authored-keys'}));
+assert(!('contact_clock' in calls.at(-1).payload.spec.contacts[0]),'Draft contact schema stays unchanged');
+C('rigIntervals').children[0].children[2].onclick();await C('rigContactFit').onclick();
+assert.equal(JSON.stringify(calls.at(-1).payload.fit_options.contact_clock_overrides),JSON.stringify({'0':'authored-keys'}));
+await open();C('rigIntervals').children[0].children[1].onclick();assert.equal(C('rigIntervalClock').value,'authored-keys');
+const mixedCount=calls.length;C('rigFitMode').value='sequential';await C('rigFitMode').onchange();await C('rigContactFit').onclick();
+assert.equal(calls.length,mixedCount);assert.match(messages.at(-1),/Individual interval timings require/);
+// Clearing the explicit choice restores the unchanged legacy request.
+C('rigIntervalClock').value='default';await C('rigContactAdd').onclick();await C('rigContactFit').onclick();
+assert(!('fit_options' in calls.at(-1).payload));
+// A saved override never binds to a changed contact list, even on the same clip.
+const stored=JSON.parse(storage.get('strep:mesh-contact-fit:'+spec.glb_sha256));stored.options.contact_clock_overrides={'0':'frame-hold'};stored.contacts=spec.contacts;
+storage.set('strep:mesh-contact-fit:'+spec.glb_sha256,JSON.stringify(stored));await open();
+C('rigFitMode').value='playback';await C('rigContactFit').onclick();assert(!('contact_clock_overrides' in calls.at(-1).payload.fit_options));
+// A new browser/reopened candidate gets the saved job choice, including its overrides.
+storage.clear();metadata.playback_fit.saved_options={...defaults,contact_clock:'frame-hold',contact_clock_overrides:{'0':'authored-keys'}};
+await open();assert.equal(C('rigFitClock').value,'frame-hold');C('rigIntervals').children[0].children[1].onclick();
+assert.equal(C('rigIntervalClock').value,'authored-keys');await C('rigContactFit').onclick();
+assert.equal(JSON.stringify(calls.at(-1).payload.fit_options.contact_clock_overrides),JSON.stringify({'0':'authored-keys'}));
 apiPending=new Promise(r=>resolve=r);const opening=open();editor.reset();current={...current,model:{updateMatrixWorld(){},traverse(){}}};resolve(metadata);await opening;
 assert(C('rigContactPanel').hidden);
 const studio=await readFile(new URL('../scripts/character-studio.js',import.meta.url),'utf8');
 assert(studio.includes('playback_contact_fit'));assert(studio.includes('Saved fitting choice'));assert(studio.includes('Playback contact review'));
 assert(html.replace(/\r\n/g,'\n').includes(source.replace(/\r\n/g,'\n')),'Generated page includes the tested editor source');
-console.log('Studio playback editor: explicit options, separate snapshots/storage, periodic rejection, legacy payload, submission lock, sampled diagnostics and stale responses pass. DOM/source only; no browser or GPU.');
+console.log('Studio playback editor: explicit options and interval clocks, deletion/remapping, contact-bound persistence, periodic/legacy rejection, snapshots, submission lock and stale diagnostics pass. DOM/source only; no browser or GPU.');

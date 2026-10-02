@@ -18,7 +18,8 @@ For across-clip fitting, **At authored frames** constrains active frame keys.
 the last selected frame, clipped to the available animation duration. Both
 methods check decoded floor geometry. Native keys, midpoints and 120 Hz samples
 are finite observations, not continuous-contact guarantees. One clock applies to
-all contacts in this request; per-contact clocks are not implemented.
+all contacts without an override. [Individual interval timing](mesh-interval-clocks-v1.md)
+is now available for mixed key/hold conditions in one job.
 
 Advanced budgets expose control spacing (1–120 frames), floor iterations
 (1–200) and contact iterations (1–200); defaults are 10, 30 and 60 respectively.

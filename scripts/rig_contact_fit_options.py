@@ -1,17 +1,21 @@
 """Explicit Studio playback fitting options, separate from the contact draft."""
 import copy
 from pathlib import Path
-from mesh_contact_clock import validate_clock
+from mesh_contact_clock import validate_clock,validate_overrides
 from strep import read,sha256
 
 def defaults():
     return dict(schema='strep-mesh-playback-fit-v1',contact_clock='authored-keys',spacing_frames=10,
                 floor_iterations=30,contact_iterations=60)
 
-def validate(options,glb):
-    if not isinstance(options,dict) or set(options)!=set(defaults()) or options['schema']!=defaults()['schema']:
+def validate(options,glb,spec=None):
+    if not isinstance(options,dict) or set(options)-{'contact_clock_overrides'}!=set(defaults()) or options['schema']!=defaults()['schema']:
         raise ValueError('Explicit playback fit options required')
     validate_clock(options['contact_clock'])
+    if 'contact_clock_overrides' in options:
+        if spec is None:raise ValueError('Contact draft required to bind interval timing choices')
+        if options['contact_clock_overrides'] is None:raise ValueError('Contact clock overrides must be an explicit map')
+        validate_overrides(options['contact_clock_overrides'],len(spec['contacts']))
     for field,maximum in (('spacing_frames',120),('floor_iterations',200),('contact_iterations',200)):
         if type(options[field]) is not int or not 1<=options[field]<=maximum:
             raise ValueError('Invalid playback '+field)

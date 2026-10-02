@@ -109,6 +109,51 @@ def test_legacy_request_never_gains_playback_options(tmp_path,monkeypatch):
     assert 'contact_fit' not in request and not (out/'contact-fit.json').exists()
 
 
+@pytest.mark.parametrize('overrides',[None,[],{'1':'frame-hold'},{'0':'bad'}])
+def test_studio_rejects_unbound_interval_clocks(tmp_path,monkeypatch,overrides):
+    _,payload=seed(tmp_path,monkeypatch);payload['fit_options']['contact_clock_overrides']=overrides
+    with pytest.raises(ValueError):author.validate_request(payload)
+
+
+def test_actual_studio_adapter_preserves_individual_interval_clocks(tmp_path,monkeypatch):
+    _,payload=seed(tmp_path,monkeypatch);spec=payload['spec']
+    spec['patches']['second']=copy.deepcopy(next(iter(spec['patches'].values())))
+    spec['contacts'].append({**spec['contacts'][0],'patch':'second'})
+    payload['fit_options']['contact_clock_overrides']={'1':'frame-hold'}
+    out=tmp_path/'edit';request=author.prepare(payload,out);archive(out);evidence,review=run(out)
+    assert request['contact_fit']==read(out/'contact-fit.json')
+    assert review['contact_clock_overrides']==evidence['contact_clock_overrides']=={'1':'frame-hold'}
+    assert read(out/'corrected/report.json')['contact_fit']['contact_clock_overrides']=={'1':'frame-hold'}
+    decoded=read(out/'mesh-fit/playback-contact-inspection.json')
+    assert [c['contact_clock'] for c in decoded['contacts']]==['authored-keys','frame-hold']
+    assert not review['quality_approved']
+
+
+def test_read_only_studio_inspection_uses_each_interval_choice(tmp_path,monkeypatch):
+    parent,payload=seed(tmp_path,monkeypatch);spec=payload['spec']
+    spec['patches']['second']=copy.deepcopy(next(iter(spec['patches'].values())))
+    spec['contacts'].append({**spec['contacts'][0],'patch':'second'})
+    payload['fit_options']['contact_clock_overrides']={'1':'frame-hold'}
+    before={str(p):sha256(p) for p in parent.rglob('*') if p.is_file()}
+    result=author.inspect_request(payload)['playback_contacts']
+    assert [c['contact_clock'] for c in result['contacts']]==['authored-keys','frame-hold']
+    assert result['contacts'][1]['samples']>result['contacts'][0]['samples']
+    assert before=={str(p):sha256(p) for p in parent.rglob('*') if p.is_file()}
+
+
+def test_completed_contact_candidate_reopens_with_bound_saved_choices(tmp_path,monkeypatch):
+    _,payload=seed(tmp_path,monkeypatch);payload['fit_options'].update(contact_clock='frame-hold',contact_clock_overrides={'0':'authored-keys'})
+    out=tmp_path/'jobs/edit';request=author.prepare(payload,out);archive(out);run(out)
+    save(out/'result.json',dict(kind='contact_edit',variants={variant:dict(sha256=sha256(out/variant/'character.glb')) for variant in ('transfer','corrected')}))
+    save(out/'pipeline.json',dict(status='complete'))
+    for variant in ('transfer','corrected'):
+        metadata=author.metadata('edit',variant)
+        assert metadata['playback_fit']['saved_options']==payload['fit_options']
+        assert metadata['spec']['glb_sha256']==sha256(out/variant/'character.glb')
+    save(out/'contact-fit.json',{**request['contact_fit'],'contact_clock':'authored-keys'})
+    with pytest.raises(ValueError,match='Saved contact fitting'):author.metadata('edit','corrected')
+
+
 def test_progress_reports_phase_without_trial_quality_claim(tmp_path,monkeypatch):
     parent,payload=seed(tmp_path,monkeypatch);out=parent.parent/'edit';author.prepare(payload,out)
     save(out/'pipeline.json',dict(status='processing'));save(out/'mesh-fit/pipeline.json',
