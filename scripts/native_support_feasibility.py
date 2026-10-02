@@ -168,7 +168,7 @@ def seed_inputs(folder,source,spec_path,root):
     request,result=read(request_path),read(result_path)
     if read(folder/'pipeline.json').get('status')!='complete' or result.get('status')!='complete':raise ValueError('Completed warm study required')
     method=request.get('proposal_method')
-    if method not in ('joint_support_source_rate_orientation_search','serialized_native_support_feasibility_repair') or len(result.get('trials',[]))!=4:
+    if method not in ('joint_support_source_rate_orientation_search','serialized_native_support_feasibility_repair','serialized_native_support_coordinate_repair') or len(result.get('trials',[]))!=4:
         raise ValueError('Four orientation-search or serialized-repair trials required')
     if request.get('spec')!=read(spec_path) or request['spec']['glb_sha256']!=sha256(source):raise ValueError('Warm study source/draft differs')
     bindings=dict(request['inputs'])
@@ -197,7 +197,8 @@ def seed_inputs(folder,source,spec_path,root):
     return seeds,bindings
 
 
-def propose(rig,reader,rows,path,tau=.05,mu=.5,*,controls_path,iterations=8,trust=.0002,quantized=False):
+def propose(rig,reader,rows,path,tau=.05,mu=.5,*,controls_path,iterations=8,trust=.0002,quantized=False,coordinates=False):
+    if type(coordinates) is not bool:raise ValueError('Explicit coordinate repair mode required')
     controls_path=Path(controls_path);controls=read(controls_path)
     if controls.get('acceleration_time_s')!=tau or controls.get('reference_weight_per_s2')!=mu or controls.get('orientation_limit_degrees')!=1. or controls.get('swivel_limit_degrees')!=5.:
         raise ValueError('Warm seed settings differ from requested trial')
@@ -216,12 +217,17 @@ def propose(rig,reader,rows,path,tau=.05,mu=.5,*,controls_path,iterations=8,trus
         return g
     def observe(row):
         save(path.with_suffix('.repair-progress.json'),dict(history=row,probes=probes,quality_approved=False))
-        print(dict(trial=prefix,repair_iteration=row['iteration'],merit=row['after_merit'],fraction=row['selected_fraction']),flush=True)
-    x,report=restore(problem,start,evaluate,iterations=iterations,trust=trust,observe=observe,quantized=quantized)
+        print(dict(trial=prefix,repair_iteration=row['iteration'],merit=row['after_merit'],
+            selection=row.get('selected_screen_index') if coordinates else row['selected_fraction']),flush=True)
+    if coordinates:
+        from native_support_coordinates import restore as coordinate_restore
+        x,report=coordinate_restore(problem,start,evaluate,iterations=iterations,trust=trust,observe=observe)
+    else:
+        x,report=restore(problem,start,evaluate,iterations=iterations,trust=trust,observe=observe,quantized=quantized)
     values,_=problem.rotations(x);export_rotations(rig.document,rig.binary,values,path)
     final_controls=dict(controls,parameters=x.tolist(),proposal_sha256=sha256(path),
         scope='Repaired orientation controls; source/draft and independent serialized acceptance remain separate')
     saved=path.with_suffix('.controls.json');save(saved,final_controls)
-    return [dict(report,method='serialized_native_support_feasibility_repair',variables=len(x),
+    return [dict(report,method='serialized_native_support_coordinate_repair' if coordinates else 'serialized_native_support_feasibility_repair',variables=len(x),
         warm_controls_sha256=sha256(controls_path),controls_file=saved.name,controls_sha256=sha256(saved),
         maximum_parameter_change=float(abs(x-start).max(initial=0)),probes=probes)]

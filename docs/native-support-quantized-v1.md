@@ -92,7 +92,8 @@ The worst normalized excess falls from 3.082896e-6 to 6.586748e-7. Five decoded
 GLBs and 3,048 numerical screens are retained. Maximum coordinate change from
 the starting vector is 2e-7 radians. **Three position-speed rows still fail.**
 This is one saved development seed, not a selected job output or release proof.
-It supports testing a bounded coordinate repair in the reproducible job path;
+A [bounded coordinate job mode](native-support-coordinates-v1.md) is now implemented;
+its matched four-seed study is running. This diagnostic supports that test;
 it does not justify weakening caps or claiming infeasibility for other seeds.
 
 ## Evidence and remaining work

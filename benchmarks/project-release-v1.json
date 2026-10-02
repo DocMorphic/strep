@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-02T00:51:03.656256+00:00",
-  "last_progress": "Quantized-key warm repair now binds completed repair ancestry and rejects conflicting hashes. Four matched eight-iteration development seeds retain 124 decoded probes, pass sampled support/preservation and exactly replay, but all still fail unchanged rate acceptance and retain the input. A four-round coordinate diagnostic on the closest seed reduces rate failures from 5/1/0/1 to 3/0/0/0; it remains unselected. All 1,521 bound evidence files rehash; 1,301 Python tests and 14 JS suites pass. Next integrate audited coordinate repair and address larger failures, then broaden rig/action/scene/engine/human evidence. No held-out use, training or release approval."
+  "last_progress_at": "2026-10-02T01:09:09.768525+00:00",
+  "last_progress": "Integrated bounded coordinate repair into native support jobs with full numerical-screen records, up to three independently decoded choices, unchanged boxes/caps/final audits and source-bound coordinate warm chaining. All 1,316 Python tests and 14 JS suites pass; cc0d68f hosted Windows/Linux checks passed. The matched four-seed study native-support-coordinate-repair-v1 is live as session 49119/PIDs 248 and 17476, with eight iterations, 2e-7-radian trust and 1,193 ancestor bindings. Partial iteration improvements do not prove acceptance; final result, selection, replay and rehash remain pending. Preserve the worker and its imported source, then complete its evidence and broaden engine/geometry/rig/action/scene/human validation. No release-gate change or quality approval."
 }
