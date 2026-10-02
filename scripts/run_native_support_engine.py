@@ -11,7 +11,7 @@ from native_support_spec import validate
 from native_engine_clock import audit_clock, compare_poses, clock_echo_matches
 from native_godot_payload import payload
 from native_leg_floor import foot_region
-from paired_approach_basis import BoundSkin
+from native_support_skin import NativeSupportSkin as BoundSkin
 from contact_rate_path import ProjectedSkin
 
 SOURCE_DIR = Path(__file__).resolve().parent
@@ -147,7 +147,7 @@ def run(study, output, *, engine=None):
         'contact_rate_path.py', 'paired_approach_basis.py', 'rig_asset.py', 'rig_clip_import.py',
         'gltf_tools.py', 'strep.py', 'elbow_swivel.py', 'two_bone_waypoint.py',
         'paired_temporal_neighbor.py', 'paired_guarded_temporal.py', 'contact_locked_native.py',
-        'timed_rotation_edit.py')
+        'timed_rotation_edit.py', 'native_support_skin.py')
     methods = {SOURCE_DIR/name: sha256(SOURCE_DIR/name) for name in names}
     output.mkdir(); project = output/'project'; project.mkdir(); archive = output/'implementation'; archive.mkdir()
     for path, digest in methods.items():

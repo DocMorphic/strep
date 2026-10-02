@@ -9,27 +9,21 @@ from rig_asset import RigAsset
 from native_support_clock import NativeSupportSampler
 from native_support_spec import validate
 from native_leg_floor import foot_region
-from paired_approach_basis import BoundSkin
+from native_support_skin import NativeSupportSkin as BoundSkin
 from native_engine_clock import clock_echo_matches
-from imported_skin_reconstruction import ImportedSkin
-from imported_skin_evidence import compare_surface
+from native_support_imported_surfaces import ImportedSupportSurfaces
 from run_native_support_engine import unchanged,bind_study
 
 SOURCE_DIR=Path(__file__).resolve().parent
 
 
 def check_skin(case,observed,poses,rig,sampler,rows):
-    if observed['id']!=case['id'] or observed['path']!=case['path'] or len(observed['surfaces'])!=1:
-        raise ValueError('One matching imported support surface required')
+    if observed['id']!=case['id'] or observed['path']!=case['path']:
+        raise ValueError('Matching imported support surfaces required')
     if poses['id']!=case['id'] or poses['path']!=case['path'] or len(poses['frames'])!=case['frames']:
         raise ValueError('Matching bound engine bone observations required')
-    primitive=rig.primitives[0];names=[rig.document['nodes'][n]['name'] for n in rig.joints]
-    weights=np.zeros((len(primitive['positions']),len(names)))
-    for col in range(primitive['joints'].shape[1]):
-        np.add.at(weights,(np.arange(len(weights)),primitive['joints'][:,col]),primitive['weights'][:,col])
-    surface=observed['surfaces'][0]
-    data_check=compare_surface(primitive['positions'],weights,names,rig.inverse,surface)
-    imported=ImportedSkin(primitive['positions'],weights,names,rig.inverse,surface)
+    imported=ImportedSupportSurfaces(rig,observed['surfaces'])
+    data_check=imported.data_check
     skin=BoundSkin(rig);regions=[foot_region(skin,rig.parents,r['chain'][-1]) for r in rows]
     height_records=[dict(id=r['id'],times_s=[],lowest_heights_m=[]) for r in rows];errors=[]
     if len(case['sample_times_s'])!=case['frames']:raise ValueError('Support skin clock population differs')
@@ -47,7 +41,7 @@ def check_skin(case,observed,poses,rig,sampler,rows):
         if not len(h):raise ValueError('Missing authored support skin samples')
         supports.append(dict(id=r['id'],samples=len(h),minimum_height_m=float(h.min()),maximum_lowest_height_m=float(h.max()),
             imported_skin_support_pass=bool(h.min()>=-1e-8 and h.max()<=r['maximum_height'])))
-    return dict(id=case['id'],skin_data_check=data_check,samples=len(errors),
+    return dict(id=case['id'],skin_data_check=data_check,surface_checks=imported.surface_checks,samples=len(errors),
         maximum_vertex_distance_m=max(e['maximum_vertex_distance_m'] for e in errors),supports=supports,
         imported_skin_support_pass=all(s['imported_skin_support_pass'] for s in supports)),errors,height_records
 
@@ -80,7 +74,7 @@ def run(engine_audit,output,*,engine=None):
     names=('audit_native_support_skin.py','native_support_skin_data.gd','imported_skin_evidence.py','imported_skin_reconstruction.py',
         'run_native_support_engine.py','native_engine_clock.py','native_support_clock.py','native_support_spec.py','native_leg_floor.py',
         'paired_approach_basis.py','contact_rate_path.py','rig_asset.py','rig_clip_import.py','gltf_tools.py','strep.py',
-        'elbow_swivel.py','paired_temporal_neighbor.py','paired_guarded_temporal.py','two_bone_waypoint.py','contact_locked_native.py','timed_rotation_edit.py')
+        'elbow_swivel.py','paired_temporal_neighbor.py','paired_guarded_temporal.py','two_bone_waypoint.py','contact_locked_native.py','timed_rotation_edit.py','native_support_skin.py','native_support_imported_surfaces.py')
     methods={SOURCE_DIR/n:sha256(SOURCE_DIR/n) for n in names}
     output.mkdir();archive=output/'implementation';archive.mkdir();project=output/'project';project.mkdir()
     for p,h in methods.items():target=archive/p.name;shutil.copyfile(p,target);bind(target,h)

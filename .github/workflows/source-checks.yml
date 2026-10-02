@@ -119,6 +119,8 @@ jobs:
           tests/test_native_support_peak_limits.py
           tests/test_native_support_engine.py
           tests/test_native_support_skin.py
+          tests/test_native_support_skin_geometry.py
+          tests/test_native_support_imported_surfaces.py
           tests/test_studio_native_support.py
           tests/test_imported_skin_evidence.py
           tests/test_imported_skin_reconstruction.py

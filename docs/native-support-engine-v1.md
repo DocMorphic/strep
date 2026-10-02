@@ -37,9 +37,12 @@ This is CPU reconstruction of imported data; GPU deformation is not established.
 Both requests bind executable hashes, evidence, executed methods and copied
 GDScript. Inputs and methods are checked before/after execution. Every raw
 observation, saved resource, diagnostic and failed result remains local. The
-auditors currently require one skinned primitive, unique plain joint names,
+auditors require all primitives to use the same validated skin, unique plain joint names,
 LINEAR joint TRS, one imported skeleton and a completed four-trial native
 support study. They do not infer anatomical mappings or convert other studies.
+The original completed evidence below used one primitive. The subsequent
+[surface audit](native-support-surfaces-v1.md) extends the auditors to multiple
+surfaces; actual multi-surface Godot support studies remain pending.
 
 ```powershell
 .venv/Scripts/python.exe scripts/run_native_support_engine.py `
@@ -107,5 +110,5 @@ clip/rig. Ordinary playback/event dispatch, strict derivative preservation in
 the engine, GPU deformation, stationary sole patches, continuous collision,
 force/balance, broad rig/action/scene coverage and human cleanup remain open.
 All 14 release capabilities remain unapproved and the full-project goal remains
-active. The stricter coordinate study is separate and must finish before its
-final acceptance or engine behavior can be reported.
+active. The stricter coordinate study subsequently completed with all four
+proposals rejected; its result and replay are recorded in the surface audit.
