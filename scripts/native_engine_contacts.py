@@ -181,7 +181,9 @@ def contact(points, anchor, row, times, patch, limit):
     return result
 
 
-def run(source, candidate, draft, policy, output, base=None):
+def run(source, candidate, draft, policy, output, base=None, frame_sampling=False):
+    if type(frame_sampling) is not bool:
+        raise ValueError('Explicit frame sampling Boolean required')
     paths = [Path(p).resolve() for p in (source, candidate, draft, policy)]
     source, candidate, draft, policy = paths; output = Path(output).resolve()
     base = Path(base).resolve() if base is not None else source
@@ -195,7 +197,13 @@ def run(source, candidate, draft, policy, output, base=None):
     if any(not isinstance(n, str) or not n for n in names) or len(set(names)) != len(names):
         raise ValueError('Unique named source joints required')
     populations = {r['id']: clocks(r) for r in rows}
-    times = checked_clock(np.unique(np.concatenate([t for c in populations.values() for t in c.values()])), reader.duration)
+    groups = [t for c in populations.values() for t in c.values()]
+    frame_populations = {}
+    if frame_sampling:
+        import engine_contact_sampling as sampling
+        frame_populations = {r['id']: sampling.frame_populations(r['stance_s']) for r in rows}
+        groups.extend(p['times_s'] for c in frame_populations.values() for p in c)
+    times = checked_clock(np.unique(np.concatenate(groups)), reader.duration)
     output.mkdir(parents=True, exist_ok=False)
     project = output/'project'; project.mkdir()
     (project/'project.godot').write_text('config_version=5\n[application]\nconfig/name="Strep engine contacts"\n[rendering]\nrenderer/rendering_method="gl_compatibility"\n', encoding='utf8')
@@ -203,7 +211,7 @@ def run(source, candidate, draft, policy, output, base=None):
     shutil.copyfile(script, project/'audit.gd')
     from native_review_support import method_names
     methods = {}; archive = output/'implementation'; archive.mkdir()
-    for name in sorted(set(method_names()) | {'native_engine_contacts.py', 'native_contact_diagnostics.py', 'native_foot_plant.py', 'godot_contact_audit.gd', 'strep.py'}):
+    for name in sorted(set(method_names()) | {'native_engine_contacts.py', 'engine_contact_sampling.py', 'native_contact_diagnostics.py', 'native_foot_plant.py', 'godot_contact_audit.gd', 'strep.py'}):
         path = ROOT/'scripts'/name; methods[str(path)] = sha256(path); shutil.copyfile(path, archive/name)
     cases = []
     for label, path in (('source', source), ('candidate', candidate)):
@@ -211,7 +219,10 @@ def run(source, candidate, draft, policy, output, base=None):
         cases.append(dict(id=label, path=str(output/(label+'.glb')), sample_times_s=times.tolist()))
     shutil.copyfile(draft, output/'draft.json'); shutil.copyfile(policy, output/'plant-policy.json')
     shutil.copyfile(base, output/'base.glb')
-    save(output/'request.json', dict(cases=cases, inputs_sha256=inputs, methods_sha256=methods))
+    request=dict(cases=cases, inputs_sha256=inputs, methods_sha256=methods)
+    if frame_sampling:
+        request.update(frame_sampling_contract=sampling.contract(),frame_sampling_contract_sha256=sampling.contract_sha256())
+    save(output/'request.json', request)
     save(output/'pipeline.json', dict(status='processing', started_at=now()))
     engine = ROOT/'.cache/godot/4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe'
     try:
@@ -255,20 +266,33 @@ def run(source, candidate, draft, policy, output, base=None):
                     measured[label] = dict(times_s=clock.tolist(),
                         engine=contact(imported_points[index], source_anchor, row, clock, patch, limits[row['id']]),
                         native=contact(expected_points[index], source_anchor, row, clock, patch, limits[row['id']]))
-                supports.append(dict(id=row['id'], populations=measured, source_region_vertex_references=skin.vertex_references[region].tolist(),
+                support=dict(id=row['id'], populations=measured, source_region_vertex_references=skin.vertex_references[region].tolist(),
                     source_patch_indices=patch.tolist(), imported_region_vertex_references=[refs[i] for i in matched],
                     maximum_bind_identity_error=error, binding_matches_within_tolerance=duplicates,
-                    maximum_engine_native_region_position_error_m=float(np.linalg.norm(imported_points-expected_points, axis=2).max())))
-            observations.append(dict(id=case['id'], samples=len(times), bones=len(names), imported_surfaces=len(case['meshes']),
+                    maximum_engine_native_region_position_error_m=float(np.linalg.norm(imported_points-expected_points, axis=2).max()))
+                if frame_sampling:
+                    indices=np.flatnonzero((times>=row['stance_s'][0])&(times<=row['stance_s'][1]))
+                    thresholds=dict(anchor_m=limits[row['id']]['anchor'],speed_m_s=limits[row['id']]['speed'],
+                                    clearance_m=row['clearance'],maximum_gap_m=row['maximum_height'])
+                    support['frame_sampling']=dict(engine=sampling.evaluate(imported_points,source_anchor,row['up'],row['offset'],patch,
+                        indices,frame_populations[row['id']],times,thresholds),
+                        native=sampling.evaluate(expected_points,source_anchor,row['up'],row['offset'],patch,
+                        indices,frame_populations[row['id']],times,thresholds))
+                supports.append(support)
+            observation=dict(id=case['id'], samples=len(times), bones=len(names), imported_surfaces=len(case['meshes']),
                 maximum_pose_element_error=pose_error, supports=supports,
-                contact_samples_pass=all(s['populations']['stance_120hz']['engine']['contact_limits_pass'] for s in supports)))
+                contact_samples_pass=all(s['populations']['stance_120hz']['engine']['contact_limits_pass'] for s in supports))
+            if frame_sampling:
+                observation['game_frame_contact_samples_pass']=all(s['frame_sampling']['engine']['passed'] for s in supports)
+                observation['all_contact_populations_pass']=bool(observation['contact_samples_pass'] and observation['game_frame_contact_samples_pass'])
+            observations.append(observation)
         if any(sha256(p) != h for p, h in {**inputs, **methods}.items()):
             raise ValueError('Engine audit inputs or methods changed')
         if any(sha256(archive/Path(p).name) != h for p, h in methods.items()):
             raise ValueError('Engine archived implementation differs')
         if any(sha256(c['path']) != sha256(p) for c,p in zip(cases,(source,candidate))):
             raise ValueError('Engine input snapshots differ')
-        result = dict(schema='strep-native-engine-contacts-v1', status='complete', created_at=now(), engine=actual['engine'],
+        result = dict(schema='strep-native-engine-contacts-v2' if frame_sampling else 'strep-native-engine-contacts-v1', status='complete', created_at=now(), engine=actual['engine'],
             engine_executable_sha256=sha256(engine), inputs_sha256=inputs, methods_sha256=methods, cases=observations,
             engine_output_sha256=sha256(output/'engine-output.json'),
             original_native_diagnostics=native, bind_identity_tolerance=IDENTITY_TOLERANCE,
@@ -276,6 +300,9 @@ def run(source, candidate, draft, policy, output, base=None):
             velocity_intervals_filtered=False,
             scope='Actual headless AnimationPlayer world joint samples and imported vertex/bind/weight data, independent CPU linear skin reconstruction. Original 120Hz stance contact gate and separate native-key population. No GPU, physics, angular-cap, continuous-collision or human quality approval.',
             gpu_skin_verified=False, full_support_gates_verified=False, quality_approved=False, release_approved=False)
+        if frame_sampling:
+            result.update(frame_sampling_contract=sampling.contract(),frame_sampling_contract_sha256=sampling.contract_sha256(),
+                          original_contact_population_replaced=False)
         save(output/'result.json', result); save(output/'pipeline.json', dict(status='complete')); return result
     except Exception as exc:
         save(output/'pipeline.json', dict(status='failed', error=str(exc))); raise
@@ -286,9 +313,10 @@ if __name__ == '__main__':
     for name in ('source', 'candidate', 'draft', 'policy', 'output'):
         parser.add_argument(name, type=Path)
     parser.add_argument('--base', type=Path, help='Unchanged base asset bound by the policy; defaults to source')
+    parser.add_argument('--frame-sampling', action='store_true', help='Also audit all fixed 30/60/120Hz quarter-phase populations; preserve original result')
     args = parser.parse_args()
     from action_worker_lock import worker_lock
     from threadpoolctl import threadpool_limits
     with worker_lock(), threadpool_limits(limits=1):
-        result = run(args.source, args.candidate, args.draft, args.policy, args.output, base=args.base)
-        print([(c['id'], c['contact_samples_pass']) for c in result['cases']])
+        result = run(args.source, args.candidate, args.draft, args.policy, args.output, base=args.base, frame_sampling=args.frame_sampling)
+        print([(c['id'], c['contact_samples_pass'], c.get('game_frame_contact_samples_pass')) for c in result['cases']])

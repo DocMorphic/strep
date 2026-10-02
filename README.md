@@ -154,4 +154,6 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 
 [Imported foot-contact validation](docs/native-engine-contacts-v1.md) now checks actual Godot animation samples and imported skin bindings through independent CPU skin reconstruction. The Studio wave passes its sampled contact limits; the earlier CLI wave exposes a near-coincident endpoint speed failure, and rejected kick/crawl proposals remain failures. Small import position error is separate from contact precision, GPU appearance and release quality.
 
+[Fixed game-frame contact sampling](docs/native-game-frame-contacts-v1.md) adds twelve declared rate/phase clocks and preserves the original failures. It catches a Studio phase overshoot; a stricter proposal follow-up then passes actual native conversion and all imported clocks under unchanged public limits. New Studio planting jobs reserve a small amount below the requested speed while retaining public audits and older saved jobs.
+
 [Reviewed native corpus training](docs/kimodo-corpus-trainer-v1.md) now connects verified targets to sequential frozen-base adapter updates, isolated development validation and bound resume. A tiny CPU fixture reproduces fresh-process continuation exactly; the real CLI rejects the unreviewed packet, and no real motion training or quality improvement is claimed.

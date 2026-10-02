@@ -1662,3 +1662,58 @@ rig, style, editing and semantic validation toward the complete system. There
 is no human review, training admission, model update or release approval here.
 All 14 capabilities remain unapproved and the formal 72x5 population is
 untouched. The full project-wide goal stays active.
+
+
+## 2026-10-02T23:25:26.185764+00:00 - Fixed game-frame contact clocks and Studio proposal headroom
+
+Predecessor 784536c's four hosted jobs pass in workflow 37071692121. The
+repository remains public at DocMorphic/strep and authorized validated changes
+continue to be committed and pushed. The previous implementation turn made
+engine-contact progress; this turn resolves the next sampling/proposal issue.
+
+Added a predeclared versioned 30/60/120Hz contract at four quarter-frame phases.
+Every population is required; short populations remain unavailable. Exact
+boundaries/native keys retain point geometry gates while each frame clock uses
+its own consecutive speed pairs. Original 120Hz/native-key outcomes remain
+independent; no original failure can be overridden by a frame pass. Sources,
+methods, contract and actual headless Godot joint/bind/weight data remain bound
+and archived with CPU skin reconstruction and no weight normalization.
+
+Four preserved source/candidate studies cover 3264 observations and exactly
+reproduce every old numeric contact population. The Studio wave's old pass
+still stands but two newly sampled phases fail (worst 5.000503mm/s versus the
+unchanged 5mm/s). The CLI wave passes ordinary frame clocks yet retains its
+95ns endpoint failure. Rejected kick/crawl raw proposals still fail. None is
+a new held-out evaluation population.
+
+An optional stricter proposal policy leaves original public contact/support/
+rate/edit requirements intact. A matched warm correction accepts three bounded
+coordinate steps. Actual editable-native conversion then passes original gates,
+and 816 imported observations pass original plus all twelve frame populations
+(worst speed 4.989232mm/s). This is a warm development follow-up, not default
+Studio evidence or a universal import-error bound.
+
+New Studio planting requests use revision 2 and reserve the smaller of 0.01mm/s
+and 0.2% of the requested speed as an internal search target; zero stays zero.
+Public trial/native-selected audits and markers retain original limits, fitting
+budgets and protected root/other tracks. Completed revision-1 jobs remain
+serveable. A separate real Studio job starts from the prior height-corrected
+source with no warm planted seed: eight joint and six coordinate iterations
+satisfy raw/shadow gates, actual native conversion selects the candidate and
+its exact markers, and another 816 imported observations pass all clocks
+(worst 4.990782mm/s). Total new engine observations are 4896 across twelve scenes.
+
+1802 model-free source checks, all 16 JS suites and 215 CPU adapter/native
+pipeline tests pass. Fixtures include phase failures, strict speed limits,
+source anchors, exact endpoint geometry, short/missing clocks, legacy serving,
+zero/proportional reserve and tamper rejection. The project-owned idle Studio
+is refreshed after terminal workers and checks using process/socket evidence
+only; no live HTTP/browser or fresh GPU render is claimed. The verification
+receipt binds source/evidence without publishing model/character payloads.
+
+The next work must broaden the fixed export/contact validation to scene/partner
+interactions and varied rigs/actions, then address measured failures alongside
+semantic quality, style/editing and human cleanup evidence. No training
+admission, real model update, human approval or release completion follows.
+All 14 capabilities remain unapproved, the formal 72x5 population untouched,
+and the single full-project goal remains active.

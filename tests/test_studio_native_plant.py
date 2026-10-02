@@ -9,7 +9,7 @@ from test_studio_native_support import setup
 from test_native_foot_plant import setup as plant_fixture
 import studio_native_support as studio
 import rig_contact_authoring
-from native_studio_plant import settings
+from native_studio_plant import settings,speed_reserve,methods
 from strep import read,save,sha256
 
 
@@ -29,7 +29,7 @@ def test_planting_requires_a_single_method_and_already_rigid_source(setup,mode):
     with pytest.raises(ValueError):studio.validate_request(body)
 
 
-def complete(tmp_path,monkeypatch,*,moving=False):
+def complete(tmp_path,monkeypatch,*,moving=False,legacy=False,zero_speed=False):
     source,rig,reader,spec,draft,policy,rows,limits=plant_fixture(tmp_path,moving=moving)
     monkeypatch.setattr(studio,'ROOT',tmp_path)
     def bound(job,variant):
@@ -37,8 +37,15 @@ def complete(tmp_path,monkeypatch,*,moving=False):
         return tmp_path,dict(label='Toy planted motion'),None,dict(root_node=0,mapping=dict(LeftLeg=1,LeftShin=2,LeftFoot=3)),source
     monkeypatch.setattr(rig_contact_authoring,'source',bound)
     choice={k:v for k,v in policy['supports'][0].items() if k!='id'}
+    if zero_speed:choice['maximum_patch_speed_m_s']=0.
     body=dict(source_job='parent',variant='transfer',spec=spec,planting=choice)
-    folder=studio.folder_for('plant-toy');studio.prepare(body,folder);studio.run(folder)
+    folder=studio.folder_for('plant-toy');studio.prepare(body,folder)
+    if legacy:
+        request=read(folder/'request.json');request.pop('planting_revision')
+        request['planting_methods']={n:d for n,d in request['planting_methods'].items() if n in methods(1)}
+        save(folder/'request.json',request)
+        prepared=read(folder/'prepared.json');prepared['request_sha256']=sha256(folder/'request.json');save(folder/'prepared.json',prepared)
+    studio.run(folder)
     return SimpleNamespace(source=source,spec=spec,choice=choice,folder=folder,output=tmp_path/'reports/native-support-fit-plant-toy')
 
 
@@ -53,6 +60,10 @@ def test_satisfactory_toy_retains_exact_source_and_exposes_bound_contact_audit(t
     assert manifest['planting']['selected_audit']['contacts'][0]['maximum_patch_anchor_error_m']==0
     assert manifest['planting']['selected_audit']['authored_clearance_pass']
     assert not manifest['quality_approved']
+    assert read(data.folder/'request.json')['planting_revision']==2
+    assert read(data.output/'plant-policy.json')['supports'][0]['maximum_patch_speed_m_s']==.0001
+    assert read(data.output/'proposal-policy.json')['supports'][0]['maximum_patch_speed_m_s']==pytest.approx(.0000998)
+    assert manifest['planting']['selected_audit']['contacts'][0]['maximum_speed_m_s']==.0001
     for name in ('plant-policy.json','trial-0-planting.json','trial-0.controls.json','plant-seed.glb','candidate.glb'):
         assert studio.served_file('native-support-jobs/plant-toy/'+name)==data.output/name
     markers=read(studio.served_file(manifest['events_url'].removeprefix('/files/')))
@@ -84,3 +95,36 @@ def test_policy_and_method_changes_cannot_be_served_even_after_shallow_rebinding
     prepared['request_sha256']=sha256(data.folder/'request.json');save(data.folder/'prepared.json',prepared)
     (data.folder/'implementation/native_studio_plant.py').write_bytes(b'changed')
     with pytest.raises(ValueError,match='archive'):studio.frozen(data.folder)
+
+
+def test_legacy_completed_method_package_still_serves(tmp_path,monkeypatch):
+    data=complete(tmp_path,monkeypatch,legacy=True)
+    manifest=studio.manifest('plant-toy')
+    assert manifest['output_planting_samples_pass'] and manifest['retained_input']
+    assert not (data.output/'proposal-policy.json').exists()
+    assert sha256(data.output/'candidate.glb')==sha256(data.source)
+    assert 'native_plant_headroom.py' not in read(data.folder/'request.json')['planting_methods']
+
+
+def test_zero_speed_keeps_exact_requirement_without_manufactured_reserve(tmp_path,monkeypatch):
+    data=complete(tmp_path,monkeypatch,zero_speed=True)
+    manifest=studio.manifest('plant-toy')
+    assert manifest['output_planting_samples_pass'] and manifest['retained_input']
+    assert read(data.output/'request.json')['proposal_speed_reserve_m_s']==0.
+    assert read(data.output/'proposal-policy.json')['supports'][0]['maximum_patch_speed_m_s']==0.
+    assert manifest['planting']['selected_audit']['contacts'][0]['maximum_speed_m_s']==0.
+
+
+def test_strict_target_cannot_be_changed_by_rebinding_output_hashes(tmp_path,monkeypatch):
+    data=complete(tmp_path,monkeypatch)
+    path=data.output/'proposal-policy.json';policy=read(path)
+    policy['supports'][0]['maximum_patch_speed_m_s']=.006;save(path,policy)
+    result=read(data.output/'result.json');result['outputs'][path.name]=sha256(path);save(data.output/'result.json',result)
+    completion=read(data.folder/'completion.json');completion['result_sha256']=sha256(data.output/'result.json');save(data.folder/'completion.json',completion)
+    with pytest.raises(ValueError,match='proposal target'):studio.manifest('plant-toy')
+    assert studio.served_file('native-support-jobs/plant-toy/candidate.glb') is None
+
+
+@pytest.mark.parametrize('speed,expected',[(0,0),(.000001,.000000002),(.005,.00001),(.1,.00001)])
+def test_fixed_proportional_reserve_is_bounded_and_never_widens_limits(speed,expected):
+    assert speed_reserve(dict(maximum_patch_anchor_error_m=.001,maximum_patch_speed_m_s=speed))==pytest.approx(expected)

@@ -23,6 +23,16 @@ is bounded to 0–30 mm anchor error and 0–100 mm/s patch speed. These ranges 
 the configurable requirement; changing a limit creates a different requirement.
 The solver never silently widens it.
 
+New jobs use planting revision 2 with a separate internal proposal target:
+speed reserve is the smaller of 0.01 mm/s and 0.2% of the requested limit.
+Zero-speed requirements stay exactly zero. Public policies, independent trial
+audits, actual selected native audits and selected markers use the requested
+limits. Original source/root/other-track protections and fitting budgets remain
+unchanged. Saved revision-1 jobs remain serveable. The
+[fixed game-frame study](native-game-frame-contacts-v1.md) explains why a reserve
+was added and records independent engine checks; the reserve itself is not a
+guarantee of engine precision.
+
 The server snapshots the original GLB, draft, planting policy and method versions.
 The policy binds source, input and draft by hash and names every support. It fixes
 the original foot-patch vertex identities and each point's source stance-start
@@ -89,9 +99,11 @@ and 9.795e-7. This establishes the offline backend path and import fidelity;
 rendered browser/GPU appearance and engine-interpolated contact precision were
 separate, unverified questions in that study. A subsequent
 [imported contact audit](native-engine-contacts-v1.md) now passes the Studio
-wave's sampled CPU contact limits and exposes a near-coincident endpoint speed
-failure in the earlier CLI wave. Neither result approves rendered appearance
-or general engine quality.
+wave's original sampled CPU contact limits and exposes a near-coincident endpoint
+speed failure in the earlier CLI wave. The later fixed frame clocks expose a
+Studio phase overshoot, preserved alongside that original pass; a matched warm
+headroom correction passes both populations after actual native conversion.
+Neither result approves rendered appearance or general engine quality.
 
 84 focused model-free Studio/support tests and 215 CPU adapter/native pipeline
 tests pass, together with four desktop bundle checks and offline editor/formatter

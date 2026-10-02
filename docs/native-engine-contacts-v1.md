@@ -94,6 +94,14 @@ neither a universal visible motion defect nor an excuse for overriding the gate
 has been established. Original anchors, limits, earlier studies and selections
 remain unchanged.
 
+A subsequent [fixed game-frame study](native-game-frame-contacts-v1.md) adds
+all twelve predeclared rate/phase populations while reproducing every original
+numeric population exactly. The CLI frame result passes but its original failure
+remains. The Studio wave fails two newly sampled phases. A separate stricter
+proposal follow-up then passes actual native conversion and all imported clocks
+under the unchanged public limits. These results supplement this preserved study;
+they do not rewrite its outcomes.
+
 The selected-source Studio and original-source CLI waves have different
 reference anchors/caps by design. They are separate experiments, not a matched
 quality comparison. Kick/crawl failures remain visible and rejected. No formal
