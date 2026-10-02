@@ -123,7 +123,9 @@ The CLI checks pinned representation/statistics and vendor source under the
 worker lock and instantiates only the CPU motion representation. It loads
 neither the denoiser nor the text encoder and performs no optimizer updates.
 Targets contain `clean_features`, `first_heading` and explicit
-`reviewed_foot_contacts`. The manifest retains prompt, segment/source hashes,
+`reviewed_foot_contacts`. The current V2 manifest explicitly binds the submission
+and release reservation files for the [verified reader](kimodo-corpus-reader-v1.md).
+It retains prompt, segment/source hashes,
 split, cleanup time, codec report and contact disagreement count. Input review,
 correction and rights evidence are copied with checksum verification; original
 raw/model inputs remain externally bound. A fresh output directory is required

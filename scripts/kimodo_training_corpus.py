@@ -283,7 +283,9 @@ def prepare(submission_path, reservation_path, output, motion_rep, codec_binding
         if not dest.exists():shutil.copyfile(original, dest)
         if sha256(dest) != inputs[path]:raise ValueError('Evidence copy differs from bound input')
         archived[path] = dest.relative_to(output).as_posix()
-    manifest = {'schema': 'strep-native-correction-corpus-v1', 'created_at': now(), 'reviewer': data['reviewer'],
+    manifest = {'schema': 'strep-native-correction-corpus-v2', 'created_at': now(), 'reviewer': data['reviewer'],
+                'submission': {'path': str(Path(submission_path).resolve()), 'sha256': inputs[str(Path(submission_path).resolve())]},
+                'release_reservations': {'path': str(Path(reservation_path).resolve()), 'sha256': inputs[str(Path(reservation_path).resolve())]},
                 'purpose': 'reviewed development supervision; not formal release evidence',
                 'rights_status': 'human attestation with bound evidence; no automatic legal determination',
                 'quality_approved': False, 'release_approved': False,

@@ -145,3 +145,5 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 [Reviewed correction preparation](docs/kimodo-training-corpus-v1.md) now requires source-bound human decisions, complete contact labels and correction-specific rights evidence before producing development targets. Reserved release prompts/seeds and source-group split leakage are rejected. The existing review packet remains unreviewed; no real targets have been admitted or motion model trained.
 
 [Native correction packing](docs/native-correction-packing-v1.md) exports an authored NPZ window and a complete on/off foot-contact schedule into that correction format without custom Python. Model suggestions stay separate from unknown annotation fields, and exported files remain unapproved until actual review and rights evidence are supplied.
+
+[Verified corpus reading](docs/kimodo-corpus-reader-v1.md) checks pinned manifests, review/evidence files, development splits and exact re-encoding before exposing targets to a trainer. New V2 manifests bind submission and reservation files explicitly; no real corpus has passed admission and no animation-quality improvement is claimed.
