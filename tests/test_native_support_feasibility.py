@@ -178,16 +178,30 @@ def test_quantized_difference_probes_equal_separate_exports(tmp_path,disjoint):
         rig=RigAsset.load(path);sampler=NativeSupportSampler(rig.document,rig.binary,0)
         world=np.array([sampler.sample(float(t)) for t in p.times])
         q={n:c[2] for n,c in rotation_channels(rig.document,rig.binary).items() if n in p.nodes}
-        return repair.signed_constraints(p,q,world)
-    base=decoded(x,'base');model=lambda z:repair.constraint_model(p,z,quantized=True)
-    np.testing.assert_allclose(model(x),base,atol=1e-11,rtol=0)
+        for n in p.nodes:np.testing.assert_array_equal(q[n],values[n].astype(np.float32))
+        stored={n:v.astype(float) for n,v in q.items()}
+        np.testing.assert_allclose(p.world(stored),world,atol=2e-14,rtol=0)
+        actual=repair.signed_constraints(p,q,world)
+        proxy=repair.constraint_model(p,z,quantized=True)
+        # Floating matrix arithmetic is amplified by second time differences.
+        # This is a cross-platform model/decoder diagnostic, not clip acceptance.
+        roundoff=64*np.finfo(float).eps/p.caps.dt**2
+        np.testing.assert_allclose(proxy,actual,atol=roundoff,rtol=0)
+        return actual,proxy
+    base,base_proxy=decoded(x,'base');model=lambda z:repair.constraint_model(p,z,quantized=True)
     jac=repair.colored_jacobian(model,x,p.lower,p.upper,p.sparsity(),step=1e-7).toarray()
     for col in range(len(x)):
         h=min(1e-7,(p.upper[col]-p.lower[col])/4)
         if p.upper[col]-x[col]<x[col]-p.lower[col]:h=-h
         z=x.copy();z[col]+=h
-        actual=decoded(z,str(col))
-        np.testing.assert_allclose(jac[:,col],(actual-base)/h,atol=1e-4,rtol=0)
+        actual,proxy=decoded(z,str(col))
+        # The structural coloring must match separate rounded-model probes.
+        np.testing.assert_allclose(jac[:,col],(proxy-base_proxy)/h,atol=1e-8,rtol=0)
+        # Independently exported differences may differ by measured roundoff
+        # in both endpoint vectors, divided by the absolute difference step.
+        propagated=(np.abs(actual-proxy)+np.abs(base-base_proxy))/abs(h)
+        error=np.abs(jac[:,col]-(actual-base)/h)
+        assert np.all(error<=propagated+1e-8)
 
 
 @pytest.mark.parametrize('mode',[True,1,'yes',None])

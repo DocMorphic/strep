@@ -40,9 +40,11 @@ The saved study must contain four ordered, completed, source/draft-matched
 orientation or repair trials. Chaining retains ancestor hashes; a mutated
 ancestor probe blocks a new study before its output folder is created.
 
-## Four-seed development results
+## Four-warm-start development results
 
-The study starts from the four saved proposals in
+These are four optimizer warm starts for one source clip/rig, not four model
+generation seeds or a motion-diversity evaluation. The study starts from the four
+saved proposals in
 `reports/native-support-feasibility-v2`. It uses the same Studio v2 source
 (`87c185ddf0dc50dec7e56bbc4c301f66896ed460a53c6c8eb6797ce5a89107c7`),
 Y-up plane offset -0.056 m, two [1.6,2.4] s stances, edit keys [15,105],
@@ -93,12 +95,13 @@ GLBs and 3,048 numerical screens are retained. Maximum coordinate change from
 the starting vector is 2e-7 radians. **Three position-speed rows still fail.**
 This is one saved development seed, not a selected job output or release proof.
 A [bounded coordinate job mode](native-support-coordinates-v1.md) is now implemented;
-its matched four-seed study is running. This diagnostic supports that test;
+its completed four-warm-start study selects one sampled-feasible proposal,
+with stricter peak and quality checks still open. This diagnostic supports that test;
 it does not justify weakening caps or claiming infeasibility for other seeds.
 
 ## Evidence and remaining work
 
-- Four-seed result: `reports/native-support-quantized-repair-v1/result.json`,
+- Four-warm-start result: `reports/native-support-quantized-repair-v1/result.json`,
   SHA256 `e7767e893b8fcfa6fa39ea663585534582fc98f82f23c5a5518940211280f1bb`.
 - Successful exact replay:
   `reports/native-support-quantized-replay-v1-single-thread/result.json`,

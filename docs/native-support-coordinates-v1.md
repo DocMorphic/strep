@@ -5,9 +5,10 @@ It turns the [saved coordinate diagnostic](native-support-quantized-v1.md) into
 a reproducible, archived four-trial job with the existing independent final
 audit. This is deterministic processing of rigged motion; Kimodo is unchanged.
 
-**The new real four-seed study is still running.** No accepted motion or release
-approval is established by that study yet. The earlier single-seed diagnostic
-still fails three position-speed rows and remains separate evidence.
+**One of four completed warm-start trials passes the job's sampled checks.**
+The standalone job selects trial 2 (zero-based index 1); its separate stricter
+absolute-peak guard still fails. No release-quality approval is established.
+The earlier coordinate diagnostic remains separate evidence.
 
 ## Method
 
@@ -60,7 +61,7 @@ warm start without dropping their ancestry. The new implementation is archived
 with the other imported methods. A changed ancestor blocks a new job before
 its folder is created.
 
-## Validation and pending evidence
+## Validation and completed development evidence
 
 Fifteen new tests exercise a discontinuous two-contact screen, frozen unrelated
 controls, boxes, numerical-candidate reconstruction, independently rejected
@@ -71,17 +72,85 @@ ancestor GLB blocks a subsequent job. All **1,316 Python tests** and
 **14 JavaScript suites** pass. Preceding commit `cc0d68f` passed Windows/Linux
 hosted checks.
 
-`reports/native-support-coordinate-repair-v1` is the running development study.
+`reports/native-support-coordinate-repair-v1` is the completed development study.
 It starts from all four saved `native-support-quantized-repair-v1` controls, with
 eight iterations and a 2e-7-radian trust radius. Its request binds 1,193 ancestor
 files and uses the same Studio v2 source, support planes, intervals and bounds.
 The source SHA256 remains
 `87c185ddf0dc50dec7e56bbc4c301f66896ed460a53c6c8eb6797ce5a89107c7`.
-Partial iteration records are observations, not final acceptance evidence.
+These four warm starts are optimizer controls for the same source clip and rig,
+not four model-generation seeds, actions or held-out examples. Their
+acceleration-time/reference-weight pairs are (0.05,0.5), (0.05,5), (0.15,0.5)
+and (0.15,5).
 
-After terminal completion, all final proposals still need controls replay,
-evidence rehash and a recorded selection decision. Passing proposals also need
-engine, geometry, broad rig/action/scene and human cleanup validation. No new
+| Trial | Starting worst excess | Final worst excess | Rate failures | Iterations / stop |
+| --- | --- | --- | --- | --- |
+| 1 | 0.0036578101 | 0.0036418172 | 67 / 13 / 25 / 14 | 8 / budget |
+| 2 | 0.0000030829 | 0 | 0 / 0 / 0 / 0 | 7 / sampled constraints |
+| 3 | 0.0109091337 | 0.0109055244 | 76 / 9 / 19 / 14 | 8 / budget |
+| 4 | 0.0010863128 | 0.0010672018 | 59 / 14 / 14 / 11 | 8 / budget |
+
+All four sampled support/preservation checks pass across 701 times, with 142
+stance samples per foot. The study preserves 104,308 numerical screens and
+35 decoded GLB probes, including four warm starts. Three variants still fail
+the unchanged rate screen; their failures remain visible. Every final GLB
+replays byte-for-byte from its controls. Rounded-key proxy/decoder component
+error remains below 9.993e-16; normalized constraint differences remain below
+1.226e-11. All 1,461 bound study, ancestor, replay and foot-audit files rehash.
+The original input and all failed proposals remain available; the standalone
+candidate is byte-identical to the passing trial. This is not Studio selection.
+
+### Completed trial 2: qualified progress
+
+The second warm start now completes its seven coordinate iterations with zero
+failing rows under the job's unchanged four-bin source-rate screen. Its sampled
+support, clock, displacement, local-angle and preservation checks pass. The
+first warm start completes eight iterations and still fails 67/13/25/14 rate
+rows. The remaining two also reach their budgets and fail. The final standalone
+selection is the second warm start; it remains quality-unapproved.
+
+An independent decoded audit of completed trial 2 reproduces the zero failing
+rows, but also reproduces **failure of the separate 1e-7 absolute-peak guard**.
+Its stricter diagnostic is not the job's 1e-5 four-bin acceptance tolerance.
+Neither tolerance has changed. This distinction prevents a sampled acceptance
+result from being presented as a release-quality result.
+
+Across 142 stance samples, the left/right fully foot-owned mesh regions contain
+52/53 vertices. Lowest heights remain 0.2500-1.4699 mm and 0.2500-1.3384 mm
+above the authored -0.056 m plane. Maximum ankle tangential distances from the
+stance start are 3.1125/2.7288 mm; per-foot vertex maxima are 3.7755/4.3785 mm.
+Maximum per-vertex tangential travel is 8.9159/12.3922 mm over each stance.
+These are trajectories of ankle and foot vertices, not tracked sole-contact
+patches; they do not certify planted feet, contact forces or absence of skating.
+The source has similar tangential motion. The different ground-zero condition
+that exceeded the 30 mm displacement box remains unresolved.
+
+`reports/native-support-plantedness-v1/result.json` binds the completed trial
+and reproduces its rate and absolute-peak diagnostics. Its SHA256 is
+`3bc8633705feb11c8dc85c7ad3b550eaa126ebe2489b6cc5037752e536bf4f15`.
+The foot audit was made before full-study completion and retains its original
+pending-selection flag. The subsequent completed study resolves that selection;
+stationary sole contact, continuous collision, engine and human quality remain
+unverified.
+
+Completed result hashes:
+
+- Fit: `5125614185cb2a674cb33c138fea448715b5e69d1756ff9634b37074f214f455`.
+- Controls replay: `e6066db2b52a917f6fd24dce377ae0095236e34c83ca701983df9ed09d384ae9`.
+- Rehash receipt: `fbc675b75cb98f52963317187c36e3fb63827407ed5e8c4085632beadd01a19d`.
+
+Hosted Windows run 36949739111 exposed a 1.918e-11 proxy/decoder diagnostic
+difference in two quantized-column tests. The revised tests require exact
+exported quaternion keys, pose agreement within 2e-14, and grouped-versus-separate
+rounded-model differences within 1e-8. They budget normalized floating roundoff
+as `64 * float64_epsilon / dt²` and propagate the independently measured endpoint
+errors into the exported finite difference. No production solver, clip gate or
+acceptance tolerance changes. The revised full local suite passes all 1,316
+Python tests and 14 JavaScript suites; hosted verification of the fix is pending.
+
+The passing proposal still needs stricter peak, engine, geometry, broad
+rig/action/scene and human cleanup validation. The other starts retain larger
+optimization failures. No new
 training, held-out use, engine/GPU/browser rendering, human review or release
 approval is claimed. All 14 release capabilities remain unapproved and the
 full-project goal remains active.
