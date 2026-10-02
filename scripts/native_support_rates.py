@@ -80,6 +80,10 @@ class SupportRateProblem:
             if parent>=0:self.local[:,node]=np.linalg.inv(self.raw[:,parent])@self.raw[:,node]
         self.nodes=sorted({n for r in rows for n in r['chain']});self.affected=np.zeros(len(rig.parents),bool)
         for r in rows:self.affected|=descendants(rig.parents,r['chain'][0])
+        # Match the scalar decoder's installed NumPy endpoint comparisons.
+        # Vector float64 comparisons can interpolate a time that it clamps.
+        self.endpoint_masks={n:tuple(np.fromiter((compare(float(t),clock[key]) for t in self.times),bool,len(self.times))
+            for compare,key in ((np.less_equal,0),(np.greater_equal,-1))) for n,(_,clock,_) in self.channels.items() if n in self.nodes}
         self.columns=np.flatnonzero(self.affected[rig.joints]);self.data=[];initial=[];lower=[];upper=[];skin=BoundSkin(rig)
         for r in rows:
             first,last=r['edit_keys'];clock=r['clock'][first:last+1];worlds=np.array([reader.sample(float(t)) for t in clock])
@@ -109,6 +113,8 @@ class SupportRateProblem:
         local=self.local.copy();world=self.raw.copy()
         for node,q in values.items():
             clock=self.channels[node][1];matrix=sampled_rotations(clock,q,self.times)
+            for mask,key in zip(self.endpoint_masks[node],(0,-1)):
+                if mask.any():matrix[mask]=Rotation.from_quat(q[key]).as_matrix()
             exact=np.searchsorted(clock,self.times,side='left');valid=exact<len(clock);valid[valid]&=clock[exact[valid]].astype(float)==self.times[valid]
             matrix[valid]=Rotation.from_quat(q[exact[valid]]).as_matrix()
             local[:,node,:3,:3]=matrix

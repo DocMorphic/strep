@@ -108,3 +108,47 @@ def test_disjoint_same_foot_windows_keep_gap_and_sparse_dependencies(tmp_path):
 def test_joint_search_rejects_invalid_budget_before_reading_inputs(budget):
     from native_support_rates import propose
     with pytest.raises(ValueError,match='evaluations'):propose(None,None,None,None,maximum_evaluations=budget)
+
+
+@pytest.mark.parametrize('mode',['bend','swivel','orientation'])
+def test_batch_model_matches_scalar_decoder_near_float32_endpoints(tmp_path,monkeypatch,mode):
+    """Expose actual scalar clock rounding; retain every serialized time/gate."""
+    import native_support_rates as rates
+    from native_support_swivel import SupportSwivelProblem
+    from native_support_orientation import SupportOrientationProblem
+    from native_support_clock import NativeSupportSampler
+    from native_leg_floor import export_rotations
+    from gltf_tools import append_accessor,write_glb
+    from rig_asset import RigAsset
+    source,rig,reader,spec=fixture(tmp_path)
+    # A non-binary first/last key exposes NumPy scalar endpoint comparisons.
+    clock=np.linspace(np.float32(1/30),np.float32(119/30),11).astype(np.float32)
+    document=copy.deepcopy(rig.document);binary=bytearray(rig.binary)
+    accessor=append_accessor(document,binary,clock,'SCALAR')
+    for sampler in document['animations'][0]['samplers']:sampler['input']=accessor
+    write_glb(source,document,binary);rig=RigAsset.load(source)
+    reader=NativeSupportSampler(rig.document,rig.binary,0)
+    spec.update(glb_sha256=sha256(source),duration_s=reader.duration)
+    spec['supports'][0].update(edit_keys=[0,10],stance_s=[float(clock[4]),float(clock[6])])
+    original_clock=rates.audit_clock
+    probes=[float(clock[0])+5e-10,float(clock[-1])-5e-9,119/30]
+    monkeypatch.setattr(rates,'audit_clock',lambda duration,keys,declared,event:original_clock(duration,keys,list(declared)+probes,event))
+    _,rows=validate(spec,rig,reader,sha256(source))
+    cls={'bend':SupportRateProblem,'swivel':SupportSwivelProblem,'orientation':SupportOrientationProblem}[mode]
+    p=cls(rig,reader,rows)
+    values={n:c[2].astype(float).copy() for n,c in p.channels.items() if n in p.nodes}
+    # Only interior keys change. The source endpoint poses stay frozen.
+    values[1][1]=Rotation.from_rotvec([.03,0,0]).as_quat()
+    values[2][-2]=Rotation.from_rotvec([0,.02,0]).as_quat()
+    path=tmp_path/'fractional-boundaries.glb';export_rotations(rig.document,rig.binary,values,path)
+    changed=RigAsset.load(path);decoder=NativeSupportSampler(changed.document,changed.binary,0)
+    world=np.array([decoder.sample(float(t)) for t in p.times])
+    rounded={n:q.astype(np.float32).astype(float) for n,q in values.items()}
+    np.testing.assert_allclose(p.world(rounded),world,atol=2e-14,rtol=0)
+    np.testing.assert_array_equal(p.world(rounded)[:,[0,5,6]],p.raw[:,[0,5,6]])
+    for t in probes:
+        # The reference decoder, including installed NumPy semantics, is final.
+        index=np.flatnonzero(p.times==t)[0]
+        np.testing.assert_allclose(p.world(rounded)[index],decoder.sample(t),atol=2e-14,rtol=0)
+    for old,new in zip(reader.channels,decoder.channels):np.testing.assert_array_equal(old[2],new[2])
+    assert p.caps.tolerance==1e-5

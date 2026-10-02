@@ -144,3 +144,8 @@ reviewed corrections, model improvement and human cleanup remain unfinished.
 There are zero real human submissions and zero model updates here. All 14
 release capabilities remain unapproved, the formal 72-by-five population is
 untouched and the single full-project goal remains active.
+
+
+The [decoder-aligned repair follow-up](native-support-clock-repair-v1.md) addresses
+the measured batch/scalar endpoint discrepancy without changing the historical
+outputs or final acceptance gates, then tests a serialized warm repair.
