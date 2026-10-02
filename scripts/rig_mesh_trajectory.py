@@ -17,6 +17,7 @@ from target_rig_contact import baseline, audit
 from rig_loop import encode
 from inspect_rig_contacts import inspect
 from strep import read, save, sha256, now
+from rig_subframe_floor import inspect as inspect_subframe_floor
 
 
 class MeshContactTrajectoryFitter(TrajectoryFitter):
@@ -76,7 +77,8 @@ class CoupledMeshContactFitter(CoupledPoseFitter):
 METHODS = ('rig_mesh_trajectory.py', 'rig_coupled_pose.py', 'rig_trajectory_fit.py',
            'rig_clearance_fit.py', 'target_rig_contact.py', 'rig_periodic_contact.py',
            'rig_asset.py', 'rig_loop.py', 'rig_transition.py', 'gltf_tools.py',
-           'temporal_basis.py', 'mesh_contact_feasibility.py', 'mesh_contact_guarded_trials.py', 'inspect_rig_contacts.py', 'strep.py')
+           'temporal_basis.py', 'mesh_contact_feasibility.py', 'mesh_contact_guarded_trials.py', 'inspect_rig_contacts.py',
+           'rig_subframe_floor.py', 'native_support_clock.py', 'rig_clip_import.py', 'strep.py')
 
 
 def _run(source, draft, output, spacing=10, max_iterations=60, feasibility=False, floor_iterations=30, guarded_trials=False, _owned_output=None):
@@ -111,6 +113,7 @@ def _run(source, draft, output, spacing=10, max_iterations=60, feasibility=False
          spacing_frames=spacing, max_iterations=max_iterations, controls=coupled.shape,
          feasibility=feasibility,floor_iterations=floor_iterations if feasibility else None,
          guarded_trials=guarded_trials,
+         decoded_floor_sampling_hz=120,
          objective=('Restore floor, then pursue contact feasibility with floor held hard; original energy reported only'
                     if feasibility else 'Original mesh contact/floor/edit priors and adjacent edit differences, all frames coupled'),
          extra_rotation_step_allowance_degrees=fitter.settings['rotation_step_allowance_degrees'],
@@ -127,9 +130,14 @@ def _run(source, draft, output, spacing=10, max_iterations=60, feasibility=False
                               output/'candidate.glb', 'Experimental coupled mesh contact candidate')
     decoded_spec = copy.deepcopy(spec); decoded_spec['glb_sha256'] = sha256(output/'candidate.glb')
     independent = inspect(output/'candidate.glb', decoded_spec)
+    subframe_floor = inspect_subframe_floor(output/'candidate.glb', spec['screen']['floor_depth_m'])
+    save(output/'subframe-floor-inspection.json', subframe_floor)
     if independent['floor_frames_failed'] or independent['failed_intervals']:
         evidence['numerical_screen_passed'] = False
         evidence['flags'].append('decoded_mesh_contact_screen_failed')
+    if not subframe_floor['sampled_floor_passed']:
+        evidence['numerical_screen_passed'] = False
+        evidence['flags'].append('decoded_subframe_floor_screen_failed')
     if summary['constraint_min'] < -1e-8:
         evidence['numerical_screen_passed'] = False; evidence['flags'].append('coupled_constraint_failed')
     np.savez_compressed(output/'fit.npz', before=before, after=fitter.world,

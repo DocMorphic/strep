@@ -26,12 +26,14 @@ under ignored `reports/`.
 Fixture tests compare the fast limit values against the original Jacobian path,
 check whole-mesh floor protection, frozen geometry and over-budget rejection,
 replay retained proposals, and exercise actual GLB export and mode isolation.
-No new real-character study, dense engine audit, animator review or cleanup-time
-measurement accompanies this source change. It adds search evaluations and
+The [fixed crawl follow-up](crawl-body-contact-guarded-trials-v1.md) now measures
+this path and records its contact regression and between-key floor failure.
+No animator review or cleanup-time measurement accompanies it. It adds search evaluations and
 storage, so matching iteration budgets do not imply equal computation. Sampling
 does not establish continuous collision freedom, anatomical contact correctness,
 convergence or infeasibility. Release capabilities remain unapproved.
 
 Validation for this source batch: all 1,511 model-free Python tests and 14
-JavaScript suites pass, including the 11 new guarded-trial cases. These checks
-do not replace a real-character experiment or release review.
+JavaScript suites pass, including the 11 new guarded-trial cases. The later
+export-gate follow-up passes 1,533 Python tests and 14 JavaScript suites. These
+checks do not replace release review.

@@ -131,6 +131,7 @@ jobs:
           tests/test_rig_mesh_trajectory.py
           tests/test_mesh_contact_feasibility.py
           tests/test_mesh_guarded_trials.py
+          tests/test_rig_subframe_floor.py
           tests/test_temporal_basis.py
           tests/test_imported_skin_evidence.py
           tests/test_imported_skin_reconstruction.py

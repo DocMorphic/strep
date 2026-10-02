@@ -15,7 +15,9 @@ from strep import read,save,sha256,now
 
 
 class AnimationSampler:
-    def __init__(self,document,binary,animation_index):
+    def __init__(self,document,binary,animation_index,max_duration_s=30):
+        if max_duration_s is not None and (type(max_duration_s) not in (int,float) or not np.isfinite(max_duration_s) or max_duration_s<=0):
+            raise ValueError('Positive finite sampling duration limit or None required')
         self.document=document;self.channels=[];self.duration=0.;self.scale_key_drift=0.
         animation=index(document.get('animations',[]),animation_index,'animation');seen=set()
         self.name=animation.get('name','Animation '+str(animation_index+1))
@@ -42,7 +44,8 @@ class AnimationSampler:
                 if drift>1e-5 or mode=='CUBICSPLINE' and np.max(np.abs(values.reshape(-1,3,3)[:,[0,2]]))>1e-5:
                     raise ValueError('Animated non-unit scale is unsupported by rig contact editing')
             self.channels.append((node,path,times,values,mode));self.duration=max(self.duration,float(times[-1]))
-        if not self.channels or not 0<self.duration<=30:raise ValueError('Choose an animated clip with duration greater than zero and at most 30 seconds')
+        if not self.channels or not np.isfinite(self.duration) or self.duration<=0 or max_duration_s is not None and self.duration>max_duration_s:
+            raise ValueError('Choose an animated clip with positive duration within the sampling limit')
 
     @staticmethod
     def value(path,times,values,mode,time):

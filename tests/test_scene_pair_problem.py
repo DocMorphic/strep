@@ -8,6 +8,7 @@ from scene_pair_problem import MotionRows, ScenePairProblem, load_actors
 from timed_rotation_edit import TimedRotationEdit
 from paired_approach_basis import BoundSkin
 from test_timed_rotation_edit import fixture
+from strep import read,save,sha256,ROOT
 
 
 def actors():
@@ -73,11 +74,31 @@ def test_incomplete_or_wrong_time_witnesses_are_rejected():
         ScenePairProblem(pair, rows)
 
 
-def test_saved_request_builds_models_without_live_original_paths():
+def test_saved_request_uses_snapshots_or_rejects_version_mismatch():
     folder = Path(__file__).resolve().parents[1]/'reports/paired-edit-jobs/curve-controls-trimmed-v1'
     if not folder.exists(): pytest.skip('Local immutable request required')
+    request=read(folder/'request.json')
+    for name,digest in request['implementation'].items():
+        assert sha256(folder/'implementation'/name)==digest
+        if sha256(ROOT/'scripts'/name)!=digest:
+            with pytest.raises(ValueError,match='Prepared edit implementation changed: '+name):load_actors(folder)
+            return
     record, pair = load_actors(folder)
     assert [a['name'] for a in pair] == ['A', 'B']
     assert all(a['source'].is_relative_to(folder) for a in pair)
     assert len(pair[0]['rates'].radii) > 0
     assert pair[0]['model'].protected[0, 0] == pytest.approx(2.0917225950783)
+
+
+@pytest.mark.parametrize('changed',['archive','current'])
+def test_changed_implementation_is_rejected_before_loading_actor_payloads(tmp_path,monkeypatch,changed):
+    import scene_pair_problem as module
+    root=tmp_path/'project';(root/'scripts').mkdir(parents=True)
+    folder=tmp_path/'request';(folder/'implementation').mkdir(parents=True)
+    archived=folder/'implementation/adapter.py';current=root/'scripts/adapter.py'
+    archived.write_text('saved implementation',encoding='utf-8');current.write_bytes(archived.read_bytes())
+    save(folder/'request.json',dict(implementation={'adapter.py':sha256(archived)}))
+    save(folder/'state.json',dict(status='prepared'))
+    (archived if changed=='archive' else current).write_text('different implementation',encoding='utf-8')
+    monkeypatch.setattr(module,'ROOT',root)
+    with pytest.raises(ValueError,match='Prepared edit implementation changed: adapter.py'):load_actors(folder)
