@@ -139,3 +139,5 @@ Completed changes are committed and pushed as development continues. See [the re
 The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) now verifies finite gradients for small frozen-base adapters on the acquired checkpoint within the local GPU's memory. It performs no training updates and establishes no motion-quality improvement; reviewed licensed correction data and an evaluated trainer remain necessary.
 
 [Native target and denoising checks](docs/kimodo-denoising-targets-v1.md) now verify motion reconstruction and 54 conditional gradient cases across seven developed actions. A source-bound developer-review packet records 220 contact disagreements; its examples remain unapproved for training. Separate CPU adapter/target tests now run in CI without model weights.
+
+[Adapter save and resume](docs/kimodo-adapter-lifecycle-v1.md) now reproduces interrupted numerical updates exactly on the frozen Kimodo base, including optimizer state and Torch random inputs. The local canary uses synthetic targets; it establishes no motion-quality improvement or training-data approval. Checkpoint lifecycle tests join the separate CPU CI jobs.

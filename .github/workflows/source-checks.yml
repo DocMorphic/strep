@@ -36,10 +36,10 @@ jobs:
           python-version: "3.10"
       - name: Install CPU test dependencies
         run: |
-          python -m pip install --only-binary=:all: pytest==9.1.1 numpy==2.2.6
+          python -m pip install --only-binary=:all: pytest==9.1.1 numpy==2.2.6 safetensors==0.8.0
           python -m pip install --only-binary=:all: torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
-      - name: Verify adapter restoration, motion targets and masked denoising objective
-        run: python -m pytest -q tests/test_kimodo_adapter_probe.py tests/test_kimodo_denoising_target.py
+      - name: Verify adapter lifecycle, motion targets and masked denoising objective
+        run: python -m pytest -q tests/test_kimodo_adapter_probe.py tests/test_kimodo_denoising_target.py tests/test_kimodo_adapter_state.py
   source-checks:
     strategy:
       fail-fast: false
