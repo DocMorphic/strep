@@ -30,7 +30,7 @@ function metadata(id,candidate='reports/original.npz',start=0){return {...packet
  recipe:{schema:'strep-native-correction-pack-recipe-v1',item_id:id,candidate_motion:{path:candidate,sha256:'b'.repeat(64)},candidate_start_frame:start,
  joint_names:Array.from({length:77},(_,j)=>'Joint'+j),contacts:joints.map(joint=>({joint,intervals:[{start_frame:0,end_frame_exclusive:3,contact:null}]}))},
  candidate_relative:candidate,quality_approved:false,training_admitted:false,preview_scope:'Original only',preview_start_s:id==='one'?0:3,preview_end_s:(id==='one'?0:3)+2/30};}
-let posts=[],calls=[],pending=null,playerLoads=0,pauses=0,timeCallback,loaded=[];
+let posts=[],calls=[],pending=null,playerLoads=0,pauses=0,timeCallback,loaded=[],supportOptions,supportResets=0;
 const fetch=async(url,options)=>{
  calls.push(url);if(pending)return pending;
  let data;
@@ -42,9 +42,9 @@ const fetch=async(url,options)=>{
   const previewSelection={draft_id:body.draft_id,draft_sha256:body.draft_sha256,item_id:body.item_id,candidate_motion:m.recipe.candidate_motion,candidate_start_frame:0};
   data={selection:body,metadata:m,candidate_motion:m.recipe.candidate_motion,candidate_start_frame:0,quality_approved:false,training_admitted:false,release_approved:false,
    report:{measured:{joint_from_original_degrees:3,root_from_original_m:.01,correction_step_degrees:3,root_correction_step_m:.01}},
-   preview:{selection:previewSelection,preview_url:'/files/native-correction-previews/editfixture/candidate.glb',preview_sha256:'d'.repeat(64),preview_start_s:0,preview_end_s:2/30,quality_approved:false,training_admitted:false,preview_scope:'Edited numerical candidate'}};
+   preview:{id:'editfixture',selection:previewSelection,preview_url:'/files/native-correction-previews/editfixture/candidate.glb',preview_sha256:'d'.repeat(64),preview_start_s:0,preview_end_s:2/30,quality_approved:false,training_admitted:false,preview_scope:'Edited numerical candidate'}};
  }
- else {const body=JSON.parse(options.body);posts.push({url,body});data=url.endsWith('-preview')?{selection:body,item_id:body.item_id,preview_url:'/files/native-correction-previews/synthetic/candidate.glb',preview_sha256:'c'.repeat(64),preview_start_s:0,preview_end_s:2/30,preview_scope:'Selected candidate',training_admitted:false,quality_approved:false}:url.endsWith('-pack')?{id:'packed',item_id:body.recipe.item_id,folder:'reports/packed',training_admitted:false,quality_approved:false}:
+ else {const body=JSON.parse(options.body);posts.push({url,body});data=url.endsWith('-preview')?{id:'synthetic',selection:body,item_id:body.item_id,preview_url:'/files/native-correction-previews/synthetic/candidate.glb',preview_sha256:'c'.repeat(64),preview_start_s:0,preview_end_s:2/30,preview_scope:'Selected candidate',training_admitted:false,quality_approved:false}:url.endsWith('-pack')?{id:'packed',item_id:body.recipe.item_id,folder:'reports/packed',training_admitted:false,quality_approved:false}:
  {submission:{path:'fixture-submission.json'},reviewed_corrections:1,training_admitted:false};}
  return {ok:true,json:async()=>data};
 };
@@ -52,6 +52,7 @@ const panel=el('correctionReviewPanel');panel.open=true;
 el('correctionContactJoint').value='0';el('correctionContactState').value='free';el('correctionReviewerRole').value='developer';
 const ui=createCorrectionReviewPanel({document:{getElementById:el,createElement(){return {textContent:''};}},fetch,
  Option:function(text,value){return {text,value};},MutationObserver:null,now:()=> '2026-10-02T12:00:00+00:00',
+ createSupportEditor:options=>{supportOptions=options;return {reset(){supportResets++;}};},
  createPlayer:async({onTime})=>{timeCallback=onTime;return {pause(){pauses++;},async load(data){playerLoads++;loaded.push(data);},seek(){},toggle(){},fit(){}};}});
 assert.equal(calls.length,0,'No automatic requests before opening');
 await ui.refresh();await ui.load();
@@ -131,3 +132,5 @@ console.log('Correction review: explicit human fields, original/candidate switch
 
 panel.open=true;pending=new Promise(r=>resolve=r);const editBefore=el('correctionCandidatePath').value,editWaiting=ui.applyEdit();panel.open=false;panel.toggle();resolve({ok:true,json:async()=>({selection:{}})});await editWaiting;assert.equal(el('correctionCandidatePath').value,editBefore,'Closed panel ignores late native authoring');pending=null;
 console.log('Native authoring: explicit vectors and clock, new candidate, unset contacts/reviews/cleanup, segment persistence, undo, original reset and stale edits pass.');
+
+panel.open=true;await ui.buildPreview();assert.equal(supportOptions.prefix,'correctionSupport');assert.deepEqual(supportOptions.getContext(),{job:{id:'synthetic'},variant:'native_review'});const supportParent=structuredClone(posts.at(-1).body);const supportRef={path:'reports/native-support-jobs/numerical/native-candidate.npz',sha256:'b'.repeat(64)};const supportResult={selection:supportParent,candidate_motion:supportRef,candidate_start_frame:0,quality_approved:false,training_admitted:false,release_approved:false,retained_input:true,retention_reason:'no_proposal_satisfies_all_bounds',preview:{id:'converted',selection:{...supportParent,candidate_motion:supportRef,candidate_start_frame:0},preview_url:'/files/native-correction-previews/converted/candidate.glb',preview_sha256:'e'.repeat(64),preview_start_s:0,preview_end_s:2/30,quality_approved:false,training_admitted:false}};await assert.rejects(()=>supportOptions.onNativeCandidate({...supportResult,selection:{...supportParent,item_id:'another'}}),/another selected/);el('correctionSemanticPass').checked=true;el('correctionReviewCleanupSeconds').value=4;await supportOptions.onNativeCandidate(supportResult);assert.equal(el('correctionCandidatePath').value,supportRef.path);assert.equal(el('correctionSemanticPass').checked,false);assert.equal(el('correctionReviewCleanupSeconds').value,'');assert.match(el('correctionContactCoverage').textContent,/0 \/ 12/);assert.match(el('correctionReviewStatus').textContent,/retained its input/);assert.equal(el('correctionEditUndo').disabled,false);assert(supportResets>0);console.log('Native support bridge: exact selected candidate, explicit use, retained failure, review reset and undo pass.');

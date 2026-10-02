@@ -157,6 +157,31 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
 <div class="rig-toolbar"><button id="correctionEditApply" class="btn primary" type="button">Save edit and preview</button><button id="correctionEditUndo" class="btn" type="button" disabled>Undo last edit</button><button id="correctionEditOriginal" class="btn" type="button">Use original motion</button></div>
 <p id="correctionEditReport" class="small" role="status"></p>
 </details>
+<details id="correctionSupportPanel" class="rig-panel">
+ <summary>Native foot supports</summary>
+ <p class="small">Build the selected native candidate preview, then load its exact GLB. Stance times use seconds; edit boundaries use that clip’s existing rotation keys. Free phases and boundary poses stay unchanged.</p>
+ <button class="btn" id="correctionSupportBind" type="button">Use selected native candidate</button>
+ <p id="correctionSupportBinding" class="small" role="status">No clip selected.</p>
+ <fieldset id="correctionSupportFields" disabled>
+  <div id="correctionSupportPreparation" hidden><label class="rig-check"><input id="correctionSupportPrepareRig" type="checkbox"> Prepare rig for foot edits</label><p id="correctionSupportPreparationHint" class="small"></p></div>
+  <label class="rig-check"><input id="correctionSupportRefine" type="checkbox"> Refine between-key foot contacts</label><p class="small">Try up to 8 refinements while keeping your contact limits. Compare the starting and final proposals; motion checks can still retain your input.</p>
+  <div id="correctionSupportMapping" class="rig-map-list"></div>
+  <div class="rig-offsets"><label>Foot<select id="correctionSupportFoot"><option value="LeftFoot">Left foot</option><option value="RightFoot">Right foot</option></select></label><label>Interval name<input id="correctionSupportName" value="stance-1" maxlength="64"></label></div>
+  <div class="rig-offsets"><label>Stance start (s)<input id="correctionSupportStart" type="number" step="any" min="0"></label><label>Stance end (s)<input id="correctionSupportEnd" type="number" step="any" min="0"></label></div>
+  <div class="rig-offsets"><label>Frozen start key<select id="correctionSupportFirst"></select></label><label>Frozen end key<select id="correctionSupportLast"></select></label></div>
+  <div class="rig-offsets"><label>Plane normal X<input id="correctionSupportNX" type="number" step="any" value="0"></label><label>Y<input id="correctionSupportNY" type="number" step="any" value="1"></label><label>Z<input id="correctionSupportNZ" type="number" step="any" value="0"></label><label>Plane offset (m)<input id="correctionSupportPlane" type="number" step="any" value="0"></label></div>
+  <div class="rig-offsets"><label>Clearance (mm)<input id="correctionSupportClearance" type="number" step="any" min="0.25" max="4.5" value="0.25"></label><label>Maximum gap (mm)<input id="correctionSupportGap" type="number" step="any" max="5" value="5"></label><label>Ankle edit limit (mm)<input id="correctionSupportDisplacement" type="number" step="any" min="0.001" max="30" value="30"></label><label>Rotation edit limit (°)<input id="correctionSupportAngle" type="number" step="any" min="0.0001" max="45" value="45"></label></div>
+  <p class="small">Plane equation: normal · point = offset, in GLB world coordinates. Enter a unit normal. Separate stance and edit intervals allow fades; same-foot edit windows cannot overlap. Direct thigh → knee → foot chains only. The floor screen uses fully foot-owned vertices, not whole-sole planting.</p>
+  <div class="rig-toolbar"><button class="btn" id="correctionSupportAdd" type="button">Add / replace interval</button><button class="btn" id="correctionSupportClear" type="button">Clear intervals</button></div>
+  <div id="correctionSupportIntervals" class="rig-contact-list"></div>
+  <button class="btn primary" id="correctionSupportFit" type="button">Try bounded native correction</button>
+ </fieldset>
+ <p id="correctionSupportStatus" class="small" role="status">Proposals must pass sampled support heights, edit limits and source-relative motion-rate caps. A finished job can retain the unchanged input.</p>
+ <div class="rig-toolbar"><button class="btn" id="correctionSupportRefresh" type="button">Refresh saved jobs</button><select id="correctionSupportJobs" aria-label="Native support result" disabled></select><button class="btn" id="correctionSupportReview" type="button" disabled>Compare input and proposals</button></div>
+ <iframe id="correctionSupportFrame" title="Native foot-support clip comparison" style="width:100%;height:780px;border:1px solid var(--border,#cbd4df);border-radius:12px" hidden></iframe>
+ <button class="btn primary" id="correctionSupportUseCorrection" type="button" hidden disabled>Use candidate in native review</button>
+</details>
+
 <details open><summary>Foot-contact annotation</summary><p class="small">Frames are local to this segment. End frames are exclusive. Mark both planted and free ranges explicitly; unknown frames are not filled from model predictions.</p>
 <div class="contact-fields"><label>Joint<select id="correctionContactJoint"><option value="0">Left foot</option><option value="1">Left toe</option><option value="2">Right foot</option><option value="3">Right toe</option></select></label><label>State<select id="correctionContactState"><option value="unknown">Unknown</option><option value="planted">Planted</option><option value="free">Free</option></select></label></div>
 <div class="contact-fields"><label>Start frame<input id="correctionContactStart" type="number" min="0" step="1"></label><label>End frame, exclusive<input id="correctionContactEnd" type="number" min="1" step="1"></label></div>
@@ -296,6 +321,7 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
  <p id="nativeSupportStatus" class="small" role="status">Proposals must pass sampled support heights, edit limits and source-relative motion-rate caps. A finished job can retain the unchanged input.</p>
  <div class="rig-toolbar"><button class="btn" id="nativeSupportRefresh" type="button">Refresh saved jobs</button><select id="nativeSupportJobs" aria-label="Native support result" disabled></select><button class="btn" id="nativeSupportReview" type="button" disabled>Compare input and proposals</button></div>
  <iframe id="nativeSupportFrame" title="Native foot-support clip comparison" style="width:100%;height:780px;border:1px solid var(--border,#cbd4df);border-radius:12px" hidden></iframe>
+ <button class="btn primary" id="nativeSupportUseCorrection" type="button" hidden disabled>Use candidate in native review</button>
 </details>
 
    <div id="rigContactPanel" hidden>
@@ -868,7 +894,8 @@ import {createSceneReleaseEditor} from '/scene-release-editor.js';
 import {createNativeReviewPanel} from '/native-review-panel.mjs';
 createNativeReviewPanel();
 import {createCorrectionReviewPanel} from '/correction-review-panel.mjs';
-createCorrectionReviewPanel({createPlayer:async options=>{const {createNativeReferencePlayer}=await import('/native-reference-player.mjs');return createNativeReferencePlayer(options);}});
+import {createNativeSupportEditor} from '/native-support-editor.mjs';
+createCorrectionReviewPanel({createSupportEditor:createNativeSupportEditor,createPlayer:async options=>{const {createNativeReferencePlayer}=await import('/native-reference-player.mjs');return createNativeReferencePlayer(options);}});
 import {createSceneRegionEditor,sceneRateDetails,sceneSupportDetails,sceneWindowDetails} from '/scene-region-editor.js';
 import {createSceneGripPicker,sceneObjectPose} from '/scene-grip-picker.js';
 // Markers have native-frame samples; actor animation still uses its exact GLB curve.

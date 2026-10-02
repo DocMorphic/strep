@@ -7,6 +7,8 @@ def render():
     html=html.replace('<details id="sceneRegionPanel">',(scripts/'scene-pair-editor.html').read_text(encoding='utf8')+'<details id="sceneRegionPanel">')
     html=html.replace('<details id="sceneTrimPanel">',(scripts/'native-review-panel.html').read_text(encoding='utf8')+'<details id="sceneTrimPanel">')
     html=html.replace('<details id="nativeReviewPanel">',(scripts/'correction-review-panel.html').read_text(encoding='utf8')+'<details id="nativeReviewPanel">')
+    review_support=(scripts/'native-support-editor.html').read_text(encoding='utf8').replace('nativeSupport','correctionSupport').replace('Select a character result and version, then load its exact GLB.','Build the selected native candidate preview, then load its exact GLB.').replace('Use selected character clip','Use selected native candidate')
+    html=html.replace('__NATIVE_REVIEW_SUPPORT__',review_support)
     html=html.replace('__CHARACTER_STUDIO__',(scripts/'character-studio.html').read_text(encoding='utf8'))
     html=html.replace('__CORRECTION_REVIEW__',(scripts/'correction-review.html').read_text(encoding='utf8'))
     html=html.replace('__NATIVE_SUPPORT_EDITOR__',(scripts/'native-support-editor.html').read_text(encoding='utf8'))

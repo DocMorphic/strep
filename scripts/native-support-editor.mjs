@@ -1,7 +1,7 @@
-export function createNativeSupportEditor({getContext,document=globalThis.document,fetch=globalThis.fetch,Option=globalThis.Option,storage=globalThis.localStorage,MutationObserver=globalThis.MutationObserver}={}){
- const el=id=>document.getElementById('nativeSupport'+id),panel=el('Panel');
+export function createNativeSupportEditor({getContext,prefix='nativeSupport',onNativeCandidate=null,document=globalThis.document,fetch=globalThis.fetch,Option=globalThis.Option,storage=globalThis.localStorage,MutationObserver=globalThis.MutationObserver}={}){
+ const el=id=>document.getElementById(prefix+id),panel=el('Panel');
  const roles=['LeftLeg','LeftShin','LeftFoot','RightLeg','RightShin','RightFoot'];
- let binding=null,spec=null,epoch=0,revision=0,pending=null,jobs=[],mapping=new Map(),refreshEpoch=0;
+ let binding=null,spec=null,epoch=0,revision=0,pending=null,applying=false,jobs=[],mapping=new Map(),refreshEpoch=0;
  const clone=v=>JSON.parse(JSON.stringify(v));
  const api=async(url,body)=>{const r=await fetch(url,body===undefined?{cache:'no-store'}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),data=await r.json();if(!r.ok)throw Error(data.error||'Request failed');return data;};
  const safe=fn=>async()=>{try{await fn();}catch(e){el('Status').textContent=e.message;}};
@@ -21,7 +21,7 @@ export function createNativeSupportEditor({getContext,document=globalThis.docume
  function intervals(){el('Intervals').replaceChildren();for(const r of spec.supports){const row=document.createElement('div'),text=document.createElement('span'),edit=document.createElement('button'),remove=document.createElement('button');row.className='rig-contact-row';text.textContent=`${r.id} · ${r.foot} · ${r.stance_s.join('–')} s · keys ${r.edit_keys.join('–')}`;edit.className=remove.className='btn';edit.type=remove.type='button';edit.textContent='Edit';remove.textContent='Remove';edit.onclick=()=>{el('Name').value=r.id;el('Foot').value=r.foot;clock();el('Start').value=r.stance_s[0];el('End').value=r.stance_s[1];el('First').value=String(r.edit_keys[0]);el('Last').value=String(r.edit_keys[1]);['NX','NY','NZ'].forEach((id,i)=>el(id).value=r.plane.normal_xyz[i]);el('Plane').value=r.plane.offset_m;for(const[id,k]of [['Clearance','clearance_m'],['Gap','maximum_gap_m'],['Displacement','maximum_displacement_m']])el(id).value=r[k]*1000;el('Angle').value=r.maximum_angle_degrees;};remove.onclick=()=>{spec.supports=spec.supports.filter(s=>s.id!==r.id);persist();intervals();};row.append(text,edit,remove);el('Intervals').append(row);}}
  async function bind(){
   reset();const context=getContext(),job=context.job,variant=context.variant;
-  if(!job?.id||!['input','transfer','corrected'].includes(variant))throw Error('Choose a saved character motion result and version first.');
+  if(!job?.id||!['input','transfer','corrected','native_review'].includes(variant))throw Error(variant==='native_review'?'Build the selected native candidate preview first.':'Choose a saved character motion result and version first.');
   const token=epoch;el('Binding').textContent='Checking selected clip and native rotation clocks…';
   const data=await api(`/api/native-support-source?job=${encodeURIComponent(job.id)}&variant=${encodeURIComponent(variant)}`);
   const current=getContext();if(token!==epoch||current.job?.id!==job.id||current.variant!==variant)return;
@@ -50,7 +50,7 @@ export function createNativeSupportEditor({getContext,document=globalThis.docume
   el('Jobs').replaceChildren(...jobs.map(j=>new Option(`${j.id} · ${j.status}${j.review?.retained_input?' · input retained':''}`,j.id)));if(jobs.some(j=>j.id===selected))el('Jobs').value=selected;
   el('Jobs').disabled=!jobs.length;el('Review').disabled=!jobs.find(j=>j.id===el('Jobs').value)?.review;
   if(pending){const j=jobs.find(j=>j.id===pending);if(j&&['complete','failed'].includes(j.status)){pending=null;el('Fields').disabled=!binding;el('Jobs').value=j.id;el('Review').disabled=!j.review;el('Status').textContent=j.status==='failed'?'Support job failed: '+j.error:j.review.retained_input?(j.review.preparation?'Prepared input retained: ':'Input retained: ')+j.review.retention_reason+'. Failed proposals remain available.':'Candidate met the sampled support and source-rate screens. Naturalness and other release checks remain unapproved.';}}
-  return data;
+  nativeChoice();return data;
  }
  el('Fit').onclick=safe(async()=>{
   if(!binding||!spec?.supports.length)throw Error('Add a stance interval first.');
@@ -61,10 +61,13 @@ export function createNativeSupportEditor({getContext,document=globalThis.docume
   if(el('Refine').checked)body.sampled_support_repair=true;
   el('Fields').disabled=true;try{const job=await api('/api/native-support-edits',body);pending=job.id;if(token===epoch&&draft===revision)el('Status').textContent='Native correction started; source and draft are frozen. A completed fit can retain the input.';await refresh();}finally{el('Fields').disabled=!!pending||!binding;}
  });
- el('Refresh').onclick=safe(refresh);el('Jobs').onchange=()=>{unload();el('Review').disabled=!jobs.find(j=>j.id===el('Jobs').value)?.review;};
+ function nativeChoice(){const report=jobs.find(j=>j.id===el('Jobs').value)?.review?.native_review_candidate;el('UseCorrection').hidden=!onNativeCandidate;el('UseCorrection').disabled=!onNativeCandidate||!report||!!pending||applying;return report;}
+ el('UseCorrection').onclick=safe(async()=>{if(pending||applying)throw Error('Wait for the current support operation');const report=nativeChoice();if(!report||!onNativeCandidate)throw Error('Choose a completed native support result');applying=true;nativeChoice();try{await onNativeCandidate(clone(report));}finally{applying=false;nativeChoice();}});
+ el('Refresh').onclick=safe(refresh);el('Jobs').onchange=()=>{unload();el('Review').disabled=!jobs.find(j=>j.id===el('Jobs').value)?.review;nativeChoice();};
  el('Review').onclick=()=>{const job=jobs.find(j=>j.id===el('Jobs').value);if(!panel.open||!job?.review)return;el('Frame').src=`/native-support-viewer.html?id=${encodeURIComponent(job.id)}&result=${job.review.result_sha256}`;el('Frame').hidden=false;};
  panel.addEventListener('toggle',()=>{if(panel.open)void safe(refresh)();else{++epoch;unload();}});
  const owner=panel.closest?.('.window');if(owner&&MutationObserver)new MutationObserver(()=>{if(owner.hidden)el('Frame').contentWindow?.postMessage('strep-native-pause',globalThis.location.origin);}).observe(owner,{attributes:true,attributeFilter:['hidden']});
+ nativeChoice();
  const timer=globalThis.setInterval?.(()=>{if(pending)void safe(refresh)();},2500);
  return {reset,bind,refresh,dispose(){globalThis.clearInterval?.(timer);reset();}};
 }

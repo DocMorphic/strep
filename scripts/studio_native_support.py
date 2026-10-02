@@ -11,6 +11,14 @@ NAMESPACE = 'native-support-jobs'
 NAME = re.compile(r'[A-Za-z0-9_-]{1,100}')
 
 
+def source(job, variant):
+    if variant=='native_review':
+        from native_review_support import source as native_source
+        return native_source(job)
+    from rig_contact_authoring import source as rig_source
+    return rig_source(job,variant)
+
+
 def folder_for(job):
     if not isinstance(job, str) or not NAME.fullmatch(job): raise ValueError('Invalid native support job')
     base=(ROOT/'reports'/NAMESPACE).resolve(); folder=(base/job).resolve()
@@ -19,7 +27,6 @@ def folder_for(job):
 
 
 def metadata(job, variant):
-    from rig_contact_authoring import source
     from rig_asset import RigAsset
     from native_support_clock import NativeSupportSampler
     _, result, _, report, glb = source(job, variant)
@@ -42,11 +49,11 @@ def metadata(job, variant):
         joints=[dict(node=n, name=rig.document['nodes'][n].get('name'), parent=rig.parents[n], **tracks.get(n, {})) for n in rig.joints],
         root_node=report['root_node'], mapping={k:v for k,v in report['mapping'].items() if k in
             {s+n for s in ('Left','Right') for n in ('Leg','Shin','Foot')}},
-        source_url=f'/files/rig-jobs/{job}/{variant}/character.glb', quality_approved=False)
+        source_url=f'/files/native-correction-previews/{job}/candidate.glb' if variant=='native_review' else f'/files/rig-jobs/{job}/{variant}/character.glb',
+        native_review_selection=result.get('native_review_selection'),quality_approved=False)
 
 
 def validate_request(payload):
-    from rig_contact_authoring import source
     from rig_asset import RigAsset
     from native_support_clock import NativeSupportSampler
     from native_support_spec import validate
@@ -85,9 +92,17 @@ def prepare(payload, folder):
         sampled_support_repair=payload.get('sampled_support_repair',False),
         sampled_support_iterations=8 if payload.get('sampled_support_repair',False) else None,
         fit_folder='native-support-fit-'+folder.name, quality_approved=False)
+    if payload['variant']=='native_review':
+        from native_review_support import method_names
+        _,native,_,_,_=source(payload['source_job'],payload['variant'])
+        request['native_review_selection']=native['native_review_selection']
+        request['native_review_methods']={name:sha256(Path(__file__).parent/name) for name in method_names()}
     save(folder/'request.json', request)
     archive=folder/'implementation';archive.mkdir()
     shutil.copyfile(__file__,archive/'studio_native_support.py')
+    for name,digest in request.get('native_review_methods',{}).items():
+        shutil.copyfile(Path(__file__).parent/name,archive/name)
+        if sha256(archive/name)!=digest:raise ValueError('Native bridge method changed during snapshot')
     save(folder/'prepared.json', dict(request_sha256=sha256(folder/'request.json'),wrapper_sha256=sha256(archive/'studio_native_support.py')))
     save(folder/'pipeline.json', dict(status='starting'))
     return request
@@ -105,6 +120,16 @@ def frozen(folder):
         raise ValueError('Changed native support snapshot')
     if sha256(folder/'implementation/studio_native_support.py')!=prepared['wrapper_sha256']:
         raise ValueError('Changed support wrapper archive')
+    if request['variant']=='native_review':
+        from native_review_support import method_names
+        if set(request.get('native_review_methods',{}))!=set(method_names()):raise ValueError('Native bridge method binding required')
+        for name,digest in request['native_review_methods'].items():
+            if sha256(folder/'implementation'/name)!=digest:raise ValueError('Changed native bridge method archive')
+        _,native,_,_,glb=source(request['source_job'],request['variant'])
+        if native['native_review_selection']!=request.get('native_review_selection') or sha256(glb)!=request['source_sha256']:
+            raise ValueError('Changed native support parent selection')
+    elif 'native_review_selection' in request or 'native_review_methods' in request:
+        raise ValueError('Unexpected native support binding')
     return request
 
 
@@ -149,6 +174,8 @@ def run(folder):
         save(folder/'worker.json', dict(pid=os.getpid(),created_at=psutil.Process().create_time()))
         request = frozen(folder); method=sha256(__file__)
         if method!=read(folder/'prepared.json')['wrapper_sha256']:raise ValueError('Support wrapper changed before fitting')
+        for name,digest in request.get('native_review_methods',{}).items():
+            if sha256(Path(__file__).parent/name)!=digest:raise ValueError('Native bridge method changed before fitting')
         save(folder/'pipeline.json', dict(status='processing'))
         from native_support_job import run as fit
         # Load numerical libraries before setting their limits. A context
@@ -168,13 +195,19 @@ def run(folder):
             source,draft,preparation=fitting_binding(folder,request)
             options=dict(sampled_support_repair=True,sampled_support_iterations=8) if request.get('sampled_support_repair',False) else {}
             fit(source,draft,output,**options)
+        if request['variant']=='native_review':
+            from native_review_support import convert
+            convert(folder,request,output)
         frozen(folder)
         fitting_binding(folder,request)
+        for name,digest in request.get('native_review_methods',{}).items():
+            if sha256(Path(__file__).parent/name)!=digest:raise ValueError('Native bridge method changed during fitting')
         if sha256(__file__)!=method:raise ValueError('Support wrapper changed during fitting')
         save(folder/'completion.json', dict(result_sha256=sha256(output/'result.json'),
             preparation_binding_sha256=sha256(folder/'preparation-binding.json') if preparation else None,
             numerical_runtime_sha256=sha256(folder/'numerical-runtime.json'),
-            request_sha256=sha256(folder/'request.json'), quality_approved=False))
+            request_sha256=sha256(folder/'request.json'),
+            native_conversion_sha256=sha256(folder/'native-conversion.json') if request['variant']=='native_review' else None,quality_approved=False))
         save(folder/'pipeline.json', dict(status='complete',finished_at=now()))
     except Exception as exc:
         save(folder/'pipeline.json', dict(status='failed',error=str(exc),finished_at=now())); raise
@@ -235,7 +268,20 @@ def manifest(job):
         if name not in result['outputs']: continue
         if trial.get('sha256') and result['outputs'][name] != trial['sha256']: raise ValueError('Changed proposal binding')
         versions.append(asset(name,f"Proposal {trial['trial']+1} · "+('screens met' if trial.get('source_rates_pass') and trial.get('support_samples_pass') else 'failed / rejected checks'), trial=screen))
+    native_candidate=None
+    if request['variant']=='native_review':
+        if sha256(folder/'native-conversion.json')!=completion.get('native_conversion_sha256'):raise ValueError('Changed native conversion receipt')
+        native_candidate=read(folder/'native-conversion.json')
+        if native_candidate.get('schema')!='strep-native-support-conversion-v1' or native_candidate['selection']!=request['native_review_selection'] or any(native_candidate.get(k) is not False for k in ('quality_approved','training_admitted','release_approved')):
+            raise ValueError('Changed native conversion selection or approval')
+        for key,name in (('candidate_motion','native-candidate.npz'),('proposal','native-proposal.npz')):
+            ref=native_candidate[key]
+            if Path(ref['path']).resolve()!=folder/name or sha256(folder/name)!=ref['sha256']:raise ValueError('Changed native conversion pose tracks')
+        from studio_correction_review import served_preview
+        preview=native_candidate['preview'];path=served_preview(preview['preview_url'].removeprefix('/files/'))
+        if path is None or sha256(path)!=preview['preview_sha256']:raise ValueError('Changed native support candidate preview')
     return dict(id=job, duration_s=spec['duration_s'], supports=spec['supports'], versions=versions,preparation=preparation,
+        native_review_candidate=native_candidate,
         refinement=dict(iterations=8) if refined else None,
         result_sha256=completion['result_sha256'], result_url=base+'result.json',
         events_url=base+'support-events.json', root_url=base+'root-motion.json',

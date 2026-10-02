@@ -7,7 +7,8 @@ import {createSceneReleaseEditor} from '/scene-release-editor.js';
 import {createNativeReviewPanel} from '/native-review-panel.mjs';
 createNativeReviewPanel();
 import {createCorrectionReviewPanel} from '/correction-review-panel.mjs';
-createCorrectionReviewPanel({createPlayer:async options=>{const {createNativeReferencePlayer}=await import('/native-reference-player.mjs');return createNativeReferencePlayer(options);}});
+import {createNativeSupportEditor} from '/native-support-editor.mjs';
+createCorrectionReviewPanel({createSupportEditor:createNativeSupportEditor,createPlayer:async options=>{const {createNativeReferencePlayer}=await import('/native-reference-player.mjs');return createNativeReferencePlayer(options);}});
 import {createSceneRegionEditor,sceneRateDetails,sceneSupportDetails,sceneWindowDetails} from '/scene-region-editor.js';
 import {createSceneGripPicker,sceneObjectPose} from '/scene-grip-picker.js';
 // Markers have native-frame samples; actor animation still uses its exact GLB curve.

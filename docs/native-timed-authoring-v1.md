@@ -110,3 +110,6 @@ These checks establish geometry and workflow behavior only. Real reviewed correc
 training data, demonstrated model improvement and the remaining scene, partner,
 rig, control and human release requirements remain unfinished. The full project
 goal stays active; no release capability is approved by this change.
+
+
+[Native foot-support fitting](native-review-support-v1.md) now connects checked candidates to the existing bounded fitter, converts results back to native NPZ and rechecks serialized support/motion screens. Use of a converted result is explicit; rejected proposals remain visible and human contact labels stay unknown.
