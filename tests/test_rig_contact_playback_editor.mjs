@@ -18,12 +18,15 @@ const spec={glb_sha256:'a'.repeat(64),frames:7,patches:{wrist:{vertices:[0]}},co
 let metadata={job_id:'parent',variant:'transfer',glb_sha256:spec.glb_sha256,frames:7,fps:30,spec,primitives:[],verification_vertices:[],editable_joints:[],playback_fit:{available:true,defaults}};
 let current={job:{id:'parent',label:'Synthetic'},result:{kind:'rough_import'},variant:'transfer',frame:0,model:{updateMatrixWorld(){},traverse(){}}};
 const storage=new Map(),calls=[],messages=[],seeks=[],fits=[];let pending=null,failStorage=false,apiPending=null;
-class Geometry {setFromPoints(){return this;}}
+class Geometry {constructor(){this.attributes={};}setFromPoints(){return this;}getAttribute(k){return this.attributes[k];}setAttribute(k,v){this.attributes[k]=v;}computeBoundingSphere(){}}
 class Object3D {constructor(geometry){this.geometry=geometry;this.position={set(){}};}}
-const THREE={Points:Object3D,LineSegments:Object3D,BufferGeometry:Geometry,PointsMaterial:class{},LineBasicMaterial:class{},Vector3:class{}};
+class Vector3 {constructor(x=0,y=0,z=0){this.set(x,y,z);}set(x,y,z){Object.assign(this,{x,y,z});return this;}applyMatrix4(m){this.x+=m.shift[0];this.y+=m.shift[1];this.z+=m.shift[2];return this;}}
+class Attribute {constructor(array,size){this.array=array;this.count=array.length/size;}setXYZ(i,x,y,z){this.array.set([x,y,z],i*3);}}
+const THREE={Points:Object3D,LineSegments:Object3D,BufferGeometry:Geometry,PointsMaterial:class{},LineBasicMaterial:class{},Vector3,Float32BufferAttribute:Attribute};
+const sceneNodes=[];
 const sandbox={structuredClone,URLSearchParams,document:{createElement:()=>new Element(),createTextNode:text=>({textContent:text})},Option:class extends Element{constructor(text,value){super();this.textContent=text;this.value=value;}},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>{if(failStorage)throw Error('full');storage.set(k,v);}}};
 vm.createContext(sandbox);vm.runInContext(source+'\nglobalThis.createEditor=createRigContactEditor;',sandbox);
-const editor=sandbox.createEditor({C,THREE,canvas:new Element(),scene:{add(){}},camera:{},controls:{},
+const editor=sandbox.createEditor({C,THREE,canvas:new Element(),scene:{add(node){sceneNodes.push(node);}},camera:{},controls:{},
  api:async()=>apiPending?await apiPending:structuredClone(metadata),post:async(url,payload)=>{calls.push({url,payload});return pending?await pending:{id:'edit'};},
  status:m=>messages.push(m),getContext:()=>current,pause(){},seek:f=>seeks.push(f),onFit:j=>fits.push(j)});
 const open=()=>C('rigEditContacts').onclick();
@@ -89,4 +92,33 @@ assert(C('rigContactPanel').hidden);
 const studio=await readFile(new URL('../scripts/character-studio.js',import.meta.url),'utf8');
 assert(studio.includes('playback_contact_fit'));assert(studio.includes('Saved fitting choice'));assert(studio.includes('Playback contact review'));
 assert(html.replace(/\r\n/g,'\n').includes(source.replace(/\r\n/g,'\n')),'Generated page includes the tested editor source');
-console.log('Studio playback editor: explicit options and interval clocks, deletion/remapping, contact-bound persistence, periodic/legacy rejection, snapshots, submission lock and stale diagnostics pass. DOM/source only; no browser or GPU.');
+// Bone-region drafts are read-only until explicitly applied, and retain timing.
+metadata.vertex_count=3;metadata.editable_joints=[{node:3,label:'Foot'}];metadata.primitives=[{node:99,primitive:0,vertex_offset:0,vertices:3}];
+const regionMesh={isMesh:true,parent:null,matrixWorld:{shift:[2,3,4]},geometry:{getAttribute:()=>({count:3})},getVertexPosition:(i,target)=>target.set(i*.1,i*.2,-i*.3)};
+current.model={updateMatrixWorld(){},traverse(fn){fn(regionMesh);}};current.loaded={parser:{associations:new Map([[regionMesh,{nodes:99,primitives:0}]])}};
+await open();C('rigRegionBone').value='3';
+const patchBefore=C('rigPatchVertices').value,clockBefore=C('rigFitClock').value;
+const resultFor=request=>({schema:request.schema,selector:Object.fromEntries(Object.entries(request).reverse()),vertex_count:3,
+ matched_count:2,vertices:[0,2],selection_limit:256,can_apply:true,requires_review:true,anatomy_verified:false,quality_approved:false,bounds_world_m:{min:[0,0,0],max:[1,1,1]}});
+async function regionPreview(transform=x=>x){pending=new Promise(r=>resolve=r);const task=C('rigRegionPreview').onclick();const request=structuredClone(calls.at(-1).payload);resolve(transform(resultFor(request)));await task;pending=null;return request;}
+const regionRequest=await regionPreview();assert.equal(calls.at(-1).url,'/api/rig-patch-selection');assert.equal(regionRequest.box_world_m,null);
+assert.equal(C('rigPatchVertices').value,patchBefore,'Preview retains old patch');assert(!C('rigRegionApply').disabled);
+editor.update();assert(sceneNodes[1].visible);const cyan=sceneNodes[1].geometry.getAttribute('position');assert.equal(cyan.count,2);
+for(const [i,want] of [2,3,4,2.2,3.4,3.4].entries())assert(Math.abs(cyan.array[i]-want)<3e-7,'Cyan indices use displayed world transforms');
+await C('rigRegionApply').onclick();assert.equal(C('rigPatchVertices').value,'0, 2');assert.equal(C('rigFitClock').value,clockBefore);assert(C('rigRegionApply').disabled);
+editor.update();assert(!sceneNodes[1].visible);assert.equal(sceneNodes[0].geometry.getAttribute('position').count,2);
+// No partial sampling of an oversized region, no empty/malformed application.
+await regionPreview(r=>({...r,matched_count:257,vertices:[],can_apply:false}));assert(C('rigRegionApply').disabled);assert.match(C('rigRegionInfo').textContent,/not sampled down/);
+await C('rigRegionApply').onclick();assert.equal(C('rigPatchVertices').value,'0, 2');
+await regionPreview(r=>({...r,matched_count:0,vertices:[],can_apply:false,bounds_world_m:null}));assert(C('rigRegionApply').disabled);
+await regionPreview(r=>({...r,vertices:[0,0]}));assert(C('rigRegionApply').disabled);assert.match(messages.at(-1),/Invalid bone-region/);
+await regionPreview(r=>({...r,quality_approved:true}));assert(C('rigRegionApply').disabled);
+// Recursive comparison includes box bounds even without firing onchange.
+C('rigRegionBox').checked=true;await regionPreview();C('rigRegionMaxX').value='0.75';
+await C('rigRegionApply').onclick();assert.match(messages.at(-1),/Preview.*again/);assert.equal(C('rigPatchVertices').value,'0, 2');
+await regionPreview();current.frame=.5;await C('rigRegionApply').onclick();assert.match(messages.at(-1),/Preview.*again/);current.frame=0;
+// Draft changes and source reset invalidate late results; duplicate clicks do not submit.
+pending=new Promise(r=>resolve=r);const regionTask=C('rigRegionPreview').onclick(),regionCount=calls.length,late=structuredClone(calls.at(-1).payload);
+await C('rigRegionPreview').onclick();assert.equal(calls.length,regionCount);C('rigRegionWeight').value='0.6';C('rigRegionWeight').onchange();resolve(resultFor(late));await regionTask;pending=null;assert(C('rigRegionApply').disabled);
+pending=new Promise(r=>resolve=r);const resetTask=C('rigRegionPreview').onclick(),resetRequest=structuredClone(calls.at(-1).payload);editor.reset();resolve(resultFor(resetRequest));await resetTask;pending=null;assert(C('rigRegionApply').disabled);
+console.log('Studio playback/region editor: interval choices, binding, source isolation, explicit region application, nested box/frame guards, oversized/empty/malformed rejection, late responses and duplicate submission pass. DOM/source only; no browser or GPU.');

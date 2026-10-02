@@ -137,6 +137,7 @@ jobs:
           tests/test_mesh_interval_clocks.py
           tests/test_studio_mesh_playback.py
           tests/test_rig_contact_timing_edits.py
+          tests/test_rig_patch_selection.py
           tests/test_temporal_basis.py
           tests/test_imported_skin_evidence.py
           tests/test_imported_skin_reconstruction.py

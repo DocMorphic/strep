@@ -35,6 +35,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Contact timing through edits](docs/mesh-contact-timing-edits-v1.md) preserves surviving choices through trim, speed, pose and marker edits. Joins, loops and mirrors retain timing with review targets; blended or reflected targets still need re-authoring and fitting.
 
+[Bone-region drafts](docs/rig-patch-selection-v1.md) help select contact vertices on supplied rigs, with optional child bones and a box at the displayed pose. Explicit preview/apply and oversized-region rejection preserve author control; deformation weights do not establish anatomical contact surfaces.
+
 [Between-key support refinement](docs/native-support-sampled-repair-v1.md) repairs the measured dance/get-up contact-bound failures with exact replay and actual engine checks. All final motion-rate selections still fail and inputs remain retained; the option is available in Studio and the CLI.
 
 [Explicit Studio rig preparation](docs/studio-support-preparation-v1.md) keeps original and derived clips separate and measures tiny static-scale changes before fitting. [Broader support diagnostics](docs/native-support-action-breadth-v1.md) cover six existing development actions on three assets; failed authoring, support and rate checks remain visible.
