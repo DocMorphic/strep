@@ -58,7 +58,7 @@ def run():
             objective='Minimize worst normalized target violation; surface/support energy is not optimized in this feasibility stage.',
             checkpoint_unchanged=True,quality_approved=False))
         snapshot=OUT/'implementation';snapshot.mkdir();hashes={}
-        for name in ['study_pose_tolerances.py','rig_pose_tolerances.py','rig_coupled_pose.py','rig_pose_trajectory.py',
+        for name in ['study_pose_tolerances.py','rig_pose_tolerances.py','rig_coupled_pose.py','temporal_basis.py','rig_pose_trajectory.py',
                      'rig_trajectory_fit.py','rig_clearance_fit.py','target_rig_contact.py','rig_periodic_contact.py',
                      'rig_loop.py','support_contact_v5.py','verify_pose_trajectory.py','verify_pose_tolerance_study.py',
                      'verify_coupled_pose.py','verify_trajectory_fit.py']:

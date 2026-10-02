@@ -124,7 +124,7 @@ class CoupledPoseFitter:
 def window_basis(envelope, spacing=10):
     # Reuse the existing cubic interpolation controls, with an explicit fixed
     # context envelope and per-frame hard bounds to contain spline overshoot.
-    from support_contact_v5 import correction_basis
+    from temporal_basis import correction_basis
     envelope=np.asarray(envelope,float)
     if envelope.ndim!=1 or not np.isfinite(envelope).all() or np.any((envelope<0)|(envelope>1)):
         raise ValueError('Finite unit edit envelope required')

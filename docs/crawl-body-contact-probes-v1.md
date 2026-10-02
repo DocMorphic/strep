@@ -89,3 +89,9 @@ anticipatory bounded trajectory correction. Broader body/scene/partner actions,
 semantic quality, clean import/playback, style/edit controls and human cleanup
 remain required. No training, new generation, formal reserved held-out usage or
 release approval occurred. All 14 release capabilities remain unapproved.
+
+The subsequent [coupled trajectory pilot](crawl-body-contact-coupled-v1.md)
+does anticipate these targets, but still fails contact limits and worsens
+floor penetration. It includes fresh actual Godot joint playback checks of
+the original and both candidates. Its retained failure motivates explicit
+floor/contact feasibility constraints, alongside reviewed patches/scheduling.

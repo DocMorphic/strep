@@ -54,7 +54,7 @@ def run():
             support_edge_min_radius_m=1e-5,target_margin_policy='min(0.001, half the initial minimum normalized target margin)',
             selection='Refine only reached targets; rejected original requests remain in the denominator. Posthoc development fixtures.',quality_approved=False))
         snapshot=OUT/'implementation';snapshot.mkdir();files={}
-        for name in ['study_target_refinement.py','rig_target_refinement.py','rig_pose_tolerances.py','rig_coupled_pose.py','rig_pose_trajectory.py',
+        for name in ['study_target_refinement.py','rig_target_refinement.py','rig_pose_tolerances.py','rig_coupled_pose.py','temporal_basis.py','rig_pose_trajectory.py',
                      'rig_trajectory_fit.py','rig_clearance_fit.py','target_rig_contact.py','rig_periodic_contact.py','rig_loop.py','support_contact_v5.py']:
             shutil.copyfile(ROOT/'scripts'/name,snapshot/name);files[name]=sha256(snapshot/name)
         save(OUT/'implementation.json',dict(created_at=now(),files=files))

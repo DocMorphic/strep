@@ -60,7 +60,7 @@ def run():
             return_policy='Best objective-decreasing feasible point; test segment backtracking if final endpoint is infeasible.')
         save(OUT/'protocol.json',protocol)
         snapshot=OUT/'implementation';snapshot.mkdir();digests={}
-        for name in ['study_coupled_pose.py','rig_coupled_pose.py','rig_pose_trajectory.py',
+        for name in ['study_coupled_pose.py','rig_coupled_pose.py','temporal_basis.py','rig_pose_trajectory.py',
                      'rig_trajectory_fit.py','rig_clearance_fit.py','target_rig_contact.py',
                      'rig_periodic_contact.py','rig_loop.py','support_contact_v5.py','verify_pose_trajectory.py']:
             shutil.copyfile(ROOT/'scripts'/name,snapshot/name);digests[name]=sha256(snapshot/name)

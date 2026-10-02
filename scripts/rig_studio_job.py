@@ -50,7 +50,7 @@ def run(folder):
             if request['kind']=='mirror_edit':
                 for name in ('rig_mirror.py','rig_mirror_edit.py'):shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
             if request['kind']=='joint_edit':
-                for name in ('rig_joint_recipe.py','rig_joint_edit.py','rig_pose_trajectory.py','rig_pose_tolerances.py','rig_target_refinement.py','rig_coupled_pose.py','rig_trajectory_fit.py','rig_clearance_fit.py','support_contact_v5.py'):
+                for name in ('rig_joint_recipe.py','rig_joint_edit.py','rig_pose_trajectory.py','rig_pose_tolerances.py','rig_target_refinement.py','rig_coupled_pose.py','temporal_basis.py','rig_trajectory_fit.py','rig_clearance_fit.py','support_contact_v5.py'):
                     shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
             if not imported:shutil.copyfile(ROOT/'vendor/kimodo/LICENSE',folder/'source/SOMA-code-LICENSE.txt')
             if request['kind']=='neutral':neutral(motion)

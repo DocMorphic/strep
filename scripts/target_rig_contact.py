@@ -14,8 +14,6 @@ from threadpoolctl import threadpool_limits
 from strep import read, save, sha256, now
 from rig_asset import RigAsset
 from gltf_tools import sample_animation, append_accessor, write_glb, local_matrix
-from correct_stance import load_motion
-from inspect_motion import validate_motion
 
 
 class SoleDraftUnsupported(ValueError):
