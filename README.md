@@ -135,3 +135,5 @@ Some tests require the separately acquired model, rig fixtures, or Godot executa
 See the [full project goal](docs/project-goal.md), [research plan](docs/research-plan.md), [source ledger](docs/source-ledger.md), and [historical development notes](DEVELOPMENT-HISTORY.md). Historical links into `reports/`, `runs/`, or localhost require the original local artifacts and are not included in this source snapshot.
 
 Completed changes are committed and pushed as development continues. See [the repository workflow](docs/github-workflow.md). Third-party licenses and access requirements remain separate from this repository's public visibility.
+
+The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) now verifies finite gradients for small frozen-base adapters on the acquired checkpoint within the local GPU's memory. It performs no training updates and establishes no motion-quality improvement; reviewed licensed correction data and an evaluated trainer remain necessary.
