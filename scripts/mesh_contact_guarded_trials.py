@@ -35,6 +35,7 @@ class GuardedMeshTrials:
                 contact.append(1-float(np.linalg.norm(points[ids].mean(axis=0)-target['target_position_m']))/f.spec['screen']['contact_error_m'])
         if self.playback is not None:
             playback_floor=self.playback.values(controls);floor.extend(playback_floor.tolist())
+            contact.extend(self.playback.contact_values(controls).tolist())
             if playback_floor.min()<self.margin:
                 extra=self.playback.lift(controls,self.margin)
                 if extra is None:rescuable=False

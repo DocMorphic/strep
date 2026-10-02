@@ -18,6 +18,8 @@ from rig_loop import encode
 from inspect_rig_contacts import inspect
 from strep import read, save, sha256, now
 from rig_subframe_floor import inspect as inspect_subframe_floor
+from rig_subframe_contacts import inspect as inspect_subframe_contacts
+from mesh_contact_clock import CONTACT_CLOCKS,validate_clock
 
 
 class MeshContactTrajectoryFitter(TrajectoryFitter):
@@ -78,10 +80,10 @@ METHODS = ('rig_mesh_trajectory.py', 'rig_coupled_pose.py', 'rig_trajectory_fit.
            'rig_clearance_fit.py', 'target_rig_contact.py', 'rig_periodic_contact.py',
            'rig_asset.py', 'rig_loop.py', 'rig_transition.py', 'gltf_tools.py',
            'temporal_basis.py', 'mesh_contact_feasibility.py', 'mesh_contact_guarded_trials.py', 'inspect_rig_contacts.py',
-           'rig_subframe_floor.py', 'native_support_clock.py', 'rig_clip_import.py', 'mesh_contact_playback.py', 'strep.py')
+           'rig_subframe_floor.py', 'native_support_clock.py', 'rig_clip_import.py', 'mesh_contact_playback.py', 'mesh_contact_clock.py', 'rig_subframe_contacts.py', 'strep.py')
 
 
-def _run(source, draft, output, spacing=10, max_iterations=60, feasibility=False, floor_iterations=30, guarded_trials=False, playback_guards=False, _owned_output=None):
+def _run(source, draft, output, spacing=10, max_iterations=60, feasibility=False, floor_iterations=30, guarded_trials=False, playback_guards=False, contact_clock='authored-keys', _owned_output=None):
     source, draft, output = map(lambda p: Path(p).resolve(), (source, draft, output))
     if type(spacing) is not int or not 1<=spacing<=120:
         raise ValueError('Control spacing must be 1–120 frames')
@@ -90,6 +92,8 @@ def _run(source, draft, output, spacing=10, max_iterations=60, feasibility=False
     if type(feasibility) is not bool:raise ValueError('Explicit feasibility choice required')
     if type(guarded_trials) is not bool or guarded_trials and not feasibility:raise ValueError('Guarded trials require explicit feasibility mode')
     if type(playback_guards) is not bool or playback_guards and not guarded_trials:raise ValueError('Playback guards require guarded trials')
+    validate_clock(contact_clock)
+    if contact_clock!='authored-keys' and not playback_guards:raise ValueError('Frame-hold contacts require playback guards')
     if type(floor_iterations) is not int or not 1<=floor_iterations<=200:
         raise ValueError('Floor iteration budget must be 1–200')
     inputs = {str(source): sha256(source), str(draft): sha256(draft)}
@@ -115,6 +119,7 @@ def _run(source, draft, output, spacing=10, max_iterations=60, feasibility=False
          feasibility=feasibility,floor_iterations=floor_iterations if feasibility else None,
          guarded_trials=guarded_trials,
          playback_guards=playback_guards,
+         contact_clock=contact_clock,decoded_contact_sampling_hz=120,
          decoded_floor_sampling_hz=120,
          objective=('Restore floor, then pursue contact feasibility with floor held hard; original energy reported only'
                     if feasibility else 'Original mesh contact/floor/edit priors and adjacent edit differences, all frames coupled'),
@@ -124,7 +129,7 @@ def _run(source, draft, output, spacing=10, max_iterations=60, feasibility=False
         save(output/'numerical-runtime.json', dict(pools=threadpool_info()))
         if feasibility:
             from mesh_contact_feasibility import MeshContactFeasibility
-            values,trace,summary=MeshContactFeasibility(coupled,guarded_trials,playback_guards).solve(output,floor_iterations,max_iterations)
+            values,trace,summary=MeshContactFeasibility(coupled,guarded_trials,playback_guards,contact_clock=contact_clock).solve(output,floor_iterations,max_iterations)
         else:values, trace, summary = coupled.solve(output, max_iterations=max_iterations)
     evidence = audit(rig, spec, before, fitter.world, values, [dict(success=summary['solver_success'])])
     animated = {c['target']['node'] for c in rig.document['animations'][0]['channels']} | set(fitter.nodes)
@@ -132,6 +137,8 @@ def _run(source, draft, output, spacing=10, max_iterations=60, feasibility=False
                               output/'candidate.glb', 'Experimental coupled mesh contact candidate')
     decoded_spec = copy.deepcopy(spec); decoded_spec['glb_sha256'] = sha256(output/'candidate.glb')
     independent = inspect(output/'candidate.glb', decoded_spec)
+    playback_contacts=inspect_subframe_contacts(output/'candidate.glb',decoded_spec,contact_clock)
+    save(output/'playback-contact-inspection.json',playback_contacts)
     subframe_floor = inspect_subframe_floor(output/'candidate.glb', spec['screen']['floor_depth_m'])
     save(output/'subframe-floor-inspection.json', subframe_floor)
     if independent['floor_frames_failed'] or independent['failed_intervals']:
@@ -140,6 +147,9 @@ def _run(source, draft, output, spacing=10, max_iterations=60, feasibility=False
     if not subframe_floor['sampled_floor_passed']:
         evidence['numerical_screen_passed'] = False
         evidence['flags'].append('decoded_subframe_floor_screen_failed')
+    if not playback_contacts['sampled_contacts_passed']:
+        evidence['numerical_screen_passed']=False
+        evidence['flags'].append('decoded_contact_clock_screen_failed')
     if summary['constraint_min'] < -1e-8:
         evidence['numerical_screen_passed'] = False; evidence['flags'].append('coupled_constraint_failed')
     np.savez_compressed(output/'fit.npz', before=before, after=fitter.world,
@@ -169,9 +179,9 @@ def _run(source, draft, output, spacing=10, max_iterations=60, feasibility=False
     return result
 
 
-def run(source, draft, output, spacing=10, max_iterations=60, feasibility=False, floor_iterations=30, guarded_trials=False, playback_guards=False):
+def run(source, draft, output, spacing=10, max_iterations=60, feasibility=False, floor_iterations=30, guarded_trials=False, playback_guards=False, contact_clock='authored-keys'):
     output=Path(output).resolve();owned={}
-    try:return _run(source,draft,output,spacing,max_iterations,feasibility,floor_iterations,guarded_trials,playback_guards,owned)
+    try:return _run(source,draft,output,spacing,max_iterations,feasibility,floor_iterations,guarded_trials,playback_guards,contact_clock,owned)
     except Exception as exc:
         if owned.get('created'):
             save(output/'failure.json',dict(at=now(),error_type=type(exc).__name__,error=str(exc),quality_approved=False))
@@ -190,6 +200,7 @@ if __name__ == '__main__':
     parser.add_argument('--floor-iterations',type=int,default=30)
     parser.add_argument('--guarded-trials',action='store_true')
     parser.add_argument('--playback-guards',action='store_true')
+    parser.add_argument('--contact-clock',choices=CONTACT_CLOCKS,default='authored-keys')
     args = parser.parse_args()
     from action_worker_lock import worker_lock
-    with worker_lock(): run(args.source, args.spec, args.output, args.spacing, args.iterations,args.feasibility,args.floor_iterations,args.guarded_trials,args.playback_guards)
+    with worker_lock(): run(args.source, args.spec, args.output, args.spacing, args.iterations,args.feasibility,args.floor_iterations,args.guarded_trials,args.playback_guards,args.contact_clock)

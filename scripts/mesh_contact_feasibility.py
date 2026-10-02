@@ -6,12 +6,15 @@ floor constraint, not a smooth collision approximation or feasibility proof.
 import numpy as np
 from scipy.optimize import minimize
 from strep import save
+from mesh_contact_clock import validate_clock
 
 
 class MeshContactFeasibility:
-    def __init__(self, coupled, guarded_trials=False, playback_guards=False, _protected=None):
+    def __init__(self, coupled, guarded_trials=False, playback_guards=False, _protected=None, contact_clock='authored-keys'):
         if type(guarded_trials) is not bool:raise ValueError('Explicit guarded trial choice required')
         if type(playback_guards) is not bool or playback_guards and not guarded_trials:raise ValueError('Playback guards require guarded trials')
+        self.contact_clock=validate_clock(contact_clock)
+        if contact_clock!='authored-keys' and not playback_guards:raise ValueError('Frame-hold contacts require playback guards')
         self.coupled=coupled
         if not coupled.fitter.spec['contacts']:raise ValueError('Explicit contact targets required')
         self.margin=.01
@@ -20,14 +23,15 @@ class MeshContactFeasibility:
         self.cached=None;self.cached_pair=None
         if playback_guards:
             from mesh_contact_playback import MeshPlaybackFloor
-            self.playback=MeshPlaybackFloor(coupled)
+            self.playback=MeshPlaybackFloor(coupled,contact_clock=self.contact_clock)
             contacts=self.pair(np.zeros(np.prod(coupled.shape)))[2]
             groups=np.array([coupled.fitter.spec['contacts'].index(target) for active in coupled.fitter.active for target in active])
+            groups=np.r_[groups,self.playback.contact_groups]
             self.protected=(np.flatnonzero(np.isin(groups,[i for i in np.unique(groups) if np.all(contacts[groups==i]>=0)]))
                             if _protected is None else np.asarray(_protected,dtype=int).copy())
             if self.protected.ndim!=1 or np.any(self.protected<0) or np.any(self.protected>=len(contacts)) or len(set(self.protected))!=len(self.protected):
                 raise ValueError('Invalid protected contact layout')
-            if np.any(contacts[self.protected]<-1e-8):raise ValueError('Starting protected contacts must pass')
+            if np.any(contacts[self.protected]<0):raise ValueError('Starting protected contacts must pass')
 
     def pair(self, controls):
         if self.cached is not None and np.array_equal(controls,self.cached):return self.cached_pair
@@ -48,6 +52,8 @@ class MeshContactFeasibility:
         if self.playback is not None:
             playback_floor,playback_rows=self.playback.pair(controls)
             floors.extend(playback_floor.tolist());floor_rows.extend(playback_rows)
+            playback_contact,playback_contact_rows=self.playback.contact_pair(controls)
+            contacts.extend(playback_contact.tolist());contact_rows.extend(playback_contact_rows)
         self.cached_pair=(np.asarray(floors),np.asarray(floor_rows),np.asarray(contacts),np.asarray(contact_rows))
         self.cached=np.array(controls,copy=True)
         return self.cached_pair
@@ -56,7 +62,7 @@ class MeshContactFeasibility:
         floor,_,contact,_=self.pair(controls)
         return dict(floor_constraint_min=float(floor.min()),contact_constraint_min=float(contact.min()),
                     floor_reached=bool(floor.min()>=0),contacts_reached=bool(contact.min()>=0),
-                    protected_contacts_reached=bool(np.all(contact[self.protected]>=-1e-8)))
+                    protected_contacts_reached=bool(np.all(contact[self.protected]>=0)))
 
     def phase(self, output, name, budget):
         if type(budget)is not int or not 1<=budget<=200:raise ValueError('Feasibility budget must be 1–200')
@@ -76,7 +82,7 @@ class MeshContactFeasibility:
             np.savez_compressed(output/(name+'-trials.npz'),warm_parameters=c.initial,basis=c.basis,
                                 controls=np.asarray(probes).reshape(-1,len(zero)),selected_controls=best,
                                 protected_contact_indices=self.protected)
-            save(output/(name+'-trials.json'),dict(phase=name,records=probe_records,quality_approved=False,
+            save(output/(name+'-trials.json'),dict(phase=name,contact_clock=self.contact_clock,records=probe_records,quality_approved=False,
                 aborted=bool(summary.get('aborted',False)),error_type=summary.get('error_type'),error=summary.get('error')))
             summary['guarded_trials']=dict(probes=len(probes),retained_updates=retained,
                 controls_file=name+'-trials.npz',records_file=name+'-trials.json')
@@ -100,7 +106,7 @@ class MeshContactFeasibility:
             if observed is None:floor,_,contact,_=self.pair(x)
             else:floor,contact=observed
             if record is not None:record.update(floor_min=float(floor.min()),contact_min=float(contact.min()),motion_min=motion)
-            if np.any(contact[self.protected]<-1e-8):
+            if np.any(contact[self.protected]<0):
                 if record is not None:record['reason']='protected_contact'
                 return
             if name=='contacts' and floor.min()<margin-1e-8:
@@ -176,10 +182,10 @@ class MeshContactFeasibility:
         if floor['floor_constraint_min']>=self.margin-1e-8:
             from rig_mesh_trajectory import CoupledMeshContactFitter
             next_coupled=CoupledMeshContactFitter(f,c.basis)
-            next_stage=MeshContactFeasibility(next_coupled,self.guarded_trials,self.playback_guards,self.protected)
+            next_stage=MeshContactFeasibility(next_coupled,self.guarded_trials,self.playback_guards,self.protected,self.contact_clock)
             _,contact_trace,contact=next_stage.phase(output,'contacts',contact_iterations)
             trace.extend(contact_trace)
-        final=MeshContactFeasibility(type(c)(f,c.basis),self.guarded_trials,self.playback_guards,self.protected)
+        final=MeshContactFeasibility(type(c)(f,c.basis),self.guarded_trials,self.playback_guards,self.protected,self.contact_clock)
         zero=np.zeros(np.prod(final.coupled.shape));metrics=final.metrics(zero)
         summary=dict(method='floor_restoration_then_floor_guarded_contact_feasibility',
             solver_success=bool(floor['solver_success'] and contact is not None and contact['solver_success']),
@@ -189,6 +195,7 @@ class MeshContactFeasibility:
             phases=dict(floor=floor,contacts=contact),target_interior_margin=self.margin,
             guarded_trials=self.guarded_trials,
             playback_guards=self.playback_guards,protected_contact_indices=self.protected.tolist(),
+            contact_clock=self.contact_clock,
             contact_phase_skipped=contact is None,**metrics,
             sampled_constraints_reached=metrics['floor_reached'] and metrics['contacts_reached'],
             infeasibility_proven=False,quality_approved=False)

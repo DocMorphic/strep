@@ -71,11 +71,11 @@ def test_protected_input_contact_survives_pursuit_of_an_unreachable_target(tmp_p
     spec['contacts'].append(dict(patch=spec['contacts'][0]['patch'],start_frame=4,end_frame_exclusive=5,target_position_m=[0.,-2.,0.]))
     f=MeshContactTrajectoryFitter(f.rig,spec,f.local,np.ones(7));c=CoupledMeshContactFitter(f,c.basis)
     stage=MeshContactFeasibility(c,True,True)
-    assert stage.protected.tolist()==[0]
+    assert stage.protected.tolist()==[0,2]
     with threadpool_limits(limits=1):values,_,result=stage.solve(tmp_path,3,6)
     assert result['protected_contacts_reached'] and result['floor_reached'] and not result['contacts_reached']
     records=read(tmp_path/'contacts-trials.json')['records'];data=np.load(tmp_path/'contacts-trials.npz',allow_pickle=False)
-    assert data['protected_contact_indices'].tolist()==[0]
+    assert data['protected_contact_indices'].tolist()==[0,2]
     for r in records:
         if r['status']=='retained':
             parameters=data['warm_parameters']+data['basis']@data['controls'][r['index']].reshape(c.shape)

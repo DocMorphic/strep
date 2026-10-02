@@ -133,6 +133,7 @@ jobs:
           tests/test_mesh_guarded_trials.py
           tests/test_rig_subframe_floor.py
           tests/test_mesh_playback_guards.py
+          tests/test_mesh_contact_clock.py
           tests/test_temporal_basis.py
           tests/test_imported_skin_evidence.py
           tests/test_imported_skin_reconstruction.py
