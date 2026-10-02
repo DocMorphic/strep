@@ -91,6 +91,10 @@ def test_conversion_changes_only_authored_leg_channels_with_numerical_screen_fix
         assert 'foot_contacts' not in converted.files
     assert all(result[k] is False for k in ('quality_approved','training_admitted','release_approved'))
     assert result['preview']['selection']['candidate_motion']==result['candidate_motion']
+    assert result['selected_contact_diagnostics']['changes_acceptance_gates'] is False
+    assert result['selected_contact_diagnostics']['supports']
+    assert result['proposal_contact_diagnostics']['supports']
+    assert read(result['selected_support_events']['path'])['target_clip_sha256']==result['preview']['preview_sha256']
 
 
 def test_cumulative_bound_failure_retains_actual_source_and_failed_native_proposal(native):
@@ -124,7 +128,10 @@ def test_real_native_wrapper_retains_unreachable_synthetic_input_and_conversion(
     assert result['retained_input'] and not result['output_support_samples_pass']
     assert converted['retained_input'] and not converted['selected_support_samples_pass']
     assert converted['selection']==selection and all(t['status']=='rejected' for t in result['trials'])
-    assert len(result['versions'])==2
+    assert len(result['versions'])==3
+    assert result['versions'][1]['id']=='native-selected'
+    markers=support.served_file(result['events_url'].removeprefix('/files/'))
+    assert markers and read(markers)['target_clip_sha256']==converted['preview']['preview_sha256']
     for ref in (converted['candidate_motion'],converted['proposal']):assert sha256(ref['path'])==ref['sha256']
     Path(converted['candidate_motion']['path']).write_bytes(b'changed')
     with pytest.raises(ValueError,match='pose tracks'):support.manifest('actual-fixture')
@@ -145,3 +152,36 @@ def test_real_serialized_screens_override_mock_fitter_pass_and_retain_input(nati
     assert result['retained_input'] and result['retention_reason']=='native_serialized_support_screens_failed'
     assert not result['selected_support_samples_pass']
     assert result['proposal_preview']['selection']['candidate_motion']==result['proposal']
+
+
+def test_studio_native_decision_and_markers_follow_conversion_not_mock_fitter_pass(native,monkeypatch):
+    setup,selection,preview,body=native
+    original=fitter.run
+    def mock_fitter_pass(*args,**kwargs):
+        result=original(*args,**kwargs)
+        # Deliberately false fitter approval: the independent conversion must
+        # still govern the Studio decision, selected clip and event status.
+        result.update(retained_input=False,retention_reason=None,output_support_samples_pass=True)
+        save(Path(args[2])/'result.json',result)
+        return result
+    monkeypatch.setattr(fitter,'run',mock_fitter_pass)
+    folder=support.folder_for('conversion-decision')
+    support.prepare(body,folder);support.run(folder)
+    result=support.manifest('conversion-decision')
+    assert result['fitted_retained_input'] is False
+    assert result['fitted_output_support_samples_pass'] is True
+    assert result['retained_input'] is True
+    assert result['retention_reason']=='native_serialized_support_screens_failed'
+    assert result['output_support_samples_pass'] is False
+    chosen=result['native_review_candidate']
+    assert result['versions'][1]['url']==chosen['preview']['preview_url']
+    audit=support.served_file(result['native_conversion_url'].removeprefix('/files/'))
+    assert audit==folder/'native-conversion.json'
+    assert read(audit)['retained_input'] is True
+    markers=support.served_file(result['events_url'].removeprefix('/files/'))
+    assert read(markers)['constraint_status']=='unverified_on_retained_input'
+    assert read(markers)['target_clip_sha256']==chosen['preview']['preview_sha256']
+    assert read(markers)['quality_approved'] is False
+    markers.write_bytes(markers.read_bytes()+b'changed')
+    with pytest.raises(ValueError,match='markers'):support.manifest('conversion-decision')
+    assert support.served_file(result['events_url'].removeprefix('/files/')) is None

@@ -50,7 +50,7 @@ def method_names():
     return ('native_review_support.py','native_motion_edit.py','native_candidate_preview.py',
             'studio_correction_review.py','pack_native_correction.py','inspect_motion.py','gltf_tools.py',
             'rig_asset.py','rig_clip_import.py','native_support_clock.py',
-            'native_support_spec.py','native_support_skin.py','native_leg_floor.py','contact_rate_path.py',
+            'native_support_spec.py','native_support_skin.py','native_contact_diagnostics.py','native_leg_floor.py','contact_rate_path.py',
             'native_engine_clock.py','sampled_motion_caps.py','paired_temporal_neighbor.py',
             'paired_approach_basis.py','absolute_rate_peaks.py','elbow_swivel.py','two_bone_waypoint.py',
             'paired_guarded_temporal.py','native_leg_smoothing.py','native_support_peak_limits.py')
@@ -145,13 +145,15 @@ def convert(folder,request,output):
     maximum=0.
     for f,t in enumerate(expected):maximum=max(maximum,float(np.abs(new.sample(float(t))[1:78]-world[f]).max()))
     if maximum>1e-5:raise ValueError('Native support conversion differs from fitted GLB')
-    proposal_preview=None;screens=None
+    proposal_preview=None;screens=None;proposal_contacts=None
     if not retained:
         proposal_preview=preview_request(dict(selection,candidate_motion=dict(path=str(proposal.resolve()),sha256=sha256(proposal)),candidate_start_frame=0))
         from studio_correction_review import served_preview
         checked=served_preview(proposal_preview['preview_url'].removeprefix('/files/'))
         if checked is None:raise ValueError('Converted proposal preview unavailable')
         screens=serialized_screens(folder/'source.glb',checked,spec)
+        from native_contact_diagnostics import measure
+        proposal_contacts=measure(folder/'source.glb',checked,spec)
         if not screens['passed']:retained=True;reason='native_serialized_support_screens_failed'
     chosen_local=local if retained else candidate
     chosen_world=native_world(chosen_local,roots,offsets,parents)
@@ -168,6 +170,14 @@ def convert(folder,request,output):
     if checked is None:raise ValueError('Converted selected preview unavailable')
     selected_screens=serialized_screens(folder/'source.glb',checked,spec)
     if not retained and not selected_screens['passed']:raise ValueError('Selected native support serialization failed its independent screens')
+    from native_contact_diagnostics import measure
+    selected_contacts=measure(folder/'source.glb',checked,spec)
+    events=folder/'native-support-events.json'
+    save(events,dict(source='Explicit authored stance intervals, not measured contact force',
+        target_clip_sha256=preview['preview_sha256'],
+        constraint_status='satisfied_at_samples' if selected_screens['passed'] else 'unverified_on_retained_input',
+        intervals=[dict(id=row['id'],foot=row['foot'],start_s=row['stance_s'][0],end_s=row['stance_s'][1]) for row in spec['supports']],
+        quality_approved=False))
     report=dict(schema='strep-native-support-conversion-v1',selection=selection,candidate_motion=ref,
                 candidate_start_frame=0,frames=data['frames'],changed_joints=changed,retained_input=retained,
                 retention_reason=reason,native_bounds=bounds,native_bound_error=error,
@@ -175,6 +185,8 @@ def convert(folder,request,output):
                 fitted_support_samples_pass=fit['output_support_samples_pass'],
                 proposal_preview=proposal_preview,proposal_serialized_screens=screens,selected_serialized_screens=selected_screens,
                 selected_support_samples_pass=selected_screens['support_samples_pass'],
+                selected_contact_diagnostics=selected_contacts,proposal_contact_diagnostics=proposal_contacts,
+                selected_support_events=dict(path=str(events.resolve()),sha256=sha256(events)),
                 proposal=dict(path=str(proposal.resolve()),sha256=sha256(proposal)),
                 quality_approved=False,training_admitted=False,release_approved=False,
                 scope='Native geometry conversion and inherited sampled support screens; no planted-contact, physics or human approval')

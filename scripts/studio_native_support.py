@@ -300,14 +300,27 @@ def manifest(job):
         from studio_correction_review import served_preview
         preview=native_candidate['preview'];path=served_preview(preview['preview_url'].removeprefix('/files/'))
         if path is None or sha256(path)!=preview['preview_sha256']:raise ValueError('Changed native support candidate preview')
+        versions[1]['label']='Fitter output before native conversion'
+        versions.insert(1,dict(id='native-selected',url=preview['preview_url'],sha256=preview['preview_sha256'],
+            label='Native retained input' if native_candidate['retained_input'] else 'Native selected candidate'))
+        events=native_candidate.get('selected_support_events')
+        if events:
+            if Path(events['path']).resolve()!=folder/'native-support-events.json' or sha256(events['path'])!=events['sha256']:
+                raise ValueError('Changed native selected support markers')
+            if read(events['path'])['target_clip_sha256']!=preview['preview_sha256']:
+                raise ValueError('Native support markers belong to another selected clip')
     return dict(id=job, duration_s=spec['duration_s'], supports=spec['supports'], versions=versions,preparation=preparation,
         native_review_candidate=native_candidate,
         refinement=dict(iterations=8) if refined else None,
         joint_search=dict(maximum_evaluations=160,swivel_limit_degrees=5.,orientation_limit_degrees=1.) if joint else None,
         result_sha256=completion['result_sha256'], result_url=base+'result.json',
-        events_url=base+'support-events.json', root_url=base+'root-motion.json',
-        retained_input=result['retained_input'], retention_reason=result['retention_reason'],
-        output_support_samples_pass=result['output_support_samples_pass'],
+        native_conversion_url=base+'native-conversion.json' if native_candidate else None,
+        events_url=base+('native-support-events.json' if native_candidate and native_candidate.get('selected_support_events') else 'support-events.json'), root_url=base+'root-motion.json',
+        retained_input=native_candidate['retained_input'] if native_candidate else result['retained_input'],
+        retention_reason=native_candidate['retention_reason'] if native_candidate else result['retention_reason'],
+        output_support_samples_pass=native_candidate['selected_support_samples_pass'] if native_candidate else result['output_support_samples_pass'],
+        fitted_retained_input=result['retained_input'],fitted_retention_reason=result['retention_reason'],
+        fitted_output_support_samples_pass=result['output_support_samples_pass'],
         source_supports=result['source_supports'], trials=trial_screens, quality_approved=False,
         scope='Sampled foot-region height and source-relative rates; no whole-sole, physics, collision, engine or human approval')
 
@@ -333,6 +346,11 @@ def served_file(relative):
         _, job, name = parts; folder = folder_for(job)
         review = manifest(job); request = frozen(folder); output = ROOT/'reports'/request['fit_folder']
         result = read(output/'result.json')
+        if name in ('native-support-events.json','native-conversion.json'):
+            native=review['native_review_candidate']
+            if native and (name=='native-conversion.json' or native.get('selected_support_events')):
+                return folder/name
+            return None
         if review['preparation'] and name in ('original.glb','rigid-comparison.json','rigid-preparation.json'):
             if name=='original.glb':return folder/'source.glb'
             prepared=ROOT/'reports'/review['preparation']['folder']

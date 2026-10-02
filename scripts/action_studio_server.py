@@ -33,7 +33,7 @@ def allowed_file(url_path):
     if path in ['/pose-guide-editor.js','/soma-preview-skin.js','/rig-joint-editor.js','/rig-posture-editor.js','/scene-release-editor.js','/scene-region-editor.js','/scene-grip-picker.js','/scene-object-geometry.js','/scene-hand-patch.js','/scene-trim-editor.js']:return ROOT/'scripts'/path[1:]
     if path=='/native-review-panel.mjs':return ROOT/'scripts/native-review-panel.mjs'
     if path in ('/correction-review-panel.mjs','/native-reference-player.mjs'):return ROOT/'scripts'/path[1:]
-    if path in ('/native-grey-loader.mjs','/native-support-editor.mjs','/native-support-viewer.mjs','/native-support-viewer.html','/native-contact-clock.mjs'):return ROOT/'scripts'/path[1:]
+    if path in ('/native-grey-loader.mjs','/native-support-editor.mjs','/native-support-viewer.mjs','/native-support-viewer.html','/native-contact-clock.mjs','/native-contact-diagnostics.mjs'):return ROOT/'scripts'/path[1:]
     if path.startswith('/files/native-correction-previews/'):
         from studio_correction_review import served_preview
         return served_preview(path.removeprefix('/files/'))
