@@ -74,17 +74,17 @@ not human-motion realism.
 
 A fresh exploratory study uses the same original Cesium crawl, unchanged draft,
 13 by 45 controls and declared 30/60 floor/contact budgets, with the explicitly
-added frame-hold condition. The worker was still live at this publication;
-its immutable request and implementation archive are local under
-`reports/crawl-body-contact-frame-hold-v1/`. No final result is claimed here.
-The existing authored-key comparison is retained unchanged. Every retained
-proposal will be independently encoded and decoded to evaluate hold protection,
-followed by dense four-clip and actual Godot checks. Matching iteration budgets
-does not imply equal computation.
+added frame-hold condition. The [completed study](crawl-body-contact-frame-hold-v1.md)
+preserves its sampled floor and protected hold through all 55 independently
+encoded/decoded retained proposals, but still fails the other three contacts
+and retains the original. Its immutable request, implementation and outputs are
+local under `reports/crawl-body-contact-frame-hold-v1/`. The authored-key
+comparison stays unchanged. Matching iteration budgets does not imply equal
+computation, and the changed hold condition is not an equivalent request.
 
 No inference, training, new seed, formal held-out use, browser/GPU rendering,
 submitted human review or cleanup timing occurred in this implementation batch.
 All 14 release capabilities remain unapproved. Reviewed contact anatomy/timing,
-the pending real study, Studio integration and broader arbitrary action,
+Studio integration and broader arbitrary action,
 scene/partner, edit/style, rig, loop/transition and import validation remain in
 the project-wide goal.

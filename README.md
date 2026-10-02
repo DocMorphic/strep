@@ -27,7 +27,7 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Playback floor guards](docs/crawl-body-contact-playback-guards-v1.md) now retain the floor limit during sampled playback and protect an already passing contact at authored keys. Other contacts, the full-frame hold and two intermediate serialized contact checks still fail; the original remains selected.
 
-[Explicit contact clocks](docs/mesh-contact-clock-v1.md) now distinguish authored-key targets from full-frame holds, add quantized contact values during playback fitting and independently reject exported contact failures on the chosen clock. Portable tests pass; the new real-character hold experiment is still being evaluated.
+[Explicit contact clocks](docs/mesh-contact-clock-v1.md) distinguish authored-key targets from full-frame holds and independently reject exported contact failures. The [completed full-frame crawl study](docs/crawl-body-contact-frame-hold-v1.md) preserves the sampled floor and passing hold across all 55 independently decoded retained proposals. Three other contacts still fail, and the original remains selected.
 
 [Between-key support refinement](docs/native-support-sampled-repair-v1.md) repairs the measured dance/get-up contact-bound failures with exact replay and actual engine checks. All final motion-rate selections still fail and inputs remain retained; the option is available in Studio and the CLI.
 
