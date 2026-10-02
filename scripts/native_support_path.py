@@ -3,7 +3,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 from native_leg_floor import foot_region, export_rotations
 from native_leg_smoothing import smooth, lifts
-from paired_approach_basis import BoundSkin
+from native_support_skin import NativeSupportSkin as BoundSkin
 from contact_rate_path import ProjectedSkin
 from paired_temporal_neighbor import rotation_channels
 from elbow_swivel import local_transforms

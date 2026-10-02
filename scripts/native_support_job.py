@@ -10,7 +10,7 @@ from native_support_clock import NativeSupportSampler as AnimationSampler
 from native_support_spec import validate
 from native_support_path import propose
 from native_leg_floor import foot_region
-from paired_approach_basis import BoundSkin
+from native_support_skin import NativeSupportSkin as BoundSkin
 from contact_rate_path import ProjectedSkin
 from elbow_swivel import descendants
 from native_engine_clock import audit_clock
@@ -94,7 +94,7 @@ def run(source, spec_path, output, *, joint_rates=False, joint_evaluations=80, j
              'rig_asset.py', 'rig_clip_import.py', 'paired_approach_basis.py',
              'paired_temporal_neighbor.py', 'elbow_swivel.py', 'two_bone_waypoint.py',
              'paired_guarded_temporal.py', 'gltf_tools.py', 'strep.py', 'sampled_motion_caps.py',
-             'native_engine_clock.py', 'absolute_rate_peaks.py', 'native_support_peak_limits.py'}
+             'native_engine_clock.py', 'absolute_rate_peaks.py', 'native_support_peak_limits.py', 'native_support_skin.py'}
     if joint_rates: names |= {'native_support_rates.py', 'timed_rotation_edit.py'}
     if joint_swivel: names.add('native_support_swivel.py')
     if joint_foot_orientation: names.add('native_support_orientation.py')

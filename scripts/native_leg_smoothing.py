@@ -4,7 +4,7 @@ Native-key clearance bounds do not imply serialized or continuous clearance.
 This is a geometric proposal, not a balance model or a naturalness judgment.
 """
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import minimize, lsq_linear
 from elbow_swivel import local_transforms
 
 
@@ -87,13 +87,42 @@ def smooth(times, lower, upper, *, acceleration_time=.15, reference_weight=.5, r
                       options=dict(ftol=1e-15, gtol=1e-11, maxiter=5000, maxls=40))
     x = result.x; gradient = value(x)[1]
     residual = float(np.abs(x-np.clip(x-gradient, lower, upper)).max())
-    if not result.success or residual > 1e-7 or np.any(x < lower) or np.any(x > upper):
+    polishing = None; converged = bool(result.success)
+    if not converged or residual > 1e-7:
+        # The same quadratic is a weighted bounded least-squares problem. An
+        # independent active-set solve can finish early L-BFGS termination;
+        # neither the physical objective nor its hard box is changed.
+        fixed = lower == upper; free = ~fixed
+        matrix = np.vstack([np.sqrt(dt)[:,None]*velocity,
+            acceleration_time*np.sqrt(midpoint_dt)[:,None]*acceleration,
+            np.diag(np.sqrt(reference_diagonal))])/np.sqrt(scale)
+        target = np.r_[np.zeros(len(dt)+len(midpoint_dt)),np.sqrt(reference_diagonal)*reference]/np.sqrt(scale)
+        target -= matrix[:,fixed]@lower[fixed]
+        candidate = lower.copy()
+        if free.any():
+            polished = lsq_linear(matrix[:,free],target,bounds=(lower[free],upper[free]),
+                method='bvls',tol=1e-12,max_iter=5000)
+            candidate[free] = polished.x
+            converged = bool(polished.success)
+            iterations = int(polished.nit)
+        else:converged = True; iterations = 0
+        new_gradient = value(candidate)[1]
+        new_residual = float(np.abs(candidate-np.clip(candidate-new_gradient,lower,upper)).max())
+        objective_before, objective_after = value(x)[0], value(candidate)[0]
+        roundoff = 64*np.finfo(float).eps*max(1.,abs(objective_before),abs(objective_after))
+        if objective_after>objective_before+roundoff:converged = False
+        polishing = dict(method='same_objective_bounded_least_squares',iterations=iterations,
+            previous_projected_gradient_residual=residual,projected_gradient_residual=new_residual,
+            numerical_objective_before=objective_before,numerical_objective_after=objective_after)
+        x, residual = candidate, new_residual
+    if not converged or residual > 1e-7 or np.any(x < lower) or np.any(x > upper):
         raise ValueError(f'Bend optimization did not converge: {result.message}; residual={residual}')
     velocity_term = float(np.sum(dt*(velocity@x)**2))
     acceleration_term = float(acceleration_time**2*np.sum(midpoint_dt*(acceleration@x)**2))
     reference_term = float(np.sum(reference_diagonal*(x-reference)**2))
     return x, dict(success=True, message=str(result.message), iterations=int(getattr(result, 'nit', 0)),
                    projected_gradient_residual=residual, numerical_scale=scale,
+                   polishing=polishing,
                    acceleration_time_s=acceleration_time, reference_weight_per_s2=reference_weight,
                    velocity_term=velocity_term, acceleration_term=acceleration_term,
                    reference_term=reference_term,

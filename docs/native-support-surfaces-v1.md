@@ -5,8 +5,8 @@ primitive in the validated single-skin character. Four/eight influence slots
 can coexist: smaller layouts receive zero-weight padding, without changing
 weights or dropping vertices. Surface offsets and original node/primitive/vertex
 references remain explicit. Single-primitive arrays equal the legacy arrays.
-The native fitting solver still uses its original one-primitive representation;
-connecting this representation to fitting is the next implementation step.
+The subsequent [rig fitting study](native-support-rigs-v1.md) connects this
+representation to native fitting and tests actual multi-surface Godot imports.
 
 Imported surfaces must have one unique complete correspondence to all source
 primitives, based on positions, effective weights and inverse binds. Surface,
@@ -83,8 +83,9 @@ All 1,791 bound ancestor, study and replay files rehash without mismatch.
 - Replay: `8e815e96398c96aae82c3b90028ad43646179f67af04c277bd5d8761fda23e5c`.
 - Rehash: `caebc669a654b12c3713aa598abc7fe3560498c7c6fa5d80bb59a63c219ef371`.
 
-No multi-surface support-fitting or actual multi-surface Godot result is claimed
-yet. Existing single-surface engine evidence remains separate. Ground-zero
+This initial surface audit did not execute multi-surface support fitting or
+Godot imports. Subsequent results are recorded separately in the rig study.
+Existing single-surface engine evidence remains separate. Ground-zero
 support bounds, continuous contact, collision/balance, broader action/scene
 quality and timed human cleanup remain unresolved. No model training or release
 approval occurred; all 14 capabilities remain unapproved under the active

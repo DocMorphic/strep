@@ -20,9 +20,11 @@ Choose a fresh metadata filename. This read-only route does not infer anatomy or
 assign roles. Map the root and each requested direct thigh/knee/foot chain using
 unique joint names or node indices from that metadata. The draft binds the exact
 source GLB SHA-256, animation index and duration. The current implementation
-requires one chosen animation with LINEAR rotation tracks, one skinned primitive,
+requires one chosen animation with LINEAR rotation tracks, all primitives on the same validated skin,
 rigid transforms and a nonempty fully foot-bound skin region. Intermediate helper
 bones and unmatched clocks within a chain are explicitly rejected.
+The [multi-surface rig study](native-support-rigs-v1.md) documents current
+fitting/import evidence and explicit preparation for static scale roundoff.
 The ankle must remain below the thigh origin along the plane normal throughout
 the edit window; folded or above-hip poses need a broader solver.
 

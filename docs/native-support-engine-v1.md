@@ -42,7 +42,8 @@ LINEAR joint TRS, one imported skeleton and a completed four-trial native
 support study. They do not infer anatomical mappings or convert other studies.
 The original completed evidence below used one primitive. The subsequent
 [surface audit](native-support-surfaces-v1.md) extends the auditors to multiple
-surfaces; actual multi-surface Godot support studies remain pending.
+surfaces; the subsequent [rig study](native-support-rigs-v1.md) records actual
+multi-surface fitting and Godot support imports.
 
 ```powershell
 .venv/Scripts/python.exe scripts/run_native_support_engine.py `

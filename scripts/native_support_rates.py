@@ -10,7 +10,7 @@ from scipy.spatial.transform import Rotation
 from native_support_path import bend_box
 from native_leg_smoothing import smooth,lifts
 from native_leg_floor import foot_region,export_rotations
-from paired_approach_basis import BoundSkin
+from native_support_skin import NativeSupportSkin as BoundSkin
 from contact_rate_path import ProjectedSkin
 from paired_temporal_neighbor import rotation_channels
 from native_engine_clock import audit_clock
