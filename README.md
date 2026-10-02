@@ -21,6 +21,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Coupled mesh-contact fitting](docs/crawl-body-contact-coupled-v1.md) now anticipates explicit hand/body targets. Its first crawl candidate still fails contact and floor checks and retains the input; actual Godot import reproduces those failures.
 
+[Floor-guarded contact feasibility](docs/crawl-body-contact-feasibility-v1.md) restores the crawl floor screen and preserves it while pursuing contact targets. The hand targets still fail, with the original retained; between-frame and actual Godot checks preserve this distinction.
+
 [Between-key support refinement](docs/native-support-sampled-repair-v1.md) repairs the measured dance/get-up contact-bound failures with exact replay and actual engine checks. All final motion-rate selections still fail and inputs remain retained; the option is available in Studio and the CLI.
 
 [Explicit Studio rig preparation](docs/studio-support-preparation-v1.md) keeps original and derived clips separate and measures tiny static-scale changes before fitting. [Broader support diagnostics](docs/native-support-action-breadth-v1.md) cover six existing development actions on three assets; failed authoring, support and rate checks remain visible.

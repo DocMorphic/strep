@@ -76,38 +76,49 @@ class CoupledMeshContactFitter(CoupledPoseFitter):
 METHODS = ('rig_mesh_trajectory.py', 'rig_coupled_pose.py', 'rig_trajectory_fit.py',
            'rig_clearance_fit.py', 'target_rig_contact.py', 'rig_periodic_contact.py',
            'rig_asset.py', 'rig_loop.py', 'rig_transition.py', 'gltf_tools.py',
-           'temporal_basis.py', 'inspect_rig_contacts.py', 'strep.py')
+           'temporal_basis.py', 'mesh_contact_feasibility.py', 'inspect_rig_contacts.py', 'strep.py')
 
 
-def run(source, draft, output, spacing=10, max_iterations=60):
+def _run(source, draft, output, spacing=10, max_iterations=60, feasibility=False, floor_iterations=30, _owned_output=None):
     source, draft, output = map(lambda p: Path(p).resolve(), (source, draft, output))
     if type(spacing) is not int or not 1<=spacing<=120:
         raise ValueError('Control spacing must be 1–120 frames')
     if type(max_iterations) is not int or not 1<=max_iterations<=200:
         raise ValueError('Iteration budget must be 1–200')
+    if type(feasibility) is not bool:raise ValueError('Explicit feasibility choice required')
+    if type(floor_iterations) is not int or not 1<=floor_iterations<=200:
+        raise ValueError('Floor iteration budget must be 1–200')
+    inputs = {str(source): sha256(source), str(draft): sha256(draft)}
     spec = read(draft)
-    if sha256(source) != spec['glb_sha256']: raise ValueError('Contact draft source changed')
-    rig = RigAsset.load(source)
+    if inputs[str(source)] != spec['glb_sha256']: raise ValueError('Contact draft source changed')
+    output.mkdir(parents=True, exist_ok=False)
+    if _owned_output is not None:_owned_output['created']=True
+    shutil.copyfile(source, output/'original.glb'); shutil.copyfile(draft, output/'contact-spec.json')
+    for saved, original in ((output/'original.glb',source),(output/'contact-spec.json',draft)):
+        if sha256(saved)!=inputs[str(original)]:raise ValueError('Mesh contact input changed while snapshotting')
+    spec=read(output/'contact-spec.json');rig=RigAsset.load(output/'original.glb')
     if len(rig.document.get('animations', [])) != 1: raise ValueError('One animation required')
     before, local = baseline(rig, spec['frames'])
     fitter = MeshContactTrajectoryFitter(rig, spec, local, np.ones(spec['frames']))
     coupled = CoupledMeshContactFitter(fitter, window_basis(fitter.envelope, spacing))
-    output.mkdir(parents=True, exist_ok=False)
-    shutil.copyfile(source, output/'original.glb'); shutil.copyfile(draft, output/'contact-spec.json')
     snapshot = output/'implementation'; snapshot.mkdir()
     methods = {}
     for name in METHODS:
         path = Path(__file__).with_name(name); shutil.copyfile(path, snapshot/name)
         methods[name] = sha256(path)
-    inputs = {str(source): sha256(source), str(draft): sha256(draft)}
     save(output/'request.json', dict(at=now(), inputs=inputs, implementation=methods,
          spacing_frames=spacing, max_iterations=max_iterations, controls=coupled.shape,
-         objective='Original mesh contact/floor/edit priors and adjacent edit differences, all frames coupled',
+         feasibility=feasibility,floor_iterations=floor_iterations if feasibility else None,
+         objective=('Restore floor, then pursue contact feasibility with floor held hard; original energy reported only'
+                    if feasibility else 'Original mesh contact/floor/edit priors and adjacent edit differences, all frames coupled'),
          extra_rotation_step_allowance_degrees=fitter.settings['rotation_step_allowance_degrees'],
          quality_approved=False))
     with threadpool_limits(limits=1):
         save(output/'numerical-runtime.json', dict(pools=threadpool_info()))
-        values, trace, summary = coupled.solve(output, max_iterations=max_iterations)
+        if feasibility:
+            from mesh_contact_feasibility import MeshContactFeasibility
+            values,trace,summary=MeshContactFeasibility(coupled).solve(output,floor_iterations,max_iterations)
+        else:values, trace, summary = coupled.solve(output, max_iterations=max_iterations)
     evidence = audit(rig, spec, before, fitter.world, values, [dict(success=summary['solver_success'])])
     animated = {c['target']['node'] for c in rig.document['animations'][0]['channels']} | set(fitter.nodes)
     times, roundtrip = encode(rig, fitter.world, animated, spec['root_node'],
@@ -129,6 +140,8 @@ def run(source, draft, output, spacing=10, max_iterations=60):
          rotations_xyzw=Rotation.from_matrix(root[:, :3, :3]).as_quat().tolist()))
     for path, digest in inputs.items():
         if sha256(path) != digest: raise ValueError('Source or draft changed during fitting')
+    if sha256(output/'original.glb')!=inputs[str(source)] or sha256(output/'contact-spec.json')!=inputs[str(draft)]:
+        raise ValueError('Mesh contact snapshot changed during fitting')
     for name, digest in methods.items():
         if sha256(Path(__file__).with_name(name)) != digest or sha256(snapshot/name) != digest:
             raise ValueError('Fitting implementation changed')
@@ -144,6 +157,16 @@ def run(source, draft, output, spacing=10, max_iterations=60):
     return result
 
 
+def run(source, draft, output, spacing=10, max_iterations=60, feasibility=False, floor_iterations=30):
+    output=Path(output).resolve();owned={}
+    try:return _run(source,draft,output,spacing,max_iterations,feasibility,floor_iterations,owned)
+    except Exception as exc:
+        if owned.get('created'):
+            save(output/'failure.json',dict(at=now(),error_type=type(exc).__name__,error=str(exc),quality_approved=False))
+            save(output/'pipeline.json',dict(status='failed',quality_approved=False))
+        raise
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, required=True)
@@ -151,6 +174,8 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--spacing', type=int, default=10)
     parser.add_argument('--iterations', type=int, default=60)
+    parser.add_argument('--feasibility',action='store_true')
+    parser.add_argument('--floor-iterations',type=int,default=30)
     args = parser.parse_args()
     from action_worker_lock import worker_lock
-    with worker_lock(): run(args.source, args.spec, args.output, args.spacing, args.iterations)
+    with worker_lock(): run(args.source, args.spec, args.output, args.spacing, args.iterations,args.feasibility,args.floor_iterations)

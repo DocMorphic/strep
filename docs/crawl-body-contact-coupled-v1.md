@@ -111,3 +111,7 @@ prior pilot, methods and engine evidence files rehash; receipt
 `a58e7416f6674f0d103cc9670c3e12392973ea4dc02d0079359857e4b29f860b`.
 No new browser render, human review, timed cleanup or release approval occurs.
 All 14 release capabilities remain unapproved; the full-project goal stays active.
+
+The subsequent [floor-guarded feasibility study](crawl-body-contact-feasibility-v1.md)
+restores and protects sampled floor clearance under the same authored limits.
+The fixed crawl contact targets still fail; the original remains selected.
