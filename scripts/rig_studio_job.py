@@ -42,6 +42,9 @@ def run(folder):
                 shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
             for name in ('rig_events.py','rig_event_retime.py','rig_event_edit.py','rig_periodic_contact.py'):shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
             for name in ('rig_runtime_finite.py','godot_finite_adapter.gd','godot_event_object_body.gd'):shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
+            if request.get('contact_fit') is not None:
+                from rig_contact_fit_options import methods
+                for name in methods():shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
             shutil.copyfile(ROOT/'scripts/motion_origin.py',snapshot/'motion_origin.py')
             shutil.copyfile(ROOT/'scripts/motion_origin_inventory.py',snapshot/'motion_origin_inventory.py')
             for name in ('rig_prompt_edit.py','rig_motion_bridge.py','reuse_action_conditioning.py','action_requests.py','generation_constraints.py','generate_actions.py','action_encoder.py','run_actions.py','export_actions.py'):shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
@@ -107,6 +110,7 @@ def run(folder):
                 result['note']='Synthetic SOMA neutral pose for mapping/axis review; not generated motion or a ground-contact test.'
             elif request['kind']=='contact_edit':
                 result['note']='Authored mesh contacts fitted to a preserved input clip. Review support placement, action and naturalness; engine validation is not part of this job.'
+                if request.get('contact_fit') is not None:result['contact_fit_options']=base+'contact-fit.json'
             elif request['kind']=='mirror_edit':
                 result['variants']['transfer']['label']='Mirrored clip'
                 result['variants']['input']=dict(label='Original clip',glb=base+'input/character.glb',sha256=request['input_glb_sha256'],root_track=base+'input/root-motion.json',report=base+'input/report.json',contacts=base+'input/contacts.json')
@@ -213,7 +217,15 @@ def run(folder):
                         result['correction_status']='infeasible';result['note']='Input retained. Current editable joints and root budget cannot clear this mesh; revise the contact targets or editable joints before fitting.'
                     else:
                         save(folder/'pipeline.json',dict(status='processing',stage='Fitting target mesh contacts; raw transfer retained'))
-                        evidence=correct(folder/'transfer',folder/'contact-spec.json',folder/'corrected')
+                        if request.get('contact_fit') is not None:
+                            from rig_playback_contact_job import run as fit_playback
+                            save(folder/'pipeline.json',dict(status='processing',stage='Fitting contacts across playback; input retained'))
+                            evidence,playback_review=fit_playback(folder)
+                            result['playback_contact_fit']=dict(**playback_review,options=base+'contact-fit.json',review=base+'contact-fit-review.json',
+                                request=base+'mesh-fit/request.json',audit=base+'mesh-fit/result.json',
+                                contacts=base+'mesh-fit/playback-contact-inspection.json',floor=base+'mesh-fit/subframe-floor-inspection.json')
+                            result['note']='Playback contact candidate '+('passes the sampled numerical screens.' if playback_review['numerical_screen_passed'] else 'fails the sampled numerical screens; input retained.')+' Fixed world targets, motion bounds, authored-key or full-frame contact timing and decoded floor are checked. Anatomy, action and naturalness remain unreviewed.'
+                        else:evidence=correct(folder/'transfer',folder/'contact-spec.json',folder/'corrected')
                         inspect_ground(folder/'corrected',{**report,'glb_sha256':evidence['glb_sha256']})
                         result['variants']['corrected']=dict(label='Contact candidate',glb=base+'corrected/character.glb',sha256=evidence['glb_sha256'],root_track=base+'corrected/root-motion.json')
                         result['correction_status']='provisional_pass' if evidence['numerical_screen_passed'] else 'rejected'
@@ -255,9 +267,9 @@ def run(folder):
                 applies_to=generation_sources['applies_to'],scope=generation_sources['scope'],quality_approved=False)
             package=folder/'character-animation.zip'
             # Only local project snapshots and outputs; original input asset remains unchanged.
-            paths=[p for directory in ['source','input','following','transfer','repeated','corrected','generation','target-fit','quality-fit'] if (folder/directory).exists()
+            paths=[p for directory in ['source','input','following','transfer','repeated','corrected','generation','target-fit','quality-fit','mesh-fit'] if (folder/directory).exists()
                    for p in (folder/directory).rglob('*') if p.is_file()]
-            paths += [folder/name for name in ['request.json','contact-spec.json','clip-edit.json','mirror.json','transition.json','loop.json','event-edit.json','prompt-edit.json','joint-edit.json','joint-spec.json','joint-targets.json','joint-input.npz','hand-posture.json','feasibility.json','correction-unavailable.json'] if (folder/name).is_file()]
+            paths += [folder/name for name in ['request.json','contact-spec.json','contact-fit.json','contact-fit-review.json','clip-edit.json','mirror.json','transition.json','loop.json','event-edit.json','prompt-edit.json','joint-edit.json','joint-spec.json','joint-targets.json','joint-input.npz','hand-posture.json','feasibility.json','correction-unavailable.json'] if (folder/name).is_file()]
             paths.append(folder/'generation-sources.json')
             note=('Local Strep character animation. No independent animator or engine approval. '
                   'Source character, saved rig profile and '+('original embedded animations' if imported else 'SOMA motion')+' are retained under source/. '

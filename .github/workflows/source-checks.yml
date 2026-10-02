@@ -134,6 +134,7 @@ jobs:
           tests/test_rig_subframe_floor.py
           tests/test_mesh_playback_guards.py
           tests/test_mesh_contact_clock.py
+          tests/test_studio_mesh_playback.py
           tests/test_temporal_basis.py
           tests/test_imported_skin_evidence.py
           tests/test_imported_skin_reconstruction.py
@@ -213,6 +214,7 @@ jobs:
           tests/test_desktop_build_preservation.py
       - name: Verify contact editor workflows without a browser
         run: |
+          node tests/test_rig_contact_playback_editor.mjs
           node tests/test_contact_timing_editor.mjs
           node tests/test_contact_export_review.mjs
           node tests/test_scene_object_geometry.mjs

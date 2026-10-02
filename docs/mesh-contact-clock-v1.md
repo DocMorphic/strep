@@ -49,8 +49,10 @@ modes now save `playback-contact-inspection.json` and add
 `decoded_contact_clock_screen_failed` when the selected contact clock fails.
 The independent full-surface playback floor gate remains mandatory.
 
-The mode remains a CLI experiment, not a Studio submission option. For an
-explicit held-contact study:
+The mode is now available as an experimental finite-clip
+[Studio submission option](studio-mesh-playback-v1.md), with saved choices,
+failure visibility and explicit periodic-clip rejection. For an explicit CLI
+held-contact study:
 
 ```powershell
 .venv/Scripts/python.exe scripts/rig_mesh_trajectory.py --source character.glb --spec draft.json --output reports/new-hold-study --feasibility --guarded-trials --playback-guards --contact-clock frame-hold
@@ -85,6 +87,6 @@ computation, and the changed hold condition is not an equivalent request.
 No inference, training, new seed, formal held-out use, browser/GPU rendering,
 submitted human review or cleanup timing occurred in this implementation batch.
 All 14 release capabilities remain unapproved. Reviewed contact anatomy/timing,
-Studio integration and broader arbitrary action,
+broader arbitrary action,
 scene/partner, edit/style, rig, loop/transition and import validation remain in
 the project-wide goal.

@@ -220,6 +220,11 @@ def jobs():
         if not (folder/'request.json').is_file(): continue
         request=read(folder/'request.json'); state=observed_state(folder)
         item=dict(id=folder.name, label=request['label'], asset_id=request['asset_id'], kind=request['kind'], **state)
+        if request.get('contact_fit') is not None and state['status']=='processing' and (folder/'mesh-fit/pipeline.json').exists():
+            progress=read(folder/'mesh-fit/pipeline.json')
+            if progress.get('phase') in ('floor','contacts') and type(progress.get('iteration')) is int:
+                item['stage']='Playback contact fitting · '+progress['phase']+' iteration '+str(progress['iteration'])
+                item['contact_fit_progress']=dict(phase=progress['phase'],iteration=progress['iteration'])
         if state['status']=='complete' and (folder/'result.json').exists():
             item['result']=read(folder/'result.json')
             if (folder/'transfer/prompt-edit-audit.json').exists():

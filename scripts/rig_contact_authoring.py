@@ -16,7 +16,13 @@ def inspect_request(payload):
     if not INSPECTION_LOCK.acquire(blocking=False):raise ValueError('A contact inspection is already running')
     try:
         _,_,report,glb,spec=validate_request(payload)
-        return inspect(glb,spec,report['mapping'])
+        result=inspect(glb,spec,report['mapping'])
+        if 'fit_options' in payload:
+            from rig_subframe_contacts import inspect as playback_contacts
+            from rig_subframe_floor import inspect as playback_floor
+            result['playback_contacts']=playback_contacts(glb,spec,payload['fit_options']['contact_clock'])
+            result['playback_floor']=playback_floor(glb,spec['screen']['floor_depth_m'])
+        return result
     finally:INSPECTION_LOCK.release()
 
 
@@ -72,10 +78,14 @@ def metadata(job_id,variant):
     aliases={node:role for role,node in report['mapping'].items()}
     from rig_events import load as load_events
     timeline_path=glb.parent/'timeline.json'
-    periodic=read(timeline_path).get('period_frames') if timeline_path.exists() else None
+    timeline=read(timeline_path) if timeline_path.exists() else {}
+    periodic=timeline.get('period_frames')
+    from rig_contact_fit_options import defaults
     return dict(job_id=job_id,variant=variant,glb_sha256=report['glb_sha256'],frames=report['frames'],fps=report['fps'],period_frames=periodic,events=load_events(glb.parent if (glb.parent/'events.json').exists() or variant!='corrected' else folder/'transfer'),
         asset_id=request['asset_id'],spec=spec,primitives=primitives,vertex_count=offset,
         verification_vertices=[dict(index=i,position_m=vertices[i].tolist()) for i in checks],
+        playback_fit=dict(available='period_frames' not in timeline,defaults=defaults(),
+            reason='Whole-clip playback fitting does not preserve cycle closure.' if 'period_frames' in timeline else None),
         editable_joints=[dict(node=n,label=aliases.get(n,rig.document['nodes'][n].get('name','Bone')+' · '+str(n)))
             for n in rig.joints if n!=report['root_node'] and descendant(n)])
 
@@ -83,7 +93,7 @@ def metadata(job_id,variant):
 def validate_request(payload):
     from rig_asset import RigAsset
     from target_rig_contact import validate
-    if not isinstance(payload,dict) or set(payload)!={'source_job','variant','spec'}:raise ValueError('Source job, version and contact draft required')
+    if not isinstance(payload,dict) or not {'source_job','variant','spec'}<=set(payload) or set(payload)-{'source_job','variant','spec','fit_options'}:raise ValueError('Source job, version and contact draft required')
     folder,result,request,report,glb=source(payload['source_job'],payload['variant'])
     spec=payload['spec']
     if not isinstance(spec,dict) or spec.get('glb_sha256')!=report['glb_sha256'] or spec.get('frames')!=report['frames'] or spec.get('root_node')!=report['root_node']:
@@ -98,6 +108,9 @@ def validate_request(payload):
     if not isinstance(spec.get('provenance'),str) or len(spec['provenance'])>2000:raise ValueError('Invalid contact provenance')
     if spec.get('screen')!={'floor_depth_m':.005,'contact_error_m':.02}:raise ValueError('Studio contact screens cannot be relaxed')
     validate(spec,RigAsset.load(glb))
+    if 'fit_options' in payload:
+        from rig_contact_fit_options import validate as validate_fit
+        validate_fit(payload['fit_options'],glb)
     return folder,request,report,glb,copy.deepcopy(spec)
 
 
@@ -122,5 +135,9 @@ def prepare(payload,folder):
         label=('Contact edit · '+read(previous/'result.json')['label'])[:160],correct_contacts=True,
         source_kind=report.get('source_kind','soma_motion'),source_motion_sha256=sha256(folder/'source'/source_name),source_job=previous.name,input_variant=payload['variant'],input_glb_sha256=sha256(glb),
         authored_spec_sha256=sha256(folder/'contact-spec.json'))
+    if 'fit_options' in payload:
+        from rig_contact_fit_options import validate as validate_fit,bind
+        options=validate_fit(payload['fit_options'],target/'character.glb');save(folder/'contact-fit.json',options)
+        request.update(contact_fit=options,contact_fit_sha256=sha256(folder/'contact-fit.json'),contact_fit_implementation=bind())
     save(folder/'request.json',request);save(folder/'pipeline.json',dict(status='starting'))
     return request
