@@ -42,7 +42,24 @@ def bend_box(worlds, parents, chain, heights, times, condition):
                 reference=np.clip(original, lower, upper))
 
 
-def propose(rig, reader, rows, path, acceleration_time=.05, reference_weight=.5):
+def restrict_box(box, low, high):
+    """Intersect an existing lift corridor; never widen authored key bounds."""
+    low,high=map(lambda x:np.asarray(x,float),(low,high))
+    if (low.shape!=box['lower_lift'].shape or high.shape!=low.shape
+            or not np.isfinite([low,high]).all() or np.any(low>high)
+            or np.any(low<box['lower_lift']) or np.any(high>box['upper_lift'])
+            or any(low[k]!=0 or high[k]!=0 for k in (0,len(low)-1))):
+        raise ValueError('Tightened lift corridor must preserve original bounds and frozen ends')
+    a,b=box['lengths'].T
+    def bend(lift):return np.arccos(np.clip((box['horizontal_squared']+(box['vertical']+lift)**2-a*a-b*b)/(2*a*b),-1.,1.))
+    lower,upper=bend(low),bend(high)
+    return dict(box,lower=lower,upper=upper,lower_lift=low.copy(),upper_lift=high.copy(),
+                reference=np.clip(box['reference'],lower,upper))
+
+
+def propose(rig, reader, rows, path, acceleration_time=.05, reference_weight=.5, *, lift_limits=None):
+    if lift_limits is not None and set(lift_limits)!={r['id'] for r in rows}:
+        raise ValueError('One tightening corridor per authored support required')
     channels = rotation_channels(rig.document, rig.binary); skin = BoundSkin(rig)
     nodes = sorted({n for row in rows for n in row['chain']})
     values = {n: channels[n][2].copy() for n in nodes}; reports = []
@@ -53,6 +70,7 @@ def propose(rig, reader, rows, path, acceleration_time=.05, reference_weight=.5)
         projection = ProjectedSkin(skin, region, row['up'], row['offset'])
         heights = projection.evaluate(worlds).min(axis=1)
         box = bend_box(worlds, rig.parents, chain, heights, times, row)
+        if lift_limits is not None:box=restrict_box(box,*lift_limits[row['id']])
         bend, optimizer = smooth(times, box['lower'], box['upper'],
             acceleration_time=acceleration_time, reference_weight=reference_weight, reference=box['reference'])
         amounts = lifts(box, bend); edits = []

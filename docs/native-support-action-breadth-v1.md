@@ -106,3 +106,8 @@ separately. No human cleanup evidence or release approval is inferred here.
 All 14 release capabilities remain unapproved. Next work must address the
 between-key bound failures and source-rate tradeoff, and extend support beyond
 feet for ground, object and partner actions.
+
+The subsequent [sampled corridor refinement](native-support-sampled-repair-v1.md)
+repairs the ten completed support failures in these three dance/get-up cases
+without changing the draft or final gates. Source-rate selection still fails;
+the study's original outputs and failed proposals remain immutable.

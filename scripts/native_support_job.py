@@ -44,7 +44,10 @@ def describe(source, output):
     save(output, record); return record
 
 
-def run(source, spec_path, output, *, joint_rates=False, joint_evaluations=80, joint_swivel=False, joint_foot_orientation=False, repair_from=None, repair_iterations=8, repair_trust=.0002, repair_quantized=False, repair_coordinates=False, repair_strict_peaks=False):
+def run(source, spec_path, output, *, joint_rates=False, joint_evaluations=80, joint_swivel=False, joint_foot_orientation=False, repair_from=None, repair_iterations=8, repair_trust=.0002, repair_quantized=False, repair_coordinates=False, repair_strict_peaks=False, sampled_support_repair=False, sampled_support_iterations=8):
+    if type(sampled_support_repair) is not bool or type(sampled_support_iterations) is not int or not 1<=sampled_support_iterations<=16 or not sampled_support_repair and sampled_support_iterations!=8:
+        raise ValueError('Explicit sampled-support mode and 1–16 iterations required')
+    if sampled_support_repair and (joint_rates or repair_from is not None):raise ValueError('Sampled corridor repair uses the original smoothing mode')
     if type(joint_rates) is not bool: raise ValueError('Explicit joint-rate mode required')
     if type(joint_evaluations) is not int or not 1 <= joint_evaluations <= 2000 or not joint_rates and joint_evaluations != 80: raise ValueError('Joint-search budget requires joint-rate mode and 1–2000 evaluations')
     if type(joint_swivel) is not bool or joint_swivel and not joint_rates: raise ValueError('Knee-plane search requires joint-rate mode')
@@ -57,6 +60,10 @@ def run(source, spec_path, output, *, joint_rates=False, joint_evaluations=80, j
     if repairing and not (joint_rates and joint_swivel and joint_foot_orientation) or not repairing and (repair_iterations != 8 or repair_trust != .0002 or repair_quantized or repair_coordinates or repair_strict_peaks): raise ValueError('Repair requires orientation mode and explicit warm controls')
     if repairing and joint_evaluations != 80: raise ValueError('Warm repair does not use a joint-search evaluation budget')
     propose_solver = propose
+    if sampled_support_repair:
+        from native_support_sampled_repair import propose as sampled_propose
+        from functools import partial
+        propose_solver=partial(sampled_propose,iterations=sampled_support_iterations)
     if joint_rates:
         from native_support_rates import propose as joint_propose
         if joint_swivel:
@@ -96,6 +103,7 @@ def run(source, spec_path, output, *, joint_rates=False, joint_evaluations=80, j
              'paired_guarded_temporal.py', 'gltf_tools.py', 'strep.py', 'sampled_motion_caps.py',
              'native_engine_clock.py', 'absolute_rate_peaks.py', 'native_support_peak_limits.py', 'native_support_skin.py'}
     if joint_rates: names |= {'native_support_rates.py', 'timed_rotation_edit.py'}
+    if sampled_support_repair:names.add('native_support_sampled_repair.py')
     if joint_swivel: names.add('native_support_swivel.py')
     if joint_foot_orientation: names.add('native_support_orientation.py')
     if repairing: names.add('native_support_feasibility.py')
@@ -111,7 +119,8 @@ def run(source, spec_path, output, *, joint_rates=False, joint_evaluations=80, j
         absolute_peak_tolerance=STRICT_PEAK_TOLERANCE,
         absolute_peak_reference='Selected input clip, full uniform 120Hz per-joint peaks; additional final gate only in strict repair mode',
         warm_study=str(Path(repair_from).resolve()) if repairing else None,
-        proposal_method='serialized_native_support_coordinate_repair' if repair_coordinates else 'serialized_native_support_feasibility_repair' if repairing else 'joint_support_source_rate_orientation_search' if joint_foot_orientation else 'joint_support_source_rate_swivel_search' if joint_swivel else 'joint_support_source_rate_search' if joint_rates else 'bounded_bend_smoothing',
+        sampled_support_iterations=sampled_support_iterations if sampled_support_repair else None,
+        proposal_method='serialized_sampled_support_corridor_refinement' if sampled_support_repair else 'serialized_native_support_coordinate_repair' if repair_coordinates else 'serialized_native_support_feasibility_repair' if repairing else 'joint_support_source_rate_orientation_search' if joint_foot_orientation else 'joint_support_source_rate_swivel_search' if joint_swivel else 'joint_support_source_rate_search' if joint_rates else 'bounded_bend_smoothing',
         joint_swivel_limit_degrees=5. if joint_swivel else None,
         joint_foot_orientation_limit_degrees=1. if joint_foot_orientation else None,
         source_rate_reference='Selected input clip, full uniform 120Hz samples and four equal time bins; not a replacement for independent benchmark caps',
@@ -229,12 +238,14 @@ if __name__ == '__main__':
     parser.add_argument('--repair-strict-peaks', action='store_true', help='Additionally constrain and independently gate full-clip per-joint source peaks at 1e-7; requires warm repair')
     parser.add_argument('--repair-iterations', type=int, default=8, help='1-32 serialized warm feasibility repair iterations')
     parser.add_argument('--repair-trust', type=float, default=.0002, help='Positive parameter trust radius up to .001 radians')
+    parser.add_argument('--sampled-support-repair', action='store_true', help='Opt-in decoded support corridor refinement; original final rate gates remain unchanged')
+    parser.add_argument('--sampled-support-iterations', type=int, default=8, help='1–16 decoded support refinement iterations')
     args = parser.parse_args()
     if args.describe is not None:
-        if args.spec is not None or args.output is not None or args.joint_rates or args.joint_evaluations != 80 or args.joint_swivel or args.joint_foot_orientation or args.repair_from is not None or args.repair_iterations != 8 or args.repair_trust != .0002 or args.repair_quantized or args.repair_coordinates or args.repair_strict_peaks: parser.error('Description does not use a support draft or fit output')
+        if args.spec is not None or args.output is not None or args.joint_rates or args.joint_evaluations != 80 or args.joint_swivel or args.joint_foot_orientation or args.repair_from is not None or args.repair_iterations != 8 or args.repair_trust != .0002 or args.repair_quantized or args.repair_coordinates or args.repair_strict_peaks or args.sampled_support_repair or args.sampled_support_iterations!=8: parser.error('Description does not use a support draft or fit output')
         describe(args.source, args.describe)
     else:
         if args.spec is None or args.output is None: parser.error('Support draft and fresh fit output required')
         from action_worker_lock import worker_lock
         from threadpoolctl import threadpool_limits
-        with worker_lock(), threadpool_limits(limits=1): run(args.source, args.spec, args.output, joint_rates=args.joint_rates, joint_evaluations=args.joint_evaluations, joint_swivel=args.joint_swivel, joint_foot_orientation=args.joint_foot_orientation, repair_from=args.repair_from, repair_iterations=args.repair_iterations, repair_trust=args.repair_trust, repair_quantized=args.repair_quantized, repair_coordinates=args.repair_coordinates, repair_strict_peaks=args.repair_strict_peaks)
+        with worker_lock(), threadpool_limits(limits=1): run(args.source, args.spec, args.output, joint_rates=args.joint_rates, joint_evaluations=args.joint_evaluations, joint_swivel=args.joint_swivel, joint_foot_orientation=args.joint_foot_orientation, repair_from=args.repair_from, repair_iterations=args.repair_iterations, repair_trust=args.repair_trust, repair_quantized=args.repair_quantized, repair_coordinates=args.repair_coordinates, repair_strict_peaks=args.repair_strict_peaks, sampled_support_repair=args.sampled_support_repair, sampled_support_iterations=args.sampled_support_iterations)
