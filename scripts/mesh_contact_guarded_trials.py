@@ -9,8 +9,8 @@ import numpy as np
 class GuardedMeshTrials:
     fractions=(1.,.5,.25,.125,.0625,.03125,.015625,.0078125)
 
-    def __init__(self, coupled, margin):
-        self.coupled=coupled;self.margin=margin
+    def __init__(self, coupled, margin, playback=None):
+        self.coupled=coupled;self.margin=margin;self.playback=playback
         f=coupled.fitter;root=f.spec['root_node']
         self.root_weights=np.concatenate([np.sum(weights*f.descendants[root][nodes],axis=1)
                                           for nodes,points,weights in f.skin.parts])
@@ -33,6 +33,12 @@ class GuardedMeshTrials:
             for target in f.active[frame]:
                 ids=f.spec['patches'][target['patch']]['vertices']
                 contact.append(1-float(np.linalg.norm(points[ids].mean(axis=0)-target['target_position_m']))/f.spec['screen']['contact_error_m'])
+        if self.playback is not None:
+            playback_floor=self.playback.values(controls);floor.extend(playback_floor.tolist())
+            if playback_floor.min()<self.margin:
+                extra=self.playback.lift(controls,self.margin)
+                if extra is None:rescuable=False
+                else:lift=max(lift,extra)
         return np.asarray(floor),np.asarray(contact),(lift+1e-8 if lift>0 and rescuable else None)
 
     def candidates(self, origin, endpoint):

@@ -25,6 +25,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Guarded contact trials](docs/crawl-body-contact-guarded-trials-v1.md) reduce the same crawl's worst target error, but regress an already passing contact and still fail acceptance. Dense playback reveals a between-key floor violation; the mesh-fitting export path now checks decoded subframes before accepting a candidate.
 
+[Playback floor guards](docs/crawl-body-contact-playback-guards-v1.md) now retain the floor limit during sampled playback and protect an already passing contact at authored keys. Other contacts, the full-frame hold and two intermediate serialized contact checks still fail; the original remains selected.
+
 [Between-key support refinement](docs/native-support-sampled-repair-v1.md) repairs the measured dance/get-up contact-bound failures with exact replay and actual engine checks. All final motion-rate selections still fail and inputs remain retained; the option is available in Studio and the CLI.
 
 [Explicit Studio rig preparation](docs/studio-support-preparation-v1.md) keeps original and derived clips separate and measures tiny static-scale changes before fitting. [Broader support diagnostics](docs/native-support-action-breadth-v1.md) cover six existing development actions on three assets; failed authoring, support and rate checks remain visible.
