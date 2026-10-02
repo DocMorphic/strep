@@ -137,3 +137,5 @@ See the [full project goal](docs/project-goal.md), [research plan](docs/research
 Completed changes are committed and pushed as development continues. See [the repository workflow](docs/github-workflow.md). Third-party licenses and access requirements remain separate from this repository's public visibility.
 
 The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) now verifies finite gradients for small frozen-base adapters on the acquired checkpoint within the local GPU's memory. It performs no training updates and establishes no motion-quality improvement; reviewed licensed correction data and an evaluated trainer remain necessary.
+
+[Native target and denoising checks](docs/kimodo-denoising-targets-v1.md) now verify motion reconstruction and 54 conditional gradient cases across seven developed actions. A source-bound developer-review packet records 220 contact disagreements; its examples remain unapproved for training. Separate CPU adapter/target tests now run in CI without model weights.
