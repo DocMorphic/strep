@@ -6,6 +6,7 @@ def render():
     html=html.replace('__CONTROL_CENTER__',(scripts/'control-center.html').read_text(encoding='utf8'))
     html=html.replace('<details id="sceneRegionPanel">',(scripts/'scene-pair-editor.html').read_text(encoding='utf8')+'<details id="sceneRegionPanel">')
     html=html.replace('<details id="sceneTrimPanel">',(scripts/'native-review-panel.html').read_text(encoding='utf8')+'<details id="sceneTrimPanel">')
+    html=html.replace('<details id="nativeReviewPanel">',(scripts/'correction-review-panel.html').read_text(encoding='utf8')+'<details id="nativeReviewPanel">')
     html=html.replace('__CHARACTER_STUDIO__',(scripts/'character-studio.html').read_text(encoding='utf8'))
     html=html.replace('__CORRECTION_REVIEW__',(scripts/'correction-review.html').read_text(encoding='utf8'))
     html=html.replace('__NATIVE_SUPPORT_EDITOR__',(scripts/'native-support-editor.html').read_text(encoding='utf8'))

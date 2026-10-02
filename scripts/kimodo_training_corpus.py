@@ -131,8 +131,10 @@ def template(draft_path, output):
     return result
 
 
-def validate(submission_path, reservation_path, joint_names):
+def validate(submission_path, reservation_path, joint_names, *, require_training=True):
     """Validate a complete submission and return bound corrections without writing."""
+    if type(require_training) is not bool:
+        raise ValueError('Explicit training population policy required')
     submission_path, reservation_path = Path(submission_path).resolve(), Path(reservation_path).resolve()
     inputs = {}
     _bound({'path': str(submission_path), 'sha256': sha256(submission_path)}, root := submission_path.parent, inputs)
@@ -223,7 +225,7 @@ def validate(submission_path, reservation_path, joint_names):
         correction_hashes.add(row['correction']['sha256'])
         accepted.append({'row': row, 'original': item, 'target': target, 'correction_path': correction,
                          'values': values, 'rights': rights, 'rights_path': rights_path})
-    if not accepted or not any(item['row']['split'] == 'train' for item in accepted):
+    if require_training and (not accepted or not any(item['row']['split'] == 'train' for item in accepted)):
         raise ValueError('At least one reviewed training correction required')
     return data, accepted, inputs
 

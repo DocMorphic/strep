@@ -32,6 +32,7 @@ def allowed_file(url_path):
     if path=='/scene-pair-editor.js':return ROOT/'scripts/scene-pair-editor.js'
     if path in ['/pose-guide-editor.js','/soma-preview-skin.js','/rig-joint-editor.js','/rig-posture-editor.js','/scene-release-editor.js','/scene-region-editor.js','/scene-grip-picker.js','/scene-object-geometry.js','/scene-hand-patch.js','/scene-trim-editor.js']:return ROOT/'scripts'/path[1:]
     if path=='/native-review-panel.mjs':return ROOT/'scripts/native-review-panel.mjs'
+    if path in ('/correction-review-panel.mjs','/native-reference-player.mjs'):return ROOT/'scripts'/path[1:]
     if path in ('/native-grey-loader.mjs','/native-support-editor.mjs','/native-support-viewer.mjs','/native-support-viewer.html','/native-contact-clock.mjs'):return ROOT/'scripts'/path[1:]
     if path.startswith('/files/native-support-jobs/'):
         from studio_native_support import served_file
@@ -90,6 +91,20 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.headers.get('Host') not in self.server.allowed_hosts:return self.respond(403,{'error':'Loopback host required'})
         route=urlsplit(self.path).path
+        if route=='/api/correction-review-drafts':
+            from studio_correction_review import listing
+            return self.respond(200,listing())
+        if route in ('/api/correction-review-packet','/api/correction-review-source'):
+            from studio_correction_review import first,metadata
+            try:
+                query=parse_qs(urlsplit(self.path).query)
+                fields={'draft','sha256'} if route.endswith('-packet') else {'draft','sha256','item'}
+                optional={'candidate','start'} if route.endswith('-source') else set()
+                if not fields<=set(query) or set(query)-fields not in (set(),optional) or any(len(v)!=1 for v in query.values()):raise ValueError('Exact review selection required')
+                if route.endswith('-packet'):data=first(query['draft'][0],query['sha256'][0])
+                else:data=metadata(query['draft'][0],query['sha256'][0],query['item'][0],query.get('candidate',[None])[0],int(query['start'][0]) if 'start' in query else None)
+                return self.respond(200,data)
+            except (ValueError,TypeError,KeyError,OSError) as exc:return self.respond(400,{'error':str(exc)})
         if route=='/api/native-support-jobs':
             from studio_native_support import listing
             return self.respond(200,listing())
@@ -230,7 +245,7 @@ class Handler(BaseHTTPRequestHandler):
         except (BrokenPipeError,ConnectionResetError):pass
 
     def do_POST(self):
-        if self.path not in ['/api/jobs','/api/scene-pair-fits','/api/scene-trims','/api/scene-releases','/api/scene-region-fits','/api/pose-target','/api/motion-brief','/api/contact-edits','/api/characters/import','/api/characters/sample','/api/characters/profile','/api/rig-jobs','/api/rig-contact-edits','/api/rig-contact-inspect','/api/rig-patch-selection','/api/native-support-edits','/api/rig-clip-edits','/api/rig-joint-edits','/api/rig-posture-edits','/api/rig-mirror-edits','/api/rig-transitions','/api/rig-loops','/api/rig-loop-search','/api/rig-events','/api/rig-prompt-edits','/api/rig-dynamics-edits']:return self.respond(404,{'error':'Unknown endpoint'})
+        if self.path not in ['/api/correction-review-pack','/api/correction-review-submission','/api/jobs','/api/scene-pair-fits','/api/scene-trims','/api/scene-releases','/api/scene-region-fits','/api/pose-target','/api/motion-brief','/api/contact-edits','/api/characters/import','/api/characters/sample','/api/characters/profile','/api/rig-jobs','/api/rig-contact-edits','/api/rig-contact-inspect','/api/rig-patch-selection','/api/native-support-edits','/api/rig-clip-edits','/api/rig-joint-edits','/api/rig-posture-edits','/api/rig-mirror-edits','/api/rig-transitions','/api/rig-loops','/api/rig-loop-search','/api/rig-events','/api/rig-prompt-edits','/api/rig-dynamics-edits']:return self.respond(404,{'error':'Unknown endpoint'})
         host=self.headers.get('Host');origin=self.headers.get('Origin')
         if host not in self.server.allowed_hosts or origin!=f'http://{host}':return self.respond(403,{'error':'Submit from the local studio page'})
         if self.path=='/api/characters/import':
@@ -246,8 +261,17 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get('Content-Type')!='application/json':return self.respond(415,{'error':'JSON required'})
         try:
             length=int(self.headers.get('Content-Length','0'))
-            if not 0<length<=32768:raise ValueError('Request too large or empty')
+            limit=1048576 if self.path in ('/api/correction-review-pack','/api/correction-review-submission') else 32768
+            if not 0<length<=limit:raise ValueError('Request too large or empty')
             payload=json.loads(self.rfile.read(length))
+            if self.path in ('/api/correction-review-pack','/api/correction-review-submission'):
+                from studio_correction_review import pack_request,save_review
+                from action_worker_lock import worker_lock
+                try:
+                    with self.server.job_lock,worker_lock():
+                        result=pack_request(payload) if self.path.endswith('-pack') else save_review(payload)
+                except RuntimeError as exc:return self.respond(409,{'error':str(exc)})
+                return self.respond(201,result)
             if self.path=='/api/pose-target':
                 from pose_target import author,validate
                 from action_worker_lock import worker_lock

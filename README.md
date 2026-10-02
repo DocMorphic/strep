@@ -147,3 +147,5 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 [Native correction packing](docs/native-correction-packing-v1.md) exports an authored NPZ window and a complete on/off foot-contact schedule into that correction format without custom Python. Model suggestions stay separate from unknown annotation fields, and exported files remain unapproved until actual review and rights evidence are supplied.
 
 [Verified corpus reading](docs/kimodo-corpus-reader-v1.md) checks pinned manifests, review/evidence files, development splits and exact re-encoding before exposing targets to a trainer. New V2 manifests bind submission and reservation files explicitly; no real corpus has passed admission and no animation-quality improvement is claimed.
+
+[Studio developer correction review](docs/studio-correction-review-v1.md) now records segment decisions, explicit contact intervals, measured cleanup time and source-bound permission evidence. Original grey reference playback is separate from externally authored candidate review; saving does not admit training data or approve release quality.
