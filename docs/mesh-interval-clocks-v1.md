@@ -36,10 +36,12 @@ the across-clip fitter. Periodic clips still reject across-clip fitting rather
 than losing cycle closure.
 
 Reopening the input or candidate of the completed contact job restores its
-hash-bound saved options even in a fresh browser. Further trims, retiming,
-mirroring, transitions and loop extraction still need explicit propagation and
-review of these choices; the original job remains retained. This update does
-not claim that those downstream editing paths preserve mixed timing yet.
+hash-bound saved options even in a fresh browser. A subsequent
+[editing integration](mesh-contact-timing-edits-v1.md) preserves active choices
+through trim, speed, pose and event edits. Transitions, loops and mirrors retain
+clocks with review targets; they do not turn those targets into fitted contact
+conditions. The original job remains retained, and anatomical/timing review is
+still required.
 
 CLI callers may pass `--contact-clock-overrides timings.json`, for example:
 

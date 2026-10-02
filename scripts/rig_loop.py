@@ -40,9 +40,12 @@ def prepare(payload,folder):
     save(dest/'report.json',report)
     spec=previous/'input/contact-spec.json' if payload['variant']=='input' else previous/'contact-spec.json'
     if spec.exists():shutil.copyfile(spec,dest/'contact-spec.json')
+    from rig_contact_timing import snapshot,bind_inputs
+    snapshot(glb,dest)
     save(folder/'loop.json',payload)
     history=folder/'source/loop-history'/folder.name;history.mkdir(parents=True);shutil.copytree(dest,history/'input');shutil.copyfile(folder/'loop.json',history/'loop.json')
     request=dict(kind='loop',label=payload['label'],asset_id=original['asset_id'],profile_id=sha256(folder/'source/rig-profile.json'),source_kind=report.get('source_kind','soma_motion'),source_motion_sha256=sha256(folder/'source'/original_name),correct_contacts=False,recipe_sha256=sha256(folder/'loop.json'))
+    bind_inputs(folder,request)
     save(folder/'request.json',request);save(folder/'pipeline.json',dict(status='starting'));return request
 
 
@@ -88,6 +91,8 @@ def assemble(raw,parents,root,recipe):
 
 def run(folder):
     folder=Path(folder);recipe=read(folder/'loop.json');request=read(folder/'request.json');report=read(folder/'input/report.json');path=folder/'input/character.glb'
+    from rig_contact_timing import verify_inputs,target_rows
+    verify_inputs(folder,request)
     if sha256(path)!=recipe['glb_sha256'] or sha256(folder/'loop.json')!=request['recipe_sha256'] or sha256(report['source'])!=report['source_sha256']:raise ValueError('Loop snapshot changed')
     rig=RigAsset.load(path);sampler=AnimationSampler(rig.document,rig.binary,0);a,p,k=(recipe[n] for n in ('start_frame','period_frames','blend_frames'));root=report['root_node']
     raw=np.array([sampler.sample(float(np.float32(f/30))) for f in range(a,a+p+k)])
@@ -101,9 +106,8 @@ def run(folder):
     from rig_contact_tracks import signals,ROLES
     masks,origin=signals(report)
     targets=[]
-    if (folder/'input/contact-spec.json').exists():
-        spec=read(folder/'input/contact-spec.json')
-        targets=[dict(patch=c['patch'],vertices=spec['patches'][c['patch']]['vertices'],target_position_m=c['target_position_m'],output_frames=[dict(frame=f,weight=1.) for f in range(c['start_frame'],c['end_frame_exclusive'])]) for c in spec['contacts']]
+    stored=target_rows(folder/'input')
+    if stored is not None:targets=stored
     elif (folder/'input/contact-review.json').exists():targets=read(folder/'input/contact-review.json')['authored_targets']
     audits={}
     for name,poses in [('transfer',single),('repeated',repeated)]:
@@ -126,7 +130,7 @@ def run(folder):
                     if weight>0:groups.setdefault(c['cycle_offset'],[]).append(dict(frame=f,weight=weight))
             for offset,frames in groups.items():
                 matrix=np.linalg.matrix_power(cycle,offset);position=matrix[:3,:3]@t['target_position_m']+matrix[:3,3]
-                authored.append(dict(patch=t['patch'],vertices=t['vertices'],target_position_m=position.tolist(),output_frames=frames,source_cycle_offset=offset))
+                authored.append(dict(t,target_position_m=position.tolist(),output_frames=frames,source_cycle_offset=offset))
         save(out/'contact-review.json',dict(authored_targets=authored,ambiguous_support_frames=ambiguous,requires_review=True,scope='Targets follow cycle placement and source weights; not fitted or confirmed.'))
         save(out/'timeline.json',dict(period_frames=p,fps=30,frames=len(poses),contributors=clock,cycle_transform=cycle.tolist(),source_glb_sha256=recipe['glb_sha256'],terminal_sample='Last frame duplicates phase zero at the next cycle placement; duration is period_frames/30.'))
         from rig_events import load as load_events,remap as remap_events

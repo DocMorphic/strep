@@ -43,6 +43,8 @@ def prepare(payload,folder):
     if not (target/'events.json').exists() and (metadata/'events.json').exists():shutil.copyfile(metadata/'events.json',target/'events.json')
     spec=previous/'input/contact-spec.json' if payload['variant']=='input' else previous/'contact-spec.json'
     if spec.exists():shutil.copyfile(spec,folder/'contact-spec.json')
+    from rig_contact_timing import snapshot,bind_inputs
+    snapshot(glb,target)
     name='character.glb' if report.get('source_kind')=='gltf_animation' else 'motion.npz'
     report.update(source=str((folder/'source'/name).resolve()),character=str((folder/'source/character.glb').resolve()))
     if report.get('timeline_edited'):report['contact_annotations_file']=str((target/'contacts.json').resolve())
@@ -59,17 +61,22 @@ def prepare(payload,folder):
         repeated=previous/'corrected/repeated' if payload['variant']=='corrected' else previous/'repeated'
         if sha256(repeated/'character.glb')!=expected:raise ValueError('Repeated source changed')
         shutil.copytree(repeated,folder/'repeated');request['repeated_sha256']=expected
+    bind_inputs(folder,request)
     save(folder/'request.json',request);save(folder/'pipeline.json',dict(status='starting'));return request
 
 
 def run(folder):
     folder=Path(folder);recipe=read(folder/'event-edit.json');request=read(folder/'request.json');report=read(folder/'input/report.json')
+    from rig_contact_timing import verify_inputs,load as load_timing,write as write_timing
+    verify_inputs(folder,request)
     if sha256(folder/'input/character.glb')!=recipe['glb_sha256'] or sha256(folder/'event-edit.json')!=request['recipe_sha256']:raise ValueError('Event snapshot changed')
     if request.get('inherited_joint_edit'):
         inherited=request['inherited_joint_edit']
         if sha256(folder/'input/joint-edit-audit.json')!=inherited['audit_sha256'] or sha256(folder/'input/character.glb')!=inherited['glb_sha256']:
             raise ValueError('Inherited joint quality snapshot changed')
     target=folder/'transfer';shutil.copytree(folder/'input',target)
+    timing=load_timing(folder/'input/character.glb')
+    if timing is not None:write_timing(target,timing[0],timing[1]['fit_options'],'event_markers',timing[2])
     save(target/'events.json',edit(load(folder/'input'),recipe['markers'],recipe['glb_sha256'],report['frames']))
     if report.get('timeline_edited'):report['contact_annotations_file']=str((target/'contacts.json').resolve())
     save(target/'report.json',report)

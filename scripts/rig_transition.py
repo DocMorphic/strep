@@ -43,7 +43,8 @@ def prepare(payload,folder):
         shutil.copyfile(glb,dest/'character.glb')
         metadata=glb.parent if (glb.parent/'inventory.json').exists() else old/'transfer'
         for name in ('inventory.json','rig-profile.json','contacts.json'):shutil.copyfile(metadata/name,dest/name)
-        if (metadata/'events.json').exists():shutil.copyfile(metadata/'events.json',dest/'events.json')
+        for name in ('events.json','contact-review.json'):
+            if (metadata/name).exists():shutil.copyfile(metadata/name,dest/name)
         shutil.copyfile(glb.parent/'root-motion.json',dest/'root-motion.json')
         original='character.glb' if report.get('source_kind')=='gltf_animation' else 'motion.npz'
         report.update(source=str((src/original).resolve()),character=str((src/'character.glb').resolve()))
@@ -51,12 +52,15 @@ def prepare(payload,folder):
         save(dest/'report.json',report)
         spec=old/'input/contact-spec.json' if payload['clips'][i]['variant']=='input' else old/'contact-spec.json'
         if spec.exists():shutil.copyfile(spec,dest/'contact-spec.json')
+        from rig_contact_timing import snapshot,bind_inputs
+        snapshot(glb,dest)
     save(folder/'transition.json',payload)
     history=folder/'source/transition-history'/folder.name;history.mkdir(parents=True)
     shutil.copytree(folder/'input',history/'input');shutil.copytree(folder/'following',history/'following');shutil.copyfile(folder/'transition.json',history/'transition.json')
     report=snapshots[0][3];original='character.glb' if report.get('source_kind')=='gltf_animation' else 'motion.npz'
     request=dict(kind='transition',label=payload['label'],asset_id=snapshots[0][2]['asset_id'],profile_id=sha256(folder/'source/rig-profile.json'),source_kind=report.get('source_kind','soma_motion'),
         source_motion_sha256=sha256(folder/'source'/original),correct_contacts=False,recipe_sha256=sha256(folder/'transition.json'))
+    bind_inputs(folder,request)
     save(folder/'request.json',request);save(folder/'pipeline.json',dict(status='starting'));return request
 
 
@@ -84,6 +88,8 @@ def blend(a,b,weights):
 
 def run(folder):
     folder=Path(folder);recipe=read(folder/'transition.json');request=read(folder/'request.json')
+    from rig_contact_timing import verify_inputs,target_rows
+    verify_inputs(folder,request)
     if sha256(folder/'transition.json')!=request['recipe_sha256']:raise ValueError('Transition recipe changed')
     rigs=[];reports=[];worlds=[];locals=[];frame_maps=[];animated=set()
     for i,name in enumerate(('input','following')):
@@ -141,13 +147,14 @@ def run(folder):
     save(out/'contacts.json',dict(origin='blended_source_predictions',source_origins=origins,intervals=intervals,provenance='Both positive-weight contributors must predict support during the blend. Missing annotations are unknown, not confirmation of no contact.',ambiguous_support_frames=ambiguous))
     authored=[]
     for i,name in enumerate(('input','following')):
-        if not (folder/name/'contact-spec.json').exists():continue
-        spec=read(folder/name/'contact-spec.json')
-        for c in spec['contacts']:
-            frames=[dict(frame=f,weight=entry['weight']) for f,entries in enumerate(clocks) for entry in entries if entry['source']==i and entry['weight']>0 and c['start_frame']<=entry['frame']<c['end_frame_exclusive']]
-            target=np.array(c['target_position_m'])
+        targets=target_rows(folder/name)
+        if targets is None:targets=read(folder/name/'contact-review.json')['authored_targets'] if (folder/name/'contact-review.json').exists() else []
+        for target_row in targets:
+            source_weights={entry['frame']:entry['weight'] for entry in target_row['output_frames']}
+            frames=[dict(frame=f,weight=entry['weight']*source_weights[entry['frame']]) for f,entries in enumerate(clocks) for entry in entries if entry['source']==i and entry['weight']>0 and source_weights.get(entry['frame'],0)>0]
+            target=np.array(target_row['target_position_m'])
             if i:target=alignment[:3,:3]@target+alignment[:3,3]
-            authored.append(dict(source=i,patch=c['patch'],vertices=spec['patches'][c['patch']]['vertices'],target_position_m=target.tolist(),output_frames=frames,original_interval=c))
+            authored.append(dict(target_row,source=i,target_position_m=target.tolist(),output_frames=frames))
     save(out/'contact-review.json',dict(authored_targets=authored,ambiguous_support_frames=ambiguous,requires_review=True,scope='Source targets are remapped and retained for review; they are not fitted or promoted to verified contacts.'))
     save(out/'timeline.json',dict(fps=30,frames=n,blend_start_frame=offset,blend_last_frame=na-1,sources=recipe['clips'],contributors=clocks,second_alignment_matrix=alignment.tolist()))
     from rig_events import load as load_events,remap as remap_events

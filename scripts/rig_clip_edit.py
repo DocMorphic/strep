@@ -83,15 +83,20 @@ def prepare(payload,folder):
     save(dest/'report.json',report)
     prior_spec=previous/'input/contact-spec.json' if payload['variant']=='input' else previous/'contact-spec.json'
     if prior_spec.exists():shutil.copyfile(prior_spec,dest/'contact-spec.json')
+    from rig_contact_timing import snapshot,bind_inputs
+    snapshot(glb,dest)
     save(folder/'clip-edit.json',edit)
     request=dict(kind='clip_edit',label=edit['label'],asset_id=original['asset_id'],profile_id=sha256(folder/'source/rig-profile.json'),
         source_kind=report.get('source_kind','soma_motion'),source_motion_sha256=sha256(folder/'source'/source_name),correct_contacts=False,
         source_job=previous.name,input_variant=payload['variant'],input_glb_sha256=sha256(glb),edit_sha256=sha256(folder/'clip-edit.json'))
+    bind_inputs(folder,request)
     save(folder/'request.json',request);save(folder/'pipeline.json',dict(status='starting'));return request
 
 
 def run(folder):
     folder=Path(folder);request=read(folder/'request.json');edit=read(folder/'clip-edit.json');input=folder/'input/character.glb';report=read(folder/'input/report.json')
+    from rig_contact_timing import verify_inputs,retime as retime_contact_timing
+    verify_inputs(folder,request)
     if sha256(input)!=request['input_glb_sha256'] or sha256(folder/'clip-edit.json')!=request['edit_sha256']:raise ValueError('Clip edit snapshot changed')
     source_frames,clock=timeline(edit,report['frames']);rig=RigAsset.load(input);sampler=AnimationSampler(rig.document,rig.binary,0)
     source_times=(source_frames/30).astype(np.float32).astype(float);world=np.array([sampler.sample(t) for t in source_times]);local=world.copy()
@@ -149,6 +154,7 @@ def run(folder):
         spec=read(folder/'input/contact-spec.json');spec['contacts'],dropped_authored=remap_intervals(spec['contacts'],source_frames)
         spec.update(frames=len(times),glb_sha256=sha256(out/'character.glb'),provenance=spec['provenance'][:1600]+' Retimed to this clip; targets retained in world space and need review after edits.')
         save(folder/'contact-spec.json',spec)
+        retime_contact_timing(folder/'input',out,spec,dropped_authored)
     else:dropped_authored=[]
     root=report['root_node'];save(out/'root-motion.json',dict(space='Edited mapped pelvis world transform; original world placement retained',node=root,times_s=times.tolist(),positions_m=after[:,root,:3,3].tolist(),rotations_xyzw=Rotation.from_matrix(after[:,root,:3,:3]).as_quat().tolist()))
     for name in ('inventory.json','rig-profile.json'):shutil.copyfile(folder/'input'/name,out/name)

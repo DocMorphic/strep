@@ -42,6 +42,7 @@ def run(folder):
                 shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
             for name in ('rig_events.py','rig_event_retime.py','rig_event_edit.py','rig_periodic_contact.py'):shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
             for name in ('rig_runtime_finite.py','godot_finite_adapter.gd','godot_event_object_body.gd'):shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
+            for name in ('rig_contact_timing.py','rig_contact_fit_options.py','mesh_contact_clock.py'):shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
             if request.get('contact_fit') is not None:
                 from rig_contact_fit_options import methods
                 for name in methods():shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
@@ -259,6 +260,17 @@ def run(folder):
                     scope=motion_origin['scope'],applies_to='original_source_motion',quality_approved=False)
                 for name in motion_origin['files']:
                     result['source_generation_origin'][name.removesuffix('.json').replace('-','_')] = base+'source/motion-origin/'+name
+            from rig_contact_timing import write as write_contact_timing
+            if request['kind']=='contact_edit':
+                from rig_contact_fit_options import defaults
+                for variant in ('transfer','corrected'):
+                    if variant in result['variants']:
+                        write_contact_timing(folder/variant,read(folder/'contact-spec.json'),request.get('contact_fit',defaults()),
+                            'authored_contact_job',dict(draft_sha256=request['authored_spec_sha256']))
+            for variant,value in result['variants'].items():
+                timing=folder/variant/'contact-timing.json'
+                if timing.exists():
+                    value.update(contact_timing=base+variant+'/contact-timing.json',contact_timing_sha256=sha256(timing),contact_spec=base+variant+'/contact-spec.json')
             from motion_origin_inventory import write as write_generation_sources
             generation_sources=write_generation_sources(folder)
             result['generation_sources']=dict(manifest=base+'generation-sources.json',manifest_sha256=sha256(folder/'generation-sources.json'),

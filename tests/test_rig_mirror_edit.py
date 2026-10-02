@@ -12,11 +12,12 @@ def test_candidate_drops_stale_success_and_active_scene_targets(monkeypatch,tmp_
     save(inp/'report.json',dict(frames=3,fps=30,root_node=0,mapping={'Hips':0},source='source.npz',source_sha256='a'*64,
         human_approved=True,engine_import='passed',target_contact_solved=True,roundtrip_max_matrix_error=99))
     save(inp/'contacts.json',dict(mapping={},intervals=[]))
-    save(inp/'contact-spec.json',dict(glb_sha256='old',contacts=['old-world-target']))
+    targets=[dict(patch='palm',start_frame=0,end_frame_exclusive=2,target_position_m=[.2,0,0])]
+    save(inp/'contact-spec.json',dict(glb_sha256=sha256(inp/'character.glb'),patches={'palm':dict(vertices=[0])},contacts=targets))
     save(inp/'timeline.json',dict(period_frames=2))
     save(inp/'events.json',dict(fps=30,events=[dict(name='left_hit',frame=1,requires_review=False)]))
     for name in ('inventory.json','rig-profile.json'):save(inp/name,{})
-    recipe=dict(frames=3,label='Test mirror',source_sha256=sha256(inp/'character.glb'));save(tmp_path/'mirror.json',recipe)
+    recipe=dict(frames=3,label='Test mirror',source_sha256=sha256(inp/'character.glb'),plane_normal=[1,0,0],plane_point=[0,0,0]);save(tmp_path/'mirror.json',recipe)
     save(tmp_path/'request.json',dict(mirror_sha256=sha256(tmp_path/'mirror.json'),source_job='original',input_variant='transfer',
         input_sidecar_sha256={p.name:sha256(p) for p in inp.iterdir()}))
     def export(source,recipe,out,contacts,events):
@@ -32,7 +33,11 @@ def test_candidate_drops_stale_success_and_active_scene_targets(monkeypatch,tmp_
     assert read(tmp_path/'transfer/contacts.json')['origin']=='source_model_predictions'
     assert not (tmp_path/'contact-spec.json').exists()
     assert 'period_frames' not in read(tmp_path/'transfer/timeline.json')
-    assert read(inp/'contact-spec.json')['contacts']==['old-world-target']
+    assert read(inp/'contact-spec.json')['contacts']==targets
+    review=read(tmp_path/'transfer/contact-review.json')
+    assert review['authored_targets'][0]['contact_clock']=='authored-keys'
+    assert review['authored_targets'][0]['proposed_mirrored_target_position_m']==[-.2,0,0]
+    assert review['authored_targets'][0]['requires_anatomical_remap']
     assert audit['retained_source_targets']==['contact-spec.json']
     # A changed source annotation must reject before launching the exporter.
     save(inp/'events.json',dict(events=[]))

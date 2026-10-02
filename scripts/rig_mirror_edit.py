@@ -52,6 +52,8 @@ def prepare(payload,folder):
         if path.exists():shutil.copyfile(path,dest/name)
     spec=previous/'input/contact-spec.json' if payload['variant']=='input' else previous/'contact-spec.json'
     if spec.exists():shutil.copyfile(spec,dest/'contact-spec.json')
+    from rig_contact_timing import snapshot,bind_inputs
+    snapshot(glb,dest)
     source_name='character.glb' if report.get('source_kind')=='gltf_animation' else 'motion.npz'
     report.update(source=str((folder/'source'/source_name).resolve()),character=str((folder/'source/character.glb').resolve()))
     if report.get('timeline_edited'):report['contact_annotations_file']=str((dest/'contacts.json').resolve())
@@ -60,16 +62,28 @@ def prepare(payload,folder):
         source_kind=report.get('source_kind','soma_motion'),source_motion_sha256=sha256(folder/'source'/source_name),correct_contacts=False,
         source_job=previous.name,input_variant=payload['variant'],input_glb_sha256=sha256(glb),mirror_sha256=sha256(folder/'mirror.json'),
         input_sidecar_sha256={p.name:sha256(p) for p in dest.iterdir() if p.is_file()})
+    bind_inputs(folder,request)
     save(folder/'request.json',request);save(folder/'pipeline.json',dict(status='starting'));return request
 
 
 def run(folder):
     folder=Path(folder);request=read(folder/'request.json');recipe=read(folder/'mirror.json');input=folder/'input';out=folder/'transfer'
+    from rig_contact_timing import verify_inputs,target_rows
+    verify_inputs(folder,request)
     if sha256(folder/'mirror.json')!=request['mirror_sha256']:raise ValueError('Mirror recipe changed')
     for name,digest in request['input_sidecar_sha256'].items():
         if sha256(input/name)!=digest:raise ValueError('Mirror input snapshot changed: '+name)
     report=read(input/'report.json')
     write_clip(input/'character.glb',recipe,out,input/'contacts.json',input/'events.json' if (input/'events.json').exists() else None)
+    targets=target_rows(input)
+    if targets is None and (input/'contact-review.json').exists():targets=read(input/'contact-review.json')['authored_targets']
+    if targets is not None:
+        normal=np.asarray(recipe['plane_normal']);normal=normal/np.linalg.norm(normal);point=np.asarray(recipe['plane_point'])
+        for target in targets:
+            position=np.asarray(target['target_position_m']);target['proposed_mirrored_target_position_m']=(position-2*normal*np.dot(normal,position-point)).tolist()
+            target['requires_anatomical_remap']=True
+        save(out/'contact-review.json',dict(authored_targets=targets,requires_review=True,
+            scope='Source patch identities, target positions and contact clocks retained for review. Proposed reflected points are not fitted targets; anatomical mesh correspondence needs re-authoring.'))
     for name in ('inventory.json','rig-profile.json'):shutil.copyfile(input/name,out/name)
     contact=read(out/'contacts.json');contact.setdefault('origin','none_supplied' if report.get('source_kind')=='gltf_animation' else 'source_model_predictions');save(out/'contacts.json',contact)
     audit=read(out/'audit.json');check=audit['export']

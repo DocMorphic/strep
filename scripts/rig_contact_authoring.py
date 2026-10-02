@@ -41,6 +41,12 @@ def source(job_id,variant):
     source_name='character.glb' if report.get('source_kind')=='gltf_animation' else 'motion.npz'
     report.update(glb_sha256=expected,source=str(folder/'source'/source_name))
     if sha256(report['source'])!=report['source_sha256']:raise ValueError('Source native motion changed')
+    timing=glb.parent/'contact-timing.json'
+    if timing.exists() or result['variants'][variant].get('contact_timing_sha256'):
+        if not timing.exists() or sha256(timing)!=result['variants'][variant].get('contact_timing_sha256'):
+            raise ValueError('Source contact timing record changed or is unbound')
+        from rig_contact_timing import load
+        load(glb)
     return folder,result,request,report,glb
 
 
@@ -60,7 +66,8 @@ def metadata(job_id,variant):
     from gltf_tools import sample_animation
     folder,result,request,report,glb=source(job_id,variant);rig=RigAsset.load(glb)
     spec=empty_spec(report)
-    saved_spec=folder/'input/contact-spec.json' if variant=='input' else folder/'contact-spec.json'
+    from rig_contact_timing import spec_path,load
+    saved_spec=spec_path(glb)
     if saved_spec.is_file():
         spec=read(saved_spec);spec['glb_sha256']=report['glb_sha256']
         spec['patches']={name:dict(vertices=patch['vertices']) for name,patch in spec['patches'].items()}
@@ -87,6 +94,7 @@ def metadata(job_id,variant):
         if sha256(saved)!=request.get('contact_fit_sha256') or read(saved)!=request['contact_fit'] or sha256(folder/'contact-spec.json')!=request['authored_spec_sha256']:
             raise ValueError('Saved contact fitting choice or draft changed')
         saved_options=validate_fit(request['contact_fit'],glb,spec)
+    if (glb.parent/'contact-timing.json').exists():saved_options=load(glb)[1]['fit_options']
     return dict(job_id=job_id,variant=variant,glb_sha256=report['glb_sha256'],frames=report['frames'],fps=report['fps'],period_frames=periodic,events=load_events(glb.parent if (glb.parent/'events.json').exists() or variant!='corrected' else folder/'transfer'),
         asset_id=request['asset_id'],spec=spec,primitives=primitives,vertex_count=offset,
         verification_vertices=[dict(index=i,position_m=vertices[i].tolist()) for i in checks],
