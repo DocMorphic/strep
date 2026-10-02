@@ -20,6 +20,9 @@ new learned model or release-quality contacts.
    Same-foot edit windows cannot overlap.
 4. Try correction. The original smoothing method remains the default; decoded
    between-key refinement is still an explicit, bounded eight-iteration choice.
+   An alternative [joint support/rate search](studio-joint-support-v1.md) uses
+   160 evaluations per proposal and saved bounded motion controls. Choose one
+   method; all final serialized gates remain required.
    Compare the source and all retained proposals, including failures.
 5. **Use candidate in native review** explicitly selects the converted result.
    It must belong to the currently selected draft, item and parent candidate.

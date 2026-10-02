@@ -58,10 +58,12 @@ def validate_request(payload):
     from native_support_clock import NativeSupportSampler
     from native_support_spec import validate
     fields={'source_job','variant','spec'}
-    if not isinstance(payload, dict) or not fields<=set(payload) or set(payload)-fields-{'prepare_rigid_input','sampled_support_repair'}:
+    if not isinstance(payload, dict) or not fields<=set(payload) or set(payload)-fields-{'prepare_rigid_input','sampled_support_repair','joint_source_rate_search'}:
         raise ValueError('Selected source job, version and native support draft required')
     if type(payload.get('prepare_rigid_input',False)) is not bool:raise ValueError('Explicit rig preparation choice required')
     if type(payload.get('sampled_support_repair',False)) is not bool:raise ValueError('Explicit sampled support choice required')
+    if type(payload.get('joint_source_rate_search',False)) is not bool:raise ValueError('Explicit joint source-rate search choice required')
+    if payload.get('sampled_support_repair',False) and payload.get('joint_source_rate_search',False):raise ValueError('Choose one support proposal method')
     _, _, _, report, glb = source(payload['source_job'], payload['variant'])
     spec = copy.deepcopy(payload['spec']); digest = sha256(glb); rig = RigAsset.load(glb)
     if len(rig.document.get('animations', [])) != 1: raise ValueError('One chosen animation required')
@@ -91,6 +93,8 @@ def prepare(payload, folder):
         prepare_rigid_input=payload.get('prepare_rigid_input',False),
         sampled_support_repair=payload.get('sampled_support_repair',False),
         sampled_support_iterations=8 if payload.get('sampled_support_repair',False) else None,
+        joint_source_rate_search=payload.get('joint_source_rate_search',False),
+        joint_search_evaluations=160 if payload.get('joint_source_rate_search',False) else None,
         fit_folder='native-support-fit-'+folder.name, quality_approved=False)
     if payload['variant']=='native_review':
         from native_review_support import method_names
@@ -116,6 +120,8 @@ def frozen(folder):
     if type(request.get('prepare_rigid_input',False)) is not bool:raise ValueError('Changed rig preparation choice')
     refinement=request.get('sampled_support_repair',False)
     if type(refinement) is not bool or request.get('sampled_support_iterations')!=(8 if refinement else None) or refinement and type(request.get('sampled_support_iterations')) is not int:raise ValueError('Changed sampled support choice or budget')
+    joint=request.get('joint_source_rate_search',False)
+    if type(joint) is not bool or request.get('joint_search_evaluations')!=(160 if joint else None) or joint and (type(request.get('joint_search_evaluations')) is not int or refinement):raise ValueError('Changed joint source-rate search choice or budget')
     if sha256(folder/'source.glb') != request['source_sha256'] or sha256(folder/'draft.json') != request['draft_sha256']:
         raise ValueError('Changed native support snapshot')
     if sha256(folder/'implementation/studio_native_support.py')!=prepared['wrapper_sha256']:
@@ -194,6 +200,8 @@ def run(folder):
                 save(folder/'preparation-binding.json',dict(folder=preparation.name,result_sha256=sha256(preparation/'result.json'),draft_sha256=sha256(folder/'prepared-draft.json')))
             source,draft,preparation=fitting_binding(folder,request)
             options=dict(sampled_support_repair=True,sampled_support_iterations=8) if request.get('sampled_support_repair',False) else {}
+            if request.get('joint_source_rate_search',False):
+                options=dict(joint_rates=True,joint_evaluations=160,joint_swivel=True,joint_foot_orientation=True)
             fit(source,draft,output,**options)
         if request['variant']=='native_review':
             from native_review_support import convert
@@ -232,11 +240,13 @@ def manifest(job):
         if not isinstance(name, str) or Path(name).name != name or '/' in name or '\\' in name or sha256(output/name) != digest:
             raise ValueError('Changed support evidence')
     spec = read(draft); base = f'/files/{NAMESPACE}/{job}/'
-    fit_request=read(output/'request.json');refined=request.get('sampled_support_repair',False)
+    fit_request=read(output/'request.json');refined=request.get('sampled_support_repair',False);joint=request.get('joint_source_rate_search',False)
     if fit_request['spec']!=spec or fit_request['inputs']!={str(source):sha256(source),str(draft):sha256(draft)}:
         raise ValueError('Changed fitting source or authoring draft binding')
-    if fit_request['proposal_method']!=('serialized_sampled_support_corridor_refinement' if refined else 'bounded_bend_smoothing') or fit_request.get('sampled_support_iterations')!=(8 if refined else None):
+    expected_method='joint_support_source_rate_orientation_search' if joint else 'serialized_sampled_support_corridor_refinement' if refined else 'bounded_bend_smoothing'
+    if fit_request['proposal_method']!=expected_method or fit_request.get('sampled_support_iterations')!=(8 if refined else None):
         raise ValueError('Changed fitting refinement mode')
+    if joint and (fit_request.get('joint_search_maximum_evaluations')!=160 or type(fit_request.get('joint_search_maximum_evaluations')) is not int or fit_request.get('joint_swivel_limit_degrees')!=5. or fit_request.get('joint_foot_orientation_limit_degrees')!=1.):raise ValueError('Changed joint-search budget or motion freedom')
     for name,digest in fit_request['implementation'].items():
         if Path(name).name!=name or '/' in name or '\\' in name or sha256(output/'implementation'/name)!=digest:raise ValueError('Changed fitting method archive')
     def asset(name, label, **extra):
@@ -253,6 +263,16 @@ def manifest(job):
     trial_screens=[]
     for trial in result['trials']:
         screen={k:trial[k] for k in ('trial','status','reason','supports','source_rates_pass','support_samples_pass','source_rate_failed_rows') if k in trial}
+        if joint and trial['status']=='complete':
+            evidence=trial['proposal'][0];control=evidence['controls_file'];index=trial['trial']
+            if control!=f'trial-{index}.controls.json' or evidence['method']!=expected_method or evidence['maximum_evaluations']!=160 or evidence['orientation_limit_degrees']!=1. or result['outputs'].get(control)!=evidence['controls_sha256']:
+                raise ValueError('Changed joint-search control binding')
+            controls=read(output/control)
+            if controls.get('schema')!='strep-native-support-orientation-controls-v1' or controls.get('proposal_sha256')!=result['outputs'][f'trial-{index}.glb'] or controls.get('orientation_limit_degrees')!=1. or controls.get('swivel_limit_degrees')!=5.:
+                raise ValueError('Changed joint-search motion controls')
+            screen['joint_search']=dict(evaluations=evidence['evaluations'],maximum_evaluations=160,
+                initial_squared_residual=evidence['initial_squared_residual'],final_squared_residual=evidence['final_squared_residual'],
+                maximum_native_orientation_edit_degrees=evidence['maximum_native_orientation_edit_degrees'],controls_url=base+control)
         if refined and trial['status']=='complete':
             evidence=trial['proposal'][0];index=trial['trial'];audit=f'trial-{index}-support-repair.json'
             if evidence['method']!='serialized_sampled_support_corridor_refinement' or evidence['iterations_limit']!=8 or evidence['quality_approved'] is not False or read(output/audit)!=evidence:
@@ -283,6 +303,7 @@ def manifest(job):
     return dict(id=job, duration_s=spec['duration_s'], supports=spec['supports'], versions=versions,preparation=preparation,
         native_review_candidate=native_candidate,
         refinement=dict(iterations=8) if refined else None,
+        joint_search=dict(maximum_evaluations=160,swivel_limit_degrees=5.,orientation_limit_degrees=1.) if joint else None,
         result_sha256=completion['result_sha256'], result_url=base+'result.json',
         events_url=base+'support-events.json', root_url=base+'root-motion.json',
         retained_input=result['retained_input'], retention_reason=result['retention_reason'],

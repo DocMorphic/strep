@@ -154,6 +154,7 @@ jobs:
           tests/test_studio_native_support.py
           tests/test_studio_support_preparation.py
           tests/test_studio_sampled_support.py
+          tests/test_studio_joint_support.py
           tests/test_rig_mesh_trajectory.py
           tests/test_mesh_contact_feasibility.py
           tests/test_mesh_guarded_trials.py
