@@ -143,6 +143,7 @@ jobs:
           tests/test_native_support_orientation.py
           tests/test_native_support_feasibility.py
           tests/test_native_support_coordinates.py
+          tests/test_native_support_roundtrip.py
           tests/test_native_contact_diagnostics.py
           tests/test_native_support_peak_limits.py
           tests/test_native_support_engine.py

@@ -111,8 +111,13 @@ def merit(g):
 def constraint_model(problem,x,*,quantized=False):
     """Finite-difference proxy; round stored keys before float64 interpolation."""
     values,_=problem.rotations(x)
-    if quantized:values={n:q.astype(np.float32).astype(float) for n,q in values.items()}
-    return signed_constraints(problem,values,problem.world(values))
+    native=getattr(problem,'native_roundtrip',False)
+    if quantized or native:values={n:q.astype(np.float32).astype(float) for n,q in values.items()}
+    raw=signed_constraints(problem,values,problem.world(values))
+    if not native:return raw
+    from native_support_roundtrip import preview_values
+    forwarded=preview_values(values,problem.channels)
+    return np.r_[raw,signed_constraints(problem,forwarded,problem.world(forwarded))]
 
 
 def restore(problem,start,evaluate,*,iterations=8,trust=.0002,observe=None,quantized=False):
@@ -171,7 +176,7 @@ def seed_inputs(folder,source,spec_path,root):
     request,result=read(request_path),read(result_path)
     if read(folder/'pipeline.json').get('status')!='complete' or result.get('status')!='complete':raise ValueError('Completed warm study required')
     method=request.get('proposal_method')
-    if method not in ('joint_support_source_rate_orientation_search','serialized_native_support_feasibility_repair','serialized_native_support_coordinate_repair') or len(result.get('trials',[]))!=4:
+    if method not in ('joint_support_source_rate_orientation_search','serialized_native_support_feasibility_repair','serialized_native_support_coordinate_repair','serialized_native_support_roundtrip_repair') or len(result.get('trials',[]))!=4:
         raise ValueError('Four orientation-search or serialized-repair trials required')
     if request.get('spec')!=read(spec_path) or request['spec']['glb_sha256']!=sha256(source):raise ValueError('Warm study source/draft differs')
     bindings=dict(request['inputs'])
@@ -200,13 +205,18 @@ def seed_inputs(folder,source,spec_path,root):
     return seeds,bindings
 
 
-def propose(rig,reader,rows,path,tau=.05,mu=.5,*,controls_path,iterations=8,trust=.0002,quantized=False,coordinates=False,strict_peaks=False):
+def propose(rig,reader,rows,path,tau=.05,mu=.5,*,controls_path,iterations=8,trust=.0002,quantized=False,coordinates=False,strict_peaks=False,native_roundtrip=False):
     if type(coordinates) is not bool:raise ValueError('Explicit coordinate repair mode required')
     if type(strict_peaks) is not bool:raise ValueError('Explicit strict peak repair mode required')
+    if type(native_roundtrip) is not bool:raise ValueError('Explicit native roundtrip repair mode required')
     controls_path=Path(controls_path);controls=read(controls_path)
     if controls.get('acceleration_time_s')!=tau or controls.get('reference_weight_per_s2')!=mu or controls.get('orientation_limit_degrees')!=1. or controls.get('swivel_limit_degrees')!=5.:
         raise ValueError('Warm seed settings differ from requested trial')
-    problem=SupportOrientationProblem(rig,reader,rows,tau,mu);start=check_controls(problem,controls);path=Path(path);prefix=path.stem
+    problem_type=SupportOrientationProblem
+    if native_roundtrip:
+        from native_support_roundtrip import SupportRoundtripProblem
+        problem_type=SupportRoundtripProblem
+    problem=problem_type(rig,reader,rows,tau,mu);start=check_controls(problem,controls);path=Path(path);prefix=path.stem
     if strict_peaks:
         source_rates=measures(features(problem.raw[problem.rate_ids],problem.rig.joints),problem.caps.dt)
         problem.strict_rate_limits=limits(source_rates,problem.caps)
@@ -219,7 +229,20 @@ def propose(rig,reader,rows,path,tau=.05,mu=.5,*,controls_path,iterations=8,trus
         actual=RigAsset.load(file);s=NativeSupportSampler(actual.document,actual.binary,0)
         world=np.array([s.sample(float(t)) for t in problem.times]);channels=rotation_channels(actual.document,actual.binary)
         g=signed_constraints(problem,{n:channels[n][2] for n in problem.nodes},world)
-        record=dict(label=label,file=file.name,sha256=sha256(file),merit=list(merit(g)));probes.append(record)
+        record=dict(label=label,file=file.name,sha256=sha256(file),raw_merit=list(merit(g)))
+        if native_roundtrip:
+            from native_support_roundtrip import preview_values
+            forwarded=preview_values({n:channels[n][2] for n in problem.nodes},problem.channels)
+            preview=file.with_name(file.stem+'.preview.glb')
+            export_rotations(rig.document,rig.binary,forwarded,preview)
+            converted=RigAsset.load(preview);decoder=NativeSupportSampler(converted.document,converted.binary,0)
+            preview_world=np.array([decoder.sample(float(t)) for t in problem.times])
+            preview_channels=rotation_channels(converted.document,converted.binary)
+            native_g=signed_constraints(problem,{n:preview_channels[n][2] for n in problem.nodes},preview_world)
+            record.update(preview_file=preview.name,preview_sha256=sha256(preview),preview_merit=list(merit(native_g)),
+                          raw_constraints_pass=bool(np.all(g<=0)),preview_constraints_pass=bool(np.all(native_g<=0)))
+            g=np.r_[g,native_g]
+        record['merit']=list(merit(g));probes.append(record)
         save(file.with_suffix('.json'),dict(record,controls=x.tolist(),quality_approved=False))
         return g
     def observe(row):
@@ -230,12 +253,17 @@ def propose(rig,reader,rows,path,tau=.05,mu=.5,*,controls_path,iterations=8,trus
         from native_support_coordinates import restore as coordinate_restore
         x,report=coordinate_restore(problem,start,evaluate,iterations=iterations,trust=trust,observe=observe)
     else:
-        x,report=restore(problem,start,evaluate,iterations=iterations,trust=trust,observe=observe,quantized=quantized)
+        x,report=restore(problem,start,evaluate,iterations=iterations,trust=trust,observe=observe,quantized=quantized or native_roundtrip)
+    if native_roundtrip:
+        evaluate(x,'final')
+        report.update(native_roundtrip_constraints_pass=probes[-1]['preview_constraints_pass'],
+                      serialized_raw_constraints_pass=probes[-1]['raw_constraints_pass'],
+                      native_roundtrip=True,constraint_population='Raw GLB plus editable FP32-matrix preview model; actual NPZ/preview conversion still independent')
     values,_=problem.rotations(x);export_rotations(rig.document,rig.binary,values,path)
     final_controls=dict(controls,parameters=x.tolist(),proposal_sha256=sha256(path),
         scope='Repaired orientation controls; source/draft and independent serialized acceptance remain separate')
     saved=path.with_suffix('.controls.json');save(saved,final_controls)
-    return [dict(report,method='serialized_native_support_coordinate_repair' if coordinates else 'serialized_native_support_feasibility_repair',variables=len(x),
+    return [dict(report,method='serialized_native_support_roundtrip_repair' if native_roundtrip else 'serialized_native_support_coordinate_repair' if coordinates else 'serialized_native_support_feasibility_repair',variables=len(x),
         warm_controls_sha256=sha256(controls_path),controls_file=saved.name,controls_sha256=sha256(saved),
         strict_peak_limits=strict_peaks,absolute_peak_tolerance=STRICT_PEAK_TOLERANCE if strict_peaks else None,
         maximum_parameter_change=float(abs(x-start).max(initial=0)),probes=probes)]
