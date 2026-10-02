@@ -152,4 +152,6 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 
 [Explicit planted-contact correction in Studio](docs/studio-native-plant-v1.md) now exposes source-anchor and speed limits with joint/coordinate search and independent editable-native acceptance. One development wave passes the configured gates; rejected alternatives, actual selected markers and provenance stay visible. This remains sampled development evidence, not human realism or general release approval.
 
+[Imported foot-contact validation](docs/native-engine-contacts-v1.md) now checks actual Godot animation samples and imported skin bindings through independent CPU skin reconstruction. The Studio wave passes its sampled contact limits; the earlier CLI wave exposes a near-coincident endpoint speed failure, and rejected kick/crawl proposals remain failures. Small import position error is separate from contact precision, GPU appearance and release quality.
+
 [Reviewed native corpus training](docs/kimodo-corpus-trainer-v1.md) now connects verified targets to sequential frozen-base adapter updates, isolated development validation and bound resume. A tiny CPU fixture reproduces fresh-process continuation exactly; the real CLI rejects the unreviewed packet, and no real motion training or quality improvement is claimed.

@@ -1617,3 +1617,48 @@ A separately recorded actual Studio run starts from the prior accepted-height cl
 reports/studio-native-plant-validation-v1/verification.json binds current public source, archived methods and terminal evidence. Matrix edits remain its two progress fields; journal bytes preserve the exact published prefix. A verified idle project-owned server is refreshed after workers/checks, observing only its new process and loopback socket. Authorized ongoing commits exclude credentials, model/character payloads and generated studies.
 
 The full goal stays active. This is one developer wave with numerical stance choices, not held-out semantic/realism approval. General action/style and scene/object/partner/finger/rig behavior, continuous geometry/force/balance plausibility, reviewed licensed data and measured learning, human timed cleanup and full release acceptance still require evidence. All 14 capabilities remain unapproved and the formal 72x5 population is untouched.
+
+
+## 2026-10-02T22:16:28.123673+00:00 - Imported native contact precision and retained failures
+
+The preceding turn verified the already public/up-to-date GitHub repository; it
+made no new implementation progress toward the full model goal. Revalidated the
+clean checkout and took the next available engine-contact validation action.
+Predecessor a852d4b's hosted workflow 37068266702 passes all four jobs.
+
+Added a source/base/draft-bound headless Godot audit with actual imported joint
+poses and vertex/bind/weight data, independent CPU skin reconstruction, fixed
+source patch identities and separate original 120Hz/native-key populations.
+The actual 4.7.2 unsigned-16 skin weight encoding is checked for vertex identity;
+measured engine coordinates retain its deficits. No weight normalization, pose
+matching, interval filtering or tolerance widening substitutes for a contact
+pass. Input/method archives, engine executable/version and output hashes bind
+every completed study. Unsupported imports fail explicitly; completed audits
+can contain failed motions and do not change Studio selections.
+
+Four source/candidate studies cover 960 engine observations, 77 named bones and
+one imported skin surface per scene. The actual Studio wave passes sampled
+engine anchor/speed/height/gap limits (0.509842mm and 4.999588mm/s). The earlier
+actual CLI wave fails the original speed population at a 95ns endpoint pair:
+19nm of imported position change yields 198.58mm/s despite its native pass.
+Its native-key and ordinary-interval diagnostics pass but do not erase that
+failure. Rejected raw kick/crawl proposals remain failed and immutable. Across
+the four studies, imported/native foot position differences stay below 7.36um;
+position fidelity alone cannot prove contact speed. Earlier preflight/encoding/
+clock attempts remain archived separately.
+
+1758 model-free source checks and all 16 JS suites pass. Analytical checks cover
+binding reordering/duplicates, wrong bones, quantized deficits, source anchors,
+invalid imports/clocks, strict speed failures and endpoint amplification.
+reports/native-engine-contact-validation-v1/verification.json binds public
+source, completed study/evidence and validation output. Model/character
+payloads and generated exports stay ignored; authorized validated changes are
+committed and pushed. No Studio reload or live HTTP/browser/GPU probe is needed
+for this CLI-only implementation.
+
+Next work must resolve the precision/conditioning contract without silently
+replacing the failing population, then broaden engine/contact/scene/partner,
+rig, style, editing and semantic validation toward the complete system. There
+is no human review, training admission, model update or release approval here.
+All 14 capabilities remain unapproved and the formal 72x5 population is
+untouched. The full project-wide goal stays active.

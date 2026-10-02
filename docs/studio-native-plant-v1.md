@@ -86,8 +86,12 @@ The Studio manifest, actual selected NPZ/GLB and source-bound stance markers
 agree. Five exported versions cover 600 native Godot frames with 77 bones, one
 skin and non-looping playback; maximum position/basis errors remain 5.437e-7 m
 and 9.795e-7. This establishes the offline backend path and import fidelity;
-rendered browser/GPU appearance and engine-interpolated contact precision are
-separate, unverified questions.
+rendered browser/GPU appearance and engine-interpolated contact precision were
+separate, unverified questions in that study. A subsequent
+[imported contact audit](native-engine-contacts-v1.md) now passes the Studio
+wave's sampled CPU contact limits and exposes a near-coincident endpoint speed
+failure in the earlier CLI wave. Neither result approves rendered appearance
+or general engine quality.
 
 84 focused model-free Studio/support tests and 215 CPU adapter/native pipeline
 tests pass, together with four desktop bundle checks and offline editor/formatter
