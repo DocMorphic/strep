@@ -155,3 +155,9 @@ optimization failures. No new
 training, held-out use, engine/GPU/browser rendering, human review or release
 approval is claimed. All 14 release capabilities remain unapproved and the
 full-project goal remains active.
+
+
+Subsequent [engine and imported-skin audits](native-support-engine-v1.md) pass
+all five source/proposal imports and preserve sampled proposal clearance.
+They do not resolve the stricter peak, stationary sole, continuous collision
+or human-quality requirements above.
