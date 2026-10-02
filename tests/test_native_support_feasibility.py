@@ -130,8 +130,74 @@ def test_real_job_warms_exact_controls_and_preserves_archived_inputs(tmp_path,mo
         assert all(sha256(output/probe['file'])==probe['sha256'] for probe in p['probes'])
         assert sha256(output/p['controls_file'])==p['controls_sha256']
     assert all(sha256(p)==h for p,h in frozen.items())
+    # A completed repair can be chained without dropping ancestor/probe hashes.
+    chained=tmp_path/'reports'/'quantized'
+    chain=job.run(source,draft,chained,**flags,repair_from=output,repair_iterations=1,
+                  repair_trust=2e-7,repair_quantized=True)
+    bound=read(chained/'request.json')
+    assert bound['repair_quantized_differences'] is True and bound['rate_tolerance']==request['rate_tolerance']
+    assert bound['spec']==request['spec']
+    assert set(request['inputs']).issubset(bound['inputs'])
+    assert str(output/'pipeline.json') in bound['inputs']
+    assert sha256(output/'result.json')==bound['inputs'][str(output/'result.json')]
+    for t in chain['trials']:
+        assert t['status']=='complete'
+        q=t['proposal'][0];parent=result['trials'][t['trial']]['proposal'][0]
+        assert q['difference_model']=='float32_keys_float64_interpolation'
+        assert q['difference_step_radians']==1e-7 and q['minimum_trust_radians']==1e-9
+        assert q['probes'][0]['sha256']==result['trials'][t['trial']]['sha256']
+        assert q['final_merit'][0]<=q['initial_merit'][0]
+        for probe in parent['probes']:assert str(output/probe['file']) in bound['inputs']
+    # Conflicting output/proposal bindings cannot silently override each other.
+    old_result=read(output/'result.json');bad=read(output/'result.json')
+    bad['trials'][0]['proposal'][0]['controls_sha256']='0'*64;save(output/'result.json',bad)
+    rejected=tmp_path/'reports'/'conflict'
+    with pytest.raises(ValueError,match='Conflicting'):job.run(source,draft,rejected,**flags,repair_from=output)
+    assert not rejected.exists();save(output/'result.json',old_result)
+    # Any ancestor probe mutation blocks another warm job before creation.
+    probe=output/result['trials'][0]['proposal'][0]['probes'][0]['file']
+    original=probe.read_bytes();probe.write_bytes(original+b'changed')
+    rejected=tmp_path/'reports'/'ancestor-change'
+    with pytest.raises(ValueError,match='hash'):job.run(source,draft,rejected,**flags,repair_from=chained)
+    assert not rejected.exists();probe.write_bytes(original)
     # Mutating the old control payload is rejected before a new study exists.
     control=warm/'trial-0.controls.json';control.write_bytes(control.read_bytes()+b'\n')
     rejected=tmp_path/'reports'/'rejected'
     with pytest.raises(ValueError,match='hash'):job.run(source,draft,rejected,**flags,repair_from=warm,repair_iterations=1)
     assert not rejected.exists()
+
+
+@pytest.mark.parametrize('disjoint',[False,True])
+def test_quantized_difference_probes_equal_separate_exports(tmp_path,disjoint):
+    p=problem(tmp_path,disjoint);x=p.initial.copy()
+    for d in p.data:x[d['orientation_ids']]=[.001,-.002,.003]
+    def decoded(z,label):
+        from paired_temporal_neighbor import rotation_channels
+        values,_=p.rotations(z);path=tmp_path/f'{label}.glb'
+        export_rotations(p.rig.document,p.rig.binary,values,path)
+        rig=RigAsset.load(path);sampler=NativeSupportSampler(rig.document,rig.binary,0)
+        world=np.array([sampler.sample(float(t)) for t in p.times])
+        q={n:c[2] for n,c in rotation_channels(rig.document,rig.binary).items() if n in p.nodes}
+        return repair.signed_constraints(p,q,world)
+    base=decoded(x,'base');model=lambda z:repair.constraint_model(p,z,quantized=True)
+    np.testing.assert_allclose(model(x),base,atol=1e-11,rtol=0)
+    jac=repair.colored_jacobian(model,x,p.lower,p.upper,p.sparsity(),step=1e-7).toarray()
+    for col in range(len(x)):
+        h=min(1e-7,(p.upper[col]-p.lower[col])/4)
+        if p.upper[col]-x[col]<x[col]-p.lower[col]:h=-h
+        z=x.copy();z[col]+=h
+        actual=decoded(z,str(col))
+        np.testing.assert_allclose(jac[:,col],(actual-base)/h,atol=1e-4,rtol=0)
+
+
+@pytest.mark.parametrize('mode',[True,1,'yes',None])
+def test_quantized_mode_needs_explicit_warm_job(mode):
+    from native_support_job import run
+    with pytest.raises(ValueError,match='[Rr]epair'):
+        run(None,None,None,repair_quantized=mode)
+
+
+@pytest.mark.parametrize('mode',[1,'yes',None])
+def test_restore_quantization_flag_rejected_before_evaluation(mode):
+    with pytest.raises(ValueError,match='quantized'):
+        repair.restore(None,None,None,quantized=mode)

@@ -50,7 +50,7 @@ def colors(pattern):
 
 
 def colored_jacobian(function,x,lower,upper,pattern,groups=None,step=1e-5):
-    """Bound-aware absolute forward differences; smooth model, not float32 keys."""
+    """Bound-aware absolute forward differences for the supplied constraint model."""
     x,lower,upper=map(lambda a:np.asarray(a,float),(x,lower,upper));pattern=csc_matrix(pattern)
     if x.ndim!=1 or lower.shape!=x.shape or upper.shape!=x.shape or not np.isfinite([x,lower,upper]).all() or np.any(x<lower) or np.any(x>upper) or np.any(lower>=upper) or not np.isfinite(step) or step<=0:
         raise ValueError('Finite free controls inside ordered boxes and positive difference step required')
@@ -105,20 +105,28 @@ def merit(g):
     return float(positive.max(initial=0)),float(positive@positive)
 
 
-def restore(problem,start,evaluate,*,iterations=8,trust=.0002,observe=None):
+def constraint_model(problem,x,*,quantized=False):
+    """Finite-difference proxy; round stored keys before float64 interpolation."""
+    values,_=problem.rotations(x)
+    if quantized:values={n:q.astype(np.float32).astype(float) for n,q in values.items()}
+    return signed_constraints(problem,values,problem.world(values))
+
+
+def restore(problem,start,evaluate,*,iterations=8,trust=.0002,observe=None,quantized=False):
     """Keep only strictly improved serialized minimax scores; retain every probe."""
     if type(iterations) is not int or not 1<=iterations<=32 or type(trust) not in (int,float) or not np.isfinite(trust) or not 0<trust<=.001:
         raise ValueError('Choose 1–32 repair iterations and up to .001 radians trust')
+    if type(quantized) is not bool:raise ValueError('Explicit quantized difference mode required')
     x=np.asarray(start,float).copy();problem.rotations(x);current=np.asarray(evaluate(x,'start'),float);initial=merit(current)
     pattern=problem.sparsity();groups=colors(pattern);history=[];reason='iteration_budget'
-    def smooth(z):
-        values,_=problem.rotations(z)
-        return signed_constraints(problem,values,problem.world(values))
+    def model(z):return constraint_model(problem,z,quantized=quantized)
+    difference_step=1e-7 if quantized else 1e-5
+    minimum_trust=1e-9 if quantized else 1e-7
     radius=float(trust)
     for iteration in range(1,iterations+1):
         before=merit(current)
         if before[0]==0:reason='sampled_constraints_satisfied';break
-        jac=colored_jacobian(smooth,x,problem.lower,problem.upper,pattern,groups)
+        jac=colored_jacobian(model,x,problem.lower,problem.upper,pattern,groups,step=difference_step)
         delta,info=direction(x,current,jac,problem.lower,problem.upper,radius)
         info.update(iteration=iteration,before_merit=list(before),probes=[]);chosen=None
         if delta is not None:
@@ -132,10 +140,12 @@ def restore(problem,start,evaluate,*,iterations=8,trust=.0002,observe=None):
         if observe:observe(info)
         if chosen is None:
             radius*=.25
-            if radius<1e-7:reason='serialized_line_search_stalled';break
+            if radius<minimum_trust:reason='serialized_line_search_stalled';break
     return x,dict(initial_merit=list(initial),final_merit=list(merit(current)),history=history,
         reason=reason,iterations=len(history),maximum_iterations=iterations,trust_radians=trust,
-        structural_colors=len(groups),sampled_proxy_feasible=merit(current)[0]==0,quality_approved=False)
+        structural_colors=len(groups),difference_step_radians=difference_step,minimum_trust_radians=minimum_trust,
+        difference_model='float32_keys_float64_interpolation' if quantized else 'smooth_float64',
+        sampled_proxy_feasible=merit(current)[0]==0,quality_approved=False)
 
 
 def check_controls(problem,controls):
@@ -157,23 +167,29 @@ def seed_inputs(folder,source,spec_path,root):
     request_path=folder/'request.json';result_path=folder/'result.json'
     request,result=read(request_path),read(result_path)
     if read(folder/'pipeline.json').get('status')!='complete' or result.get('status')!='complete':raise ValueError('Completed warm study required')
-    if request.get('proposal_method')!='joint_support_source_rate_orientation_search' or len(result.get('trials',[]))!=4:
-        raise ValueError('Four original orientation-search trials required')
+    method=request.get('proposal_method')
+    if method not in ('joint_support_source_rate_orientation_search','serialized_native_support_feasibility_repair') or len(result.get('trials',[]))!=4:
+        raise ValueError('Four orientation-search or serialized-repair trials required')
     if request.get('spec')!=read(spec_path) or request['spec']['glb_sha256']!=sha256(source):raise ValueError('Warm study source/draft differs')
-    bindings=dict(request['inputs']);bindings[str(request_path)]=sha256(request_path);bindings[str(result_path)]=sha256(result_path)
+    bindings=dict(request['inputs'])
+    def bind(path,digest):
+        name=str(path)
+        if name in bindings and bindings[name]!=digest:raise ValueError('Conflicting warm study evidence hashes')
+        bindings[name]=digest
+    for path in (request_path,result_path,folder/'pipeline.json'):bind(path,sha256(path))
     for name,h in request['implementation'].items():
         if Path(name).name!=name or Path(name).suffix!='.py':raise ValueError('Warm implementation filename required')
-        bindings[str(folder/'implementation'/name)]=h
+        bind(folder/'implementation'/name,h)
     for name,h in result['outputs'].items():
         if Path(name).name!=name:raise ValueError('Warm output filename required')
-        bindings[str(folder/name)]=h
+        bind(folder/name,h)
     seeds=[]
     for i,t in enumerate(result['trials']):
         if t.get('trial')!=i or t.get('status')!='complete' or len(t.get('proposal',[]))!=1:raise ValueError('Completed ordered warm trials required')
         p=t['proposal'][0];name=f'trial-{i}.controls.json'
-        if p.get('controls_file')!=name or p.get('method')!='joint_support_source_rate_orientation_search':raise ValueError('Original orientation controls required')
-        control=folder/name;bindings[str(control)]=p['controls_sha256']
-        glb=folder/f'trial-{i}.glb';bindings[str(glb)]=t['sha256']
+        if p.get('controls_file')!=name or p.get('method')!=method:raise ValueError('Source-bound orientation controls and matching proposal method required')
+        control=folder/name;bind(control,p['controls_sha256'])
+        glb=folder/f'trial-{i}.glb';bind(glb,t['sha256'])
         if read(control).get('proposal_sha256')!=t['sha256']:raise ValueError('Warm control/proposal binding differs')
         seeds.append(control)
     for name,h in bindings.items():
@@ -181,7 +197,7 @@ def seed_inputs(folder,source,spec_path,root):
     return seeds,bindings
 
 
-def propose(rig,reader,rows,path,tau=.05,mu=.5,*,controls_path,iterations=8,trust=.0002):
+def propose(rig,reader,rows,path,tau=.05,mu=.5,*,controls_path,iterations=8,trust=.0002,quantized=False):
     controls_path=Path(controls_path);controls=read(controls_path)
     if controls.get('acceleration_time_s')!=tau or controls.get('reference_weight_per_s2')!=mu or controls.get('orientation_limit_degrees')!=1. or controls.get('swivel_limit_degrees')!=5.:
         raise ValueError('Warm seed settings differ from requested trial')
@@ -201,7 +217,7 @@ def propose(rig,reader,rows,path,tau=.05,mu=.5,*,controls_path,iterations=8,trus
     def observe(row):
         save(path.with_suffix('.repair-progress.json'),dict(history=row,probes=probes,quality_approved=False))
         print(dict(trial=prefix,repair_iteration=row['iteration'],merit=row['after_merit'],fraction=row['selected_fraction']),flush=True)
-    x,report=restore(problem,start,evaluate,iterations=iterations,trust=trust,observe=observe)
+    x,report=restore(problem,start,evaluate,iterations=iterations,trust=trust,observe=observe,quantized=quantized)
     values,_=problem.rotations(x);export_rotations(rig.document,rig.binary,values,path)
     final_controls=dict(controls,parameters=x.tolist(),proposal_sha256=sha256(path),
         scope='Repaired orientation controls; source/draft and independent serialized acceptance remain separate')

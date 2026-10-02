@@ -1,7 +1,9 @@
 # Serialized native support feasibility repair
 
 The native support CLI can now warm-start a repair from the saved controls of a
-completed four-trial [foot-orientation study](native-support-orientation-v1.md).
+completed four-trial [foot-orientation study](native-support-orientation-v1.md)
+or a source-matched completed repair study. An opt-in
+[quantized-key difference mode](native-support-quantized-v1.md) is also available.
 It retains the same parameter boxes, source-relative rate caps and final
 serialized acceptance checks. This is deterministic motion processing; the
 Kimodo checkpoint remains unchanged.
@@ -51,7 +53,7 @@ the search reports a stall. This cannot certify infeasibility.
 Warm mode requires the three experimental flags, 1–32 iterations and a positive
 trust radius no larger than 0.001 radians. It does not use a joint-search
 evaluation budget. The prior study must be complete, source/draft matched and
-hash intact, with four ordered original orientation trials. The new request binds
+hash intact, with four ordered orientation or serialized-repair trials. The new request binds
 its old GLBs, controls, outputs, input and implementation archive. Each warm
 control vector must reproduce its old GLB exactly before repair. The final
 independent audit can select a proposal only when every existing screen passes.

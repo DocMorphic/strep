@@ -43,14 +43,15 @@ def describe(source, output):
     save(output, record); return record
 
 
-def run(source, spec_path, output, *, joint_rates=False, joint_evaluations=80, joint_swivel=False, joint_foot_orientation=False, repair_from=None, repair_iterations=8, repair_trust=.0002):
+def run(source, spec_path, output, *, joint_rates=False, joint_evaluations=80, joint_swivel=False, joint_foot_orientation=False, repair_from=None, repair_iterations=8, repair_trust=.0002, repair_quantized=False):
     if type(joint_rates) is not bool: raise ValueError('Explicit joint-rate mode required')
     if type(joint_evaluations) is not int or not 1 <= joint_evaluations <= 2000 or not joint_rates and joint_evaluations != 80: raise ValueError('Joint-search budget requires joint-rate mode and 1–2000 evaluations')
     if type(joint_swivel) is not bool or joint_swivel and not joint_rates: raise ValueError('Knee-plane search requires joint-rate mode')
     if type(joint_foot_orientation) is not bool or joint_foot_orientation and not (joint_rates and joint_swivel): raise ValueError('Foot orientation search requires joint-rate and knee-plane modes')
+    if type(repair_quantized) is not bool: raise ValueError('Explicit quantized repair mode required')
     repairing = repair_from is not None
     if type(repair_iterations) is not int or not 1 <= repair_iterations <= 32 or type(repair_trust) not in (int, float) or not np.isfinite(repair_trust) or not 0 < repair_trust <= .001: raise ValueError('Bounded repair iterations/trust required')
-    if repairing and not (joint_rates and joint_swivel and joint_foot_orientation) or not repairing and (repair_iterations != 8 or repair_trust != .0002): raise ValueError('Repair requires orientation mode and explicit warm controls')
+    if repairing and not (joint_rates and joint_swivel and joint_foot_orientation) or not repairing and (repair_iterations != 8 or repair_trust != .0002 or repair_quantized): raise ValueError('Repair requires orientation mode and explicit warm controls')
     if repairing and joint_evaluations != 80: raise ValueError('Warm repair does not use a joint-search evaluation budget')
     propose_solver = propose
     if joint_rates:
@@ -71,7 +72,7 @@ def run(source, spec_path, output, *, joint_rates=False, joint_evaluations=80, j
         inputs.update(warm_inputs)
         def propose_solver(rig, reader, rows, path, tau, mu):
             index = ((.05, .5), (.05, 5.), (.15, .5), (.15, 5.)).index((tau, mu))
-            return repair_propose(rig, reader, rows, path, tau, mu, controls_path=seeds[index], iterations=repair_iterations, trust=repair_trust)
+            return repair_propose(rig, reader, rows, path, tau, mu, controls_path=seeds[index], iterations=repair_iterations, trust=repair_trust, quantized=repair_quantized)
     rig = RigAsset.load(source); reader = AnimationSampler(rig.document, rig.binary, 0)
     if len(rig.document.get('animations', [])) != 1: raise ValueError('One chosen native animation required')
     spec = read(spec_path); mapping, rows = validate(spec, rig, reader, inputs[str(source)])
@@ -100,6 +101,7 @@ def run(source, spec_path, output, *, joint_rates=False, joint_evaluations=80, j
     save(output/'request.json', dict(at=now(), spec=spec, inputs=inputs, implementation=methods,
         joint_search_maximum_evaluations=joint_evaluations if joint_rates and not repairing else None,
         repair_iterations=repair_iterations if repairing else None, repair_trust_radians=repair_trust if repairing else None,
+        repair_quantized_differences=repair_quantized if repairing else None,
         warm_study=str(Path(repair_from).resolve()) if repairing else None,
         proposal_method='serialized_native_support_feasibility_repair' if repairing else 'joint_support_source_rate_orientation_search' if joint_foot_orientation else 'joint_support_source_rate_swivel_search' if joint_swivel else 'joint_support_source_rate_search' if joint_rates else 'bounded_bend_smoothing',
         joint_swivel_limit_degrees=5. if joint_swivel else None,
@@ -211,15 +213,16 @@ if __name__ == '__main__':
     parser.add_argument('--joint-evaluations', type=int, default=80, help='1–2000 evaluations per experimental joint-rate trial')
     parser.add_argument('--joint-swivel', action='store_true', help='Add bounded knee-plane freedom to joint-rate search')
     parser.add_argument('--joint-foot-orientation', action='store_true', help='Allow up to 1 degree native foot-world orientation edits; requires joint-rate and knee-plane modes')
-    parser.add_argument('--repair-from', type=Path, help='Completed four-trial orientation study with bound warm controls')
+    parser.add_argument('--repair-from', type=Path, help='Completed four-trial orientation or repair study with bound warm controls')
+    parser.add_argument('--repair-quantized', action='store_true', help='Use float32-key difference probes; requires warm repair mode')
     parser.add_argument('--repair-iterations', type=int, default=8, help='1-32 serialized warm feasibility repair iterations')
     parser.add_argument('--repair-trust', type=float, default=.0002, help='Positive parameter trust radius up to .001 radians')
     args = parser.parse_args()
     if args.describe is not None:
-        if args.spec is not None or args.output is not None or args.joint_rates or args.joint_evaluations != 80 or args.joint_swivel or args.joint_foot_orientation or args.repair_from is not None or args.repair_iterations != 8 or args.repair_trust != .0002: parser.error('Description does not use a support draft or fit output')
+        if args.spec is not None or args.output is not None or args.joint_rates or args.joint_evaluations != 80 or args.joint_swivel or args.joint_foot_orientation or args.repair_from is not None or args.repair_iterations != 8 or args.repair_trust != .0002 or args.repair_quantized: parser.error('Description does not use a support draft or fit output')
         describe(args.source, args.describe)
     else:
         if args.spec is None or args.output is None: parser.error('Support draft and fresh fit output required')
         from action_worker_lock import worker_lock
         from threadpoolctl import threadpool_limits
-        with worker_lock(), threadpool_limits(limits=1): run(args.source, args.spec, args.output, joint_rates=args.joint_rates, joint_evaluations=args.joint_evaluations, joint_swivel=args.joint_swivel, joint_foot_orientation=args.joint_foot_orientation, repair_from=args.repair_from, repair_iterations=args.repair_iterations, repair_trust=args.repair_trust)
+        with worker_lock(), threadpool_limits(limits=1): run(args.source, args.spec, args.output, joint_rates=args.joint_rates, joint_evaluations=args.joint_evaluations, joint_swivel=args.joint_swivel, joint_foot_orientation=args.joint_foot_orientation, repair_from=args.repair_from, repair_iterations=args.repair_iterations, repair_trust=args.repair_trust, repair_quantized=args.repair_quantized)
