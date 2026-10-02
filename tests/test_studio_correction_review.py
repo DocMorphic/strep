@@ -210,3 +210,73 @@ def test_failed_preview_is_retained_and_never_served(setup,monkeypatch):
     files=list((setup.root/'reports/native-correction-previews').glob('*/result.json'))
     assert len(files)==1 and read(files[0])['status']=='failed'
     assert studio.served_preview('native-correction-previews/'+files[0].parent.name+'/candidate.glb') is None
+
+
+def edit_selection(f,monkeypatch):
+    payload=preview_fixture(f,monkeypatch)
+    payload['edit']=dict(joint='Joint4',rotation_vector_degrees=[3,0,0],root_offset_m=[0,.01,0],
+                         start_frame=0,peak_frame=1,end_frame=2)
+    return payload
+
+
+def test_edit_saves_new_native_geometry_and_checked_preview_with_no_contact_labels(setup,monkeypatch):
+    payload=edit_selection(setup,monkeypatch)
+    before=Path(payload['candidate_motion']['path']).read_bytes()
+    result=studio.edit_request(payload)
+    assert result['selection']==payload and result['candidate_start_frame']==0
+    assert all(result[k] is False for k in ('quality_approved','training_admitted','release_approved'))
+    data=result['metadata'];assert data['recipe']['candidate_motion']==result['candidate_motion']
+    assert all(row['intervals'][0]['contact'] is None for row in data['recipe']['contacts'])
+    with np.load(result['candidate_motion']['path'],allow_pickle=False) as archive:
+        assert set(archive.files)=={'local_rot_mats','root_positions','posed_joints','global_rot_mats'}
+        local=archive['local_rot_mats'];roots=archive['root_positions']
+    with np.load(payload['candidate_motion']['path'],allow_pickle=False) as archive:
+        for frame in (0,2):
+            np.testing.assert_array_equal(local[frame],archive['local_rot_mats'][frame])
+            np.testing.assert_array_equal(roots[frame],archive['root_positions'][frame])
+    assert Path(payload['candidate_motion']['path']).read_bytes()==before
+    assert studio.served_preview(result['preview']['preview_url'].removeprefix('/files/')).is_file()
+    assert result['report']['measured']['joint_from_original_degrees']==pytest.approx(3,abs=1e-5)
+    assert result['report']['joint_position_change_m']['Joint5']>=.009
+
+
+def test_edit_route_uses_current_binding_origin_size_and_worker_lock(setup,monkeypatch):
+    payload=edit_selection(setup,monkeypatch)
+    monkeypatch.setitem(sys.modules,'action_worker_lock',SimpleNamespace(worker_lock=lambda:nullcontext()))
+    h=handler('/api/correction-review-edit',payload);h.do_POST();assert h.response[0]==201
+    for headers,code in [({'Origin':'http://foreign'},403),({'Content-Type':'text/plain'},415),({'Content-Length':'1048577'},400)]:
+        h=handler('/api/correction-review-edit',payload,**headers);h.do_POST();assert h.response[0]==code
+    from contextlib import contextmanager
+    @contextmanager
+    def busy():raise RuntimeError('Another local action job is running');yield
+    monkeypatch.setitem(sys.modules,'action_worker_lock',SimpleNamespace(worker_lock=busy))
+    h=handler('/api/correction-review-edit',payload);h.do_POST();assert h.response[0]==409
+    payload['candidate_motion']['sha256']='f'*64
+    with pytest.raises(ValueError,match='changed'):studio.edit_request(payload)
+
+
+def test_edit_failure_retained_when_cumulative_original_bound_exceeded(setup,monkeypatch):
+    payload=edit_selection(setup,monkeypatch);payload['edit']['root_offset_m']=[.1,0,0]
+    with pytest.raises(ValueError,match='Cumulative'):studio.edit_request(payload)
+    results=list((setup.root/'reports/native-correction-edits').glob('*/result.json'))
+    assert len(results)==1 and read(results[0])['status']=='failed'
+    assert not (results[0].parent/'candidate.npz').exists()
+
+
+def test_edit_chains_against_original_and_source_and_methods_remain_hash_bound(setup,monkeypatch):
+    payload=edit_selection(setup,monkeypatch);payload['edit']['rotation_vector_degrees']=[2,0,0]
+    result=studio.edit_request(payload);payload['candidate_motion']=result['candidate_motion'];payload['candidate_start_frame']=0
+    second=studio.edit_request(payload)
+    assert second['report']['measured']['joint_from_original_degrees']==pytest.approx(4,abs=1e-4)
+    record=read(Path(second['candidate_motion']['path']).parent/'result.json')
+    assert all(sha256(path)==digest for path,digest in record['inputs_sha256'].items())
+    assert record['methods_sha256']['native_motion_edit.py']==sha256(Path(studio.__file__).parent/'native_motion_edit.py')
+
+
+def test_failed_edit_preview_does_not_report_complete_edit(setup,monkeypatch):
+    payload=edit_selection(setup,monkeypatch)
+    def failed(*args):raise ValueError('Preview unavailable')
+    monkeypatch.setattr(studio,'preview_request',failed)
+    with pytest.raises(ValueError,match='Preview unavailable'):studio.edit_request(payload)
+    record=read(next((setup.root/'reports/native-correction-edits').glob('*/result.json')))
+    assert record['status']=='failed' and not record['quality_approved']

@@ -84,3 +84,8 @@ unapproved. Actual reviewed licensed corrections, an evaluated trainer,
 learning curves, fresh-process resume, improvement/forgetting comparisons,
 broader scene/partner/finger support, rig transfer and human cleanup evidence
 remain necessary.
+
+
+## Direct native cleanup
+
+The panel now supports [timed native joint/root authoring](native-timed-authoring-v1.md), with checked candidate previews, cumulative original-relative bounds, segment-specific candidate selection, undo and original reset. Each geometry change resets its contact annotation and human claims. Saved NPZ versions remain separate from the source and never inherit predicted contact labels. This extends the review workflow without admitting training data or approving quality.

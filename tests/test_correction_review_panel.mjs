@@ -28,7 +28,7 @@ const packet={draft_id:'kimodo-target-review-fixture',draft_sha256:'a'.repeat(64
  items:[{id:'one',prompt:'Wave'},{id:'two',prompt:'Sit'}]};
 function metadata(id,candidate='reports/original.npz',start=0){return {...packet,item_id:id,prompt:id,frames:3,fps:30,source_start_frame:id==='one'?0:90,
  recipe:{schema:'strep-native-correction-pack-recipe-v1',item_id:id,candidate_motion:{path:candidate,sha256:'b'.repeat(64)},candidate_start_frame:start,
- contacts:joints.map(joint=>({joint,intervals:[{start_frame:0,end_frame_exclusive:3,contact:null}]}))},
+ joint_names:Array.from({length:77},(_,j)=>'Joint'+j),contacts:joints.map(joint=>({joint,intervals:[{start_frame:0,end_frame_exclusive:3,contact:null}]}))},
  candidate_relative:candidate,quality_approved:false,training_admitted:false,preview_scope:'Original only',preview_start_s:id==='one'?0:3,preview_end_s:(id==='one'?0:3)+2/30};}
 let posts=[],calls=[],pending=null,playerLoads=0,pauses=0,timeCallback,loaded=[];
 const fetch=async(url,options)=>{
@@ -37,6 +37,13 @@ const fetch=async(url,options)=>{
  if(url==='/api/correction-review-drafts')data={drafts:[{id:packet.draft_id,sha256:packet.draft_sha256,segments:2,quality_approved:false}]};
  else if(url.startsWith('/api/correction-review-packet?'))data=metadata('one');
  else if(url.startsWith('/api/correction-review-source?')){const q=new URLSearchParams(url.split('?')[1]);data=metadata(q.get('item'),q.get('candidate')||undefined,Number(q.get('start')||0));}
+ else if(url==='/api/correction-review-edit'){
+  const body=JSON.parse(options.body);posts.push({url,body});const m=metadata(body.item_id,'reports/native-correction-edits/edited'+posts.length+'/candidate.npz',0);
+  const previewSelection={draft_id:body.draft_id,draft_sha256:body.draft_sha256,item_id:body.item_id,candidate_motion:m.recipe.candidate_motion,candidate_start_frame:0};
+  data={selection:body,metadata:m,candidate_motion:m.recipe.candidate_motion,candidate_start_frame:0,quality_approved:false,training_admitted:false,release_approved:false,
+   report:{measured:{joint_from_original_degrees:3,root_from_original_m:.01,correction_step_degrees:3,root_correction_step_m:.01}},
+   preview:{selection:previewSelection,preview_url:'/files/native-correction-previews/editfixture/candidate.glb',preview_sha256:'d'.repeat(64),preview_start_s:0,preview_end_s:2/30,quality_approved:false,training_admitted:false,preview_scope:'Edited numerical candidate'}};
+ }
  else {const body=JSON.parse(options.body);posts.push({url,body});data=url.endsWith('-preview')?{selection:body,item_id:body.item_id,preview_url:'/files/native-correction-previews/synthetic/candidate.glb',preview_sha256:'c'.repeat(64),preview_start_s:0,preview_end_s:2/30,preview_scope:'Selected candidate',training_admitted:false,quality_approved:false}:url.endsWith('-pack')?{id:'packed',item_id:body.recipe.item_id,folder:'reports/packed',training_admitted:false,quality_approved:false}:
  {submission:{path:'fixture-submission.json'},reviewed_corrections:1,training_admitted:false};}
  return {ok:true,json:async()=>data};
@@ -96,6 +103,23 @@ await ui.showPreview('original');timeCallback(3);
 assert.match(el('correctionReviewClock').textContent,/Frame 0/);assert.equal(el('correctionReviewTime').min,3);
 await ui.bind('one','reports/another-edited.npz',0);await ui.showPreview('candidate');
 assert.match(el('correctionReviewStatus').textContent,/Build the selected/,'Changed candidate does not reuse a stale preview');
+for(const prefix of ['Rotation','Root'])for(const axis of ['X','Y','Z'])el('correctionEdit'+prefix+axis).value=0;
+const editPostCount=posts.length;await ui.applyEdit();assert.equal(posts.length,editPostCount,'Zero offset is not submitted');
+el('correctionEditRotationX').value='3';el('correctionEditRootY').value='.01';
+el('correctionEditStart').value='';await ui.applyEdit();assert.equal(posts.length,editPostCount,'Empty frame key cannot become zero');
+el('correctionEditStart').value=0;el('correctionEditPeak').value=1;el('correctionEditEnd').value=2;
+el('correctionSemanticPass').checked=true;el('correctionRightsPermitted').checked=true;el('correctionReviewCleanupSeconds').value=12;
+await ui.applyEdit();assert.equal(posts.length,editPostCount+1);const editPost=posts.at(-1);
+assert.equal(editPost.url,'/api/correction-review-edit');assert.deepEqual(editPost.body.edit,{joint:'Joint0',rotation_vector_degrees:[3,0,0],root_offset_m:[0,.01,0],start_frame:0,peak_frame:1,end_frame:2});
+assert.equal(el('correctionPreviewVersion').value,'candidate');assert.equal(el('correctionReviewDecision').value,'unreviewed');
+assert.equal(el('correctionSemanticPass').checked,false);assert.equal(el('correctionRightsPermitted').checked,false);assert.equal(el('correctionReviewCleanupSeconds').value,'');
+assert.match(el('correctionContactCoverage').textContent,/0 \/ 12/);assert.equal(el('correctionEditUndo').disabled,false);
+assert.match(el('correctionEditReport').textContent,/3.000°/);const savedCandidate=el('correctionCandidatePath').value;
+await ui.bind('two');await ui.bind('one');assert.equal(el('correctionCandidatePath').value,savedCandidate,'Switching segments keeps the edited candidate');
+await ui.undoEdit();assert.equal(el('correctionCandidatePath').value,'reports/another-edited.npz');assert.equal(el('correctionEditUndo').disabled,true);
+assert.equal(el('correctionPreviewVersion').value,'candidate','Undo previews the restored geometry');
+await ui.applyEdit();assert.match(el('correctionCandidatePath').value,/native-correction-edits/);
+await el('correctionEditOriginal').onclick();assert.equal(el('correctionCandidatePath').value,'reports/original.npz');assert.equal(el('correctionEditUndo').disabled,true);
 let resolve;pending=new Promise(r=>resolve=r);const before=playerLoads,waiting=ui.buildPreview();panel.open=false;panel.toggle();
 resolve({ok:true,json:async()=>({selection:{},preview_url:'/files/native-correction-previews/stale/candidate.glb'})});await waiting;
 assert.equal(playerLoads,before,'Closed panel ignores a late candidate export');pending=null;panel.open=true;
@@ -104,3 +128,6 @@ pending=new Promise(r=>resolve=r);const binding=ui.bind('two');panel.open=false;
 resolve({ok:true,json:async()=>metadata('two')});await binding;assert.equal(el('correctionReviewItem').value,previous);
 assert(pauses>0);
 console.log('Correction review: explicit human fields, original/candidate switching, exact preview binding, separate clocks, candidate reset and stale responses pass.');
+
+panel.open=true;pending=new Promise(r=>resolve=r);const editBefore=el('correctionCandidatePath').value,editWaiting=ui.applyEdit();panel.open=false;panel.toggle();resolve({ok:true,json:async()=>({selection:{}})});await editWaiting;assert.equal(el('correctionCandidatePath').value,editBefore,'Closed panel ignores late native authoring');pending=null;
+console.log('Native authoring: explicit vectors and clock, new candidate, unset contacts/reviews/cleanup, segment persistence, undo, original reset and stale edits pass.');

@@ -248,7 +248,7 @@ class Handler(BaseHTTPRequestHandler):
         except (BrokenPipeError,ConnectionResetError):pass
 
     def do_POST(self):
-        if self.path not in ['/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission','/api/jobs','/api/scene-pair-fits','/api/scene-trims','/api/scene-releases','/api/scene-region-fits','/api/pose-target','/api/motion-brief','/api/contact-edits','/api/characters/import','/api/characters/sample','/api/characters/profile','/api/rig-jobs','/api/rig-contact-edits','/api/rig-contact-inspect','/api/rig-patch-selection','/api/native-support-edits','/api/rig-clip-edits','/api/rig-joint-edits','/api/rig-posture-edits','/api/rig-mirror-edits','/api/rig-transitions','/api/rig-loops','/api/rig-loop-search','/api/rig-events','/api/rig-prompt-edits','/api/rig-dynamics-edits']:return self.respond(404,{'error':'Unknown endpoint'})
+        if self.path not in ['/api/correction-review-edit','/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission','/api/jobs','/api/scene-pair-fits','/api/scene-trims','/api/scene-releases','/api/scene-region-fits','/api/pose-target','/api/motion-brief','/api/contact-edits','/api/characters/import','/api/characters/sample','/api/characters/profile','/api/rig-jobs','/api/rig-contact-edits','/api/rig-contact-inspect','/api/rig-patch-selection','/api/native-support-edits','/api/rig-clip-edits','/api/rig-joint-edits','/api/rig-posture-edits','/api/rig-mirror-edits','/api/rig-transitions','/api/rig-loops','/api/rig-loop-search','/api/rig-events','/api/rig-prompt-edits','/api/rig-dynamics-edits']:return self.respond(404,{'error':'Unknown endpoint'})
         host=self.headers.get('Host');origin=self.headers.get('Origin')
         if host not in self.server.allowed_hosts or origin!=f'http://{host}':return self.respond(403,{'error':'Submit from the local studio page'})
         if self.path=='/api/characters/import':
@@ -264,15 +264,15 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get('Content-Type')!='application/json':return self.respond(415,{'error':'JSON required'})
         try:
             length=int(self.headers.get('Content-Length','0'))
-            limit=1048576 if self.path in ('/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission') else 32768
+            limit=1048576 if self.path in ('/api/correction-review-edit','/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission') else 32768
             if not 0<length<=limit:raise ValueError('Request too large or empty')
             payload=json.loads(self.rfile.read(length))
-            if self.path in ('/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission'):
-                from studio_correction_review import pack_request,save_review,preview_request
+            if self.path in ('/api/correction-review-edit','/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission'):
+                from studio_correction_review import pack_request,save_review,preview_request,edit_request
                 from action_worker_lock import worker_lock
                 try:
                     with self.server.job_lock,worker_lock():
-                        result=preview_request(payload) if self.path.endswith('-preview') else pack_request(payload) if self.path.endswith('-pack') else save_review(payload)
+                        result=edit_request(payload) if self.path.endswith('-edit') else preview_request(payload) if self.path.endswith('-preview') else pack_request(payload) if self.path.endswith('-pack') else save_review(payload)
                 except RuntimeError as exc:return self.respond(409,{'error':str(exc)})
                 return self.respond(201,result)
             if self.path=='/api/pose-target':

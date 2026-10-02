@@ -10,6 +10,7 @@ from strep import ROOT,read,save,sha256,now
 NAME=re.compile(r'[A-Za-z0-9_-]{1,100}')
 NAMESPACE='native-correction-packs'
 PREVIEWS='native-correction-previews'
+EDITS='native-correction-edits'
 
 
 def _draft(identifier):
@@ -122,6 +123,72 @@ def preview_request(payload):
                 'preview_url':'/files/'+PREVIEWS+'/'+identifier+'/candidate.glb','preview_sha256':record['preview']['sha256'],
                 'preview_start_s':0.,'preview_end_s':report['duration_s'],'preview_scope':'Selected candidate geometry; human review remains pending',
                 'quality_approved':False,'training_admitted':False}
+    except Exception as exc:
+        record.update(status='failed',error=str(exc));save(folder/'result.json',record);raise
+
+
+def edit_request(payload):
+    """Retain a new native candidate and checked preview; never overwrite input."""
+    import numpy as np
+    from inspect_motion import skeleton_metadata
+    from pack_native_correction import selected, _motion
+    from native_motion_edit import edit_native, validate_spec
+    from native_candidate_preview import source_offsets, native_world
+    fields={'draft_id','draft_sha256','item_id','candidate_motion','candidate_start_frame','edit'}
+    if not isinstance(payload,dict) or set(payload)!=fields:
+        raise ValueError('Bound native selection and timed edit required')
+    candidate=payload['candidate_motion']
+    if not isinstance(candidate,dict) or set(candidate)!={'path','sha256'}:
+        raise ValueError('Bound candidate motion required')
+    data=metadata(payload['draft_id'],payload['draft_sha256'],payload['item_id'],candidate['path'],payload['candidate_start_frame'])
+    if data['recipe']['candidate_motion']!=candidate:raise ValueError('Selected candidate changed; bind it again')
+    names,parents,_=skeleton_metadata(77)
+    validate_spec(payload['edit'],data['frames'],names)
+    inputs={};item=selected(Path(data['draft']['path']),payload['item_id'],inputs)
+    inputs[candidate['path']]=candidate['sha256']
+    source=(Path(data['draft']['path']).parent/item['source_motion']).resolve()
+    with np.load(source,allow_pickle=False) as archive:
+        original={key:archive[key][item['source_start_frame']:item['source_end_frame_exclusive']].copy()
+                  for key in ('local_rot_mats','root_positions','posed_joints','global_rot_mats')}
+    local,roots=_motion(candidate['path'],payload['candidate_start_frame'],data['frames'])
+    identifier=uuid.uuid4().hex;folder=ROOT/'reports'/EDITS/identifier;folder.mkdir(parents=True)
+    record={'schema':'strep-native-timed-edit-result-v1','status':'running','at':now(),
+            'selection':payload,'inputs_sha256':inputs,'quality_approved':False,
+            'training_admitted':False,'release_approved':False}
+    save(folder/'result.json',record)
+    try:
+        methods={}
+        for name in ('native_motion_edit.py','native_candidate_preview.py','studio_correction_review.py',
+                     'pack_native_correction.py','inspect_motion.py','gltf_tools.py'):
+            method=Path(__file__).parent/name;dest=folder/'methods'/name
+            dest.parent.mkdir(exist_ok=True);dest.write_bytes(method.read_bytes())
+            inputs[str(method)]=sha256(method);methods[name]=inputs[str(method)]
+        edited_local,edited_roots,report=edit_native(original['local_rot_mats'],original['root_positions'],
+                                                   local.numpy(),roots.numpy(),names,payload['edit'])
+        offsets=source_offsets(original,parents)
+        before=native_world(local.numpy(),roots.numpy(),offsets,parents)
+        world=native_world(edited_local,edited_roots,offsets,parents)
+        report['joint_position_change_m']={name:float(np.linalg.norm(world[:,j,:3,3]-before[:,j,:3,3],axis=-1).max())
+                                           for j,name in enumerate(names)}
+        output=folder/'candidate.npz'
+        # No inherited predicted contact labels: geometry changes require fresh annotation.
+        np.savez(output,local_rot_mats=edited_local,root_positions=edited_roots,
+                 posed_joints=world[:,:,:3,3].astype(np.float32),global_rot_mats=world[:,:,:3,:3].astype(np.float32))
+        checked_local,checked_roots=_motion(output,0,data['frames'])
+        if not np.array_equal(checked_local.numpy(),edited_local) or not np.array_equal(checked_roots.numpy(),edited_roots):
+            raise ValueError('Serialized native edit changed pose tracks')
+        ref={'path':str(output),'sha256':sha256(output)};inputs[str(output)]=ref['sha256']
+        preview_selection={key:payload[key] for key in fields-{'edit'}}
+        preview_selection.update(candidate_motion=ref,candidate_start_frame=0)
+        preview=preview_request(preview_selection)
+        updated=metadata(payload['draft_id'],payload['draft_sha256'],payload['item_id'],str(output),0)
+        if any(sha256(p)!=h for p,h in inputs.items()):raise ValueError('Edit source, output or method changed during authoring')
+        record.update(status='complete',report=report,methods_sha256=methods,candidate_motion=ref,
+                      candidate_start_frame=0,preview=preview)
+        save(folder/'result.json',record)
+        return {'id':identifier,'selection':payload,'candidate_motion':ref,'candidate_start_frame':0,
+                'metadata':updated,'preview':preview,'report':report,
+                'quality_approved':False,'training_admitted':False,'release_approved':False}
     except Exception as exc:
         record.update(status='failed',error=str(exc));save(folder/'result.json',record);raise
 
