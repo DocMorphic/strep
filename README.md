@@ -156,4 +156,6 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 
 [Fixed game-frame contact sampling](docs/native-game-frame-contacts-v1.md) adds twelve declared rate/phase clocks and preserves the original failures. It catches a Studio phase overshoot; a stricter proposal follow-up then passes actual native conversion and all imported clocks under unchanged public limits. New Studio planting jobs reserve a small amount below the requested speed while retaining public audits and older saved jobs.
 
+[Contact validation across actions and rigs](docs/native-contact-rig-breadth-v1.md) now audits frozen populations without changing selections. An 18-case, six-action, three-character study completes 11,610 imported observations; every requested planted-contact comparison still fails. Static normalized vertex colors now survive the planted-motion preservation check with their stored values and encoding intact.
+
 [Reviewed native corpus training](docs/kimodo-corpus-trainer-v1.md) now connects verified targets to sequential frozen-base adapter updates, isolated development validation and bound resume. A tiny CPU fixture reproduces fresh-process continuation exactly; the real CLI rejects the unreviewed packet, and no real motion training or quality improvement is claimed.

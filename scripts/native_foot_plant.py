@@ -21,6 +21,22 @@ from two_bone_waypoint import reach
 from gltf_tools import accessor
 
 
+def mesh_accessor_payload(document,binary,index):
+    """Read stored mesh elements for preservation, without dequantizing them.
+
+    Normalized integer attributes can remain opaque to motion computation.
+    Sparse layouts retain the existing unsupported-input rejection.
+    """
+    item=document['accessors'][index]
+    normalized=item.get('normalized',False)
+    if type(normalized) is not bool or normalized and item['componentType'] not in (5120,5121,5122,5123):
+        raise ValueError('Invalid normalized mesh accessor encoding')
+    raw=dict(document);raw['accessors']=list(document['accessors'])
+    record=dict(item);record.pop('normalized',None);raw['accessors'][index]=record
+    metadata={k:v for k,v in item.items() if k not in ('bufferView','byteOffset')}
+    return metadata,accessor(raw,binary,index)
+
+
 def policy_rows(policy,source,base,draft,rows):
     fields={'schema','source_sha256','base_sha256','draft_sha256','supports'}
     if (not isinstance(policy,dict) or set(policy)!=fields or policy['schema']!='strep-native-foot-plant-v1'
@@ -115,8 +131,9 @@ def audit(source,candidate,spec,limits):
             ids=list(primitive['attributes'].values())
             if 'indices' in primitive:ids.append(primitive['indices'])
             ids.extend(i for target in primitive.get('targets',[]) for i in target.values())
-            if any(not np.array_equal(accessor(rig.document,rig.binary,i),accessor(changed.document,changed.binary,i)) for i in ids):
-                raise ValueError('Native mesh payload changed')
+            for i in ids:
+                a=mesh_accessor_payload(rig.document,rig.binary,i);b=mesh_accessor_payload(changed.document,changed.binary,i)
+                if a[0]!=b[0] or not np.array_equal(a[1],b[1]):raise ValueError('Native mesh payload changed')
     for image in rig.document.get('images',[]):
         if 'bufferView' in image:
             v=rig.document['bufferViews'][image['bufferView']];start=v.get('byteOffset',0);end=start+v['byteLength']

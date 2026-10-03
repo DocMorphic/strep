@@ -1717,3 +1717,65 @@ semantic quality, style/editing and human cleanup evidence. No training
 admission, real model update, human approval or release completion follows.
 All 14 capabilities remain unapproved, the formal 72x5 population untouched,
 and the single full-project goal remains active.
+
+
+## 2026-10-03T00:02:32.088000+00:00 - Contact breadth, normalized character colors and retained roll correction
+
+The previous goal turn made concrete progress: fixed game-frame clocks and
+Studio speed-reserve integration were validated, committed and pushed as
+94c7da4. All four hosted jobs now pass in workflow 37077565561. Revalidated
+the clean worktree and expanded measurement across actions and supplied rigs.
+
+Added a frozen source/candidate population auditor with explicit per-file
+hashes, sequential worker ownership, fixed twelve frame clocks and unchanged
+legacy stance gates. Labels cannot approve motion. Failed imports remain
+unavailable; input/method changes terminate the batch. Manifest parsing binds
+one immutable byte buffer. The auditor cannot select or edit any clip.
+
+The predeclared existing development set spans six actions and three assets
+across two rig families. Comparisons use historical trial zero or exact input
+when no proposal was exported: 13 rejected raw proposals and five retained
+inputs. All 18 audits complete, covering 11610 pose observations, 36 scene
+imports and 84 surface instances, with 19/65 bones and one/three surfaces.
+All original selections stay exact. Every added planting comparison fails;
+five imported versus nine native exports pass height/gap alone at the new
+clocks. Maximum imported/native foot-region difference is 0.178930mm. These
+historical both-foot diagnostic conditions are not semantic labels: dance can
+conflict with them and crawl also needs hand/knee/body support.
+
+A bounded follow-up on the closest prior multi-rig rate case, Quaternius
+female run-roll-stand, first rejects before optimization because the planting
+preservation decoder cannot read normalized colors. This failed attempt stays
+immutable. Stored mesh-element and encoding comparison now preserves the
+existing normalized integer color attributes without dequantization. Sparse
+layouts and unsupported motion-sampler encodings stay rejected. Real leg-edit
+fixtures cover byte/short colors and reject changed values/metadata.
+
+A fresh same-input follow-up completes eight joint LP iterations at .001
+radian trust with the original authoring/rate/contact limits and a separate
+.01mm/s proposal reserve. Worst normalized deficit decreases from 5.381602 to
+2.349188, but raw contact and rate gates still fail. Rate rows regress from
+12/0/0/0 to 32/23/4/10; no motion-quality improvement is claimed. Another
+612 actual imported observations preserve the failed proposal (left/right
+frame speeds 5.631816/16.120047mm/s). The selected output remains the exact
+input. Seven actual normalized color attributes, 100256 stored values,
+preserve their original values and encoding across the exported proposal.
+Total new engine observations are 12222. This target-rig GLB study does not
+claim SOMA-native NPZ conversion or a new accepted clip.
+
+1826 model-free source tests, 16 JS suites and 215 CPU adapter/native pipeline
+checks pass. Archived study methods remain bound separately from subsequent
+manifest-parser/color fixes; the frozen population resolves identically under
+the published reader and the engine's policy binding function is unchanged.
+Existing completed Studio planting jobs still serve. After terminal checks,
+the owned idle Studio listener is refreshed with process/socket evidence only.
+The source/evidence receipt retains the initial compatibility failure, all
+failed motion and method archives; generated characters/models remain ignored.
+
+Next work must pursue the contact/motion tradeoff on supplied rigs, author
+appropriate phase-specific supports for broad actions and scene/partner/body
+interactions, and continue style/editing/semantic/human cleanup validation.
+No human approval, training admission, real model update or release completion
+occurs. All 14 capabilities remain unapproved and the formal 72x5 population
+is untouched. The single full-project goal remains active; routine validated
+source/documentation changes continue to be committed and pushed publicly.

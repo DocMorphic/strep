@@ -7,12 +7,58 @@ import pytest
 from scipy.spatial.transform import Rotation
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from test_native_support import fixture
-from native_foot_plant import envelope,policy_rows,propose,audit,run,preserve
+from native_foot_plant import envelope,policy_rows,propose,audit,run,preserve,mesh_accessor_payload
 from native_support_clock import NativeSupportSampler
 from native_support_spec import validate
 from rig_asset import RigAsset
 from gltf_tools import append_accessor,write_glb,accessor
 from strep import save,read,sha256
+
+
+def colored_fixture(tmp_path,component=5121):
+    source,rig,reader,spec,draft,policy,rows,limits=setup(tmp_path)
+    doc=copy.deepcopy(rig.document);data=bytearray(rig.binary)
+    primitive=doc['meshes'][0]['primitives'][0];count=doc['accessors'][primitive['attributes']['POSITION']]['count']
+    dtype=np.dtype('u1' if component==5121 else '<u2');colors=np.arange(count*4,dtype=dtype).reshape(count,4)
+    while len(data)%4:data.append(0)
+    offset=len(data);data.extend(colors.tobytes());view=len(doc['bufferViews'])
+    doc['bufferViews'].append(dict(buffer=0,byteOffset=offset,byteLength=colors.nbytes))
+    index=len(doc['accessors']);doc['accessors'].append(dict(bufferView=view,componentType=component,count=count,type='VEC4',normalized=True))
+    primitive['attributes']['COLOR_0']=index;write_glb(source,doc,data)
+    rig=RigAsset.load(source);reader=NativeSupportSampler(rig.document,rig.binary,0)
+    spec['glb_sha256']=sha256(source);save(draft,spec)
+    return source,rig,reader,spec,rows,limits,index,colors
+
+
+@pytest.mark.parametrize('component',[5121,5123])
+def test_normalized_colors_preserved_through_real_leg_proposal_and_byte_change_rejected(tmp_path,component):
+    source,rig,reader,spec,rows,limits,index,colors=colored_fixture(tmp_path,component)
+    path=tmp_path/'proposal.glb';propose(rig,reader,rig,reader,rows,path)
+    result=audit(source,path,spec,limits)
+    assert result['contact_samples_pass'] and not result['support_screens']['source_rates_pass']
+    changed=RigAsset.load(path);metadata,raw=mesh_accessor_payload(changed.document,changed.binary,index)
+    assert metadata['normalized'] is True and np.array_equal(raw,colors)
+    doc=copy.deepcopy(changed.document);data=bytearray(changed.binary)
+    view=doc['bufferViews'][doc['accessors'][index]['bufferView']];data[view['byteOffset']]^=1
+    tampered=tmp_path/'color-change.glb';write_glb(tampered,doc,data)
+    with pytest.raises(ValueError,match='mesh payload'):audit(source,tampered,spec,limits)
+
+
+@pytest.mark.parametrize('fault',['normalized','component','count','sparse'])
+def test_color_encoding_metadata_cannot_change_without_payload_failure(tmp_path,fault):
+    source,rig,reader,spec,rows,limits,index,colors=colored_fixture(tmp_path)
+    doc=copy.deepcopy(rig.document);item=doc['accessors'][index]
+    if fault=='normalized':item['normalized']=False
+    if fault=='component':item['componentType']=5123
+    if fault=='count':item['count']+=1
+    if fault=='sparse':item['sparse']={}
+    path=tmp_path/'changed.glb';write_glb(path,doc,rig.binary)
+    with pytest.raises(ValueError):audit(source,path,spec,limits)
+
+
+def test_normalized_float_encoding_is_rejected_instead_of_reinterpreted():
+    with pytest.raises(ValueError,match='normalized mesh accessor'):
+        mesh_accessor_payload(dict(accessors=[dict(normalized=True,componentType=5126)]),b'',0)
 
 
 def setup(tmp_path,moving=True):

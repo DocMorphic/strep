@@ -35,6 +35,13 @@ rate caps, support heights and cumulative ankle/angular bounds are checked
 separately through the existing serialized audit. Those development caps
 are not independent animation-quality or realism benchmarks.
 
+Static normalized integer mesh attributes are preserved by comparing stored
+elements and encoding metadata, without converting their values to floats.
+This permits the normalized vertex colors used by the existing Quaternius
+characters through the audit; sparse accessors remain unsupported. The
+[broader rig/contact study](native-contact-rig-breadth-v1.md) records the real
+compatibility rejection that motivated this fix and its retained failure.
+
 The selected output is the proposal only when every configured gate passes
 and the input was not already satisfactory. Otherwise it is a byte-for-byte
 copy of the supplied input; rejected exports and explanations stay available.

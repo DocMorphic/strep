@@ -147,6 +147,7 @@ jobs:
           tests/test_native_contact_diagnostics.py
           tests/test_native_engine_contacts.py
           tests/test_engine_contact_sampling.py
+          tests/test_native_engine_contact_population.py
           tests/test_native_plant_headroom.py
           tests/test_native_foot_plant.py
           tests/test_native_joint_plant.py
