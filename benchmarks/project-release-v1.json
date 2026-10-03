@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-03T10:36:34.071918+00:00",
-  "last_progress": "Separate checked weight export preserves non-weight scene/animation payloads. Two actual headless imports pass unchanged sampled skin/contact limits; independent original-reference skin maxima 0.02760/0.02758 mm across 216672 replayed vertices. Partner collision still fails. Complete original triangle/containment queries yield 4646 local surface rows (451 crossing pairs, 587 contained vertices); no solver integration or correction claimed. All 380 focused regressions pass; prior 6f7b300 four CI jobs green. Release gates/formal trials unchanged, full goal active."
+  "last_progress_at": "2026-10-03T10:58:51.983329+00:00",
+  "last_progress": "Surface-vector CLI now protects all original native/contact conditions and uses complete decoded mesh audits for acceptance. Failed batch/scalar base mismatch retained; decoded anchoring fixes proposal base without changing caps. Two restored high-five steps: contact 29.9995->25.9743 mm, depth 21.4951->20.7519 mm, crossings regress 451->478, deep vertices 364->396; geometry remains failed under original placements. Replay verifies 7 controls/14 byte-exact GLBs, original caps and complete sampled geometry, rehashing 284 files. All 395 focused tests pass; prior 7ae1aac all four CI jobs green. Release gates/formal trials unchanged, full goal active."
 }

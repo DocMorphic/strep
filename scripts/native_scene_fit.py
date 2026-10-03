@@ -20,6 +20,7 @@ from strep import ROOT, read, save, sha256, now
 
 METHODS = sorted(set(CONTACT_METHODS) | {'native_scene_edit.py','native_scene_fit.py',
     'native_scene_norms.py','native_scene_conic.py','native_scene_storage.py','native_scene_restore.py','native_scene_resume.py','native_scene_geometry.py',
+    'native_surface_model.py','native_partner_surface_rows.py','native_surface_lift.py',
     'triangle_primitive_depth.py','triangle_crossing.py','convex_partner_surface.py',
     'timed_rotation_edit.py','sampled_motion_caps.py','native_support_feasibility.py','action_worker_lock.py',
     'native_foot_plant.py','native_leg_floor.py','native_support_spec.py','native_contact_diagnostics.py',
@@ -146,17 +147,18 @@ def optimize(problem,evaluate,iterations,trust):
 def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_model='scalar',vector_difference_step=None,storage_cells=None,restoration_steps=0,
         geometry_policy=None,resume_from=None):
     if type(iterations) is not int or not 1<=iterations<=16: raise ValueError('Choose 1-16 proposal iterations')
-    if proposal_model not in ('scalar','vector','storage-vector'):raise ValueError('Choose scalar, vector or storage-vector proposal model')
+    if proposal_model not in ('scalar','vector','storage-vector','surface-vector'):raise ValueError('Choose scalar, vector, storage-vector or surface-vector proposal model')
     if proposal_model=='scalar' and vector_difference_step is not None:raise ValueError('Vector difference step applies only to vector proposals')
     if proposal_model!='storage-vector' and storage_cells is not None:raise ValueError('Storage cells apply only to storage-vector proposals')
     if type(restoration_steps) is not int or not 0<=restoration_steps<=4:raise ValueError('Choose 0-4 decoded restoration steps')
-    if proposal_model!='storage-vector' and restoration_steps:raise ValueError('Decoded restoration applies only to storage-vector proposals')
+    if proposal_model not in ('storage-vector','surface-vector') and restoration_steps:raise ValueError('Decoded restoration applies only to storage/surface-vector proposals')
+    if proposal_model=='surface-vector' and geometry_policy is None:raise ValueError('Surface proposals require an explicit bound geometry policy')
     if proposal_model=='storage-vector':
         storage_cells=64 if storage_cells is None else storage_cells
         if type(storage_cells) is not int or not 1<=storage_cells<=512:raise ValueError('Choose 1-512 storage cells')
-    if proposal_model in ('vector','storage-vector'):vector_difference_step = scalar(.001 if vector_difference_step is None else vector_difference_step,1e-6,.01,'vector difference step')
+    if proposal_model in ('vector','storage-vector','surface-vector'):vector_difference_step = scalar(.001 if vector_difference_step is None else vector_difference_step,1e-6,.01,'vector difference step')
     conic_identity = None
-    if proposal_model in ('vector','storage-vector'):
+    if proposal_model in ('vector','storage-vector','surface-vector'):
         from native_scene_conic import solver_identity
         conic_identity = solver_identity()
     trust = scalar(trust,.000001,.02,'normalized control trust')
@@ -206,6 +208,10 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
         save(output/'pipeline.json',dict(status='processing')); probes = []
         try:
             problem = SceneProblem(scene,edits)
+            if proposal_model=='surface-vector':
+                from native_surface_model import include_times
+                if scene.objects:raise ValueError('Surface proposals do not yet include object primitives')
+                include_times(problem,policy_for(geometry_request,scene,bindings[str(contacts_path)])[0])
             if resume is not None:resume.check_caps(problem,contract_sha256())
             caps = {}
             for name,c in problem.caps.items():
@@ -223,7 +229,27 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                 record = dict(label=label,controls=value.tolist(),merit=list(merit(residual)),
                     files_sha256={p.relative_to(output).as_posix():sha256(p) for p in files.values()})
                 save(folder/'probe.json',record); probes.append(record); return residual
-            if proposal_model in ('vector','storage-vector'):
+            def evaluate_surface(value,label):
+                residual=evaluate(value,label);folder=output/'probes'/label
+                files={name:folder/(name+'.glb') for name in edits.actors}
+                _,worlds=problem.decoded(files,value)
+                derived_spec=copy.deepcopy(spec)
+                for name in scene.actors:
+                    path=files.get(name,originals[name]);derived_spec['actors'][name]['glb']=str(path)
+                    derived_spec['actors'][name]['sha256']=sha256(path)
+                save(folder/'contacts.json',derived_spec);digest=sha256(folder/'contacts.json')
+                decoded_scene=SceneContacts(derived_spec,folder)
+                derived_policy=copy.deepcopy(geometry_request);derived_policy['contacts_sha256']=digest
+                save(folder/'policy.json',derived_policy)
+                from native_scene_geometry import evaluate as geometry_audit
+                geometry,arrays=geometry_audit(decoded_scene,derived_policy,digest)
+                save(folder/'geometry.json',geometry);np.savez_compressed(folder/'geometry-observations.npz',**arrays)
+                return dict(native=residual,worlds=worlds,scene=decoded_scene,policy=derived_policy,digest=digest,geometry=geometry)
+            if proposal_model=='surface-vector':
+                from native_surface_model import optimize as optimize_surfaces
+                value,optimization=optimize_surfaces(problem,evaluate_surface,iterations,trust,
+                    step=vector_difference_step,restoration_steps=restoration_steps)
+            elif proposal_model in ('vector','storage-vector'):
                 from native_scene_conic import optimize as optimize_vectors
                 value,optimization = optimize_vectors(problem,evaluate,iterations,trust,difference_step=vector_difference_step,
                     difference_source='continuous' if proposal_model=='storage-vector' else 'stored',
@@ -293,10 +319,10 @@ if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('contacts',type=Path); p.add_argument('permissions',type=Path); p.add_argument('output',type=Path)
     p.add_argument('--iterations',type=int,default=4); p.add_argument('--trust',type=float,default=.02)
-    p.add_argument('--proposal-model',choices=['scalar','vector','storage-vector'],default='scalar')
+    p.add_argument('--proposal-model',choices=['scalar','vector','storage-vector','surface-vector'],default='scalar')
     p.add_argument('--vector-difference-step',type=float)
     p.add_argument('--storage-cells',type=int,help='Finite translation cell probes per iteration, storage-vector only')
-    p.add_argument('--restoration-steps',type=int,default=0,help='0-4 decoded source-bound restoration solves, storage-vector only')
+    p.add_argument('--restoration-steps',type=int,default=0,help='0-4 decoded constraint restoration solves, storage/surface-vector only')
     p.add_argument('--geometry-policy',type=Path,help='Source-bound sampled scene policy; originals remain selected')
     p.add_argument('--resume-from',type=Path,help='Completed fit to replay against the exact original source and limits')
     a=p.parse_args(); run(a.contacts,a.permissions,a.output,iterations=a.iterations,trust=a.trust,

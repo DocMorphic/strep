@@ -2533,3 +2533,46 @@ training data is admitted, checkpoint changed or quality approval given. Full
 goal stays active. Next: connect complete geometry proposal rows to correction
 while preserving original caps, then expand rig/action/transition validation and
 complete developer/animator review and engine/runtime evidence.
+
+
+## 2026-10-03: Full-mesh-guided correction with decoded anchoring
+
+Surface-vector fitting now rebuilds complete partner/plane witnesses at each
+retained step, adds explicit geometry clocks without rebuilding original rate
+caps, and protects ALL original motion/contact norms in the affine solve.
+Every exported candidate receives unchanged decoded native checks and a full
+sampled geometry audit. Actual geometry scoring compares maximum depth first,
+then crossing/deep-containment/failed-condition counts; the policy can retain
+increased crossing populations when depth improves, so it is not quality proof.
+The public CLI requires an explicit geometry policy and a feasible native start;
+object surfaces remain explicitly unsupported in this proposal mode.
+
+An initial real-case attempt stopped on a batch/scalar normalized rate mismatch
+(maximum 3.656e-6), with its failed job preserved. Proposal vectors now anchor on
+decoded scalar-sampler poses; continuous batch derivatives remain guides. Original
+caps/scales and decoded acceptance tolerances stay unchanged.
+
+Two restored surface steps resume the exact original high-five source/permissions,
+for 35 cumulative primary iterations. Point separation falls 29.9995 -> 25.9743 mm;
+maximum partner depth 21.4951 -> 20.7519 mm. Crossings increase 451 -> 478 and
+vertices over 5 mm increase 364 -> 396. All seven sampled geometry failures remain,
+including floor penetration under original scene placement. No stage rise or
+weight-conditioning transformation is applied in this study. Both accepted steps
+pass unchanged native/contact conditions; three unsafe probes remain rejected.
+Original meshes and source epochs stay retained, and no candidate is approved.
+
+Replay verifies all seven controls, fourteen byte-exact exports, original cap
+arrays, complete decoded geometry through the source skin-point callback and
+all acceptance decisions, then rehashes 284 files. Shared pose/geometry routines
+remain used; no GPU/continuous collision/runtime/animator claim is inferred.
+All 395 focused model-free regressions pass, including 15 new cases; CI includes
+them on Linux/Windows. Prior 7ae1aac hosted CI passed all four jobs.
+Evidence: reports/native-surface-fit-development-v1 (failed),
+reports/native-surface-fit-development-v2/high-five/verification-v1 and
+reports/native-surface-fit-validation-v1. Generated assets/evidence stay ignored.
+
+All fourteen release gates and formal held-out trials remain unchanged. No
+training data or checkpoint changes; full goal remains active. Next: improve
+contact-region orientation and surface separation while preserving the exact
+original epoch and explicit bounds, compose placement/export checks, and broaden
+rig/action/transition validation with developer/animator review and runtime proof.

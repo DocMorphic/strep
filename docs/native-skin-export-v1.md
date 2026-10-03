@@ -72,7 +72,8 @@ box makes the resulting norm residual equal the scalar clearance deficit
 throughout that box. This is an affine algebra result, not a bound on nonlinear
 poses or skin motion.
 
-The surface rows and lift are proposal helpers. They are not yet connected to
+The initial surface rows and lift are proposal helpers. Subsequent
+[surface-guided correction](native-surface-correction-v1.md) connects them to
 the motion solver. Axes and barycentric witnesses must be rebuilt after edits,
 and complete decoded contact, source-rate and mesh audits must remain the
 acceptance authority. Synthetic tests cover crossing/coplanar triangles, full
