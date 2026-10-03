@@ -1,5 +1,9 @@
 # Native root, contact and gameplay tracks
 
+The separate [native finite root adapter](native-root-runtime-v1.md) now verifies
+embedded/extracted motion for saved resources. It is not automatically enabled
+in these reference packages; complete scene/object/event playback remains open.
+
 Completed native scenes can now produce a source-preserving game-track package
 from Studio. This supports any supplied action: the asset/contact schema, rather
 than an action-name list, determines what can be measured and exported.
