@@ -150,6 +150,7 @@ jobs:
           tests/test_native_scene_norms.py
           tests/test_native_scene_storage.py
           tests/test_native_scene_restore.py
+          tests/test_native_scene_resume.py
           tests/test_triangle_primitive_depth.py
           tests/test_native_scene_geometry.py
           tests/test_native_scene_engine.py

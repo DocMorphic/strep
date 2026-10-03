@@ -2380,3 +2380,56 @@ Next: pursue usable rotational/partner contacts beyond the finite primary budget
 then broader scene/rig/action/transition validation and authoring integration with
 developer/animator review. GPU, physics, events, continuous collision and human
 quality remain unapproved.
+
+
+## Source-bound completed-fit continuation — 2026-10-03
+
+Prior c6a2582 passes all four hosted CI jobs in run 37109040449.
+The CLI can warm-start a completed native scene fit against its exact
+original actors, contact/permission bytes, frame contract and source-rate arrays.
+It replays starting GLBs byte-for-byte and rejects original protected-constraint
+failures, corrupt artifacts, changed limits and mutation during execution.
+Required artifacts and ancestors are copied and hashed; prior methods are never
+executed. This resumes controls, not solver internals; trust and reserves reset.
+
+The retained high-five continues from 177.976173 to 77.223038 mm hand
+separation against an unchanged 30 mm contact limit. It attempts 16 further
+primary iterations and accepts 16 steps (20 cumulative
+primary iterations). The larger budget and up to three additional restoration
+solves per iteration are not a comparison at equal compute. All sampled original
+positional/angular rate conditions remain passing, with source arrays exactly
+matching the preceding vector baseline. Originals remain selected; the contact
+target still fails. No new inference or formal held-out trial runs.
+
+Independent verification replays 44 controls and
+88 GLB exports byte-for-byte, with 25 restoration
+margin updates and 256 fitting files rehashed.
+The initial exports exactly match the prior final exports; ancestor snapshots
+rehash. Full independent skin verifies contact effectors within
+2.22e-16 m. Partner target
+interpolation remains shared; margin arithmetic uses implementation Jacobians
+and is not an independent derivative or solver proof.
+
+Two actual headless Godot jobs measure 77.179256 and
+77.179221 mm contact separation in import and native-resource manual
+authoring modes. Combined sampled conditions remain failing. The diagnostic
+plane and the separate 0.1 mm skin-position condition still fail; skin maxima
+range 0.135614–0.136711 mm. The geometry policy changes
+only its contact binding. Independent raw imported-slot reconstruction checks
+2 contact point samples and 216672 complete geometry-clock
+vertices, rehashing 115 engine files. Between-geometry-time
+skin-error curves are not independently replayed. No GPU, physics, event,
+continuous collision, human quality, training or release approval is established.
+All 344 focused model-free tests pass, including 14 continuation cases.
+
+Methodology: docs/native-scene-resume-v1.md. Local evidence:
+reports/native-scene-resume-development-v1,
+reports/native-scene-resume-verification-v1,
+reports/native-scene-resume-engine-v1 and
+reports/native-scene-resume-validation-v1.
+
+All fourteen release gates and formal held-out trials remain unchanged.
+No training data is admitted or checkpoint changed. The full goal stays active.
+Next: improve remaining rotational/partner contact errors, then extend
+scene/rig/action/transition validation and authoring integration with developer
+and animator review.

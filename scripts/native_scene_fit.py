@@ -19,7 +19,7 @@ from threadpoolctl import threadpool_limits
 from strep import ROOT, read, save, sha256, now
 
 METHODS = sorted(set(CONTACT_METHODS) | {'native_scene_edit.py','native_scene_fit.py',
-    'native_scene_norms.py','native_scene_conic.py','native_scene_storage.py','native_scene_restore.py','native_scene_geometry.py',
+    'native_scene_norms.py','native_scene_conic.py','native_scene_storage.py','native_scene_restore.py','native_scene_resume.py','native_scene_geometry.py',
     'triangle_primitive_depth.py','triangle_crossing.py','convex_partner_surface.py',
     'timed_rotation_edit.py','sampled_motion_caps.py','native_support_feasibility.py','action_worker_lock.py',
     'native_foot_plant.py','native_leg_floor.py','native_support_spec.py','native_contact_diagnostics.py',
@@ -144,7 +144,7 @@ def optimize(problem,evaluate,iterations,trust):
 
 
 def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_model='scalar',vector_difference_step=None,storage_cells=None,restoration_steps=0,
-        geometry_policy=None):
+        geometry_policy=None,resume_from=None):
     if type(iterations) is not int or not 1<=iterations<=16: raise ValueError('Choose 1-16 proposal iterations')
     if proposal_model not in ('scalar','vector','storage-vector'):raise ValueError('Choose scalar, vector or storage-vector proposal model')
     if proposal_model=='scalar' and vector_difference_step is not None:raise ValueError('Vector difference step applies only to vector proposals')
@@ -165,6 +165,11 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
     bindings = {str(p):sha256(p) for p in (contacts_path,permissions_path)}
     spec = read(contacts_path); scene = SceneContacts(spec,contacts_path.parent)
     edits = SceneEdits(read(permissions_path),scene,sha256(contacts_path)); bindings.update(scene.inputs)
+    source_bindings=dict(bindings);resume=None
+    if resume_from is not None:
+        from native_scene_resume import ResumeState
+        resume=ResumeState(resume_from,bindings[str(contacts_path)],bindings[str(permissions_path)],edits)
+        edits.initial=resume.controls.copy();bindings.update(resume.bindings)
     geometry_request = None
     if geometry_policy is not None:
         from native_scene_geometry import policy_for
@@ -174,6 +179,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
     with worker_lock(),threadpool_limits(limits=1):
         output.mkdir(parents=True); archive = output/'implementation'; archive.mkdir()
         for n in methods: shutil.copyfile(ROOT/'scripts'/n,archive/n)
+        resume_receipt=None if resume is None else resume.snapshot(output/'resume')
         shutil.copyfile(contacts_path,output/'contacts.json'); shutil.copyfile(permissions_path,output/'permissions.json')
         snapshots = {output/'contacts.json':bindings[str(contacts_path)],output/'permissions.json':bindings[str(permissions_path)]}
         if geometry_request is not None:
@@ -186,7 +192,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             path = (contacts_path.parent/a['glb']).resolve(); shutil.copyfile(path,dest)
             if sha256(dest)!=a['sha256']: raise ValueError('Native scene input snapshot differs')
             originals[name] = dest
-        save(output/'request.json',dict(at=now(),inputs_sha256=bindings,implementation_sha256=methods,
+        save(output/'request.json',dict(at=now(),inputs_sha256=bindings,source_inputs_sha256=source_bindings,resume=resume_receipt,implementation_sha256=methods,
             contacts_source_path=str(contacts_path),permissions_source_path=str(permissions_path),
             actor_snapshots={n:dict(path=p.relative_to(output).as_posix(),sha256=spec['actors'][n]['sha256']) for n,p in originals.items()},
             controls=edits.size,iterations=iterations,trust_control_fraction=trust,
@@ -200,6 +206,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
         save(output/'pipeline.json',dict(status='processing')); probes = []
         try:
             problem = SceneProblem(scene,edits)
+            if resume is not None:resume.check_caps(problem,contract_sha256())
             caps = {}
             for name,c in problem.caps.items():
                 for i,v in enumerate(c.caps): caps[f'{name}_metric_{i}'] = v
@@ -212,6 +219,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                     audit = edits.audit(name,path,scene.actors[name]['animation_index'])
                     if not audit['passed']: raise ValueError('Probe exceeds explicit native edit bounds')
                 residual,_ = problem.decoded(files,value)
+                if label=='start' and resume is not None:resume.check_start(files,residual,problem.protected_rows)
                 record = dict(label=label,controls=value.tolist(),merit=list(merit(residual)),
                     files_sha256={p.relative_to(output).as_posix():sha256(p) for p in files.values()})
                 save(folder/'probe.json',record); probes.append(record); return residual
@@ -254,9 +262,14 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                 if sha256(ROOT/'scripts'/n)!=h or sha256(archive/n)!=h: raise ValueError('Native scene fitting method changed')
             for n,p in originals.items():
                 if sha256(p)!=spec['actors'][n]['sha256']: raise ValueError('Native scene input snapshot changed')
+            if resume is not None:
+                resume.check_inputs()
+                for relative,h in resume_receipt['files_sha256'].items():
+                    if sha256(output/'resume'/relative)!=h:raise ValueError('Resume archived snapshot changed')
             if any(sha256(p)!=h for p,h in snapshots.items()): raise ValueError('Authored request snapshot changed')
             if conic_identity is not None and solver_identity()!=conic_identity:raise ValueError('Installed vector proposal solver changed')
             result = dict(status='complete',optimization=optimization,probes=probes,edits=audits,
+                resume=resume_receipt,completed_primary_iterations=len(optimization['history'])+(0 if resume is None else resume.prior_iterations),
                 native_constraints_pass=bool(merit(final_constraints)[0]==0 and report['passed'] and all(a['passed'] for a in audits.values())),
                 source_rate_tolerance=1e-5,source_rate_bins=4,source_rate_caps_sha256=sha256(output/'source-rate-caps.npz'),
                 proposal_model=proposal_model,conic_solver=conic_identity,
@@ -285,5 +298,6 @@ if __name__=='__main__':
     p.add_argument('--storage-cells',type=int,help='Finite translation cell probes per iteration, storage-vector only')
     p.add_argument('--restoration-steps',type=int,default=0,help='0-4 decoded source-bound restoration solves, storage-vector only')
     p.add_argument('--geometry-policy',type=Path,help='Source-bound sampled scene policy; originals remain selected')
+    p.add_argument('--resume-from',type=Path,help='Completed fit to replay against the exact original source and limits')
     a=p.parse_args(); run(a.contacts,a.permissions,a.output,iterations=a.iterations,trust=a.trust,
-        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,restoration_steps=a.restoration_steps,geometry_policy=a.geometry_policy)
+        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,restoration_steps=a.restoration_steps,geometry_policy=a.geometry_policy,resume_from=a.resume_from)

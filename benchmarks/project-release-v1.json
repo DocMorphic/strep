@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-03T08:12:25.173024+00:00",
-  "last_progress": "Optional decoded restoration tightens affine proposal caps from all observed protected underpredictions without relaxing final source constraints. Four accepted humanoid high-five steps reduce separation 206.233 to 177.976 mm while preserving all sampled source rates; contact still fails. Sphere hold remains failing. Four actual Godot imports retain contact/floor/skin failures, originals selected. Independent 38-control/54-export/18-margin replay and 4134-contact/397232-engine-vertex checks pass; 330 focused tests pass. Prior 7535c43 hosted CI all four jobs pass. No GPU/physics/continuous/quality/training/release approval; all release gates/formal trials unchanged, full goal active."
+  "last_progress_at": "2026-10-03T08:57:50.819662+00:00",
+  "last_progress": "Source-bound completed-fit continuation replays controls/GLBs against exact original limits and verifies ancestors without recapping edited motion. Retained high-five separation 177.976 to 77.223 mm against 30 mm; 16/16 further steps accepted, original sampled rates all pass. Two actual Godot jobs retain sampled contact/plane/skin failures and originals selected. Independent 44-control/88-export replay and raw 2-contact/216672-vertex checks pass; 344 focused tests pass. Prior c6a2582 all hosted CI jobs pass. All release gates/formal trials unchanged; goal active."
 }
