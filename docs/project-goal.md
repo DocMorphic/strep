@@ -2497,3 +2497,39 @@ Next: include contact-region surfaces/partner geometry in correction, investigat
 weight-preserving engine export precision, and broaden action/rig/transition
 validation and authoring integration with developer/animator review. No GPU,
 physics, gameplay event, continuous collision or human-quality approval.
+
+
+## 2026-10-03: Separate weight-conditioned export and partner surface rows
+
+Optional export preserves original animation/binary payloads, bindings, positions,
+topology and other metadata while appending checked Float32 weight accessors.
+The original source remains selected. On both retained 18056-vertex actors,
+70 rows need one ULP adjustment; encoded sums are exact for 18026 vertices and
+one unit short for 30. Two actual headless Godot 4.7.2 import modes pass the
+unchanged 0.1 mm sampled skin tolerance and point-contact condition, but complete
+hand geometry still fails and neither study passes overall. Independent raw-slot
+accumulation replays 216672 geometry-clock vertices and compares to the ORIGINAL
+unconditioned mesh: maximum errors 0.02760/0.02758 mm; conditioned native posed mesh
+differs by at most 0.001363 mm. This does not replace GPU or human review.
+
+Complete sampled partner-surface proposal data now covers all 36108 triangles
+per actor. On the retained high-five, 451 crossings produce 4059 scalar pairs;
+345/242 containment witnesses give 4646 total rows within the explicit budget.
+Independent row accumulation agrees within 2e-12 m. Deepest gap -21.495 mm remains
+a failure. Local scalar-to-norm lifting is exact only within the affine trust
+box. Solver integration, nonlinear acceptance, object surfaces, between-clock
+collision and motion quality are outstanding; no motion correction is claimed.
+
+All 380 focused model-free regressions pass, including 22 new cases; CI includes
+both new suites on Linux/Windows. Prior 6f7b300 passed all four hosted CI jobs.
+Public source excludes generated assets, tokens, machine reports and model data.
+Evidence: reports/native-skin-export-development-v1/verification-v2,
+reports/native-partner-surface-rows-development-v1 and
+reports/native-skin-surface-validation-v1. First local verifier attempt stopped
+before producing a result on an invalid path lookup; it remains retained.
+
+All fourteen release gates and formal held-out trials remain unchanged. No
+training data is admitted, checkpoint changed or quality approval given. Full
+goal stays active. Next: connect complete geometry proposal rows to correction
+while preserving original caps, then expand rig/action/transition validation and
+complete developer/animator review and engine/runtime evidence.

@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-03T09:33:23.780401+00:00",
-  "last_progress": "Second completed-fit continuation passes the original high-five point target (29.999466/30 mm) with original sampled rates intact; 49-control/98-export replay verified. Explicit common stage translation preserves clips/contact residuals and passes fixed-plane samples, but full partner meshes show 451 proper crossings and 19.603/21.495 mm containment. Four actual Godot jobs retain partner/skin failures, proposals unselected. Raw imported slots replay 433344 geometry-clock vertices; skin decomposition attributes ~0.136 mm to unsigned-16 weights, without changing assets/caps. All 358 focused tests pass; prior c73eb55 hosted CI all green. Release gates/formal trials unchanged, full goal active."
+  "last_progress_at": "2026-10-03T10:36:34.071918+00:00",
+  "last_progress": "Separate checked weight export preserves non-weight scene/animation payloads. Two actual headless imports pass unchanged sampled skin/contact limits; independent original-reference skin maxima 0.02760/0.02758 mm across 216672 replayed vertices. Partner collision still fails. Complete original triangle/containment queries yield 4646 local surface rows (451 crossing pairs, 587 contained vertices); no solver integration or correction claimed. All 380 focused regressions pass; prior 6f7b300 four CI jobs green. Release gates/formal trials unchanged, full goal active."
 }
