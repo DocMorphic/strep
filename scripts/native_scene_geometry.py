@@ -23,9 +23,10 @@ from engine_contact_sampling import frame_populations, contract_sha256
 from triangle_primitive_depth import query
 from triangle_crossing import audit as crossings
 from convex_partner_surface import penetration
+from native_observation_archive import ObservationArchive
 
 METHODS = tuple(dict.fromkeys(CONTACT_METHODS + ('native_scene_geometry.py', 'triangle_primitive_depth.py',
-    'triangle_crossing.py', 'convex_partner_surface.py', 'action_worker_lock.py')))
+    'triangle_crossing.py', 'convex_partner_surface.py', 'action_worker_lock.py', 'native_observation_archive.py')))
 
 
 def faces_for(rig):
@@ -93,7 +94,7 @@ def volume_state(vertices, faces):
         self_intersection_checked=False, containment_available=valid)
 
 
-def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, object_poses=None):
+def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, object_poses=None, observation_sink=None):
     times, populations, resolution = policy_for(policy, scene, digest)
     faces = {}; topology = {}
     for name, actor in scene.actors.items():
@@ -104,7 +105,8 @@ def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, objec
     limit = policy['limits']['penetration_m']; tol = policy['limits']['surface_tolerance_m']
     object_query = scene.object_poses if object_poses is None else object_poses
     poses = {n: object_query(n, times) for n in scene.objects}
-    samples = []; arrays = dict(times_s=times); passed = True
+    samples = []; arrays = {} if observation_sink is None else observation_sink; passed = True
+    arrays['times_s'] = times
     for frame, time in enumerate(times):
         vertices = {}; meshes = {}; states = {}; degenerate = {}
         for name, actor in scene.actors.items():
@@ -175,6 +177,17 @@ def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, objec
             'No object/object, self-collision, continuous-time, exact-arithmetic, engine or quality certification.'), arrays
 
 
+def evaluate_to_archive(scene, policy, digest, path, progress=None, *, actor_vertices=None,
+        object_poses=None, maximum_array_bytes=256*1024**2):
+    """Stream every query array; report decisions and numeric precision stay identical."""
+    path = Path(path)
+    with ObservationArchive(path, maximum_array_bytes=maximum_array_bytes) as observations:
+        report, _ = evaluate(scene, policy, digest, progress, actor_vertices=actor_vertices,
+            object_poses=object_poses, observation_sink=observations)
+    return report, dict(observations_sha256=sha256(path),
+        observation_receipt_sha256=sha256(Path(str(path)+'.receipt.json')))
+
+
 def run(contacts_path, policy_path, output):
     contacts_path, policy_path, output = [Path(p).resolve() for p in (contacts_path, policy_path, output)]
     if output.exists(): raise ValueError('Fresh geometry audit output required')
@@ -193,17 +206,16 @@ def run(contacts_path, policy_path, output):
             snapshots[path] = dict(path=dest.relative_to(output).as_posix(), sha256=expected)
         save(output/'pipeline.json', dict(status='processing'))
         try:
-            result, arrays = evaluate(scene, policy, bindings[str(contacts_path)],
+            result, transport = evaluate_to_archive(scene, policy, bindings[str(contacts_path)], output/'observations.npz',
                 lambda p: save(output/'pipeline.json', p))
             for path, snapshot in snapshots.items():
                 if sha256(path) != snapshot['sha256'] or sha256(output/snapshot['path']) != snapshot['sha256']:
                     raise ValueError('Geometry source or snapshot changed')
             if any(sha256(ROOT/'scripts'/n) != h or sha256(archive/n) != h for n, h in methods.items()):
                 raise ValueError('Geometry implementation changed')
-            np.savez_compressed(output/'observations.npz', **arrays)
             result.update(source_snapshots=snapshots, implementation_sha256=methods,
                 contacts_sha256=bindings[str(contacts_path)], policy_sha256=bindings[str(policy_path)],
-                observations_sha256=sha256(output/'observations.npz'),
+                **transport,
                 runtime=dict(python=sys.version, numpy=np.__version__, scipy=scipy.__version__, trimesh=trimesh.__version__))
             save(output/'result.json', result); save(output/'pipeline.json', dict(status='complete', original_selected=True))
             return result

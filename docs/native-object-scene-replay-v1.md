@@ -53,8 +53,10 @@ They exercise exact replay, immutable inputs, retained default failures, altered
 observations even with updated receipts, incomplete populations, source binding,
 partner/plane decisions, explicit clock preservation and retained geometry
 failure. These tests do not count as actual Godot execution or human feedback.
-The expanded real 2,201-time humanoid study remains separately in progress;
-its replay cannot run until both producers and their combined audit complete.
+The expanded real 2,201-time humanoid study and its full original-method replay
+have since completed. Every skin/contact/object observation and all 4,402 saved
+actor/object geometry reductions match. New producers additionally stream and
+verify exact archive receipts; see [producer integration and historical replay](native-geometry-stream-v1.md).
 
 Local validation covers 29 replay cases, 20 combined producer cases and 22
 geometry cases. The initial combined run records 69 passes and two existing

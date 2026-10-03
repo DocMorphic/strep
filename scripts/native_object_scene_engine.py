@@ -15,8 +15,9 @@ from action_worker_lock import worker_lock
 from native_scene_contacts import SceneContacts
 from native_scene_engine import EngineObservations, METHODS as ACTOR_METHODS, SKIN_POSITION_TOLERANCE
 from native_object_asset import METHODS as OBJECT_METHODS, POSITION_LIMIT_M, BASIS_LIMIT, ObjectAsset, audit as asset_audit
-from native_scene_geometry import evaluate as geometry_audit, policy_for
+from native_scene_geometry import evaluate_to_archive as geometry_archive, policy_for
 from strep import ROOT,read,save,sha256,now
+from native_engine_clock import clock_wire, check_clock_wire
 
 METHODS=tuple(dict.fromkeys(ACTOR_METHODS+OBJECT_METHODS+('native_object_scene_engine.py',)))
 
@@ -60,7 +61,7 @@ def prepare(contacts,policy_path,asset_dir,output):
             save(output/'pipeline.json',dict(status='processing',original_selected=True))
             save(output/'common-policy.json',derived_policy);save(output/'asset-audit.json',report)
             np.savez_compressed(output/'contact-observations.npz',**arrays)
-            payload['sample_times_s']=times.tolist();save(output/'engine-payload.json',payload)
+            payload['sample_times_s']=times.tolist();payload['sample_clock']=clock_wire(times);save(output/'engine-payload.json',payload)
             shutil.copyfile(ROOT/'scripts/native_object_scene_engine.py',output/'clock-preparation.py')
             preparation=dict(source_asset_dir=str(asset_dir),source_result_sha256=sha256(asset_dir/'result.json'),
                 source_files_sha256=source['files_sha256'],source_policy_path=str(policy_path),source_policy_sha256=sha256(policy_path),
@@ -109,13 +110,18 @@ def load(contacts,policy_path,actor_dir,object_dir):
     require(sha256(actor_dir/'raw-engine-receipt.json')==a['raw_engine_receipt_sha256'],'Actor engine receipt changed')
     require(receipt['returncode']==0 and receipt['engine_executable_sha256']==request['engine_sha256']==a['engine_executable_sha256'],'Actor engine executable receipt differs')
     require(sha256(actor_dir/'native-observations.npz')==a['native_observations_sha256'],'Actor native observations changed')
+    require(sha256(actor_dir/'geometry.json')==a['geometry_sha256'],'Actor geometry report changed')
+    geometry=read(actor_dir/'geometry.json')
+    require(sha256(actor_dir/'geometry-observations.npz')==geometry['observations_sha256']
+        and sha256(actor_dir/'geometry-observations.npz.receipt.json')==geometry['observation_receipt_sha256'],
+        'Actor geometry transport changed')
     method_bindings(actor_dir,a,ACTOR_METHODS)
     for path,h in a['inputs_sha256'].items():require(sha256(path)==h,'Actor producer input changed')
     require(set(a['source_snapshots'])=={p for p,h in a['inputs_sha256'].items() if h!=a['engine_executable_sha256']},'Complete actor producer snapshots required')
     for path,snapshot in a['source_snapshots'].items():
         saved=(actor_dir/snapshot['path']).resolve();require(saved.is_relative_to(actor_dir),'Actor snapshot escapes producer')
         require(sha256(path)==sha256(saved)==snapshot['sha256'],'Actor producer snapshot changed')
-    require(set(receipt['executed_scripts_sha256'])=={'godot_native_scene_audit.gd','native_godot_tracks.gd','native_godot_preview.gd'},'Complete executed actor scripts required')
+    require(set(receipt['executed_scripts_sha256'])=={'godot_native_scene_audit.gd','native_godot_tracks.gd','native_godot_preview.gd','native_engine_clock.gd'},'Complete executed actor scripts required')
     for n,h in receipt['executed_scripts_sha256'].items():
         require(n in ACTOR_METHODS and h==a['implementation_sha256'][n],'Unbound executed actor script')
         require(sha256(actor_dir/'project'/('audit.gd' if n=='godot_native_scene_audit.gd' else n))==h,'Executed actor script changed')
@@ -128,6 +134,7 @@ def load(contacts,policy_path,actor_dir,object_dir):
     require(sha256(asset_dir/'source-contacts.json')==digest,'Object source snapshot differs')
     require(sha256(object_dir/'request.json')==o['bindings']['request_sha256'],'Object request changed')
     require(object_request['payload']==read(asset_dir/'engine-payload.json'),'Object engine payload differs from actual asset')
+    check_clock_wire(object_request['payload']['sample_clock'], object_request['payload']['sample_times_s'])
     require(o['bindings']['engine_sha256']==a['engine_executable_sha256'],'Actor and object producers use different engines')
     method_bindings(asset_dir,asset,OBJECT_METHODS)
     if 'clock_preparation' in asset:
@@ -149,7 +156,9 @@ def load(contacts,policy_path,actor_dir,object_dir):
         saved=(asset_dir/snapshot['path']).resolve();require(saved.is_relative_to(asset_dir),'Object actor snapshot escapes producer')
         require(sha256(saved)==spec['actors'][name]['sha256']==snapshot['sha256'],'Object actor snapshot differs')
     require(sha256(object_dir/'project/audit.gd')==o['bindings']['script_sha256']==asset['implementation_sha256']['godot_native_object_asset.gd'],'Executed object script changed')
+    require(sha256(object_dir/'project/native_engine_clock.gd')==o['bindings']['clock_script_sha256']==asset['implementation_sha256']['native_engine_clock.gd'],'Executed object clock script changed')
     times=np.asarray(request['sample_times_s'],float)
+    check_clock_wire(request['sample_clock'], times)
     require(np.array_equal(times,np.asarray(object_request['payload']['sample_times_s'])),'Complete identical actor/object clocks required')
     require(np.isfinite(times).all() and np.all(np.diff(times)>0) and times[0]==0 and times[-1]==scene.duration and np.isin(required,times).all(),'Complete declared scene clock required')
     require([c['id'] for c in request['cases']]==list(scene.actors),'Complete original actor selection required')
@@ -192,10 +201,10 @@ def run(contacts,policy_path,actor_dir,object_dir,output):
                     p,r=scene.object_poses(name,times);q,s=provider.object_poses(name,times)
                     position=float(np.linalg.norm(q-p,axis=1).max());basis=float(abs(s-r).max())
                     objects_by_mode[mode][name]=dict(maximum_position_error_m=position,maximum_basis_error=basis,passed=position<=POSITION_LIMIT_M and basis<=BASIS_LIMIT)
-            geometry,data=geometry_audit(scene,policy,sha256(contacts),
+            geometry,transport=geometry_archive(scene,policy,sha256(contacts),output/'geometry-observations.npz',
                 lambda p:save(output/'pipeline.json',dict(**p,stage='combined-scene-geometry',original_selected=True)),
                 actor_vertices=actor.actor_vertices,object_poses=providers['native-authoring'].object_poses)
-            save(output/'geometry.json',geometry);np.savez_compressed(output/'geometry-observations.npz',**data)
+            geometry.update(**transport);save(output/'geometry.json',geometry)
             np.savez_compressed(output/'observations.npz',**arrays)
             native,_=scene.evaluate();scene.check_inputs()
             for p,h in bindings.items():require(sha256(p)==h,'Combined producer/source binding changed')
@@ -209,7 +218,7 @@ def run(contacts,policy_path,actor_dir,object_dir,output):
                 actor_pose_reports=actor.reports,skin_errors=skin,object_pose_reports=objects_by_mode,
                 source_contacts_pass=native['passed'],contacts_pass={m:r['passed'] for m,r in contacts_by_mode.items()},
                 geometry_pass=geometry['sampled_conditions_pass'],all_sampled_conditions_pass=passed,
-                files_sha256={n:sha256(output/n) for n in ('default-import-contacts.json','native-authoring-contacts.json','geometry.json','geometry-observations.npz','observations.npz')},
+                files_sha256={n:sha256(output/n) for n in ('default-import-contacts.json','native-authoring-contacts.json','geometry.json','geometry-observations.npz','geometry-observations.npz.receipt.json','observations.npz')},
                 original_selected=True,quality_approved=False,training_admitted=False,release_approved=False,
                 gpu_render_checked=False,physics_verified=False,real_time_playback_verified=False,continuous_collision_certified=False,
                 scope='Complete imported CPU actor skin and actual object native-resource authoring at all original clocks. Full declared sampled scene geometry; no object/object, self/continuous, physics, runtime events or human-quality approval.')

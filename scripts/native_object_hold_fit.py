@@ -15,7 +15,7 @@ from threadpoolctl import threadpool_limits
 from action_worker_lock import worker_lock
 from engine_contact_sampling import frame_populations, contract_sha256
 from native_scene_contacts import SceneContacts, fields, scalar, vector
-from native_scene_geometry import evaluate as geometry_audit, policy_for, METHODS as GEOMETRY_METHODS
+from native_scene_geometry import evaluate_to_archive as geometry_archive, policy_for, METHODS as GEOMETRY_METHODS
 from two_hand_rigidity import fit_two_grips
 from strep import ROOT, read, save, sha256, now
 
@@ -136,12 +136,12 @@ def run(contacts_path, request_path, policy_path, output):
             clocks,_,_=policy_for(derived_policy,candidate,digest)
             bounds=audit_bounds(scene,candidate,value,clocks)
             contacts,observations=candidate.evaluate();save(output/'contact-audit.json',contacts)
-            geometry,geometry_arrays=geometry_audit(candidate,derived_policy,digest,
+            geometry,transport=geometry_archive(candidate,derived_policy,digest,output/'geometry-observations.npz',
                 lambda p:save(output/'pipeline.json',dict(**p,original_selected=True)))
+            geometry.update(**transport)
             save(output/'geometry-policy.json',derived_policy);save(output/'geometry-audit.json',geometry)
             np.savez_compressed(output/'proposal-observations.npz',**arrays)
             np.savez_compressed(output/'contact-observations.npz',**observations)
-            np.savez_compressed(output/'geometry-observations.npz',**geometry_arrays)
             scene.check_inputs();candidate.check_inputs()
             if any(sha256(Path(p))!=h for p,h in inputs.items()):raise ValueError('Object fit input changed')
             if any(sha256(ROOT/'scripts'/n)!=h or sha256(archive/n)!=h for n,h in methods.items()):raise ValueError('Object fit implementation changed')

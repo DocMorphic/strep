@@ -3159,3 +3159,9 @@ formal held-out trials and frozen gates remain unchanged. Next: finish/replay
 the actual combined resource study, then integrate exact streaming into complete
 scene authoring before broader interaction trials. Human semantics/cleanup,
 physical attachment and final model validation remain required. Goal active.
+
+## 2026-10-03T19:55:08.144430+00:00 — complete geometry streaming and exact engine clocks
+
+Expanded original/key-union humanoid comparison and full original-method replay complete: 2201 times, 4402 complete actor/object rows pass; all recorded skin/contact/object observations and triangle reductions match. Dense study remains at recorded 9640b81 methods and immutable. Complete geometry producers now stream every Float64 array with bound receipts, unchanged clocks/faces/limits and retained failures. Initial 68 checks, 206 workflow checks, 96 targeted clock/engine checks and final 335 checks pass. First actual procedural authoring job fails strict actor clock echo: early 1/480 and 1/240 times return 8 ULPs low; failure retained. Versioned complete Float64 little-endian clocks and executed decoder receipts fix transport without widening tolerances. Actual two-rig/sphere job-v2 completes all 8 stages on 1101 times: original contacts and default import fail, bounded edit/native sampled conditions pass; 2202 actor/object, 1101 partner and 2202 remote declared-plane rows pass. Exact actor clock echoes; replay validates all 6607 geometry arrays (1,065,768 bytes) and all skin/contact/object reductions. Procedural integration only, not realistic humanoid, stance or total-memory benchmark. Previous 9640b81 CI all four jobs pass. No model, training, human, GPU, runtime, physics or release approval; all capability evidence, held-out trials and frozen gates unchanged.
+
+Methodology: `docs/native-geometry-stream-v1.md`. Local bound evidence: `reports/native-geometry-stream-validation-v1/checks.json`. Full project goal remains active.

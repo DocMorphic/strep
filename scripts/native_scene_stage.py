@@ -7,7 +7,7 @@ import numpy as np
 from threadpoolctl import threadpool_limits
 from action_worker_lock import worker_lock
 from native_scene_contacts import SceneContacts, fields, vector, scalar
-from native_scene_geometry import policy_for, evaluate as geometry_audit, METHODS as GEOMETRY_METHODS
+from native_scene_geometry import policy_for, evaluate_to_archive as geometry_audit, METHODS as GEOMETRY_METHODS
 from strep import ROOT, read, save, sha256, now
 
 METHODS=tuple(dict.fromkeys(GEOMETRY_METHODS+('native_scene_stage.py',)))
@@ -92,8 +92,8 @@ def run(contacts_path, policy_path, control_path, output):
             save(output/'source-contacts.json',before);save(output/'proposal-contacts.json',after)
             np.savez_compressed(output/'source-contact-observations.npz',**before_arrays)
             np.savez_compressed(output/'proposal-contact-observations.npz',**after_arrays)
-            geometry,arrays=geometry_audit(after_scene,derived_policy,digest)
-            save(output/'geometry.json',geometry);np.savez_compressed(output/'geometry-observations.npz',**arrays)
+            geometry,transport=geometry_audit(after_scene,derived_policy,digest,output/'geometry-observations.npz')
+            geometry.update(**transport);save(output/'geometry.json',geometry)
             scene.check_inputs();after_scene.check_inputs()
             for p,snapshot in snapshots.items():
                 if sha256(p)!=snapshot['sha256'] or sha256(output/snapshot['path'])!=snapshot['sha256']:
@@ -103,7 +103,7 @@ def run(contacts_path, policy_path, control_path, output):
             if sha256(proposal/'contacts.json')!=digest or sha256(proposal/'policy.json')!=policy_digest:
                 raise ValueError('Scene translation proposal changed')
             evidence=['source-contacts.json','proposal-contacts.json','source-contact-observations.npz',
-                'proposal-contact-observations.npz','geometry.json','geometry-observations.npz']
+                'proposal-contact-observations.npz','geometry.json','geometry-observations.npz','geometry-observations.npz.receipt.json']
             result=dict(status='complete',source_scene_retained=True,proposal_selected=False,
                 source_snapshots=snapshots,inputs_sha256=bindings,implementation_sha256=methods,
                 translation_m=offset.tolist(),maximum_contact_residual_difference_m=difference,

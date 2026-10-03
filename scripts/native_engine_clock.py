@@ -2,6 +2,21 @@
 import numpy as np
 
 
+def clock_wire(times):
+    """Explicit little-endian Float64 bytes avoid decimal-parser clock loss."""
+    values = np.asarray(times, dtype='<f8')
+    if (values.ndim != 1 or len(values)<2 or not np.isfinite(values).all()
+            or values[0] != 0 or np.any(np.diff(values)<=0)):
+        raise ValueError('Complete increasing finite engine clock required')
+    return dict(schema='strep-native-engine-clock-f64le-v1', count=len(values), bytes_hex=values.tobytes().hex())
+
+
+def check_clock_wire(value, times):
+    expected = clock_wire(times)
+    if not isinstance(value,dict) or set(value)!=set(expected) or type(value.get('count')) is not int or value != expected:
+        raise ValueError('Exact complete engine clock bytes required')
+
+
 def clock_echo_matches(requested, observed):
     requested, observed = float(requested), float(observed)
     # Godot's JSON decimal parser can differ by two double ULPs. Do not

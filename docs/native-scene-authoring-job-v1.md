@@ -82,8 +82,9 @@ worker contention and replay identity. A component integration test executes the
 actual contact, GLB, clock, imported skin, geometry and replay Python code on
 small closed meshes, with only engine execution mocked. Neither test type is
 actual Godot, model generation, developer feedback or release evidence. The
-separate expanded humanoid engine study remains in progress; it is not rerun
-merely to exercise this wrapper. All release capability gates stay open.
+separate expanded humanoid engine study and its original-method replay have
+since completed; they are not rerun merely to exercise this wrapper.
+All release capability gates stay open.
 
 Local validation passes 41 cases. The initial component integration retained
 37 passes and one real API mismatch: the synchronous source contact audit saves
@@ -94,6 +95,15 @@ are archived; the component rerun and current whole suite pass.
 
 A recipe is also prepared and validated against the actual retained humanoid
 sphere source, original full geometry policy and installed Godot binary. This
-is input/preflight evidence only. The expanded actual engine study remains
-active; no second study is dispatched and no completed real job is claimed.
+is input/preflight evidence only; this wrapper has not executed that humanoid
+recipe. Complete streamed producer validation is documented
+[separately](native-geometry-stream-v1.md).
+
+A separate actual procedural two-rig/object job now completes all eight stages
+at 1,101 times, including saved resources, partner/plane geometry and replay.
+Its original contacts and default object import fail; the bounded proposal and
+sampled native conditions pass. An initial decimal-clock transport failure is
+retained and repaired with exact binary clocks without widening tolerances.
+This validates execution on small procedural rigs, not realistic humanoid
+motion, general rig transfer, prompt semantics or human quality.
 The previous replay commit's hosted checks pass on both Windows and Linux.

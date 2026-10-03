@@ -14,8 +14,9 @@ from native_scene_contacts import SceneContacts,METHODS as CONTACT_METHODS
 from gltf_tools import append_accessor,write_glb,read_glb,accessor
 from object_geometry_mesh import triangle_mesh
 from strep import ROOT,read,save,sha256,now
+from native_engine_clock import clock_wire, check_clock_wire
 
-METHODS=tuple(dict.fromkeys(CONTACT_METHODS+('native_object_asset.py','object_geometry_mesh.py','action_worker_lock.py','godot_native_object_asset.gd')))
+METHODS=tuple(dict.fromkeys(CONTACT_METHODS+('native_object_asset.py','object_geometry_mesh.py','action_worker_lock.py','godot_native_object_asset.gd','native_engine_clock.py','native_engine_clock.gd')))
 POSITION_LIMIT_M=1e-6
 BASIS_LIMIT=1e-6
 
@@ -132,7 +133,7 @@ def run(contacts_path,output):
                 [v for k,v in native.items() if k.endswith('_times_s')]))
             report,arrays=audit(scene,asset,times)
             save(output/'clock-storage.json',clocks);save(output/'asset-audit.json',report);np.savez_compressed(output/'contact-observations.npz',**arrays)
-            save(output/'engine-payload.json',dict(channels=asset.channels,duration_s=max(scene.duration,max(v['translation'][0][-1] for v in asset.objects.values())),sample_times_s=times.tolist()))
+            save(output/'engine-payload.json',dict(channels=asset.channels,duration_s=max(scene.duration,max(v['translation'][0][-1] for v in asset.objects.values())),sample_times_s=times.tolist(),sample_clock=clock_wire(times)))
             scene.check_inputs()
             assert sha256(contacts_path)==sha256(output/'source-contacts.json')==digest
             assert all(sha256(ROOT/'scripts'/n)==sha256(archive/n)==h for n,h in methods.items())
@@ -155,12 +156,14 @@ def run_engine(asset_output,output,engine):
             raise ValueError('Object asset engine audit requires the recorded unchanged implementation')
         for n,h in source_result['files_sha256'].items():assert sha256(asset_output/n)==h
         scene=scene_from_snapshots(asset_output);asset=ObjectAsset(asset_output/'objects.glb');payload=read(asset_output/'engine-payload.json');times=np.asarray(payload['sample_times_s'])
+        check_clock_wire(payload['sample_clock'], times)
         output.mkdir(parents=True);project=output/'project';project.mkdir()
         (project/'project.godot').write_text('config_version=5\n[application]\nconfig/name="Strep rigid object asset audit"\n')
         script=ROOT/'scripts/godot_native_object_asset.gd';shutil.copyfile(script,project/'audit.gd')
+        clock_script=ROOT/'scripts/native_engine_clock.gd';shutil.copyfile(clock_script,project/clock_script.name)
         request=dict(asset_path=str(asset_output/'objects.glb'),payload=payload,resource_path=str(output/'native-animation.res'))
         save(output/'request.json',request);save(output/'pipeline.json',dict(status='processing',stage='headless-object-import'))
-        bindings=dict(engine_sha256=sha256(engine),script_sha256=sha256(script),request_sha256=sha256(output/'request.json'),source_result_sha256=sha256(asset_output/'result.json'))
+        bindings=dict(engine_sha256=sha256(engine),script_sha256=sha256(script),clock_script_sha256=sha256(clock_script),request_sha256=sha256(output/'request.json'),source_result_sha256=sha256(asset_output/'result.json'))
         try:
             with (output/'engine.log').open('w') as log:
                 child=subprocess.run([str(engine),'--headless','--path',str(project),'--script','audit.gd','--',str(output/'request.json'),str(output/'engine-output.json')],stdout=log,stderr=subprocess.STDOUT,timeout=300,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
@@ -190,6 +193,7 @@ def run_engine(asset_output,output,engine):
                 observations.update({mode+'_'+k:v for k,v in contact_arrays.items()})
             np.savez_compressed(output/'observations.npz',**observations)
             assert sha256(script)==sha256(project/'audit.gd')==bindings['script_sha256'] and sha256(engine)==bindings['engine_sha256']
+            assert sha256(clock_script)==sha256(project/clock_script.name)==bindings['clock_script_sha256']
             assert sha256(output/'request.json')==bindings['request_sha256'] and sha256(asset_output/'result.json')==bindings['source_result_sha256']
             for n,h in source_result['files_sha256'].items():assert sha256(asset_output/n)==h
             scene.check_inputs()

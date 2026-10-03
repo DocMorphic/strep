@@ -16,14 +16,14 @@ from threadpoolctl import threadpool_limits
 from action_worker_lock import worker_lock
 from strep import ROOT, read, save, sha256
 from native_scene_contacts import SceneContacts
-from native_scene_geometry import evaluate as geometry_audit, policy_for, METHODS as GEOMETRY_METHODS
+from native_scene_geometry import evaluate_to_archive as geometry_archive, policy_for, METHODS as GEOMETRY_METHODS
 from native_scene_imported_skin import ImportedSceneSkin
 from native_engine_contacts import imported_world, matrices
-from native_engine_clock import clock_echo_matches
+from native_engine_clock import clock_echo_matches, clock_wire
 from native_godot_payload import payload
 
 METHODS = tuple(dict.fromkeys(GEOMETRY_METHODS + ('native_scene_engine.py','native_scene_imported_skin.py',
-    'native_engine_contacts.py','native_engine_clock.py','native_godot_payload.py','godot_native_scene_audit.gd',
+    'native_engine_contacts.py','native_engine_clock.py','native_engine_clock.gd','native_godot_payload.py','godot_native_scene_audit.gd',
     'native_godot_tracks.gd','native_godot_preview.gd','native_review_support.py','native_support_spec.py',
     'native_leg_floor.py','native_foot_plant.py','native_contact_diagnostics.py','contact_rate_path.py',
     'contact_locked_native.py','timed_rotation_edit.py','elbow_swivel.py','two_bone_waypoint.py',
@@ -125,7 +125,7 @@ def run(contacts_path,output,*,geometry_policy=None,engine=None,playback_mode='i
             if sha256(dest)!=h: raise ValueError('Engine input snapshot differs')
             snapshots[path] = dict(path=dest.relative_to(output).as_posix(),sha256=h)
         (project/'project.godot').write_text('config_version=5\n[application]\nconfig/name="Strep native scene audit"\n[rendering]\nrenderer/rendering_method="gl_compatibility"\n')
-        for n in ('godot_native_scene_audit.gd','native_godot_tracks.gd','native_godot_preview.gd'):
+        for n in ('godot_native_scene_audit.gd','native_godot_tracks.gd','native_godot_preview.gd','native_engine_clock.gd'):
             shutil.copyfile(ROOT/'scripts'/n,project/('audit.gd' if n=='godot_native_scene_audit.gd' else n))
         cases = []
         for name,actor in scene.actors.items():
@@ -135,7 +135,7 @@ def run(contacts_path,output,*,geometry_policy=None,engine=None,playback_mode='i
                 case.update(native_payload=payload(actor['rig'],actor['sampler'],sha256(original)),
                     animation_output=str(output/(name+'-animation.res')))
             cases.append(case)
-        request = dict(cases=cases,sample_times_s=times.tolist(),objects=spec['objects'],playback_mode=playback_mode,
+        request = dict(cases=cases,sample_times_s=times.tolist(),sample_clock=clock_wire(times),objects=spec['objects'],playback_mode=playback_mode,
             engine_sha256=bindings[str(engine)],inputs_sha256=bindings,implementation_sha256=methods,
             pose_tolerance=POSE_TOLERANCE,object_pose_tolerance=OBJECT_TOLERANCE,
             skin_position_tolerance_m=SKIN_POSITION_TOLERANCE,
@@ -149,7 +149,7 @@ def run(contacts_path,output,*,geometry_policy=None,engine=None,playback_mode='i
             if finished.returncode: raise ValueError('Native scene engine import failed; inspect engine.log')
             raw_digest = sha256(output/'engine-output.json')
             executed_scripts = {n:sha256(project/('audit.gd' if n=='godot_native_scene_audit.gd' else n))
-                for n in ('godot_native_scene_audit.gd','native_godot_tracks.gd','native_godot_preview.gd')}
+                for n in ('godot_native_scene_audit.gd','native_godot_tracks.gd','native_godot_preview.gd','native_engine_clock.gd')}
             if any(h!=methods[n] for n,h in executed_scripts.items()): raise ValueError('Executed engine script changed')
             save(output/'raw-engine-receipt.json',dict(returncode=finished.returncode,engine_executable_sha256=bindings[str(engine)],
                 request_sha256=sha256(output/'request.json'),engine_output_sha256=raw_digest,
@@ -176,19 +176,18 @@ def run(contacts_path,output,*,geometry_policy=None,engine=None,playback_mode='i
             geometry = None
             if policy is not None:
                 save(output/'pipeline.json',dict(status='processing',stage='imported-scene-geometry'))
-                geometry,geometry_arrays = geometry_audit(scene,policy,bindings[str(contacts_path)],
+                geometry,transport = geometry_archive(scene,policy,bindings[str(contacts_path)],output/'geometry-observations.npz',
                     actor_vertices=observed.actor_vertices,object_poses=observed.object_poses)
-                np.savez_compressed(output/'geometry-observations.npz',**geometry_arrays)
                 geometry.update(imported_triangle_identity_checked=True,
                     measurement_source='Imported CPU skin and engine Node3D prop transforms; authored placements after skin',
-                    observations_sha256=sha256(output/'geometry-observations.npz'))
+                    **transport)
                 save(output/'geometry.json',geometry)
             if any(sha256(p)!=h for p,h in bindings.items()): raise ValueError('Native scene engine source changed')
             if sha256(output/'engine-output.json')!=raw_digest: raise ValueError('Raw imported engine observations changed')
             if any(sha256(output/e['path'])!=e['sha256'] for e in snapshots.values()): raise ValueError('Engine source snapshot changed')
             if any(sha256(ROOT/'scripts'/n)!=h or sha256(archive/n)!=h for n,h in methods.items()):
                 raise ValueError('Native scene engine implementation changed')
-            for n in ('godot_native_scene_audit.gd','native_godot_tracks.gd','native_godot_preview.gd'):
+            for n in ('godot_native_scene_audit.gd','native_godot_tracks.gd','native_godot_preview.gd','native_engine_clock.gd'):
                 target = project/('audit.gd' if n=='godot_native_scene_audit.gd' else n)
                 if sha256(target)!=methods[n]: raise ValueError('Executed engine script changed')
             np.savez_compressed(output/'native-observations.npz',**native_arrays)

@@ -41,13 +41,13 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Native object asset export](docs/native-object-assets-v1.md) records Float32 timestamp collisions and rechecks the actual GLB at original contact times. A matched Godot trial fails with default import but passes object pose/contact checks through a saved native Animation resource. Imported actor skin, complete scene geometry and runtime playback still need separate validation.
 
-[Combined imported scene checks](docs/native-object-scene-engine-v1.md) now pass the retained sphere hold using full imported character skin and actual native object-resource poses at 1,266 times. A reusable CLI prepares a source-bound common clock and preserves failed default imports. The expanded stored-key population, runtime behavior and motion-quality approval remain open.
+[Combined imported scene checks](docs/native-object-scene-engine-v1.md) pass the retained sphere hold using full imported character skin and actual native object-resource poses at 1,266 times, followed by the expanded 2,201-time population and full original-method replay. A reusable CLI prepares a source-bound common clock and preserves failed default imports. Runtime behavior and motion-quality approval remain open.
 
 [Combined evidence replay](docs/native-object-scene-replay-v1.md) rederives all imported skin/contact/object observations and checks complete saved geometry reductions. It preserves numerical failures and rejects inconsistent results, including changed observations with updated receipts. Geometry queries and human-quality approval remain separate.
 
 [A single native scene job](docs/native-scene-authoring-job-v1.md) connects supplied-rig contact measurements, optional explicit bounded object edits, exports, common clocks, engine observations and replay. It retains numerical failures and preserves source selection. Prompt generation, rig transfer, physical interaction and human approval remain separate requirements.
 
-[Streamed observation storage](docs/native-observation-archive-v1.md) preserves numeric arrays exactly without retaining previous frames. The expanded actor producer passes its 2,201-time sampled checks; the combined native object-resource comparison remains live. Streamed storage is tested separately and is not yet integrated into that worker.
+[Streamed observation storage](docs/native-observation-archive-v1.md) preserves numeric arrays exactly without retaining previous frames. The expanded actor/object comparison and original-method replay pass at all 2,201 times. [Complete scene producer integration](docs/native-geometry-stream-v1.md) retains all clocks, triangles and precision, with bound archive receipts and preserved partial failures. Motion-quality and release gates stay open.
 
 [Stored-key scene proposals](docs/native-scene-storage-proposals-v1.md) add hard source-motion constraints, continuous proposal derivatives and finite Float32 translation-cell probes. A synthetic body-contact correction passes native checks after five iterations; the matched four-iteration result still fails. This does not establish realistic motion or release readiness.
 

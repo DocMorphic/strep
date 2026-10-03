@@ -94,7 +94,9 @@ The common-clock preparation additionally includes stored Float32 object keys.
 The retained derived bundle has 2,201 times and passes its saved object pose and
 contact audit, with unchanged GLB bytes and original limits. The completed
 1,266-time result does not approve this larger population implicitly. Expanded
-actor and object engine observations and geometry still require their own run.
+actor and object engine observations, combined geometry and original-method
+replay have since completed; all sampled native conditions pass. See
+[the expanded study and streamed producer integration](native-geometry-stream-v1.md).
 
 Ignored evidence is retained in `reports/native-object-combined-engine-development-v1`,
 `reports/native-object-scene-engine-validation-v1` and

@@ -17,9 +17,10 @@ from native_scene_engine import SKIN_POSITION_TOLERANCE
 from native_object_asset import POSITION_LIMIT_M, BASIS_LIMIT
 from native_scene_geometry import faces_for, policy_for
 from engine_contact_sampling import contract_sha256
+from native_observation_archive import verify as verify_transport
 
 FILES = ('default-import-contacts.json', 'native-authoring-contacts.json',
-         'geometry.json', 'geometry-observations.npz', 'observations.npz')
+         'geometry.json', 'geometry-observations.npz', 'geometry-observations.npz.receipt.json', 'observations.npz')
 
 
 def geometry_reductions(scene, policy, digest, times, report, saved):
@@ -144,8 +145,13 @@ def run(contacts, policy_path, actor_dir, object_dir, combined_dir, output):
             with np.load(combined_dir/'observations.npz', allow_pickle=False) as saved:
                 require(set(saved.files) == set(arrays), 'Complete replay observations required')
                 for n,v in arrays.items(): require(np.array_equal(v,saved[n]), 'Replayed observations differ: '+n)
+            geometry_report = read(combined_dir/'geometry.json')
+            require(sha256(combined_dir/'geometry-observations.npz')==geometry_report['observations_sha256']
+                and sha256(combined_dir/'geometry-observations.npz.receipt.json')==geometry_report['observation_receipt_sha256'],
+                'Combined geometry transport changed')
+            transport = verify_transport(combined_dir/'geometry-observations.npz')
             with np.load(combined_dir/'geometry-observations.npz', allow_pickle=False) as saved:
-                geometry = geometry_reductions(scene, policy, sha256(contacts), times, read(combined_dir/'geometry.json'), saved)
+                geometry = geometry_reductions(scene, policy, sha256(contacts), times, geometry_report, saved)
             native,_ = scene.evaluate()
             passed = bool(native['passed'] and reports['native-authoring']['passed'] and geometry['passed']
                 and all(r['pose_samples_pass'] for r in actor.reports.values()) and all(r['passed'] for r in skin.values())
@@ -156,7 +162,7 @@ def run(contacts, policy_path, actor_dir, object_dir, combined_dir, output):
             for p,h in {**bindings,**receipts}.items(): require(sha256(p)==h, 'Verification input changed')
             require(sha256(__file__)==sha256(output/'verifier.py'), 'Verifier changed')
             verified = dict(at=now(), status='complete', samples=len(times), all_replayed_observations_exact=True,
-                recorded_sampled_conditions_pass=passed, geometry_reductions=geometry, source_bindings_sha256=bindings,
+                recorded_sampled_conditions_pass=passed, geometry_reductions=geometry, geometry_transport=transport, source_bindings_sha256=bindings,
                 combined_files_sha256=receipts, producer_implementation_sha256=result['implementation_sha256'],
                 verifier_sha256=sha256(__file__), original_selected=True, quality_approved=False, training_admitted=False,
                 release_approved=False, gpu_render_checked=False, physics_verified=False, real_time_playback_verified=False,

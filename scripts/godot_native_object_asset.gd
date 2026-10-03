@@ -1,4 +1,5 @@
 extends SceneTree
+const NativeClock = preload("res://native_engine_clock.gd")
 
 func descendants(node: Node) -> Array:
 	var result: Array = [node]
@@ -14,6 +15,10 @@ func audit() -> void:
 		quit(2)
 		return
 	var request = JSON.parse_string(FileAccess.get_file_as_string(args[0]))
+	var times := NativeClock.decode(request.payload.sample_clock, request.payload.sample_times_s.size())
+	if times.size() != request.payload.sample_times_s.size():
+		quit(14)
+		return
 	var document := GLTFDocument.new()
 	var state := GLTFState.new()
 	if document.append_from_file(request.asset_path, state) != OK:
@@ -55,7 +60,7 @@ func audit() -> void:
 		return
 	player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	player.play(selected)
-	for time in request.payload.sample_times_s:
+	for time in times:
 		player.seek(float(time), true)
 		for object in report["default-import"]:
 			var node: Node3D = nodes["Object_" + object]
@@ -94,7 +99,7 @@ func audit() -> void:
 			if decoded.track_get_key_time(track,key) != float(PackedFloat32Array([channel.times_s[key]])[0]):
 				quit(11)
 				return
-	for time in request.payload.sample_times_s:
+	for time in times:
 		for track in range(decoded.get_track_count()):
 			var channel: Dictionary = request.payload.channels[track]
 			var node: Node3D = nodes[channel.node_name]
@@ -107,6 +112,6 @@ func audit() -> void:
 			var q := node.quaternion.normalized()
 			report["native-authoring"][object].append({"time_s": time, "translation_m": [node.position.x,node.position.y,node.position.z], "rotation_xyzw": [q.x,q.y,q.z,q.w]})
 	var file := FileAccess.open(args[1],FileAccess.WRITE)
-	file.store_string(JSON.stringify(report))
+	file.store_string(JSON.stringify(report, "", true, true))
 	file.close()
 	quit(0)

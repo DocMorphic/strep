@@ -1,7 +1,7 @@
 """Write complete numeric observations to NPZ without retaining earlier arrays.
 
 Transport only: no sample selection, coercion, geometry queries or quality gate.
-Integration into existing scene studies must wait for their terminal replay.
+Scene producers use this transport without changing their complete query population.
 """
 import hashlib
 import json

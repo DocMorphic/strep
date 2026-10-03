@@ -19,7 +19,7 @@ from threadpoolctl import threadpool_limits
 from strep import ROOT, read, save, sha256, now
 
 METHODS = sorted(set(CONTACT_METHODS) | {'native_scene_edit.py','native_scene_fit.py',
-    'native_scene_norms.py','native_scene_conic.py','native_scene_storage.py','native_scene_restore.py','native_scene_resume.py','native_scene_geometry.py',
+    'native_scene_norms.py','native_scene_conic.py','native_scene_storage.py','native_scene_restore.py','native_scene_resume.py','native_scene_geometry.py','native_observation_archive.py',
     'native_surface_model.py','native_partner_surface_rows.py','native_object_surface_rows.py','native_surface_lift.py',
     'native_surface_contact.py','native_contact_norms.py','native_geometry_norms.py',
     'triangle_primitive_depth.py','triangle_crossing.py','convex_partner_surface.py',
@@ -259,9 +259,9 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                 decoded_scene=SceneContacts(derived_spec,folder)
                 derived_policy=copy.deepcopy(geometry_request);derived_policy['contacts_sha256']=digest
                 save(folder/'policy.json',derived_policy)
-                from native_scene_geometry import evaluate as geometry_audit
-                geometry,arrays=geometry_audit(decoded_scene,derived_policy,digest)
-                save(folder/'geometry.json',geometry);np.savez_compressed(folder/'geometry-observations.npz',**arrays)
+                from native_scene_geometry import evaluate_to_archive as geometry_archive
+                geometry,transport=geometry_archive(decoded_scene,derived_policy,digest,folder/'geometry-observations.npz')
+                geometry.update(**transport);save(folder/'geometry.json',geometry)
                 surface_observation=None
                 if contact_model is not None:
                     from native_surface_contact import evaluate as surface_audit
@@ -296,21 +296,20 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             audits = {n:edits.audit(n,Path(proposal_spec['actors'][n]['glb']),scene.actors[n]['animation_index']) for n in edits.actors}
             geometry_report = None
             if geometry_request is not None:
-                from native_scene_geometry import evaluate as geometry_audit
+                from native_scene_geometry import evaluate_to_archive as geometry_archive
                 geometry_folder = output/'geometry-audit'; geometry_folder.mkdir()
                 derived = copy.deepcopy(geometry_request)
                 derived['contacts_sha256'] = sha256(proposal/'contacts.json')
                 save(geometry_folder/'policy.json',derived)
                 policy_digest = sha256(geometry_folder/'policy.json')
                 decoded_scene = SceneContacts(proposal_spec,proposal)
-                geometry_report,geometry_arrays = geometry_audit(decoded_scene,derived,derived['contacts_sha256'])
+                geometry_report,transport = geometry_archive(decoded_scene,derived,derived['contacts_sha256'],geometry_folder/'observations.npz')
                 decoded_scene.check_inputs()
                 if sha256(geometry_folder/'policy.json') != policy_digest: raise ValueError('Derived geometry policy changed')
                 if sha256(proposal/'contacts.json') != derived['contacts_sha256']: raise ValueError('Proposal scene changed during geometry audit')
-                np.savez_compressed(geometry_folder/'observations.npz',**geometry_arrays)
                 geometry_report.update(authored_policy_sha256=bindings[str(geometry_policy)],
                     derived_policy_sha256=policy_digest,contacts_sha256=derived['contacts_sha256'],
-                    observations_sha256=sha256(geometry_folder/'observations.npz'),implementation_sha256=methods)
+                    **transport,implementation_sha256=methods)
                 save(geometry_folder/'result.json',geometry_report)
             surface_report=None
             if surface_request is not None:

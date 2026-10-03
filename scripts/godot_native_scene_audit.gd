@@ -1,6 +1,7 @@
 extends SceneTree
 const NativeTracks = preload("res://native_godot_tracks.gd")
 const NativePreview = preload("res://native_godot_preview.gd")
+const NativeClock = preload("res://native_engine_clock.gd")
 
 func vector(value: Vector3) -> Array:
 	return [value.x, value.y, value.z]
@@ -37,6 +38,10 @@ func audit() -> void:
 		quit(2)
 		return
 	var request = JSON.parse_string(FileAccess.get_file_as_string(args[0]))
+	var times := NativeClock.decode(request.sample_clock, request.sample_times_s.size())
+	if times.size() != request.sample_times_s.size():
+		quit(15)
+		return
 	var report: Dictionary = {"engine": Engine.get_version_info(), "cases": [], "objects": []}
 	for item in request.cases:
 		var document := GLTFDocument.new()
@@ -110,7 +115,7 @@ func audit() -> void:
 		player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 		player.play(selected)
 		var frames: Array = []
-		for time in request.sample_times_s:
+		for time in times:
 			if request.playback_mode == "native-authoring":
 				if NativePreview.seek(player, skeleton, player.get_animation(selected), float(time)) != OK:
 					quit(11)
@@ -132,7 +137,7 @@ func audit() -> void:
 		var target := Node3D.new()
 		root.add_child(target)
 		var frames: Array = []
-		for time in request.sample_times_s:
+		for time in times:
 			target.transform = sample_object(request.objects[name].keyframes, float(time))
 			var q := target.quaternion
 			frames.append({"requested_time_s": time, "matrix": matrix(target.global_transform), "rotation_xyzw": [q.x, q.y, q.z, q.w]})

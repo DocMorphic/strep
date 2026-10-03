@@ -162,6 +162,7 @@ jobs:
           tests/test_verify_native_object_scene_engine.py
           tests/test_native_scene_authoring_job.py
           tests/test_native_observation_archive.py
+          tests/test_native_geometry_archive.py
           tests/test_two_hand_rigidity.py
           tests/test_native_surface_model.py
           tests/test_native_surface_contact.py

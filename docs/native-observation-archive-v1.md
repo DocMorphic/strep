@@ -4,9 +4,10 @@ The expanded humanoid actor stage now completes at all 2,201 original/key-union
 times. Pose, original Node3D object transforms, contacts, complete imported skin
 and declared sampled geometry pass. The maximum source-relative vertex error
 remains 0.0950103 mm against the original 0.1 mm limit; all 4,402 actor/object
-geometry observations pass. This is the actor producer, not the final combined
-comparison with actual saved/reloaded object resources. That combined stage
-remains in progress. No world plane or partner is declared in this case, and
+geometry observations pass. The combined comparison with actual saved/reloaded
+object resources and its full original-method replay have also completed.
+See [complete producer integration](native-geometry-stream-v1.md).
+No world plane or partner is declared in this case, and
 no human, GPU, runtime or physics approval follows.
 
 The worker was observed reserving 8.10 GB of private process memory. For this
@@ -27,11 +28,10 @@ with ObservationArchive(output / 'observations.npz') as observations:
 transport_check = verify(output / 'observations.npz')
 ```
 
-This is a storage component, not a geometry evaluator. The running study and
-existing scene evaluators remain unchanged. Integration must wait for the
-current combined study and its terminal replay; the component does not claim
-that the live worker's peak memory is already reduced. No complete-population
-memory benchmark has been performed.
+This is a storage component, not a geometry evaluator. Integration into scene
+producers followed terminal completion and replay of the unchanged dense study.
+New producers stream the complete arrays; old study files remain immutable.
+No complete-population process-memory benchmark has been performed.
 
 Each assignment snapshots one whole array, preserving dtype, shape, logical
 bytes and ordering. It neither downcasts nor filters nonfinite diagnostic
@@ -81,6 +81,5 @@ validated by this round trip; the writer API does not select or discard them.
 Ignored evidence lives in `reports/native-observation-archive-development-v1`.
 The preceding single-job commit passes all four Windows/Linux hosted checks.
 All release capability gates, formal held-out trials and human cleanup/review
-requirements remain open. Next: finish and replay the current combined producer,
-then integrate streamed archives into the complete scene workflow while retaining
-the original query population and exact numeric values.
+requirements remain open. Complete producer integration and its separate
+validation are documented in [the scene streaming study](native-geometry-stream-v1.md).
