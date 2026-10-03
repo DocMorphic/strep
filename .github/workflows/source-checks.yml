@@ -147,6 +147,7 @@ jobs:
           tests/test_native_contact_diagnostics.py
           tests/test_native_scene_contacts.py
           tests/test_native_scene_fit.py
+          tests/test_action_worker_lock.py
           tests/test_native_engine_contacts.py
           tests/test_engine_contact_sampling.py
           tests/test_native_engine_contact_population.py

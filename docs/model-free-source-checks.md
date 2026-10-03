@@ -38,3 +38,25 @@ Eight inward-feasibility LP tests now cover common progress, conflicting constra
 
 
 Three LSMR diagnostic tests add fixed-system iteration-cap comparisons, independent damped normal-residual checks and invalid-input rejection. The selected public Python suite now contains 80 tests; this does not qualify a motion or the full product.
+
+## Worker-lock portability
+
+The native scene fitter exposed a Windows-only worker-lock import in Linux CI
+at commit `d5aafd5`. [That run](https://github.com/DocMorphic/strep/actions/runs/37096023942)
+passed Windows source checks and both adapter jobs, but Linux source collection
+failed before its tests ran. The failure is retained as a software portability
+issue; it does not change the recorded correction-study outcomes.
+
+The shared lock now uses Windows nonblocking byte locking or POSIX nonblocking
+`flock`, retaining the same project lock file and one-job rule. Closing the file
+or exiting a process releases ownership; a leftover lock file does not represent
+a live job. Contention is reported as busy, while unrelated filesystem errors
+remain errors. This is a lock between local processes on supported local
+filesystems, not distributed GPU-job scheduling.
+
+Ten model-free regressions cover independent handles, exceptions, contention
+between real processes, normal and forced process exit, and error classification.
+Both Windows and Linux source jobs run them. Locally, all 142 focused lock,
+native scene, clock, edit, rate and skin checks pass on Windows. Hosted Linux
+verification is separate from that local result. No model study is repeated,
+and no animation, import, training or release approval is granted.

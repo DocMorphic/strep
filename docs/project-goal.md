@@ -2103,3 +2103,22 @@ measured learned improvements remain open. No inference, new seed, held-out,
 engine/render, human-quality, training admission or model improvement is claimed.
 All fourteen capability gates and the formal 72x5 protocol remain unchanged;
 the single full-project goal stays active.
+
+
+## Worker lock portability — 2026-10-03
+
+Hosted CI for d5aafd5 passed both adapter jobs and Windows source checks, but
+Linux source collection failed at the Windows-only msvcrt worker-lock import.
+The shared lock now uses the equivalent nonblocking POSIX flock on Linux while
+preserving Windows byte locking and the same project-wide one-job file. Busy
+classification is limited to contention; other I/O failures remain errors.
+
+All 142 focused model-free checks pass on Windows, including ten dedicated lock
+cases. Real subprocesses verify contention, graceful exit and forced termination
+release; exceptions and independent handles also release/reject correctly. The
+same new tests join both hosted source jobs. Evidence stays in ignored
+reports/worker-lock-portability-v1; previous raw correction studies are unchanged.
+No model study, geometry/engine check, human review, training or quality gain is
+claimed. All release gates and the formal protocol stay unchanged; the single
+full-project goal remains active. Next: source-bound scene geometry and diagnosis
+of near-static rate/serialization failures in retained correction proposals.

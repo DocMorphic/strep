@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-03T04:10:42.511231+00:00",
-  "last_progress": "Explicit source/contact-bound native body and scene TRS proposals preserve protected keys, source rate bins, all-joint displacement and body/object/partner conditions; final status uses decoded constraints. Three four-iteration synthetic/sphere/high-five trials still fail and originals remain selected. All 76 GLB exports from 70 control vectors replay byte-for-byte, source caps match exactly and final full-skin contacts agree within 4.30e-16 metres; 326 evidence files rehash. All 132 model-free checks, including 29 new fit cases, pass. No inference, held-out, engine/render, review, training or release claim; all 14 gates and the formal 72x5 protocol are unchanged and the full goal remains active. Next: near-static rate and serialization diagnosis, full scene geometry and actual imported-skin checks."
+  "last_progress_at": "2026-10-03T04:26:19.183460+00:00",
+  "last_progress": "Fixed Windows-only worker-lock import exposed by Linux CI, preserving nonblocking local one-job exclusion and OS release. All 142 focused model-free Windows checks pass, including 10 real-process/error lock checks; hosted platforms will verify the same tests. Previous correction outputs and all release gates remain unchanged, and the full-project goal stays active. Next: source-bound scene geometry and near-static rate/serialization diagnosis; no model training, quality or release claim."
 }
