@@ -2122,3 +2122,59 @@ No model study, geometry/engine check, human review, training or quality gain is
 claimed. All release gates and the formal protocol stay unchanged; the single
 full-project goal remains active. Next: source-bound scene geometry and diagnosis
 of near-static rate/serialization failures in retained correction proposals.
+
+
+## Vector scene proposals and native storage diagnosis — 2026-10-03
+
+The preceding 1275b47 worker-lock fix passes all four hosted CI jobs in run
+37096560554. This continuation adds an optional vector-norm native scene
+proposal model with pinned Clarabel 0.11.1, source/package bindings, sparse
+Jacobians and full-trust-box affine screening. Scalar and Studio defaults
+retain their numerical behavior; decoded constraints still decide native passes,
+and originals remain selected pending scene geometry, imported skin and review.
+
+Replaying a rejected scalar direction identifies a row predicted at -78.133340
+but measured at +82.688060; preserving the affine vector norm catches it at
++67.802718. A separate stored vector proposal demonstrates Float32 difference
+aliasing: a 1e-5 difference predicts worst residual 0.760193, actual 47.276840.
+Larger differences catch the missed rows. Vector jobs now explicitly record a
+default 1e-3 normalized difference step. This is one-fixture calibration, not
+a universal optimum or proof of smooth quantized keys.
+
+The dense first implementation completes body/sphere trials but rejects the
+partner Jacobian at its resource limit. Sparse storage preserves every exact
+nonzero and all decoded rows. The partner's 74,377,602 dense elements become
+34,868,487 stored nonzeros in its first step; 459,121 norms remain audited.
+Only affine norms bounded passing throughout the full trust box can be screened.
+All three same-input, same-budget four-iteration follow-ups now execute locally.
+Body contact error improves to 1.152541 mm, still above 1 mm, and 24 positional
+acceleration rows fail. Sphere right error is 2.358980 mm and speed 10.175305
+mm/s against 5; positional/angular acceleration failure counts are 1/7.
+High-five separation is 170.462344 mm against 30; A rate failures are
+262/41/116/26 and B 19/18/30/5. None passes and none changes its selected input.
+Small interaction differences establish no animator-visible quality gain.
+
+An endpoint-travel bound does not rule out the root request. The first replay
+wrapper wrongly asserted it must conflict; that failed observation stays saved.
+Fresh verification records the compatible necessary bound, without claiming
+feasibility. A separate authored root plateau fails, and an ordinary triangle
+fails 24 acceleration rows. A triangle aligned to this synthetic source's
+Float32 spacing passes all unchanged native conditions: 1.999736 mm peak,
+0.400211 mm contact error, 1.999736 mm/s hold speed. Independent scalar sampling
+confirms zero rate failures and extra-clock full-skin contact. This is an authored
+six-bone fixture, not solver success, generated humanoid quality or training data.
+
+All 163 focused model-free checks pass, including 21 vector/storage cases.
+The initial dense study's 22 exports/22 controls and sparse follow-up's
+27 exports/21 controls replay byte-for-byte. The follow-up's source cap arrays
+match the scalar baseline exactly, merits reproduce and independent full-skin
+contact coordinates agree within 3.34e-16 metres. All 234 follow-up study files
+rehash. Evidence: reports/native-scene-vector-development-v2/verification-v1,
+reports/native-scene-storage-seed-development-v1/verification.json and
+reports/native-scene-vector-validation-v4/checks.json. Methodology:
+docs/native-scene-vector-proposals-v1.md. No new inference, held-out, actual
+engine/render, collision, human review, training admission or model update is
+claimed. All fourteen release capability gates and the formal protocol remain
+unchanged. The full-project goal stays active. Next: native storage-aware
+proposal handling, complete scene geometry and actual imported-skin checking,
+while retaining broad action, style, editing, transition and transfer requirements.

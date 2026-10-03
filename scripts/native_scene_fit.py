@@ -19,6 +19,7 @@ from threadpoolctl import threadpool_limits
 from strep import ROOT, read, save, sha256, now
 
 METHODS = sorted(set(CONTACT_METHODS) | {'native_scene_edit.py','native_scene_fit.py',
+    'native_scene_norms.py','native_scene_conic.py',
     'timed_rotation_edit.py','sampled_motion_caps.py','native_support_feasibility.py','action_worker_lock.py',
     'native_foot_plant.py','native_leg_floor.py','native_support_spec.py','native_contact_diagnostics.py',
     'native_leg_smoothing.py','elbow_swivel.py','two_bone_waypoint.py','contact_rate_path.py',
@@ -134,8 +135,15 @@ def optimize(problem,evaluate,iterations,trust):
         final_merit=list(merit(current)),difference_step_control_fraction=1e-5,conservative_dense_dependencies=True)
 
 
-def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02):
+def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_model='scalar',vector_difference_step=None):
     if type(iterations) is not int or not 1<=iterations<=16: raise ValueError('Choose 1-16 proposal iterations')
+    if proposal_model not in ('scalar','vector'):raise ValueError('Choose scalar or vector proposal model')
+    if proposal_model=='scalar' and vector_difference_step is not None:raise ValueError('Vector difference step applies only to vector proposals')
+    if proposal_model=='vector':vector_difference_step = scalar(.001 if vector_difference_step is None else vector_difference_step,1e-6,.01,'vector difference step')
+    conic_identity = None
+    if proposal_model=='vector':
+        from native_scene_conic import solver_identity
+        conic_identity = solver_identity()
     trust = scalar(trust,.000001,.02,'normalized control trust')
     contacts_path,permissions_path,output = map(lambda p:Path(p).resolve(),(contacts_path,permissions_path,output))
     if output.exists(): raise ValueError('Fresh native scene fitting directory required')
@@ -159,6 +167,8 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02):
             contacts_source_path=str(contacts_path),permissions_source_path=str(permissions_path),
             actor_snapshots={n:dict(path=p.relative_to(output).as_posix(),sha256=spec['actors'][n]['sha256']) for n,p in originals.items()},
             controls=edits.size,iterations=iterations,trust_control_fraction=trust,
+            proposal_model=proposal_model,conic_solver=conic_identity,
+            vector_difference_step=vector_difference_step,
             frame_contract_sha256=contract_sha256(),python=sys.version,numpy=np.__version__,scipy=scipy.__version__,
             quality_approved=False,scope='Proposal only; originals selected pending scene geometry and actual imported-skin checks.'))
         save(output/'pipeline.json',dict(status='processing')); probes = []
@@ -179,7 +189,10 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02):
                 record = dict(label=label,controls=value.tolist(),merit=list(merit(residual)),
                     files_sha256={p.relative_to(output).as_posix():sha256(p) for p in files.values()})
                 save(folder/'probe.json',record); probes.append(record); return residual
-            value,optimization = optimize(problem,evaluate,iterations,trust)
+            if proposal_model=='vector':
+                from native_scene_conic import optimize as optimize_vectors
+                value,optimization = optimize_vectors(problem,evaluate,iterations,trust,difference_step=vector_difference_step)
+            else:value,optimization = optimize(problem,evaluate,iterations,trust)
             final_constraints = evaluate(value,'final'); proposal_spec = copy.deepcopy(spec); proposal = output/'proposal'; proposal.mkdir()
             for i,name in enumerate(spec['actors']):
                 src = output/'probes/final'/(name+'.glb') if name in edits.actors else originals[name]
@@ -196,9 +209,12 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02):
             for n,p in originals.items():
                 if sha256(p)!=spec['actors'][n]['sha256']: raise ValueError('Native scene input snapshot changed')
             if any(sha256(p)!=h for p,h in snapshots.items()): raise ValueError('Authored request snapshot changed')
+            if conic_identity is not None and solver_identity()!=conic_identity:raise ValueError('Installed vector proposal solver changed')
             result = dict(status='complete',optimization=optimization,probes=probes,edits=audits,
                 native_constraints_pass=bool(merit(final_constraints)[0]==0 and report['passed'] and all(a['passed'] for a in audits.values())),
                 source_rate_tolerance=1e-5,source_rate_bins=4,source_rate_caps_sha256=sha256(output/'source-rate-caps.npz'),
+                proposal_model=proposal_model,conic_solver=conic_identity,
+                vector_difference_step=vector_difference_step,
                 original_selected=True,selected_files={n:p.relative_to(output).as_posix() for n,p in originals.items()},
                 proposal_files={n:str(Path(a['glb']).relative_to(output)) for n,a in proposal_spec['actors'].items()},
                 contacts_result_sha256=sha256(output/'contact-audit/result.json'),
@@ -214,4 +230,7 @@ if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('contacts',type=Path); p.add_argument('permissions',type=Path); p.add_argument('output',type=Path)
     p.add_argument('--iterations',type=int,default=4); p.add_argument('--trust',type=float,default=.02)
-    a=p.parse_args(); run(a.contacts,a.permissions,a.output,iterations=a.iterations,trust=a.trust)
+    p.add_argument('--proposal-model',choices=['scalar','vector'],default='scalar')
+    p.add_argument('--vector-difference-step',type=float)
+    a=p.parse_args(); run(a.contacts,a.permissions,a.output,iterations=a.iterations,trust=a.trust,
+        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step)

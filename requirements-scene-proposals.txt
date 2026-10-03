@@ -1,0 +1,5 @@
+# Optional CPU vector-norm scene proposals; no model weights or Torch required.
+numpy==2.2.6
+scipy==1.15.3
+threadpoolctl==3.6.0
+clarabel==0.11.1

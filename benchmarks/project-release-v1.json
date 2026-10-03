@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-03T04:26:19.183460+00:00",
-  "last_progress": "Fixed Windows-only worker-lock import exposed by Linux CI, preserving nonblocking local one-job exclusion and OS release. All 142 focused model-free Windows checks pass, including 10 real-process/error lock checks; hosted platforms will verify the same tests. Previous correction outputs and all release gates remain unchanged, and the full-project goal stays active. Next: source-bound scene geometry and near-static rate/serialization diagnosis; no model training, quality or release claim."
+  "last_progress_at": "2026-10-03T05:25:21.528159+00:00",
+  "last_progress": "Optional vector-norm scene proposals now use sparse exact-nonzero Jacobians, trust-box norm screening and explicitly recorded larger Float32 differences. All same-input body/sphere/partner trials execute, but all still fail and retain originals. Follow-up 27 GLBs/21 controls replay exactly, original source caps match and 234 files rehash. A separately authored Float32-aligned synthetic triangle passes native conditions with independent checks; this is not solver/humanoid/engine quality. All 163 focused checks pass, prior 1275b47 hosted CI is green, and all release gates/formal trials remain unchanged. Full goal active; next native storage handling, scene geometry and imported-skin checks."
 }
