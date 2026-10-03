@@ -2576,3 +2576,51 @@ training data or checkpoint changes; full goal remains active. Next: improve
 contact-region orientation and surface separation while preserving the exact
 original epoch and explicit bounds, compose placement/export checks, and broaden
 rig/action/transition validation with developer/animator review and runtime proof.
+
+
+## 2026-10-03: Surface-facing acceptance and contact-seed diagnosis
+
+A new source-bound read-only surface audit covers every authored partner/world/
+object point contact at its existing clocks. Incident-triangle normals retain
+winding and all face multiplicities; centroid groups union faces once. Unavailable
+normal area/coherence or degenerate/missing incident faces fails. Explicit target
+normals use world/object-local coordinates, with rigid object transforms sampled
+at the exact clocks. Complete pose populations and an explicit non-truncating
+resource budget are required. These are added authored conditions, not anatomical
+inference or frozen release thresholds.
+
+The fitting CLI now optionally applies the surface policy at final acceptance.
+Original point/motion results remain separate; native acceptance additionally
+requires the specified surface conditions. This filter does not yet guide motion
+optimization. Policy/source/method/observation hashes are retained. Resume must
+keep exact added policy bytes and its archived snapshot; silently omitting or
+changing them is rejected without output. Originals remain selected.
+
+Diagnosis changes the next action: the retained [0,0,14712] seed is predominantly
+weighted to index/ring-base tracks and is not an outer support point of the
+selected hand-subtree envelope (about 51.7 mm front excess). Anatomical meaning
+remains unreviewed. Source/point-fit/surface-fit normal opposition errors are
+44.982/39.577/39.162 degrees. Both corrected clips pass point distance but fail
+prototype normal/side conditions: latest signed side projections are -25.518 and
+-21.023 mm. Do not treat point contact as a usable high-five or silently replace
+the existing seed/conditions to produce a passing report.
+
+Independent scalar incident-face accumulation confirms all three cases and
+rehashes 82 audit files. A real fitting composition adds the acceptance filter
+without any further motion step; four start/final exports equal the previous
+35-iteration clip byte-for-byte, original rate arrays stay exact, and complete
+normal/geometry observations match retained verified evidence. Original point/
+motion conditions pass while native/surface acceptance fails. Composition
+rechecks 308 files. All 423 focused model-free regressions pass, including 28
+new cases. Prior 0e35273 hosted CI passed all four jobs. Evidence remains local:
+reports/native-palm-orientation-diagnosis-v1,
+reports/native-surface-contact-development-v1/verification-v1,
+reports/native-surface-contact-fitting-v1/high-five/verification-v1 and
+reports/native-surface-contact-validation-v1. Generated payloads stay ignored.
+
+All fourteen release gates and formal held-out trials remain unchanged. No
+checkpoint/training admission, GPU/runtime/continuous-collision proof, anatomical
+approval or release approval. Full goal stays active. Next: review/select intended
+contact patches and normal semantics before further hand fitting or training
+labels; wire reviewed surface conditions into correction while preserving the
+original epoch, then broaden rig/action/transition and runtime validation.

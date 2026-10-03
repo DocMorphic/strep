@@ -155,6 +155,7 @@ jobs:
           tests/test_native_skin_export.py
           tests/test_native_partner_surface_rows.py
           tests/test_native_surface_model.py
+          tests/test_native_surface_contact.py
           tests/test_triangle_primitive_depth.py
           tests/test_native_scene_geometry.py
           tests/test_native_scene_engine.py

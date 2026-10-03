@@ -21,6 +21,7 @@ from strep import ROOT, read, save, sha256, now
 METHODS = sorted(set(CONTACT_METHODS) | {'native_scene_edit.py','native_scene_fit.py',
     'native_scene_norms.py','native_scene_conic.py','native_scene_storage.py','native_scene_restore.py','native_scene_resume.py','native_scene_geometry.py',
     'native_surface_model.py','native_partner_surface_rows.py','native_surface_lift.py',
+    'native_surface_contact.py',
     'triangle_primitive_depth.py','triangle_crossing.py','convex_partner_surface.py',
     'timed_rotation_edit.py','sampled_motion_caps.py','native_support_feasibility.py','action_worker_lock.py',
     'native_foot_plant.py','native_leg_floor.py','native_support_spec.py','native_contact_diagnostics.py',
@@ -145,7 +146,7 @@ def optimize(problem,evaluate,iterations,trust):
 
 
 def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_model='scalar',vector_difference_step=None,storage_cells=None,restoration_steps=0,
-        geometry_policy=None,resume_from=None):
+        geometry_policy=None,resume_from=None,surface_contact_policy=None):
     if type(iterations) is not int or not 1<=iterations<=16: raise ValueError('Choose 1-16 proposal iterations')
     if proposal_model not in ('scalar','vector','storage-vector','surface-vector'):raise ValueError('Choose scalar, vector, storage-vector or surface-vector proposal model')
     if proposal_model=='scalar' and vector_difference_step is not None:raise ValueError('Vector difference step applies only to vector proposals')
@@ -172,6 +173,14 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
         from native_scene_resume import ResumeState
         resume=ResumeState(resume_from,bindings[str(contacts_path)],bindings[str(permissions_path)],edits)
         edits.initial=resume.controls.copy();bindings.update(resume.bindings)
+    surface_request=None
+    if surface_contact_policy is not None:
+        from native_surface_contact import policy_for as surface_policy_for
+        surface_contact_policy=Path(surface_contact_policy).resolve();bindings[str(surface_contact_policy)]=sha256(surface_contact_policy)
+        surface_request=read(surface_contact_policy);surface_policy_for(surface_request,scene,bindings[str(contacts_path)])
+    if resume is not None and resume.surface_contact_policy_sha256 is not None:
+        if surface_contact_policy is None or bindings[str(surface_contact_policy)]!=resume.surface_contact_policy_sha256:
+            raise ValueError('Resume must retain its exact additional surface contact policy')
     geometry_request = None
     if geometry_policy is not None:
         from native_scene_geometry import policy_for
@@ -187,6 +196,9 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
         if geometry_request is not None:
             shutil.copyfile(geometry_policy,output/'geometry-policy.json')
             snapshots[output/'geometry-policy.json'] = bindings[str(geometry_policy)]
+        if surface_request is not None:
+            shutil.copyfile(surface_contact_policy,output/'surface-contact-policy.json')
+            snapshots[output/'surface-contact-policy.json']=bindings[str(surface_contact_policy)]
         if any(sha256(p)!=h for p,h in snapshots.items()): raise ValueError('Authored request snapshot differs')
         originals = {}
         for i,(name,a) in enumerate(spec['actors'].items()):
@@ -203,6 +215,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             storage_cells=storage_cells,
             restoration_steps=restoration_steps,
             geometry_policy_sha256=None if geometry_request is None else bindings[str(geometry_policy)],
+            surface_contact_policy_sha256=None if surface_request is None else bindings[str(surface_contact_policy)],
             frame_contract_sha256=contract_sha256(),python=sys.version,numpy=np.__version__,scipy=scipy.__version__,
             quality_approved=False,scope='Proposal only; originals selected pending scene geometry and actual imported-skin checks.'))
         save(output/'pipeline.json',dict(status='processing')); probes = []
@@ -282,6 +295,17 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                     derived_policy_sha256=policy_digest,contacts_sha256=derived['contacts_sha256'],
                     observations_sha256=sha256(geometry_folder/'observations.npz'),implementation_sha256=methods)
                 save(geometry_folder/'result.json',geometry_report)
+            surface_report=None
+            if surface_request is not None:
+                from native_surface_contact import evaluate as surface_audit
+                surface_folder=output/'surface-contact-audit';surface_folder.mkdir()
+                derived=copy.deepcopy(surface_request);derived['contacts_sha256']=sha256(proposal/'contacts.json')
+                save(surface_folder/'policy.json',derived)
+                surface_report,arrays=surface_audit(SceneContacts(proposal_spec,proposal),derived,derived['contacts_sha256'])
+                np.savez_compressed(surface_folder/'observations.npz',**arrays)
+                surface_report.update(authored_policy_sha256=bindings[str(surface_contact_policy)],derived_policy_sha256=sha256(surface_folder/'policy.json'),
+                    implementation_sha256=methods,observations_sha256=sha256(surface_folder/'observations.npz'))
+                save(surface_folder/'result.json',surface_report)
             for p,h in bindings.items():
                 if sha256(p)!=h: raise ValueError('Native scene fitting input changed')
             for n,h in methods.items():
@@ -296,7 +320,11 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             if conic_identity is not None and solver_identity()!=conic_identity:raise ValueError('Installed vector proposal solver changed')
             result = dict(status='complete',optimization=optimization,probes=probes,edits=audits,
                 resume=resume_receipt,completed_primary_iterations=len(optimization['history'])+(0 if resume is None else resume.prior_iterations),
-                native_constraints_pass=bool(merit(final_constraints)[0]==0 and report['passed'] and all(a['passed'] for a in audits.values())),
+                point_and_motion_constraints_pass=bool(merit(final_constraints)[0]==0 and report['passed'] and all(a['passed'] for a in audits.values())),
+                native_constraints_pass=bool(merit(final_constraints)[0]==0 and report['passed'] and all(a['passed'] for a in audits.values())
+                    and (surface_report is None or surface_report['surface_contacts_pass'])),
+                surface_contact_conditions_pass=None if surface_report is None else surface_report['surface_contacts_pass'],
+                surface_contact_result_sha256=None if surface_report is None else sha256(output/'surface-contact-audit/result.json'),
                 source_rate_tolerance=1e-5,source_rate_bins=4,source_rate_caps_sha256=sha256(output/'source-rate-caps.npz'),
                 proposal_model=proposal_model,conic_solver=conic_identity,
                 vector_difference_step=vector_difference_step,
@@ -325,5 +353,6 @@ if __name__=='__main__':
     p.add_argument('--restoration-steps',type=int,default=0,help='0-4 decoded constraint restoration solves, storage/surface-vector only')
     p.add_argument('--geometry-policy',type=Path,help='Source-bound sampled scene policy; originals remain selected')
     p.add_argument('--resume-from',type=Path,help='Completed fit to replay against the exact original source and limits')
+    p.add_argument('--surface-contact-policy',type=Path,help='Additional surface-facing acceptance audit; does not guide optimization')
     a=p.parse_args(); run(a.contacts,a.permissions,a.output,iterations=a.iterations,trust=a.trust,
-        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,restoration_steps=a.restoration_steps,geometry_policy=a.geometry_policy,resume_from=a.resume_from)
+        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,restoration_steps=a.restoration_steps,geometry_policy=a.geometry_policy,resume_from=a.resume_from,surface_contact_policy=a.surface_contact_policy)

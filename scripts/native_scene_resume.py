@@ -35,6 +35,10 @@ class ResumeState:
                 raise ValueError('Resume method archive changed')
         if request.get('geometry_policy_sha256') is not None:
             if sha256(file('geometry-policy.json'))!=request['geometry_policy_sha256']:raise ValueError('Resume geometry snapshot changed')
+        self.surface_contact_policy_sha256=request.get('surface_contact_policy_sha256')
+        if self.surface_contact_policy_sha256 is not None:
+            if sha256(file('surface-contact-policy.json'))!=self.surface_contact_policy_sha256:
+                raise ValueError('Resume surface contact policy snapshot changed')
         self.caps_path=file('source-rate-caps.npz')
         if sha256(self.caps_path)!=result['source_rate_caps_sha256']:raise ValueError('Resume source caps changed')
         record=read(file('probes/final/probe.json'))

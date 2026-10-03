@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-03T10:58:51.983329+00:00",
-  "last_progress": "Surface-vector CLI now protects all original native/contact conditions and uses complete decoded mesh audits for acceptance. Failed batch/scalar base mismatch retained; decoded anchoring fixes proposal base without changing caps. Two restored high-five steps: contact 29.9995->25.9743 mm, depth 21.4951->20.7519 mm, crossings regress 451->478, deep vertices 364->396; geometry remains failed under original placements. Replay verifies 7 controls/14 byte-exact GLBs, original caps and complete sampled geometry, rehashing 284 files. All 395 focused tests pass; prior 7ae1aac all four CI jobs green. Release gates/formal trials unchanged, full goal active."
+  "last_progress_at": "2026-10-03T11:27:21.891531+00:00",
+  "last_progress": "Surface-facing audit now covers exact partner/world/object contacts with explicit normals, reliability/pose budgets and retained evidence; optional fitting acceptance filter cannot be silently dropped on resume. Retained high-five seed is backward-facing: corrected point distances pass but normal errors ~39 degrees and side projections -25.518/-21.023 mm fail prototype policy. No seed or motion is silently changed. Independent normals replay rehashes 82 files; real no-motion fitting composition verifies four byte-identical exports/original caps and 308 files, keeping point/motion pass separate from failed native/surface acceptance. All 423 focused regressions pass; prior 0e35273 all four CI jobs green. Release gates/formal trials unchanged, full goal active."
 }
