@@ -2041,3 +2041,65 @@ failed sources stay unchanged. Broader generation/edit/style/scene/partner,
 transition/rig/engine workflows, admitted training and measured model improvement
 remain necessary. All 14 capability gates and the formal 72x5 population are
 unchanged, and the single full-project goal stays active.
+
+
+## 2026-10-03 - Bounded native scene correction proposals
+
+Added a source/contact-bound native edit permission contract and executable
+scene proposal CLI for arbitrary skin-joint LINEAR rotation/translation tracks.
+Authors choose nodes, edit windows, protected times, knots, cumulative track
+budgets and all-joint displacement budgets. Native clocks, entire interpolation
+support outside/protected windows, all other tracks/animations, static mesh/skin
+and image payloads remain checked. Exact selected indices survive duplicate
+animation contents. Existing Studio/leg-only behavior is unchanged.
+
+Every edited actor retains four original 120 Hz source bins for all skin joints'
+world speed/acceleration and angular speed/acceleration, tolerance 1e-5, plus
+sampled original-relative displacement. Body/object/partner point/centroid targets
+keep exact-touch/held semantics, moving-object coordinates and all twelve speed
+clocks. Controls are normalized fractions; derivative and trust units are stated.
+The finite minimax/L1 search decodes every exported trial. Intermediate violations
+are retained; final native status uses actual constraints, not optimizer metadata.
+Snapshot guards reject mutated authored JSON and preserve actor input paths/hashes.
+Originals always remain selected pending geometry, actual imported-skin and review.
+
+Three four-iteration trials completed; none passes. The synthetic two-millimetre
+root lift remains 1.989874 mm from its one-millimetre target budget and adds 18
+positional-acceleration failures. The retained sphere keeps the left grip but
+worsens right position to 2.413454 mm; right speed barely improves to 10.188682
+mm/s against 5. Motion failures are 38/7/0/4. High-five seed 5101 separation
+improves from 206.232573 to 170.586944 mm, still above 30. Actor A motion failures
+are 262/41/116/26; B 19/20/32/5. Both real sources, all contact budgets and
+original rates stay unchanged. These outcomes are finite-search failures, not
+infeasibility, successful interaction, animator realism or permission to relax caps.
+
+Independent replay reconstructs all 76 GLB exports from 70 stored control vectors byte-for-byte,
+recomputes all source cap arrays exactly, reproduces final merits and separately
+skins the final contacts within 4.30e-16 metres. All 326 evidence files rehash.
+The first verifier's advanced NumPy index moved the joint axis ahead of time;
+the failed observation remains, and fresh v2 uses explicit time-first indexing.
+Fitter computations/inputs were unchanged. After the studies, archive manifests,
+copied-JSON guards, final-constraint selection and trust-unit labels were hardened;
+the verifier binds unchanged numerical classes and the metadata-only optimizer
+label change. No expensive numerical studies were repeated for these safeguards.
+
+All 132 focused model-free checks pass, including 29 new fit checks. They cover
+mutation rejection, optimizer metadata versus actual constraints, every joint/time
+displacement row, independent raw exports, moving/partner targets, frozen support,
+duplicate animation indices, radial budgets and unchanged-source native success.
+That passing source fixture needs zero optimization and grants no geometry/engine
+approval. An earlier validation wrapper named a missing file and ran no tests;
+its corrected complete transcript is retained. Prior 25d97e4 hosted CI passed
+all four jobs. Evidence: reports/native-scene-fitting-development-v1/verification-v2/
+verification.json and reports/native-scene-fitting-validation-v2/checks.json.
+Methodology: docs/native-scene-fitting-v1.md.
+
+Next investigate near-static rate rows and serialized directions, add complete
+scene geometry and actual imported-skin checking, and reuse only source-bound
+evaluated proposals. Root/body edit freedom alone does not make corrections work.
+Broad action generation, rough editing/style, objects/partners, transitions,
+transfer/engine workflows, developer/animator cleanup, licensed/admitted data and
+measured learned improvements remain open. No inference, new seed, held-out,
+engine/render, human-quality, training admission or model improvement is claimed.
+All fourteen capability gates and the formal 72x5 protocol remain unchanged;
+the single full-project goal stays active.

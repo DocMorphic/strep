@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-03T03:23:32.695689+00:00",
-  "last_progress": "Native supplied-rig body/object/partner point and centroid audits now preserve explicit source identities, touches versus holds, moving-object coordinates and all12 separate frame-speed clocks. 14 retained scenes/22 conditions replay independently: 9425 CPU point samples,204 clock populations,234 evidence files; sphere right hold speed fails despite both passing positions. 115 project-environment checks and37 separate model-free new checks pass. No inference, engine/render, human review, training admission or release approval; all14 gates/formal72x5 unchanged. Next executable native scene corrections with explicit edit permissions and original motion bounds; full goal active."
+  "last_progress_at": "2026-10-03T04:10:42.511231+00:00",
+  "last_progress": "Explicit source/contact-bound native body and scene TRS proposals preserve protected keys, source rate bins, all-joint displacement and body/object/partner conditions; final status uses decoded constraints. Three four-iteration synthetic/sphere/high-five trials still fail and originals remain selected. All 76 GLB exports from 70 control vectors replay byte-for-byte, source caps match exactly and final full-skin contacts agree within 4.30e-16 metres; 326 evidence files rehash. All 132 model-free checks, including 29 new fit cases, pass. No inference, held-out, engine/render, review, training or release claim; all 14 gates and the formal 72x5 protocol are unchanged and the full goal remains active. Next: near-static rate and serialization diagnosis, full scene geometry and actual imported-skin checks."
 }

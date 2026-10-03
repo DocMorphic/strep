@@ -85,7 +85,8 @@ class SceneContacts:
             rig = RigAsset.load(path); sampler = NativeSupportSampler(rig.document, rig.binary, entry['animation_index'])
             if sampler.duration != self.duration:
                 raise ValueError('Actors must share the exact declared clip duration; retime explicitly first')
-            self.actors[name] = dict(rig=rig, sampler=sampler, skin=NativeSupportSkin(rig), placement=pose(entry['placement']))
+            self.actors[name] = dict(rig=rig, sampler=sampler, animation_index=entry['animation_index'],
+                skin=NativeSupportSkin(rig), placement=pose(entry['placement']))
             self.inputs[str(path)] = digest
         if not isinstance(spec['objects'], dict) or len(spec['objects']) > 32:
             raise ValueError('Named object dictionary required')
