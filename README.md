@@ -29,6 +29,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Surface-facing acceptance](docs/native-surface-contact-v1.md) now checks oriented normals and the facing side of authored partner, world and object contacts. A source-bound optional fitting filter catches backward-facing contacts even when point distance passes, and resume cannot silently drop that filter. The retained high-five seed needs contact-patch review; this audit does not identify anatomical palms or prove collision freedom.
 
+[Contact-normal guidance](docs/native-contact-guidance-v1.md) adds those authored conditions to surface-vector proposals while protecting original motion/contact limits. A retained half-step reduces point separation and penetration slightly, but opposition angle and crossing counts worsen. Aggregate error improvement does not establish realistic contact; all quality and release checks remain unapproved.
+
 [Stored-key scene proposals](docs/native-scene-storage-proposals-v1.md) add hard source-motion constraints, continuous proposal derivatives and finite Float32 translation-cell probes. A synthetic body-contact correction passes native checks after five iterations; the matched four-iteration result still fails. This does not establish realistic motion or release readiness.
 
 [Native scene engine diagnostics](docs/native-scene-engine-v1.md) now verify complete imported skin functions and triangles, explicit animation selection, actor/partner contacts and engine object poses. Eight matched humanoid imports complete but retain contact, floor or skin-position failures; 299 focused tests pass. Headless CPU reconstruction and manual authoring seeks do not establish GPU, physics or real-time playback quality.

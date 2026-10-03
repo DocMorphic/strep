@@ -69,9 +69,11 @@ between-clock collision, GPU/runtime playback and animator review.
 ## Integration with native fitting
 
 `scripts/native_scene_fit.py` accepts `--surface-contact-policy surface-policy.json`.
-This is an additional final acceptance filter. Current point/surface fitting
-does **not** optimize these new normal conditions; a failed filter remains a
-failure instead of being promoted by successful point fitting.
+This is an additional final acceptance filter. In `surface-vector` mode it also
+guides proposals using the exact authored orientation and facing-side conditions;
+see [contact-normal guidance](native-contact-guidance-v1.md). Other proposal modes
+retain final filtering only. A failed filter remains a failure even when point
+fitting succeeds.
 
 `point_and_motion_constraints_pass` reports the original conditions separately.
 When a surface policy is supplied, `native_constraints_pass` additionally requires
@@ -102,10 +104,11 @@ entire selected hand region.
 
 All three fail the explicit prototype surface policy. Both normals in the
 latest correction point away from the source-to-target contact direction.
-The small point gap should not be presented as a usable high-five. This changes
-the next action: review/select the intended contact patch and normal meaning
-before further fitting or collecting training labels. Earlier measurements and
-their failed outputs remain retained; the existing seed is not silently replaced.
+The small point gap should not be presented as a usable high-five. Contact-patch
+and normal-meaning review remains necessary before collecting training labels
+or approving contact quality. A subsequent bounded guidance experiment retains
+these exact references and reports its mixed outcome separately. Earlier
+measurements and failed outputs remain retained; the seed is not silently replaced.
 
 A real fitting composition replays the 35-iteration clip without adding motion
 steps. Original point/motion conditions pass, while the new surface filter makes

@@ -34,6 +34,13 @@ can retain more crossing records, which must remain visible; the score is an
 optimization policy, not a realism or release criterion. Complete collision
 conditions must still pass before any collision-free claim.
 
+An optional `--surface-contact-policy` additionally enables
+[contact-normal guidance](native-contact-guidance-v1.md). In that mode acceptance
+requires the geometry score and the aggregate surface-contact error to avoid
+regression, with at least one objective improving. This aggregate rule can still
+trade individual contact errors against each other; the later retained result
+shows a small opposition-angle regression and remains a failure.
+
 The proposal's base vectors use decoded scalar-sampler poses. Batched continuous
 poses provide derivatives only. A first real-case attempt exposed a normalized
 rate-row mismatch up to 0.000003656 between the batch proxy and decoded exports

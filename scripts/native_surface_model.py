@@ -71,7 +71,7 @@ def improved(before, after):
     return False
 
 
-def model(problem, value, decoded_scene, policy, digest, trust, *, step=.001, maximum_rows=20000, decoded_worlds=None):
+def model(problem, value, decoded_scene, policy, digest, trust, *, step=.001, maximum_rows=20000, decoded_worlds=None, contact_model=None):
     """Rebuild all witnesses, then combine them with unchanged original norms."""
     value = problem.edits.controls(value)
     original, jac, identity = linearize(problem, value, step=step, difference_source='continuous')
@@ -81,7 +81,13 @@ def model(problem, value, decoded_scene, policy, digest, trust, *, step=.001, ma
             raise ValueError('Decoded anchoring changed original norm caps or ordering')
         original=anchored
     witnesses = build(decoded_scene, policy, digest, maximum_rows=maximum_rows)
-    if not witnesses.rows: return original, jac, None, dict(differences=identity, surface_rows=0)
+    if not witnesses.rows:
+        report=dict(differences=identity,surface_rows=0)
+        if contact_model is None:return original,jac,None,report
+        extra,extra_jac,contact_identity=contact_model.linearize(value,decoded_worlds if decoded_worlds is not None else problem.worlds(value),trust,step=step)
+        combined=NormRows(np.r_[original.vectors,extra.vectors],np.r_[original.caps,extra.caps],np.r_[original.scales,extra.scales])
+        report['contact_guidance']=contact_identity
+        return combined,sparse.vstack([jac,extra_jac],format='csc'),None,report
     stored = witnesses.gaps()
     np.testing.assert_allclose(stored, witnesses.gaps(surface_points(problem,problem.worlds(value))),atol=2e-10,rtol=0)
     smooth = witnesses.gaps(surface_points(problem, problem.worlds(value, quantized=False)))
@@ -95,13 +101,19 @@ def model(problem, value, decoded_scene, policy, digest, trust, *, step=.001, ma
     scalar_jac = sparse.csr_matrix(np.stack(columns, axis=1))
     extra, vector_jac, conversion = lift(stored, scalar_jac, value, problem.lower, problem.upper, trust)
     combined = NormRows(np.r_[original.vectors,extra.vectors],np.r_[original.caps,extra.caps],np.r_[original.scales,extra.scales])
-    return combined, sparse.vstack([jac,vector_jac],format='csc'), witnesses, dict(
+    matrix=sparse.vstack([jac,vector_jac],format='csc')
+    report=dict(
         differences=identity, surface_rows=len(stored), surface_query=witnesses.report,
         conversion=conversion, original_norm_rows=len(original.caps),
         scope='All original norms are protected. Witnesses only guide a local affine proposal; complete decoded audits decide acceptance.')
+    if contact_model is not None:
+        extra,extra_jac,contact_identity=contact_model.linearize(value,decoded_worlds if decoded_worlds is not None else problem.worlds(value),trust,step=step)
+        combined=NormRows(np.r_[combined.vectors,extra.vectors],np.r_[combined.caps,extra.caps],np.r_[combined.scales,extra.scales])
+        matrix=sparse.vstack([matrix,extra_jac],format='csc');report['contact_guidance']=contact_identity
+    return combined,matrix,witnesses,report
 
 
-def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restoration_steps=3):
+def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restoration_steps=3, contact_model=None):
     """evaluate returns native residuals, worlds, decoded scene/policy and geometry.
 
     Every candidate must be independently exported/decoded by the caller. Full
@@ -118,19 +130,25 @@ def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restorati
     if initial.ndim!=1 or not len(initial) or not np.isfinite(initial).all() or np.any(initial > 0):
         raise ValueError('Surface correction requires an originally feasible native/contact start')
     for iteration in range(1, iterations+1):
-        if current['geometry']['sampled_conditions_pass']: break
-        system,jac,witnesses,identity=model(problem,value,current['scene'],current['policy'],current['digest'],radius,step=step,decoded_worlds=current['worlds'])
+        if current['geometry']['sampled_conditions_pass'] and (contact_model is None or current['surface_contact']['surface_contacts_pass']): break
+        system,jac,witnesses,identity=model(problem,value,current['scene'],current['policy'],current['digest'],radius,step=step,decoded_worlds=current['worlds'],contact_model=contact_model)
         hard = len(current['native'])
         if hard > len(system.caps): raise ValueError('Original norm population changed')
         np.testing.assert_allclose(system.residual()[:hard],current['native'],atol=1e-9,rtol=1e-12)
         delta,info=direction(system,jac,value,problem.lower,problem.upper,radius,hard_rows=hard)
         probes=[]; accepted=None; before=geometry_score(current['geometry']); reserve=None
+        contact_before=None if contact_model is None else contact_model.residual(current['worlds'])
         def observe(other,label):
             result=evaluate(other,label); native=np.asarray(result['native'],float)
             if native.shape!=(hard,) or not np.isfinite(native).all(): raise ValueError('Complete original decoded native population required')
             score=geometry_score(result['geometry']); safe=bool(np.all(native<=0))
-            good=bool(safe and improved(before,score))
-            probes.append(dict(label=label,native_pass=safe,geometry_score=score.tolist(),accepted=good))
+            good=bool(safe and improved(before,score));contact_score=None
+            if contact_model is not None:
+                from native_contact_norms import score as contact_merit,improved as contact_improved,nonregressing
+                contact_actual=contact_model.residual(result['worlds']);contact_score=contact_merit(contact_actual).tolist()
+                good=bool(safe and not improved(score,before) and nonregressing(contact_before,contact_actual)
+                    and (improved(before,score) or contact_improved(contact_before,contact_actual)))
+            probes.append(dict(label=label,native_pass=safe,geometry_score=score.tolist(),surface_contact_merit=contact_score,accepted=good))
             return result,good
         if delta is not None:
             for backoff in range(10):
@@ -141,9 +159,11 @@ def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restorati
                     repair_delta=delta
                     for repair in range(restoration_steps):
                         actual=system.residual().copy();actual[:hard]=candidate['native']
+                        geometry_rows=0 if witnesses is None else len(witnesses.rows)
                         if witnesses is not None:
                             gaps=witnesses.gaps(surface_points(problem,candidate['worlds']))
-                            actual[hard:]=(.0005-gaps)/.005
+                            actual[hard:hard+geometry_rows]=(.0005-gaps)/.005
+                        if contact_model is not None:actual[hard+geometry_rows:]=contact_model.residual(candidate['worlds'])
                         tightened,reserve,_=tighten(system,jac,repair_delta,actual,hard,reserve)
                         repaired,repair_info=direction(tightened,jac,value,problem.lower,problem.upper,radius,hard_rows=hard)
                         if repaired is None: break
@@ -157,6 +177,10 @@ def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restorati
         history.append(dict(iteration=iteration,before_geometry_score=before.tolist(),
             after_geometry_score=geometry_score(current['geometry']).tolist(),selected_fraction=accepted,
             probes=probes,conic_step=info,model=identity))
+        if contact_model is not None:
+            from native_contact_norms import score as contact_merit
+            history[-1].update(before_surface_contact_merit=contact_merit(contact_before).tolist(),
+                after_surface_contact_merit=contact_merit(contact_model.residual(current['worlds'])).tolist())
         print(iteration,history[-1]['after_geometry_score'],accepted,flush=True)
         if accepted is None:
             radius *= .25

@@ -2624,3 +2624,50 @@ approval or release approval. Full goal stays active. Next: review/select intend
 contact patches and normal semantics before further hand fitting or training
 labels; wire reviewed surface conditions into correction while preserving the
 original epoch, then broaden rig/action/transition and runtime validation.
+
+
+## 2026-10-03T12:02:37.424063+00:00: Authored contact-normal guidance and public source publication
+
+Surface-vector fitting now adds original authored orientation and facing-side
+rows to geometry proposals. Complete incident-face normals and exact existing
+contact clocks/references remain bound; no anatomical inference or silent
+population truncation. Decoded bases anchor continuous proposal derivatives,
+all original point/motion conditions remain hard, and actual exported audits
+decide acceptance. Existing surface-policy bytes remain mandatory on resume.
+Other fitting modes retain final surface filtering only; full object correction
+remains unsupported by surface-vector despite isolated object-normal coverage.
+
+Two further primary iterations resume the preceding 35-iteration filtered clip
+under unchanged original contacts, actor placements, edit permissions, rate
+arrays and geometry/surface policies. The first iteration cannot retain a step;
+its restored proposals still exceed small source limits and passing backoffs
+increase penetration. The second retains a half-step. Contact gap improves
+25.9743 -> 25.3787 mm, max partner depth 20.7519 -> 20.4773 mm, deep vertices
+396 -> 395. Crossings regress 478 -> 488 and opposition error 39.1619 -> 39.2352
+degrees. Seven sampled geometry conditions still fail. Facing-side gaps improve
+but remain -24.6960/-20.8870 mm. Aggregate maximum/SSE contact errors improve;
+this rule does not guarantee individual angle/row nonregression. All original
+point/motion conditions pass while surface/geometry/native acceptance fail.
+Originals remain selected; no scene rise, weight conditioning or new seed is
+applied. Count 37 denotes attempted cumulative primary iterations, not accepted
+steps. Contact-patch semantics still require review before quality/training use.
+
+Terminal replay checks 20 saved control vectors, 40 byte-exact exports, exact
+original caps, complete decoded geometry/contact residuals and acceptance
+decisions. Shared pose/normal/geometry routines remain used; no independent
+continuous collision, GPU/runtime or anatomical proof. All 440 focused
+model-free regression cases pass, including 17 new guidance cases, with a bound
+transcript and source hashes. Earlier aaa575b hosted workflow 37119771477 passed.
+Evidence: reports/native-oriented-surface-fit-development-v1/high-five/
+verification-v1 and reports/native-contact-guidance-validation-v1. See
+docs/native-contact-guidance-v1.md for method, exact mixed results and limits.
+
+User-authorized public DocMorphic/strep GitHub workflow remains in force. Publish
+this validated source/test/documentation batch; bulky study/character/model
+payloads, caches and credentials stay local/ignored. All fourteen release gates
+and formal held-out trials are unchanged; matrix edits only progress metadata.
+No training admission/checkpoint change, human cleanup review or quality/release
+approval. This is development progress; the single full-project goal stays
+ACTIVE. Next address individual error tradeoffs and reviewed contact semantics,
+then broaden scene/rig/action/transition and runtime validation under the
+existing general-purpose scope.

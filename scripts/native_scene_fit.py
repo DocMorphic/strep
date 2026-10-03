@@ -21,7 +21,7 @@ from strep import ROOT, read, save, sha256, now
 METHODS = sorted(set(CONTACT_METHODS) | {'native_scene_edit.py','native_scene_fit.py',
     'native_scene_norms.py','native_scene_conic.py','native_scene_storage.py','native_scene_restore.py','native_scene_resume.py','native_scene_geometry.py',
     'native_surface_model.py','native_partner_surface_rows.py','native_surface_lift.py',
-    'native_surface_contact.py',
+    'native_surface_contact.py','native_contact_norms.py',
     'triangle_primitive_depth.py','triangle_crossing.py','convex_partner_surface.py',
     'timed_rotation_edit.py','sampled_motion_caps.py','native_support_feasibility.py','action_worker_lock.py',
     'native_foot_plant.py','native_leg_floor.py','native_support_spec.py','native_contact_diagnostics.py',
@@ -242,6 +242,10 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                 record = dict(label=label,controls=value.tolist(),merit=list(merit(residual)),
                     files_sha256={p.relative_to(output).as_posix():sha256(p) for p in files.values()})
                 save(folder/'probe.json',record); probes.append(record); return residual
+            contact_model=None
+            if proposal_model=='surface-vector' and surface_request is not None:
+                from native_contact_norms import ContactNorms
+                contact_model=ContactNorms(problem,surface_request,bindings[str(contacts_path)])
             def evaluate_surface(value,label):
                 residual=evaluate(value,label);folder=output/'probes'/label
                 files={name:folder/(name+'.glb') for name in edits.actors}
@@ -257,11 +261,18 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                 from native_scene_geometry import evaluate as geometry_audit
                 geometry,arrays=geometry_audit(decoded_scene,derived_policy,digest)
                 save(folder/'geometry.json',geometry);np.savez_compressed(folder/'geometry-observations.npz',**arrays)
-                return dict(native=residual,worlds=worlds,scene=decoded_scene,policy=derived_policy,digest=digest,geometry=geometry)
+                surface_observation=None
+                if contact_model is not None:
+                    from native_surface_contact import evaluate as surface_audit
+                    surface_policy=copy.deepcopy(surface_request);surface_policy['contacts_sha256']=digest
+                    surface_observation,surface_arrays=surface_audit(decoded_scene,surface_policy,digest)
+                    save(folder/'surface-contact-policy.json',surface_policy);save(folder/'surface-contact.json',surface_observation)
+                    np.savez_compressed(folder/'surface-contact-observations.npz',**surface_arrays)
+                return dict(native=residual,worlds=worlds,scene=decoded_scene,policy=derived_policy,digest=digest,geometry=geometry,surface_contact=surface_observation)
             if proposal_model=='surface-vector':
                 from native_surface_model import optimize as optimize_surfaces
                 value,optimization=optimize_surfaces(problem,evaluate_surface,iterations,trust,
-                    step=vector_difference_step,restoration_steps=restoration_steps)
+                    step=vector_difference_step,restoration_steps=restoration_steps,contact_model=contact_model)
             elif proposal_model in ('vector','storage-vector'):
                 from native_scene_conic import optimize as optimize_vectors
                 value,optimization = optimize_vectors(problem,evaluate,iterations,trust,difference_step=vector_difference_step,
@@ -353,6 +364,6 @@ if __name__=='__main__':
     p.add_argument('--restoration-steps',type=int,default=0,help='0-4 decoded constraint restoration solves, storage/surface-vector only')
     p.add_argument('--geometry-policy',type=Path,help='Source-bound sampled scene policy; originals remain selected')
     p.add_argument('--resume-from',type=Path,help='Completed fit to replay against the exact original source and limits')
-    p.add_argument('--surface-contact-policy',type=Path,help='Additional surface-facing acceptance audit; does not guide optimization')
+    p.add_argument('--surface-contact-policy',type=Path,help='Surface-facing acceptance audit and surface-vector proposal guidance')
     a=p.parse_args(); run(a.contacts,a.permissions,a.output,iterations=a.iterations,trust=a.trust,
         proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,restoration_steps=a.restoration_steps,geometry_policy=a.geometry_policy,resume_from=a.resume_from,surface_contact_policy=a.surface_contact_policy)
