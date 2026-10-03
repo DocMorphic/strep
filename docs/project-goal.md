@@ -3120,3 +3120,42 @@ only. Full engine completion, user-facing scene authoring, broader interaction
 trials, model improvement and human cleanup/review remain required. All 14
 release evidence lists, frozen gates and formal held-out trials are unchanged;
 the full-project goal remains active.
+
+
+## 2026-10-03 — Expanded imported actor success and exact streamed observations
+
+f14b06e hosted CI passes all four Windows/Linux jobs. The expanded actor
+producer is terminal complete at 2201 original/stored-key-union times: pose,
+original Node3D object transforms, contacts, full imported skin and complete
+declared geometry pass. Maximum source-relative skin error remains 0.0950103 mm
+under the original 0.1 mm limit; 4402 actor/object geometry observations pass.
+This first producer does not substitute for the combined actual object-resource
+comparison. That stage is live on confirmed handle 91372, with 740/2201 samples
+observed; no complete combined result/replay is claimed. No partner/world plane
+is declared here, and GPU/runtime/physics/human quality remain unverified.
+
+The live process reserves about 8.10 GB of private memory. Its complete triangle
+bounds/witness population alone represents 6,358,472,640 Float64 bytes. A separate
+observation writer streams complete arrays to standard NPZ, retains one array
+snapshot plus buffers, and preserves exact numeric dtype/shape/bytes/order.
+It does not shrink clocks, faces or precision or filter nonfinite diagnostics.
+Default per-array budget is 256 MiB, with whole-array rejection rather than
+truncation. Plain numeric/endian/complex arrays are supported; unsupported object,
+string and dtype metadata are rejected explicitly. Safe headers and complete
+payload sizes are checked before allocations during verification.
+
+All 38 transport tests pass, including NaN payload bits, array lifetime, original
+value/shape/dtype preservation, partial failures, fresh publication against races,
+updated-hash tampering and pre-allocation header/entry rejection. An actual
+transport sample copies the whole completed 2201-time vector and full triangle
+arrays at three explicitly selected frames for both objects: 19 arrays and
+8,683,528 bytes are bitwise exact. Original archives and methods remain unchanged.
+This is selected transport compatibility, not full geometry replay/query or a
+peak-memory benchmark. The new writer is not yet integrated into the live
+evaluator; running source remains unchanged until terminal study and replay.
+
+Source selection, quality/training/release flags, all 14 release evidence lists,
+formal held-out trials and frozen gates remain unchanged. Next: finish/replay
+the actual combined resource study, then integrate exact streaming into complete
+scene authoring before broader interaction trials. Human semantics/cleanup,
+physical attachment and final model validation remain required. Goal active.
