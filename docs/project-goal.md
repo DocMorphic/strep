@@ -1996,3 +1996,48 @@ training data and measured learning remain open. No actual target-rig SOMA NPZ,
 continuous collision/force/balance, human realism, training admission or model
 quality improvement is claimed. All 14 release capabilities and formal 72x5
 requirements stay unchanged; the single full-project goal remains active.
+
+
+## 2026-10-03 - Native body, object and partner contact measurement
+
+Added source-bound point/centroid conditions for supplied-rig GLBs without SOMA
+joint names or leg mappings. World targets, moving box/sphere/cylinder surface
+points and another actor's skin use explicit vertex correspondence and rigid
+placement. Exact touches and closed held intervals remain distinct. Position
+checks include boundaries/native/object keys and all twelve fixed game clocks;
+speed differentiates each clock separately. Moving-object residuals use its
+local frame. Unavailable held clocks fail. Full loaded skin influences/primitives
+are preserved and weight normalization is recorded; no anatomy/area/support,
+collision, actual imported skin, forces, balance or quality proof is inferred.
+
+The CLI retains immutable request/source/method snapshots and observation hashes.
+It makes no animation edits or candidate selection. Fourteen retained scenes
+cover five high-five touches, five handshake holds, two crawl proxy versions
+and two sphere-grip versions; no new inference or held-out trials. Existing
+position budgets remain; the new 5 mm/s hold-speed condition is explicit.
+Every partner case fails. Both crawl versions fail all held conditions despite
+the left shin meeting 20 mm position. Both corrected sphere positions pass 5 mm
+at 2.2193/2.2468 mm; left speed 3.7562 mm/s passes, right 10.1976 mm/s fails.
+The first wrapper's incorrect handshake-touch assumption stopped after five
+audits and remains retained; fresh v2 keeps the actual authored hold interval.
+
+Independent full-skin decoding matches 9,425 contact point samples across 22
+conditions within 6.66e-16 metres, replays 204 frame-clock reductions exactly and
+rehashes 234 evidence files. Three subsequent list-valued identity rejection
+guards are the only source difference from archived measurement methods, with
+AST verification; computations/gates unchanged. All 115 focused project-environment
+checks pass and all 37 new checks separately pass model-free. An initial broader
+model-free run failed an existing asset export's lazy Torch dependency after 114
+passes; the complete population then passed with installed project dependencies,
+without removing tests. Prior 37c5b47 hosted CI completed all four jobs successfully.
+Evidence: reports/native-scene-contact-development-v2/verification.json and
+reports/native-scene-contact-validation-v2/checks.json; methodology:
+docs/native-scene-contacts-v1.md.
+
+Next turn these measurements into supplied-rig scene corrections under explicit
+root/body/joint edit permissions and original motion bounds, then actual imported
+skin checks and developer/animator review. Existing Studio/leg-only methods and
+failed sources stay unchanged. Broader generation/edit/style/scene/partner,
+transition/rig/engine workflows, admitted training and measured model improvement
+remain necessary. All 14 capability gates and the formal 72x5 population are
+unchanged, and the single full-project goal stays active.

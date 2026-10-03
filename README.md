@@ -17,6 +17,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
+[Native body, object and partner contact audits](docs/native-scene-contacts-v1.md) now measure explicit points on supplied rigs against world targets, moving primitives and another character. Exact touches and held contacts keep separate timing contracts; original source files remain unchanged. Retained interaction replays expose a right-hand hold-speed failure despite passing sphere-grip positions. This is measurement support for broader corrections, with no motion-quality approval.
+
 [Studio now offers between-key refinement](docs/studio-sampled-support-v1.md) with bound starting/final proposals and unchanged input-retention feedback. The [crawl hand/shin diagnostic](docs/crawl-body-contact-probes-v1.md) records the existing mesh-contact workflow's failed first pilot and its next trajectory experiment.
 
 [Coupled mesh-contact fitting](docs/crawl-body-contact-coupled-v1.md) now anticipates explicit hand/body targets. Its first crawl candidate still fails contact and floor checks and retains the input; actual Godot import reproduces those failures.
