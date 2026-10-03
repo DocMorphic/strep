@@ -2433,3 +2433,67 @@ No training data is admitted or checkpoint changed. The full goal stays active.
 Next: improve remaining rotational/partner contact errors, then extend
 scene/rig/action/transition validation and authoring integration with developer
 and animator review.
+
+
+## Point-contact success and explicit scene placement — 2026-10-03
+
+Prior c73eb55 passes all four hosted CI jobs in run 37111491335. The next
+completed-fit continuation accepts thirteen further steps (33 cumulative primary
+iterations) and reaches 29.999466 mm against the unchanged 30 mm high-five point
+limit. All original sampled positional/angular rate conditions still pass; source
+caps, clocks, edit permissions and checkpoint remain unchanged. This tiny contact
+margin is not robust held-out quality evidence. Independent replay verifies all
+49 controls, 98 byte-exact GLBs, original cap arrays and 325 fitting files.
+
+A generic CLI scene-placement proposal translates every actor, prop trajectory
+and world target by one explicit bounded vector, while preserving local object
+targets, partner references, rotations, animation indices and clip bytes. It
+does not infer ground, edit fixed planes or repair foot planting. Inputs/methods
+are snapshot-bound; actual before/after clocks, contact residuals, metrics and
+acceptance are rechecked. Sources stay retained and proposals stay unselected.
+
+The separate retained-pair trial uses a declared 15 mm common rise within 20 mm.
+At the existing three geometry times, all actor-plane conditions now pass against
+the same Y=0 plane and 5 mm depth limit. Contact residual differences are zero,
+and all animation/mesh bytes are unchanged. Full partner geometry exposes the
+remaining error: at 2.5 s, 451 proper triangle crossings and 217/147 contained
+vertices deeper than 5 mm, with maximum depths 19.603/21.495 mm. Point-contact
+success is not a usable, collision-free high-five. Common translation cannot
+alter this relative actor intersection. Every proposal and failure is saved.
+
+Four actual headless Godot jobs import the before/after stage clips in ordinary
+and native-resource authoring modes. Point contacts pass in all four; translated
+plane samples pass in both stage jobs. Combined conditions fail due to partner
+intersection and the separate 0.1 mm imported/source skin limit. Actor placement
+is applied after raw CPU skin reconstruction; real-time world staging and GPU
+rendering are not verified. Separate raw imported-slot arithmetic reproduces
+four contact point samples and 433344 geometry-clock vertices across these jobs.
+Stage placement/plane arithmetic replays 108336 native vertices, sharing the
+RigAsset sampler; full mesh crossing/depth arithmetic remains shared.
+
+CPU error decomposition at the same three clocks identifies unsigned-16 weight
+encoding as the dominant approximately 0.136 mm fidelity error. Separate loader
+normalization/pose components stay below 0.00026 mm; bind differences are tiny.
+The four component vectors sum exactly to observed errors. Encoding helpers are
+shared; this is not GPU/shader arithmetic evidence and no asset weight or fidelity
+cap changes. Pinned renderer source and scope are linked in the methodology.
+
+All 358 focused model-free tests pass, including fourteen new scene-placement
+cases spanning world, moving-object and partner targets, fixed planes,
+byte preservation, explicit bounds and input/archive mutation. Methodology:
+docs/native-scene-stage-v1.md. Local evidence:
+reports/native-scene-resume-development-v2,
+reports/native-scene-resume-verification-v2,
+reports/native-scene-resume-engine-v2,
+reports/native-scene-stage-development-v1,
+reports/native-scene-stage-verification-v1,
+reports/native-scene-stage-engine-v1,
+reports/native-scene-skin-precision-diagnosis-v1 and
+reports/native-scene-stage-validation-v1.
+
+All fourteen release gates and formal held-out trials remain unchanged. No
+training data is admitted or checkpoint changed. The full goal stays active.
+Next: include contact-region surfaces/partner geometry in correction, investigate
+weight-preserving engine export precision, and broaden action/rig/transition
+validation and authoring integration with developer/animator review. No GPU,
+physics, gameplay event, continuous collision or human-quality approval.

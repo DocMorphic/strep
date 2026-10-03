@@ -71,3 +71,7 @@ vertices, rehashing 115 engine files. Between-geometry-time
 skin-error curves are not independently replayed. No GPU, physics, event,
 continuous collision, human quality, training or release approval is established.
 All 344 focused model-free tests pass, including 14 continuation cases.
+
+A second continuation subsequently passes the unchanged point-contact limit.
+See [scene placement and complete mesh checks](native-scene-stage-v1.md) for the
+new evidence and the remaining hand-intersection and engine-fidelity failures.

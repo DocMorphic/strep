@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-03T08:57:50.819662+00:00",
-  "last_progress": "Source-bound completed-fit continuation replays controls/GLBs against exact original limits and verifies ancestors without recapping edited motion. Retained high-five separation 177.976 to 77.223 mm against 30 mm; 16/16 further steps accepted, original sampled rates all pass. Two actual Godot jobs retain sampled contact/plane/skin failures and originals selected. Independent 44-control/88-export replay and raw 2-contact/216672-vertex checks pass; 344 focused tests pass. Prior c6a2582 all hosted CI jobs pass. All release gates/formal trials unchanged; goal active."
+  "last_progress_at": "2026-10-03T09:33:23.780401+00:00",
+  "last_progress": "Second completed-fit continuation passes the original high-five point target (29.999466/30 mm) with original sampled rates intact; 49-control/98-export replay verified. Explicit common stage translation preserves clips/contact residuals and passes fixed-plane samples, but full partner meshes show 451 proper crossings and 19.603/21.495 mm containment. Four actual Godot jobs retain partner/skin failures, proposals unselected. Raw imported slots replay 433344 geometry-clock vertices; skin decomposition attributes ~0.136 mm to unsigned-16 weights, without changing assets/caps. All 358 focused tests pass; prior c73eb55 hosted CI all green. Release gates/formal trials unchanged, full goal active."
 }
