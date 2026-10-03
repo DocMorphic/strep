@@ -21,7 +21,7 @@ from strep import ROOT, read, save, sha256, now
 METHODS = sorted(set(CONTACT_METHODS) | {'native_scene_edit.py','native_scene_fit.py',
     'native_scene_norms.py','native_scene_conic.py','native_scene_storage.py','native_scene_restore.py','native_scene_resume.py','native_scene_geometry.py',
     'native_surface_model.py','native_partner_surface_rows.py','native_surface_lift.py',
-    'native_surface_contact.py','native_contact_norms.py',
+    'native_surface_contact.py','native_contact_norms.py','native_geometry_norms.py',
     'triangle_primitive_depth.py','triangle_crossing.py','convex_partner_surface.py',
     'timed_rotation_edit.py','sampled_motion_caps.py','native_support_feasibility.py','action_worker_lock.py',
     'native_foot_plant.py','native_leg_floor.py','native_support_spec.py','native_contact_diagnostics.py',

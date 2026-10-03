@@ -2729,3 +2729,73 @@ accepted state while pursuing separation, explicitly review contact semantics,
 and compose engine/placement checks; broad actions, object/partner correction,
 editing/style, rigs, loops/transitions and full release validation remain scope.
 Publish validated source/tests/docs to public GitHub under persistent authority.
+
+
+## 2026-10-03T13:19:14.249457+00:00: Separate geometry bounds after a verified stalled continuation
+
+Previous goal turn made authoritative source/experimental progress and published
+individual contact protection as 9f4b403. Hosted workflow 37122626189 now passes
+all four jobs. This turn completes four new primary continuation iterations
+under identical original source, permissions and policy bytes. None is accepted;
+start/final clips are byte-identical. Full replay re-exports 52 controls/104 GLBs,
+checks original cap arrays, partitions the complete 459121-row original native
+population, checks all contact/geometry decisions, independently accumulates
+52 normal samples and rehashes 937 files. The completed count is 41 attempted
+primary iterations, not accepted steps.
+
+Evidence changes the next action: candidate 2-restore-2 passes original native
+limits and improves all three contact conditions, reducing crossings 482 -> 458
+and deep vertices 389 -> 378, but worsens peak depth 20.4945 -> 20.8548 mm and is
+rejected. All 6901 fixed baseline witnesses evaluated on the actual export give
+geometry proxy max 4.19889 -> 4.38235, versus contact max 4.67541 -> 4.38218; the
+combined worst objective improves while geometry regresses. This is decoded
+fixed-proxy diagnosis, not independent affine-solver reconstruction. Rig-weight
+classification of the starting mesh reports 455 crossings within both left-hand
+subtrees and 27 in one subtree/another region, including forearm/seam witnesses.
+Both deepest vertices are in those hand regions; source seed 14712 is the deepest
+A vertex. All six plane failures are foot-weighted. Metadata is not anatomy.
+
+New native_geometry_norms duplicates the complete geometry block into the hard
+proposal prefix with separate caps at its baseline worst positive proxy error.
+The original authored norms remain in the objective and final audit; no source,
+contact, geometry quality limit or epoch is reset. Base witnesses use decoded
+poses. Restoration reconstructs their exact norm encoding/offsets from exported
+poses and can tighten proposal-only margins. Complete decoded mesh checks stay
+authoritative and can reject a passing proxy. Individual contact guards and all
+original native conditions remain required. Full object correction stays open.
+
+Two fresh iterations resume the exact 41-iteration retained clip with the new
+bound, accepting two restored full steps (three restoration attempts then one).
+Initial unrestored proposals fail original native limits and the new proxy bound;
+none is promoted. First/second models have 6901/6885 geometry rows with bounds
+4.19889/4.17049. Final gap 24.8464 -> 24.2313 mm, peak depth 20.4945 -> 20.3363 mm,
+crossings 482 -> 471, opposition 39.1568 -> 38.6099 degrees, source/target facing
+gaps -23.8770/-20.8896 -> -23.0875/-20.8030 mm. Deep vertices worsen 389 -> 396;
+seven geometry conditions and all added surface conditions still fail. Original
+point/motion conditions and contact guards pass, native acceptance fails,
+originals selected. Count 43 includes rejected iterations, not 43 accepted steps.
+No scene rise, conditioned weights, seed replacement, inference or training.
+
+Guarded replay verifies all 8 controls/16 byte-exact exports, exact original caps,
+complete native/geometry/contact results and acceptance decisions. It reconstructs
+both proxy models and six decoded overruns and independently checks all eight
+normal/side/error samples, rehashing 559 files. Shared pose/geometry routines
+remain used. All 468 focused model-free regressions pass, including 14 new
+geometry bound/direction/restoration/full-mesh authority cases; CI selects them
+on Linux/Windows. Source was not changed during either actual fitting/replay
+worker. New unused helper/test files were prepared while the old replay ran;
+existing imported source changed only after its terminal exit.
+
+Evidence: reports/native-oriented-surface-fit-development-v3 and -v4,
+reports/native-surface-regions-development-v2,
+reports/native-geometry-tradeoff-development-v1,
+reports/native-geometry-guards-validation-v1. Public method/failures are in
+docs/native-geometry-guards-v1.md. All fourteen capabilities retain empty
+release evidence; only two matrix progress fields change and formal held-out
+trials remain untouched. No anatomy/human cleanup, continuous collision,
+GPU/runtime, model adaptation or release approval. Full goal remains ACTIVE.
+Next continue from the verified two-step state with source/normal/geometry bounds,
+compose placement/engine checks and reviewed contact semantics, then broaden
+object/partner, action, rig, style/editing, transition and full release evaluation.
+Public source publication remains user-authorized; bulky studies/assets/models
+and credentials stay ignored.

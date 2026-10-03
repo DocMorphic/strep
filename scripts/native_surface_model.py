@@ -90,6 +90,10 @@ def model(problem, value, decoded_scene, policy, digest, trust, *, step=.001, ma
         return combined,sparse.vstack([jac,extra_jac],format='csc'),None,report
     stored = witnesses.gaps()
     np.testing.assert_allclose(stored, witnesses.gaps(surface_points(problem,problem.worlds(value))),atol=2e-10,rtol=0)
+    if decoded_worlds is not None:
+        anchored=witnesses.gaps(surface_points(problem,decoded_worlds))
+        np.testing.assert_allclose(stored,anchored,atol=2e-10,rtol=0)
+        stored=anchored
     smooth = witnesses.gaps(surface_points(problem, problem.worlds(value, quantized=False)))
     columns = []
     for i in range(len(value)):
@@ -125,7 +129,7 @@ def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restorati
             or type(step) not in (int,float) or not np.isfinite(step) or not 1e-6 <= step <= .01
             or type(restoration_steps) is not int or not 0 <= restoration_steps <= 4):
         raise ValueError('Bounded surface proposal settings required')
-    value = problem.initial.copy(); current = evaluate(value,'start'); history=[]; radius=trust
+    value = problem.initial.copy(); current = evaluate(value,'start'); history=[]; radius=trust;geometry_guard_used=False
     initial=np.asarray(current['native'],float)
     if initial.ndim!=1 or not len(initial) or not np.isfinite(initial).all() or np.any(initial > 0):
         raise ValueError('Surface correction requires an originally feasible native/contact start')
@@ -142,6 +146,12 @@ def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restorati
             from native_contact_norms import protect_rows
             system,jac,guard_identity=protect_rows(system,jac,hard,contact_before)
             protected=guard_identity['hard_rows'];identity['contact_protection']=guard_identity
+        contact_end=protected;geometry_rows=0 if witnesses is None else len(witnesses.rows)
+        if geometry_rows:
+            from native_geometry_norms import protect_worst
+            system,jac,geometry_identity=protect_worst(system,jac,protected,geometry_rows)
+            protected=geometry_identity['hard_rows'];identity['geometry_protection']=geometry_identity
+            geometry_guard_used=True
         delta,info=direction(system,jac,value,problem.lower,problem.upper,radius,hard_rows=protected)
         def observe(other,label):
             result=evaluate(other,label); native=np.asarray(result['native'],float)
@@ -158,17 +168,21 @@ def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restorati
             if contact_model is not None:
                 probes[-1].update(contact_rows_nonregressing=bool(np.all(regression<=0)),
                     maximum_contact_row_regression=float(max(0.,regression.max())))
+            if geometry_rows:
+                probes[-1]['maximum_geometry_proxy_guard_excess']=float(max(0.,actual_rows(result)[contact_end:protected].max()))
             return result,good
         def actual_rows(candidate):
             actual=system.residual().copy();actual[:hard]=candidate['native']
-            geometry_rows=0 if witnesses is None else len(witnesses.rows)
             if witnesses is not None:
                 gaps=witnesses.gaps(surface_points(problem,candidate['worlds']))
                 actual[protected:protected+geometry_rows]=(.0005-gaps)/.005
+                offsets=np.asarray(identity['conversion']['offset_m'])
+                actual[contact_end:protected]=NormRows(np.c_[offsets-gaps,np.zeros((len(gaps),2))],
+                    system.caps[contact_end:protected],system.scales[contact_end:protected]).residual()
             if contact_model is not None:
                 from native_contact_norms import row_regression
                 contact_actual=contact_model.residual(candidate['worlds'])
-                actual[hard:protected]=row_regression(contact_before,contact_actual)
+                actual[hard:contact_end]=row_regression(contact_before,contact_actual)
                 actual[protected+geometry_rows:]=contact_actual
             return actual
         if delta is not None:
@@ -204,4 +218,5 @@ def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restorati
     return value,dict(history=history,geometry_score=geometry_score(current['geometry']).tolist(),
         maximum_iterations=iterations,trust=trust,all_original_norms_protected=True,
         individual_contact_rows_protected=contact_model is not None,
+        worst_geometry_proxy_bounded_in_proposal=geometry_guard_used,
         quality_approved=False,release_approved=False)

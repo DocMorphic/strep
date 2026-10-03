@@ -17,6 +17,11 @@ geometry clocks are inserted into pose sampling without changing the original
 uniform rate clock, bins, tolerance or cap arrays. Object primitives are
 explicitly rejected by this mode; object correction remains outstanding.
 
+[Separate geometry bounds](native-geometry-guards-v1.md) now prevent the proposal
+objective from trading a larger contact improvement for increased worst
+geometry-proxy error. The original decoded geometry policy remains authoritative;
+these fixed-witness proposal bounds are not collision certificates.
+
 `scripts/native_surface_model.py` rebuilds complete partner triangle and
 containment queries at each retained step. Local fixed-axis/barycentric rows are
 converted to vector norms inside the current affine trust box. All original

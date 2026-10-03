@@ -19,7 +19,8 @@ proposal prefix after the original native rows. Separate guard caps use the
 greater of each authored cap and its current decoded base-vector length. The
 unchanged authored rows remain in the minimax objective and final surface audit;
 the guard cap is never reported as a relaxed quality limit. Their Jacobian rows
-are duplicated in the same order. Geometry rows remain soft proposal guidance.
+are duplicated in the same order. Original geometry rows remain in the soft
+objective, with separate [worst-proxy proposal bounds](native-geometry-guards-v1.md).
 
 Decoded restoration now responds to individual contact regressions even when
 all original native rows pass. It fills the augmented hard prefix with actual
