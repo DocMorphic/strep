@@ -1,0 +1,57 @@
+<details id="nativeScenePanel" class="rig-panel">
+ <summary>Scene contacts &amp; game assets</summary>
+ <p class="small">Assemble supplied character clips, objects and explicit contacts. Clips must share their exact duration; retime them first if needed. Pick mesh patches in Mesh contacts. Assets and measured failures stay separate from motion-quality review.</p>
+ <div class="rig-field-grid">
+  <label>Character name<input id="nativeSceneActorName" value="A"></label>
+  <label>Character position (m)<input id="nativeSceneActorPosition" value="0, 0, 0"></label>
+ </div>
+ <button class="btn" id="nativeSceneAddActor">Add selected character clip</button>
+ <p class="small" id="nativeSceneDuration">No character clips added.</p>
+ <div id="nativeSceneActors"></div>
+ <div class="rig-field-grid">
+  <label>Object name<input id="nativeSceneObjectName" value="item"></label>
+  <label>Shape<select id="nativeSceneShape"><option value="box">Box</option><option value="sphere">Sphere</option><option value="cylinder">Cylinder</option></select></label>
+  <label>Box size / radius, height (m)<input id="nativeSceneDimensions" value="0.4, 0.4, 0.4"></label>
+  <label>Object position (m)<input id="nativeSceneObjectPosition" value="0, 1, 0"></label>
+ </div>
+ <button class="btn" id="nativeSceneAddObject">Add static object</button>
+ <div id="nativeSceneObjects"></div>
+ <div class="rig-field-grid">
+  <label>Contact name<input id="nativeSceneContactName" value="grip"></label>
+  <label>Character<select id="nativeSceneContactActor"></select></label>
+  <label>Target type<select id="nativeSceneTargetType"><option value="object">Object grip</option><option value="world">World point</option><option value="actor">Partner patch</option></select></label>
+  <label>Object / partner<select id="nativeSceneTarget"></select></label>
+  <label>Grip point in object / world point (m)<input id="nativeScenePoint" value="0, 0, 0"></label>
+  <label>Timing<select id="nativeSceneMode"><option value="hold">Hold</option><option value="touch">Touch</option></select></label>
+  <label>Start / touch time (s)<input id="nativeSceneStart" type="number" min="0" step="any" value="0"></label>
+  <label>Hold end (s)<input id="nativeSceneEnd" type="number" min="0" step="any" value="1"></label>
+  <label>Position limit (mm)<input id="nativeSceneContactLimit" type="number" min="0" step="any" value="5"></label>
+  <label>Relative speed limit (mm/s)<input id="nativeSceneSpeedLimit" type="number" min="0" step="any" value="5"></label>
+ </div>
+ <button class="btn" id="nativeScenePartnerPatch">Use selected patch as partner target</button>
+ <button class="btn" id="nativeSceneAddContact">Add contact from selected patch</button>
+ <div id="nativeSceneContacts"></div>
+ <label><input id="nativeSceneFloor" type="checkbox"> Check a horizontal world plane</label>
+ <div class="rig-field-grid">
+  <label>Plane height (m)<input id="nativeSceneFloorHeight" type="number" step="any" value="0"></label>
+  <label>Penetration limit (mm)<input id="nativeSceneDepthLimit" type="number" min="0" max="100" step="any" value="5"></label>
+ </div>
+ <label><input id="nativeSceneFit" type="checkbox"> Propose a bounded object edit from two declared grips</label>
+ <div class="rig-field-grid">
+  <label>Object to edit<select id="nativeSceneFitObject"></select></label>
+  <label>First hold<select id="nativeSceneFirstGrip"></select></label>
+  <label>Second hold<select id="nativeSceneSecondGrip"></select></label>
+  <label>Edit starts / ends (s)<input id="nativeSceneEditWindow" value="0, 2"></label>
+  <label>Translation bound (mm)<input id="nativeSceneTranslation" type="number" min="0" step="any" value="10"></label>
+  <label>Rotation bound (degrees)<input id="nativeSceneRotation" type="number" min="0" max="45" step="any" value="2"></label>
+  <label>Maximum object keys<input id="nativeSceneKeys" type="number" min="2" max="3601" step="1" value="3601"></label>
+ </div>
+ <div class="toolbar">
+  <button class="btn" id="nativeSceneSave">Save scene draft</button>
+  <label class="btn">Open scene draft<input id="nativeSceneImport" type="file" accept=".json,application/json" hidden></label>
+  <button class="btn primary" id="nativeSceneBuild">Build scene assets</button>
+ </div>
+ <p class="small" id="nativeSceneStatus" role="status">Add a character clip and object to begin.</p>
+ <div class="toolbar"><select id="nativeSceneJobs" aria-label="Scene asset job"></select><button class="btn" id="nativeSceneRefresh">Refresh jobs</button><button class="btn" id="nativeSceneReview">Show assets &amp; results</button></div>
+ <div id="nativeSceneResults" aria-live="polite"></div>
+</details>
