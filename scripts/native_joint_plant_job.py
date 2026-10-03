@@ -57,11 +57,13 @@ def authored_audit(source,candidate,spec,limits):
     return result
 
 
-def run(source,base,draft,policy_path,output,*,seed=None,iterations=4,trust=.001,native_roundtrip=True,coordinates=False):
+def run(source,base,draft,policy_path,output,*,seed=None,iterations=4,trust=.001,native_roundtrip=True,coordinates=False,
+        frame_sampling=False,exterior_seed_ramp=False):
     if type(iterations) is not int or not 1<=iterations<=16 or type(trust) not in (int,float) or not np.isfinite(trust) or not 0<trust<=.02:
         raise ValueError('Bounded joint iterations/trust required')
     if type(native_roundtrip) is not bool:raise ValueError('Explicit native preview mode required')
     if type(coordinates) is not bool:raise ValueError('Explicit coordinate mode required')
+    if type(frame_sampling) is not bool or type(exterior_seed_ramp) is not bool:raise ValueError('Explicit frame/ramp modes required')
     if coordinates and trust>.001:raise ValueError('Coordinate trust is limited to .001 radians')
     source,base,draft,policy_path,output=map(lambda p:Path(p).resolve(),(source,base,draft,policy_path,output))
     seed=base if seed is None else Path(seed).resolve()
@@ -71,7 +73,14 @@ def run(source,base,draft,policy_path,output,*,seed=None,iterations=4,trust=.001
     _,rows=validate(spec,rig,reader,sha256(source));limits=policy_rows(read(policy_path),source,base,draft,rows)
     baseline=authored_audit(source,base,spec,limits);warm_audit=authored_audit(source,seed,spec,limits)
     warm=RigAsset.load(seed);warm_reader=NativeSupportSampler(warm.document,warm.binary,0);preserve(reader,warm_reader,rows)
-    problem=JointPlantProblem(rig,reader,rows,limits,warm_reader)
+    problem_type=JointPlantProblem
+    if frame_sampling:
+        from native_frame_plant import FramePlantProblem
+        problem_type=FramePlantProblem
+    problem=problem_type(rig,reader,rows,limits,warm_reader)
+    if exterior_seed_ramp:
+        from native_frame_plant import exterior_ramp
+        problem.initial=exterior_ramp(problem,problem.initial)
     problem.native_roundtrip=native_roundtrip
     output.mkdir();shutil.copyfile(base,output/'input.glb');archive=output/'implementation';archive.mkdir()
     from native_review_support import method_names
@@ -79,13 +88,20 @@ def run(source,base,draft,policy_path,output,*,seed=None,iterations=4,trust=.001
         'native_support_rates.py','native_support_feasibility.py','native_support_roundtrip.py',
         'native_support_orientation.py','native_support_swivel.py','native_support_path.py'}
     if coordinates:names.add('native_support_coordinates.py')
+    if frame_sampling or exterior_seed_ramp:names.update({'native_frame_plant.py','engine_contact_sampling.py'})
     methods={}
     for name in sorted(names):
         path=Path(__file__).resolve().parent/name;methods[str(path)]=sha256(path);shutil.copyfile(path,archive/name)
-    save(output/'request.json',dict(at=now(),inputs_sha256=inputs,implementation_sha256=methods,spec=spec,policy=read(policy_path),
+    request=dict(at=now(),inputs_sha256=inputs,implementation_sha256=methods,spec=spec,policy=read(policy_path),
         iterations=iterations,trust_radians=trust,native_roundtrip=native_roundtrip,coordinate_search=coordinates,
         python=sys.version,numpy=np.__version__,scipy=scipy.__version__,
-        scope='Interior leg rotations, source anchor contacts/support/rates; real native NPZ conversion still independent',quality_approved=False))
+        scope='Interior leg rotations, source anchor contacts/support/rates; real native NPZ conversion still independent',quality_approved=False)
+    if frame_sampling:
+        from engine_contact_sampling import contract,contract_sha256
+        request.update(frame_sampling_contract=contract(),frame_sampling_contract_sha256=contract_sha256(),
+                       proposal_skin='Native, not imported engine skin')
+    if exterior_seed_ramp:request['exterior_seed_ramp']='Cubic Hermite exterior native rotation-vector controls; LINEAR exported keys, no C1 guarantee'
+    save(output/'request.json',request)
     save(output/'pipeline.json',dict(status='processing'));probes=[];decoded_cache={}
     try:
         def evaluate(x,label):
@@ -153,9 +169,13 @@ if __name__=='__main__':
     parser.add_argument('--seed',type=Path);parser.add_argument('--iterations',type=int,default=4)
     parser.add_argument('--trust',type=float,default=.001);parser.add_argument('--raw-only',action='store_true')
     parser.add_argument('--coordinates',action='store_true',help='Bounded FP32 key coordinate screens with independent decoded acceptance')
+    parser.add_argument('--frame-sampling',action='store_true',help='Constrain every fixed game-frame clock in native skin; actual engine import remains independent')
+    parser.add_argument('--exterior-seed-ramp',action='store_true',help='Initialize exterior correction keys with Hermite ramps inside the original edit window')
     args=parser.parse_args()
     from action_worker_lock import worker_lock
     from threadpoolctl import threadpool_limits
     with worker_lock(),threadpool_limits(limits=1):
-        result=run(args.source,args.base,args.draft,args.policy,args.output,seed=args.seed,iterations=args.iterations,trust=args.trust,native_roundtrip=not args.raw_only,coordinates=args.coordinates)
+        result=run(args.source,args.base,args.draft,args.policy,args.output,seed=args.seed,iterations=args.iterations,trust=args.trust,
+                   native_roundtrip=not args.raw_only,coordinates=args.coordinates,
+                   frame_sampling=args.frame_sampling,exterior_seed_ramp=args.exterior_seed_ramp)
         print(dict(retained_input=result['retained_input'],reason=result['retention_reason'],merit=result['optimization']['final_merit']))

@@ -151,6 +151,7 @@ jobs:
           tests/test_native_plant_headroom.py
           tests/test_native_foot_plant.py
           tests/test_native_joint_plant.py
+          tests/test_native_frame_plant.py
           tests/test_native_plant_rate_diagnosis.py
           tests/test_studio_native_plant.py
           tests/test_native_support_peak_limits.py

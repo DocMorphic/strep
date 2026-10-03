@@ -1828,3 +1828,65 @@ scene/partner/body supports, actions/style/rig transfer, licensed reviewed
 corrections and measured training, human cleanup and full release evidence
 remain required. All 14 capabilities remain unapproved, formal72x5 untouched
 and the single full-project goal remains active.
+
+
+## 2026-10-03 — Opt-in game-frame planting and exterior seeds
+
+Previous goal turn made source, numerical study and public publication
+progress; 0d3f173 now passes all four hosted jobs. Full goal stays active.
+
+Added explicit --frame-sampling/--exterior-seed-ramp options to the native
+joint planting CLI. Defaults and current Studio choices stay unchanged.
+Frame proposals preserve exact original 120Hz source caps/bins/tolerance
+while checking anchor/height geometry on all native/event/frame points,
+legacy contact speeds and all twelve predeclared game clocks separately.
+Unavailable short populations reject instead of substituting a clock.
+Raw FP32/shadow native decodes still decide steps; actual imports stay
+independent. Source/root/translations, unrelated rotations, mesh/skin payloads,
+native clocks, original edit bounds and frozen keys remain protected.
+
+Optional Hermite exterior rotation-vector seeds preserve interior stance-key
+vectors and original edit boundaries. Fractional stance interpolation can
+change, and LINEAR exported tracks do not supply a C1 guarantee. Component
+overshoot rejects rather than clips. Existing radial/source/contact gates
+remain unchanged. The fitter still requires fully foot-bound regions;
+unsupported mixed soles are rejected without discarding skin influences.
+
+Three frozen female run/roll/stand variants complete eight iterations at
+.001-rad trust from the same prior raw seed with the original 4.99 mm/s
+proposal target: ramps, game frames, and both. Another 1,836 actual imported
+observations across six scenes use 65 bones and three surfaces; repeated source
+observations and 612 reused historical observations are not held-out breadth.
+All variants fail original contacts/rates and combined engine checks;
+every selected output is the exact input. Native left/right speeds are
+6.167438/12.030422, 7.385402/9.625968, 7.482717/10.854916 mm/s;
+worst imported frame speeds 12.137823, 9.780831, 10.889149 mm/s all exceed 5.
+Source-rate row counts 28/22/4/10, 24/23/4/14, 24/22/4/14 remain failures.
+Support/edit bounds and clearance pass. Neither extra constraints, reduced
+one-foot speed nor objective sums on different populations certify quality.
+
+1,859 model-free Python tests, 16 JS suites and 215 CPU adapter/native tests pass.
+Sixteen new frame/ramp fixtures include original clocks/caps, independent
+decodes, derivative graphs, ramp/frozen keys, overshoot, unsupported soles,
+archive dependencies and failed/passing retention. Two initial mixed-sole
+fixtures assumed unsupported admission; their expectation was corrected
+after confirming the existing region contract, without relaxing that guard.
+After the terminal study, archiving is completed for the sampling dependency
+loaded by ramp-only mode. Study-wide hashes and same-case engine archives
+already bind it; executed archives stay separate and AST comparison proves
+only archive-name statements changed. No completed search is repeated for
+publication. The saved original/control method difference remains explicit.
+
+Both prior completed Studio planting jobs still serve their exact archived
+selections. After terminal checks the verified idle project-owned listener
+is refreshed using process/socket evidence only. Source/evidence receipt:
+reports/native-frame-roll-validation-v1/verification.json. Models, characters,
+generated studies and credentials remain excluded from public commits.
+
+Next work must improve coupled correction flexibility under explicit edit
+permissions and original acceptance, then generalize phase/body/scene/partner
+support and complete action/style/rig, human cleanup and measured learning
+evidence. No actual target-rig SOMA NPZ, live HTTP/browser, fresh GPU,
+continuous collision/force/balance, human realism, training admission or
+model-quality improvement is claimed. All 14 release capabilities remain
+unapproved, formal 72x5 untouched; the single full-project goal stays active.

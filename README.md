@@ -160,4 +160,6 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 
 [Matched planting-rate diagnosis](docs/native-plant-rate-diagnosis-v1.md) separates contact search from the original motion-rate guard. Removing translation-rate constraints improves native contact in one run/roll/stand case, but original rate and imported contact checks still fail. The diagnostic keeps selections and public limits unchanged and localizes the largest acceleration excess at the stance exit.
 
+[Native game-frame planting options](docs/native-frame-plant-v1.md) add all twelve fixed frame clocks to the proposal model and an optional exterior-key ramp seed. Three matched corrections still fail the original contact/rate/import checks and retain their inputs. These CLI options preserve the existing default Studio path and all release requirements.
+
 [Reviewed native corpus training](docs/kimodo-corpus-trainer-v1.md) now connects verified targets to sequential frozen-base adapter updates, isolated development validation and bound resume. A tiny CPU fixture reproduces fresh-process continuation exactly; the real CLI rejects the unreviewed packet, and no real motion training or quality improvement is claimed.
