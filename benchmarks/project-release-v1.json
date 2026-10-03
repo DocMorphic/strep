@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-03T06:56:48.147977+00:00",
-  "last_progress": "Complete raw imported skin/triangle correspondence, explicit animation selection and actual actor/prop samples now audit native scenes in import and native-resource authoring modes. Eight humanoid studies complete but all retain contact, floor or skin-position failures; originals remain selected. Independent replay checks 8268 contact points, 794464 geometry-clock vertices and 445 files. Three-surface four/eight-influence index-1 fixture passes sampled conditions in both modes; 299 focused tests pass. Prior bc5539b CI all four jobs pass. No GPU/physics/continuous/quality/training/release approval; all release gates and formal trials unchanged, full goal active."
+  "last_progress_at": "2026-10-03T07:25:58.036489+00:00",
+  "last_progress": "Optional storage-vector proposals protect source edit/displacement/rate rows in affine and decoded checks, use continuous proposal derivatives and finite verified translation storage-cell probes. Matched synthetic four-iteration contact still fails by 0.192 um; extended budget passes native conditions after five steps and both actual headless Godot sampled modes. Sphere/high-five humanoid trials still fail; rotation cell search explicitly unavailable, originals remain selected. Independent byte replay/source-cap/skin and engine-slot checks pass; 314 focused tests pass. Prior 0d53c5f hosted CI all four jobs pass. No GPU/physics/continuous/quality/training/release approval; gates and formal trials unchanged, full goal active."
 }

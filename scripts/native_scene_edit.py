@@ -81,9 +81,9 @@ class SceneEdits:
             result[entry['node'],entry['path']] = values
         return result
 
-    def worlds(self, name, value, times):
+    def worlds(self, name, value, times, *, quantized=True):
         """Batch LINEAR proposals; actual exports remain independently decoded."""
-        actor = self.actors[name]['source']; reader = actor['sampler']; values = self.values(name,value)
+        actor = self.actors[name]['source']; reader = actor['sampler']; values = self.values(name,value,quantized=quantized)
         times = np.asarray(times,float); key = tuple(times); cache = self.actors[name]['world_cache']
         if key not in cache:
             world = np.array([reader.sample(float(t)) for t in times]); local = world.copy()

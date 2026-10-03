@@ -24,10 +24,11 @@ def solver_identity():
     return dict(version=module.__version__,files_sha256={p.relative_to(folder).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in files})
 
 
-def direction(system, jacobian, value, lower, upper, trust):
+def direction(system, jacobian, value, lower, upper, trust, *, hard_rows=0):
     value,lower,upper = [np.asarray(a,float) for a in (value,lower,upper)]
     if value.ndim!=1:raise ValueError('One-dimensional vector controls required')
     n = len(value)
+    if type(hard_rows) is not int or not 0<=hard_rows<=len(system.vectors):raise ValueError('Valid protected norm row prefix required')
     if sparse.issparse(jacobian):jacobian = sparse.csr_matrix(jacobian)
     else:
         jacobian = np.asarray(jacobian,float)
@@ -56,12 +57,15 @@ def direction(system, jacobian, value, lower, upper, trust):
     box_passing = (counts>0)&np.isfinite(upper_norm)&(upper_norm+reserve<=system.caps)
     active = np.flatnonzero((counts>0)&~box_passing); fixed_mask = counts==0
     fixed_residual = system.residual()[fixed_mask]; fixed = fixed_residual[fixed_residual>0]
+    if np.any(system.residual()[:hard_rows][counts[:hard_rows]==0]>0):
+        return None,dict(status='FixedProtectedConflict',protected_norm_rows=hard_rows,
+            scope='Fixed failed protected affine row; no decoded feasibility claim.')
     omitted = int((fixed_residual<=0).sum())
     if len(active):
         selected_rows = (3*active[:,None]+np.arange(3)).ravel()
         derivative = jacobian[selected_rows].multiply((-trust/np.repeat(system.scales[active],3))[:,None]).tocoo()
         mapped_rows = 4*(derivative.row//3)+1+derivative.row%3
-        matrix = sparse.csc_matrix((np.r_[derivative.data,-np.ones(len(active))],
+        matrix = sparse.csc_matrix((np.r_[derivative.data,-(active>=hard_rows).astype(float)],
             (np.r_[mapped_rows,4*np.arange(len(active))],np.r_[derivative.col,np.full(len(active),n)])),shape=(4*len(active),n+1))
         # Each consecutive four-row group is one full, unsimplified norm cone.
         bound = np.c_[system.caps[active],system.vectors[active]]/system.scales[active,None]
@@ -77,6 +81,7 @@ def direction(system, jacobian, value, lower, upper, trust):
     first = solver.DefaultSolver(sparse.csc_matrix((n+1,n+1)),objective,matrix,bound,cones,settings).solve()
     info = dict(status=str(first.status),iterations=first.iterations,trust_control_fraction=float(trust),
         solver_version=solver.__version__,norm_rows=len(system.vectors),active_cones=len(active),
+        protected_norm_rows=hard_rows,
         fixed_failed_rows=len(fixed),omitted_fixed_passing_rows=omitted,
         omitted_affine_box_passing_rows=int(box_passing.sum()),
         affine_box_bound='norm(abs(vector) + abs(J) @ maximum_absolute_step) plus arithmetic reserve',
@@ -100,30 +105,48 @@ def direction(system, jacobian, value, lower, upper, trust):
     return delta,info
 
 
-def optimize(problem,evaluate,iterations,trust,*,difference_step=.001):
+def optimize(problem,evaluate,iterations,trust,*,difference_step=.001,difference_source='stored',storage_cells=0,protect_source_rows=False):
     value = problem.initial.copy(); current = evaluate(value,'start'); history = []; radius = trust
     for iteration in range(1,iterations+1):
         before = merit(current)
         if before[0]==0:break
-        system,jacobian,differences = linearize(problem,value,step=difference_step)
+        system,jacobian,differences = linearize(problem,value,step=difference_step,difference_source=difference_source)
         # Algebraic refactoring may differ in final floating-point subtraction;
         # it must describe the same ordered constraints before proposing a step.
         np.testing.assert_allclose(system.residual(),problem.model(value),atol=1e-9,rtol=1e-12)
-        delta,info = direction(system,jacobian,value,problem.lower,problem.upper,radius)
-        accepted = None; probes = []
+        delta,info = direction(system,jacobian,value,problem.lower,problem.upper,radius,
+            hard_rows=problem.protected_rows if protect_source_rows else 0)
+        accepted = None; probes = []; storage_info = None
+        def acceptable(g):
+            score=merit(g)
+            protected=not protect_source_rows or np.all(g[:problem.protected_rows]<=0)
+            improved=score[0]<before[0]-1e-12 or abs(score[0]-before[0])<=1e-12 and score[1]<before[1]-1e-15
+            return score,bool(protected),bool(protected and improved)
         if delta is not None:
             for backoff in range(10):
                 fraction = .5**backoff; other = np.clip(value+fraction*delta,problem.lower,problem.upper)
-                g = evaluate(other,f'{iteration}-{backoff}'); score = merit(g)
-                passed = score[0]<before[0]-1e-12 or abs(score[0]-before[0])<=1e-12 and score[1]<before[1]-1e-15
-                probes.append(dict(fraction=fraction,merit=list(score),accepted=bool(passed)))
+                g = evaluate(other,f'{iteration}-{backoff}'); score,protected,passed = acceptable(g)
+                probes.append(dict(fraction=fraction,merit=list(score),source_rows_pass=protected,accepted=passed))
                 if passed:value=other;current=g;accepted=fraction;break
+                if storage_cells and backoff==0:
+                    from native_scene_storage import fractions
+                    try:
+                        cells,storage_info=fractions(problem.edits,value,delta,maximum_cells=storage_cells)
+                    except ValueError as exc:
+                        cells=[];storage_info=dict(available=False,error=str(exc),maximum_cells=storage_cells)
+                    for index,entry in enumerate(cells):
+                        other=np.clip(value+entry['fraction']*delta,problem.lower,problem.upper)
+                        g=evaluate(other,f'{iteration}-storage-{index}');score,protected,passed=acceptable(g)
+                        probes.append(dict(**entry,kind='translation-storage-cell',merit=list(score),source_rows_pass=protected,accepted=passed))
+                        if passed:value=other;current=g;accepted=entry['fraction'];break
+                    if accepted is not None:break
         history.append(dict(iteration=iteration,before=list(before),after=list(merit(current)),
-            selected_fraction=accepted,probes=probes,conic_step=info,differences=differences))
+            selected_fraction=accepted,probes=probes,conic_step=info,differences=differences,storage_cells=storage_info))
         print(iteration,history[-1]['after'],flush=True)
         if accepted is None:
             radius *= .25
             if radius<1e-8:break
     return value,dict(history=history,maximum_iterations=iterations,trust_control_fraction=trust,
         final_merit=list(merit(current)),proposal_model='affine-vector-norms',solver_version=VERSION,
+        difference_source=difference_source,maximum_storage_cells=storage_cells,protect_source_rows=protect_source_rows,
         quantized_native_keys=True,conservative_dense_dependencies=True)

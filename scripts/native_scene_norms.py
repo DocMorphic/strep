@@ -99,8 +99,10 @@ def rows(problem, value, worlds=None):
     return NormRows(np.concatenate(vectors),np.concatenate(caps),np.concatenate(scales))
 
 
-def linearize(problem, value, *, step=1e-5, maximum_elements=60_000_000):
+def linearize(problem, value, *, step=1e-5, maximum_elements=60_000_000, difference_source='stored'):
     value = problem.edits.controls(value); base = rows(problem,value)
+    if difference_source not in ('stored','continuous'):raise ValueError('Choose stored or continuous vector differences')
+    smooth = rows(problem,value,problem.worlds(value,quantized=False)) if difference_source=='continuous' else base
     if (type(step) not in (int,float) or not np.isfinite(step) or step<=0
             or type(maximum_elements) is not int or maximum_elements<=0):
         raise ValueError('Positive difference step and vector Jacobian resource limit required')
@@ -111,11 +113,12 @@ def linearize(problem, value, *, step=1e-5, maximum_elements=60_000_000):
         room = upper[column]-value[column] if upper[column]-value[column]>=value[column]-lower[column] else lower[column]-value[column]
         h = np.copysign(min(step,abs(room)),room)
         if h==0:raise ValueError('No vector finite-difference room')
-        other = value.copy(); other[column]+=h; sample = rows(problem,other)
+        other = value.copy(); other[column]+=h
+        sample = rows(problem,other,problem.worlds(other,quantized=False)) if difference_source=='continuous' else rows(problem,other)
         if (sample.vectors.shape != base.vectors.shape or not np.array_equal(sample.caps,base.caps)
                 or not np.array_equal(sample.scales,base.scales)):
             raise ValueError('Vector constraint population changed during differences')
-        derivative = ((sample.vectors-base.vectors)/h).ravel()
+        derivative = ((sample.vectors-smooth.vectors)/h).ravel()
         if not np.isfinite(derivative).all():raise ValueError('Nonfinite native scene vector derivative')
         nonzero = np.flatnonzero(derivative)
         if pointers[-1]+len(nonzero)>maximum_elements:
@@ -127,4 +130,4 @@ def linearize(problem, value, *, step=1e-5, maximum_elements=60_000_000):
         norm_rows=len(base.vectors),maximum_nonzero_jacobian_elements=maximum_elements,
         dense_jacobian_elements=base.vectors.size*len(value),stored_nonzero_jacobian_elements=jacobian.nnz,
         jacobian_storage='sparse CSC; exact nonzero entries only',
-        quantized_native_keys=True,conservative_dense_dependencies=True)
+        quantized_native_keys=True,difference_source=difference_source,conservative_dense_dependencies=True)

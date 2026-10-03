@@ -2272,3 +2272,54 @@ All fourteen release capability gates and formal held-out trials remain unchange
 No training is admitted or performed. The full goal stays active; next work is
 storage-aware correction of measured failures and broader scene/playback,
 action/style/editing/transition and rig-transfer validation with human review.
+
+
+## Stored translation cells and hard source rows — 2026-10-03
+
+Prior 0d53c5f passes all four hosted CI jobs in run 37104725156. Optional
+storage-vector proposals use continuous pre-storage derivatives with the actual
+stored residual base. Source edit, displacement and rate rows are hard affine
+cones and hard decoded acceptance conditions; contact excess remains the
+objective. Existing scalar/vector defaults and all authored limits stay intact.
+Finite translation-cell line probes independently check actual serialized key
+interiors, record budgets/unavailability and keep every decoded condition.
+Rotation directions lack this affine cell calculation. This is not an exhaustive
+discrete feasibility method or rigorous interval proof; tiny cells may be skipped.
+
+The first cell probe failed at a numerical tie; a coordinate-aware Float64 step
+reserve fixes the ambiguity without changing Float32 weights or acceptance.
+Initial hard decoded acceptance with soft affine source rows stagnated; that
+failed study remains saved. Hard affine rows resolve the synthetic tradeoff.
+The matched four-iteration body fixture still misses 1 mm contact by 0.192 um.
+An extended eight-iteration budget succeeds after five executed steps, measuring
+0.999953 mm contact and preserving every original native condition. Both actual
+Godot import and native-resource authoring seeks pass synthetic sampled contacts
+and declared geometry over 196 engine times; raw-skin differences are 89.47/59.68
+nm. Geometry covers five times and an explicit diagnostic Y=-2 plane only.
+Engine source-rate/GPU/physics/events, continuous collision and quality remain
+unverified. The original stays selected even for this passing synthetic proposal.
+
+Same-input sphere and high-five jobs retain the four-iteration budget. Sphere
+left/right errors are 2.219262/2.244020 mm against 2 mm, right hold speed
+10.192061 mm/s against 5 mm/s. High-five remains 206.232573 mm apart against
+30 mm; no proposed step satisfies protected source rows. Solved affine status
+cannot override these failures or prove the requests impossible. No humanoid
+quality success is claimed.
+
+Independent verification reproduces 125 control vectors and 167 GLB exports
+byte-for-byte, decoded residuals, protected accepted rows and final rate checks;
+all rate caps match the previous vector baseline exactly. Independent full-skin
+contact effectors agree within 2e-12 m; partner/object target interpolation remains
+shared. All 559 fitting-study files rehash. Separate raw engine-slot accumulation
+replays both contact/speed reports and all 1176 full-clock vertices in the tiny fixture,
+with 383 engine-study files rehashed. All 314 focused model-free tests pass.
+Methodology: docs/native-scene-storage-proposals-v1.md. Evidence remains under
+ignored reports/native-scene-storage-fit-development-v4,
+reports/native-scene-storage-interactions-v1,
+reports/native-scene-storage-verification-v1 and
+reports/native-scene-storage-validation-v1.
+
+All fourteen release gates and formal held-out trials stay unchanged. No model
+training or data admission occurs. The full goal remains active; next is robust
+correction for rotational and partner failures, explicit authoring permissions
+and broader scene/action/rig/playback validation with developer/animator review.

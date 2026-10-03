@@ -19,7 +19,7 @@ from threadpoolctl import threadpool_limits
 from strep import ROOT, read, save, sha256, now
 
 METHODS = sorted(set(CONTACT_METHODS) | {'native_scene_edit.py','native_scene_fit.py',
-    'native_scene_norms.py','native_scene_conic.py','native_scene_geometry.py',
+    'native_scene_norms.py','native_scene_conic.py','native_scene_storage.py','native_scene_geometry.py',
     'triangle_primitive_depth.py','triangle_crossing.py','convex_partner_surface.py',
     'timed_rotation_edit.py','sampled_motion_caps.py','native_support_feasibility.py','action_worker_lock.py',
     'native_foot_plant.py','native_leg_floor.py','native_support_spec.py','native_contact_diagnostics.py',
@@ -55,9 +55,16 @@ class SceneProblem:
             row = r['entry']['authored']; target = row['target']; r['ids'] = np.searchsorted(self.times,r['times'])
             if target['space']=='object': r['object_pose'] = scene.object_poses(target['object'],r['times'])
 
-    def worlds(self, value):
-        return {n:self.edits.worlds(n,value,self.times) if n in self.edits.actors else w
+    def worlds(self, value, *, quantized=True):
+        return {n:self.edits.worlds(n,value,self.times,quantized=quantized) if n in self.edits.actors else w
             for n,w in self.source_world.items()}
+
+    @property
+    def protected_rows(self):
+        """All edit, displacement and source-rate rows preceding contacts."""
+        return sum(sum(len(e['ids']) for e in a['tracks'])
+            +len(self.uniform)*len(self.scene.actors[n]['rig'].joints)
+            +sum(c.size for c in self.caps[n].caps) for n,a in self.edits.actors.items())
 
     def skin_points(self, name, ids, worlds, times, reduction):
         actor = self.scene.actors[name]; skin = actor['skin']; w = worlds[name][times]
@@ -136,14 +143,18 @@ def optimize(problem,evaluate,iterations,trust):
         final_merit=list(merit(current)),difference_step_control_fraction=1e-5,conservative_dense_dependencies=True)
 
 
-def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_model='scalar',vector_difference_step=None,
+def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_model='scalar',vector_difference_step=None,storage_cells=None,
         geometry_policy=None):
     if type(iterations) is not int or not 1<=iterations<=16: raise ValueError('Choose 1-16 proposal iterations')
-    if proposal_model not in ('scalar','vector'):raise ValueError('Choose scalar or vector proposal model')
+    if proposal_model not in ('scalar','vector','storage-vector'):raise ValueError('Choose scalar, vector or storage-vector proposal model')
     if proposal_model=='scalar' and vector_difference_step is not None:raise ValueError('Vector difference step applies only to vector proposals')
-    if proposal_model=='vector':vector_difference_step = scalar(.001 if vector_difference_step is None else vector_difference_step,1e-6,.01,'vector difference step')
+    if proposal_model!='storage-vector' and storage_cells is not None:raise ValueError('Storage cells apply only to storage-vector proposals')
+    if proposal_model=='storage-vector':
+        storage_cells=64 if storage_cells is None else storage_cells
+        if type(storage_cells) is not int or not 1<=storage_cells<=512:raise ValueError('Choose 1-512 storage cells')
+    if proposal_model in ('vector','storage-vector'):vector_difference_step = scalar(.001 if vector_difference_step is None else vector_difference_step,1e-6,.01,'vector difference step')
     conic_identity = None
-    if proposal_model=='vector':
+    if proposal_model in ('vector','storage-vector'):
         from native_scene_conic import solver_identity
         conic_identity = solver_identity()
     trust = scalar(trust,.000001,.02,'normalized control trust')
@@ -179,6 +190,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             controls=edits.size,iterations=iterations,trust_control_fraction=trust,
             proposal_model=proposal_model,conic_solver=conic_identity,
             vector_difference_step=vector_difference_step,
+            storage_cells=storage_cells,
             geometry_policy_sha256=None if geometry_request is None else bindings[str(geometry_policy)],
             frame_contract_sha256=contract_sha256(),python=sys.version,numpy=np.__version__,scipy=scipy.__version__,
             quality_approved=False,scope='Proposal only; originals selected pending scene geometry and actual imported-skin checks.'))
@@ -200,9 +212,11 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                 record = dict(label=label,controls=value.tolist(),merit=list(merit(residual)),
                     files_sha256={p.relative_to(output).as_posix():sha256(p) for p in files.values()})
                 save(folder/'probe.json',record); probes.append(record); return residual
-            if proposal_model=='vector':
+            if proposal_model in ('vector','storage-vector'):
                 from native_scene_conic import optimize as optimize_vectors
-                value,optimization = optimize_vectors(problem,evaluate,iterations,trust,difference_step=vector_difference_step)
+                value,optimization = optimize_vectors(problem,evaluate,iterations,trust,difference_step=vector_difference_step,
+                    difference_source='continuous' if proposal_model=='storage-vector' else 'stored',
+                    storage_cells=storage_cells or 0,protect_source_rows=proposal_model=='storage-vector')
             else:value,optimization = optimize(problem,evaluate,iterations,trust)
             final_constraints = evaluate(value,'final'); proposal_spec = copy.deepcopy(spec); proposal = output/'proposal'; proposal.mkdir()
             for i,name in enumerate(spec['actors']):
@@ -244,6 +258,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                 source_rate_tolerance=1e-5,source_rate_bins=4,source_rate_caps_sha256=sha256(output/'source-rate-caps.npz'),
                 proposal_model=proposal_model,conic_solver=conic_identity,
                 vector_difference_step=vector_difference_step,
+                storage_cells=storage_cells,
                 original_selected=True,selected_files={n:p.relative_to(output).as_posix() for n,p in originals.items()},
                 proposal_files={n:str(Path(a['glb']).relative_to(output)) for n,a in proposal_spec['actors'].items()},
                 contacts_result_sha256=sha256(output/'contact-audit/result.json'),
@@ -261,8 +276,9 @@ if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('contacts',type=Path); p.add_argument('permissions',type=Path); p.add_argument('output',type=Path)
     p.add_argument('--iterations',type=int,default=4); p.add_argument('--trust',type=float,default=.02)
-    p.add_argument('--proposal-model',choices=['scalar','vector'],default='scalar')
+    p.add_argument('--proposal-model',choices=['scalar','vector','storage-vector'],default='scalar')
     p.add_argument('--vector-difference-step',type=float)
+    p.add_argument('--storage-cells',type=int,help='Finite translation cell probes per iteration, storage-vector only')
     p.add_argument('--geometry-policy',type=Path,help='Source-bound sampled scene policy; originals remain selected')
     a=p.parse_args(); run(a.contacts,a.permissions,a.output,iterations=a.iterations,trust=a.trust,
-        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,geometry_policy=a.geometry_policy)
+        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,geometry_policy=a.geometry_policy)
