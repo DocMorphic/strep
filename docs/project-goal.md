@@ -1779,3 +1779,52 @@ No human approval, training admission, real model update or release completion
 occurs. All 14 capabilities remain unapproved and the formal 72x5 population
 is untouched. The single full-project goal remains active; routine validated
 source/documentation changes continue to be committed and pushed publicly.
+
+
+## 2026-10-03 — Matched planting-rate diagnosis
+
+Previous goal turn verified the public repository and a still-live hosted job;
+9030eb6 now passes all four hosted jobs. The full goal remains active.
+
+Added an isolated diagnostic CLI with four frozen rate modes. Search can omit
+named original rate families, but independent raw/shadow original audits,
+source caps/bins/tolerance, geometry/contact/edit constraints and selections
+remain unchanged. Each output candidate is the exact supplied base, even for
+a passing diagnostic. Probes retain original and diagnostic deficits plus
+all-joint failure counts and worst locations/caps/units. Method/input changes
+terminate without publishing a result. No production planting path changes.
+
+Matched female run/roll/stand case reuses its completed original control only
+after exact archived method/input, serialized merit and full audit verification.
+Three new eight-iteration/.001-rad searches share the prior raw seed and
+4.99mm/s search target. Native public contacts pass only when translation rates
+are omitted; original rate counts there are 56/39/0/11. All-rate omission has
+only an 8.407206e-6 normalized diagnostic deficit but still fails subnanometre
+anchor overshoots and original 56/37/8/24 rate rows. Angular-only omission
+remains farther from planting. Support/edit bounds and clearance pass all.
+
+Actual headless Godot imports add 1836 observations/six scene imports with
+65 bones and three surfaces; 612 reused control observations are separate.
+All combined imported contact checks fail. Worst frame speeds are 5.250642,
+12.792564 and 5.163385mm/s for the three ablations vs the unchanged public
+5mm/s bound. Every variant retains the exact selected input. The largest
+acceleration excess stays at the right toe leaf at the 6.6s stance exit;
+all-rate removal raises it to 15.472710m/s² vs source-bin cap1.593403m/s².
+Neither tiny contact deficits nor a feasible linear LP certify a usable clip.
+
+71 focused model-free tests pass (17 new diagnosis and 54 adjacent planting/
+headroom checks), covering real decodes, original gates, finite differences,
+row masks, failed/passing retention and mutation rejection. Only the new
+diagnosis test enters the broad CI selection. Immutable local study and
+verification receipts bind outputs and methods; public commits exclude
+character/model/generated payloads and credentials. No GPU appearance,
+actual target-rig SOMA NPZ, continuous collision, force/balance, human realism,
+reviewed training data or model-quality improvement is claimed.
+
+Next solver work: smooth correction entry/exit and test proposal constraints
+on the fixed game-frame clocks, keeping original acceptance. The ablations
+do not establish infeasibility or justify a looser rate contract. Broader
+scene/partner/body supports, actions/style/rig transfer, licensed reviewed
+corrections and measured training, human cleanup and full release evidence
+remain required. All 14 capabilities remain unapproved, formal72x5 untouched
+and the single full-project goal remains active.

@@ -158,4 +158,6 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 
 [Contact validation across actions and rigs](docs/native-contact-rig-breadth-v1.md) now audits frozen populations without changing selections. An 18-case, six-action, three-character study completes 11,610 imported observations; every requested planted-contact comparison still fails. Static normalized vertex colors now survive the planted-motion preservation check with their stored values and encoding intact.
 
+[Matched planting-rate diagnosis](docs/native-plant-rate-diagnosis-v1.md) separates contact search from the original motion-rate guard. Removing translation-rate constraints improves native contact in one run/roll/stand case, but original rate and imported contact checks still fail. The diagnostic keeps selections and public limits unchanged and localizes the largest acceleration excess at the stance exit.
+
 [Reviewed native corpus training](docs/kimodo-corpus-trainer-v1.md) now connects verified targets to sequential frozen-base adapter updates, isolated development validation and bound resume. A tiny CPU fixture reproduces fresh-process continuation exactly; the real CLI rejects the unreviewed packet, and no real motion training or quality improvement is claimed.

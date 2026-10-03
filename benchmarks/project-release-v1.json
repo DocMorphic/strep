@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-03T00:02:32.088000+00:00",
-  "last_progress": "Added frozen imported-contact population audit: six actions x three assets, 11610 observations, all requested planting comparisons still fail. Fixed normalized integer color preservation; a matched eight-iteration Quaternius roll proposal completes but fails contact/rate/engine gates and retains exact input (612 further observations). 1826 model-free tests/16 JS suites/215 CPU native checks pass. No new accepted clip, human/training/release approval; all 14 capabilities unapproved, formal 72x5 untouched, full goal active."
+  "last_progress_at": "2026-10-03T00:32:24.656229+00:00",
+  "last_progress": "Matched rate ablations retain source/rig/contacts and original acceptance. Three searches add 1836 imported observations; translation-rate omission passes native public contact but fails original rates and imported speeds. All variants rejected; largest acceleration excess occurs at the authored stance exit. 17 diagnostic + 54 adjacent model-free tests pass. All 14 capabilities unapproved, formal 72x5 untouched; full goal active. Next smoother correction exits and fixed game-frame proposal constraints."
 }
