@@ -2941,3 +2941,48 @@ or animator acceptance is implied. All 14 capability evidence lists, formal
 held-out trials and frozen release gates remain unchanged. Next: validate the
 derived object track in actual engine asset storage/import, including native
 Float32 clock collisions, before integrating it into reviewed Studio workflows.
+
+
+## 2026-10-03 — Float32 object assets and actual native engine resources
+
+Previous d0c9e47 hosted CI completes successfully in all four Windows/Linux
+jobs. The full-project goal remains active. Native object export now writes
+all declared primitive meshes and complete Float32 rigid TRS tracks from a
+source-bound native scene. Every source-to-stored time index and collision
+group is recorded; the unique Float32 clock resamples source interpolation,
+with endpoint clamping explicit. Original contact/native audit clocks and
+caps are preserved. Sharp quantization failures are visible, not selected.
+Actor snapshots remain byte-identical; all inputs and methods stay bound.
+
+The retained corrected sphere's 1266 keys become 1182 stored keys through
+84 collision groups, with maximum rounding 0.222524 microseconds. All 1266
+original audit times remain. Reopened GLB pose/contact checks pass. Actual
+headless Godot 4.7.2 default 30 Hz import fails: sphere position error reaches
+0.043089 mm, basis component error 2.46e-4 and right held speed 10.194265 mm/s.
+A native Animation resource built from the actual reopened GLB, saved/reloaded
+with every native key count/time checked, passes the original 5 mm/5 mm/s
+contacts and independent 1e-6 metre/basis pose limits. Its right held speed is
+3.076894 mm/s and sphere pose error 0.0000595 mm. Manual authoring interpolation
+on imported mesh nodes is not real-time AnimationPlayer/event/physics proof.
+Actor contact points still use native CPU skin; imported actor/full-scene
+geometry must be validated separately against the saved engine object poses.
+
+Two raw runs preserve the failed default import and passing native alternative;
+the second adds strict pre/post implementation bindings without altering asset
+bytes. Independent replay reproduces the GLB byte-for-byte, all collision maps,
+all asset and raw-engine contact arrays and both decisions. A first verifier
+stopped on original-path versus snapshot-path metadata; its failed directory
+remains retained. Corrected replay binds each scene's own input paths rather
+than suppressing the distinction. No raw study output is overwritten.
+
+Seventeen focused cases exercise storage collisions, original frame clocks,
+three primitive shapes, repeated identical exports, unchanged actors, static
+tracks, malformed files, sharp-motion failures and pre-launch method drift.
+All 533 related model-free checks pass. Methods, CLI, CI and concise evidence
+are published; local models, actors, resources and study arrays stay ignored.
+No inference, checkpoint update, training admission, GPU rendering, physical
+attachment, continuous checks, animator/developer approval or release approval.
+The earlier authoring geometry pass is not transferred implicitly. All 14
+capability evidence lists, formal held-out trials and frozen gates are unchanged.
+Next: combine native engine object-resource poses with complete imported actor
+skin and full declared-scene geometry, then expose reviewed authoring controls.
