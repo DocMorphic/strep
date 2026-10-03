@@ -19,7 +19,8 @@ from threadpoolctl import threadpool_limits
 from strep import ROOT, read, save, sha256, now
 
 METHODS = sorted(set(CONTACT_METHODS) | {'native_scene_edit.py','native_scene_fit.py',
-    'native_scene_norms.py','native_scene_conic.py',
+    'native_scene_norms.py','native_scene_conic.py','native_scene_geometry.py',
+    'triangle_primitive_depth.py','triangle_crossing.py','convex_partner_surface.py',
     'timed_rotation_edit.py','sampled_motion_caps.py','native_support_feasibility.py','action_worker_lock.py',
     'native_foot_plant.py','native_leg_floor.py','native_support_spec.py','native_contact_diagnostics.py',
     'native_leg_smoothing.py','elbow_swivel.py','two_bone_waypoint.py','contact_rate_path.py',
@@ -135,7 +136,8 @@ def optimize(problem,evaluate,iterations,trust):
         final_merit=list(merit(current)),difference_step_control_fraction=1e-5,conservative_dense_dependencies=True)
 
 
-def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_model='scalar',vector_difference_step=None):
+def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_model='scalar',vector_difference_step=None,
+        geometry_policy=None):
     if type(iterations) is not int or not 1<=iterations<=16: raise ValueError('Choose 1-16 proposal iterations')
     if proposal_model not in ('scalar','vector'):raise ValueError('Choose scalar or vector proposal model')
     if proposal_model=='scalar' and vector_difference_step is not None:raise ValueError('Vector difference step applies only to vector proposals')
@@ -150,12 +152,20 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
     bindings = {str(p):sha256(p) for p in (contacts_path,permissions_path)}
     spec = read(contacts_path); scene = SceneContacts(spec,contacts_path.parent)
     edits = SceneEdits(read(permissions_path),scene,sha256(contacts_path)); bindings.update(scene.inputs)
+    geometry_request = None
+    if geometry_policy is not None:
+        from native_scene_geometry import policy_for
+        geometry_policy = Path(geometry_policy).resolve(); bindings[str(geometry_policy)] = sha256(geometry_policy)
+        geometry_request = read(geometry_policy); policy_for(geometry_request,scene,bindings[str(contacts_path)])
     methods = {n:sha256(ROOT/'scripts'/n) for n in METHODS}
     with worker_lock(),threadpool_limits(limits=1):
         output.mkdir(parents=True); archive = output/'implementation'; archive.mkdir()
         for n in methods: shutil.copyfile(ROOT/'scripts'/n,archive/n)
         shutil.copyfile(contacts_path,output/'contacts.json'); shutil.copyfile(permissions_path,output/'permissions.json')
         snapshots = {output/'contacts.json':bindings[str(contacts_path)],output/'permissions.json':bindings[str(permissions_path)]}
+        if geometry_request is not None:
+            shutil.copyfile(geometry_policy,output/'geometry-policy.json')
+            snapshots[output/'geometry-policy.json'] = bindings[str(geometry_policy)]
         if any(sha256(p)!=h for p,h in snapshots.items()): raise ValueError('Authored request snapshot differs')
         originals = {}
         for i,(name,a) in enumerate(spec['actors'].items()):
@@ -169,6 +179,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             controls=edits.size,iterations=iterations,trust_control_fraction=trust,
             proposal_model=proposal_model,conic_solver=conic_identity,
             vector_difference_step=vector_difference_step,
+            geometry_policy_sha256=None if geometry_request is None else bindings[str(geometry_policy)],
             frame_contract_sha256=contract_sha256(),python=sys.version,numpy=np.__version__,scipy=scipy.__version__,
             quality_approved=False,scope='Proposal only; originals selected pending scene geometry and actual imported-skin checks.'))
         save(output/'pipeline.json',dict(status='processing')); probes = []
@@ -202,6 +213,24 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             from native_scene_contacts import run as contact_audit
             report = contact_audit(proposal/'contacts.json',output/'contact-audit')
             audits = {n:edits.audit(n,Path(proposal_spec['actors'][n]['glb']),scene.actors[n]['animation_index']) for n in edits.actors}
+            geometry_report = None
+            if geometry_request is not None:
+                from native_scene_geometry import evaluate as geometry_audit
+                geometry_folder = output/'geometry-audit'; geometry_folder.mkdir()
+                derived = copy.deepcopy(geometry_request)
+                derived['contacts_sha256'] = sha256(proposal/'contacts.json')
+                save(geometry_folder/'policy.json',derived)
+                policy_digest = sha256(geometry_folder/'policy.json')
+                decoded_scene = SceneContacts(proposal_spec,proposal)
+                geometry_report,geometry_arrays = geometry_audit(decoded_scene,derived,derived['contacts_sha256'])
+                decoded_scene.check_inputs()
+                if sha256(geometry_folder/'policy.json') != policy_digest: raise ValueError('Derived geometry policy changed')
+                if sha256(proposal/'contacts.json') != derived['contacts_sha256']: raise ValueError('Proposal scene changed during geometry audit')
+                np.savez_compressed(geometry_folder/'observations.npz',**geometry_arrays)
+                geometry_report.update(authored_policy_sha256=bindings[str(geometry_policy)],
+                    derived_policy_sha256=policy_digest,contacts_sha256=derived['contacts_sha256'],
+                    observations_sha256=sha256(geometry_folder/'observations.npz'),implementation_sha256=methods)
+                save(geometry_folder/'result.json',geometry_report)
             for p,h in bindings.items():
                 if sha256(p)!=h: raise ValueError('Native scene fitting input changed')
             for n,h in methods.items():
@@ -218,6 +247,8 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                 original_selected=True,selected_files={n:p.relative_to(output).as_posix() for n,p in originals.items()},
                 proposal_files={n:str(Path(a['glb']).relative_to(output)) for n,a in proposal_spec['actors'].items()},
                 contacts_result_sha256=sha256(output/'contact-audit/result.json'),
+                sampled_geometry_conditions_pass=None if geometry_report is None else geometry_report['sampled_conditions_pass'],
+                geometry_result_sha256=None if geometry_report is None else sha256(output/'geometry-audit/result.json'),
                 engine_playback_verified=False,collision_verified=False,actual_soma_npz_verified=False,
                 quality_approved=False,training_admitted=False,release_approved=False)
             save(output/'result.json',result); save(output/'pipeline.json',dict(status='complete',original_selected=True))
@@ -232,5 +263,6 @@ if __name__=='__main__':
     p.add_argument('--iterations',type=int,default=4); p.add_argument('--trust',type=float,default=.02)
     p.add_argument('--proposal-model',choices=['scalar','vector'],default='scalar')
     p.add_argument('--vector-difference-step',type=float)
+    p.add_argument('--geometry-policy',type=Path,help='Source-bound sampled scene policy; originals remain selected')
     a=p.parse_args(); run(a.contacts,a.permissions,a.output,iterations=a.iterations,trust=a.trust,
-        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step)
+        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,geometry_policy=a.geometry_policy)

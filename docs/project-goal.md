@@ -2178,3 +2178,52 @@ claimed. All fourteen release capability gates and the formal protocol remain
 unchanged. The full-project goal stays active. Next: native storage-aware
 proposal handling, complete scene geometry and actual imported-skin checking,
 while retaining broad action, style, editing, transition and transfer requirements.
+
+
+## Whole-surface native scene diagnostics — 2026-10-03
+
+The preceding 41dff3d commit passes all four hosted CI jobs in run 37099966188.
+This continuation adds source-bound CPU audits of every supplied actor triangle
+against analytic boxes, spheres and cylinders, every partner pair and explicit
+world planes. Triangle-interior depth and object-center containment remain
+separate; original topology is preserved. Missing/near/degenerate geometry and
+uncertain partner surface outcomes cannot silently pass. Authored clocks either
+remain explicit or expand to all native/object keys, contact boundaries and the
+twelve existing whole-clip frame populations. No inferred floor is introduced.
+
+Optional fitting integration binds the original geometry policy and a derived
+copy bound to the actual final exported scene; only that binding changes.
+Geometry/native results remain separate and originals remain selected. The
+numerical SceneProblem and scalar optimizer ASTs match the previous commit.
+Depth brackets are floating-point diagnostics, not exact-arithmetic or rigorous
+outward-rounded proofs. No continuous collision, actor self-collision,
+object/object, engine-imported skin or quality approval is claimed.
+
+Same-input sphere source/proposal trials pass geometry at five declared times;
+their earlier contact/rate failures remain unresolved. High-five source/proposal
+trials have no pair crossings or vertex penetration at three declared times, but
+both fail an explicitly declared diagnostic Y=0 plane: A depth 7.071–8.938 mm,
+B 11.477–12.130 mm against 5 mm. This plane is a test hypothesis, not calibrated
+floor geometry. The correction does not improve these outcomes. All 36,108
+triangles per supplied actor are included; no new inference was performed.
+
+Independent replay checks all sixteen saved observations, skin reconstruction,
+raw face bytes, 722,160 sphere-face closest-point depths, plane extrema, partner
+triangle-box separation and AABB-filtered vertex signed distances. Skin results
+agree within 8.89e-16 metres. The first verifier wrongly assumed whole partner
+AABBs must be disjoint; that failed assumption remains saved. A fresh verifier
+checks every triangle box and containment instead, and all 102 study files
+rehash. Evidence: reports/native-scene-geometry-development-v1/verification-v2.
+All 230 focused regression checks pass: 220 model-free and 10 point-geometry
+checks in the existing inference environment. Fixtures expose interior hits
+missed by vertices, enclosed objects, nested partners, ambiguous/missing
+geometry, original multi-primitive topology, moving objects, actor placement,
+complete declared clocks, input mutation and fitting integration. Methodology:
+docs/native-scene-geometry-v1.md; validation:
+reports/native-scene-geometry-validation-v1/checks.json.
+
+All fourteen release capability gates and formal held-out trials remain
+unchanged. No training data is admitted and no model is updated. The full goal
+stays active. Next: native storage-aware corrections, complete scene/continuous
+and actual imported-skin checking, then broader action/style/editing/transition
+and rig-transfer validation with developer and animator review.
