@@ -2893,3 +2893,51 @@ CI and methodology document the change. No model inference, new native keys,
 engine playback, human-quality approval, data admission or checkpoint update.
 All 14 release capability evidence lists and formal held-out trials stay
 unchanged; developer review remains required. The project-wide goal is active.
+
+
+## 2026-10-03 — Explicit bounded object-track hold correction
+
+Previous native-contact guard batch 68b31ea hosted CI completes successfully
+in all four Windows/Linux jobs. The single full-project goal remains active.
+An exact full-clock diagnosis separates native-key error chords from actual
+skin-interpolation curvature in the retained sphere hold: 0.11317 mm curvature
+accounts for almost all of the worst 10.19763 mm/s held speed. Free two-grip
+object feasibility predicts a bounded alternative; this is a diagnosis rather
+than an implicit object edit or proof of grasp quality.
+
+A new source-bound experimental CLI explicitly permits two-grip rigid object
+trajectory edits while preserving all actor GLB bytes and original scene
+contacts, other objects, placements and geometry. Both hold intervals must
+match completely. All actor/object native keys and all twelve absolute frame
+populations stay included, with ingress/egress and original key preservation.
+Oversized full clocks reject rather than truncate. Saved rigid interpolation,
+original-relative pose bounds, all contacts and complete sampled scene geometry
+remain authoritative. Two-point twist follows the reference; no forces,
+physical attachment, inferred anatomy or continuous certification is claimed.
+
+The controlled humanoid follow-up permits 2 mm object translation, two degrees
+rotation, a 1.5–4.5 second edit window and at most 3601 keys. It produces 1266
+object keys with at most 0.994770 mm translation and 0.014456 degrees rotation.
+Both grip errors are at most 2.001215 mm and both worst held speeds are
+3.076664 mm/s, passing the original 5 mm/5 mm/s contact caps. Complete geometry
+at 1266 clocks includes all 36108 actor triangles against two objects: all
+2532 actor/object observations pass. No partner or world plane is declared;
+floor, partner, self/object-object/continuous collision, normals, engine
+playback and human quality remain unverified. The prior fixed-object actor-only
+failure remains unchanged. Only the explicitly permitted derived object track
+passes these finite sampled conditions; originals remain selected.
+
+Independent saved replay regenerates every object key exactly, checks unchanged
+actors/other scene content, exact proposal/contact arrays, all frame-population
+speed formulas, sampled pose bounds and complete saved per-triangle geometry
+reductions. Original geometry queries are not needlessly rerun; their raw
+containment/depth observations remain retained with receipt hashes. All 512
+related model-free regression checks pass, including 18 new object-fit cases
+and two existing rigid-fit tests. Code, tests, CI and methodology are published;
+credentials, models, characters and bulky local results remain excluded.
+
+No new inference, checkpoint, data admission, engine approval, developer review
+or animator acceptance is implied. All 14 capability evidence lists, formal
+held-out trials and frozen release gates remain unchanged. Next: validate the
+derived object track in actual engine asset storage/import, including native
+Float32 clock collisions, before integrating it into reviewed Studio workflows.

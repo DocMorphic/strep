@@ -3,8 +3,6 @@ import argparse
 import numpy as np
 from scipy.spatial.transform import Rotation
 from strep import ROOT,read,save,sha256,now
-from build_soma_preview import ASSET
-from scene_constraints import transform_motion,effector_track,sample_object
 
 
 def shortest_rotation(source,target):
@@ -38,6 +36,7 @@ def fit_two_grips(local_grips,world_palms,reference_rotation):
 
 
 def audit(scene,skin):
+    from scene_constraints import transform_motion,effector_track,sample_object
     sources={};actors={};records=[]
     for actor,entry in scene['actors'].items():
         path=(ROOT/entry['motion']).resolve()
@@ -71,6 +70,7 @@ def audit(scene,skin):
 
 
 if __name__=='__main__':
+    from build_soma_preview import ASSET
     p=argparse.ArgumentParser();p.add_argument('scene');p.add_argument('--output',required=True);args=p.parse_args()
     d=read(args.scene);result=audit(d.get('scene',d),dict(np.load(ASSET)))
     save(args.output,dict(**result,created_at=now(),scene_sha256=sha256(args.scene),auditor_sha256=sha256(__file__)))

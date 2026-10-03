@@ -156,6 +156,8 @@ jobs:
           tests/test_native_skin_export.py
           tests/test_native_partner_surface_rows.py
           tests/test_native_object_surface_rows.py
+          tests/test_native_object_hold_fit.py
+          tests/test_two_hand_rigidity.py
           tests/test_native_surface_model.py
           tests/test_native_surface_contact.py
           tests/test_native_contact_norms.py

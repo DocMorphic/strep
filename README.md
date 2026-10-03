@@ -37,6 +37,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Individual held-contact repair bounds](docs/native-contact-repair-v1.md) prevent aggregate improvements from hiding worse point or speed conditions. The paired sphere trial exposes 27 hidden contact regressions in the earlier path; the guarded path retains no step and preserves the original 53 failures. Decoded anchoring and restoration keep saved GLBs authoritative, with no motion-quality approval.
 
+[Bounded two-grip object fitting](docs/native-object-hold-fit-v1.md) adds an explicit object-trajectory proposal while preserving every actor GLB byte. Saved interpolation, unchanged contact limits, object-edit budgets and complete sampled scene geometry decide its numerical result. Physical attachment, engine playback and animation-quality approval remain separate requirements.
+
 [Stored-key scene proposals](docs/native-scene-storage-proposals-v1.md) add hard source-motion constraints, continuous proposal derivatives and finite Float32 translation-cell probes. A synthetic body-contact correction passes native checks after five iterations; the matched four-iteration result still fails. This does not establish realistic motion or release readiness.
 
 [Native scene engine diagnostics](docs/native-scene-engine-v1.md) now verify complete imported skin functions and triangles, explicit animation selection, actor/partner contacts and engine object poses. Eight matched humanoid imports complete but retain contact, floor or skin-position failures; 299 focused tests pass. Headless CPU reconstruction and manual authoring seeks do not establish GPU, physics or real-time playback quality.
