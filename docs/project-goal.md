@@ -3076,3 +3076,47 @@ capability release evidence lists, frozen gates and formal held-out trials stay
 unchanged. Next: finish the expanded source-bound actual scene study and replay
 its terminal outputs; then connect those complete artifacts to authoring and
 broader interactions. The full-project goal remains active.
+
+
+## 2026-10-03 — One source-bound object/character authoring job
+
+9523551 hosted CI passes all four Windows/Linux jobs. The live expanded
+2201-time humanoid study remains on confirmed exec handle 91372; complete
+imported actor geometry is still computing. No producer or expanded combined
+result is promoted before it becomes terminal. Running source methods remain
+unchanged and no completed expensive study is rerun for publication.
+
+The new native-scene-authoring command plans an exact-hash recipe and executes
+source contacts, optional explicit bounded two-grip object editing, Float32
+export, original-preserving common clocks, actual object/actor engine producers,
+complete combined geometry and separate replay in order. It accepts supplied
+action clips by rig/contact schema, with no action-name whitelist. This object
+pipeline requires a declared primitive; actor-only and generation/rig-transfer
+paths remain separate. Invalid edits are rejected rather than dropped.
+
+Inputs, actor snapshots, current/archived methods, derived contacts/policies and
+every completed stage receipt are bound and revalidated. Nonterminal stages,
+execution errors and changed evidence retain failed pipelines and partial
+files. Numeric failures continue through diagnostics and remain in the final
+result; job execution completion does not imply numerical or quality success.
+Source/Studio selection is unchanged. The executable is referenced/hashed, not
+bundled, and each component keeps its original production worker lock.
+
+All 41 job cases pass. Synthetic stage mocks test complete failure retention,
+recipe/source/method/snapshot drift, worker contention, saved-result identity
+and matching replay. A component case runs actual Python contact, saved GLB,
+common-clock, imported skin, complete geometry and replay code on small closed
+meshes with engine execution explicitly mocked. Its first run retained a
+37-pass/one-failure API mismatch: synchronous source contact audit has no status
+field. That actual schema is now handled explicitly; subsequent producer status
+requirements remain strict. Original failed pipeline/implementation are archived.
+The component rerun and current whole suite pass. No real engine/model/human
+evidence follows from these unit tests.
+
+An actual retained humanoid recipe validates original assets, full geometry
+policy and installed engine hashes. Actual dispatch refuses the live worker,
+creates no job output and starts no second study. This is preflight/lock evidence
+only. Full engine completion, user-facing scene authoring, broader interaction
+trials, model improvement and human cleanup/review remain required. All 14
+release evidence lists, frozen gates and formal held-out trials are unchanged;
+the full-project goal remains active.

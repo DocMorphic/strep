@@ -45,6 +45,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Combined evidence replay](docs/native-object-scene-replay-v1.md) rederives all imported skin/contact/object observations and checks complete saved geometry reductions. It preserves numerical failures and rejects inconsistent results, including changed observations with updated receipts. Geometry queries and human-quality approval remain separate.
 
+[A single native scene job](docs/native-scene-authoring-job-v1.md) connects supplied-rig contact measurements, optional explicit bounded object edits, exports, common clocks, engine observations and replay. It retains numerical failures and preserves source selection. Prompt generation, rig transfer, physical interaction and human approval remain separate requirements.
+
 [Stored-key scene proposals](docs/native-scene-storage-proposals-v1.md) add hard source-motion constraints, continuous proposal derivatives and finite Float32 translation-cell probes. A synthetic body-contact correction passes native checks after five iterations; the matched four-iteration result still fails. This does not establish realistic motion or release readiness.
 
 [Native scene engine diagnostics](docs/native-scene-engine-v1.md) now verify complete imported skin functions and triangles, explicit animation selection, actor/partner contacts and engine object poses. Eight matched humanoid imports complete but retain contact, floor or skin-position failures; 299 focused tests pass. Headless CPU reconstruction and manual authoring seeks do not establish GPU, physics or real-time playback quality.
