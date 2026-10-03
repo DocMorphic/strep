@@ -164,4 +164,6 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 
 [Support articulation and convergence diagnosis](docs/native-support-articulation-v1.md) reports protected animated toe influences across 18 existing clips. Doubling one matched search to sixteen iterations improves contact errors but still fails the original native and imported checks; the input and all release gates remain unchanged.
 
+[Explicit additional foot rotations](docs/native-toe-plant-v1.md) now have a separate source-bound permission contract, cumulative angle limits, raw/shadow audits and actual imported-contact checks before selection. A matched real-rig trial still fails and retains its input; synthetic fixtures verify both input retention and changed-clip selection without implying human-motion quality.
+
 [Reviewed native corpus training](docs/kimodo-corpus-trainer-v1.md) now connects verified targets to sequential frozen-base adapter updates, isolated development validation and bound resume. A tiny CPU fixture reproduces fresh-process continuation exactly; the real CLI rejects the unreviewed packet, and no real motion training or quality improvement is claimed.

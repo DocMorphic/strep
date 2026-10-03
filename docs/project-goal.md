@@ -1940,3 +1940,59 @@ remain required. Live HTTP/browser, fresh GPU appearance, target-rig SOMA NPZ,
 continuous collision/force/balance, human realism, training admission and
 model-quality improvement remain unclaimed. All 14 release capabilities and
 formal 72x5 requirements are unchanged; the full project goal stays active.
+
+
+## 2026-10-03 — Explicit bounded foot-descendant corrections
+
+Added a separate source/draft-bound extra-foot-rotation permission contract,
+fixed-frame proposal model and CLI job. Authors name animated skin descendants
+below each support foot and cumulative source-relative angle bounds. Invalid
+nodes/clocks/bindings/bounds/duplicates reject. Existing leg-only and Studio
+sources stay unchanged. Root/all translations, unrelated rotations, native
+clocks/frozen keys, static geometry and original all-joint source caps/bins/
+tolerance remain protected. Additional-angle rows and derivative dependencies
+are explicit; new-contract passes never masquerade as old leg-only preservation.
+
+Every search probe is independently decoded raw/shadow. Normal selection also
+requires actual Godot legacy/all-twelve-frame contacts. Looser proposal limits
+reject. Diagnostic-only mode never selects corrections; import/input/method
+failures retain the original input snapshot. Existing completed Studio jobs
+remain serveable from their archives; no live HTTP/browser or fresh GPU claim.
+
+The matched female run/roll/stand trial uses the same original warm seed,
+sixteen iterations, .001 radian trust and original public/search contact limits,
+adding only explicit two-degree Toe54/59 permissions. Both native anchors and
+left speed improve, while right speed and several motion-rate failures worsen.
+Native anchors 1.067320/1.093633 mm and speeds 5.766828/9.238813 mm/s still fail.
+Original rate failures 24/27/4/26 remain. Extra angles .024810/.194924 degrees,
+support/edit bounds and clearance pass. Actual Godot adds 612 source/proposal
+observations across two 65-bone/three-surface scenes; every imported speed clock
+fails for both feet, worst 5.864405/9.290800 mm/s. Input remains selected.
+The .8818832723 maximum normalized deficit is worse than the historical
+leg-only sixteen-iteration .8073194880. More variables are not automatic
+quality improvement, causality, feasibility or a reason to relax original gates.
+
+Two analytical six-bone engine fixtures add 776 separately counted observations:
+one retains an already passing input, another selects a changed constant-stance
+toe-yaw seed after original raw/shadow/rate/contact and imported checks. Both
+need zero optimization iterations. This verifies default-path changed-asset
+selection, not learned fitting or human-motion realism. All three final raw
+GLBs replay byte-for-byte from controls, scores re-decode exactly under the
+recorded one-thread runtime, and original caps match the inherited frame model.
+
+All 166 focused model-free checks pass, including 34 new fixtures. An overly
+strict exact proxy-matrix expectation differed by 3.33e-16, and a purported
+passing fixture had its authored plane above its foot. Corrected fixtures use
+existing scalar/proxy tolerances and an explicit compatible plane; original
+caps and final independent gates are not relaxed. Both CI platforms include
+the new suite; prior e4063f6 hosted jobs passed. Receipt:
+reports/native-toe-validation-v1/verification.json.
+
+Next work must use the best preserved source-bound proposals rather than assume
+extra freedom improves a finite search, and broaden phase/body, scene/partner
+contacts and whole-system action/style/rig validation. Root/body editing needs
+its own explicit contract; object and partner motion, human cleanup, admitted
+training data and measured learning remain open. No actual target-rig SOMA NPZ,
+continuous collision/force/balance, human realism, training admission or model
+quality improvement is claimed. All 14 release capabilities and formal 72x5
+requirements stay unchanged; the single full-project goal remains active.
