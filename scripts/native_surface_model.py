@@ -40,12 +40,29 @@ def surface_points(problem, worlds):
 
 
 def geometry_score(report):
-    """Full audit depth first, then unresolved surface/containment populations."""
+    """Full audit severity first, then unresolved surface/containment populations.
+
+    Enclosed primitives use bounding radius plus center depth as an escape
+    severity proxy, not measured triangle penetration or a changed pass limit.
+    """
     limit = max(report['limits']['penetration_m'], 1e-12)
     depth, records, inside, failed = 0., 0, 0, 0
     for sample in report['samples']:
-        if sample['actor_objects']: raise ValueError('Object surface correction is not implemented')
         if any(sample['degenerate_faces'].values()): raise ValueError('Degenerate decoded actor surface')
+        for row in sample['actor_objects']:
+            containment = row['containment']; status = containment['status']
+            if status not in ('inside', 'outside', 'near-surface'):
+                raise ValueError('Complete primitive center containment unavailable')
+            severity = row['maximum_depth_upper_m']
+            if status != 'outside':
+                radius = row['primitive_bounding_radius_m']; center = containment['signed_center_distance_m']
+                if not np.isfinite([radius, center]).all() or radius <= 0:
+                    raise ValueError('Finite primitive enclosure severity required')
+                severity = max(severity, radius + max(0., center))
+                inside += 1
+            if not np.isfinite(severity) or severity < 0: raise ValueError('Finite primitive depth required')
+            depth = max(depth, severity / limit)
+            failed += int(not row['passed'])
         for row in sample['world_planes']:
             depth = max(depth, row['maximum_depth_m'] / limit)
             failed += int(not row['passed'])
@@ -64,7 +81,7 @@ def improved(before, after):
     before, after = np.asarray(before, float), np.asarray(after, float)
     if before.shape != (4,) or after.shape != (4,) or not np.isfinite(np.r_[before,after]).all():
         raise ValueError('Complete finite geometry scores required')
-    # A depth regression is never exchanged for fewer crossing records.
+    # A severity regression is never exchanged for fewer crossing records.
     for i, tolerance in enumerate((1e-9, 0., 0., 0.)):
         if after[i] < before[i] - tolerance: return True
         if after[i] > before[i] + tolerance: return False

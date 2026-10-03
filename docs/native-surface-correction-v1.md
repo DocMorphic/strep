@@ -14,8 +14,9 @@ caps using an edited animation.
 The existing 1–16 iteration limit and maximum normalized trust of 0.02 apply.
 The optional restoration loop has at most four extra proposal solves. Explicit
 geometry clocks are inserted into pose sampling without changing the original
-uniform rate clock, bins, tolerance or cap arrays. Object primitives are
-explicitly rejected by this mode; object correction remains outstanding.
+uniform rate clock, bins, tolerance or cap arrays. Declared boxes, spheres and
+cylinders now have [whole-triangle and enclosure guides](native-object-guides-v1.md);
+successful object manipulation and geometry correction remain outstanding.
 
 [Separate geometry bounds](native-geometry-guards-v1.md) now prevent the proposal
 objective from trading a larger contact improvement for increased worst
@@ -31,13 +32,17 @@ acceptance. Each candidate, including rejected candidates, receives a complete
 sampled mesh audit.
 
 Actual acceptance requires every original decoded native condition to pass and
-the complete geometry score to improve. That score compares maximum penetration
+the complete geometry score to improve. For partner-only scenes it compares maximum penetration
 normalized by the unchanged policy limit first, then crossing-record count,
 vertices over the penetration tolerance and failed geometry-condition count.
 A depth regression cannot be exchanged for fewer crossings. A depth improvement
 can retain more crossing records, which must remain visible; the score is an
 optimization policy, not a realism or release criterion. Complete collision
 conditions must still pass before any collision-free claim.
+
+For object scenes, enclosed centers also contribute the explicitly documented
+bounding-radius/center-depth escape severity. This proposal ranking proxy is
+separate from measured triangle penetration and the unchanged geometry pass limit.
 
 An optional `--surface-contact-policy` additionally enables
 [contact-normal guidance](native-contact-guidance-v1.md). In that mode acceptance

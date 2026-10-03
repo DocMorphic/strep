@@ -129,6 +129,7 @@ def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, objec
                         signed_center_distance_m=value)
                 ok = bool(hi <= limit and not degenerate[name] and not len(depth['degenerate_faces']) and containment['status'] == 'outside')
                 objects.append(dict(actor=name, object=other, maximum_depth_lower_m=lo, maximum_depth_upper_m=hi,
+                    primitive_bounding_radius_m=obj['geometry'].bounding_radius(),
                     peak_lower_face=i, peak_lower_witness_world_m=depth['witnesses_world_m'][i].tolist(),
                     candidate_faces=int(depth['candidate_faces'].sum()), total_faces=len(faces[name]),
                     floating_reserve_m=depth['floating_reserve_m'], containment=containment, passed=ok))

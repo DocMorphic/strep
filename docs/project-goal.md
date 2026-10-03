@@ -2799,3 +2799,49 @@ compose placement/engine checks and reviewed contact semantics, then broaden
 object/partner, action, rig, style/editing, transition and full release evaluation.
 Public source publication remains user-authorized; bulky studies/assets/models
 and credentials stay ignored.
+
+
+## 2026-10-03T13:53:57.511261+00:00: Declared object primitives enter native surface proposals
+
+Previous turn made verified solver progress and published separate geometry
+bounds as d1d9fe4. Hosted run 37125868437 completes successfully. This turn
+broadens surface-vector from partner/plane-only rows to all declared boxes,
+spheres and cylinders. Complete actor triangles are queried against each object
+at every declared geometry clock. Active support-plane/barycentric witnesses,
+enclosed-center escape rows, recorded ambiguous axes and a shared nontruncating
+resource budget are added. Object trajectories remain authored and immutable;
+only permitted actor tracks can change. Missing volume containment and degenerate
+surfaces fail explicitly. Original point/motion/contact caps, per-contact guards,
+worst-geometry proposal bounds and full decoded acceptance remain unchanged.
+
+For enclosed objects, ranking adds primitive bounding radius plus positive
+center depth as an explicit escape severity proxy. This can reduce while actual
+triangle overlap appears near the boundary. It is not measured penetration, a
+changed geometry pass limit, collision proof or quality approval. Partner-only
+ranking is unchanged. Exact grip normals remain separate from escape axes.
+
+Exact saved humanoid sphere candidate/permission pairing: all 36108 triangles
+against two objects at 0, 3 and 5.9666666984558105 seconds. Sampled object geometry
+passes; zero active rows after complete queries. Original native population has
+281219 rows, 53 failed, max excess 1.0395263893. Correction is not attempted from
+that infeasible start; the held-contact failure remains visible. A separate
+read-only 10 mm sphere translation toward the nearest actor surface at 3 seconds
+produces 333 active guides independently replayed from full skin vertices.
+Worst triangle depth is bracketed at 7.9096991 mm and geometry fails. No claim
+that this modified scene improves the original action or solves lifting.
+
+Separate synthetic closed cube/sphere protocol executes one complete fitting
+iteration with explicitly declared prototype contact bounds and original motion
+caps. No step retained. Verification replays all 12 controls into byte-identical
+exports, exact original cap arrays, full decoded geometry and all 10 rejection
+decisions. Start and final GLBs match. Native constraints pass; geometry fails,
+originals selected. Development-v3 receipt rehashes 216 files. Initial request
+binding rejection, 8758 inactive broadphase rows and verifier relative/final-path
+errors are retained in earlier separate versions; none receives approval.
+
+All 482 related model-free regressions pass, including 14 new object-guide cases.
+Public source adds method binding and cross-platform CI coverage. Raw meshes,
+models, credentials and bulky study outputs remain ignored. All 14 release
+capability evidence lists and formal held-out trials remain unchanged; developer
+review is still required. This is a concrete implementation/measurement advance,
+not release completion. The single project-wide goal remains active.

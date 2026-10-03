@@ -54,7 +54,9 @@ motion; passing them is not a collision certificate. Actual acceptance still
 requires every original point/motion condition, each individual contact guard,
 aggregate contact checks and the complete decoded geometry score. Geometry
 counts can still trade against reduced maximum depth under that existing score.
-Full object correction remains unsupported by this mode.
+[Declared primitive guides](native-object-guides-v1.md) now extend this mode to
+boxes, spheres and cylinders. Successful full object correction remains open;
+center enclosure uses a separately documented escape-severity ranking proxy.
 
 ## Retained correction after the bound
 

@@ -20,7 +20,7 @@ from strep import ROOT, read, save, sha256, now
 
 METHODS = sorted(set(CONTACT_METHODS) | {'native_scene_edit.py','native_scene_fit.py',
     'native_scene_norms.py','native_scene_conic.py','native_scene_storage.py','native_scene_restore.py','native_scene_resume.py','native_scene_geometry.py',
-    'native_surface_model.py','native_partner_surface_rows.py','native_surface_lift.py',
+    'native_surface_model.py','native_partner_surface_rows.py','native_object_surface_rows.py','native_surface_lift.py',
     'native_surface_contact.py','native_contact_norms.py','native_geometry_norms.py',
     'triangle_primitive_depth.py','triangle_crossing.py','convex_partner_surface.py',
     'timed_rotation_edit.py','sampled_motion_caps.py','native_support_feasibility.py','action_worker_lock.py',
@@ -223,7 +223,6 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             problem = SceneProblem(scene,edits)
             if proposal_model=='surface-vector':
                 from native_surface_model import include_times
-                if scene.objects:raise ValueError('Surface proposals do not yet include object primitives')
                 include_times(problem,policy_for(geometry_request,scene,bindings[str(contacts_path)])[0])
             if resume is not None:resume.check_caps(problem,contract_sha256())
             caps = {}
