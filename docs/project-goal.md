@@ -2323,3 +2323,60 @@ All fourteen release gates and formal held-out trials stay unchanged. No model
 training or data admission occurs. The full goal remains active; next is robust
 correction for rotational and partner failures, explicit authoring permissions
 and broader scene/action/rig/playback validation with developer/animator review.
+
+
+## Decoded source-bound restoration — 2026-10-03
+
+Prior 7535c43 passes all four hosted CI jobs in run 37106395517. Two existing
+rejected high-five probes identify small source-rate overruns rather than an
+obvious large motion-bound conflict: the full first step fails one angular
+acceleration row by approximately 0.000048 rad/s²; smaller steps add different
+Float32 failures. Optional storage-vector restoration compares the actual reloaded
+GLB residual against the affine vector prediction and tightens proposal caps.
+Authored caps, tolerances, source clocks, mesh/binds and actual decoded acceptance
+stay unchanged. Every repaired candidate is independently exported and checked.
+Defaults remain zero restoration steps; Studio is not yet wired to this option.
+
+The first variant only tightened failed rows and stagnated. One failed row became
+three, then nine after corrections; that study stays saved. The revised heuristic
+includes all positive observed protected underpredictions, even still-passing
+rows. Up to three additional local solves increase compute, so equal primary
+iteration counts are not equal work. This is not a certified/global error bound.
+
+Same-input high-five accepts four source-safe sampled steps and decreases hand
+separation from 206.232573 to 177.976173 mm, still failing 30 mm. The same sphere
+trial remains approximately 2.219/2.244 mm against 2 mm and right hold speed
+10.192 mm/s against 5 mm/s. All original source-rate arrays match the earlier
+vector baseline exactly; final positional/angular rate failures are zero.
+No result proves the remaining contact requests impossible.
+
+Four actual headless Godot jobs import both exported proposals in ordinary and
+native-resource authoring modes. High-five hand separation is approximately
+177.930 mm; its diagnostic Y=0 plane and 0.1 mm skin-position fidelity limit still
+fail (raw skin differences 0.131–0.137 mm). Sphere sparse geometry/skin conditions
+pass but contacts still fail. All combined conditions fail and originals remain
+selected. Geometry policies change only their binding, with identical clocks,
+limits, planes and scene geometry. No new inference or formal held-out trial.
+
+Independent replay reproduces 38 control vectors, 54 byte-exact GLB exports,
+decoded merits, protected accepted rows and 18 reserve updates. Reserve arithmetic
+uses implementation Jacobians; it does not independently establish derivatives
+or solver correctness. Full-skin effectors agree within 4.45e-16 m; partner/object
+targets remain shared. All 229 fitting-study files rehash. Separate raw imported
+slots reproduce 4134 contact samples/all contact speeds and 397232 geometry-clock
+vertices, within 2.23e-16 m contact error and 225 engine-study files rehashed.
+Full between-geometry-time skin-error curves are not independently replayed.
+All 330 focused model-free tests pass. Methodology:
+docs/native-scene-decoded-restoration-v1.md. Local evidence:
+reports/native-scene-rotation-guard-diagnosis-v1,
+reports/native-scene-decoded-restore-development-v1/v2,
+reports/native-scene-decoded-restore-verification-v1,
+reports/native-scene-decoded-restore-engine-v1 and
+reports/native-scene-decoded-restore-validation-v1.
+
+All fourteen release gates and formal held-out trials remain unchanged. No
+training data is admitted or checkpoint changed. The full goal stays active.
+Next: pursue usable rotational/partner contacts beyond the finite primary budget,
+then broader scene/rig/action/transition validation and authoring integration with
+developer/animator review. GPU, physics, events, continuous collision and human
+quality remain unapproved.

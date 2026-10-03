@@ -19,7 +19,7 @@ from threadpoolctl import threadpool_limits
 from strep import ROOT, read, save, sha256, now
 
 METHODS = sorted(set(CONTACT_METHODS) | {'native_scene_edit.py','native_scene_fit.py',
-    'native_scene_norms.py','native_scene_conic.py','native_scene_storage.py','native_scene_geometry.py',
+    'native_scene_norms.py','native_scene_conic.py','native_scene_storage.py','native_scene_restore.py','native_scene_geometry.py',
     'triangle_primitive_depth.py','triangle_crossing.py','convex_partner_surface.py',
     'timed_rotation_edit.py','sampled_motion_caps.py','native_support_feasibility.py','action_worker_lock.py',
     'native_foot_plant.py','native_leg_floor.py','native_support_spec.py','native_contact_diagnostics.py',
@@ -143,12 +143,14 @@ def optimize(problem,evaluate,iterations,trust):
         final_merit=list(merit(current)),difference_step_control_fraction=1e-5,conservative_dense_dependencies=True)
 
 
-def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_model='scalar',vector_difference_step=None,storage_cells=None,
+def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_model='scalar',vector_difference_step=None,storage_cells=None,restoration_steps=0,
         geometry_policy=None):
     if type(iterations) is not int or not 1<=iterations<=16: raise ValueError('Choose 1-16 proposal iterations')
     if proposal_model not in ('scalar','vector','storage-vector'):raise ValueError('Choose scalar, vector or storage-vector proposal model')
     if proposal_model=='scalar' and vector_difference_step is not None:raise ValueError('Vector difference step applies only to vector proposals')
     if proposal_model!='storage-vector' and storage_cells is not None:raise ValueError('Storage cells apply only to storage-vector proposals')
+    if type(restoration_steps) is not int or not 0<=restoration_steps<=4:raise ValueError('Choose 0-4 decoded restoration steps')
+    if proposal_model!='storage-vector' and restoration_steps:raise ValueError('Decoded restoration applies only to storage-vector proposals')
     if proposal_model=='storage-vector':
         storage_cells=64 if storage_cells is None else storage_cells
         if type(storage_cells) is not int or not 1<=storage_cells<=512:raise ValueError('Choose 1-512 storage cells')
@@ -191,6 +193,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             proposal_model=proposal_model,conic_solver=conic_identity,
             vector_difference_step=vector_difference_step,
             storage_cells=storage_cells,
+            restoration_steps=restoration_steps,
             geometry_policy_sha256=None if geometry_request is None else bindings[str(geometry_policy)],
             frame_contract_sha256=contract_sha256(),python=sys.version,numpy=np.__version__,scipy=scipy.__version__,
             quality_approved=False,scope='Proposal only; originals selected pending scene geometry and actual imported-skin checks.'))
@@ -216,7 +219,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                 from native_scene_conic import optimize as optimize_vectors
                 value,optimization = optimize_vectors(problem,evaluate,iterations,trust,difference_step=vector_difference_step,
                     difference_source='continuous' if proposal_model=='storage-vector' else 'stored',
-                    storage_cells=storage_cells or 0,protect_source_rows=proposal_model=='storage-vector')
+                    storage_cells=storage_cells or 0,protect_source_rows=proposal_model=='storage-vector',restoration_steps=restoration_steps)
             else:value,optimization = optimize(problem,evaluate,iterations,trust)
             final_constraints = evaluate(value,'final'); proposal_spec = copy.deepcopy(spec); proposal = output/'proposal'; proposal.mkdir()
             for i,name in enumerate(spec['actors']):
@@ -259,6 +262,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                 proposal_model=proposal_model,conic_solver=conic_identity,
                 vector_difference_step=vector_difference_step,
                 storage_cells=storage_cells,
+                restoration_steps=restoration_steps,
                 original_selected=True,selected_files={n:p.relative_to(output).as_posix() for n,p in originals.items()},
                 proposal_files={n:str(Path(a['glb']).relative_to(output)) for n,a in proposal_spec['actors'].items()},
                 contacts_result_sha256=sha256(output/'contact-audit/result.json'),
@@ -279,6 +283,7 @@ if __name__=='__main__':
     p.add_argument('--proposal-model',choices=['scalar','vector','storage-vector'],default='scalar')
     p.add_argument('--vector-difference-step',type=float)
     p.add_argument('--storage-cells',type=int,help='Finite translation cell probes per iteration, storage-vector only')
+    p.add_argument('--restoration-steps',type=int,default=0,help='0-4 decoded source-bound restoration solves, storage-vector only')
     p.add_argument('--geometry-policy',type=Path,help='Source-bound sampled scene policy; originals remain selected')
     a=p.parse_args(); run(a.contacts,a.permissions,a.output,iterations=a.iterations,trust=a.trust,
-        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,geometry_policy=a.geometry_policy)
+        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,restoration_steps=a.restoration_steps,geometry_policy=a.geometry_policy)
