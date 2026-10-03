@@ -46,7 +46,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
       HF_HUB_OFFLINE: "1"
@@ -159,6 +159,7 @@ jobs:
           tests/test_native_object_hold_fit.py
           tests/test_native_object_asset.py
           tests/test_native_object_scene_engine.py
+          tests/test_verify_native_object_scene_engine.py
           tests/test_two_hand_rigidity.py
           tests/test_native_surface_model.py
           tests/test_native_surface_contact.py

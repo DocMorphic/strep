@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 import trimesh
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'scripts'))
+import action_worker_lock
 from test_native_scene_contacts import setup
 from native_scene_contacts import SceneContacts
 import native_scene_geometry as geometry
@@ -146,6 +147,7 @@ def test_original_multi_primitive_topology_and_nonindexed_triangles_preserved(tm
 
 
 def test_run_preserves_source_snapshots_and_failure_state(tmp_path, monkeypatch):
+    monkeypatch.setattr(action_worker_lock, 'ROOT', tmp_path/'fixture-lock')
     source, path, spec = closed_fixture(tmp_path)
     p = policy(path, planes=dict(floor=dict(normal_world=[0., 1, 0], offset_m=-2.)))
     pp = tmp_path/'policy.json'; save(pp, p)
@@ -165,6 +167,7 @@ def test_run_preserves_source_snapshots_and_failure_state(tmp_path, monkeypatch)
 
 
 def test_fitting_attaches_geometry_without_changing_native_pass_or_selection(tmp_path, monkeypatch):
+    monkeypatch.setattr(action_worker_lock, 'ROOT', tmp_path/'fixture-lock')
     from test_native_scene_fit import prepare
     import native_scene_fit as fitting
     from native_support_feasibility import merit

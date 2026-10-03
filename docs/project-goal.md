@@ -3040,3 +3040,39 @@ gates stay unchanged. Next: validate the expanded actual stored-key population,
 then connect the auditable workflow to scene authoring and broader interaction
 trials. Code, tests, CI and concise methodology are published; bulky raw study
 data, models, characters and machine details stay excluded.
+
+
+## 2026-10-03 — Read-only replay of combined engine evidence
+
+8203174 is published and all four Windows/Linux hosted CI jobs pass. The
+expanded 2201-time real study is active on confirmed exec handle 91372. Its
+actual object-resource stage completes: native-authoring passes and default
+import fails. Complete imported actor geometry is still processing; no expanded
+actor, combined geometry or replay pass is claimed from the preliminary stage.
+Original assets, limits and running study methods remain unchanged.
+
+A separate public verifier replays every full imported skin error and every
+contact/object observation, checks terminal producers/resources/archives, and
+reduces all complete saved actor/object triangle bounds and witnesses. It checks
+declared partner/plane populations and saved decision summaries, revalidates
+inputs after replay and preserves recorded numerical failures. Geometry queries,
+containment distances, partner crossings and plane measurements are not rerun;
+saved reductions are evidence consistency, not independent geometry proof.
+Explicit geometry clocks are preserved when engine contact clocks have extras.
+
+Validation covers 29 new replay cases, 20 combined cases and 22 geometry cases.
+The first run retains 69 passes/two wrapper lock-contention failures while the
+production study runs. The two small synthetic fixtures now use their own lock
+directories and pass targeted rerun. Production worker locking is unchanged;
+the original failed transcript remains. New tests reject altered observations
+even with updated receipts, missing populations/bindings, forged decisions and
+inconsistent partner/plane reductions. No expensive study was restarted. The
+source-check CI budget increases to 30 minutes: the previous Windows source job
+took 13m50s and new replay cases add coverage, with no dropped checks.
+
+No live Studio/GPU/physics/event checks, new model, training admission, reviewer
+ratings, cleanup records or quality/release approvals are inferred. All 14
+capability release evidence lists, frozen gates and formal held-out trials stay
+unchanged. Next: finish the expanded source-bound actual scene study and replay
+its terminal outputs; then connect those complete artifacts to authoring and
+broader interactions. The full-project goal remains active.
