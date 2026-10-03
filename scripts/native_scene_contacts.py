@@ -176,7 +176,9 @@ class SceneContacts:
         p = np.stack([np.interp(times, clock, obj['positions'][:, i]) for i in range(3)], axis=1)
         return p, Slerp(clock, Rotation.from_matrix(obj['rotations']))(times).as_matrix()
 
-    def evaluate(self):
+    def evaluate(self, *, actor_points=None, object_poses=None):
+        point_query = self.actor_points if actor_points is None else actor_points
+        object_query = self.object_poses if object_poses is None else object_poses
         observations = {}; results = []
         for index, entry in enumerate(self.rows):
             row = entry['authored']; start, end = row['interval_s']; target = row['target']; space = target['space']
@@ -185,14 +187,14 @@ class SceneContacts:
             native += [obj['times'] for obj in self.objects.values()]
             times = np.unique(np.concatenate([np.array([start, end])] + native + [p['times_s'] for p in populations]))
             times = times[(times >= start) & (times <= end)]
-            effector = self.actor_points(row['actor'], entry['ids'], times)
+            effector = point_query(row['actor'], entry['ids'], times)
             if row['reduction'] == 'centroid': effector = effector.mean(axis=1, keepdims=True)
             if space == 'actor':
-                goal = self.actor_points(target['actor'], entry['target_ids'], times)
+                goal = point_query(target['actor'], entry['target_ids'], times)
                 if target['reduction'] == 'centroid': goal = goal.mean(axis=1, keepdims=True)
             elif space == 'world': goal = np.repeat(entry['target_ids'][None], len(times), axis=0)
             else:
-                p, r = self.object_poses(target['object'], times)
+                p, r = object_query(target['object'], times)
                 goal = np.einsum('fij,vj->fvi', r, entry['target_ids']) + p[:, None]
             error = effector - goal
             if space == 'object': error = np.einsum('fvi,fij->fvj', error, r)

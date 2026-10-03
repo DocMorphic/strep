@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-03T06:04:37.110658+00:00",
-  "last_progress": "Whole actor-triangle scene diagnostics and optional final-proposal integration now cover analytic boxes/spheres/cylinders, partner surfaces/containment and explicit planes on authored or complete declared frame clocks. Same-input sphere source/proposal pass sparse geometry; high-five source/proposal fail the diagnostic Y=0 plane by 7\u201312 mm. No original selection changes or continuous/imported-skin/quality claims. Independent replay checks 16 observations, 722160 sphere faces and 102 study files; 230 focused checks pass. Prior 41dff3d hosted CI is green. All release gates/formal trials unchanged; full goal active, next storage-aware correction and complete scene/imported-skin checks."
+  "last_progress_at": "2026-10-03T06:56:48.147977+00:00",
+  "last_progress": "Complete raw imported skin/triangle correspondence, explicit animation selection and actual actor/prop samples now audit native scenes in import and native-resource authoring modes. Eight humanoid studies complete but all retain contact, floor or skin-position failures; originals remain selected. Independent replay checks 8268 contact points, 794464 geometry-clock vertices and 445 files. Three-surface four/eight-influence index-1 fixture passes sampled conditions in both modes; 299 focused tests pass. Prior bc5539b CI all four jobs pass. No GPU/physics/continuous/quality/training/release approval; all release gates and formal trials unchanged, full goal active."
 }

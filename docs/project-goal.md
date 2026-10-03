@@ -2227,3 +2227,48 @@ unchanged. No training data is admitted and no model is updated. The full goal
 stays active. Next: native storage-aware corrections, complete scene/continuous
 and actual imported-skin checking, then broader action/style/editing/transition
 and rig-transfer validation with developer and animator review.
+
+
+## Complete native scene engine observations — 2026-10-03
+
+The prior bc5539b source and adapter hosted CI jobs pass on both operating systems
+in run 37101894449. Complete raw imported skin functions and triangle populations
+now bind arbitrary supported actors, four/eight influences and all primitives
+before CPU reconstruction. Explicit animation selection, exact contact/geometry
+clocks, actual Node3D prop poses and partner skin replace native assumptions in
+the imported measurements. Ordinary import and exported/reloaded native-resource
+manual authoring seeks remain distinct. No GPU, physics or real-time claim.
+
+Initial eight imports succeeded but correspondence failed at three source weight
+boundaries. Version-pinned Godot loader inspection established ordered Float32
+weight summation/division; a different reduction tree crosses quantization bins.
+The identity reference now reproduces that encoding without changing raw imported
+weights, source measurements or the unchanged 2e-6 function tolerance. Initial
+captures and failures remain saved. A later runner initializer failure also
+remains saved separately; fresh corrected studies completed all eight jobs.
+
+Sphere source/proposal each retain grip failures across 1036 engine times:
+roughly 2.213–2.348 mm against 2 mm and right hold speed 10.18–10.22 mm/s against
+5 mm/s. Their geometry passes only at five declared times. High-five source and
+proposal remain approximately 206 and 170 mm apart against 30 mm; the explicitly
+declared diagnostic Y=0 plane fails by roughly 7–12 mm against 5 mm. Imported
+skin differs by 0.130–0.138 mm, failing the separate 0.1 mm correspondence limit.
+All eight combined sampled conditions fail, with all originals retained.
+
+Independent slot accumulation reproduces 8268 contact point samples and all
+contact frame speeds, plus 794464 complete geometry-clock vertices and plane
+extrema; contact coordinates agree within 2.23e-16 metres and 445 study files
+rehash. Full skin-error curves between geometry times are not independently
+replayed. A separate actual-engine three-surface, four/eight-influence fixture
+selects animation 1 from two clips and passes its authored sampled conditions
+in both modes across 198 times. This is import validation, not action quality.
+All 299 focused model-free regression tests pass. Methodology:
+docs/native-scene-engine-v1.md; immutable local evidence:
+reports/native-scene-engine-development-v3/verification-v1,
+reports/native-scene-engine-multirig-v1 and
+reports/native-scene-engine-validation-v1/checks.json.
+
+All fourteen release capability gates and formal held-out trials remain unchanged.
+No training is admitted or performed. The full goal stays active; next work is
+storage-aware correction of measured failures and broader scene/playback,
+action/style/editing/transition and rig-transfer validation with human review.

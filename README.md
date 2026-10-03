@@ -17,6 +17,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
+[Native scene engine diagnostics](docs/native-scene-engine-v1.md) now verify complete imported skin functions and triangles, explicit animation selection, actor/partner contacts and engine object poses. Eight matched humanoid imports complete but retain contact, floor or skin-position failures; 299 focused tests pass. Headless CPU reconstruction and manual authoring seeks do not establish GPU, physics or real-time playback quality.
+
 [Bounded native scene proposals](docs/native-scene-fitting-v1.md) now edit explicitly permitted rotation or translation tracks against body, object and partner targets. Source motion limits, native clocks, protected keys and rig geometry remain checked. Three finite-budget trials still fail; improved hand separation does not approve motion quality, and originals remain selected pending scene and engine checks.
 
 [Native body, object and partner contact audits](docs/native-scene-contacts-v1.md) now measure explicit points on supplied rigs against world targets, moving primitives and another character. Exact touches and held contacts keep separate timing contracts; original source files remain unchanged. Retained interaction replays expose a right-hand hold-speed failure despite passing sphere-grip positions. This is measurement support for broader corrections, with no motion-quality approval.

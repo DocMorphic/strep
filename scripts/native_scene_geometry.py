@@ -93,7 +93,7 @@ def volume_state(vertices, faces):
         self_intersection_checked=False, containment_available=valid)
 
 
-def evaluate(scene, policy, digest, progress=None):
+def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, object_poses=None):
     times, populations, resolution = policy_for(policy, scene, digest)
     faces = {}; topology = {}
     for name, actor in scene.actors.items():
@@ -102,13 +102,17 @@ def evaluate(scene, policy, digest, progress=None):
             faces=len(faces[name]), faces_sha256=hashlib.sha256(faces[name].astype('<i8').tobytes()).hexdigest(),
             primitives=primitives)
     limit = policy['limits']['penetration_m']; tol = policy['limits']['surface_tolerance_m']
-    poses = {n: scene.object_poses(n, times) for n in scene.objects}
+    object_query = scene.object_poses if object_poses is None else object_poses
+    poses = {n: object_query(n, times) for n in scene.objects}
     samples = []; arrays = dict(times_s=times); passed = True
     for frame, time in enumerate(times):
         vertices = {}; meshes = {}; states = {}; degenerate = {}
         for name, actor in scene.actors.items():
             p, r = actor['placement']
-            vertices[name] = actor['rig'].vertices(actor['sampler'].sample(float(time))) @ r.T + p
+            vertices[name] = (actor['rig'].vertices(actor['sampler'].sample(float(time))) @ r.T + p
+                if actor_vertices is None else np.asarray(actor_vertices(name,float(time)),float))
+            if vertices[name].shape != (topology[name]['vertices'],3) or not np.isfinite(vertices[name]).all():
+                raise ValueError('Complete finite actor surface population required')
             meshes[name], states[name] = volume_state(vertices[name], faces[name])
             tri = vertices[name][faces[name]]
             degenerate[name] = np.flatnonzero(np.linalg.norm(np.cross(tri[:, 1]-tri[:, 0], tri[:, 2]-tri[:, 0]), axis=1) <= tol**2).tolist()
