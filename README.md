@@ -49,6 +49,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Studio scene authoring](docs/studio-native-scene-v1.md) connects selected clips, picked mesh patches, object geometry and explicit edit bounds to that job. Saved drafts and source-bound asset packages preserve character bytes, clocks and measured failures; motion-quality and release approval remain separate.
 
+[Native game tracks](docs/native-scene-game-tracks-v1.md) add complete root references, contact intent and explicit gameplay markers to completed scene packages. A finite Godot dispatcher checks exact marker timing; motion remains embedded in unchanged character clips, with physics and animation-quality review still required.
+
 [Streamed observation storage](docs/native-observation-archive-v1.md) preserves numeric arrays exactly without retaining previous frames. The expanded actor/object comparison and original-method replay pass at all 2,201 times. [Complete scene producer integration](docs/native-geometry-stream-v1.md) retains all clocks, triangles and precision, with bound archive receipts and preserved partial failures. Motion-quality and release gates stay open.
 
 [Stored-key scene proposals](docs/native-scene-storage-proposals-v1.md) add hard source-motion constraints, continuous proposal derivatives and finite Float32 translation-cell probes. A synthetic body-contact correction passes native checks after five iterations; the matched four-iteration result still fails. This does not establish realistic motion or release readiness.

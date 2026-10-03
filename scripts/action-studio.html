@@ -390,6 +390,26 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
  <div id="nativeSceneResults" aria-live="polite"></div>
 </details>
 
+   <details id="nativeSceneGamePanel" class="rig-panel">
+ <summary>Root &amp; gameplay tracks</summary>
+ <p class="small">Choose a completed scene above, then bind it here. Select each root joint explicitly. Root tracks are references: motion stays embedded in the character clips. Contact measurements never confirm gameplay intent.</p>
+ <button class="btn" id="nativeSceneGameBind">Use selected scene</button>
+ <div id="nativeSceneGameRoots"></div>
+ <div class="rig-field-grid">
+  <label>Marker ID<input id="nativeSceneGameMarkerId" value="event-1"></label>
+  <label>Event name<input id="nativeSceneGameMarkerName" value="grasp"></label>
+  <label>Character<select id="nativeSceneGameActor"></select></label>
+  <label>Exact audited time (s)<select id="nativeSceneGameTime"></select></label>
+ </div>
+ <label><input id="nativeSceneGameConfirmed" type="checkbox"> I confirm this marker’s timing for gameplay</label>
+ <button class="btn" id="nativeSceneGameAdd">Add marker</button>
+ <div id="nativeSceneGameMarkers"></div>
+ <div class="toolbar"><button class="btn" id="nativeSceneGameSave">Save track request</button><button class="btn primary" id="nativeSceneGameBuild">Build game-track package</button></div>
+ <p class="small" id="nativeSceneGameStatus" role="status">Bind a completed scene to begin.</p>
+ <div class="toolbar"><select id="nativeSceneGameJobs" aria-label="Game-track job"></select><button class="btn" id="nativeSceneGameRefresh">Refresh jobs</button><button class="btn" id="nativeSceneGameReview">Show package &amp; results</button></div>
+ <div id="nativeSceneGameResults" aria-live="polite"></div>
+</details>
+
    <div id="rigContactPanel" hidden>
  <div class="rig-toolbar"><strong>Mesh contacts</strong><button class="btn" id="rigContactClose">Back to mapping</button></div>
  <p class="small" id="rigContactBinding">Select an exported clip to edit.</p>
@@ -1445,6 +1465,9 @@ function rigResultSelection(result, requested = null) {
 }
 
 // Separate target-rig renderer; the main SOMA preview keeps its existing state.
+async function initializeOptionalRigEditor(load,status,label){
+ try{await load();return true;}catch(error){status.textContent=`${label} could not load: ${error.message}. Restart Studio after updating its backend.`;return false;}
+}
 void (async function characterStudio(){
  const C=id=>document.getElementById(id),api=async(url,options)=>{const r=await fetch(url,options),data=await r.json();if(!r.ok)throw Error(data.error||'Request failed');return data;};
  const generationHistory=createGenerationHistoryPanel(C('rigGenerationHistory'));
@@ -1458,8 +1481,10 @@ void (async function characterStudio(){
  const {createNativeSupportEditor}=await import('/native-support-editor.mjs');
  const nativeSupportEditor=createNativeSupportEditor({getContext:()=>({job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value})});
  const contactEditor=createRigContactEditor({C,THREE,canvas,scene,camera,controls,api,post,status,getContext:()=>({model,loaded,frame,result,job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),pause:()=>{playing=false;C('rigPlay').textContent='Play';},seek,onFit:job=>{pending=job.id;controlsState();refreshJobs().catch(e=>status(e.message));}});
- const {createNativeSceneEditor}=await import('/native-scene-editor.mjs');
- createNativeSceneEditor({api,post,getContext:()=>({job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),getPatch:()=>contactEditor.nativePatch()});
+ await initializeOptionalRigEditor(async()=>{const {createNativeSceneEditor}=await import('/native-scene-editor.mjs');
+  createNativeSceneEditor({api,post,getContext:()=>({job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),getPatch:()=>contactEditor.nativePatch()});},C('nativeSceneStatus'),'Scene editor');
+ await initializeOptionalRigEditor(async()=>{const {createNativeSceneGameEditor}=await import('/native-scene-game-editor.mjs');
+  createNativeSceneGameEditor({api,post});},C('nativeSceneGameStatus'),'Game-track editor');
  const clipEditor=createRigClipEditor({C,api,post,status,sampleJoint:node=>{let joint;model.traverse(n=>{if(loaded.parser.associations.get(n)?.nodes===node)joint=n;});if(!joint)throw Error('Selected GLB joint is not available');model.updateMatrixWorld(true);return {position_m:joint.getWorldPosition(new THREE.Vector3()).toArray(),rotation_xyzw:joint.getWorldQuaternion(new THREE.Quaternion()).toArray()};},getContext:()=>({model,frame,result,job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),seek,pause:()=>{playing=false;C('rigPlay').textContent='Play';},closeContacts:()=>contactEditor.hide(),onJob:job=>{pending=job.id;controlsState();refreshJobs().catch(e=>status(e.message));}});
  const transitionEditor=createRigTransitionEditor({C,post,status,getContext:()=>({jobs,model,frame,result,job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),pause:()=>{playing=false;C('rigPlay').textContent='Play';},closeEditors:()=>{contactEditor.hide();clipEditor.hide();},onJob:job=>{pending=job.id;controlsState();refreshJobs().catch(e=>status(e.message));}});
  const loopEditor=createRigLoopEditor({C,post,status,getContext:()=>({result,job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),pause:()=>{playing=false;C('rigPlay').textContent='Play';},closeEditors:()=>{contactEditor.hide();clipEditor.hide();transitionEditor.hide();},onJob:job=>{pending=job.id;controlsState();refreshJobs().catch(e=>status(e.message));}});

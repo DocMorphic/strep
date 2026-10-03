@@ -1,0 +1,19 @@
+<details id="nativeSceneGamePanel" class="rig-panel">
+ <summary>Root &amp; gameplay tracks</summary>
+ <p class="small">Choose a completed scene above, then bind it here. Select each root joint explicitly. Root tracks are references: motion stays embedded in the character clips. Contact measurements never confirm gameplay intent.</p>
+ <button class="btn" id="nativeSceneGameBind">Use selected scene</button>
+ <div id="nativeSceneGameRoots"></div>
+ <div class="rig-field-grid">
+  <label>Marker ID<input id="nativeSceneGameMarkerId" value="event-1"></label>
+  <label>Event name<input id="nativeSceneGameMarkerName" value="grasp"></label>
+  <label>Character<select id="nativeSceneGameActor"></select></label>
+  <label>Exact audited time (s)<select id="nativeSceneGameTime"></select></label>
+ </div>
+ <label><input id="nativeSceneGameConfirmed" type="checkbox"> I confirm this marker’s timing for gameplay</label>
+ <button class="btn" id="nativeSceneGameAdd">Add marker</button>
+ <div id="nativeSceneGameMarkers"></div>
+ <div class="toolbar"><button class="btn" id="nativeSceneGameSave">Save track request</button><button class="btn primary" id="nativeSceneGameBuild">Build game-track package</button></div>
+ <p class="small" id="nativeSceneGameStatus" role="status">Bind a completed scene to begin.</p>
+ <div class="toolbar"><select id="nativeSceneGameJobs" aria-label="Game-track job"></select><button class="btn" id="nativeSceneGameRefresh">Refresh jobs</button><button class="btn" id="nativeSceneGameReview">Show package &amp; results</button></div>
+ <div id="nativeSceneGameResults" aria-live="polite"></div>
+</details>

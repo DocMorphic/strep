@@ -66,6 +66,10 @@ sidecars are explicitly absent from this package version. Playback integration,
 physics/attachment, semantic correctness, animator cleanup, human review and
 release approval remain separate. Character and engine licenses still apply.
 
+[Root/contact/gameplay packages](native-scene-game-tracks-v1.md) add explicit
+sidecars and a finite tested Godot event helper to completed scenes while keeping
+this original package and its source observations unchanged.
+
 ## Validation scope
 
 Python checks cover exact preparation, rejected input/URL/clock/limit changes,

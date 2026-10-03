@@ -1,4 +1,7 @@
 // Separate target-rig renderer; the main SOMA preview keeps its existing state.
+async function initializeOptionalRigEditor(load,status,label){
+ try{await load();return true;}catch(error){status.textContent=`${label} could not load: ${error.message}. Restart Studio after updating its backend.`;return false;}
+}
 void (async function characterStudio(){
  const C=id=>document.getElementById(id),api=async(url,options)=>{const r=await fetch(url,options),data=await r.json();if(!r.ok)throw Error(data.error||'Request failed');return data;};
  const generationHistory=createGenerationHistoryPanel(C('rigGenerationHistory'));
@@ -12,8 +15,10 @@ void (async function characterStudio(){
  const {createNativeSupportEditor}=await import('/native-support-editor.mjs');
  const nativeSupportEditor=createNativeSupportEditor({getContext:()=>({job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value})});
  const contactEditor=createRigContactEditor({C,THREE,canvas,scene,camera,controls,api,post,status,getContext:()=>({model,loaded,frame,result,job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),pause:()=>{playing=false;C('rigPlay').textContent='Play';},seek,onFit:job=>{pending=job.id;controlsState();refreshJobs().catch(e=>status(e.message));}});
- const {createNativeSceneEditor}=await import('/native-scene-editor.mjs');
- createNativeSceneEditor({api,post,getContext:()=>({job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),getPatch:()=>contactEditor.nativePatch()});
+ await initializeOptionalRigEditor(async()=>{const {createNativeSceneEditor}=await import('/native-scene-editor.mjs');
+  createNativeSceneEditor({api,post,getContext:()=>({job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),getPatch:()=>contactEditor.nativePatch()});},C('nativeSceneStatus'),'Scene editor');
+ await initializeOptionalRigEditor(async()=>{const {createNativeSceneGameEditor}=await import('/native-scene-game-editor.mjs');
+  createNativeSceneGameEditor({api,post});},C('nativeSceneGameStatus'),'Game-track editor');
  const clipEditor=createRigClipEditor({C,api,post,status,sampleJoint:node=>{let joint;model.traverse(n=>{if(loaded.parser.associations.get(n)?.nodes===node)joint=n;});if(!joint)throw Error('Selected GLB joint is not available');model.updateMatrixWorld(true);return {position_m:joint.getWorldPosition(new THREE.Vector3()).toArray(),rotation_xyzw:joint.getWorldQuaternion(new THREE.Quaternion()).toArray()};},getContext:()=>({model,frame,result,job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),seek,pause:()=>{playing=false;C('rigPlay').textContent='Play';},closeContacts:()=>contactEditor.hide(),onJob:job=>{pending=job.id;controlsState();refreshJobs().catch(e=>status(e.message));}});
  const transitionEditor=createRigTransitionEditor({C,post,status,getContext:()=>({jobs,model,frame,result,job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),pause:()=>{playing=false;C('rigPlay').textContent='Play';},closeEditors:()=>{contactEditor.hide();clipEditor.hide();},onJob:job=>{pending=job.id;controlsState();refreshJobs().catch(e=>status(e.message));}});
  const loopEditor=createRigLoopEditor({C,post,status,getContext:()=>({result,job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),pause:()=>{playing=false;C('rigPlay').textContent='Play';},closeEditors:()=>{contactEditor.hide();clipEditor.hide();transitionEditor.hide();},onJob:job=>{pending=job.id;controlsState();refreshJobs().catch(e=>status(e.message));}});
