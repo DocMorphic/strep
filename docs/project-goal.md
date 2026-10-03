@@ -1890,3 +1890,53 @@ evidence. No actual target-rig SOMA NPZ, live HTTP/browser, fresh GPU,
 continuous collision/force/balance, human realism, training admission or
 model-quality improvement is claimed. All 14 release capabilities remain
 unapproved, formal 72x5 untouched; the single full-project goal stays active.
+
+
+## 2026-10-03 — Foot articulation evidence and bounded convergence
+
+Added a source/draft-bound read-only native support articulation report with
+archived methods, exact authored stance endpoints, source clock/clamp handling,
+fixed patch identities, repeated influence aggregation and original edit
+permissions. Weight semantics explicitly identify the existing RigAsset
+loader's normalization; no positive influence is discarded. All 36 authored
+intervals in 18 existing six-action/three-asset development clips have
+protected animated foot descendants influencing the patch. This is existing
+population inspection, not new motion, held-out coverage or causal proof.
+
+The female run/roll/stand game-frame search is extended from eight to sixteen
+iterations with the same initial seed, computational methods, .001 radian
+trust, original source caps/bins, clocks and authored bounds. The historical
+24 raw/shadow probe pairs and first eight complete histories reproduce exactly.
+The known job archive-closure difference is explicit; a prior preflight failure
+started no fitting/import and remains separate. No study is rerun merely for
+publication. Final controls replay the raw proposal byte-for-byte, and a
+single-thread scalar decode reproduces the final raw/shadow merit exactly.
+
+The worst normalized deficit drops from 1.1946778795 to .8073194880; native
+left/right speeds improve from 7.385402/9.625968 to 6.105352/8.142963 mm/s,
+but both still exceed the original 5 mm/s public limit. Anchors 1.141046/
+1.211663 mm also fail. Original rate failure rows are 28/21/4/9; support/edit
+bounds and clearance pass. Actual Godot import adds 612 source/proposal pose
+observations across two scenes; both feet fail all twelve speed clocks, with
+worst imported speeds 6.232815/8.206508 mm/s. The original clip remains selected.
+Extra budget reduces some deficits without proving acceptance, infeasibility,
+general animation quality or a need to relax the user's bounds.
+
+Seventeen new fixtures and all 68 focused model-free support/skin/contact/
+report checks pass. Both source CI platforms include the new suite; the prior
+63c6be1 commit's four hosted jobs have succeeded. An early fixture catches
+FP32 endpoint downcasting; final reports preserve float64 authored bounds.
+Verification initially observes a 2.84e-14 squared-merit reduction difference
+under a different BLAS thread count; the recorded one-thread runtime is used
+for exact replay instead of relaxing a contact or rate gate. Receipt:
+reports/native-support-articulation-validation-v2/verification.json.
+
+Next, test separately declared, source/draft-bound toe rotations and cumulative
+angle limits while retaining root/all translations, unrelated tracks, frozen
+keys/clocks, mesh payloads, original rates and raw/shadow/actual-engine checks.
+Do not present a changed permission contract as an old leg-only pass. Broader
+phase/body, scene/partner, action/style/rig, human cleanup and measured learning
+remain required. Live HTTP/browser, fresh GPU appearance, target-rig SOMA NPZ,
+continuous collision/force/balance, human realism, training admission and
+model-quality improvement remain unclaimed. All 14 release capabilities and
+formal 72x5 requirements are unchanged; the full project goal stays active.

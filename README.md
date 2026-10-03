@@ -162,4 +162,6 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 
 [Native game-frame planting options](docs/native-frame-plant-v1.md) add all twelve fixed frame clocks to the proposal model and an optional exterior-key ramp seed. Three matched corrections still fail the original contact/rate/import checks and retain their inputs. These CLI options preserve the existing default Studio path and all release requirements.
 
+[Support articulation and convergence diagnosis](docs/native-support-articulation-v1.md) reports protected animated toe influences across 18 existing clips. Doubling one matched search to sixteen iterations improves contact errors but still fails the original native and imported checks; the input and all release gates remain unchanged.
+
 [Reviewed native corpus training](docs/kimodo-corpus-trainer-v1.md) now connects verified targets to sequential frozen-base adapter updates, isolated development validation and bound resume. A tiny CPU fixture reproduces fresh-process continuation exactly; the real CLI rejects the unreviewed packet, and no real motion training or quality improvement is claimed.
