@@ -1,5 +1,13 @@
 # Native finite root extraction
 
+The next [finite scene controller](native-scene-runtime-v1.md) now combines this
+component with saved object motion and confirmed gameplay timing. Its shared-clock
+checks remain separate from physical interaction, transitions and human review.
+It also measures skin in skeleton space followed by each mesh's world transform.
+The older weighted-world-bone skin figures below are retained as diagnostics;
+they omit the outer translation contribution when imported weights sum below one
+and must not be read as renderer-equivalent mesh parity.
+
 `scripts/godot_native_root_adapter.gd` evaluates a previously saved native
 LINEAR bone Animation in two modes: embedded root motion, or motion moved onto
 an outer actor node. It does not resample the clip to 30 fps, change its resource,
@@ -153,8 +161,8 @@ are explicit **test doubles**, separate from the actual headless observations.
 This does not certify rendered appearance, frame-rate performance, scene/object
 runtime contact, events during animation playback, transitions, loops, physics,
 semantic action correctness or animator cleanup time. The full project goal and
-formal release gates remain open. Next integrate the component with the complete
-multi-actor/object/event clock and broaden actual humanoid/rig/action trials.
+formal release gates remain open. The separate scene controller now integrates
+the finite actor/object/event clock; broad humanoid/rig/action trials remain open.
 
 Primary API references: Godot's [Skeleton3D global-pose semantics](https://docs.godotengine.org/en/stable/classes/class_skeleton3d.html),
 [Animation track API](https://docs.godotengine.org/en/stable/classes/class_animation.html)

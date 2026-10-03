@@ -1,8 +1,13 @@
 # Native root, contact and gameplay tracks
 
+These immutable ZIPs can now feed the separate [finite scene runtime builder](native-scene-runtime-v1.md).
+It keeps the original entries and verifies simultaneous actor/object poses and
+marker-time callbacks before producing a portable Godot scene.
+
 The separate [native finite root adapter](native-root-runtime-v1.md) now verifies
 embedded/extracted motion for saved resources. It is not automatically enabled
-in these reference packages; complete scene/object/event playback remains open.
+in these reference packages; the separate runtime builder combines it with finite
+scene/object/event playback. Physics, transitions and human review remain open.
 
 Completed native scenes can now produce a source-preserving game-track package
 from Studio. This supports any supplied action: the asset/contact schema, rather
