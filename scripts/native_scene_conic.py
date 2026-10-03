@@ -105,44 +105,68 @@ def direction(system, jacobian, value, lower, upper, trust, *, hard_rows=0):
     return delta,info
 
 
-def optimize(problem,evaluate,iterations,trust,*,difference_step=.001,difference_source='stored',storage_cells=0,protect_source_rows=False,restoration_steps=0):
-    value = problem.initial.copy(); current = evaluate(value,'start'); history = []; radius = trust
+def optimize(problem,evaluate,iterations,trust,*,difference_step=.001,difference_source='stored',storage_cells=0,protect_source_rows=False,restoration_steps=0,
+        protect_contact_rows=False,anchor_worlds=None):
+    if type(protect_contact_rows) is not bool or protect_contact_rows and not protect_source_rows:
+        raise ValueError('Individual native contact protection requires source protection')
+    if anchor_worlds is not None and not callable(anchor_worlds):raise ValueError('Callable decoded anchor required')
+    value = problem.initial.copy(); current_label='start';current = evaluate(value,current_label); history = []; radius = trust
     for iteration in range(1,iterations+1):
         before = merit(current)
         if before[0]==0:break
-        system,jacobian,differences = linearize(problem,value,step=difference_step,difference_source=difference_source)
+        options={} if anchor_worlds is None else dict(base_worlds=anchor_worlds(value,current_label))
+        system,jacobian,differences = linearize(problem,value,step=difference_step,difference_source=difference_source,**options)
         # Algebraic refactoring may differ in final floating-point subtraction;
         # it must describe the same ordered constraints before proposing a step.
-        np.testing.assert_allclose(system.residual(),problem.model(value),atol=1e-9,rtol=1e-12)
+        np.testing.assert_allclose(system.residual(),problem.model(value) if anchor_worlds is None else current,atol=1e-9,rtol=1e-12)
+        hard=problem.protected_rows if protect_source_rows else 0
+        contact_before=None
+        if protect_contact_rows:
+            from native_contact_norms import protect_rows,row_regression
+            contact_before=np.asarray(current[hard:],float)
+            if np.any(np.asarray(current[:hard])>0):raise ValueError('Original source conditions must pass before contact protection')
+            system,jacobian,guard_identity=protect_rows(system,jacobian,hard,contact_before)
+            hard=guard_identity['hard_rows'];differences['native_contact_protection']=guard_identity
         delta,info = direction(system,jacobian,value,problem.lower,problem.upper,radius,
-            hard_rows=problem.protected_rows if protect_source_rows else 0)
+            hard_rows=hard)
         accepted = None; probes = []; storage_info = None; repairs=[]
         def acceptable(g):
             score=merit(g)
             protected=not protect_source_rows or np.all(g[:problem.protected_rows]<=0)
+            if protect_contact_rows:protected=bool(protected and np.all(row_regression(contact_before,g[problem.protected_rows:])<=0))
             improved=score[0]<before[0]-1e-12 or abs(score[0]-before[0])<=1e-12 and score[1]<before[1]-1e-15
             return score,bool(protected),bool(protected and improved)
+        def observation(g):
+            extra=dict(source_rows_pass=bool(not protect_source_rows or np.all(g[:problem.protected_rows]<=0)))
+            if protect_contact_rows:
+                regression=row_regression(contact_before,g[problem.protected_rows:])
+                extra.update(native_contact_rows_nonregressing=bool(np.all(regression<=0)),
+                    maximum_native_contact_row_regression=float(max(0.,regression.max())))
+            return extra
+        def protected_residual(g):
+            if not protect_contact_rows:return g
+            return np.r_[g[:problem.protected_rows],row_regression(contact_before,g[problem.protected_rows:]),g[problem.protected_rows:]]
         if delta is not None:
             for backoff in range(10):
                 fraction = .5**backoff; other = np.clip(value+fraction*delta,problem.lower,problem.upper)
-                g = evaluate(other,f'{iteration}-{backoff}'); score,protected,passed = acceptable(g)
-                probes.append(dict(fraction=fraction,merit=list(score),source_rows_pass=protected,accepted=passed))
-                if passed:value=other;current=g;accepted=fraction;break
+                label=f'{iteration}-{backoff}';g = evaluate(other,label); score,protected,passed = acceptable(g)
+                probes.append(dict(fraction=fraction,merit=list(score),**observation(g),accepted=passed))
+                if passed:value=other;current=g;current_label=label;accepted=fraction;break
                 if restoration_steps and protect_source_rows and backoff==0 and not protected:
                     from native_scene_restore import tighten
                     reserve=None;repair_delta=delta;repair_g=g
                     for repair in range(restoration_steps):
-                        tightened,reserve,margin=tighten(system,jacobian,repair_delta,repair_g,problem.protected_rows,reserve)
-                        repaired,repair_info=direction(tightened,jacobian,value,problem.lower,problem.upper,radius,hard_rows=problem.protected_rows)
+                        tightened,reserve,margin=tighten(system,jacobian,repair_delta,protected_residual(repair_g),hard,reserve)
+                        repaired,repair_info=direction(tightened,jacobian,value,problem.lower,problem.upper,radius,hard_rows=hard)
                         record=dict(index=repair,margin=margin,conic_step=repair_info,available=repaired is not None)
                         repairs.append(record)
                         if repaired is None:break
                         other=np.clip(value+repaired,problem.lower,problem.upper)
-                        repair_g=evaluate(other,f'{iteration}-restore-{repair}');score,protected,passed=acceptable(repair_g)
-                        record.update(merit=list(score),source_rows_pass=protected,accepted=passed)
-                        probes.append(dict(kind='decoded-restoration',index=repair,fraction=1.,merit=list(score),source_rows_pass=protected,accepted=passed))
-                        if passed:value=other;current=repair_g;accepted=1.;break
-                        if protected:break  # No decoded source defect left to restore.
+                        label=f'{iteration}-restore-{repair}';repair_g=evaluate(other,label);score,protected,passed=acceptable(repair_g)
+                        record.update(merit=list(score),**observation(repair_g),accepted=passed)
+                        probes.append(dict(kind='decoded-restoration',index=repair,fraction=1.,merit=list(score),**observation(repair_g),accepted=passed))
+                        if passed:value=other;current=repair_g;current_label=label;accepted=1.;break
+                        if protected:break  # No decoded protected defect left to restore.
                         repair_delta=repaired
                     if accepted is not None:break
                 if storage_cells and backoff==0:
@@ -153,9 +177,9 @@ def optimize(problem,evaluate,iterations,trust,*,difference_step=.001,difference
                         cells=[];storage_info=dict(available=False,error=str(exc),maximum_cells=storage_cells)
                     for index,entry in enumerate(cells):
                         other=np.clip(value+entry['fraction']*delta,problem.lower,problem.upper)
-                        g=evaluate(other,f'{iteration}-storage-{index}');score,protected,passed=acceptable(g)
-                        probes.append(dict(**entry,kind='translation-storage-cell',merit=list(score),source_rows_pass=protected,accepted=passed))
-                        if passed:value=other;current=g;accepted=entry['fraction'];break
+                        label=f'{iteration}-storage-{index}';g=evaluate(other,label);score,protected,passed=acceptable(g)
+                        probes.append(dict(**entry,kind='translation-storage-cell',merit=list(score),**observation(g),accepted=passed))
+                        if passed:value=other;current=g;current_label=label;accepted=entry['fraction'];break
                     if accepted is not None:break
         history.append(dict(iteration=iteration,before=list(before),after=list(merit(current)),
             selected_fraction=accepted,probes=probes,conic_step=info,differences=differences,storage_cells=storage_info,decoded_restorations=repairs))
@@ -167,4 +191,5 @@ def optimize(problem,evaluate,iterations,trust,*,difference_step=.001,difference
         final_merit=list(merit(current)),proposal_model='affine-vector-norms',solver_version=VERSION,
         difference_source=difference_source,maximum_storage_cells=storage_cells,protect_source_rows=protect_source_rows,
         maximum_restoration_steps=restoration_steps,
+        native_contact_rows_individually_protected=protect_contact_rows,decoded_base_anchor=anchor_worlds is not None,
         quantized_native_keys=True,conservative_dense_dependencies=True)

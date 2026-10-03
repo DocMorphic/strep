@@ -2845,3 +2845,51 @@ models, credentials and bulky study outputs remain ignored. All 14 release
 capability evidence lists and formal held-out trials remain unchanged; developer
 review is still required. This is a concrete implementation/measurement advance,
 not release completion. The single project-wide goal remains active.
+
+
+## 2026-10-03T14:22:44.499656+00:00: Individual held-contact bounds after an aggregate tradeoff
+
+Previous turn made source/measurement progress and published declared primitive
+guides as 9912b4e. Hosted run 37127783203 completes all four jobs successfully.
+This turn follows the original sphere hold failure rather than claiming object
+geometry support has solved interaction. Exact source and permissions diagnosis
+partitions all 281219 native conditions: 275761 source rows pass, both position
+conditions pass, and 53 right-grip held-speed rows fail in five 60/120 Hz phase
+populations. All authored clocks, budgets, source epoch and native keys remain.
+
+Two source-only guarded primary iterations with original five-degree forearm/
+wrist bounds, 3 cm displacement and 18 controls retain one 1/16 step. Worst
+speed decreases 10.1976319 -> 10.1969850 mm/s; 53 rows still fail and 27 individual
+failed contact rows gain excess. A smaller aggregate maximum hid these losses.
+Independent replay verifies all 10 control/GLB exports, exact original caps,
+complete decoded norm populations, eight decisions and full sampled geometry
+for every proposal. Source limits and final three-clock object geometry pass;
+held contact fails, originals selected. No quality or training approval.
+
+Storage-vector now duplicates every original point/held-speed norm into separate
+hard no-worsening proposal bounds: passing rows stay passing, failed excess
+cannot increase. Original authored contact norms remain in the objective and
+final audit. Its vector base uses the retained GLB scalar decoder with original
+caps/scales/order; derivatives retain their matching proxy origin. Accepted
+export labels locate each subsequent base. Contact guard defects can trigger
+decoded restoration even when the source prefix passes; only proposal margins
+tighten. Plain scalar/vector numerical paths retain their previous behavior.
+Source, permission, point/hold, sampling and acceptance limits are not relaxed.
+
+Paired guarded trial uses the same original inputs, two primary iterations,
+0.02 initial trust and up to three restoration solves, changing both anchoring
+and individual guards. No step is retained, start/final bytes match, all 53
+failures remain. This is not a causal isolation or global infeasibility proof.
+Replay verifies all 23 control/GLB exports, exact original cap arrays, decoded
+norm equality, two complete guard baseline arrays, all 21 rejection decisions
+and full sampled geometry for every proposal. Final geometry passes only the
+three declared clocks; held contact still fails. Every raw failure is retained.
+
+Ten new focused tests cover aggregate tradeoffs, individual passing/failing
+contacts, contact-only decoded restoration, invalid configurations, source
+conflicts, stored/continuous derivative anchoring and retained export labels.
+All 492 related model-free regressions pass. Public methods, request metadata,
+CI and methodology document the change. No model inference, new native keys,
+engine playback, human-quality approval, data admission or checkpoint update.
+All 14 release capability evidence lists and formal held-out trials stay
+unchanged; developer review remains required. The project-wide goal is active.

@@ -211,6 +211,8 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             actor_snapshots={n:dict(path=p.relative_to(output).as_posix(),sha256=spec['actors'][n]['sha256']) for n,p in originals.items()},
             controls=edits.size,iterations=iterations,trust_control_fraction=trust,
             proposal_model=proposal_model,conic_solver=conic_identity,
+            native_contact_rows_individually_protected=proposal_model=='storage-vector',
+            decoded_vector_base_anchor=proposal_model=='storage-vector',
             vector_difference_step=vector_difference_step,
             storage_cells=storage_cells,
             restoration_steps=restoration_steps,
@@ -274,9 +276,14 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                     step=vector_difference_step,restoration_steps=restoration_steps,contact_model=contact_model)
             elif proposal_model in ('vector','storage-vector'):
                 from native_scene_conic import optimize as optimize_vectors
+                def anchor_worlds(value,label):
+                    files={name:output/'probes'/label/(name+'.glb') for name in edits.actors}
+                    return problem.decoded(files,value)[1]
                 value,optimization = optimize_vectors(problem,evaluate,iterations,trust,difference_step=vector_difference_step,
                     difference_source='continuous' if proposal_model=='storage-vector' else 'stored',
-                    storage_cells=storage_cells or 0,protect_source_rows=proposal_model=='storage-vector',restoration_steps=restoration_steps)
+                    storage_cells=storage_cells or 0,protect_source_rows=proposal_model=='storage-vector',restoration_steps=restoration_steps,
+                    protect_contact_rows=proposal_model=='storage-vector',
+                    anchor_worlds=anchor_worlds if proposal_model=='storage-vector' else None)
             else:value,optimization = optimize(problem,evaluate,iterations,trust)
             final_constraints = evaluate(value,'final'); proposal_spec = copy.deepcopy(spec); proposal = output/'proposal'; proposal.mkdir()
             for i,name in enumerate(spec['actors']):

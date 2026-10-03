@@ -10,10 +10,13 @@ python scripts/native_scene_fit.py contacts.json permissions.json reports/my-res
 ```
 
 Use a fresh folder and the existing model-free/conic development dependencies.
-Restoration is available only in `storage-vector` mode; its default remains zero,
-preserving the preceding numerical behavior. Choose zero to four additional
+Restoration is available in `storage-vector` and `surface-vector` modes; its
+default remains zero, without extra restoration solves. Choose zero to four additional
 restoration solves per primary iteration. This does not download models or assets,
 run inference, add native keys or change the authored permissions.
+The storage-vector path now also restores
+[individual native-contact guard defects](native-contact-repair-v1.md), even when
+the original motion prefix passes. Authored contact caps remain unchanged.
 Studio retains its existing defaults; this optional CLI path is not yet wired
 into the authoring controls.
 

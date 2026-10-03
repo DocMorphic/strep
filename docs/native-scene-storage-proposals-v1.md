@@ -16,7 +16,7 @@ their numerical defaults. The new mode is not yet connected to Studio.
 
 ## Proposal calculation
 
-The vector model keeps its actual stored-key residual as the base. Its Jacobian
+The vector model now anchors its base to the retained GLB's scalar decoder. Its Jacobian
 uses continuous track values before Float32 serialization, avoiding derivatives
 dominated by isolated rounding transitions. Continuous interpolation describes
 the proposal only; every accepted probe is exported, loaded again and checked
@@ -27,6 +27,11 @@ rate rows as hard constraints. Contact excess remains the minimax objective.
 Protected rows cannot share the contact excess variable. A fixed failed protected
 row makes that affine direction unavailable. All protected decoded rows must
 also pass before accepting a step. Solver success alone is insufficient.
+
+[Individual contact repair bounds](native-contact-repair-v1.md) now additionally
+keep passing native contacts passing and prevent each failed contact row from
+gaining excess. Separate duplicate guard caps constrain the proposal; original
+authored contact caps remain in the minimax objective and decoded final audit.
 
 If the full step is rejected, a finite neighboring storage-cell search can probe
 its translation direction before ordinary backoff. Each native translation

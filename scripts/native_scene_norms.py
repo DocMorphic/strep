@@ -99,10 +99,16 @@ def rows(problem, value, worlds=None):
     return NormRows(np.concatenate(vectors),np.concatenate(caps),np.concatenate(scales))
 
 
-def linearize(problem, value, *, step=1e-5, maximum_elements=60_000_000, difference_source='stored'):
+def linearize(problem, value, *, step=1e-5, maximum_elements=60_000_000, difference_source='stored', base_worlds=None):
     value = problem.edits.controls(value); base = rows(problem,value)
     if difference_source not in ('stored','continuous'):raise ValueError('Choose stored or continuous vector differences')
     smooth = rows(problem,value,problem.worlds(value,quantized=False)) if difference_source=='continuous' else base
+    if base_worlds is not None:
+        anchored=rows(problem,value,base_worlds)
+        if (anchored.vectors.shape!=base.vectors.shape or not np.array_equal(anchored.caps,base.caps)
+                or not np.array_equal(anchored.scales,base.scales)):
+            raise ValueError('Decoded vector anchoring changed original caps or population')
+        base=anchored  # Differences still use their matching proxy origin.
     if (type(step) not in (int,float) or not np.isfinite(step) or step<=0
             or type(maximum_elements) is not int or maximum_elements<=0):
         raise ValueError('Positive difference step and vector Jacobian resource limit required')
@@ -130,4 +136,5 @@ def linearize(problem, value, *, step=1e-5, maximum_elements=60_000_000, differe
         norm_rows=len(base.vectors),maximum_nonzero_jacobian_elements=maximum_elements,
         dense_jacobian_elements=base.vectors.size*len(value),stored_nonzero_jacobian_elements=jacobian.nnz,
         jacobian_storage='sparse CSC; exact nonzero entries only',
-        quantized_native_keys=True,difference_source=difference_source,conservative_dense_dependencies=True)
+        quantized_native_keys=True,difference_source=difference_source,decoded_base_anchor=base_worlds is not None,
+        conservative_dense_dependencies=True)
