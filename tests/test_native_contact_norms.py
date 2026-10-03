@@ -11,7 +11,7 @@ from test_native_surface_contact import scene_fixture,policy
 from native_scene_contacts import SceneContacts
 from native_scene_edit import SceneEdits
 from native_scene_fit import SceneProblem
-from native_contact_norms import ContactNorms,score,improved,nonregressing
+from native_contact_norms import ContactNorms,score,improved,nonregressing,row_regression,protect_rows
 from native_surface_contact import evaluate
 import native_surface_model as surface
 from native_scene_norms import NormRows
@@ -106,7 +106,7 @@ def test_object_guidance_matches_authored_rigid_normal_transform(tmp_path):
 @pytest.mark.parametrize('geometry_worse,contact_worse',[(True,False),(False,True),(False,False)])
 def test_guided_acceptance_requires_both_geometry_and_contact_nonregression(monkeypatch,geometry_worse,contact_worse):
     problem=SimpleNamespace(initial=np.zeros(1),lower=-np.ones(1),upper=np.ones(1))
-    system=NormRows([[0.,0,0]],[1.],[1.]);jac=sparse.csr_matrix((3,1))
+    system=NormRows([[0.,0,0],[3.,0,0]],[1.,1.],[1.,1.]);jac=sparse.csr_matrix((6,1))
     monkeypatch.setattr(surface,'model',lambda *a,**kw:(system,jac,None,{}))
     monkeypatch.setattr(surface,'direction',lambda *a,**kw:(np.array([.01]),dict(status='Solved')))
     guide=SimpleNamespace(residual=lambda worlds:np.array([2. if worlds==0 else (3. if contact_worse else 1.)]))
@@ -124,3 +124,86 @@ def test_invalid_or_incomplete_poses_cannot_supply_contact_guidance(tmp_path):
     with pytest.raises(ValueError,match='dictionary'):guide.sample({})
     with pytest.raises(ValueError,match='population'):guide.sample({'A':np.zeros((1,1,4,4))})
     with pytest.raises(ValueError):ContactNorms(problem,p,digest,maximum_rows=True)
+
+
+@pytest.mark.parametrize('before,after,passed',[
+    ([2.,2.],[1.9,1.9],True),
+    ([2.,2.],[1.9,2.01],False),
+    ([2.,0.,-1.],[1.9,0.,-.1],True),
+    ([2.,0.,-1.],[1.9,1e-12,-.1],False),
+    ([2.,0.,-1.],[1.9,0.,1e-12],False),
+    ([1.5675955073,5.0036579700,4.1045549998],[1.572225,4.8392048930,4.0773978238],False),
+])
+def test_each_contact_condition_protects_passes_and_failed_excess(before,after,passed):
+    assert bool(np.all(row_regression(before,after)<=0))==passed
+
+
+@pytest.mark.parametrize('before,after',[([1.],[1.,0.]),([1.],[[1.]]),([],[]),([1.],[float('nan')])])
+def test_row_guard_rejects_missing_or_broadcast_populations(before,after):
+    with pytest.raises(ValueError):row_regression(before,after)
+
+
+def test_proposal_guards_duplicate_suffix_without_recapping_authored_rows():
+    # Native, geometry, then two authored contact rows (failed and passing).
+    rows=NormRows([[0.,0,0],[2.,0,0],[3.,0,0],[.5,0,0]],np.ones(4),np.ones(4))
+    j=sparse.csc_matrix(np.arange(24).reshape(12,2))
+    original_caps=rows.caps.copy();before=rows.residual()[-2:]
+    guarded,jac,identity=protect_rows(rows,j,1,before)
+    assert identity['hard_rows']==3 and identity['geometry_rows']==1
+    np.testing.assert_array_equal(guarded.caps,[1.,3.,1.,1.,1.,1.])
+    np.testing.assert_array_equal(rows.caps,original_caps)
+    np.testing.assert_array_equal(guarded.vectors[3:],rows.vectors[1:])
+    np.testing.assert_array_equal(guarded.caps[3:],rows.caps[1:])
+    np.testing.assert_array_equal(jac.toarray(),j.toarray()[[0,1,2,6,7,8,9,10,11,3,4,5,6,7,8,9,10,11]])
+    np.testing.assert_array_equal(guarded.residual()[1:3],[0.,-.5])
+
+
+def test_affine_guard_prevents_tradeoff_that_minimax_alone_would_accept():
+    from native_scene_conic import direction
+    # Moving right helps the largest failed contact but worsens another.
+    rows=NormRows([[0.,0,0],[3.,0,0],[2.,0,0]],np.ones(3),np.ones(3))
+    j=sparse.csc_matrix(np.array([0,0,0,-1,0,0,1,0,0])[:,None])
+    plain,_=direction(rows,j,np.zeros(1),-np.ones(1),np.ones(1),.02,hard_rows=1)
+    assert plain[0]>.019
+    guarded,jac,identity=protect_rows(rows,j,1,rows.residual()[1:])
+    safe,info=direction(guarded,jac,np.zeros(1),-np.ones(1),np.ones(1),.02,hard_rows=identity['hard_rows'])
+    assert abs(safe[0])<1e-8 and info['protected_norm_rows']==3
+
+
+def test_actual_export_regression_overrules_protected_affine_proposal(monkeypatch):
+    problem=SimpleNamespace(initial=np.zeros(1),lower=-np.ones(1),upper=np.ones(1))
+    rows=NormRows([[0.,0,0],[2.,0,0],[3.,0,0]],np.ones(3),np.ones(3));j=sparse.csc_matrix((9,1))
+    monkeypatch.setattr(surface,'model',lambda *a,**kw:(rows,j,None,{}))
+    monkeypatch.setattr(surface,'direction',lambda *a,**kw:(np.array([.01]),dict(status='Solved')))
+    guide=SimpleNamespace(residual=lambda worlds:np.array([1.,2.]) if worlds==0 else np.array([1.01,1.9]))
+    assert nonregressing([1.,2.],[1.01,1.9])
+    def evaluator(x,label):
+        initial=label=='start'
+        return dict(native=np.array([-1.]),geometry=report(depth=2. if initial else 1.),worlds=0 if initial else 1,
+            scene=None,policy=None,digest=None,surface_contact=dict(surface_contacts_pass=False))
+    value,result=surface.optimize(problem,evaluator,iterations=1,restoration_steps=0,contact_model=guide)
+    np.testing.assert_array_equal(value,[0.])
+    assert result['individual_contact_rows_protected']
+    assert all(not p['accepted'] and not p['contact_rows_nonregressing'] for p in result['history'][0]['probes'])
+
+
+def test_contact_guard_restoration_runs_when_original_native_rows_already_pass(monkeypatch):
+    problem=SimpleNamespace(initial=np.zeros(1),lower=-np.ones(1),upper=np.ones(1))
+    rows=NormRows([[0.,0,0],[3.,0,0]],np.ones(2),np.ones(2));j=sparse.csc_matrix((6,1))
+    monkeypatch.setattr(surface,'model',lambda *a,**kw:(rows,j,None,{}))
+    monkeypatch.setattr(surface,'direction',lambda *a,**kw:(np.array([.01]),dict(status='Solved')))
+    guide=SimpleNamespace(residual=lambda worlds:np.array([2. if worlds==0 else (2.1 if worlds==1 else 1.9)]))
+    observed=[]
+    original_tighten=surface.tighten
+    def repair(system,jac,delta,actual,hard,reserve):
+        observed.append((actual.copy(),hard))
+        return original_tighten(system,jac,delta,actual,hard,reserve)
+    monkeypatch.setattr(surface,'tighten',repair)
+    def evaluator(x,label):
+        state=0 if label=='start' else (2 if 'restore' in label else 1)
+        return dict(native=np.array([-1.]),geometry=report(depth=2. if state==0 else 1.),worlds=state,
+            scene=None,policy=None,digest=None,surface_contact=dict(surface_contacts_pass=False))
+    value,result=surface.optimize(problem,evaluator,iterations=1,restoration_steps=1,contact_model=guide)
+    assert np.any(value) and observed[0][1]==2
+    np.testing.assert_allclose(observed[0][0],[-1.,.1,2.1],atol=1e-12)
+    assert result['history'][0]['probes'][1]['accepted']

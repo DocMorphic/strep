@@ -37,9 +37,9 @@ conditions must still pass before any collision-free claim.
 An optional `--surface-contact-policy` additionally enables
 [contact-normal guidance](native-contact-guidance-v1.md). In that mode acceptance
 requires the geometry score and the aggregate surface-contact error to avoid
-regression, with at least one objective improving. This aggregate rule can still
-trade individual contact errors against each other; the later retained result
-shows a small opposition-angle regression and remains a failure.
+regression, with at least one objective improving. Individual contact conditions
+are now protected as well; the initial aggregate-only experiment traded a small
+opposition-angle regression for better side gaps and remains a retained failure.
 
 The proposal's base vectors use decoded scalar-sampler poses. Batched continuous
 poses provide derivatives only. A first real-case attempt exposed a normalized

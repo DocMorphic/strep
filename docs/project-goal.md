@@ -2671,3 +2671,61 @@ approval. This is development progress; the single full-project goal stays
 ACTIVE. Next address individual error tradeoffs and reviewed contact semantics,
 then broaden scene/rig/action/transition and runtime validation under the
 existing general-purpose scope.
+
+
+## 2026-10-03T12:21:22.575535+00:00: Individual contact-condition protection and matched retained progress
+
+Previous goal turn made authoritative progress through validated contact-normal
+guidance, immutable mixed-result evidence and public commit 26db01e. Its hosted
+workflow 37121621615 has since passed all four jobs. This turn adds individual
+contact-row protection rather than accepting the previous aggregate tradeoff.
+Every original authored orientation/side condition at every existing point and
+clock keeps passing if already passing, or cannot gain failed excess. Complete
+finite matching vectors are mandatory; decoded acceptance uses no positive
+guard tolerance. Aggregate objectives and original native/geometry checks remain.
+
+Proposal models duplicate those rows into a hard prefix with separate bounds
+at max(authored cap, decoded base norm). Original authored rows/caps/scales
+remain unchanged in the soft objective and final audit. These separate
+nonregression bounds are not relaxed surface-quality thresholds. Restoration
+also responds to guard defects when original native conditions already pass.
+Each probe records its individual nonregression verdict and maximum overrun.
+Original source epoch, permissions, contact references and policies remain fixed.
+
+The real matched trial starts from the identical 35-iteration clip used by the
+previous experiment. Two primary iterations use the same trust, difference
+step and three-restoration budget. Iteration one accepts none; iteration two
+retains the third restored full step at the reduced trust. Its initial proposal
+fails both original native constraints and an orientation guard, and remains
+rejected. Final point gap 25.9743 -> 24.8464 mm; maximum partner depth 20.7519 ->
+20.4945 mm; deep vertices 396 -> 389; opposition 39.1619 -> 39.1568 degrees;
+source/target side gaps -25.5183/-21.0228 -> -23.8770/-20.8896 mm. All three
+authored contact errors improve, but all added surface conditions and seven
+geometry conditions still fail. Crossings regress 478 -> 482 under the retained
+depth-first geometry score. Original point/motion pass, native acceptance fails,
+originals selected. No scene rise, export weight conditioning or seed replacement.
+Count 37 is attempted cumulative primary iterations on an alternative branch,
+not 37 accepted steps or a continuation of the prior aggregate-only half-step.
+
+Terminal replay checks every one of 19 saved control vectors and 38 byte-exact
+exports, exact original cap arrays, complete decoded geometry, all individual/
+aggregate contact guards and every acceptance decision. Independent scalar
+incident-facet accumulation checks every saved normal/side/error (19 samples)
+without the production normal helper; pose samplers and geometry classifiers
+remain shared. All 546 bound files rehash. The previous half-step has a positive
+orientation-row regression ~0.004613 and is rejected by the new rule; its raw
+results stay untouched. All 454 focused model-free regressions pass, including
+14 new individual-bound, affine-conflict, exported-defect and restoration cases.
+Local evidence: reports/native-oriented-surface-fit-development-v2/high-five/
+verification-v1 and reports/native-contact-guards-validation-v1. Public method
+and limits: docs/native-contact-guards-v1.md. Generated evidence stays ignored.
+
+All fourteen capabilities retain empty release evidence and all matrix fields
+other than two progress metadata fields equal HEAD. Formal held-out trials
+unchanged. No training admission/checkpoint change, anatomical approval,
+continuous collision, GPU/runtime proof, developer/animator cleanup submission
+or release approval. Full goal remains ACTIVE. Next preserve this source-bound
+accepted state while pursuing separation, explicitly review contact semantics,
+and compose engine/placement checks; broad actions, object/partner correction,
+editing/style, rigs, loops/transitions and full release validation remain scope.
+Publish validated source/tests/docs to public GitHub under persistent authority.

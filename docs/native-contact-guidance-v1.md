@@ -37,16 +37,19 @@ saved exports, a complete mesh audit and a surface-contact audit.
 Actual step acceptance requires all original decoded point/motion conditions to
 pass, the existing lexicographic geometry score not to regress, and both surface
 error aggregates not to increase: maximum positive normalized residual and sum
-of squared positive residuals. At least one objective must improve. This rule
-does **not** protect each individual residual or each geometry count separately.
-An opposition-angle regression can accompany improved side gaps; fewer maximum
-penetration millimeters can accompany more crossings. Such steps are development
-observations, not approved contacts. The final native acceptance flag still
-requires the complete authored surface policy to pass.
+of squared positive residuals. At least one objective must improve. Current
+fitting also protects every individual contact condition: a passing row stays
+passing, and a failed row cannot increase its excess. Separate duplicated
+proposal bounds guide this requirement without changing the authored caps or
+final audit. See [individual contact protection](native-contact-guards-v1.md).
+Geometry count tradeoffs remain possible under the existing depth-first score.
+The final native acceptance flag still requires the complete authored surface
+policy to pass.
 
 ## Retained high-five experiment
 
-The experiment resumes the prior 35-primary-iteration clip against the exact
+This initial experiment used aggregate contact acceptance, before individual
+protection was added. It resumes the prior 35-primary-iteration clip against the exact
 original source and policy bytes. It attempts two further primary iterations
 with three restoration solves available per iteration. It accepts one half-step
 in the second iteration. The first iteration's proposals either exceed unchanged

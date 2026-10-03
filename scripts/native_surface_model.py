@@ -135,43 +135,59 @@ def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restorati
         hard = len(current['native'])
         if hard > len(system.caps): raise ValueError('Original norm population changed')
         np.testing.assert_allclose(system.residual()[:hard],current['native'],atol=1e-9,rtol=1e-12)
-        delta,info=direction(system,jac,value,problem.lower,problem.upper,radius,hard_rows=hard)
         probes=[]; accepted=None; before=geometry_score(current['geometry']); reserve=None
         contact_before=None if contact_model is None else contact_model.residual(current['worlds'])
+        protected=hard
+        if contact_model is not None:
+            from native_contact_norms import protect_rows
+            system,jac,guard_identity=protect_rows(system,jac,hard,contact_before)
+            protected=guard_identity['hard_rows'];identity['contact_protection']=guard_identity
+        delta,info=direction(system,jac,value,problem.lower,problem.upper,radius,hard_rows=protected)
         def observe(other,label):
             result=evaluate(other,label); native=np.asarray(result['native'],float)
             if native.shape!=(hard,) or not np.isfinite(native).all(): raise ValueError('Complete original decoded native population required')
             score=geometry_score(result['geometry']); safe=bool(np.all(native<=0))
             good=bool(safe and improved(before,score));contact_score=None
             if contact_model is not None:
-                from native_contact_norms import score as contact_merit,improved as contact_improved,nonregressing
+                from native_contact_norms import score as contact_merit,improved as contact_improved,nonregressing,row_regression
                 contact_actual=contact_model.residual(result['worlds']);contact_score=contact_merit(contact_actual).tolist()
-                good=bool(safe and not improved(score,before) and nonregressing(contact_before,contact_actual)
+                regression=row_regression(contact_before,contact_actual)
+                good=bool(safe and np.all(regression<=0) and not improved(score,before) and nonregressing(contact_before,contact_actual)
                     and (improved(before,score) or contact_improved(contact_before,contact_actual)))
             probes.append(dict(label=label,native_pass=safe,geometry_score=score.tolist(),surface_contact_merit=contact_score,accepted=good))
+            if contact_model is not None:
+                probes[-1].update(contact_rows_nonregressing=bool(np.all(regression<=0)),
+                    maximum_contact_row_regression=float(max(0.,regression.max())))
             return result,good
+        def actual_rows(candidate):
+            actual=system.residual().copy();actual[:hard]=candidate['native']
+            geometry_rows=0 if witnesses is None else len(witnesses.rows)
+            if witnesses is not None:
+                gaps=witnesses.gaps(surface_points(problem,candidate['worlds']))
+                actual[protected:protected+geometry_rows]=(.0005-gaps)/.005
+            if contact_model is not None:
+                from native_contact_norms import row_regression
+                contact_actual=contact_model.residual(candidate['worlds'])
+                actual[hard:protected]=row_regression(contact_before,contact_actual)
+                actual[protected+geometry_rows:]=contact_actual
+            return actual
         if delta is not None:
             for backoff in range(10):
                 fraction=.5**backoff; other=np.clip(value+fraction*delta,problem.lower,problem.upper)
                 candidate,good=observe(other,f'{iteration}-{backoff}')
                 if good: value=other;current=candidate;accepted=fraction;break
-                if backoff==0 and np.any(candidate['native']>0):
+                if backoff==0 and np.any(actual_rows(candidate)[:protected]>0):
                     repair_delta=delta
                     for repair in range(restoration_steps):
-                        actual=system.residual().copy();actual[:hard]=candidate['native']
-                        geometry_rows=0 if witnesses is None else len(witnesses.rows)
-                        if witnesses is not None:
-                            gaps=witnesses.gaps(surface_points(problem,candidate['worlds']))
-                            actual[hard:hard+geometry_rows]=(.0005-gaps)/.005
-                        if contact_model is not None:actual[hard+geometry_rows:]=contact_model.residual(candidate['worlds'])
-                        tightened,reserve,_=tighten(system,jac,repair_delta,actual,hard,reserve)
-                        repaired,repair_info=direction(tightened,jac,value,problem.lower,problem.upper,radius,hard_rows=hard)
+                        actual=actual_rows(candidate)
+                        tightened,reserve,_=tighten(system,jac,repair_delta,actual,protected,reserve)
+                        repaired,repair_info=direction(tightened,jac,value,problem.lower,problem.upper,radius,hard_rows=protected)
                         if repaired is None: break
                         other=np.clip(value+repaired,problem.lower,problem.upper)
                         candidate,good=observe(other,f'{iteration}-restore-{repair}')
                         probes[-1]['restoration_step']=repair_info
                         if good: value=other;current=candidate;accepted=1.;break
-                        if np.all(candidate['native']<=0): break
+                        if np.all(actual_rows(candidate)[:protected]<=0): break
                         repair_delta=repaired
                     if accepted is not None: break
         history.append(dict(iteration=iteration,before_geometry_score=before.tolist(),
@@ -187,4 +203,5 @@ def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restorati
             if radius < 1e-6: break
     return value,dict(history=history,geometry_score=geometry_score(current['geometry']).tolist(),
         maximum_iterations=iterations,trust=trust,all_original_norms_protected=True,
+        individual_contact_rows_protected=contact_model is not None,
         quality_approved=False,release_approved=False)

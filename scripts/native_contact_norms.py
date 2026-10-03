@@ -105,3 +105,37 @@ def nonregressing(before,after):
 def improved(before,after):
     before,after=score(before),score(after)
     return bool(np.all(after<=before+np.array([1e-9,1e-12])) and np.any(after<before-np.array([1e-9,1e-12])))
+
+
+def row_regression(before,after):
+    """Each passing row stays passing; each failed row cannot gain excess."""
+    before,after=np.asarray(before,float),np.asarray(after,float)
+    if (before.ndim!=1 or not len(before) or after.shape!=before.shape
+            or not np.isfinite(np.r_[before,after]).all()):
+        raise ValueError('Matching complete finite contact residual populations required')
+    return after-np.maximum(0.,before)
+
+
+def protect_rows(system,jacobian,native_rows,contact_before):
+    """Duplicate contact rows into the hard prefix without changing authored caps.
+
+    Failed rows have a separate no-worsening bound at their decoded base norm.
+    Their original authored rows remain in the objective and final audit.
+    """
+    before=np.asarray(contact_before,float);jacobian=sparse.csc_matrix(jacobian)
+    if (type(native_rows) is not int or not 1<=native_rows<=len(system.caps)
+            or before.ndim!=1 or not len(before) or not np.isfinite(before).all()
+            or native_rows+len(before)>len(system.caps)
+            or jacobian.shape[0]!=3*len(system.caps) or not np.isfinite(jacobian.data).all()):
+        raise ValueError('Complete native prefix and contact suffix required for protection')
+    count=len(before);suffix=np.arange(len(system.caps)-count,len(system.caps))
+    np.testing.assert_allclose(system.residual()[suffix],before,atol=1e-9,rtol=1e-12)
+    order=np.r_[np.arange(native_rows),suffix,np.arange(native_rows,len(system.caps))]
+    caps=system.caps[order].copy()
+    caps[native_rows:native_rows+count]=np.maximum(system.caps[suffix],np.linalg.norm(system.vectors[suffix],axis=1))
+    protected=NormRows(system.vectors[order],caps,system.scales[order])
+    derivative=jacobian[(3*order[:,None]+np.arange(3)).ravel()]
+    return protected,derivative,dict(native_rows=native_rows,protected_contact_rows=count,
+        hard_rows=native_rows+count,geometry_rows=len(system.caps)-native_rows-count,
+        authored_norm_rows_unchanged=True,contact_baseline_residual=before.tolist(),
+        scope='Separate per-row no-worsening proposal bounds. Original authored caps/scales retained in soft rows and final decoded audit.')
