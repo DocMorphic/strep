@@ -106,3 +106,7 @@ Imported actor skin, whole-scene geometry, continuous contact/collision, normals
 attachment/release, physics, runtime event dispatch, human review and release
 acceptance remain unapproved. This experimental CLI path does not change
 Studio defaults or claim a newly trained model or general manipulation quality.
+
+The subsequent [combined imported scene study](native-object-scene-engine-v1.md)
+passes full imported skin and declared geometry on its retained 1,266-time clock.
+Its expanded common-clock preparation remains a separate validation population.

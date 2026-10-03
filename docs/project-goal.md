@@ -2986,3 +2986,57 @@ The earlier authoring geometry pass is not transferred implicitly. All 14
 capability evidence lists, formal held-out trials and frozen gates are unchanged.
 Next: combine native engine object-resource poses with complete imported actor
 skin and full declared-scene geometry, then expose reviewed authoring controls.
+
+
+## 2026-10-03 — Complete imported skin and native-resource scene comparison
+
+Previous 5eedf9b hosted CI completes successfully in all four Windows/Linux
+jobs. The full-project goal remains active. The completed original 1266-time
+humanoid sphere study first imports all 18056 vertices, 36108 faces and 18056
+distinct skin functions, validates all raw influences/bind mappings and records
+globally reversed imported winding. Full-skin position errors are rederived
+at every time: maximum 0.0950103 mm against the original 0.1 mm limit. Pose
+matrix maximum error is 7.115e-7. All first-stage pose, Node3D object, contact,
+full-skin and declared-geometry conditions pass. This remains headless CPU
+reconstruction and native-resource authoring, not GPU/runtime/physics approval.
+
+The combined follow-up uses the actual saved/reloaded GLB-derived native object
+Animation resource observations with that complete imported character skin.
+All 2532 actor/object geometry observations pass at all 1266 original clocks.
+Original 5 mm/5 mm/s contact limits pass: left/right distances 1.999534/1.996182
+mm and worst held speeds 3.072727/3.086137 mm/s. The matched default object import
+still fails, with right speed 10.209631 mm/s. No partner or world plane is
+declared; partner/floor, contact normals, balance, self/object-object/continuous
+collision, physical attachment, real-time events and human quality remain open.
+
+Saved replay independently binds all raw producers, snapshots, resources and
+methods, reproduces every full-vertex skin error and contact array exactly,
+and checks every saved per-triangle geometry reduction. The expensive geometry
+query is not redundantly rerun for replay. A prototype's generic callback
+metadata incorrectly labels weights normalized; numerical callbacks use actual
+raw unnormalized imported weights. Original evidence remains immutable; a
+separate derived report corrects the label and the reusable CLI explicitly
+records it correctly. No failed import or historical result is overwritten.
+
+A reusable combined engine CLI validates complete identical source/engine
+clocks, terminal producers, methods, raw receipts, resources and snapshots
+before computing complete skin/contact/pose/scene gates. Its prepare command
+creates a derived object bundle and common geometry policy from original
+required clocks, original audit times and actual stored object key times.
+Original GLB/actor bytes, contacts, policy mode, limits and planes are unchanged;
+every inherited clock is preserved, with budget rejection rather than truncation.
+The real prepared bundle has 2201 times and passes its saved object pose/contact
+screen. This expansion is a separate population: old 1266-time engine/geometry
+success is not transferred to it. Its fresh producer/geometry run remains needed.
+
+Twenty focused cases cover full sampled composition, failing default imports,
+changed/incomplete producers/resources/scripts, exact clocks, actual counterpart
+use, expanded policy preservation, unchanged assets and source/output isolation.
+Small unit engine execution is explicitly mocked; real humanoid raw data comes
+from headless Godot. All 553 related model-free regressions pass. No new model
+inference, training admission, checkpoint, developer/animator approval or release
+approval. All 14 capability evidence lists, formal held-out trials and frozen
+gates stay unchanged. Next: validate the expanded actual stored-key population,
+then connect the auditable workflow to scene authoring and broader interaction
+trials. Code, tests, CI and concise methodology are published; bulky raw study
+data, models, characters and machine details stay excluded.
