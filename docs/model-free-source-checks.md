@@ -1,5 +1,15 @@
 # Public source checks
 
+The native character-correction workflow adds CPU job, continuation, contact
+revision, evidence-tampering and offline HTTP-handler regressions, plus a Node
+DOM workflow. No live Studio connection or renderer is used. In
+[run 37175584147](https://github.com/DocMorphic/strep/actions/runs/37175584147),
+the Linux source job and both adapter jobs passed. The Windows Python step
+reported 2,639 passed and three skipped in 1,761 seconds, then the 30-minute
+job limit canceled the run before its Node checks. This is an incomplete hosted
+run, not a passing Windows run. The source-job limit is now 45 minutes to allow
+its existing suite and subsequent editor checks to finish.
+
 The public repository now defines a GitHub Actions workflow for a suite that needs no motion checkpoint, gated text encoder, character payload, saved study or Godot executable. It runs on Windows and Linux with Python 3.10, pinned NumPy/SciPy/pytest/Trimesh/Rtree requirements and Node 24. Both push and pull-request events run it; manual dispatch is also available.
 
 The suite checks primitive preview geometry, endpoint travel bounds, exact rate/pose conflict certificates, reproducibility of the Studio HTML build and offline contact-editor behavior. This is software regression coverage, not a full-suite, inference, engine, visual or animation-quality approval. The legacy geometry/scene comparison test imports the full Torch-based pipeline and remains outside this model-free suite.

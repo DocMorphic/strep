@@ -1,0 +1,27 @@
+<details id="nativeSceneFitPanel" class="rig-panel">
+ <summary>Correct character motion</summary>
+ <p class="small">Assemble characters and contacts in Scene contacts first. Choose the joints and timing that may change. Original clips stay selected; proposals and failed checks remain available for review. Object paths stay as declared.</p>
+ <button class="btn" id="nativeSceneFitLoad">Load scene joints</button>
+ <div class="rig-field-grid">
+  <label>Character<select id="nativeSceneFitActor"></select></label>
+  <label>Edit starts / ends (s)<input id="nativeSceneFitWindow" value="0, 2"></label>
+  <label>Motion control times (s)<input id="nativeSceneFitKnots" value="0, 0.6, 1.4, 2"></label>
+  <label>Protected time ranges (s)<input id="nativeSceneFitProtected" value="[]"></label>
+  <label>Maximum joint movement (mm)<input id="nativeSceneFitDisplacement" type="number" min="0.001" max="220" step="any" value="150"></label>
+ </div>
+ <p class="small">Rotation bounds are degrees; translation bounds are millimetres. Unavailable native channels are shown with a reason. Source motion-rate limits remain fixed.</p>
+ <div id="nativeSceneFitTracks"></div>
+ <div class="toolbar"><button class="btn" id="nativeSceneFitSaveActor">Save character bounds</button><button class="btn" id="nativeSceneFitRemoveActor">Remove character bounds</button></div>
+ <div id="nativeSceneFitSelections"></div>
+ <div class="rig-field-grid">
+  <label>Correction iterations<input id="nativeSceneFitIterations" type="number" min="1" max="16" step="1" value="2"></label>
+  <label>Source epoch<select id="nativeSceneFitResume"><option value="">Fresh correction from submitted clips</option></select></label>
+ </div>
+ <button class="btn" id="nativeSceneFitLoadResume">Load selected correction for continuation</button>
+ <div class="toolbar"><button class="btn" id="nativeSceneFitSave">Save correction request</button><button class="btn primary" id="nativeSceneFitBuild">Propose character correction</button></div>
+ <p class="small" id="nativeSceneFitStatus" role="status">No scene joints loaded.</p>
+ <div class="toolbar"><select id="nativeSceneFitJobs" aria-label="Character correction job"></select><button class="btn" id="nativeSceneFitRefresh">Refresh jobs</button><button class="btn" id="nativeSceneFitReview">Show source &amp; proposal files</button></div>
+ <div id="nativeSceneFitResults" aria-live="polite"></div>
+ <button class="btn" id="nativeSceneFitStage" disabled>Use all proposals in a new scene draft</button>
+ <p class="small">Staging requires the recorded native and sampled geometry checks to pass. Build and review new scene assets to verify import; numerical checks do not approve animation quality.</p>
+</details>

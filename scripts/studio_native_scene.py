@@ -20,7 +20,7 @@ NAMESPACE='native-scene-jobs'
 NAME=re.compile(r'[A-Za-z0-9_-]{1,100}')
 SCRIPT_ROOT=Path(__file__).resolve().parent
 METHODS=tuple(dict.fromkeys(AUTHOR_METHODS+('studio_native_scene.py','native_contact_revision.py')))
-ASSET_PREFIXES=('/files/rig-jobs/','/files/character-assets/','/files/native-correction-previews/','/files/native-support-jobs/')
+ASSET_PREFIXES=('/files/rig-jobs/','/files/character-assets/','/files/native-correction-previews/','/files/native-support-jobs/','/files/native-scene-jobs/','/files/native-scene-fit-jobs/')
 
 
 def require(condition,message):

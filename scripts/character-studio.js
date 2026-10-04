@@ -15,8 +15,11 @@ void (async function characterStudio(){
  const {createNativeSupportEditor}=await import('/native-support-editor.mjs');
  const nativeSupportEditor=createNativeSupportEditor({getContext:()=>({job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value})});
  const contactEditor=createRigContactEditor({C,THREE,canvas,scene,camera,controls,api,post,status,getContext:()=>({model,loaded,frame,result,job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),pause:()=>{playing=false;C('rigPlay').textContent='Play';},seek,onFit:job=>{pending=job.id;controlsState();refreshJobs().catch(e=>status(e.message));}});
+ let nativeSceneEditor=null;
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneEditor}=await import('/native-scene-editor.mjs');
-  createNativeSceneEditor({api,post,getContext:()=>({job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),getPatch:()=>contactEditor.nativePatch()});},C('nativeSceneStatus'),'Scene editor');
+  nativeSceneEditor=createNativeSceneEditor({api,post,getContext:()=>({job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),getPatch:()=>contactEditor.nativePatch()});},C('nativeSceneStatus'),'Scene editor');
+ await initializeOptionalRigEditor(async()=>{const {createNativeSceneFitEditor}=await import('/native-scene-fit-editor.mjs');
+  if(!nativeSceneEditor)throw Error('Scene editor is required');createNativeSceneFitEditor({api,post,getDraft:()=>nativeSceneEditor.snapshot(),setDraft:value=>nativeSceneEditor.bind(value)});},C('nativeSceneFitStatus'),'Character correction editor');
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneGameEditor}=await import('/native-scene-game-editor.mjs');
   createNativeSceneGameEditor({api,post});},C('nativeSceneGameStatus'),'Game-track editor');
  const clipEditor=createRigClipEditor({C,api,post,status,sampleJoint:node=>{let joint;model.traverse(n=>{if(loaded.parser.associations.get(n)?.nodes===node)joint=n;});if(!joint)throw Error('Selected GLB joint is not available');model.updateMatrixWorld(true);return {position_m:joint.getWorldPosition(new THREE.Vector3()).toArray(),rotation_xyzw:joint.getWorldQuaternion(new THREE.Quaternion()).toArray()};},getContext:()=>({model,frame,result,job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),seek,pause:()=>{playing=false;C('rigPlay').textContent='Play';},closeContacts:()=>contactEditor.hide(),onJob:job=>{pending=job.id;controlsState();refreshJobs().catch(e=>status(e.message));}});
