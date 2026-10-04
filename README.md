@@ -69,6 +69,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Stored quaternion correction](docs/native-scene-serialized-correction-v1.md) adds explicit symmetric derivatives, source-scale quaternion updates and finite actual-key ray probes for rotation/translation edits. Original source limits and decoded contact checks remain authoritative; numerical correction still requires geometry, engine and human-quality review.
 
+[Recentered scene restoration](docs/native-scene-recentered-restoration-v1.md) offers an explicit alternative that rebuilds full local models on rejected decoded exports, preserving original motion limits and contact references. Each trial still requires independent export acceptance; the option alone does not establish usable motion.
+
 [Native scene engine diagnostics](docs/native-scene-engine-v1.md) now verify complete imported skin functions and triangles, explicit animation selection, actor/partner contacts and engine object poses. Eight matched humanoid imports complete but retain contact, floor or skin-position failures; 299 focused tests pass. Headless CPU reconstruction and manual authoring seeks do not establish GPU, physics or real-time playback quality.
 
 [Bounded native scene proposals](docs/native-scene-fitting-v1.md) now edit explicitly permitted rotation or translation tracks against body, object and partner targets. Source motion limits, native clocks, protected keys and rig geometry remain checked. Three finite-budget trials still fail; improved hand separation does not approve motion quality, and originals remain selected pending scene and engine checks.

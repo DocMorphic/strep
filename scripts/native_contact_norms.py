@@ -116,10 +116,12 @@ def row_regression(before,after):
     return after-np.maximum(0.,before)
 
 
-def protect_rows(system,jacobian,native_rows,contact_before):
+def protect_rows(system,jacobian,native_rows,contact_before,*,reference=None):
     """Duplicate contact rows into the hard prefix without changing authored caps.
 
     Failed rows have a separate no-worsening bound at their decoded base norm.
+    A recentered model supplies the original contact-only reference explicitly;
+    the rejected candidate cannot become a new no-worsening baseline.
     Their original authored rows remain in the objective and final audit.
     """
     before=np.asarray(contact_before,float);jacobian=sparse.csc_matrix(jacobian)
@@ -129,10 +131,15 @@ def protect_rows(system,jacobian,native_rows,contact_before):
             or jacobian.shape[0]!=3*len(system.caps) or not np.isfinite(jacobian.data).all()):
         raise ValueError('Complete native prefix and contact suffix required for protection')
     count=len(before);suffix=np.arange(len(system.caps)-count,len(system.caps))
-    np.testing.assert_allclose(system.residual()[suffix],before,atol=1e-9,rtol=1e-12)
+    anchor=NormRows(system.vectors[suffix],system.caps[suffix],system.scales[suffix]) if reference is None else reference
+    if (not isinstance(anchor,NormRows) or anchor.vectors.shape!=(count,3)
+            or not np.array_equal(anchor.caps,system.caps[suffix])
+            or not np.array_equal(anchor.scales,system.scales[suffix])):
+        raise ValueError('Complete original contact reference with unchanged caps/scales required')
+    np.testing.assert_allclose(anchor.residual(),before,atol=1e-9,rtol=1e-12)
     order=np.r_[np.arange(native_rows),suffix,np.arange(native_rows,len(system.caps))]
     caps=system.caps[order].copy()
-    caps[native_rows:native_rows+count]=np.maximum(system.caps[suffix],np.linalg.norm(system.vectors[suffix],axis=1))
+    caps[native_rows:native_rows+count]=np.maximum(anchor.caps,np.linalg.norm(anchor.vectors,axis=1))
     protected=NormRows(system.vectors[order],caps,system.scales[order])
     derivative=jacobian[(3*order[:,None]+np.arange(3)).ravel()]
     return protected,derivative,dict(native_rows=native_rows,protected_contact_rows=count,

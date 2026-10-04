@@ -106,7 +106,12 @@ def direction(system, jacobian, value, lower, upper, trust, *, hard_rows=0):
 
 
 def optimize(problem,evaluate,iterations,trust,*,difference_step=.001,difference_source='stored',storage_cells=0,protect_source_rows=False,restoration_steps=0,
-        protect_contact_rows=False,anchor_worlds=None,difference_scheme='forward',serialized_ray_probes=0):
+        protect_contact_rows=False,anchor_worlds=None,difference_scheme='forward',serialized_ray_probes=0,restoration_model='measured-cap'):
+    if restoration_model not in ('measured-cap','recentered'):raise ValueError('Choose measured-cap or recentered restoration')
+    if restoration_model=='recentered' and (type(restoration_steps) is not int or not 1<=restoration_steps<=4):
+        raise ValueError('Choose 1-4 recentered restoration steps')
+    if restoration_model=='recentered' and (not restoration_steps or not protect_source_rows or anchor_worlds is None):
+        raise ValueError('Recentered restoration requires protected source rows, decoded anchors and positive restoration steps')
     if difference_scheme not in ('forward','central'):raise ValueError('Choose forward or central vector differences')
     if type(serialized_ray_probes) is not int or not 0<=serialized_ray_probes<=512:
         raise ValueError('Choose 0-512 serialized ray probes')
@@ -126,10 +131,11 @@ def optimize(problem,evaluate,iterations,trust,*,difference_step=.001,difference
         # it must describe the same ordered constraints before proposing a step.
         np.testing.assert_allclose(system.residual(),problem.model(value) if anchor_worlds is None else current,atol=1e-9,rtol=1e-12)
         hard=problem.protected_rows if protect_source_rows else 0
-        contact_before=None
+        contact_before=None;contact_reference=None
         if protect_contact_rows:
             from native_contact_norms import protect_rows,row_regression
             contact_before=np.asarray(current[hard:],float)
+            contact_reference=NormRows(system.vectors[hard:],system.caps[hard:],system.scales[hard:])
             if np.any(np.asarray(current[:hard])>0):raise ValueError('Original source conditions must pass before contact protection')
             system,jacobian,guard_identity=protect_rows(system,jacobian,hard,contact_before)
             hard=guard_identity['hard_rows'];differences['native_contact_protection']=guard_identity
@@ -159,7 +165,46 @@ def optimize(problem,evaluate,iterations,trust,*,difference_step=.001,difference
                 backoff_source_pass=bool(np.all(g[:problem.protected_rows]<=0))
                 probes.append(dict(fraction=fraction,merit=list(score),**observation(g),accepted=passed))
                 if passed:value=other;current=g;current_label=label;accepted=fraction;break
-                if restoration_steps and protect_source_rows and backoff==0 and not protected:
+                if restoration_steps and restoration_model=='recentered' and protect_source_rows and backoff==0 and not protected:
+                    repair_value=other.copy();repair_g=g;repair_label=label
+                    for repair in range(restoration_steps):
+                        repair_system,repair_jac,repair_differences=linearize(problem,repair_value,
+                            step=difference_step,difference_source=difference_source,difference_scheme=difference_scheme,
+                            base_worlds=anchor_worlds(repair_value,repair_label))
+                        np.testing.assert_allclose(repair_system.residual(),repair_g,atol=1e-9,rtol=1e-12)
+                        repair_hard=problem.protected_rows
+                        if protect_contact_rows:
+                            repair_system,repair_jac,guard=protect_rows(repair_system,repair_jac,repair_hard,
+                                contact_before,reference=contact_reference)
+                            repair_hard=guard['hard_rows'];repair_differences['native_contact_protection']=guard
+                        repaired,repair_info=direction(repair_system,repair_jac,repair_value,problem.lower,problem.upper,
+                            radius*.5**repair,hard_rows=repair_hard)
+                        record=dict(index=repair,model='recentered',anchor_label=repair_label,
+                            anchor_controls=repair_value.tolist(),differences=repair_differences,conic_step=repair_info,
+                            available=repaired is not None,probes=[])
+                        repairs.append(record)
+                        if repaired is None:break
+                        repair_before=merit(protected_residual(repair_g)[:repair_hard]);next_anchor=None
+                        for trial in range(10):
+                            repair_fraction=.5**trial
+                            candidate=np.clip(repair_value+repair_fraction*repaired,problem.lower,problem.upper)
+                            candidate_label=f'{iteration}-recenter-{repair}-{trial}'
+                            candidate_g=evaluate(candidate,candidate_label);score,guard_pass,passed=acceptable(candidate_g)
+                            defect=merit(protected_residual(candidate_g)[:repair_hard])
+                            item=dict(kind='recentered-restoration',index=repair,repair_fraction=repair_fraction,
+                                label=candidate_label,merit=list(score),protected_merit=list(defect),
+                                **observation(candidate_g),accepted=passed)
+                            record['probes'].append(item);probes.append(item)
+                            if passed:
+                                value=candidate;current=candidate_g;current_label=candidate_label;accepted=repair_fraction;break
+                            if (defect[0]<repair_before[0]-1e-12 or
+                                    abs(defect[0]-repair_before[0])<=1e-12 and defect[1]<repair_before[1]-1e-15):
+                                if next_anchor is None or tuple(defect)<tuple(next_anchor[3]):
+                                    next_anchor=(candidate,candidate_g,candidate_label,defect)
+                        if accepted is not None or next_anchor is None:break
+                        repair_value,repair_g,repair_label,_=next_anchor
+                    if accepted is not None:break
+                if restoration_steps and restoration_model=='measured-cap' and protect_source_rows and backoff==0 and not protected:
                     from native_scene_restore import tighten
                     reserve=None;repair_delta=delta;repair_g=g
                     for repair in range(restoration_steps):
@@ -220,5 +265,6 @@ def optimize(problem,evaluate,iterations,trust,*,difference_step=.001,difference
         difference_scheme=difference_scheme,
         maximum_serialized_ray_probes=serialized_ray_probes,
         maximum_restoration_steps=restoration_steps,
+        restoration_model=restoration_model,
         native_contact_rows_individually_protected=protect_contact_rows,decoded_base_anchor=anchor_worlds is not None,
         quantized_native_keys=True,conservative_dense_dependencies=True)

@@ -147,7 +147,10 @@ def optimize(problem,evaluate,iterations,trust):
 
 def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_model='scalar',vector_difference_step=None,storage_cells=None,restoration_steps=0,
         geometry_policy=None,resume_from=None,surface_contact_policy=None,contact_revision=None,vector_difference_scheme='forward',serialized_ray_probes=0,
-        rotation_storage_policy=None):
+        rotation_storage_policy=None,restoration_model='measured-cap'):
+    if restoration_model not in ('measured-cap','recentered'):raise ValueError('Choose measured-cap or recentered restoration')
+    if restoration_model=='recentered' and (proposal_model!='storage-vector' or not restoration_steps):
+        raise ValueError('Recentered restoration requires storage-vector proposals and positive restoration steps')
     if rotation_storage_policy is None:
         if resume_from is None:rotation_storage_policy='unit'
         else:
@@ -250,6 +253,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             rotation_storage_policy=rotation_storage_policy,
             storage_cells=storage_cells,
             restoration_steps=restoration_steps,
+            restoration_model=restoration_model,
             geometry_policy_sha256=None if geometry_request is None else bindings[str(geometry_policy)],
             surface_contact_policy_sha256=None if surface_request is None else bindings[str(surface_contact_policy)],
             frame_contract_sha256=contract_sha256(),python=sys.version,numpy=np.__version__,scipy=scipy.__version__,
@@ -318,6 +322,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                     serialized_ray_probes=serialized_ray_probes,
                     difference_source='continuous' if proposal_model=='storage-vector' else 'stored',
                     storage_cells=storage_cells or 0,protect_source_rows=proposal_model=='storage-vector',restoration_steps=restoration_steps,
+                    restoration_model=restoration_model,
                     protect_contact_rows=proposal_model=='storage-vector',
                     anchor_worlds=anchor_worlds if proposal_model=='storage-vector' else None)
             else:value,optimization = optimize(problem,evaluate,iterations,trust)
@@ -391,6 +396,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                 rotation_storage_policy=rotation_storage_policy,
                 storage_cells=storage_cells,
                 restoration_steps=restoration_steps,
+                restoration_model=restoration_model,
                 original_selected=True,selected_files={n:p.relative_to(output).as_posix() for n,p in originals.items()},
                 proposal_files={n:str(Path(a['glb']).relative_to(output)) for n,a in proposal_spec['actors'].items()},
                 contacts_result_sha256=sha256(output/'contact-audit/result.json'),
@@ -420,9 +426,11 @@ if __name__=='__main__':
         help='Preserve source quaternion length before Float32 storage; defaults to prior policy on resume, unit on fresh fits')
     p.add_argument('--storage-cells',type=int,help='Finite translation cell probes per iteration, storage-vector only')
     p.add_argument('--restoration-steps',type=int,default=0,help='0-4 decoded constraint restoration solves, storage/surface-vector only')
+    p.add_argument('--restoration-model',choices=['measured-cap','recentered'],default='measured-cap',
+        help='Recenter a local model on rejected decoded exports; storage-vector with positive restoration steps only')
     p.add_argument('--geometry-policy',type=Path,help='Source-bound sampled scene policy; originals remain selected')
     p.add_argument('--resume-from',type=Path,help='Completed fit to replay against the exact original source and limits')
     p.add_argument('--contact-revision',type=Path,help='Explicit patch-only revision receipt; requires --resume-from and unchanged source edit permissions')
     p.add_argument('--surface-contact-policy',type=Path,help='Surface-facing acceptance audit and surface-vector proposal guidance')
     a=p.parse_args(); run(a.contacts,a.permissions,a.output,iterations=a.iterations,trust=a.trust,
-        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,restoration_steps=a.restoration_steps,geometry_policy=a.geometry_policy,resume_from=a.resume_from,surface_contact_policy=a.surface_contact_policy,contact_revision=a.contact_revision,vector_difference_scheme=a.vector_difference_scheme,serialized_ray_probes=a.serialized_ray_probes,rotation_storage_policy=a.rotation_storage_policy)
+        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,restoration_steps=a.restoration_steps,geometry_policy=a.geometry_policy,resume_from=a.resume_from,surface_contact_policy=a.surface_contact_policy,contact_revision=a.contact_revision,vector_difference_scheme=a.vector_difference_scheme,serialized_ray_probes=a.serialized_ray_probes,rotation_storage_policy=a.rotation_storage_policy,restoration_model=a.restoration_model)
