@@ -17,6 +17,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
+[Contact-region review](docs/native-contact-region-review-v1.md) preserves original motion and targets while measuring declared mesh regions at every contact time. Four development reviews show that a passing high-five point condition can still place the point 51.7 mm inside the region's supporting plane. Persistent alternatives remain explicit author choices; they do not establish anatomical contact, collision freedom or motion quality.
+
 [Decoded source-bound restoration](docs/native-scene-decoded-restoration-v1.md) tightens proposal caps using measured serialization and nonlinear errors, while retaining the original final motion limits. A retained high-five now accepts four safe sampled steps and reduces hand separation from 206 mm to 178 mm; the 30 mm contact target still fails.
 
 [Source-bound continuation](docs/native-scene-resume-v1.md) resumes a completed native scene proposal by replaying its controls against the exact original actors and limits. Sixteen further accepted steps reduce the retained high-five separation from 178 mm to 77 mm while preserving sampled source rates; the 30 mm contact target still fails. It checks byte-exact exports and decoded source safety before further fitting; it does not rebuild motion caps from an edited clip or restore optimizer internals.
