@@ -246,3 +246,57 @@ def test_rebuilding_caps_for_a_later_step_is_rejected(tmp_path, monkeypatch):
         flow.run(*paths, output, iterations=2)
     assert read(output/'iteration-1/backoff-0/decision.json')['provisional_native_contact_progress']
     assert read(output/'pipeline.json')['status'] == 'failed' and not (output/'result.json').exists()
+
+
+@pytest.mark.parametrize('fault', ['shape', 'nan', 'boxes', 'start', 'trust'])
+def test_invalid_projection_inputs_reject_without_partial_direction(fault):
+    value=np.array([.9, -.9]);delta=np.array([.03, -.03]);lower=np.array([-1., -1.]);upper=-lower;trust=.02
+    if fault=='shape':delta=delta[:1]
+    if fault=='nan':delta[0]=np.nan
+    if fault=='boxes':lower=upper.copy()
+    if fault=='start':value[0]=1.1
+    if fault=='trust':trust=True
+    with pytest.raises(ValueError):flow.project_direction(value,delta,lower,upper,trust)
+
+
+@pytest.mark.parametrize('fraction', [1., .5, .125])
+def test_exact_projection_and_rounded_backoff_preserve_original_boxes_and_trust(fraction):
+    value=np.array([.1, -.1, .999, -.999]);raw=np.array([.020000000002492416, -.020000000002492416, .03, -.03])
+    lower=-np.ones(4);upper=-lower;delta,report=flow.project_direction(value,raw,lower,upper,.02)
+    assert report['changed_components']==4 and report['raw_step_box_excess']>0
+    assert not report['authored_limits_relaxed'] and not report['projected_affine_feasibility_certified']
+    assert np.all(np.abs(delta)<=.02) and np.all(delta>=lower-value) and np.all(delta<=upper-value)
+    candidate=flow.backoff_controls(value,delta,lower,upper,.02,fraction)
+    assert np.all(candidate>=lower) and np.all(candidate<=upper) and np.all(np.abs(candidate-value)<=fraction*.02)
+    if fraction==1.:
+        # Floating addition at 0.1 + 0.02 otherwise produces a larger step.
+        assert .1+.02-.1>.02
+        assert candidate[0]==np.nextafter(.1+.02,.1)
+
+
+@pytest.mark.parametrize('fraction', [0., -1., 1.1, float('nan'), True])
+def test_unbounded_or_invalid_backoff_fraction_rejects(fraction):
+    with pytest.raises(ValueError):flow.backoff_controls([0.], [.02], [-1.], [1.], .02, fraction)
+
+
+def test_raw_solver_overrun_is_saved_and_projected_before_actual_native_rejection(tmp_path, monkeypatch):
+    paths=fixture(tmp_path,monkeypatch);raw=np.array([.020000000002492416,0.,0.])
+    monkeypatch.setattr(flow,'direction',lambda *a,**k:(raw.copy(),dict(status='test-external-proposal')))
+    output=tmp_path/'out';result=flow.run(*paths,output,iterations=1,backoffs=1)
+    np.testing.assert_array_equal(np.load(output/'iteration-1/raw-direction.npy'),raw)
+    np.testing.assert_array_equal(np.load(output/'iteration-1/direction.npy'),[.02,0.,0.])
+    report=read(output/'iteration-1/direction-projection.json')
+    assert report['changed_components']==1 and report['raw_step_box_excess']>0
+    decision=read(output/'iteration-1/backoff-0/decision.json')
+    assert not decision['native_pass'] and not decision['provisional_native_contact_progress']
+    assert not result['retained_partial_improvement'] and not result['geometry_checked']
+    assert 'iteration-1/raw-direction.npy' in result['files_sha256']
+
+
+def test_nonfinite_raw_solver_output_is_preserved_then_rejected(tmp_path, monkeypatch):
+    paths=fixture(tmp_path,monkeypatch)
+    monkeypatch.setattr(flow,'direction',lambda *a,**k:(np.array([np.nan,0.,0.]),dict(status='test-external-proposal')))
+    output=tmp_path/'out'
+    with pytest.raises(ValueError,match='Finite matching'):flow.run(*paths,output,iterations=1)
+    assert np.isnan(np.load(output/'iteration-1/raw-direction.npy')[0])
+    assert read(output/'pipeline.json')['status']=='failed' and not (output/'result.json').exists()

@@ -67,6 +67,41 @@ def provisional(before_native, after_native, before_contact, after_contact):
                 full_geometry_checked=False, retained=False)
 
 
+def project_direction(value, delta, lower, upper, trust):
+    value, delta, lower, upper = [np.asarray(a, float) for a in (value, delta, lower, upper)]
+    if (value.ndim != 1 or not len(value) or any(a.shape != value.shape or not np.isfinite(a).all()
+            for a in (value, delta, lower, upper)) or np.any(lower >= upper)
+            or np.any(value < lower) or np.any(value > upper)
+            or type(trust) not in (int, float) or not np.isfinite(trust) or trust <= 0):
+        raise ValueError('Finite matching direction, original control boxes and positive trust required')
+    lo, hi = np.maximum(lower-value, -trust), np.minimum(upper-value, trust)
+    used = np.clip(delta, lo, hi)
+    return used, dict(raw_maximum_control_step=float(np.abs(delta).max()),
+        raw_step_box_excess=float(np.maximum(np.maximum(lo-delta, delta-hi), 0).max()),
+        projected_maximum_control_step=float(np.abs(used).max()),
+        changed_components=int((used != delta).sum()), maximum_projection_change=float(np.abs(used-delta).max()),
+        exact_step_box_projection=True, authored_limits_relaxed=False,
+        projected_affine_feasibility_certified=False, independent_export_audit_required=True)
+
+
+def backoff_controls(value, delta, lower, upper, trust, fraction):
+    delta, _ = project_direction(value, delta, lower, upper, trust)
+    if type(fraction) not in (int, float) or not np.isfinite(fraction) or not 0 < fraction <= 1:
+        raise ValueError('Finite backoff fraction in (0,1] required')
+    value = np.asarray(value, float)
+    candidate = np.clip(value + fraction*delta, lower, upper)
+    # Addition can round an exactly bounded displacement one ULP outwards.
+    # Move only those coordinates towards the original point; never add slack.
+    for _ in range(2):
+        outside = np.abs(candidate-value) > fraction*trust
+        if not np.any(outside):
+            return candidate
+        candidate[outside] = np.nextafter(candidate[outside], value[outside])
+    if np.any(np.abs(candidate-value) > fraction*trust):
+        raise ValueError('Rounded backoff cannot meet its exact trust box')
+    return candidate
+
+
 def run(contacts_path, permissions_path, surface_policy_path, geometry_policy_path, output, *,
         start_controls=None, geometry_donor=None, iterations=3, backoffs=10, trust=.02,
         difference_step=.001, phase_seconds=120., maximum_iterations=200,
@@ -178,13 +213,15 @@ def run(contacts_path, permissions_path, surface_policy_path, geometry_policy_pa
                 save(folder/'proposal.json', proposal)
                 probes = []; chosen = None
                 if delta is not None:
-                    delta = edits.controls(delta)
-                    if np.any(np.abs(delta) > trust + 1e-12):
-                        raise ValueError('Solver proposal exceeded the declared trust box')
+                    raw_delta = np.asarray(delta, float)
+                    np.save(folder/'raw-direction.npy', raw_delta, allow_pickle=False)
+                    raw_delta = edits.controls(raw_delta)
+                    delta, projection = project_direction(x, raw_delta, problem.lower, problem.upper, trust)
+                    save(folder/'direction-projection.json', projection)
                     np.save(folder/'direction.npy', delta)
                     for backoff in range(backoffs):
                         label = f'backoff-{backoff}'; fraction = .5**backoff
-                        value = np.clip(x + fraction*delta, problem.lower, problem.upper)
+                        value = backoff_controls(x, delta, problem.lower, problem.upper, trust, fraction)
                         pipeline('serialized-curve-audit', iteration=iteration, label=label)
                         newfiles, after, newworlds, newcontact, newstatic = audit(value, folder/label)
                         decision = provisional(native, after, contact, newcontact)
