@@ -14,7 +14,7 @@ from strep import ROOT,read,save,sha256,now
 from native_scene_contacts import SceneContacts,fields
 from native_scene_geometry import policy_for
 from native_object_hold_fit import request_for
-from native_scene_authoring_job import plan,run as author,validated,METHODS as AUTHOR_METHODS
+from native_scene_authoring_job import plan,run as author,validated,METHODS as AUTHOR_METHODS,method_names as author_methods
 
 NAMESPACE='native-scene-jobs'
 NAME=re.compile(r'[A-Za-z0-9_-]{1,100}')
@@ -39,7 +39,7 @@ def actor_metadata(job,variant):
     return {k:result[k] for k in ('source_job','variant','label','source_url','glb_sha256','duration_s','animation_index')}
 
 
-def validate_request(payload,resolver,*,require_objects=True):
+def validate_request(payload,resolver,*,require_objects=False):
     from native_contact_revision import validate
     ordinary,revision=validate(payload)
     if revision is not None:validate_request(revision['baseline'],resolver,require_objects=require_objects)
@@ -78,7 +78,7 @@ def validate_request(payload,resolver,*,require_objects=True):
 
 
 def method_names(payload):
-    return METHODS
+    return METHODS if payload['scene']['objects'] else METHODS+('verify_native_actor_scene_engine.py',)
 
 
 def revision_preview(payload,resolver):
@@ -157,7 +157,7 @@ def frozen(folder,*,current_methods=True):
     require(p['schema']=='strep-studio-native-scene-prepared-v1' and p['original_selected'] is True
         and all(p[k] is False for k in ('quality_approved','training_admitted','release_approved')),'Unapproved source scene required')
     draft=read(folder/'draft.json')
-    expected_methods=set(METHODS)
+    expected_methods=set(method_names(draft))
     legacy=not current_methods and 'contact_revision' not in draft and 'native_contact_revision.py' not in p['implementation_sha256']
     if legacy:expected_methods.remove('native_contact_revision.py')
     require(set(p['implementation_sha256'])==expected_methods,'Complete Studio scene methods required')
@@ -192,9 +192,10 @@ def frozen(folder,*,current_methods=True):
 
 
 def download_names(prepared):
+    actors_only='verify_native_actor_scene_engine.py' in prepared['implementation_sha256']
     return ({'exports/contact-revision.json'} if prepared.get('contact_revision_requested',False) else set()) | {f'input/actor-{i}.glb' for i in range(len(prepared['sources']))} | {
-        'authoring/objects-common/objects.glb','authoring/objects-engine/native-animation.res',
-        'authoring/result.json','authoring/combined-engine/geometry.json','authoring/replay/result.json','assets.zip'} | {
+        'authoring/result.json','authoring/replay/result.json','assets.zip'} | ({'authoring/actors-engine/geometry.json'} if actors_only else {
+        'authoring/objects-common/objects.glb','authoring/objects-engine/native-animation.res','authoring/combined-engine/geometry.json'}) | {
         f'authoring/actors-engine/{name}-animation.res' for name in prepared['sources']}
 
 
@@ -208,11 +209,12 @@ def package(folder,prepared,result):
         require(scene['actors'][name]['sha256']==source['sha256'],'Scene package changes actor bytes')
         scene['actors'][name]['glb']=f'actors/{i}.glb'
     save(exports/'scene.json',scene)
-    policy=read(folder/'authoring/objects-common/common-policy.json');policy['contacts_sha256']=sha256(exports/'scene.json')
+    policy=read(folder/'authoring/objects-common/common-policy.json' if scene['objects'] else folder/'geometry-policy.json');policy['contacts_sha256']=sha256(exports/'scene.json')
     save(exports/'geometry-policy.json',policy)
-    files={'scene.json':exports/'scene.json','geometry-policy.json':exports/'geometry-policy.json',
-        'objects.glb':folder/'authoring/objects-common/objects.glb',
-        'animations/objects.res':folder/'authoring/objects-engine/native-animation.res'}
+    files={'scene.json':exports/'scene.json','geometry-policy.json':exports/'geometry-policy.json'}
+    if scene['objects']:
+        files.update({'objects.glb':folder/'authoring/objects-common/objects.glb',
+            'animations/objects.res':folder/'authoring/objects-engine/native-animation.res'})
     for i,(name,source) in enumerate(prepared['sources'].items()):
         files[f'actors/{i}.glb']=folder/source['snapshot']
         files[f'animations/{name}.res']=folder/f'authoring/actors-engine/{name}-animation.res'
@@ -255,8 +257,11 @@ def run(folder):
         require(read(folder/'authoring/result.json')==result and result['status']=='complete','Terminal saved scene authoring required')
         outputs={f'input/actor-{i}.glb':dict(label=f'Character clip: {name}',sha256=s['sha256'])
             for i,(name,s) in enumerate(prepared['sources'].items())}
-        for relative,label in [('authoring/objects-common/objects.glb','Object clip'),('authoring/objects-engine/native-animation.res','Godot object animation'),
-                ('authoring/result.json','Measured result'),('authoring/combined-engine/geometry.json','Scene geometry'),('authoring/replay/result.json','Replay verification')]:
+        actor_only=not read(folder/'contacts.json')['objects']
+        downloads=[('authoring/result.json','Measured result'),('authoring/replay/result.json','Replay verification')]
+        downloads+= [('authoring/actors-engine/geometry.json','Scene geometry')] if actor_only else [
+            ('authoring/objects-common/objects.glb','Object clip'),('authoring/objects-engine/native-animation.res','Godot object animation'),('authoring/combined-engine/geometry.json','Scene geometry')]
+        for relative,label in downloads:
             outputs[relative]=dict(label=label,sha256=sha256(folder/relative))
         for name in prepared['sources']:
             relative=f'authoring/actors-engine/{name}-animation.res';outputs[relative]=dict(label=f'Godot character animation: {name}',sha256=sha256(folder/relative))
@@ -291,14 +296,15 @@ def manifest(job):
         and all(c[k] is False for k in ('studio_selection_changed','quality_approved','training_admitted','release_approved')),'Scene decisions changed')
     require(all(r[k] is False for k in ('studio_selection_changed','quality_approved','training_admitted','release_approved',
         'gpu_render_checked','physics_verified','real_time_playback_verified','human_review_submitted')),'Scene authoring approval changed')
-    require(r['implementation_sha256']=={n:prepared['implementation_sha256'][n] for n in AUTHOR_METHODS},'Scene authoring methods changed')
+    scene=SceneContacts(read(folder/'contacts.json'),folder)
+    require(r['implementation_sha256']=={n:prepared['implementation_sha256'][n] for n in author_methods(scene)},'Scene authoring methods changed')
     require(r['recipe_sha256']==sha256(folder/'recipe.json') and r['object_edit_requested']==(read(folder/'draft.json')['object_edit'] is not None),'Scene authoring input selection changed')
     for path,digest in {**r['inputs_sha256'],**r['derived_inputs_sha256']}.items():
         require(sha256(path)==digest,'Scene authoring input changed')
     for name,digest in r['implementation_sha256'].items():
         require(sha256(folder/'authoring/implementation'/name)==digest,'Scene authoring method archive changed')
-    expected_stages=['source-contacts']+(['object-edit'] if r['object_edit_requested'] else [])+[
-        'objects-source','objects-common','objects-engine','actors-engine','combined-engine','replay']
+    expected_stages=['source-contacts']+(['object-edit'] if r['object_edit_requested'] else [])+(
+        ['objects-source','objects-common','objects-engine','actors-engine','combined-engine','replay'] if scene.objects else ['actors-engine','replay'])
     require([s['id'] for s in r['stages']]==expected_stages,'Complete ordered scene stages required')
     for stage in r['stages']:
         require(stage['id'] in ('source-contacts','object-edit','objects-source','objects-common','objects-engine','actors-engine','combined-engine','replay')
@@ -318,13 +324,20 @@ def manifest(job):
     geometry=read(actor_folder/'geometry.json')
     require(sha256(actor_folder/'geometry-observations.npz')==geometry['observations_sha256']
         and sha256(actor_folder/'geometry-observations.npz.receipt.json')==geometry['observation_receipt_sha256'],'Scene actor geometry changed')
-    replay=read(folder/'authoring/replay/result.json');combined=read(folder/'authoring/combined-engine/result.json')
+    replay=read(folder/'authoring/replay/result.json');producer='combined-engine' if scene.objects else 'actors-engine'
+    combined=read(folder/'authoring'/producer/'result.json')
     require(replay['producer_implementation_sha256']==combined['implementation_sha256'],'Scene replay producer methods changed')
-    require(sha256(folder/'authoring/replay/verifier.py')==prepared['implementation_sha256']['verify_native_object_scene_engine.py'],'Scene replay method changed')
+    verifier='verify_native_object_scene_engine.py' if scene.objects else 'verify_native_actor_scene_engine.py'
+    require(sha256(folder/'authoring/replay/verifier.py')==prepared['implementation_sha256'][verifier],'Scene replay method changed')
     require(replay['status']=='complete' and replay['all_replayed_observations_exact'] is True
         and replay['recorded_sampled_conditions_pass'] is combined['all_sampled_conditions_pass']
-        and replay['combined_files_sha256'].get(str(folder/'authoring/combined-engine/result.json'))==sha256(folder/'authoring/combined-engine/result.json'),
+        and replay['combined_files_sha256' if scene.objects else 'producer_files_sha256'].get(str(folder/'authoring'/producer/'result.json'))==sha256(folder/'authoring'/producer/'result.json'),
         'Scene replay binding changed')
+    if not scene.objects:
+        require(r['object_edit_requested'] is False and r['object_edit_conditions_pass'] is None
+            and r['artifacts']['common_policy'] is None and r['artifacts']['objects_glb'] is None
+            and r['artifacts']['object_animation_resource'] is None and r['artifacts']['combined_audit'] is None,'Actor-only job invents object artifacts')
+        for path,digest in replay['producer_files_sha256'].items():require(sha256(path)==digest,'Actor-only replay source changed')
     require(r['samples']==combined['samples']==replay['samples'] and r['source_contact_conditions_pass'] is read(folder/'authoring/source-contacts/result.json')['passed'],'Scene source report differs')
     if r['object_edit_requested']:require(r['object_edit_conditions_pass'] is read(folder/'authoring/object-edit/result.json')['sampled_constraints_pass'],'Scene object edit decision differs')
     passed=bool(combined['all_sampled_conditions_pass'] and (r['object_edit_conditions_pass'] is None or r['object_edit_conditions_pass']))

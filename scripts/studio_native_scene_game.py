@@ -41,13 +41,24 @@ def source(job):
     folder=scenes.folder_for(job);result=read(folder/'authoring/result.json')
     contacts=Path(result['artifacts']['active_contacts']).resolve()
     require(contacts.is_relative_to(folder),'Source contacts escape scene job')
-    policy=folder/'authoring/objects-common/common-policy.json';spec=read(contacts)
+    spec=read(contacts)
+    policy=folder/'authoring/objects-common/common-policy.json' if spec['objects'] else folder/'geometry-policy.json'
     scene=SceneContacts(spec,contacts.parent);request=read(folder/'authoring/actors-engine/request.json')
     times=np.asarray(request['sample_times_s'],dtype='<f8');check_clock_wire(request['sample_clock'],times)
     receipt=read(folder/'authoring/actors-engine/raw-engine-receipt.json')
     require(sha256(folder/'authoring/actors-engine/request.json')==receipt['request_sha256'],'Source actor clock request changed')
     require(times[0]==0 and times[-1]==scene.duration and len(times)==manifest['samples'],'Complete source scene clock required')
     return folder,manifest,spec,scene,contacts,policy,times
+
+
+def method_names(scene):
+    return METHODS if scene.objects else METHODS+('verify_native_actor_scene_engine.py',)
+
+
+def measured_contacts(folder, scene):
+    path=folder/'authoring/combined-engine/native-authoring-contacts.json' if scene.objects else folder/'authoring/actors-engine/result.json'
+    value=read(path)
+    return (value if scene.objects else value['imported_contacts']),path
 
 
 def metadata(job):
@@ -69,7 +80,7 @@ def prepare(payload,folder):
     folder=Path(folder).resolve();require(folder==folder_for(folder.name) and not folder.exists(),'Fresh native game package job required')
     values=validate_request(payload);source_folder,manifest,spec,scene,contacts,policy,times=values
     engine=Path(read(source_folder/'prepared.json')['engine_path']).resolve()
-    methods={n:sha256(SCRIPT_ROOT/n) for n in METHODS}
+    methods={n:sha256(SCRIPT_ROOT/n) for n in method_names(scene)}
     folder.mkdir(parents=True);save(folder/'pipeline.json',dict(status='preparing',original_selected=True,quality_approved=False))
     try:
         save(folder/'request.json',payload);archive=folder/'implementation';archive.mkdir()
@@ -94,7 +105,10 @@ def frozen(folder,*,current_methods=True):
     values=validate_request(payload);source_folder=values[0]
     require(sha256(source_folder/'completion.json')==p['source_completion_sha256'] and
         sha256(source_folder/'assets.zip')==sha256(folder/'source-assets.zip')==p['source_assets_sha256'],'Game package source changed')
-    require(set(p['implementation_sha256'])==set(METHODS),'Complete game package method population required')
+    expected_methods=set(method_names(values[3]))
+    legacy=not current_methods and 'native_contact_revision.py' not in p['implementation_sha256'] and 'contact_revision' not in read(source_folder/'draft.json')
+    if legacy:expected_methods.remove('native_contact_revision.py')
+    require(set(p['implementation_sha256'])==expected_methods,'Complete game package method population required')
     for name,digest in p['implementation_sha256'].items():
         require(sha256(folder/'implementation'/name)==digest,'Game package method archive changed')
         if current_methods:require(sha256(SCRIPT_ROOT/name)==digest,'Game package implementation changed')
@@ -184,12 +198,16 @@ def run(folder):
         p,values=frozen(folder);source_folder,manifest,spec,scene,contacts,policy,times=values
         with worker_lock(),threadpool_limits(limits=1):
             save(folder/'pipeline.json',dict(status='processing',stage='root-contact-tracks',original_selected=True,quality_approved=False))
-            scene,policy_value,actor,providers,loaded_times,bindings=load(contacts,policy,source_folder/'authoring/actors-engine',source_folder/'authoring/objects-engine')
+            if scene.objects:
+                scene,policy_value,actor,providers,loaded_times,bindings=load(contacts,policy,source_folder/'authoring/actors-engine',source_folder/'authoring/objects-engine')
+            else:
+                from verify_native_actor_scene_engine import load as actor_load
+                scene,policy_value,actor,loaded_times,bindings=actor_load(contacts,policy,source_folder/'authoring/actors-engine')
             require(np.array_equal(times,loaded_times),'Complete unchanged source clock required')
-            contact_report=source_folder/'authoring/combined-engine/native-authoring-contacts.json'
+            contact_value,contact_report=measured_contacts(source_folder,scene)
             with zipfile.ZipFile(folder/'source-assets.zip') as package:
                 portable_digest=hashlib.sha256(package.read('scene.json')).hexdigest()
-            tracks=export_tracks(scene,read(folder/'request.json')['request'],times,actor.worlds,read(contact_report),folder/'tracks',
+            tracks=export_tracks(scene,read(folder/'request.json')['request'],times,actor.worlds,contact_value,folder/'tracks',
                 source_spec=spec,portable_scene_sha256=portable_digest,contact_report_sha256=sha256(contact_report))
             frozen(folder);save(folder/'pipeline.json',dict(status='processing',stage='runtime-event-helper',original_selected=True,quality_approved=False))
             events=engine_audit(folder/'tracks/events.json',folder/'runtime-events',Path(p['engine_path']))
@@ -235,11 +253,10 @@ def manifest(job):
     require(read(folder/'tracks/request.json')==read(folder/'request.json')['request'],'Game track choices changed')
     with zipfile.ZipFile(folder/'source-assets.zip') as archive:
         portable_digest=hashlib.sha256(archive.read('scene.json')).hexdigest()
-    expected_events,expected_contacts=event_plan(values[3],read(folder/'tracks/request.json'),values[6],
-        read(values[0]/'authoring/combined-engine/native-authoring-contacts.json'))
+    expected_events,expected_contacts=event_plan(values[3],read(folder/'tracks/request.json'),values[6],measured_contacts(values[0],values[3])[0])
     expected_events['portable_scene_sha256']=portable_digest
     expected_contacts.update(portable_scene_sha256=portable_digest,
-        contact_report_sha256=sha256(values[0]/'authoring/combined-engine/native-authoring-contacts.json'))
+        contact_report_sha256=sha256(measured_contacts(values[0],values[3])[1]))
     require(read(folder/'tracks/events.json')==expected_events and read(folder/'tracks/contacts.json')==expected_contacts,'Game contact/marker intent differs from original choices')
     roots=read(folder/'tracks/root-motion.json');request=read(folder/'tracks/request.json')
     require(roots['times_s']==values[6].tolist() and set(roots['actors'])==set(request['actors'])

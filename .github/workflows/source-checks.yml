@@ -161,6 +161,8 @@ jobs:
           tests/test_native_object_scene_engine.py
           tests/test_verify_native_object_scene_engine.py
           tests/test_native_scene_authoring_job.py
+          tests/test_native_actor_scene_job.py
+          tests/test_native_actor_scene_runtime.py
           tests/test_studio_native_scene.py
           tests/test_native_contact_revision.py
           tests/test_native_scene_game_tracks.py

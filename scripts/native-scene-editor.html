@@ -1,6 +1,6 @@
 <details id="nativeScenePanel" class="rig-panel">
  <summary>Scene contacts &amp; game assets</summary>
- <p class="small">Assemble supplied character clips, objects and explicit contacts. Clips must share their exact duration; retime them first if needed. Pick mesh patches in Mesh contacts. Assets and measured failures stay separate from motion-quality review.</p>
+ <p class="small">Assemble supplied character clips with ground or partner contacts. Add objects when the action needs them. Clips must share their exact duration; retime them first if needed. Pick mesh patches in Mesh contacts. Assets and measured failures stay separate from motion-quality review.</p>
  <div class="rig-field-grid">
   <label>Character name<input id="nativeSceneActorName" value="A"></label>
   <label>Character position (m)<input id="nativeSceneActorPosition" value="0, 0, 0"></label>
@@ -68,7 +68,7 @@
   <label class="btn">Open scene draft<input id="nativeSceneImport" type="file" accept=".json,application/json" hidden></label>
   <button class="btn primary" id="nativeSceneBuild">Build scene assets</button>
  </div>
- <p class="small" id="nativeSceneStatus" role="status">Add a character clip and object to begin.</p>
+ <p class="small" id="nativeSceneStatus" role="status">Add a character clip to begin. Objects are optional.</p>
  <div class="toolbar"><select id="nativeSceneJobs" aria-label="Scene asset job"></select><button class="btn" id="nativeSceneRefresh">Refresh jobs</button><button class="btn" id="nativeSceneReview">Show assets &amp; results</button></div>
  <div id="nativeSceneResults" aria-live="polite"></div>
 </details>

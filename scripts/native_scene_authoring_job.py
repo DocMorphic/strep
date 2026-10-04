@@ -22,6 +22,10 @@ METHODS=tuple(dict.fromkeys(FIT_METHODS+COMBINED_METHODS+('verify_native_object_
 DIGEST=re.compile(r'[0-9a-f]{64}')
 
 
+def method_names(scene):
+    return METHODS if scene.objects else METHODS+('verify_native_actor_scene_engine.py',)
+
+
 def require(condition, message):
     if not condition: raise ValueError(message)
 
@@ -45,7 +49,7 @@ def validated(recipe_path):
         require(path.is_file() and sha256(path)==entry['sha256'],'Changed job input: '+name)
         paths[name]=path; receipts[str(path)]=entry['sha256']
     scene=SceneContacts(read(paths['contacts']),paths['contacts'].parent)
-    require(bool(scene.objects),'This object/character pipeline needs a declared object; use native_scene_engine.py for actor-only scenes')
+    require(bool(scene.objects) or 'object_edit' not in paths,'Object edits require a declared object')
     policy_for(read(paths['geometry_policy']),scene,sha256(paths['contacts']))
     if 'object_edit' in paths:request_for(scene,read(paths['object_edit']),sha256(paths['contacts']))
     receipts.update(scene.inputs)
@@ -58,7 +62,7 @@ def plan(contacts,policy,engine,output,object_edit=None):
         geometry_policy=binding(policy),engine=binding(engine),object_edit=None if object_edit is None else binding(object_edit))
     # Validate in memory through the same checks before publishing a recipe.
     scene=SceneContacts(read(contacts),Path(contacts).resolve().parent)
-    require(bool(scene.objects),'Object/character pipeline requires at least one declared object')
+    require(bool(scene.objects) or object_edit is None,'Object edits require a declared object')
     policy_for(read(policy),scene,sha256(contacts))
     if object_edit is not None:request_for(scene,read(object_edit),sha256(contacts))
     scene.check_inputs(); output.parent.mkdir(parents=True,exist_ok=True); save(output,value)
@@ -70,7 +74,7 @@ def run(recipe_path,output):
     require(not worker_busy(),'Another local study worker is active')
     recipe,paths,scene,receipts=validated(recipe_path)
     require(not any(Path(p).is_relative_to(output) for p in receipts),'Job output contains its own input')
-    methods={n:sha256(ROOT/'scripts'/n) for n in METHODS}
+    methods={n:sha256(ROOT/'scripts'/n) for n in method_names(scene)}
     output.mkdir(parents=True); archive=output/'implementation'; snapshots=output/'input'; stages=[]; copies={}; derived={}
     save(output/'pipeline.json',dict(at=now(),status='processing',stage='input-snapshots',original_selected=True))
     try:
@@ -117,16 +121,25 @@ def run(recipe_path,output):
             contacts,policy=output/'object-edit/proposal-contacts.json',output/'object-edit/geometry-policy.json'
             require(sha256(contacts)==fit['proposal_contacts_sha256'],'Object proposal differs from fit evidence')
             derived.update({str(p):sha256(p) for p in (contacts,policy)})
-        execute('objects-source',asset_run,contacts,output/'objects-source')
-        execute('objects-common',clock_prepare,contacts,policy,output/'objects-source',output/'objects-common')
-        common=output/'objects-common/common-policy.json'
-        derived[str(common)]=sha256(common)
-        execute('objects-engine',object_run,output/'objects-common',output/'objects-engine',paths['engine'])
+        if scene.objects:
+            execute('objects-source',asset_run,contacts,output/'objects-source')
+            execute('objects-common',clock_prepare,contacts,policy,output/'objects-source',output/'objects-common')
+            common=output/'objects-common/common-policy.json'
+            derived[str(common)]=sha256(common)
+            execute('objects-engine',object_run,output/'objects-common',output/'objects-engine',paths['engine'])
+        else:
+            common=policy
         execute('actors-engine',actor_run,contacts,output/'actors-engine',geometry_policy=common,
                 playback_mode='native-authoring',engine=paths['engine'])
-        combined=execute('combined-engine',combined_run,contacts,common,output/'actors-engine',output/'objects-engine',output/'combined-engine')
-        replay=execute('replay',replay_run,contacts,common,output/'actors-engine',output/'objects-engine',output/'combined-engine',output/'replay')
-        require(replay['combined_files_sha256'][str(output/'combined-engine/result.json')]==sha256(output/'combined-engine/result.json'), 'Replay belongs to another combined result')
+        if scene.objects:
+            combined=execute('combined-engine',combined_run,contacts,common,output/'actors-engine',output/'objects-engine',output/'combined-engine')
+            replay=execute('replay',replay_run,contacts,common,output/'actors-engine',output/'objects-engine',output/'combined-engine',output/'replay')
+            require(replay['combined_files_sha256'][str(output/'combined-engine/result.json')]==sha256(output/'combined-engine/result.json'), 'Replay belongs to another combined result')
+        else:
+            from verify_native_actor_scene_engine import run as actor_replay
+            combined=read(output/'actors-engine/result.json')
+            replay=execute('replay',actor_replay,contacts,common,output/'actors-engine',output/'replay')
+            require(replay['producer_files_sha256'][str(output/'actors-engine/result.json')]==sha256(output/'actors-engine/result.json'), 'Replay belongs to another actor result')
         require(replay['recorded_sampled_conditions_pass'] is combined['all_sampled_conditions_pass'],'Replay decision differs')
         unchanged()
         # Completed jobs may contain failed numerical conditions. No automatic selection.
@@ -136,9 +149,9 @@ def run(recipe_path,output):
             stages=stages,object_edit_requested=fit is not None,source_contact_conditions_pass=read(output/'source-contacts/result.json')['passed'],
             samples=combined['samples'],combined_conditions_pass=combined['all_sampled_conditions_pass'],
             object_edit_conditions_pass=None if fit is None else fit['sampled_constraints_pass'],sampled_conditions_pass=passed,
-            artifacts=dict(active_contacts=str(contacts),active_policy=str(policy),common_policy='objects-common/common-policy.json',
-                objects_glb='objects-common/objects.glb',object_animation_resource='objects-engine/native-animation.res',
-                actor_engine='actors-engine',combined_audit='combined-engine',replay='replay'),
+            artifacts=dict(active_contacts=str(contacts),active_policy=str(policy),common_policy='objects-common/common-policy.json' if scene.objects else None,
+                objects_glb='objects-common/objects.glb' if scene.objects else None,object_animation_resource='objects-engine/native-animation.res' if scene.objects else None,
+                actor_engine='actors-engine',combined_audit='combined-engine' if scene.objects else None,replay='replay'),
             original_selected=True,studio_selection_changed=False,quality_approved=False,training_admitted=False,release_approved=False,
             gpu_render_checked=False,physics_verified=False,real_time_playback_verified=False,human_review_submitted=False,
             scope='Supplied native rigs and declared objects/partners, optional explicit two-grip bounded object edit, actual headless sampled import and saved replay. No prompt generation, automatic rig transfer, physical attachment, real-time playback or human-quality approval.')

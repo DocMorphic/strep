@@ -18,6 +18,17 @@ from strep import read,save,sha256
 from test_studio_native_scene import setup as source_setup,mock_author,handler
 
 
+def test_only_archived_ordinary_game_jobs_accept_pre_revision_method_population(tmp_path,monkeypatch):
+    payload,*_=setup(tmp_path,monkeypatch)
+    folder=game.folder_for('archived');game.prepare(payload,folder)
+    prepared=read(folder/'prepared.json');prepared['implementation_sha256'].pop('native_contact_revision.py')
+    save(folder/'prepared.json',prepared)
+    assert game.frozen(folder,current_methods=False)[0]==prepared
+    with pytest.raises(ValueError,match='method population'):game.frozen(folder)
+    prepared['implementation_sha256'].pop('native_scene_authoring_job.py');save(folder/'prepared.json',prepared)
+    with pytest.raises(ValueError,match='method population'):game.frozen(folder,current_methods=False)
+
+
 def setup(tmp_path,monkeypatch,*,scene_pass=True,root_pass=True):
     draft,source,resolver=source_setup(tmp_path,monkeypatch)
     monkeypatch.setattr(game,'ROOT',tmp_path);monkeypatch.setattr(action_worker_lock,'ROOT',tmp_path)

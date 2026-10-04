@@ -112,7 +112,11 @@ def test_character_only_partner_preview_needs_no_artificial_object(tmp_path,monk
     result=studio.revision_preview(p,resolver)
     assert result['changes'][0]['id']=='meeting' and result['record']['original_intent_retained']
     assert result['changes'][0]['authored_endpoint_inspection']['times_s']==[1.]
-    with pytest.raises(ValueError,match='requires at least one scene object'):studio.validate_request(p,resolver)
+    spec,_,edit,sources=studio.validate_request(p,resolver)
+    assert spec['objects']=={} and edit is None and set(sources)=={'A','B'}
+    folder=studio.folder_for('partner-revision-without-prop');prepared=studio.prepare(p,folder,resolver)
+    assert prepared['contact_revision_requested'] and 'verify_native_actor_scene_engine.py' in prepared['implementation_sha256']
+    assert read(folder/'contacts.json')['contacts']==p['scene']['contacts'] and read(folder/'contacts.json')['objects']=={}
 
 
 @pytest.mark.parametrize('fault,code',[('valid',200),('busy',200),('host',403),('origin',403),('type',415),('size',400),('protected-change',400),('source-change',400)])

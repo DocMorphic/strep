@@ -77,9 +77,13 @@ def configure(folder,manifest,modes):
         entries.append(dict(id=name,asset=asset(spec['actors'][name]['glb']),resource=asset('animations/'+name+'.res'),
             animation_index=actor['animation_index'],root_bone=actor['rig'].document['nodes'][node]['name'],
             placement=placement.tolist(),extract=modes[name]=='extracted'))
-    require(bool(scene.objects),'At least one declared object required')
-    config=dict(schema='strep-native-scene-runtime-v1',actors=entries,
-        objects=dict(asset=asset('objects.glb'),resource=asset('animations/objects.res'),names=list(scene.objects)),events=asset('events.json'))
+    objects=None
+    if scene.objects:
+        objects=dict(asset=asset('objects.glb'),resource=asset('animations/objects.res'),names=list(scene.objects))
+    else:
+        require(not {'objects.glb','animations/objects.res'}.intersection(manifest['files_sha256']), 'Actor-only package contains synthetic object resources')
+    config=dict(schema='strep-native-scene-runtime-v1',scene=asset('scene.json'),actors=entries,
+        objects=objects,events=asset('events.json'))
     return config,scene,times,events
 
 
@@ -116,9 +120,11 @@ def compare(scene,times,events,actual,*,object_asset):
                 [f['actors'][name] for f in observed['previews']],times,SKIN_POSITION_TOLERANCE)
             actor_checks[name]['affine_skin']=affine;all_pass=all_pass and affine['passed']
             for key,value in values.items():arrays[f'{mode}_actor_{index}_{key}']=value
-        require(len(observed['object_channels'])==len(object_asset.channels),'Complete saved object channel population required')
+        require((object_asset is not None)==bool(scene.objects),'Exact declared object population required')
+        object_channels=[] if object_asset is None else object_asset.channels
+        require(len(observed['object_channels'])==len(object_channels),'Complete saved object channel population required')
         object_key_error=0.0
-        for index,(source,target) in enumerate(zip(object_asset.channels,observed['object_channels'])):
+        for index,(source,target) in enumerate(zip(object_channels,observed['object_channels'])):
             require(target['target_name']==source['node_name'] and target['type']=={'translation':1,'rotation':2,'scale':3}[source['path']]
                 and np.array_equal(target['times_s'],source['times_s']),'Saved object native key times, targets or channels changed')
             expected_values=np.asarray(source['values'],dtype='<f8');values=np.asarray(target['values'],dtype='<f8')
@@ -136,6 +142,7 @@ def compare(scene,times,events,actual,*,object_asset):
             all_pass=all_pass and objects[name]['passed']
         preview_error=0.0
         for preview in observed['previews']:
+            require(set(preview['actors'])==set(scene.actors) and set(preview['objects'])==set(scene.objects),'Complete preview participant population required')
             ids=[i for i,t in enumerate(times) if clock_echo_matches(t,preview['pose_time_s'])]
             require(len(ids)==1 and clock_echo_matches(times[-1],preview['playback_time_s']),'Preview must retain the playback cursor and one exact pose time')
             for name in scene.objects:preview_error=max(preview_error,float(abs(matrices(preview['objects'][name])-matrices(frames[ids[0]]['objects'][name])).max()))
@@ -147,6 +154,7 @@ def compare(scene,times,events,actual,*,object_asset):
             require(len(trace)==len(expected),'Complete confirmed gameplay marker population required')
             for wanted,callback in zip(expected,trace):
                 entry=callback['event'];sample_index=wanted['sample_index'];t=float(times[sample_index]);snapshot=callback['scene']
+                require(set(snapshot['actors'])==set(scene.actors) and set(snapshot['objects'])==set(scene.objects),'Complete callback participant population required')
                 require({k:v for k,v in entry.items() if k!='time_s'}=={k:v for k,v in wanted.items() if k!='time_s'}
                     and clock_echo_matches(t,entry['time_s']) and clock_echo_matches(t,snapshot['pose_time_s'])
                     and clock_echo_matches(t,snapshot['playback_time_s']),'Callbacks must observe scene at exact marker time, including skipped frames')
@@ -159,7 +167,7 @@ def compare(scene,times,events,actual,*,object_asset):
                     for node in reference['actors'][name]['mesh_world']:
                         callback_error=max(callback_error,float(abs(matrices(snapshot['actors'][name]['mesh_world'][node])-matrices(reference['actors'][name]['mesh_world'][node])).max()))
                 for name in scene.objects:callback_error=max(callback_error,float(abs(matrices(snapshot['objects'][name])-matrices(reference['objects'][name])).max()))
-        all_pass=all_pass and callback_error<=POSE_TOLERANCE and observed['malformed_configs']>=7 and all(observed[k] is True for k in ('invalid_rejected','late_participant_rejected','reentrant_rejected','malformed_configs_rejected'))
+        all_pass=all_pass and callback_error<=POSE_TOLERANCE and observed['malformed_configs']==11 and all(observed[k] is True for k in ('invalid_rejected','late_participant_rejected','reentrant_rejected','malformed_configs_rejected'))
         checks[mode]=dict(actors=actor_checks,objects=objects,callbacks=len(expected),callback_scenarios=len(traces),
             maximum_callback_pose_difference=callback_error,invalid_clocks_rejected=observed['invalid_rejected'],
             late_participant_rejected=observed['late_participant_rejected'],reentrant_rejected=observed['reentrant_rejected'],malformed_configs=observed['malformed_configs'],
@@ -227,8 +235,9 @@ def run(source,output,modes,*,engine=None):
             with (output/'engine.log').open('w',encoding='utf8') as log:
                 process=subprocess.run([str(engine),'--headless','--path',str(project),'--script','res://runtime-v1/godot_native_scene_runtime_audit.gd','--',str(output/'request.json'),str(output/'engine-output.json')],stdout=log,stderr=subprocess.STDOUT,timeout=300,env=offline_environment())
             require(process.returncode==0 and (output/'engine-output.json').exists(),'Actual complete scene runtime audit failed; preserved engine.log')
-            asset=ObjectAsset(project/'objects.glb')
-            require(set(asset.objects)==set(scene.objects) and all(np.isin(c['times_s'],times).all() for c in asset.channels),'Complete object identities and original native key clock required')
+            asset=ObjectAsset(project/'objects.glb') if scene.objects else None
+            if asset is not None:
+                require(set(asset.objects)==set(scene.objects) and all(np.isin(c['times_s'],times).all() for c in asset.channels),'Complete object identities and original native key clock required')
             actual=read(output/'engine-output.json');result,arrays=compare(scene,times,events,actual,object_asset=asset)
             np.savez_compressed(output/'observations.npz',**arrays)
             with np.load(output/'observations.npz',allow_pickle=False) as stored:

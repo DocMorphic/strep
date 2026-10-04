@@ -18,15 +18,18 @@ var advancing := false
 func bind(entries: Array, object_player: AnimationPlayer, object_clip: StringName, objects: Dictionary, document: Dictionary) -> Error:
 	if bound or entries.is_empty() or entries.size() > 8: return ERR_INVALID_PARAMETER
 	var planned := Events.new()
-	if not planned.configure(document) or not Props.eligible(object_player, object_clip, objects): return ERR_INVALID_DATA
+	if not planned.configure(document): return ERR_INVALID_DATA
+	if object_player == null:
+		if object_clip != &"" or not objects.is_empty(): return ERR_INVALID_DATA
+	elif not Props.eligible(object_player, object_clip, objects): return ERR_INVALID_DATA
 	var duration: float = planned.times[-1]
-	if object_player.get_animation(object_clip).length != duration: return ERR_INVALID_DATA
+	if object_player != null and object_player.get_animation(object_clip).length != duration: return ERR_INVALID_DATA
 	var seen := {}
 	for item in entries:
 		if not item is Dictionary or not item.get("id") is String or item.id == "" or seen.has(item.id) or typeof(item.get("extract")) != TYPE_BOOL: return ERR_INVALID_DATA
 		if not item.get("player") is AnimationPlayer or not item.get("skeleton") is Skeleton3D or not item.get("actor") is Node3D: return ERR_INVALID_DATA
 		if not Roots.eligible(item.get("player"), item.get("skeleton"), item.get("actor"), item.get("clip", ""), item.get("root_bone", "")) or item.player.get_animation(item.clip).length != duration: return ERR_INVALID_DATA
-		if item.player == object_player or item.actor.is_ancestor_of(object_player): return ERR_INVALID_DATA
+		if object_player != null and (item.player == object_player or item.actor.is_ancestor_of(object_player)): return ERR_INVALID_DATA
 		for earlier in seen.values():
 			if item.actor == earlier.actor or item.player == earlier.player or item.skeleton == earlier.skeleton or item.actor.is_ancestor_of(earlier.actor) or earlier.actor.is_ancestor_of(item.actor): return ERR_INVALID_DATA
 		seen[item.id] = item
@@ -37,22 +40,25 @@ func bind(entries: Array, object_player: AnimationPlayer, object_clip: StringNam
 		var helper := Roots.new()
 		if helper.bind(item.player, item.skeleton, item.actor, item.clip, item.root_bone, item.extract) != OK: return ERR_INVALID_DATA
 		actors[item.id] = helper
-	props = Props.new()
-	if props.bind(object_player, object_clip, objects) != OK: return ERR_INVALID_DATA
+	if object_player != null:
+		props = Props.new()
+		if props.bind(object_player, object_clip, objects) != OK: return ERR_INVALID_DATA
 	events = planned; times = planned.times; bound = true
 	for name in actors:
 		playback_roots[name] = actors[name].root_motion_transform; root_deltas[name] = Transform3D.IDENTITY
 	return OK
 
 func can_sample(seconds: float) -> bool:
-	if not bound or advancing or not is_finite(seconds) or seconds < 0.0 or seconds > times[-1] or not props.can_sample(seconds): return false
+	if not bound or advancing or not is_finite(seconds) or seconds < 0.0 or seconds > times[-1]: return false
+	if props != null and not props.can_sample(seconds): return false
 	for helper in actors.values():
 		if not is_instance_valid(helper.player) or not is_instance_valid(helper.actor) or not is_instance_valid(helper.skeleton) or not helper._valid(seconds): return false
 	return true
 
 func _sample(seconds: float) -> void:
 	for helper in actors.values(): helper.seek_preview(seconds)
-	props.seek_preview(seconds); pose_time_s = seconds
+	if props != null: props.seek_preview(seconds)
+	pose_time_s = seconds
 
 func advance_to(seconds: float) -> Dictionary:
 	if not can_sample(seconds) or (playback_time_s != null and seconds < playback_time_s): return {"valid": false, "events": []}

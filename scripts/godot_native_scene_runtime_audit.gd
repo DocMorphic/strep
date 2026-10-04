@@ -32,7 +32,7 @@ func audit() -> void:
 		var scene = loaded.player; var times: PackedFloat64Array = scene.times
 		var malformed_count := 0
 		var initial := Observe.snapshot(scene); var child_count := parent.get_child_count()
-		for fault in ["root", "partial-root", "index", "index-bool", "duplicate", "event-hash", "mode"]:
+		for fault in ["root", "partial-root", "index", "index-bool", "duplicate", "event-hash", "mode", "scene-hash", "missing-objects", "empty-objects", "object-population"]:
 			var bad: Dictionary = config.duplicate(true)
 			match fault:
 				"root": bad.actors[-1].root_bone = "missing-root"
@@ -46,6 +46,12 @@ func audit() -> void:
 				"duplicate": bad.actors.append(bad.actors[0].duplicate(true))
 				"event-hash": bad.events.sha256 = "invalid-hash"
 				"mode": bad.actors[-1].extract = "yes"
+				"scene-hash": bad.scene.sha256 = "invalid-hash"
+				"missing-objects": bad.erase("objects")
+				"empty-objects": bad.objects = {"names": []}
+				"object-population":
+					if config.objects == null: bad.objects = {"names": ["ghost"]}
+					else: bad.objects = null
 			var rejected := Loader.load_scene(parent, request.asset_folder, bad)
 			if not rejected.is_empty() or parent.get_child_count() != child_count or Observe.snapshot(scene) != initial: fail("Malformed scene config changed existing scene"); return
 			malformed_count += 1
@@ -55,7 +61,7 @@ func audit() -> void:
 			var before := Observe.snapshot(scene)
 			if scene.advance_to(scene.pose_time_s).valid or scene.seek_preview(0.0) == OK or scene.restart() == OK or Observe.snapshot(scene) != before: reentrant_rejected = false
 		)
-		var entry := {"actors": {}, "object_channels": Observe.channels(scene.props.animation), "frames": [], "events": [], "previews": [], "traces": {}, "invalid_rejected": false, "late_participant_rejected": false, "malformed_configs_rejected": true, "malformed_configs": malformed_count}
+		var entry := {"actors": {}, "object_channels": Observe.channels(scene.props.animation) if scene.props != null else [], "frames": [], "events": [], "previews": [], "traces": {}, "invalid_rejected": false, "late_participant_rejected": false, "malformed_configs_rejected": true, "malformed_configs": malformed_count}
 		for track in range(entry.object_channels.size()): entry.object_channels[track].target_name = str(scene.props.targets[track].name)
 		for name in scene.actors: entry.actors[name] = Observe.skin_data(scene.actors[name])
 		for time in times:

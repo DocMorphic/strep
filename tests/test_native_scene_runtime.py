@@ -81,7 +81,7 @@ def observations(scene,times,events,asset):
         object_channels=[dict(target_name=c['node_name'],path=c['node_name'],type={'translation':1,'rotation':2,'scale':3}[c['path']],times_s=copy.deepcopy(c['times_s']),values=copy.deepcopy(c['values'])) for c in asset.channels]
         actual['modes'][mode]=dict(actors=actors,object_channels=object_channels,frames=frames,events=callbacks,previews=preview,
             traces={id:copy.deepcopy(callbacks) for id in ('whole-clip','skipped','repeated')},
-            invalid_rejected=True,late_participant_rejected=True,reentrant_rejected=True,malformed_configs_rejected=True,malformed_configs=7)
+            invalid_rejected=True,late_participant_rejected=True,reentrant_rejected=True,malformed_configs_rejected=True,malformed_configs=11)
     return actual
 
 

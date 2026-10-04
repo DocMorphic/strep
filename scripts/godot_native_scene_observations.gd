@@ -12,7 +12,8 @@ static func snapshot(scene) -> Dictionary:
 		for node in Roots.nodes(helper.actor):
 			if node is MeshInstance3D: mesh_world[str(node.get_path())] = matrix(node.global_transform)
 		actors[name] = {"time_s": scene.pose_time_s, "bones": bones, "skeleton_world": matrix(helper.skeleton.global_transform), "mesh_world": mesh_world, "actor_world": matrix(helper.actor.global_transform), "root_motion": matrix(helper.root_motion_transform), "root_delta": matrix(scene.root_deltas[name]), "root_in_actor": matrix(helper.actor.global_transform.affine_inverse() * helper.skeleton.global_transform * helper.skeleton.get_bone_global_pose(helper.root_bone))}
-	for name in scene.props.objects: objects[name] = matrix(scene.props.objects[name].global_transform)
+	if scene.props != null:
+		for name in scene.props.objects: objects[name] = matrix(scene.props.objects[name].global_transform)
 	for name in scene.root_deltas: deltas[name] = matrix(scene.root_deltas[name])
 	return {"pose_time_s": scene.pose_time_s, "playback_time_s": scene.playback_time_s, "actors": actors, "objects": objects, "root_deltas": deltas}
 

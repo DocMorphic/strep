@@ -59,6 +59,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Finite scene playback](docs/native-scene-runtime-v1.md) combines saved actor/object resources, root extraction and confirmed gameplay intent on one clock. Callbacks observe all participants at marker time, including skipped frames; preview stays separate from gameplay. Portable Godot packages retain source bytes, with physical interaction, transition/loop integration and human review still open.
 
+[Actor-only contact scenes](docs/native-actor-scene-assets-v1.md) now carry world/partner contacts through authoring, complete imported evidence replay, portable game tracks and finite Godot playback without a synthetic prop. Original clips and failed contact conditions remain preserved; motion quality and release approval stay separate.
+
 [Streamed observation storage](docs/native-observation-archive-v1.md) preserves numeric arrays exactly without retaining previous frames. The expanded actor/object comparison and original-method replay pass at all 2,201 times. [Complete scene producer integration](docs/native-geometry-stream-v1.md) retains all clocks, triangles and precision, with bound archive receipts and preserved partial failures. Motion-quality and release gates stay open.
 
 [Stored-key scene proposals](docs/native-scene-storage-proposals-v1.md) add hard source-motion constraints, continuous proposal derivatives and finite Float32 translation-cell probes. A synthetic body-contact correction passes native checks after five iterations; the matched four-iteration result still fails. This does not establish realistic motion or release readiness.
