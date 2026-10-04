@@ -51,6 +51,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Bounded object scene validation](docs/native-object-bounded-scene-v1.md) takes a passing object handoff through actual character import, full imported skin and complete declared sampled geometry, then replays the saved results. Rigid object success cannot approve failed character or scene checks.
 
+[Object-only contact preflight](docs/rigid-contact-preflight-v1.md) identifies incompatible fixed-surface targets before an object refit, retaining exact clocks, point witnesses and unknown cases. Body/hand edits remain outside that conditional rejection.
+
 [Imported surface-facing diagnostics](docs/native-object-scene-surface-v1.md) keep point success separate from surface opposition. The retained sphere hold fails its additional authored normal conditions; a fixed-surface angular bound rejects an object-only solution without changing prior budgets or approving animation quality.
 
 [Developer breadth review](docs/developer-packet-review-v1.md) prepares all 390 raw actor clips across 12 action families for source-bound developer ratings and actual cleanup records. Developer submissions use separate identities and never count as independent review or release approval.

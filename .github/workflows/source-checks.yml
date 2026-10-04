@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: source-checks-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   adapter-source-checks:
@@ -168,6 +168,7 @@ jobs:
           tests/test_native_object_bounded_scene.py
           tests/test_native_object_scene_surface.py
           tests/test_rigid_normal_spread.py
+          tests/test_rigid_contact_preflight.py
           tests/test_native_object_asset.py
           tests/test_native_object_scene_engine.py
           tests/test_verify_native_object_scene_engine.py
