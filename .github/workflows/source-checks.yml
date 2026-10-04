@@ -195,6 +195,8 @@ jobs:
           tests/test_native_surface_contact.py
           tests/test_native_contact_region_review.py
           tests/test_native_contact_norms.py
+          tests/test_cached_contact_norms.py
+          tests/test_coupled_native_contacts.py
           tests/test_native_geometry_norms.py
           tests/test_triangle_primitive_depth.py
           tests/test_native_scene_geometry.py

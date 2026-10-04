@@ -54,3 +54,5 @@ Verification independently reconstructs all 720 editable native quaternion keys 
 The canonical source reader uses normalized supplied skin weights and differs from the earlier raw Godot import epoch. No full motion geometry or engine audit is attempted for this candidate; they remain unverified. No original-rate or contact allowance is relaxed. This failure does not prove that another timing or coupled correction is infeasible. Next correction must handle contact position/speed and motion-rate constraints jointly with surface orientation throughout the interval. Original clips remain selected, all 14 release evidence lists stay unchanged, and the full project goal remains active.
 
 Local evidence: `reports/native-pose-lift-development-v1`, `reports/native-pose-lift-verification-v1` and `reports/native-pose-lift-clean-source-v1`.
+
+The next [coupled native/contact proposal API](coupled-native-contacts-v1.md) protects native motion rates, point positions, held speeds and individual surface conditions in one proposal. Its actual correction study remains in progress; no accepted result supersedes the failures above.
