@@ -152,6 +152,7 @@ jobs:
           tests/test_native_scene_restore.py
           tests/test_native_contact_repair.py
           tests/test_native_scene_resume.py
+          tests/test_native_scene_revision_resume.py
           tests/test_native_scene_stage.py
           tests/test_native_skin_export.py
           tests/test_native_partner_surface_rows.py

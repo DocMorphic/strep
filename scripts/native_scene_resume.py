@@ -6,7 +6,8 @@ from strep import read,sha256
 
 
 class ResumeState:
-    def __init__(self, folder, contacts_digest, permissions_digest, edits):
+    def __init__(self, folder, contacts_digest, permissions_digest, edits, *,
+                 contact_revision=None, current_contacts=None, current_permissions=None):
         self.folder=Path(folder).resolve();self.bindings={}
         def file(relative):
             value=Path(relative)
@@ -19,11 +20,17 @@ class ResumeState:
         if result['status']!='complete' or pipeline['status']!='complete' or not result['original_selected']:
             raise ValueError('Completed original-retaining native fit required for resume')
         contacts=file('contacts.json');permissions=file('permissions.json')
-        if sha256(contacts)!=contacts_digest or sha256(permissions)!=permissions_digest:
+        old_contacts_digest=sha256(contacts);old_permissions_digest=sha256(permissions)
+        self.original_contacts=read(contacts);self.revision=None
+        if contact_revision is None and (old_contacts_digest!=contacts_digest or old_permissions_digest!=permissions_digest):
             raise ValueError('Resume must retain the exact original source inputs')
-        if (request['inputs_sha256'].get(request['contacts_source_path'])!=contacts_digest
-                or request['inputs_sha256'].get(request['permissions_source_path'])!=permissions_digest):
+        if (request['inputs_sha256'].get(request['contacts_source_path'])!=old_contacts_digest
+                or request['inputs_sha256'].get(request['permissions_source_path'])!=old_permissions_digest):
             raise ValueError('Resume authored snapshots differ from original inputs')
+        if contact_revision is not None:
+            from native_scene_revision import validate
+            self.revision=validate(contact_revision,self.original_contacts,read(permissions),
+                old_contacts_digest,old_permissions_digest,current_contacts,current_permissions,contacts_digest)
         if request['controls']!=edits.size or set(request['actor_snapshots'])!=set(edits.scene.actors):
             raise ValueError('Resume control/actor population differs')
         authored=read(contacts)
@@ -33,12 +40,20 @@ class ResumeState:
         for name,h in request['implementation_sha256'].items():
             if len(Path(name).parts)!=1 or sha256(file('implementation/'+name))!=h:
                 raise ValueError('Resume method archive changed')
+        self.geometry_policy=None
         if request.get('geometry_policy_sha256') is not None:
-            if sha256(file('geometry-policy.json'))!=request['geometry_policy_sha256']:raise ValueError('Resume geometry snapshot changed')
+            policy=file('geometry-policy.json')
+            if sha256(policy)!=request['geometry_policy_sha256']:raise ValueError('Resume geometry snapshot changed')
+            self.geometry_policy=read(policy)
         self.surface_contact_policy_sha256=request.get('surface_contact_policy_sha256')
         if self.surface_contact_policy_sha256 is not None:
             if sha256(file('surface-contact-policy.json'))!=self.surface_contact_policy_sha256:
                 raise ValueError('Resume surface contact policy snapshot changed')
+            if self.revision is not None:
+                raise ValueError('Patch revision of an additional surface contact policy is not yet supported')
+        if request.get('contact_revision_sha256') is not None:
+            if sha256(file('contact-revision.json'))!=request['contact_revision_sha256']:
+                raise ValueError('Resume prior contact revision receipt changed')
         self.caps_path=file('source-rate-caps.npz')
         if sha256(self.caps_path)!=result['source_rate_caps_sha256']:raise ValueError('Resume source caps changed')
         record=read(file('probes/final/probe.json'))
@@ -65,6 +80,13 @@ class ResumeState:
             self.prior_iterations+=count
         self.prior_merit=record['merit']
 
+    def check_geometry(self, current, contacts_digest):
+        if self.geometry_policy is not None:
+            import copy
+            expected=copy.deepcopy(self.geometry_policy)
+            if self.revision is not None:expected['contacts_sha256']=contacts_digest
+            if current!=expected:raise ValueError('Resume must retain its original geometry clock, planes and limits')
+
     def check_caps(self, problem, frame_contract):
         if self.frame_contract!=frame_contract:raise ValueError('Resume frame sampling contract differs')
         expected={'times_s':problem.uniform}
@@ -72,7 +94,7 @@ class ResumeState:
             if c.tolerance!=self.rate_tolerance:raise ValueError('Resume rate tolerance differs')
             expected.update({f'{name}_metric_{i}':a for i,a in enumerate(c.caps)})
         with np.load(self.caps_path,allow_pickle=False) as stored:
-            if set(stored.files)!=set(expected) or any(not np.array_equal(stored[k],v) for k,v in expected.items()):
+            if set(stored.files)!=set(expected) or any(stored[k].dtype!=v.dtype or not np.array_equal(stored[k],v) for k,v in expected.items()):
                 raise ValueError('Resume must retain original source-rate arrays')
 
     def check_start(self, files, residual, protected_rows):
@@ -90,7 +112,9 @@ class ResumeState:
             snapshots[relative.as_posix()]=h
         return dict(source_directory=str(self.folder),files_sha256=snapshots,controls=self.controls.tolist(),
             prior_merit=self.prior_merit,completed_primary_iterations=self.prior_iterations,
-            original_source_caps_required=True,current_start_replay_required=True,quality_approved=False)
+            original_source_caps_required=True,current_start_replay_required=True,
+            contact_revision=self.revision,prior_merit_uses_original_contact_intent=self.revision is not None,
+            quality_approved=False)
 
     def check_inputs(self):
         if any(sha256(p)!=h for p,h in self.bindings.items()):raise ValueError('Resume source artifact changed')

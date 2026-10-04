@@ -61,6 +61,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Actor-only contact scenes](docs/native-actor-scene-assets-v1.md) now carry world/partner contacts through authoring, complete imported evidence replay, portable game tracks and finite Godot playback without a synthetic prop. Original clips and failed contact conditions remain preserved; motion quality and release approval stay separate.
 
+[Contact revision continuation](docs/native-scene-contact-revision-resume-v1.md) connects explicit mesh patch revisions to native character correction while retaining the original source clips, edit permissions, motion caps and geometry policy. Both original and revised contact intent remain measurable on the proposed motion; anatomical and motion-quality review remain open.
+
 [Streamed observation storage](docs/native-observation-archive-v1.md) preserves numeric arrays exactly without retaining previous frames. The expanded actor/object comparison and original-method replay pass at all 2,201 times. [Complete scene producer integration](docs/native-geometry-stream-v1.md) retains all clocks, triangles and precision, with bound archive receipts and preserved partial failures. Motion-quality and release gates stay open.
 
 [Stored-key scene proposals](docs/native-scene-storage-proposals-v1.md) add hard source-motion constraints, continuous proposal derivatives and finite Float32 translation-cell probes. A synthetic body-contact correction passes native checks after five iterations; the matched four-iteration result still fails. This does not establish realistic motion or release readiness.

@@ -19,7 +19,7 @@ from threadpoolctl import threadpool_limits
 from strep import ROOT, read, save, sha256, now
 
 METHODS = sorted(set(CONTACT_METHODS) | {'native_scene_edit.py','native_scene_fit.py',
-    'native_scene_norms.py','native_scene_conic.py','native_scene_storage.py','native_scene_restore.py','native_scene_resume.py','native_scene_geometry.py','native_observation_archive.py',
+    'native_scene_norms.py','native_scene_conic.py','native_scene_storage.py','native_scene_restore.py','native_scene_resume.py','native_scene_revision.py','native_contact_revision.py','native_scene_geometry.py','native_observation_archive.py',
     'native_surface_model.py','native_partner_surface_rows.py','native_object_surface_rows.py','native_surface_lift.py',
     'native_surface_contact.py','native_contact_norms.py','native_geometry_norms.py',
     'triangle_primitive_depth.py','triangle_crossing.py','convex_partner_surface.py',
@@ -146,7 +146,9 @@ def optimize(problem,evaluate,iterations,trust):
 
 
 def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_model='scalar',vector_difference_step=None,storage_cells=None,restoration_steps=0,
-        geometry_policy=None,resume_from=None,surface_contact_policy=None):
+        geometry_policy=None,resume_from=None,surface_contact_policy=None,contact_revision=None):
+    if contact_revision is not None and resume_from is None:
+        raise ValueError('Explicit contact revisions require a completed source-epoch fit')
     if type(iterations) is not int or not 1<=iterations<=16: raise ValueError('Choose 1-16 proposal iterations')
     if proposal_model not in ('scalar','vector','storage-vector','surface-vector'):raise ValueError('Choose scalar, vector, storage-vector or surface-vector proposal model')
     if proposal_model=='scalar' and vector_difference_step is not None:raise ValueError('Vector difference step applies only to vector proposals')
@@ -169,9 +171,15 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
     spec = read(contacts_path); scene = SceneContacts(spec,contacts_path.parent)
     edits = SceneEdits(read(permissions_path),scene,sha256(contacts_path)); bindings.update(scene.inputs)
     source_bindings=dict(bindings);resume=None
+    revision_request=None
+    if contact_revision is not None:
+        contact_revision=Path(contact_revision).resolve();bindings[str(contact_revision)]=sha256(contact_revision)
+        source_bindings[str(contact_revision)]=bindings[str(contact_revision)]
+        revision_request=read(contact_revision)
     if resume_from is not None:
         from native_scene_resume import ResumeState
-        resume=ResumeState(resume_from,bindings[str(contacts_path)],bindings[str(permissions_path)],edits)
+        resume=ResumeState(resume_from,bindings[str(contacts_path)],bindings[str(permissions_path)],edits,
+            contact_revision=revision_request,current_contacts=spec,current_permissions=read(permissions_path))
         edits.initial=resume.controls.copy();bindings.update(resume.bindings)
     surface_request=None
     if surface_contact_policy is not None:
@@ -186,6 +194,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
         from native_scene_geometry import policy_for
         geometry_policy = Path(geometry_policy).resolve(); bindings[str(geometry_policy)] = sha256(geometry_policy)
         geometry_request = read(geometry_policy); policy_for(geometry_request,scene,bindings[str(contacts_path)])
+    if resume is not None:resume.check_geometry(geometry_request,bindings[str(contacts_path)])
     methods = {n:sha256(ROOT/'scripts'/n) for n in METHODS}
     with worker_lock(),threadpool_limits(limits=1):
         output.mkdir(parents=True); archive = output/'implementation'; archive.mkdir()
@@ -193,6 +202,9 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
         resume_receipt=None if resume is None else resume.snapshot(output/'resume')
         shutil.copyfile(contacts_path,output/'contacts.json'); shutil.copyfile(permissions_path,output/'permissions.json')
         snapshots = {output/'contacts.json':bindings[str(contacts_path)],output/'permissions.json':bindings[str(permissions_path)]}
+        if revision_request is not None:
+            shutil.copyfile(contact_revision,output/'contact-revision.json')
+            snapshots[output/'contact-revision.json']=bindings[str(contact_revision)]
         if geometry_request is not None:
             shutil.copyfile(geometry_policy,output/'geometry-policy.json')
             snapshots[output/'geometry-policy.json'] = bindings[str(geometry_policy)]
@@ -208,6 +220,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             originals[name] = dest
         save(output/'request.json',dict(at=now(),inputs_sha256=bindings,source_inputs_sha256=source_bindings,resume=resume_receipt,implementation_sha256=methods,
             contacts_source_path=str(contacts_path),permissions_source_path=str(permissions_path),
+            contact_revision_sha256=None if revision_request is None else bindings[str(contact_revision)],
             actor_snapshots={n:dict(path=p.relative_to(output).as_posix(),sha256=spec['actors'][n]['sha256']) for n,p in originals.items()},
             controls=edits.size,iterations=iterations,trust_control_fraction=trust,
             proposal_model=proposal_model,conic_solver=conic_identity,
@@ -293,6 +306,12 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             save(proposal/'contacts.json',proposal_spec)
             from native_scene_contacts import run as contact_audit
             report = contact_audit(proposal/'contacts.json',output/'contact-audit')
+            original_contact_report=None
+            if revision_request is not None:
+                original_spec=copy.deepcopy(resume.original_contacts)
+                original_spec['actors']=copy.deepcopy(proposal_spec['actors'])
+                save(output/'original-contact-intent.json',original_spec)
+                original_contact_report=contact_audit(output/'original-contact-intent.json',output/'original-contact-audit')
             audits = {n:edits.audit(n,Path(proposal_spec['actors'][n]['glb']),scene.actors[n]['animation_index']) for n in edits.actors}
             geometry_report = None
             if geometry_request is not None:
@@ -349,6 +368,8 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                 original_selected=True,selected_files={n:p.relative_to(output).as_posix() for n,p in originals.items()},
                 proposal_files={n:str(Path(a['glb']).relative_to(output)) for n,a in proposal_spec['actors'].items()},
                 contacts_result_sha256=sha256(output/'contact-audit/result.json'),
+                original_contact_intent_result_sha256=None if original_contact_report is None else sha256(output/'original-contact-audit/result.json'),
+                original_contact_intent_pass=None if original_contact_report is None else original_contact_report['passed'],
                 sampled_geometry_conditions_pass=None if geometry_report is None else geometry_report['sampled_conditions_pass'],
                 geometry_result_sha256=None if geometry_report is None else sha256(output/'geometry-audit/result.json'),
                 engine_playback_verified=False,collision_verified=False,actual_soma_npz_verified=False,
@@ -369,6 +390,7 @@ if __name__=='__main__':
     p.add_argument('--restoration-steps',type=int,default=0,help='0-4 decoded constraint restoration solves, storage/surface-vector only')
     p.add_argument('--geometry-policy',type=Path,help='Source-bound sampled scene policy; originals remain selected')
     p.add_argument('--resume-from',type=Path,help='Completed fit to replay against the exact original source and limits')
+    p.add_argument('--contact-revision',type=Path,help='Explicit patch-only revision receipt; requires --resume-from and unchanged source edit permissions')
     p.add_argument('--surface-contact-policy',type=Path,help='Surface-facing acceptance audit and surface-vector proposal guidance')
     a=p.parse_args(); run(a.contacts,a.permissions,a.output,iterations=a.iterations,trust=a.trust,
-        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,restoration_steps=a.restoration_steps,geometry_policy=a.geometry_policy,resume_from=a.resume_from,surface_contact_policy=a.surface_contact_policy)
+        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,restoration_steps=a.restoration_steps,geometry_policy=a.geometry_policy,resume_from=a.resume_from,surface_contact_policy=a.surface_contact_policy,contact_revision=a.contact_revision)

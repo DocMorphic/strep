@@ -6,6 +6,11 @@ contacts and permissions; do not use the previous proposal as the new source.
 The default remains a fresh fit. This option is currently available through the
 CLI, with originals retained pending scene, engine and human review.
 
+An [explicit contact revision](native-scene-contact-revision-resume-v1.md) may
+change declared mesh patches while retaining the original source epoch and all
+edit bounds. Ordinary resumes still require exact contact/permission bytes.
+Both paths preserve an existing geometry policy; omission or relaxation fails.
+
 Before optimization, continuation verifies the prior final receipt, archived
 original actors, implementation hashes, source-rate arrays, frame sampling
 contract, and exact authored contact/permission bytes. Paths must remain within
