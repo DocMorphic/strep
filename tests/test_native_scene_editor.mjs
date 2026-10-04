@@ -40,6 +40,7 @@ assert.deepEqual(editor.snapshot().geometry.clock.times_s,[0,2]);
 el('ActorName').value='B';el('ActorPosition').value='2, 0, 0';metadata.duration_s=3;await el('AddActor').onclick();assert.match(el('Status').textContent,/different durations/);assert.equal(Object.keys(editor.snapshot().scene.actors).length,1);
 metadata.duration_s=2;let resolve;waiting=new Promise(r=>resolve=r);const stale=el('AddActor').onclick();context.variant='edited';resolve(metadata);await stale;assert.match(el('Status').textContent,/selection changed/);assert.equal(Object.keys(editor.snapshot().scene.actors).length,1);
 context.variant='transfer';waiting=null;await el('AddActor').onclick();assert.equal(editor.snapshot().scene.actors.B.placement.translation_m[0],2);
+el('ActorName').value='C';let resolveScene;waiting=new Promise(r=>resolveScene=r);const changing=el('AddActor').onclick();el('DepthLimit').value='6';resolveScene(metadata);await changing;assert.match(el('Status').textContent,/Scene draft changed/);assert(!editor.snapshot().scene.actors.C);el('DepthLimit').value='5';waiting=null;
 await el('AddObject').onclick();assert.deepEqual(editor.snapshot().scene.objects.item.geometry.size_m,[.4,.4,.4]);
 el('ContactActor').value='A';el('Target').value='item';el('ContactName').value='grip-A';el('Start').value='.8';el('End').value='1';el('Point').value='-.2, 0, 0';await el('AddContact').onclick();
 assert.deepEqual(editor.snapshot().scene.contacts[0].vertices,patch.vertices);assert.deepEqual(editor.snapshot().scene.contacts[0].interval_s,[.8,1]);

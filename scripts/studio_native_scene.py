@@ -7,6 +7,8 @@ import re
 import shutil
 import zipfile
 import hashlib
+import json
+import numpy as np
 from urllib.parse import urlsplit
 from strep import ROOT,read,save,sha256,now
 from native_scene_contacts import SceneContacts,fields
@@ -17,7 +19,7 @@ from native_scene_authoring_job import plan,run as author,validated,METHODS as A
 NAMESPACE='native-scene-jobs'
 NAME=re.compile(r'[A-Za-z0-9_-]{1,100}')
 SCRIPT_ROOT=Path(__file__).resolve().parent
-METHODS=tuple(dict.fromkeys(AUTHOR_METHODS+('studio_native_scene.py',)))
+METHODS=tuple(dict.fromkeys(AUTHOR_METHODS+('studio_native_scene.py','native_contact_revision.py')))
 ASSET_PREFIXES=('/files/rig-jobs/','/files/character-assets/','/files/native-correction-previews/','/files/native-support-jobs/')
 
 
@@ -37,8 +39,11 @@ def actor_metadata(job,variant):
     return {k:result[k] for k in ('source_job','variant','label','source_url','glb_sha256','duration_s','animation_index')}
 
 
-def validate_request(payload,resolver):
-    fields(payload,('schema','scene','geometry','object_edit'),'Studio native scene draft')
+def validate_request(payload,resolver,*,require_objects=True):
+    from native_contact_revision import validate
+    ordinary,revision=validate(payload)
+    if revision is not None:validate_request(revision['baseline'],resolver,require_objects=require_objects)
+    payload=ordinary
     require(payload['schema']=='strep-studio-native-scene-v1','Studio native scene schema required')
     spec=copy.deepcopy(payload['scene'])
     fields(spec,('schema','duration_s','actors','objects','contacts'),'native scene')
@@ -59,7 +64,7 @@ def validate_request(payload,resolver):
         sources[name]=dict(url=url,path=str(path),sha256=entry['sha256'])
         entry['glb']=str(path)
     scene=SceneContacts(spec,ROOT)
-    require(bool(scene.objects),'Declare at least one scene object')
+    if require_objects:require(bool(scene.objects),'This asset builder requires at least one scene object; character-only contact previews are supported separately')
     fields(payload['geometry'],('clock','limits','planes'),'declared scene geometry')
     geometry=dict(schema='strep-native-scene-geometry-v1',contacts_sha256='draft',**copy.deepcopy(payload['geometry']))
     policy_for(geometry,scene,'draft')
@@ -72,13 +77,54 @@ def validate_request(payload,resolver):
     return spec,geometry,edit,sources
 
 
+def method_names(payload):
+    return METHODS
+
+
+def revision_preview(payload,resolver):
+    """Read-only exact intent comparison and endpoint positions, not a hold audit."""
+    from native_contact_revision import validate,portable_record
+    _,revision=validate(payload)
+    require(revision is not None,'Explicit contact revision required')
+    digest=lambda v:hashlib.sha256(json.dumps(v,sort_keys=True,separators=(',',':'),allow_nan=False).encode()).hexdigest()
+    methods={n:sha256(SCRIPT_ROOT/n) for n in method_names(payload)}
+    spec,_,_,sources=validate_request(payload,resolver,require_objects=False)
+    original_spec,_,_,_=validate_request(revision['baseline'],resolver,require_objects=False)
+    original=SceneContacts(original_spec,ROOT);changed=SceneContacts(spec,ROOT);observations=[]
+    def inspect(scene,entry):
+        row=entry['authored'];times=np.unique(row['interval_s']);target=row['target']
+        points=scene.actor_points(row['actor'],entry['ids'],times)
+        if row['reduction']=='centroid':points=points.mean(axis=1,keepdims=True)
+        if target['space']=='actor':
+            goal=scene.actor_points(target['actor'],entry['target_ids'],times)
+            if target['reduction']=='centroid':goal=goal.mean(axis=1,keepdims=True)
+        elif target['space']=='world':goal=np.repeat(entry['target_ids'][None],len(times),axis=0)
+        else:
+            p,r=scene.object_poses(target['object'],times);goal=np.einsum('fij,vj->fvi',r,entry['target_ids'])+p[:,None]
+        return dict(times_s=times.tolist(),source_world_m=points.tolist(),target_world_m=goal.tolist(),
+            separation_m=np.linalg.norm(points-goal,axis=2).tolist())
+    for edit in revision['edits']:
+        before=next(e for e in original.rows if e['authored']['id']==edit['id'])
+        after=next(e for e in changed.rows if e['authored']['id']==edit['id'])
+        observations.append(dict(id=edit['id'],original_contact=before['authored'],authored_contact=after['authored'],
+            original_endpoint_inspection=inspect(original,before),authored_endpoint_inspection=inspect(changed,after)))
+    original.check_inputs();changed.check_inputs()
+    require(all(sha256(SCRIPT_ROOT/n)==h for n,h in methods.items()),'Revision preview implementation changed')
+    return dict(schema='strep-native-contact-revision-preview-v1',draft_sha256=digest(payload),
+        baseline_sha256=digest(revision['baseline']),implementation_sha256=methods,
+        actor_sha256={n:s['sha256'] for n,s in sources.items()},changes=observations,record=portable_record(payload),
+        original_selected=True,animation_edited=False,anatomical_review_pending=True,quality_approved=False,
+        training_admitted=False,release_approved=False,
+        scope='Explicit new contact intent; start/end source pose inspection only, not whole-hold acceptance, fitting, collision or anatomical approval.')
+
+
 def prepare(payload,folder,resolver):
     folder=Path(folder).resolve()
     require(folder==folder_for(folder.name) and not folder.exists(),'Fresh Studio scene folder required')
     spec,geometry,edit,sources=validate_request(payload,resolver)
     engine=ROOT/'.cache/godot/4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe'
     require(engine.is_file(),'Install the configured local Godot runtime before building scene assets')
-    methods={n:sha256(SCRIPT_ROOT/n) for n in METHODS}
+    methods={n:sha256(SCRIPT_ROOT/n) for n in method_names(payload)}
     folder.mkdir(parents=True);save(folder/'pipeline.json',dict(status='preparing',original_selected=True,quality_approved=False))
     try:
         archive=folder/'implementation';archive.mkdir();inputs=folder/'input';inputs.mkdir()
@@ -95,6 +141,7 @@ def prepare(payload,folder,resolver):
         plan(folder/'contacts.json',folder/'geometry-policy.json',engine,folder/'recipe.json',edit_path)
         names=['draft.json','contacts.json','geometry-policy.json','recipe.json']+(['object-edit.json'] if edit is not None else [])
         prepared=dict(schema='strep-studio-native-scene-prepared-v1',sources=sources,
+            contact_revision_requested='contact_revision' in payload,
             files_sha256={n:sha256(folder/n) for n in names},implementation_sha256=methods,
             engine_path=str(engine),engine_sha256=sha256(engine),original_selected=True,quality_approved=False,
             training_admitted=False,release_approved=False,at=now())
@@ -109,12 +156,19 @@ def frozen(folder,*,current_methods=True):
     p=read(folder/'prepared.json')
     require(p['schema']=='strep-studio-native-scene-prepared-v1' and p['original_selected'] is True
         and all(p[k] is False for k in ('quality_approved','training_admitted','release_approved')),'Unapproved source scene required')
-    require(set(p['implementation_sha256'])==set(METHODS),'Complete Studio scene methods required')
+    draft=read(folder/'draft.json')
+    expected_methods=set(METHODS)
+    legacy=not current_methods and 'contact_revision' not in draft and 'native_contact_revision.py' not in p['implementation_sha256']
+    if legacy:expected_methods.remove('native_contact_revision.py')
+    require(set(p['implementation_sha256'])==expected_methods,'Complete Studio scene methods required')
+    require(p.get('contact_revision_requested',False)==('contact_revision' in draft),'Scene revision selection changed')
     for n,h in p['implementation_sha256'].items():
         require(sha256(folder/'implementation'/n)==h,'Scene method archive changed')
         if current_methods:require(sha256(SCRIPT_ROOT/n)==h,'Scene implementation changed')
     expected={'draft.json','contacts.json','geometry-policy.json','recipe.json'}
-    draft=read(folder/'draft.json');edit=draft['object_edit']
+    edit=draft['object_edit']
+    from native_contact_revision import validate
+    validate(draft)
     if edit is not None:expected.add('object-edit.json')
     require(set(p['files_sha256'])==expected,'Complete scene draft receipts required')
     for n,h in p['files_sha256'].items():require(sha256(folder/n)==h,'Scene draft changed')
@@ -138,7 +192,7 @@ def frozen(folder,*,current_methods=True):
 
 
 def download_names(prepared):
-    return {f'input/actor-{i}.glb' for i in range(len(prepared['sources']))} | {
+    return ({'exports/contact-revision.json'} if prepared.get('contact_revision_requested',False) else set()) | {f'input/actor-{i}.glb' for i in range(len(prepared['sources']))} | {
         'authoring/objects-common/objects.glb','authoring/objects-engine/native-animation.res',
         'authoring/result.json','authoring/combined-engine/geometry.json','authoring/replay/result.json','assets.zip'} | {
         f'authoring/actors-engine/{name}-animation.res' for name in prepared['sources']}
@@ -162,6 +216,12 @@ def package(folder,prepared,result):
     for i,(name,source) in enumerate(prepared['sources'].items()):
         files[f'actors/{i}.glb']=folder/source['snapshot']
         files[f'animations/{name}.res']=folder/f'authoring/actors-engine/{name}-animation.res'
+    if 'contact_revision' in read(folder/'draft.json'):
+        from native_contact_revision import portable_record
+        record=portable_record(read(folder/'draft.json'))
+        require(record['authored_contacts']==scene['contacts'],'Scene export changes revised contact intent')
+        record['portable_scene_sha256']=sha256(exports/'scene.json');save(exports/'contact-revision.json',record)
+        files['contact-revision.json']=exports/'contact-revision.json'
     receipts={n:sha256(path) for n,path in files.items()}
     save(exports/'package.json',dict(schema='strep-native-scene-asset-package-v1',files_sha256=receipts,
         selected_animations={name:a['animation_index'] for name,a in scene['actors'].items()},
@@ -201,6 +261,8 @@ def run(folder):
         for name in prepared['sources']:
             relative=f'authoring/actors-engine/{name}-animation.res';outputs[relative]=dict(label=f'Godot character animation: {name}',sha256=sha256(folder/relative))
         outputs['assets.zip']=dict(label='Scene asset package',sha256=package(folder,prepared,result))
+        if prepared.get('contact_revision_requested',False):
+            outputs['exports/contact-revision.json']=dict(label='Original and revised contact intent',sha256=sha256(folder/'exports/contact-revision.json'))
         frozen(folder)
         completion=dict(schema='strep-studio-native-scene-completion-v1',prepared_sha256=sha256(folder/'prepared.json'),
             result_sha256=sha256(folder/'authoring/result.json'),replay_sha256=sha256(folder/'authoring/replay/result.json'),
@@ -229,7 +291,7 @@ def manifest(job):
         and all(c[k] is False for k in ('studio_selection_changed','quality_approved','training_admitted','release_approved')),'Scene decisions changed')
     require(all(r[k] is False for k in ('studio_selection_changed','quality_approved','training_admitted','release_approved',
         'gpu_render_checked','physics_verified','real_time_playback_verified','human_review_submitted')),'Scene authoring approval changed')
-    require(r['implementation_sha256']=={n:h for n,h in prepared['implementation_sha256'].items() if n!='studio_native_scene.py'},'Scene authoring methods changed')
+    require(r['implementation_sha256']=={n:prepared['implementation_sha256'][n] for n in AUTHOR_METHODS},'Scene authoring methods changed')
     require(r['recipe_sha256']==sha256(folder/'recipe.json') and r['object_edit_requested']==(read(folder/'draft.json')['object_edit'] is not None),'Scene authoring input selection changed')
     for path,digest in {**r['inputs_sha256'],**r['derived_inputs_sha256']}.items():
         require(sha256(path)==digest,'Scene authoring input changed')

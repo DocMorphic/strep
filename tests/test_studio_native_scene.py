@@ -165,7 +165,7 @@ def mock_author(folder,*,passed=True):
     import shutil
     def author(recipe,out):
         out.mkdir();prepared=read(folder/'prepared.json');impl=out/'implementation';impl.mkdir()
-        methods={n:h for n,h in prepared['implementation_sha256'].items() if n!='studio_native_scene.py'}
+        methods={n:prepared['implementation_sha256'][n] for n in studio.AUTHOR_METHODS}
         for name in methods:shutil.copyfile(folder/'implementation'/name,impl/name)
         stages=[]
         names=['source-contacts','object-edit','objects-source','objects-common','objects-engine','actors-engine','combined-engine','replay']

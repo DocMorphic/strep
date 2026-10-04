@@ -365,6 +365,23 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
  <button class="btn" id="nativeScenePartnerPatch">Use selected patch as partner target</button>
  <button class="btn" id="nativeSceneAddContact">Add contact from selected patch</button>
  <div id="nativeSceneContacts"></div>
+ <details>
+  <summary>Revise an existing contact patch</summary>
+  <p class="small">Pick the intended surface in Mesh contacts, stage it here, then preview the changes before applying. This creates new contact intent and retains the original conditions. Timing, limits, placements, geometry and edit bounds stay preserved.</p>
+  <div class="rig-field-grid">
+   <label>Contact<select id="nativeSceneRevisionContact"></select></label>
+   <label>Source measurement<select id="nativeSceneRevisionSourceReduction"><option value="centroid">Average patch position</option><option value="individual">Individual points</option></select></label>
+   <label>Partner measurement<select id="nativeSceneRevisionPartnerReduction"><option value="centroid">Average patch position</option><option value="individual">Individual points</option></select></label>
+  </div>
+  <div class="toolbar">
+   <button class="btn" id="nativeSceneRevisionSource">Stage selected source patch</button>
+   <button class="btn" id="nativeSceneRevisionPartner">Stage selected partner patch</button>
+   <button class="btn" id="nativeSceneRevisionPreview">Preview patch changes</button>
+   <button class="btn" id="nativeSceneRevisionApply" disabled>Apply reviewed changes</button>
+   <button class="btn" id="nativeSceneRevisionRestore" disabled>Restore original draft</button>
+  </div>
+  <div id="nativeSceneRevisionResults" aria-live="polite"></div>
+ </details>
  <label><input id="nativeSceneFloor" type="checkbox"> Check a horizontal world plane</label>
  <div class="rig-field-grid">
   <label>Plane height (m)<input id="nativeSceneFloorHeight" type="number" step="any" value="0"></label>

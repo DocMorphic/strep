@@ -17,6 +17,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
+[Explicit contact revisions in Studio](docs/native-contact-revision-v1.md) now stage source and partner patches, show original/new references and endpoint positions, recheck sources before Apply, and retain the original draft and all authoring bounds. Four development replays and an actual eight-stage CPU Godot fixture preserve provenance and failed decisions. This authoring workflow does not correct the retained motion-quality failures; character-only asset building remains open.
+
 [Contact-region review](docs/native-contact-region-review-v1.md) preserves original motion and targets while measuring declared mesh regions at every contact time. Four development reviews show that a passing high-five point condition can still place the point 51.7 mm inside the region's supporting plane. Persistent alternatives remain explicit author choices; they do not establish anatomical contact, collision freedom or motion quality.
 
 [Decoded source-bound restoration](docs/native-scene-decoded-restoration-v1.md) tightens proposal caps using measured serialization and nonlinear errors, while retaining the original final motion limits. A retained high-five now accepts four safe sampled steps and reduces hand separation from 206 mm to 178 mm; the 30 mm contact target still fails.
