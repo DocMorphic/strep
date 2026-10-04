@@ -66,6 +66,18 @@ def test_static_object_receives_complete_duration_tracks(tmp_path):
     p,r=asset.object_poses('item',[0.,.3,2.]);assert np.array_equal(p[0],p[-1]) and np.array_equal(r[0],r[-1])
 
 
+def test_exact_native_rotation_knots_keep_declared_and_stored_poses(tmp_path):
+    from scipy.spatial.transform import Rotation
+    _,_,spec,_,_=fixture(tmp_path)
+    spec['objects']['item']['keyframes']=[dict(time_s=t,translation_m=[0.,0.,0.],rotation_xyzw=q)
+        for t,q in [(0.,[0.,0.,0.,1.]),(.5,Rotation.from_rotvec([.003,.002,.001]).as_quat().tolist()),(1.,[0.,0.,0.,1.]),(2.,[0.,0.,0.,1.])]]
+    scene=SceneContacts(spec,tmp_path);path=tmp_path/'objects.glb';export(scene,path);asset=ObjectAsset(path)
+    clock,q=asset.objects['item']['rotation']
+    assert np.array_equal(q[clock==1.],[[0.,0.,0.,1.]])
+    _,actual=asset.object_poses('item',clock)
+    assert np.array_equal(actual,Rotation.from_quat(q).as_matrix())
+
+
 def test_engine_audit_rejects_implementation_drift_before_launch(tmp_path,monkeypatch):
     _,path,_,_,_=fixture(tmp_path);output=tmp_path/'asset';run(path,output)
     archived=output/'implementation/native_object_asset.py';archived.write_bytes(archived.read_bytes()+b'\n# drift\n')

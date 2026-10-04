@@ -45,7 +45,13 @@ def export(scene,path):
     for name,obj in scene.objects.items():
         original=obj['times'] if len(obj['times'])>1 else np.array([0.,scene.duration])
         times,clocks[name]=stored_clock(original)
-        p,r=scene.object_poses(name,np.clip(times,0,scene.duration));q=Rotation.from_matrix(r).as_quat()
+        p,r=scene.object_poses(name,np.clip(times,0,scene.duration))
+        # Exact native knots retain their declared poses. Slerp endpoint
+        # recomposition can otherwise introduce tiny rotations at frozen keys.
+        ids=np.searchsorted(obj['times'],times);matched=ids<len(obj['times'])
+        matched[matched]=obj['times'][ids[matched]]==times[matched]
+        p[matched]=obj['positions'][ids[matched]];r[matched]=obj['rotations'][ids[matched]]
+        q=Rotation.from_matrix(r).as_quat()
         for i in range(1,len(q)):
             if q[i]@q[i-1]<0:q[i]*=-1
         vertices,normals,approximation=triangle_mesh(obj['geometry']);vertices=vertices.reshape(-1,3);normals=normals.reshape(-1,3)
@@ -89,7 +95,10 @@ class ObjectAsset:
 
     def object_poses(self,name,times):
         tracks=self.objects[name];clock,p=tracks['translation'];_,q=tracks['rotation'];t=np.clip(np.asarray(times,float),clock[0],clock[-1])
-        return np.stack([np.interp(t,clock,p[:,i]) for i in range(3)],axis=1),Slerp(clock,Rotation.from_quat(q))(t).as_matrix()
+        native=Rotation.from_quat(q);positions=np.stack([np.interp(t,clock,p[:,i]) for i in range(3)],axis=1)
+        rotations=Slerp(clock,native)(t).as_matrix();ids=np.searchsorted(clock,t);matched=clock[ids]==t
+        positions[matched]=p[ids[matched]];rotations[matched]=native.as_matrix()[ids[matched]]
+        return positions,rotations
 
 
 def audit(scene,asset,times):
