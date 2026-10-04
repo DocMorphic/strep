@@ -38,6 +38,7 @@ def test_replay_recomputes_every_closed_population_and_complete_geometry(tmp_pat
     assert proof['geometry']['geometry_queries_rerun'] and proof['geometry']['complete_samples']==3
     assert proof['geometry']['sampled_conditions_pass']==original['complete_geometry_pass']==(not unsafe_floor)
     assert proof['decoder_shared_with_producer'] and not proof['all_derivative_columns_recomputed']
+    assert proof['condition_summaries_and_closed_decisions_reduced']
     assert not proof['quality_approved'] and not proof['release_approved']
 
 
@@ -45,6 +46,34 @@ def test_timeout_replay_verifies_non_retention_without_inventing_geometry(tmp_pa
     out,_=study(tmp_path,monkeypatch,timeout=True);proof=replay.run(out,tmp_path/'replay')
     assert proof['complete_closed_populations']==['baseline','rejected'] and proof['geometry'] is None
     assert proof['retained_claim_reproduced'] and proof['editable_keys_reconstructed']==18
+
+
+@pytest.mark.parametrize('population',['original','baseline','rejected','final'])
+def test_contradictory_final_summary_rejects_even_when_motion_and_hashes_are_valid(tmp_path,monkeypatch,population):
+    out,_=study(tmp_path,monkeypatch);result=read(out/'result.json')
+    result[population]['surface_failed_rows']+=1;save(out/'result.json',result)
+    with pytest.raises(ValueError,match='summary'):
+        replay.run(out,tmp_path/'replay')
+    assert not (tmp_path/'replay/result.json').exists()
+
+
+@pytest.mark.parametrize('field',['native_maximum_excess','contact_score','feasible_improved_motion','static_edit_audit_pass'])
+def test_forged_closed_decision_summary_rejects_with_rebound_inventory(tmp_path,monkeypatch,field):
+    out,_=study(tmp_path,monkeypatch);path=out/'iteration-1/trials.json';trials=read(path)
+    if field=='contact_score':trials[0][field][1]+=.1
+    elif field=='native_maximum_excess':trials[0][field]+=.1
+    else:trials[0][field]=not trials[0][field]
+    decision=out/'iteration-1/backoff-0/decision.json';save(path,trials);save(decision,trials[0]);rebind(out,path,decision)
+    with pytest.raises(ValueError,match='summary'):
+        replay.run(out,tmp_path/'replay')
+    assert not (tmp_path/'replay/result.json').exists()
+
+
+@pytest.mark.parametrize('field',['baseline_fallback_preserved','original_contact_guard_pass','complete_geometry_pass'])
+def test_contradictory_final_retention_flags_reject(tmp_path,monkeypatch,field):
+    out,_=study(tmp_path,monkeypatch);result=read(out/'result.json');result[field]=not result[field];save(out/'result.json',result)
+    with pytest.raises(AssertionError):replay.run(out,tmp_path/'replay')
+    assert not (tmp_path/'replay/result.json').exists()
 
 
 @pytest.mark.parametrize('kind',['partner','object'])

@@ -67,3 +67,10 @@ fresh complete replay are pending until their actual runs finish.
 
 
 All 27 focused cases and 378 isolated native/contact/geometry/solver source cases pass. The command fixture performs the fresh complete geometry replay in a separate copied checkout. Local evidence: `reports/verify-coupled-restoration-tests-v5.log` and `reports/verify-coupled-restoration-clean-source-v1`. The real-character restoration worker is still auditing final geometry; this new replay command has not yet verified that production result.
+
+
+## Complete summary consistency
+
+A preserved adversarial run exposed four accepted contradictions: original, baseline, rejected and final surface-failure counts could disagree with valid underlying scalar observations. The old physical replay still matched motion, but omitted these reported summaries. The corrected replay reduces every full saved native/contact population after its physical parity checks and requires exact agreement with all four summaries. Every trial decision must also agree with the recomputed native/contact scores, counts, guards, feasibility and static audit, and its separate saved decision must equal the trials record. Final geometry, contact-guard and baseline fallback flags must reproduce the actual decision. No parity tolerance is added to these summary comparisons or feasibility guards.
+
+All 38 focused and 389 isolated source cases pass. Eleven additional cases cover contradictory summary counts, changed native/contact scores, incorrect trial feasibility/static flags and false final retention flags. The four failing original fixtures, falsely successful old replay outputs and source snapshots remain preserved. This correction changes only verification; producer methods, permissions and acceptance limits remain unchanged. Local evidence: `reports/restoration-summary-replay-repair-v1`, `reports/verify-coupled-restoration-tests-v6.log` and `reports/verify-coupled-restoration-clean-source-v2`. Production repair geometry and fresh complete replay remain pending.

@@ -30,6 +30,20 @@ def score(value):
     return [float(positive.max()),float(positive@positive)]
 
 
+def condition_summary(observations):
+    """Reduce full saved scalars after their independent physical parity checks."""
+    native,contact=[np.asarray(observations[n],float) for n in ('native','contact')]
+    score(native)  # Validate the complete finite population even if all rows pass.
+    return dict(native_pass=bool(np.all(native<=0)),native_failed_rows=int((native>0).sum()),
+        native_maximum_excess=float(native.max()),contact_score=score(contact),
+        surface_contacts_pass=bool(np.all(contact<=0)),surface_failed_rows=int((contact>0).sum()))
+
+
+def check_summary(claim,observations):
+    if claim!=condition_summary(observations):
+        raise ValueError('Restoration condition summary disagrees with complete scalar observations')
+
+
 def vertices(actor,world):
     """Reconstruct complete placed skin inputs without RigAsset.vertices."""
     rig=actor['rig'];transforms=world[rig.joints]@rig.inverse;parts=[]
@@ -88,6 +102,9 @@ def run(study,output,*,progress=None):
         result=read(study/'result.json');request=read(study/'request.json')
         assert result['schema']=='strep-restore-coupled-contacts-result-v1' and result['status']=='complete'
         assert result['original_selected'] and not result['quality_approved'] and not result['release_approved']
+        assert result['fixed_previous_contact_anchor'] and not result['rejected_pose_becomes_new_baseline']
+        assert not result['human_reviewed'] and not result['imported_skin_checked']
+        assert not result['self_or_continuous_collision_checked'] and not result['geometry_queries_rerun_by_independent_verifier']
         assert request['schema']=='strep-restore-coupled-contacts-request-v1'
         assert result['request_sha256']==sha256(study/'request.json') and request['rotation_storage_policy']=='source-scale'
         actual_files={p.relative_to(study).as_posix() for p in study.rglob('*') if p.is_file()
@@ -137,6 +154,7 @@ def run(study,output,*,progress=None):
             np.testing.assert_allclose(initial_native,saved['native'],atol=1e-7,rtol=0)
             np.testing.assert_array_equal(initial_native>0,saved['native']>0)
             assert np.all(initial_native<=0)
+            check_summary(result['original'],saved)
             key_count=0;populations=[]
             def population(folder):
                 nonlocal key_count
@@ -168,9 +186,13 @@ def run(study,output,*,progress=None):
                 return obs,worlds,current,current_spec
             baseline,baseline_worlds,_,_=population(study/'baseline')
             assert np.all(baseline['native']<=0) and np.all(baseline['contact']<=np.maximum(original_contact,0))
+            check_summary(result['baseline'],baseline)
             base,worlds,current,current_spec=population(study/'rejected');assert np.any(base['native']>0)
+            check_summary(result['rejected'],base)
             x=base['controls'];steps=0
-            for item in result['history']:
+            assert result['history']==read(study/'history.json') and len(result['history'])<=request['iterations']
+            for iteration,item in enumerate(result['history'],1):
+                assert item['iteration']==iteration
                 folder=study/f"iteration-{item['iteration']}";meta=read(folder/'model.json')
                 with np.load(folder/'model.npz',allow_pickle=False) as a:
                     vectors=a['vectors'];bounds=a['caps'];scales=a['scales']
@@ -234,6 +256,17 @@ def run(study,output,*,progress=None):
                     feasible=bool(np.all(obs['native']<=0))
                     improves=bool(after[0]<=before[0] and ((feasible and np.any(base['native']>0)) or after[1]<before[1]-1e-12))
                     okay=bool(guard and original_guard and improves)
+                    old_contact,new_contact=score(baseline['contact']),score(obs['contact'])
+                    contact_improves=bool(new_contact[0]<=old_contact[0] and new_contact[1]<old_contact[1]-1e-12)
+                    expected_decision=dict(**condition_summary(obs),native_before_score=before,native_after_score=after,
+                        native_merit_improves=improves,individual_baseline_contact_guard_pass=guard,
+                        contact_improves_over_baseline=contact_improves,provisional_repair_progress=okay,
+                        feasible_improved_motion=bool(feasible and guard and contact_improves),
+                        full_geometry_checked=False,retained=False,label=trial['label'],fraction=trial['fraction'],
+                        static_edit_audit_pass=True,original_contact_guard_pass=original_guard,
+                        controls_relative_to_original_source=True)
+                    if trial!=expected_decision or read(folder/trial['label']/'decision.json')!=expected_decision:
+                        raise ValueError('Restoration decision summary disagrees with complete replay')
                     assert trial['native_pass']==feasible and trial['native_failed_rows']==int((obs['native']>0).sum())
                     assert trial['individual_baseline_contact_guard_pass']==guard and trial['original_contact_guard_pass']==original_guard
                     assert trial['native_merit_improves']==improves and trial['provisional_repair_progress']==okay
@@ -242,6 +275,7 @@ def run(study,output,*,progress=None):
                 assert chosen==item['provisional_step'];x=base['controls']
             np.testing.assert_array_equal(np.load(study/'provisional-controls.npy',allow_pickle=False),x)
             assert result['provisional_steps']==steps
+            check_summary(result['final'],base)
             expected_files={n:dict(path=current_spec['actors'][n]['glb'],sha256=current_spec['actors'][n]['sha256']) for n in permissions['actors']}
             assert result['candidate_files']==expected_files
             original_guard=bool(np.all(base['contact']<=np.maximum(original_contact,0)))
@@ -254,6 +288,9 @@ def run(study,output,*,progress=None):
             geometry=geometry_replay(study,current,worlds,clock,request,progress) if eligible else None
             keep=bool(eligible and geometry['sampled_conditions_pass']) if geometry else False
             assert result['retained_partial_improvement']==keep
+            assert result['baseline_fallback_preserved']==(not keep)
+            assert result['original_contact_guard_pass']==original_guard
+            assert result['complete_geometry_pass']==(geometry['sampled_conditions_pass'] if geometry else None)
             np.testing.assert_array_equal(np.load(study/'retained-controls.npy',allow_pickle=False),x if keep else baseline['controls'])
             check()
             replay=dict(schema='strep-coupled-restoration-replay-v1',at=now(),status='complete',
@@ -261,6 +298,7 @@ def run(study,output,*,progress=None):
                 complete_closed_populations=populations,editable_keys_reconstructed=key_count,
                 native_scalar_and_vector_arithmetic_recomputed=True,uncached_full_surface_contact_recomputed=True,
                 paired_guard_rows_and_jacobians_checked=True,all_derivative_columns_recomputed=False,
+                condition_summaries_and_closed_decisions_reduced=True,
                 decoder_shared_with_producer=True,geometry=geometry,retained_claim_reproduced=True,
                 engine_or_human_quality_checked=False,quality_approved=False,release_approved=False)
             save(output/'result.json',replay);save(output/'pipeline.json',dict(status='complete'));return replay

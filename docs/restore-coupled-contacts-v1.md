@@ -93,3 +93,10 @@ One preserved small command fixture uses the actual CPU solver: both phases repo
 
 
 The [saved repair replay command](verify-coupled-restoration-v1.md) now checks complete closed trial populations, fixed original caps and contact references, raw keys, directions and retention decisions, then reruns all declared geometry/containment queries using the unchanged shared kernel. Its 27 focused and 378 isolated source cases pass; the actual production restoration and fresh replay remain pending.
+
+
+## Provisional residual diagnosis
+
+A bounded reduction of the live real-character repair's closed scalar populations locates all 2,066 remaining surface failures at exactly two neighbor points: left point 2 (vertex 7112) and right point 2 (vertex 11577), each failing at all 1,033 contact samples from 2.0 to 4.0333333015441895 seconds. Left opposition error is 44.77854415790069-45.03924294197185 degrees and right error is 44.39748150949209-44.90435631726569 degrees against the unchanged 15-degree limit. All stored source/target side-gap conditions pass. Native conditions pass in the producer's provisional export, but final geometry retention and fresh physical replay are pending.
+
+Static inspection includes every incident triangle and every positive skin influence. The affected regions are weighted to the corresponding hand, ring base and little-finger base nodes; all these animated rotation tracks and their relevant edited ancestors are already permitted. No missing local rotation permission is found in that complete incident population. This does not prove pose reachability, useful derivative magnitude, anatomical contact or a successful correction. It gives no present justification to broaden joint permissions. No motion, target, tolerance or clock was changed. Local evidence: `reports/restored-contact-failure-reduction-v2` and `reports/restored-contact-dependencies-v1`. The first scalar-score comparison used the default BLAS thread count and failed exact parity; its script/failure are preserved. The fresh reduction uses the producer's single numerical thread and reproduces its score exactly, without adding comparison slack.
