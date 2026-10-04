@@ -106,7 +106,12 @@ def direction(system, jacobian, value, lower, upper, trust, *, hard_rows=0):
 
 
 def optimize(problem,evaluate,iterations,trust,*,difference_step=.001,difference_source='stored',storage_cells=0,protect_source_rows=False,restoration_steps=0,
-        protect_contact_rows=False,anchor_worlds=None):
+        protect_contact_rows=False,anchor_worlds=None,difference_scheme='forward',serialized_ray_probes=0):
+    if difference_scheme not in ('forward','central'):raise ValueError('Choose forward or central vector differences')
+    if type(serialized_ray_probes) is not int or not 0<=serialized_ray_probes<=512:
+        raise ValueError('Choose 0-512 serialized ray probes')
+    if serialized_ray_probes and not protect_source_rows:
+        raise ValueError('Serialized ray probes require protected original source rows')
     if type(protect_contact_rows) is not bool or protect_contact_rows and not protect_source_rows:
         raise ValueError('Individual native contact protection requires source protection')
     if anchor_worlds is not None and not callable(anchor_worlds):raise ValueError('Callable decoded anchor required')
@@ -115,7 +120,8 @@ def optimize(problem,evaluate,iterations,trust,*,difference_step=.001,difference
         before = merit(current)
         if before[0]==0:break
         options={} if anchor_worlds is None else dict(base_worlds=anchor_worlds(value,current_label))
-        system,jacobian,differences = linearize(problem,value,step=difference_step,difference_source=difference_source,**options)
+        system,jacobian,differences = linearize(problem,value,step=difference_step,difference_source=difference_source,
+            difference_scheme=difference_scheme,**options)
         # Algebraic refactoring may differ in final floating-point subtraction;
         # it must describe the same ordered constraints before proposing a step.
         np.testing.assert_allclose(system.residual(),problem.model(value) if anchor_worlds is None else current,atol=1e-9,rtol=1e-12)
@@ -129,7 +135,7 @@ def optimize(problem,evaluate,iterations,trust,*,difference_step=.001,difference
             hard=guard_identity['hard_rows'];differences['native_contact_protection']=guard_identity
         delta,info = direction(system,jacobian,value,problem.lower,problem.upper,radius,
             hard_rows=hard)
-        accepted = None; probes = []; storage_info = None; repairs=[]
+        accepted = None; probes = []; storage_info = None; repairs=[];ray_info=None
         def acceptable(g):
             score=merit(g)
             protected=not protect_source_rows or np.all(g[:problem.protected_rows]<=0)
@@ -150,6 +156,7 @@ def optimize(problem,evaluate,iterations,trust,*,difference_step=.001,difference
             for backoff in range(10):
                 fraction = .5**backoff; other = np.clip(value+fraction*delta,problem.lower,problem.upper)
                 label=f'{iteration}-{backoff}';g = evaluate(other,label); score,protected,passed = acceptable(g)
+                backoff_source_pass=bool(np.all(g[:problem.protected_rows]<=0))
                 probes.append(dict(fraction=fraction,merit=list(score),**observation(g),accepted=passed))
                 if passed:value=other;current=g;current_label=label;accepted=fraction;break
                 if restoration_steps and protect_source_rows and backoff==0 and not protected:
@@ -181,8 +188,28 @@ def optimize(problem,evaluate,iterations,trust,*,difference_step=.001,difference
                         probes.append(dict(**entry,kind='translation-storage-cell',merit=list(score),**observation(g),accepted=passed))
                         if passed:value=other;current=g;current_label=label;accepted=entry['fraction'];break
                     if accepted is not None:break
+                if serialized_ray_probes and ray_info is None and not backoff_source_pass:
+                    backoff_value=np.clip(value+fraction*delta,problem.lower,problem.upper)
+                    continuous=problem.constraints(backoff_value,problem.worlds(backoff_value,quantized=False))
+                    smooth_score=merit(continuous)
+                    smooth_improved=(smooth_score[0]<before[0]-1e-12 or
+                        abs(smooth_score[0]-before[0])<=1e-12 and smooth_score[1]<before[1]-1e-15)
+                    if np.all(continuous[:problem.protected_rows]<=0) and smooth_improved:
+                        from native_scene_serialized_ray import probe_fractions
+                        entries,ray_info=probe_fractions(problem.edits,value,delta,
+                            maximum_probes=serialized_ray_probes,start_fraction=fraction)
+                        ray_info.update(anchor_label=f'{iteration}-{backoff}',smooth_source_rows_pass=True,
+                            anchor_decoded_source_rows_pass=False,smooth_merit=list(smooth_score))
+                        for index,entry in enumerate(entries):
+                            candidate=np.clip(value+entry['fraction']*delta,problem.lower,problem.upper)
+                            ray_label=f'{iteration}-ray-{index}'
+                            ray_g=evaluate(candidate,ray_label);score,protected,passed=acceptable(ray_g)
+                            probes.append(dict(**entry,kind='serialized-key-ray',merit=list(score),**observation(ray_g),accepted=passed))
+                            if passed:value=candidate;current=ray_g;current_label=ray_label;accepted=entry['fraction'];break
+                        if accepted is not None:break
         history.append(dict(iteration=iteration,before=list(before),after=list(merit(current)),
-            selected_fraction=accepted,probes=probes,conic_step=info,differences=differences,storage_cells=storage_info,decoded_restorations=repairs))
+            selected_fraction=accepted,probes=probes,conic_step=info,differences=differences,storage_cells=storage_info,
+            serialized_ray=ray_info,decoded_restorations=repairs))
         print(iteration,history[-1]['after'],flush=True)
         if accepted is None:
             radius *= .25
@@ -190,6 +217,8 @@ def optimize(problem,evaluate,iterations,trust,*,difference_step=.001,difference
     return value,dict(history=history,maximum_iterations=iterations,trust_control_fraction=trust,
         final_merit=list(merit(current)),proposal_model='affine-vector-norms',solver_version=VERSION,
         difference_source=difference_source,maximum_storage_cells=storage_cells,protect_source_rows=protect_source_rows,
+        difference_scheme=difference_scheme,
+        maximum_serialized_ray_probes=serialized_ray_probes,
         maximum_restoration_steps=restoration_steps,
         native_contact_rows_individually_protected=protect_contact_rows,decoded_base_anchor=anchor_worlds is not None,
         quantized_native_keys=True,conservative_dense_dependencies=True)

@@ -99,7 +99,9 @@ def rows(problem, value, worlds=None):
     return NormRows(np.concatenate(vectors),np.concatenate(caps),np.concatenate(scales))
 
 
-def linearize(problem, value, *, step=1e-5, maximum_elements=60_000_000, difference_source='stored', base_worlds=None):
+def linearize(problem, value, *, step=1e-5, maximum_elements=60_000_000, difference_source='stored', base_worlds=None,
+              difference_scheme='forward'):
+    if difference_scheme not in ('forward','central'):raise ValueError('Choose forward or central vector differences')
     value = problem.edits.controls(value); base = rows(problem,value)
     if difference_source not in ('stored','continuous'):raise ValueError('Choose stored or continuous vector differences')
     smooth = rows(problem,value,problem.worlds(value,quantized=False)) if difference_source=='continuous' else base
@@ -114,17 +116,30 @@ def linearize(problem, value, *, step=1e-5, maximum_elements=60_000_000, differe
         raise ValueError('Positive difference step and vector Jacobian resource limit required')
     lower,upper = problem.lower,problem.upper
     if np.any(value<lower) or np.any(value>upper):raise ValueError('Vector difference point outside control boxes')
-    data,indices,pointers = [],[],[0]; steps = []
-    for column in range(len(value)):
-        room = upper[column]-value[column] if upper[column]-value[column]>=value[column]-lower[column] else lower[column]-value[column]
-        h = np.copysign(min(step,abs(room)),room)
-        if h==0:raise ValueError('No vector finite-difference room')
-        other = value.copy(); other[column]+=h
+    data,indices,pointers = [],[],[0]; steps = []; offsets=[];central_columns=0;queries=0
+    def sample_at(column, h):
+        other=value.copy();other[column]+=h
         sample = rows(problem,other,problem.worlds(other,quantized=False)) if difference_source=='continuous' else rows(problem,other)
         if (sample.vectors.shape != base.vectors.shape or not np.array_equal(sample.caps,base.caps)
                 or not np.array_equal(sample.scales,base.scales)):
             raise ValueError('Vector constraint population changed during differences')
-        derivative = ((sample.vectors-smooth.vectors)/h).ravel()
+        return sample
+    for column in range(len(value)):
+        room = upper[column]-value[column] if upper[column]-value[column]>=value[column]-lower[column] else lower[column]-value[column]
+        h = np.copysign(min(step,abs(room)),room)
+        if h==0:raise ValueError('No vector finite-difference room')
+        # Use the full requested symmetric stencil only where both samples fit.
+        # Near a box boundary retain a recorded one-sided estimate toward room;
+        # never evaluate outside the authored control box or silently shrink h.
+        central=(difference_scheme=='central' and value[column]-step>=lower[column]
+                 and value[column]+step<=upper[column])
+        if central:
+            h=float(step);positive=sample_at(column,h);negative=sample_at(column,-h)
+            derivative=((positive.vectors-negative.vectors)/(2*h)).ravel()
+            offsets.append([h,-h]);central_columns+=1;queries+=2
+        else:
+            sample=sample_at(column,h);derivative = ((sample.vectors-smooth.vectors)/h).ravel()
+            offsets.append([float(h)]);queries+=1
         if not np.isfinite(derivative).all():raise ValueError('Nonfinite native scene vector derivative')
         nonzero = np.flatnonzero(derivative)
         if pointers[-1]+len(nonzero)>maximum_elements:
@@ -137,4 +152,7 @@ def linearize(problem, value, *, step=1e-5, maximum_elements=60_000_000, differe
         dense_jacobian_elements=base.vectors.size*len(value),stored_nonzero_jacobian_elements=jacobian.nnz,
         jacobian_storage='sparse CSC; exact nonzero entries only',
         quantized_native_keys=True,difference_source=difference_source,decoded_base_anchor=base_worlds is not None,
+        difference_scheme=difference_scheme,actual_difference_offsets=offsets,
+        central_difference_columns=central_columns,one_sided_difference_columns=len(value)-central_columns,
+        column_proxy_evaluations=queries,
         conservative_dense_dependencies=True)

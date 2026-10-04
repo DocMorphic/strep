@@ -19,7 +19,7 @@ from threadpoolctl import threadpool_limits
 from strep import ROOT, read, save, sha256, now
 
 METHODS = sorted(set(CONTACT_METHODS) | {'native_scene_edit.py','native_scene_fit.py',
-    'native_scene_norms.py','native_scene_conic.py','native_scene_storage.py','native_scene_restore.py','native_scene_resume.py','native_scene_revision.py','native_contact_revision.py','native_scene_geometry.py','native_observation_archive.py',
+    'native_scene_norms.py','native_scene_conic.py','native_scene_storage.py','native_scene_serialized_ray.py','native_scene_restore.py','native_scene_resume.py','native_scene_revision.py','native_contact_revision.py','native_scene_geometry.py','native_observation_archive.py',
     'native_surface_model.py','native_partner_surface_rows.py','native_object_surface_rows.py','native_surface_lift.py',
     'native_surface_contact.py','native_contact_norms.py','native_geometry_norms.py',
     'triangle_primitive_depth.py','triangle_crossing.py','convex_partner_surface.py',
@@ -146,7 +146,25 @@ def optimize(problem,evaluate,iterations,trust):
 
 
 def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_model='scalar',vector_difference_step=None,storage_cells=None,restoration_steps=0,
-        geometry_policy=None,resume_from=None,surface_contact_policy=None,contact_revision=None):
+        geometry_policy=None,resume_from=None,surface_contact_policy=None,contact_revision=None,vector_difference_scheme='forward',serialized_ray_probes=0,
+        rotation_storage_policy=None):
+    if rotation_storage_policy is None:
+        if resume_from is None:rotation_storage_policy='unit'
+        else:
+            previous_request=Path(resume_from)/'request.json'
+            if not previous_request.is_file():raise ValueError('Completed native fit request required to infer rotation storage')
+            previous=read(previous_request)
+            if not isinstance(previous,dict):raise ValueError('Native fit request object required')
+            rotation_storage_policy=previous.get('rotation_storage_policy','unit')
+    if rotation_storage_policy not in ('unit','source-scale'):
+        raise ValueError('Choose unit or source-scale rotation storage')
+    if type(serialized_ray_probes) is not int or not 0<=serialized_ray_probes<=512:
+        raise ValueError('Choose 0-512 serialized ray probes')
+    if serialized_ray_probes and proposal_model!='storage-vector':
+        raise ValueError('Serialized ray probes apply only to storage-vector proposals')
+    if vector_difference_scheme not in ('forward','central'):raise ValueError('Choose forward or central vector differences')
+    if vector_difference_scheme!='forward' and proposal_model not in ('vector','storage-vector'):
+        raise ValueError('Central vector differences apply to vector/storage-vector proposals')
     if contact_revision is not None and resume_from is None:
         raise ValueError('Explicit contact revisions require a completed source-epoch fit')
     if type(iterations) is not int or not 1<=iterations<=16: raise ValueError('Choose 1-16 proposal iterations')
@@ -169,7 +187,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
     if output.exists(): raise ValueError('Fresh native scene fitting directory required')
     bindings = {str(p):sha256(p) for p in (contacts_path,permissions_path)}
     spec = read(contacts_path); scene = SceneContacts(spec,contacts_path.parent)
-    edits = SceneEdits(read(permissions_path),scene,sha256(contacts_path)); bindings.update(scene.inputs)
+    edits = SceneEdits(read(permissions_path),scene,sha256(contacts_path),rotation_storage_policy=rotation_storage_policy); bindings.update(scene.inputs)
     source_bindings=dict(bindings);resume=None
     revision_request=None
     if contact_revision is not None:
@@ -227,6 +245,9 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             native_contact_rows_individually_protected=proposal_model=='storage-vector',
             decoded_vector_base_anchor=proposal_model=='storage-vector',
             vector_difference_step=vector_difference_step,
+            vector_difference_scheme=vector_difference_scheme,
+            serialized_ray_probes=serialized_ray_probes,
+            rotation_storage_policy=rotation_storage_policy,
             storage_cells=storage_cells,
             restoration_steps=restoration_steps,
             geometry_policy_sha256=None if geometry_request is None else bindings[str(geometry_policy)],
@@ -293,6 +314,8 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                     files={name:output/'probes'/label/(name+'.glb') for name in edits.actors}
                     return problem.decoded(files,value)[1]
                 value,optimization = optimize_vectors(problem,evaluate,iterations,trust,difference_step=vector_difference_step,
+                    difference_scheme=vector_difference_scheme,
+                    serialized_ray_probes=serialized_ray_probes,
                     difference_source='continuous' if proposal_model=='storage-vector' else 'stored',
                     storage_cells=storage_cells or 0,protect_source_rows=proposal_model=='storage-vector',restoration_steps=restoration_steps,
                     protect_contact_rows=proposal_model=='storage-vector',
@@ -363,6 +386,9 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                 source_rate_tolerance=1e-5,source_rate_bins=4,source_rate_caps_sha256=sha256(output/'source-rate-caps.npz'),
                 proposal_model=proposal_model,conic_solver=conic_identity,
                 vector_difference_step=vector_difference_step,
+                vector_difference_scheme=vector_difference_scheme,
+                serialized_ray_probes=serialized_ray_probes,
+                rotation_storage_policy=rotation_storage_policy,
                 storage_cells=storage_cells,
                 restoration_steps=restoration_steps,
                 original_selected=True,selected_files={n:p.relative_to(output).as_posix() for n,p in originals.items()},
@@ -386,6 +412,12 @@ if __name__=='__main__':
     p.add_argument('--iterations',type=int,default=4); p.add_argument('--trust',type=float,default=.02)
     p.add_argument('--proposal-model',choices=['scalar','vector','storage-vector','surface-vector'],default='scalar')
     p.add_argument('--vector-difference-step',type=float)
+    p.add_argument('--vector-difference-scheme',choices=['forward','central'],default='forward',
+        help='Central uses two proxy samples inside the control box, one-sided estimates near its boundary')
+    p.add_argument('--serialized-ray-probes',type=int,default=0,
+        help='0-512 actual-key probes around a smooth-feasible stored-key defect; storage-vector only')
+    p.add_argument('--rotation-storage-policy',choices=['unit','source-scale'],
+        help='Preserve source quaternion length before Float32 storage; defaults to prior policy on resume, unit on fresh fits')
     p.add_argument('--storage-cells',type=int,help='Finite translation cell probes per iteration, storage-vector only')
     p.add_argument('--restoration-steps',type=int,default=0,help='0-4 decoded constraint restoration solves, storage/surface-vector only')
     p.add_argument('--geometry-policy',type=Path,help='Source-bound sampled scene policy; originals remain selected')
@@ -393,4 +425,4 @@ if __name__=='__main__':
     p.add_argument('--contact-revision',type=Path,help='Explicit patch-only revision receipt; requires --resume-from and unchanged source edit permissions')
     p.add_argument('--surface-contact-policy',type=Path,help='Surface-facing acceptance audit and surface-vector proposal guidance')
     a=p.parse_args(); run(a.contacts,a.permissions,a.output,iterations=a.iterations,trust=a.trust,
-        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,restoration_steps=a.restoration_steps,geometry_policy=a.geometry_policy,resume_from=a.resume_from,surface_contact_policy=a.surface_contact_policy,contact_revision=a.contact_revision)
+        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,restoration_steps=a.restoration_steps,geometry_policy=a.geometry_policy,resume_from=a.resume_from,surface_contact_policy=a.surface_contact_policy,contact_revision=a.contact_revision,vector_difference_scheme=a.vector_difference_scheme,serialized_ray_probes=a.serialized_ray_probes,rotation_storage_policy=a.rotation_storage_policy)

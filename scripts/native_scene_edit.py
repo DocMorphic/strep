@@ -12,7 +12,10 @@ from native_foot_plant import mesh_accessor_payload
 
 
 class SceneEdits:
-    def __init__(self, permissions, scene, spec_digest):
+    def __init__(self, permissions, scene, spec_digest, *, rotation_storage_policy='unit'):
+        if rotation_storage_policy not in ('unit','source-scale'):
+            raise ValueError('Choose unit or source-scale rotation storage')
+        self.rotation_storage_policy=rotation_storage_policy
         fields(permissions, ('schema', 'contacts_sha256', 'actors'), 'scene edit permissions')
         if permissions['schema'] != 'strep-native-scene-edit-v1' or permissions['contacts_sha256'] != spec_digest:
             raise ValueError('Permissions must bind the exact native scene contact request')
@@ -50,6 +53,10 @@ class SceneEdits:
                 if len(matches) != 1 or matches[0][4] != 'LINEAR':
                     raise ValueError('Selected track needs an existing LINEAR native channel')
                 _, _, clock, values, mode = matches[0]
+                if path=='rotation' and rotation_storage_policy=='source-scale':
+                    if (not np.array_equal(values,values.astype(np.float32).astype(float))
+                            or np.max(np.abs(np.linalg.norm(values,axis=1)-1.))>4*np.finfo(np.float32).eps):
+                        raise ValueError('Source-scale rotation storage requires near-unit original Float32 quaternions')
                 maximum = scalar(track['maximum_change'], .000001, 45 if path == 'rotation' else .22, 'track change bound')
                 unit = np.deg2rad(maximum) if path == 'rotation' else maximum
                 ids = editable_keys(clock, window, protected)
@@ -74,7 +81,18 @@ class SceneEdits:
             original = entry['source']; values = original.astype(float).copy(); ids = entry['ids']
             delta = entry['weights'] @ value[entry['controls']] * entry['unit']; changed = np.any(delta != 0,axis=1)
             if entry['path'] == 'rotation':
-                edited = (Rotation.from_quat(original[ids[changed]]) * Rotation.from_rotvec(delta[changed])).as_quat()
+                if self.rotation_storage_policy=='source-scale':
+                    # Right-multiply the original raw quaternion by the unit
+                    # intended delta. Preserve its source length before Float32
+                    # storage: decoding normalizes it as usual. Normalizing the
+                    # original first can move components by an ULP even for an
+                    # infinitesimal edit and create an artificial rate jump.
+                    a=original[ids[changed]].astype(float)
+                    b=Rotation.from_rotvec(delta[changed]).as_quat()
+                    edited=np.c_[a[:,3,None]*b[:,:3]+b[:,3,None]*a[:,:3]+np.cross(a[:,:3],b[:,:3]),
+                        a[:,3]*b[:,3]-np.sum(a[:,:3]*b[:,:3],axis=1)]
+                else:
+                    edited = (Rotation.from_quat(original[ids[changed]]) * Rotation.from_rotvec(delta[changed])).as_quat()
                 edited *= np.where(np.sum(edited*original[ids[changed]],axis=1)<0,-1,1)[:,None]
             else: edited = original[ids[changed]] + delta[changed]
             values[ids[changed]] = edited.astype(np.float32) if quantized else edited

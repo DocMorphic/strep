@@ -148,6 +148,9 @@ jobs:
           tests/test_native_scene_contacts.py
           tests/test_native_scene_fit.py
           tests/test_native_scene_norms.py
+          tests/test_native_scene_central_differences.py
+          tests/test_native_scene_serialized_ray.py
+          tests/test_native_scene_rotation_storage.py
           tests/test_native_scene_storage.py
           tests/test_native_scene_restore.py
           tests/test_native_contact_repair.py
