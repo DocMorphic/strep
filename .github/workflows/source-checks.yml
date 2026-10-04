@@ -162,6 +162,7 @@ jobs:
           tests/test_native_partner_surface_rows.py
           tests/test_native_object_surface_rows.py
           tests/test_native_object_hold_fit.py
+          tests/test_native_object_correspondence_fit.py
           tests/test_native_object_asset.py
           tests/test_native_object_scene_engine.py
           tests/test_verify_native_object_scene_engine.py

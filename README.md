@@ -45,6 +45,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Bounded two-grip object fitting](docs/native-object-hold-fit-v1.md) adds an explicit object-trajectory proposal while preserving every actor GLB byte. Saved interpolation, unchanged contact limits, object-edit budgets and complete sampled scene geometry decide its numerical result. Physical attachment, engine playback and animation-quality approval remain separate requirements.
 
+[Multiple-point object fitting](docs/native-object-correspondence-fit-v1.md) lets explicitly authored surface correspondences determine object rotation, including the twist left ambiguous by two grips. Every selected point participates, with source preservation, complete sampled checks and separate contact, movement-budget and geometry decisions.
+
 [Native object asset export](docs/native-object-assets-v1.md) records Float32 timestamp collisions and rechecks the actual GLB at original contact times. A matched Godot trial fails with default import but passes object pose/contact checks through a saved native Animation resource. Imported actor skin, complete scene geometry and runtime playback still need separate validation.
 
 [Combined imported scene checks](docs/native-object-scene-engine-v1.md) pass the retained sphere hold using full imported character skin and actual native object-resource poses at 1,266 times, followed by the expanded 2,201-time population and full original-method replay. A reusable CLI prepares a source-bound common clock and preserves failed default imports. Runtime behavior and motion-quality approval remain open.
