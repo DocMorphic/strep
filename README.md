@@ -49,6 +49,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Object fitting inside movement limits](docs/native-object-bounded-fit-v1.md) restricts each proposed pose relative to the original object path, with explicit initialization and numerical reserve. Saved contact/slip, full sampled geometry and solver convergence remain separate checks; a reference path cannot reset the edit budget.
 
+[Bounded object scene validation](docs/native-object-bounded-scene-v1.md) takes a passing object handoff through actual character import, full imported skin and complete declared sampled geometry, then replays the saved results. Rigid object success cannot approve failed character or scene checks.
+
 [Native object asset export](docs/native-object-assets-v1.md) records Float32 timestamp collisions and rechecks the actual GLB at original contact times. A matched Godot trial fails with default import but passes object pose/contact checks through a saved native Animation resource. Imported actor skin, complete scene geometry and runtime playback still need separate validation.
 
 [Combined imported scene checks](docs/native-object-scene-engine-v1.md) pass the retained sphere hold using full imported character skin and actual native object-resource poses at 1,266 times, followed by the expanded 2,201-time population and full original-method replay. A reusable CLI prepares a source-bound common clock and preserves failed default imports. Runtime behavior and motion-quality approval remain open.
