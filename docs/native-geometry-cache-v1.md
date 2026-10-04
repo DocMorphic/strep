@@ -27,3 +27,8 @@ All 31 new focused cases and 91 selected cache/geometry/transport tests pass fro
 This is a geometry workflow improvement, not a motion/contact acceptance gate or quality certificate. Full point/surface contacts and motion rates still require separate measurements. The original geometry scope remains sampled declared actor/object, actor/actor and plane conditions; object/object, self-collision, continuous collision, exact arithmetic, engine playback and human realism are not certified. The API retains original selection and never grants release approval. No universal performance claim or full-character cache speedup is measured yet.
 
 Local evidence: `reports/native-geometry-cache-clean-source-v3`, `reports/native-geometry-cache-repair-v1`, `reports/native-geometry-cache-order-regression-v1.log` and `reports/native-geometry-cache-source-publication-v1`. The current candidate study and its pending full independent replay remain separate. The full project goal and all release gates remain open.
+
+
+## First complete production capture
+
+The repeated real-character contact study now completes a fresh capture at all 2,552 declared times, with zero reused samples: 17,870 arrays and 8,479,080,160 logical bytes. Its declared actor/sphere geometry passes. Independent saved-evidence replay verifies transport, all placed vertex/topology/object inputs and all 5,104 stored query decisions. It does not rerun geometry/containment queries, measure production donor parity or establish a speedup. The character still fails 3,099 authored surface-contact conditions; geometry alone grants no quality or release approval. Local evidence: `reports/cumulative-endpoint-contacts-development-v2` and `reports/cumulative-endpoint-contacts-verification-v2`.

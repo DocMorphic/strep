@@ -90,3 +90,6 @@ All 37 focused workflow cases and 351 isolated native/contact/geometry/solver ca
 
 
 One preserved small command fixture uses the actual CPU solver: both phases report AlmostSolved, its 483 native failures fall to zero and complete declared sampled geometry passes. The retained partial improvement still fails one authored surface condition. The focused test independently replays native conditions, uncached contact and whole geometry. This is a synthetic fixture, not a production character, partner geometry or human-quality result. Local evidence: `reports/restore-coupled-contacts-command-v1`. Both mistaken open-partner retention expectations are preserved in `reports/restore-coupled-contacts-repair-v2`.
+
+
+The [saved repair replay command](verify-coupled-restoration-v1.md) now checks complete closed trial populations, fixed original caps and contact references, raw keys, directions and retention decisions, then reruns all declared geometry/containment queries using the unchanged shared kernel. Its 27 focused and 378 isolated source cases pass; the actual production restoration and fresh replay remain pending.

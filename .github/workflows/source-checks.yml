@@ -207,6 +207,7 @@ jobs:
           tests/test_cumulative_coupled_contacts.py
           tests/test_recentered_coupled_contacts.py
           tests/test_restore_coupled_contacts.py
+          tests/test_verify_coupled_restoration.py
           tests/test_native_scene_engine.py
           tests/test_action_worker_lock.py
           tests/test_review_session.py
