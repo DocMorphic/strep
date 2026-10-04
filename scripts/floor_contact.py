@@ -8,7 +8,6 @@ import numpy as np
 from scipy.ndimage import gaussian_filter1d
 from scipy.optimize import minimize
 from scipy.spatial.transform import Rotation
-from correct_stance import swing, knee_target
 from inspect_motion import validate_motion
 
 CONFIG = dict(fps=30, clearance_m=.002, wrist_limit_degrees=65,
@@ -77,6 +76,7 @@ def smooth_lift(required, limit):
 
 
 def correct(source, skin):
+    from correct_stance import swing, knee_target
     names,parents,_=validate_motion(source,30)
     if names!=list(map(str,skin['rig_joint_names'])):raise ValueError('SOMA77 skin/rig mismatch')
     surface=Surface(skin); local=source['local_rot_mats'].astype(float).copy()

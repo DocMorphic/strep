@@ -17,6 +17,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
+[Scene reference checks before generation](docs/scene-target-preflight-v1.md) now catch contact, floor, object and partner failures after the actual model skeleton conversion. Strict preparation rejects incompatible references before encoding; explicit diagnostic comparisons preserve them. A passing constructive object reference and rejected real high-five references verify this path, without claiming realistic generated interactions.
+
 [Explicit contact revisions in Studio](docs/native-contact-revision-v1.md) now stage source and partner patches, show original/new references and endpoint positions, recheck sources before Apply, and retain the original draft and all authoring bounds. Four development replays and an actual eight-stage CPU Godot fixture preserve provenance and failed decisions. This authoring workflow does not correct the retained motion-quality failures; character-only asset building remains open.
 
 [Contact-region review](docs/native-contact-region-review-v1.md) preserves original motion and targets while measuring declared mesh regions at every contact time. Four development reviews show that a passing high-five point condition can still place the point 51.7 mm inside the region's supporting plane. Persistent alternatives remain explicit author choices; they do not establish anatomical contact, collision freedom or motion quality.

@@ -83,15 +83,20 @@ def box_vertex_depth(vertices,position,rotation,size):
     return np.maximum(0,distance.min(-1))
 
 
-def evaluate(scene,skin,project_root=ROOT):
+def evaluate(scene,skin,project_root=ROOT,*,motions=None):
     if scene.get('schema_version')!=1 or scene.get('fps')!=30:raise ValueError('Scene schema/fps mismatch')
     frames=scene.get('frame_count')
     if type(frames)!=int or not 3<=frames<=1800:raise ValueError('Invalid scene duration')
+    if motions is not None and set(motions)!=set(scene['actors']):
+        raise ValueError('Measurement overrides must include every scene actor')
     actors={};provenance={}
     for name,entry in scene['actors'].items():
         path=(Path(project_root)/entry['motion']).resolve()
         if not path.is_relative_to(Path(project_root).resolve()):raise ValueError('Motion escapes project')
-        motion=dict(np.load(path,allow_pickle=False));validate_motion(motion,30)
+        if motions is not None and sha256(path)!=entry.get('source_sha256'):
+            raise ValueError('Measurement source hash mismatch')
+        motion=dict(np.load(path,allow_pickle=False)) if motions is None else motions[name]
+        validate_motion(motion,30)
         if len(motion['root_positions'])!=frames:raise ValueError('Actor clock/duration mismatch')
         actors[name]=transform_motion(motion,entry['transform']);provenance[name]=dict(path=entry['motion'],sha256=sha256(path))
     if not actors:raise ValueError('Scene needs an actor')
@@ -129,6 +134,8 @@ def evaluate(scene,skin,project_root=ROOT):
                 vertices=surface.vertices(actor['rotations'][f],actor['positions'][f])
                 depths.append(float(geometry.penetration_depth(vertices,positions[f],rotations[f]).max()))
             collisions.append(dict(actor=actor_name,object=object_name,max_skin_vertex_depth_m=max(depths),frames_over_1cm=int(np.sum(np.array(depths)>.01)),per_frame_max_depth_m=depths))
-    return dict(scene_id=scene['id'],fps=30,frame_count=frames,sources=provenance,contacts=contacts,contact_tracks=tracks,
+    result=dict(scene_id=scene['id'],fps=30,frame_count=frames,sources=provenance,contacts=contacts,contact_tracks=tracks,
         object_collisions=collisions,object_tracks={name:dict(positions_m=p.tolist(),rotations_xyzw=Rotation.from_matrix(r).as_quat().tolist(),provenance=scene['objects'][name].get('trajectory_provenance','authored')) for name,(p,r) in objects.items()},
         partner_collision=None,object_attachment=None,scope='Authored shared-clock transforms and targets; no joint scene-aware generation or interaction correction. Effector offsets are declared proxies. Analytic primitive tests cover sampled skin vertices only; no triangle intersections, self/partner collision, forces or continuous-time proof.')
+    if motions is not None:result['measurement_representation']='Provided derived arrays; sources identify unchanged originals, not measured arrays'
+    return result

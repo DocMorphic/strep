@@ -16,14 +16,25 @@ def inward_box_face(point,size):
     normal=np.zeros(3);axis=faces[0];normal[axis]=-np.sign(point[axis]);return normal
 
 
-def audit(scene,skin,tolerance_degrees=15):
+def audit(scene,skin,tolerance_degrees=15,*,motions=None,project_root=None):
+    project_root=ROOT if project_root is None else Path(project_root)
     if any('region_contact' in c for c in scene['contacts']):
         raise ValueError('Use scene_constraints.evaluate for authored region normals; vertex-normal audit has different semantics')
+    if motions is not None and set(motions)!=set(scene['actors']):
+        raise ValueError('Measurement overrides must include every scene actor')
     actors={};sources={}
     for name,entry in scene['actors'].items():
-        path=(ROOT/entry['motion']).resolve()
-        if not path.is_relative_to(ROOT.resolve()):raise ValueError('Actor source escapes project')
-        sources[name]=sha256(path);actors[name]=transform_motion(dict(np.load(path)),entry['transform'])
+        path=(Path(project_root)/entry['motion']).resolve()
+        if not path.is_relative_to(Path(project_root).resolve()):raise ValueError('Actor source escapes project')
+        sources[name]=sha256(path)
+        if motions is not None and sources[name]!=entry.get('source_sha256'):
+            raise ValueError('Measurement source hash mismatch')
+        motion=dict(np.load(path,allow_pickle=False)) if motions is None else motions[name]
+        if motions is not None:
+            from inspect_motion import validate_motion
+            validate_motion(motion,30)
+            if len(motion['root_positions'])!=scene['frame_count']:raise ValueError('Actor clock/duration mismatch')
+        actors[name]=transform_motion(motion,entry['transform'])
     records=[]
     for c in scene['contacts']:
         target=c['target'];vertex=c['effector'].get('surface_vertex')
@@ -67,8 +78,10 @@ def audit(scene,skin,tolerance_degrees=15):
             error=np.rad2deg(np.arccos(np.clip(np.sum(measured*wanted,axis=-1),-1,1)));interval=error[a:b+1]
             records[-1].update(tangent_max_error_degrees=float(interval.max()),tangent_frames_over_tolerance=int(np.sum(interval>tolerance_degrees)),
                 per_frame_tangent_error_degrees=error.tolist(),actual_tangents_world=measured.tolist(),desired_tangents_world=wanted.tolist())
-    return dict(scene_id=scene['id'],sources=sources,tolerance_degrees=tolerance_degrees,contacts=records,
+    result=dict(scene_id=scene['id'],sources=sources,tolerance_degrees=tolerance_degrees,contacts=records,
         scope='Area-weighted skinned triangle normals at the chosen contact vertex, not anatomical hand-plane calibration or full hand orientation. 15 degrees is a provisional diagnostic, not an animator-approved acceptance threshold.')
+    if motions is not None:result['measurement_representation']='Provided derived arrays; sources identify unchanged originals, not measured arrays'
+    return result
 
 
 if __name__=='__main__':

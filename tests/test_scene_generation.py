@@ -33,6 +33,15 @@ def test_simultaneous_hands_become_one_nonconflicting_model_guide():
     assert len(guide)==1 and guide[0]['joint_names']==['LeftHand','RightHand']
 
 
+def test_one_direction_partner_contact_conditions_both_actors():
+    value=scene();value['contacts']=[next(c for c in value['contacts'] if c['actor']=='A')]
+    value['contacts'][0]['target']=dict(space='actor',actor='B',joint='LeftHand',offset_m=[0,0,0])
+    guide=actor_guides(value,'B')
+    assert guide[0]['joint_names']==['LeftHand'] and guide[0]['frame_indices']==[60]
+    batch=requests(value,plan())
+    assert batch['requests'][3]['generation_constraints']==guide
+
+
 @pytest.mark.parametrize('mutation',['hash','tilt','elevation','frame','effector','clock','missing_actor'])
 def test_unrepresentable_or_stale_scene_guide_rejected(mutation):
     value=scene();p=plan()

@@ -12,7 +12,11 @@ from process_monitor import tree_rss,kill_tree
 
 
 def run(request_path,folder):
-    batch=validate_batch(read(request_path));folder=Path(folder).resolve();folder.mkdir(parents=True,exist_ok=True)
+    batch=validate_batch(read(request_path));folder=Path(folder).resolve()
+    from scene_target_preflight import validate_preflight
+    source_preflight=validate_preflight(Path(request_path).resolve().parent,batch)
+    if folder!=Path(request_path).resolve().parent:validate_preflight(folder,batch)
+    folder.mkdir(parents=True,exist_ok=True)
     snapshot=folder/'request.json'
     if snapshot.exists() and request_digest(read(snapshot))!=request_digest(batch):raise ValueError('Output belongs to a different request')
     save(snapshot,batch)
@@ -23,6 +27,9 @@ def run(request_path,folder):
         for name in ['motion_profile.py','action_requests.py','generate_actions.py','action_encoder.py','run_actions.py','export_actions.py']:
             shutil.copyfile(ROOT/'scripts'/name,implementation/name)
     status={'status':'starting','started_at':now(),'request_sha256':request_digest(batch),'peak_process_tree_rss_bytes':0}
+    if source_preflight is not None:status['scene_reference_preflight']=dict(audit_sha256=sha256(Path(request_path).resolve().parent/'target-preflight/audit.json'),
+        mode=read(Path(request_path).resolve().parent/'freeze.json')['target_preflight_mode'],
+        reference_screens_passed=source_preflight['reference_screens_passed'],quality_approved=False)
     save(folder/'pipeline.json',status)
     try:
         from generation_constraints import compile_guides

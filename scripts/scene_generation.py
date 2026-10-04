@@ -14,6 +14,7 @@ from action_requests import validate_batch, request_digest, conditioning_texts
 from generation_constraints import EFFECTORS, compile_guides
 from scene_constraints import evaluate, pose, effector_track
 from build_soma_preview import ASSET
+from scene_target_preflight import orientation,write as write_preflight,validate_preflight
 
 
 def actor_guides(scene, name):
@@ -26,12 +27,15 @@ def actor_guides(scene, name):
         raise ValueError('Generation currently requires ground-level yaw-only actor placement')
     frames={}
     for contact in scene['contacts']:
-        if contact['actor']!=name:continue
-        joint=contact['effector'].get('joint')
-        if joint not in EFFECTORS:raise ValueError('Generation scene guides currently support hand/foot contacts only')
+        joints=[]
+        if contact['actor']==name:joints.append(contact['effector'].get('joint'))
+        target=contact['target']
+        if target.get('space')=='actor' and target.get('actor')==name:joints.append(target.get('joint'))
+        if not joints:continue
+        if any(j not in EFFECTORS for j in joints):raise ValueError('Generation scene guides currently support hand/foot contacts only')
         a,b=contact['start_frame'],contact['end_frame']
         if type(a)!=int or type(b)!=int or not 0<=a<=b<scene['frame_count']:raise ValueError('Contact frame outside scene')
-        for frame in range(a,b+1):frames.setdefault(frame,set()).add(joint)
+        for frame in range(a,b+1):frames.setdefault(frame,set()).update(joints)
     if not frames:raise ValueError('Scene actor needs at least one hand/foot contact pose')
     groups={}
     for frame,joints in sorted(frames.items()):groups.setdefault(tuple(sorted(joints)),[]).append(frame)
@@ -82,26 +86,32 @@ def import_baseline_cache(batch, cache):
     ActionEncoder(cache,batch)
 
 
-def prepare(scene_path, plan_path, output, reuse_baseline=False):
+def prepare(scene_path, plan_path, output, reuse_baseline=False,diagnostic_targets=False):
     source=read(scene_path);scene=source.get('scene',source);plan=read(plan_path)
     batch=requests(scene,plan)
     skin=dict(np.load(ASSET,allow_pickle=False));source_evaluation=evaluate(scene,skin)
-    from audit_scene_orientation import audit
-    orientation=audit(scene,skin)
+    source_orientation=orientation(scene,skin)
     if any(not c['all_requested_frames_within_tolerance'] for c in source_evaluation['contacts']):
         raise ValueError('Fit source poses to the authored scene contacts before using them as generation guides')
-    if any(c['frames_over_tolerance'] or c.get('tangent_frames_over_tolerance',0) for c in orientation['contacts']):
+    if any(c['frames_over_tolerance'] or c.get('tangent_frames_over_tolerance',0) for c in source_orientation['contacts']):
         raise ValueError('Fit source hand orientation to the scene before using it as a generation guide')
     out=Path(output).resolve();out.mkdir(parents=True,exist_ok=False)
     save(out/'authored-scene.json',scene);save(out/'actor-plan.json',plan);save(out/'request.json',batch)
-    save(out/'source-contact-evaluation.json',source_evaluation);save(out/'source-orientation.json',orientation)
+    save(out/'source-contact-evaluation.json',source_evaluation);save(out/'source-orientation.json',source_orientation)
+    preflight=write_preflight(scene,out/'target-preflight',scene_file=out/'authored-scene.json')
     save(out/'freeze.json',dict(created_at=now(),scene_sha256=sha256(out/'authored-scene.json'),plan_sha256=sha256(out/'actor-plan.json'),
         request_sha256=request_digest(batch),compiler_sha256=sha256(__file__),actor_order=list(plan),
         source_file=str(Path(scene_path).resolve()),source_file_sha256=sha256(scene_path),
+        target_preflight_sha256=sha256(out/'target-preflight/audit.json'),
+        target_preflight_mode='diagnostic' if diagnostic_targets else 'strict',
         scope='Fitted native actor poses used as sparse generation conditions. Independent actor sampling with fixed authored placement/clock; no object/partner awareness, anatomy approval or collision solve. All source and output defects remain reportable.'))
     snapshot=out/'source-snapshot';snapshot.mkdir()
-    for name in ['scene_generation.py','generation_constraints.py','generate_actions.py','run_actions.py','audit_generation_guides.py']:
+    for name in ['scene_generation.py','scene_target_preflight.py','generation_constraints.py','generate_actions.py','run_actions.py','audit_generation_guides.py']:
         shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
+    if not preflight['reference_screens_passed'] and not diagnostic_targets:
+        save(out/'pipeline.json',dict(status='rejected',failed_stage='scene_target_preflight',finished_at=now(),
+            native_flags=preflight['native']['flags'],model_flags=preflight['model']['flags']))
+        raise ValueError('Scene target references fail model-representation preflight; retained audit: '+str(out/'target-preflight/audit.json'))
     if reuse_baseline:import_baseline_cache(batch,out/'conditioning')
     print(out,flush=True)
 
@@ -111,10 +121,10 @@ def build(output):
     if sha256(out/'authored-scene.json')!=freeze['scene_sha256'] or sha256(out/'actor-plan.json')!=freeze['plan_sha256']:
         raise ValueError('Authored scene or actor plan changed')
     if request_digest(read(out/'request.json'))!=freeze['request_sha256']:raise ValueError('Generation request changed')
+    preflight=validate_preflight(out,read(out/'request.json'))
     if read(out/'pipeline.json')['status']!='complete':raise ValueError('Complete generation and exports first')
     if len({len(v['seeds']) for v in plan.values()})!=1:raise ValueError('Each actor needs the same number of seeds for paired scenes')
     skin=dict(np.load(ASSET,allow_pickle=False));manifest=dict(created_at=now(),scenes=[],assets={})
-    from audit_scene_orientation import audit
     from run_scene_fit import bundle
     for pair in range(len(next(iter(plan.values()))['seeds'])):
         for mode in ['baseline','guided']:
@@ -132,19 +142,22 @@ def build(output):
                 downloads.append(dict(label=f'Actor {name} · animation ZIP',path=(take/'animation-pack.zip').relative_to(out).as_posix()))
             folder=out/'scenes'/candidate['id'];folder.mkdir(parents=True,exist_ok=False)
             measured=evaluate(candidate,skin);save(folder/'scene.json',bundle(candidate,motions,measured))
-            save(folder/'orientation.json',audit(candidate,skin))
+            save(folder/'orientation.json',orientation(candidate,skin))
             save(folder/'actor-placement.json',{name:entry['transform'] for name,entry in candidate['actors'].items()})
             downloads.append(dict(label='Actor placements',path=(folder/'actor-placement.json').relative_to(out).as_posix()))
             manifest['scenes'].append(dict(id=candidate['id'],label=f'Generated scene pair {pair+1} · {mode}',
                 review_note=candidate['review_note'],
                 variants=dict(palm=(folder/'scene.json').relative_to(out).as_posix()),
                 orientation_file=(folder/'orientation.json').relative_to(out).as_posix(),downloads=downloads))
-    manifest['scope']=freeze['scope'];save(out/'manifest.json',manifest)
+    manifest['scope']=freeze['scope']
+    if preflight is not None:manifest['target_reference']=dict(mode=freeze['target_preflight_mode'],
+        audit_sha256=freeze['target_preflight_sha256'],reference_screens_passed=preflight['reference_screens_passed'],quality_approved=False)
+    save(out/'manifest.json',manifest)
 
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser();sub=parser.add_subparsers(dest='command',required=True)
-    p=sub.add_parser('prepare');p.add_argument('scene');p.add_argument('plan');p.add_argument('output');p.add_argument('--reuse-baseline-cache',action='store_true')
+    p=sub.add_parser('prepare');p.add_argument('scene');p.add_argument('plan');p.add_argument('output');p.add_argument('--reuse-baseline-cache',action='store_true');p.add_argument('--diagnostic-targets',action='store_true',help='Explicitly retain and sample failed reference poses for development comparisons')
     p=sub.add_parser('build');p.add_argument('output');args=parser.parse_args()
-    if args.command=='prepare':prepare(args.scene,args.plan,args.output,args.reuse_baseline_cache)
+    if args.command=='prepare':prepare(args.scene,args.plan,args.output,args.reuse_baseline_cache,args.diagnostic_targets)
     else:build(args.output)
