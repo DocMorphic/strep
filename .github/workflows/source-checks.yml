@@ -204,6 +204,7 @@ jobs:
           tests/test_triangle_primitive_depth.py
           tests/test_native_scene_geometry.py
           tests/test_native_geometry_cache.py
+          tests/test_cumulative_coupled_contacts.py
           tests/test_native_scene_engine.py
           tests/test_action_worker_lock.py
           tests/test_review_session.py
