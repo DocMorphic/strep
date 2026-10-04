@@ -50,3 +50,5 @@ At source publication, the protected proposal study is still performing its full
 No solver or candidate outcome is reported yet. The original clip remains selected. The study uses one humanoid and two declared spheres; the object named `box` is a sphere, and there is no partner or declared floor. Normalized source skin remains distinct from raw engine import. Full-system interaction, engine, continuous collision, anatomy and human quality evidence remain open. All release criteria and evidence lists remain unchanged.
 
 Local evidence: `reports/coupled-native-contacts-tests-v1.log` and the in-progress `reports/coupled-native-contacts-development-v1`. Generated character payloads and complete numeric archives remain outside public Git history.
+
+The [native contact-support preflight](native-contact-support-v1.md) now identifies twelve failing source orientation rows at structurally frozen held endpoints in this setup. The running study can measure improvements at editable times, but cannot make all authored surface rows pass. Its inputs remain unchanged; a broader edit setup needs a separate study with original source-rate and contact limits retained.
