@@ -51,6 +51,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Bounded object scene validation](docs/native-object-bounded-scene-v1.md) takes a passing object handoff through actual character import, full imported skin and complete declared sampled geometry, then replays the saved results. Rigid object success cannot approve failed character or scene checks.
 
+[Imported surface-facing diagnostics](docs/native-object-scene-surface-v1.md) keep point success separate from surface opposition. The retained sphere hold fails its additional authored normal conditions; a fixed-surface angular bound rejects an object-only solution without changing prior budgets or approving animation quality.
+
 [Developer breadth review](docs/developer-packet-review-v1.md) prepares all 390 raw actor clips across 12 action families for source-bound developer ratings and actual cleanup records. Developer submissions use separate identities and never count as independent review or release approval.
 
 [Native object asset export](docs/native-object-assets-v1.md) records Float32 timestamp collisions and rechecks the actual GLB at original contact times. A matched Godot trial fails with default import but passes object pose/contact checks through a saved native Animation resource. Imported actor skin, complete scene geometry and runtime playback still need separate validation.
