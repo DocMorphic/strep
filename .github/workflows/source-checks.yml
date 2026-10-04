@@ -198,6 +198,7 @@ jobs:
           tests/test_cached_contact_norms.py
           tests/test_coupled_native_contacts.py
           tests/test_central_coupled_contacts.py
+          tests/test_budgeted_native_conic.py
           tests/test_native_contact_support.py
           tests/test_native_geometry_norms.py
           tests/test_triangle_primitive_depth.py

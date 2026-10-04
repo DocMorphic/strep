@@ -1,0 +1,35 @@
+# Explicit CPU budgets for native/contact proposals
+
+`scripts/budgeted_native_conic.py` exposes bounded computational settings for the same native norm-cone proposal formulation. Its historical 30-second implementation remains unchanged so earlier studies stay reproducible. It retains the complete cones, trust boxes, individual hard guards, conservative full-box omission proof, exact-zero handling, tolerances and primary/secondary solve logic.
+
+```python
+from budgeted_native_conic import direction
+
+delta, report = direction(system, jacobian, controls, lower, upper, 0.02,
+                          hard_rows=details['hard_rows'],
+                          phase_seconds=120., maximum_iterations=200)
+```
+
+Each solver phase accepts an explicit 1–300-second budget and 1–500-iteration ceiling. The defaults are 120 seconds and 200 iterations. Model construction and cone assembly lie outside the solver phase budget; this is not a total process wall-clock cap. Invalid, nonfinite or unbounded settings reject before loading the solver. Clarabel remains pinned to 0.11.1 and one thread.
+
+The primary phase minimizes worst affine excess. If it returns no valid solved direction, the API returns no direction. If the secondary minimum-norm phase times out, the existing algorithm retains the valid primary direction and records the secondary status. A direction is only a proposal: independently serialized native curves, original motion/contact limits and complete declared geometry decide whether a correction can be retained. No optimizer tolerance changes an authored physical limit, and no solver status grants quality or release approval.
+
+All 19 focused tests pass. They exercise finite budget validation, actual sparse/dense parity with the historical solver, individual hard contact guards, fixed protected conflicts, iteration exhaustion and budget propagation to both phases. A simulated secondary timeout verifies that only the primary direction is retained. All 137 selected budgeted/central/cache/coupled/reference tests also pass from an isolated source copy without vendor code, models or downloaded characters. The initial focused run exposed a missing imported merit reducer; its source snapshot is retained locally, the import is repaired, and the successful check covers the repaired source. The new suite joins the existing Linux/Windows CI population.
+
+## Endpoint-editable comparison
+
+The original hold-only edit window structurally froze failed contact endpoints. The separately prepared setup uses a 1.75–4.3-second window and knots at 1.75, 2.0, 4.0333333015441895 and 4.3 seconds. It retains the same 12 declared rotation tracks, 45-degree source-relative rotation bound, 0.22-metre displacement bound, contact references, geometry limits and original source-rate caps. This is a fresh explicit permission setup, not a changed old result. Structural support shows no frozen contact observations; that does not establish feasibility.
+
+Its complete symmetric model has 72 controls, 303,761 native rows and 30,990 surface rows. The 168 additional native rows account for additional editable source keys. Duplicated contact guards bring the model to 365,741 rows, with 334,751 hard rows and 8,675,928 stored derivative entries. Construction takes 73.620273 seconds in one local measurement. All original 2,552 motion/geometry times, 717 uniform rate times and source cap arrays remain unchanged.
+
+With the historical 30-second phase budget, Clarabel returns MaxTime after 22 iterations with 90,402 active cones and zero fixed failed rows. There are no directions or candidate trials. Independent replay reconstructs original rate caps, every native decision, all model rows and paired guard Jacobians, and all 10,330 source point-normal observations from complete loaded vertices/faces at every contact clock. The maximum source surface residual difference is 2.19824158875781e-14. Candidate verification remains null because no candidate exists, and no geometry query is rerun. Timeout is not an infeasibility proof.
+
+The larger-budget study reuses that exact model archive rather than recomputing or filtering it. It allows one bounded proposal, ten backoffs and at most one complete candidate geometry audit. Only candidates passing independently decoded native conditions, every contact no-regression guard, objective improvement and native/static edit audit can reach geometry validation. A missing geometry result cannot approve retention. The original motion remains selected pending broader engine and human validation.
+
+This test is one canonical sphere-hold scene. It establishes neither a box-lift solution nor general interaction quality. The actor skin normalizes supplied weights and remains a different observation epoch from raw engine import. No floor, partner, self-collision, continuous collision or human realism result follows.
+
+The larger-budget primary phase returns AlmostSolved after 60 iterations; its secondary minimum-norm phase returns MaxTime. The existing algorithm retains the primary direction. Full, half and quarter exports fail respectively eight, one and one original native conditions. The full step also regresses an individual contact condition. All three are rejected; the quarter-step peak normalized native excess is 6.294134877009754e-08, which is still a failure under the unchanged condition.
+
+The eighth-step export passes all producer-decoded native conditions, every individual surface no-regression guard and the native/static edit audit, and improves the surface objective. Its worst excess decreases from 2.0606432901462743 to 2.0413945298986893; 5,111 surface conditions still fail their original authored limits. It proceeds to the complete 2,552-time geometry audit. This is a candidate under evaluation, not an accepted or fully corrected animation. The complete stored scalar-population reduction is bound to all four exported probe archives; a separate full independent curve/contact/geometry replay remains pending until the worker completes.
+
+Local evidence: `reports/endpoint-editable-coupled-contacts-development-v1`, `reports/endpoint-editable-coupled-contacts-verification-v1`, `reports/budgeted-native-conic-clean-source-v1`, `reports/budgeted-native-conic-repair-v1`, `reports/endpoint-budget-probe-reduction-v1` and `reports/endpoint-editable-coupled-contacts-budget-development-v1`. The ongoing geometry worker retains its original method and input snapshot during source publication. The larger-budget final result and independent candidate audits are reported after completion. All release gates and the full project goal remain open.
