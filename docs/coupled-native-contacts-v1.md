@@ -39,7 +39,7 @@ Incident-surface caching is sufficient for these contact normals and points. It 
 
 Forty-two focused tests cover complete world/object/partner clocks and ordered rows; individual and centroid groups; multiple influences/primitives; shared logical budgets; active versus unused unavailable normals; original clock, input and cap mutation; complete orientation/side derivatives; byte/row overflow; individual condition regressions; and missing geometry. Existing full-population reference calculations remain separate and unchanged. No synthetic success counts as human quality evidence.
 
-## Actual source comparison; correction study still running
+## Actual source comparison at initial publication
 
 The canonical unchanged sphere-hold source retains four contact groups, 1,033 times per group and ten point correspondences. Complete reference and cache calculations agree within `1e-12` for all orientation vectors and facing gaps, with identical caps, scales, ordered point identities and logical query counts. This comparison is complete; it does not accept an animation correction.
 
@@ -47,8 +47,24 @@ One reference construction/evaluation took 150.507434 seconds; one cache evaluat
 
 At source publication, the protected proposal study is still performing its full geometry audit. Its explicit clock contains 2,552 times, the union of the 2,201 original geometry/imported times and native/contact/rate clocks. Original source-rate caps were captured before adding geometry clocks and remain frozen. The study permits one coupled proposal, ten saved-curve backoffs and at most one candidate eligible for a full geometry audit. A proposal failing native, individual surface or static-payload checks cannot skip directly to retention. An unaudited candidate's geometry result remains unverified.
 
-No solver or candidate outcome is reported yet. The original clip remains selected. The study uses one humanoid and two declared spheres; the object named `box` is a sphere, and there is no partner or declared floor. Normalized source skin remains distinct from raw engine import. Full-system interaction, engine, continuous collision, anatomy and human quality evidence remain open. All release criteria and evidence lists remain unchanged.
+At that publication, no solver or candidate outcome had been reported. The original clip remains selected. The study uses one humanoid and two declared spheres; the object named `box` is a sphere, and there is no partner or declared floor. Normalized source skin remains distinct from raw engine import. Full-system interaction, engine, continuous collision, anatomy and human quality evidence remain open. All release criteria and evidence lists remain unchanged.
 
-Local evidence: `reports/coupled-native-contacts-tests-v1.log` and the in-progress `reports/coupled-native-contacts-development-v1`. Generated character payloads and complete numeric archives remain outside public Git history.
+Local evidence: `reports/coupled-native-contacts-tests-v1.log` and `reports/coupled-native-contacts-development-v1`. Generated character payloads and complete numeric archives remain outside public Git history.
 
-The [native contact-support preflight](native-contact-support-v1.md) now identifies twelve failing source orientation rows at structurally frozen held endpoints in this setup. The running study can measure improvements at editable times, but cannot make all authored surface rows pass. Its inputs remain unchanged; a broader edit setup needs a separate study with original source-rate and contact limits retained.
+The [native contact-support preflight](native-contact-support-v1.md) identifies twelve failing source orientation rows at structurally frozen held endpoints in this setup. Interior improvements would not make all authored surface rows pass. Its inputs remain unchanged; a broader edit setup needs a separate study with original source-rate and contact limits retained.
+
+## Completed protected proposal study
+
+The complete canonical source geometry audit passes all 2,552 declared times, with 5,104 actor/sphere records. All loaded actor triangles and primitive center-containment conditions are included. The maximum reported depth upper bound is `9.818366e-14` m, a floating reserve with no positive sphere-depth witness. The 15,313-array archive retains 7,371,829,696 logical bytes without truncation or downcasting. This is sampled geometry, with no floor, self-collision, continuous-time or engine certificate.
+
+The coupled model contains 303,593 native conditions, 30,990 authored surface rows and a separate duplicate of every surface row for protection: 365,573 norm rows in total, with 334,583 hard rows and 36 control components. Model construction takes 28.666860 seconds. Its native Jacobian has 30,656,508 nonzero entries out of 32,788,044 dense positions; the complete protected matrix stores 34,347,054 entries. This observed density warrants investigation of the continuous proposal differences before expanding the solve; no small coefficient is discarded to improve the measurement.
+
+Clarabel 0.11.1 reports `MaxTime` after 24 iterations under its 30-second phase limit, with 71,477 active cones. It returns no direction. Consequently there are zero serialized candidate trials, zero candidate geometry audits and zero accepted corrections. `MaxTime` is a solver-budget outcome, not a proof of infeasibility. The separate frozen-endpoint diagnostic establishes why this particular edit setup cannot satisfy every authored surface condition.
+
+Independent replay reconstructs the original source-rate caps, reproduces all 303,593 native source conditions and re-skins the entire loaded actor surface at every one of the 1,033 unique contact clocks. All 10,330 point-normal observations and 30,990 orientation/facing residuals agree with at most `2.198242e-14` difference. It checks every protected model row, exact guard/soft row correspondence and paired Jacobian entries. It also verifies the entire numeric archive transport and reduces every saved geometry decision. Geometry queries and center-containment calculations are not independently rerun. Candidate fields remain unverified because no candidates existed.
+
+Two verifier-only failures are retained: an unnecessary sorted-storage assumption for valid CSC entries, then a missing source-surface result mapping. Fresh versions compare entries by row identity and invoke the complete source-surface replay. Producer code, numeric archives, limits and proposal results remain unchanged. Ninety-four cache/coupled/reference tests pass from an isolated source copy without vendor code, models or character assets.
+
+A separate prepared setup extends the twelve-channel edit window to `[1.75, 4.3]`, with knots at `1.75`, `2.0`, `4.0333333015441895` and `4.3`. It has 72 control components and no structurally frozen contact observations, while retaining rotation/displacement budgets, source actor/object/contact payloads and source-rate/contact/geometry limits. It has not been solved or certified feasible. Original clips remain selected; all release criteria and evidence stay unchanged.
+
+Local evidence: `reports/coupled-native-contacts-verification-v5`, `reports/coupled-native-contacts-clean-source-v1` and `reports/expanded-native-contact-support-preflight-v1`.
