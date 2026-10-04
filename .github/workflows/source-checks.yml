@@ -169,6 +169,7 @@ jobs:
           tests/test_native_object_scene_surface.py
           tests/test_rigid_normal_spread.py
           tests/test_rigid_contact_preflight.py
+          tests/test_native_contact_pose.py
           tests/test_native_object_asset.py
           tests/test_native_object_scene_engine.py
           tests/test_verify_native_object_scene_engine.py

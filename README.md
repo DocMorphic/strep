@@ -51,6 +51,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Bounded object scene validation](docs/native-object-bounded-scene-v1.md) takes a passing object handoff through actual character import, full imported skin and complete declared sampled geometry, then replays the saved results. Rigid object success cannot approve failed character or scene checks.
 
+[Bounded contact-pose diagnostics](docs/native-contact-pose-v1.md) test explicit body/finger rotation changes against point and normal conditions before committing to a temporal fit. This pose relaxation cannot approve a clip or replace full geometry and import checks.
+
 [Object-only contact preflight](docs/rigid-contact-preflight-v1.md) identifies incompatible fixed-surface targets before an object refit, retaining exact clocks, point witnesses and unknown cases. Body/hand edits remain outside that conditional rejection.
 
 [Imported surface-facing diagnostics](docs/native-object-scene-surface-v1.md) keep point success separate from surface opposition. The retained sphere hold fails its additional authored normal conditions; a fixed-surface angular bound rejects an object-only solution without changing prior budgets or approving animation quality.

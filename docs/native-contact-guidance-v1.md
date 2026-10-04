@@ -14,9 +14,11 @@ The starting clip must pass all original point/motion conditions. It may fail
 the added surface policy. Missing or unreliable incident-face normals reject
 guidance rather than substituting an inferred anatomical direction. Complete
 pose and row populations are required; exceeding either explicit budget rejects
-the operation without returning a subset. The full solver still rejects object
-primitives; transformed object-normal rows have isolated regression coverage,
-not an implemented full object-correction workflow.
+the operation without returning a subset. The initial guidance study predated primitive geometry integration. Current
+`surface-vector` fitting supports declared boxes, spheres and cylinders through
+[whole-triangle and enclosure guides](native-object-guides-v1.md), with object
+poses fixed while permitted actor tracks change. Transformed normal rows alone
+do not establish a working grasp or a complete object-correction workflow.
 
 ## Proposal and acceptance
 
