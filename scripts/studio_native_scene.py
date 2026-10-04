@@ -19,7 +19,7 @@ from native_scene_authoring_job import plan,run as author,validated,METHODS as A
 NAMESPACE='native-scene-jobs'
 NAME=re.compile(r'[A-Za-z0-9_-]{1,100}')
 SCRIPT_ROOT=Path(__file__).resolve().parent
-METHODS=tuple(dict.fromkeys(AUTHOR_METHODS+('studio_native_scene.py','native_contact_revision.py')))
+METHODS=tuple(dict.fromkeys(AUTHOR_METHODS+('studio_native_scene.py','native_contact_revision.py','native_correction_lineage.py')))
 ASSET_PREFIXES=('/files/rig-jobs/','/files/character-assets/','/files/native-correction-previews/','/files/native-support-jobs/','/files/native-scene-jobs/','/files/native-scene-fit-jobs/')
 
 
@@ -77,8 +77,15 @@ def validate_request(payload,resolver,*,require_objects=False):
     return spec,geometry,edit,sources
 
 
-def method_names(payload):
-    return METHODS if payload['scene']['objects'] else METHODS+('verify_native_actor_scene_engine.py',)
+def method_names(payload,*,corrections=None):
+    result=METHODS if payload['scene']['objects'] else METHODS+('verify_native_actor_scene_engine.py',)
+    if corrections is None:
+        from native_correction_lineage import has_origins
+        corrections=has_origins(payload)
+    if corrections:
+        from studio_native_scene_fit import METHODS as CORRECTION_METHODS
+        result=tuple(dict.fromkeys(result+CORRECTION_METHODS+('native_correction_lineage.py',)))
+    return result
 
 
 def revision_preview(payload,resolver):
@@ -134,6 +141,8 @@ def prepare(payload,folder,resolver):
             require(sha256(dest)==sha256(source['path'])==source['sha256'],'Scene actor changed during snapshot')
             source['snapshot']=dest.relative_to(folder).as_posix();spec['actors'][name]['glb']=str(dest)
         save(folder/'draft.json',payload);save(folder/'contacts.json',spec);digest=sha256(folder/'contacts.json')
+        from native_correction_lineage import has_origins,snapshot
+        correction_lineage=snapshot(payload,folder/'correction-lineage') if has_origins(payload) else None
         geometry['contacts_sha256']=digest;save(folder/'geometry-policy.json',geometry)
         edit_path=None
         if edit is not None:
@@ -141,6 +150,7 @@ def prepare(payload,folder,resolver):
         plan(folder/'contacts.json',folder/'geometry-policy.json',engine,folder/'recipe.json',edit_path)
         names=['draft.json','contacts.json','geometry-policy.json','recipe.json']+(['object-edit.json'] if edit is not None else [])
         prepared=dict(schema='strep-studio-native-scene-prepared-v1',sources=sources,
+            correction_lineage=correction_lineage,
             contact_revision_requested='contact_revision' in payload,
             files_sha256={n:sha256(folder/n) for n in names},implementation_sha256=methods,
             engine_path=str(engine),engine_sha256=sha256(engine),original_selected=True,quality_approved=False,
@@ -157,10 +167,16 @@ def frozen(folder,*,current_methods=True):
     require(p['schema']=='strep-studio-native-scene-prepared-v1' and p['original_selected'] is True
         and all(p[k] is False for k in ('quality_approved','training_admitted','release_approved')),'Unapproved source scene required')
     draft=read(folder/'draft.json')
-    expected_methods=set(method_names(draft))
+    lineage=p.get('correction_lineage')
+    from native_correction_lineage import has_origins,verify
+    if current_methods:require((lineage is not None)==has_origins(draft),'Scene correction lineage selection changed')
+    expected_methods=set(method_names(draft,corrections=lineage is not None))
     legacy=not current_methods and 'contact_revision' not in draft and 'native_contact_revision.py' not in p['implementation_sha256']
     if legacy:expected_methods.remove('native_contact_revision.py')
+    if not current_methods and 'correction_lineage' not in p and 'native_correction_lineage.py' not in p['implementation_sha256']:
+        expected_methods.remove('native_correction_lineage.py')
     require(set(p['implementation_sha256'])==expected_methods,'Complete Studio scene methods required')
+    if lineage is not None:verify(draft,folder/'correction-lineage',lineage)
     require(p.get('contact_revision_requested',False)==('contact_revision' in draft),'Scene revision selection changed')
     for n,h in p['implementation_sha256'].items():
         require(sha256(folder/'implementation'/n)==h,'Scene method archive changed')
@@ -193,7 +209,7 @@ def frozen(folder,*,current_methods=True):
 
 def download_names(prepared):
     actors_only='verify_native_actor_scene_engine.py' in prepared['implementation_sha256']
-    return ({'exports/contact-revision.json'} if prepared.get('contact_revision_requested',False) else set()) | {f'input/actor-{i}.glb' for i in range(len(prepared['sources']))} | {
+    return ({'correction-lineage/record.json'} if prepared.get('correction_lineage') is not None else set()) | ({'exports/contact-revision.json'} if prepared.get('contact_revision_requested',False) else set()) | {f'input/actor-{i}.glb' for i in range(len(prepared['sources']))} | {
         'authoring/result.json','authoring/replay/result.json','assets.zip'} | ({'authoring/actors-engine/geometry.json'} if actors_only else {
         'authoring/objects-common/objects.glb','authoring/objects-engine/native-animation.res','authoring/combined-engine/geometry.json'}) | {
         f'authoring/actors-engine/{name}-animation.res' for name in prepared['sources']}
@@ -224,6 +240,10 @@ def package(folder,prepared,result):
         require(record['authored_contacts']==scene['contacts'],'Scene export changes revised contact intent')
         record['portable_scene_sha256']=sha256(exports/'scene.json');save(exports/'contact-revision.json',record)
         files['contact-revision.json']=exports/'contact-revision.json'
+    if prepared.get('correction_lineage') is not None:
+        from native_correction_lineage import verify,package_files
+        verify(read(folder/'draft.json'),folder/'correction-lineage',prepared['correction_lineage'])
+        files.update(package_files(folder/'correction-lineage',prepared['correction_lineage']))
     receipts={n:sha256(path) for n,path in files.items()}
     save(exports/'package.json',dict(schema='strep-native-scene-asset-package-v1',files_sha256=receipts,
         selected_animations={name:a['animation_index'] for name,a in scene['actors'].items()},
@@ -268,6 +288,8 @@ def run(folder):
         outputs['assets.zip']=dict(label='Scene asset package',sha256=package(folder,prepared,result))
         if prepared.get('contact_revision_requested',False):
             outputs['exports/contact-revision.json']=dict(label='Original and revised contact intent',sha256=sha256(folder/'exports/contact-revision.json'))
+        if prepared.get('correction_lineage') is not None:
+            outputs['correction-lineage/record.json']=dict(label='Character correction provenance',sha256=sha256(folder/'correction-lineage/record.json'))
         frozen(folder)
         completion=dict(schema='strep-studio-native-scene-completion-v1',prepared_sha256=sha256(folder/'prepared.json'),
             result_sha256=sha256(folder/'authoring/result.json'),replay_sha256=sha256(folder/'authoring/replay/result.json'),

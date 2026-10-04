@@ -55,6 +55,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Studio character correction](docs/studio-native-scene-fit-v1.md) adds explicit joint permissions, source-bound continuations and separate source/proposal downloads for body, object and partner contact edits. All proposals remain unapproved; only passing numerical proposals can be explicitly staged in a new scene draft for further engine and motion-quality review.
 
+[Portable correction evidence](docs/native-correction-lineage-v1.md) retains original clips, candidate clips, edit bounds, motion caps, contact revisions and correction ancestors through scene/game packaging. Parent numerical results retain their original scope; the exported scene requires its own engine and motion-quality review.
+
 [Native game tracks](docs/native-scene-game-tracks-v1.md) add complete root references, contact intent and explicit gameplay markers to completed scene packages. A finite Godot dispatcher checks exact marker timing; motion remains embedded in unchanged character clips, with physics and animation-quality review still required.
 
 [Native root runtime](docs/native-root-runtime-v1.md) evaluates saved native resources with motion embedded or moved onto the actor once. Headless checks preserve joint poses; the finite scene checks below additionally measure raw skin after mesh-node transforms.

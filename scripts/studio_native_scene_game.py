@@ -51,8 +51,12 @@ def source(job):
     return folder,manifest,spec,scene,contacts,policy,times
 
 
-def method_names(scene):
-    return METHODS if scene.objects else METHODS+('verify_native_actor_scene_engine.py',)
+def method_names(scene,*,corrections=False):
+    result=METHODS if scene.objects else METHODS+('verify_native_actor_scene_engine.py',)
+    if corrections:
+        from studio_native_scene_fit import METHODS as CORRECTION_METHODS
+        result=tuple(dict.fromkeys(result+CORRECTION_METHODS+('native_correction_lineage.py',)))
+    return result
 
 
 def measured_contacts(folder, scene):
@@ -80,7 +84,7 @@ def prepare(payload,folder):
     folder=Path(folder).resolve();require(folder==folder_for(folder.name) and not folder.exists(),'Fresh native game package job required')
     values=validate_request(payload);source_folder,manifest,spec,scene,contacts,policy,times=values
     engine=Path(read(source_folder/'prepared.json')['engine_path']).resolve()
-    methods={n:sha256(SCRIPT_ROOT/n) for n in method_names(scene)}
+    methods={n:sha256(SCRIPT_ROOT/n) for n in method_names(scene,corrections=read(source_folder/'prepared.json').get('correction_lineage') is not None)}
     folder.mkdir(parents=True);save(folder/'pipeline.json',dict(status='preparing',original_selected=True,quality_approved=False))
     try:
         save(folder/'request.json',payload);archive=folder/'implementation';archive.mkdir()
@@ -88,6 +92,7 @@ def prepare(payload,folder):
         shutil.copyfile(source_folder/'assets.zip',folder/'source-assets.zip')
         require(sha256(folder/'source-assets.zip')==sha256(source_folder/'assets.zip'),'Scene package changed during snapshot')
         prepared=dict(schema='strep-native-scene-game-prepared-v1',request_sha256=sha256(folder/'request.json'),
+            correction_lineage_included=read(source_folder/'prepared.json').get('correction_lineage') is not None,
             source_completion_sha256=sha256(source_folder/'completion.json'),source_assets_sha256=sha256(folder/'source-assets.zip'),
             engine_path=str(engine),engine_sha256=sha256(engine),implementation_sha256=methods,
             original_selected=True,quality_approved=False,training_admitted=False,release_approved=False)
@@ -105,9 +110,13 @@ def frozen(folder,*,current_methods=True):
     values=validate_request(payload);source_folder=values[0]
     require(sha256(source_folder/'completion.json')==p['source_completion_sha256'] and
         sha256(source_folder/'assets.zip')==sha256(folder/'source-assets.zip')==p['source_assets_sha256'],'Game package source changed')
-    expected_methods=set(method_names(values[3]))
+    expected_methods=set(method_names(values[3],corrections=read(source_folder/'prepared.json').get('correction_lineage') is not None))
+    require(p.get('correction_lineage_included',False) is (read(source_folder/'prepared.json').get('correction_lineage') is not None),
+        'Game correction lineage selection changed')
     legacy=not current_methods and 'native_contact_revision.py' not in p['implementation_sha256'] and 'contact_revision' not in read(source_folder/'draft.json')
     if legacy:expected_methods.remove('native_contact_revision.py')
+    if not current_methods and 'correction_lineage_included' not in p and 'native_correction_lineage.py' not in p['implementation_sha256']:
+        expected_methods.remove('native_correction_lineage.py')
     require(set(p['implementation_sha256'])==expected_methods,'Complete game package method population required')
     for name,digest in p['implementation_sha256'].items():
         require(sha256(folder/'implementation'/name)==digest,'Game package method archive changed')
