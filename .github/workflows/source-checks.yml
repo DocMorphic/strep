@@ -214,6 +214,7 @@ jobs:
           tests/test_action_worker_lock.py
           tests/test_review_session.py
           tests/test_developer_packet_review.py
+          tests/test_paired_cleanup_analysis.py
           tests/test_portable_review_packet.py
           tests/test_native_engine_contacts.py
           tests/test_engine_contact_sampling.py
