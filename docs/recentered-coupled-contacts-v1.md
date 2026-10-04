@@ -69,3 +69,6 @@ success or quality approval.
 Local evidence stays under ignored `reports/recentered-coupled-contacts-tests-v1.log`
 and `reports/recentered-coupled-contacts-clean-source-v1`. Public CI includes the
 new focused suite alongside the existing checks.
+
+
+The separate [offline restoration workflow](restore-coupled-contacts-v1.md) now wraps this model with exported trial checks and final complete sampled geometry. The model API itself still grants no retention or quality approval. Its real-character restoration result remains unmeasured.
