@@ -62,6 +62,12 @@ def validate(data,manifest,digest):
     if not isinstance(data,dict) or set(data)!={'schema','packet_id','manifest_sha256','reviewer_id','independent_human','reviews'} or data['schema']!='strep-human-review-v1':raise ValueError('Invalid human review schema')
     if data['packet_id']!=manifest['packet_id'] or data['manifest_sha256']!=digest:raise ValueError('Review belongs to another packet')
     if data['independent_human'] is not True:raise ValueError('Independent human attestation required')
+    if manifest.get('review_type','independent')!='independent':raise ValueError('Independent review requires an independent packet')
+    return _validate_rows(data,manifest,digest)
+
+
+def _validate_rows(data,manifest,digest):
+    """Shared rubric checks; the caller must enforce identity and attestation."""
     if not isinstance(data['reviewer_id'],str) or not 1<=len(data['reviewer_id'].strip())<=120:raise ValueError('Reviewer identifier required')
     if not isinstance(data['reviews'],list):raise ValueError('Reviews must be a list')
     valid={c['id'] for c in manifest['cases']};seen=set()

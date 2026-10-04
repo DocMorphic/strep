@@ -26,6 +26,9 @@ def package(packet,archive):
     shutil.copyfile(ROOT/'scripts/soma-preview-skin.js',runtime/'soma-preview-skin.js')
     html=(packet/'viewer.html').read_text(encoding='utf-8')
     html=html.replace('../../assets/viewer/node_modules/three/','./runtime/three/').replace('../../scripts/soma-preview-skin.js','./runtime/soma-preview-skin.js')
+    if '../../scripts/review-identity.js' in html:
+        shutil.copyfile(ROOT/'scripts/review-identity.js',runtime/'review-identity.js')
+        html=html.replace('../../scripts/review-identity.js','./runtime/review-identity.js')
     if '../../' in html:raise ValueError('Viewer still references workspace files')
     (packet/'viewer.html').write_text(html,encoding='utf-8')
     shutil.copyfile(ROOT/'scripts/serve_review_packet.py',packet/'serve.py')
@@ -47,6 +50,10 @@ Actual cleanup means editing the downloaded GLB, recording active seconds and op
 
 SOMA preview and skin helper: NVIDIA Kimodo / Strep modifications, Apache-2.0 (LICENSE.txt). Three.js: MIT (runtime/three/LICENSE). This is a model-free reviewer packet, not a motion-model redistribution or release certification.
 ''',encoding='utf-8')
+    if manifest.get('review_type')=='developer':
+        readme=packet/'README.txt';text=readme.read_text(encoding='utf-8')
+        text=text.replace('Strep independent animation review','Strep developer animation review')
+        readme.write_text(text+'\nDeveloper ratings remain separate from independent animator evidence. This packet cannot confer release approval.\n',encoding='utf-8')
     inventory={p.relative_to(packet).as_posix():sha256(p) for p in sorted(packet.rglob('*')) if p.is_file()}
     save(packet/'package-integrity.json',dict(schema=1,created_at=now(),files=inventory,
         scope='Local integrity inventory, not a publisher signature. No organizer key or model weights included.'))

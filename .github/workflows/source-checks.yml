@@ -194,6 +194,9 @@ jobs:
           tests/test_native_scene_geometry.py
           tests/test_native_scene_engine.py
           tests/test_action_worker_lock.py
+          tests/test_review_session.py
+          tests/test_developer_packet_review.py
+          tests/test_portable_review_packet.py
           tests/test_native_engine_contacts.py
           tests/test_engine_contact_sampling.py
           tests/test_native_engine_contact_population.py
@@ -326,3 +329,5 @@ jobs:
           node tests/test_native_contact_revision.mjs
           node tests/test_native_scene_game_editor.mjs
           node tests/test_native_contact_diagnostics.mjs
+          node tests/test_review_identity.mjs
+          node tests/test_packet_review_form.mjs

@@ -71,8 +71,14 @@ earlier moving-path fixture exposes `6.780e-11` exterior component drift after
 export and is explicitly tested as a rejected input. That fixture change
 does not loosen the production exterior-preservation gate.
 
-The retained humanoid follow-up uses the existing ten-point sphere fit and
-2,201-time object handoff. Actual imported character/scene results will be
-reported only after those workers finish and the full saved-result replay
-completes. Earlier fit/import failures and all release requirements remain
-unchanged.
+## Actual retained humanoid study
+
+The follow-up completed on the existing ten-point sphere fit and 2,201-time object handoff. The declared target named `box` is a sphere, not a box mesh. One unchanged humanoid has 18,056 vertices and 36,108 faces; the other prop remains unedited. No partner or ground plane is declared.
+
+Both the actual imported-actor stage and the combined native object-resource stage pass their declared sampled conditions at all 2,201 times. Each stage separately queries the complete imported skin against both declared objects, yielding 4,402 actor/object records per stage. The combined skin error is 0.0950103 mm against the 0.1 mm source-fidelity limit. Maximum imported contact-position error is 4.683863 mm against 5 mm. The complete sampled geometry passes, with maximum penetration-depth upper bound 9.818365e-14 m.
+
+Original-relative native object movement remains 1.998049 mm and 0.810380 degrees against unchanged 2 mm and 2 degree limits. All protected original object states are exact in their declared export epoch. Native object-resource pose fidelity and contacts pass; default import still fails and is retained separately. Default sphere pose error is 0.04820018 mm with basis error 0.00048475635. Default success is not inferred from native authoring.
+
+The read-only verifier exactly reconstructs all recorded skin, contact and object observations and the complete saved geometry reductions. It does not independently rerun geometry or establish containment. Study execution and replay took 5,495.422 seconds on the local CPU. Raw source motion and retargeted/imported observations remain separate; the original remains selected.
+
+This is one retained development hold, not a held-out study, anatomical grasp proof, physical support test, broad action-quality result or release approval. No self/object-object or continuous collision, dynamics, runtime gameplay, GPU appearance or human review is certified. Earlier fit/import failures and all release requirements remain unchanged. Local results: `reports/native-object-bounded-scene-development-v1/summary.json` and `scene/verification/result.json`. The publication finalizer verifies all saved receipts and current method bindings; all four prior public CI jobs pass.

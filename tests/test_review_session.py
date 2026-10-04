@@ -5,6 +5,18 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from review_session import CATEGORIES,validate,scrub,build,build_many,import_reviews
 from strep import save,read,sha256
 from gltf_tools import read_glb,write_glb
+import review_session
+
+
+@pytest.fixture(autouse=True)
+def model_free_packet_sources(tmp_path,monkeypatch):
+ # Package-copy fixtures never need a downloaded vendor checkout or real asset.
+ root=tmp_path/'synthetic-project'
+ license_path=root/'vendor/kimodo/LICENSE';license_path.parent.mkdir(parents=True)
+ license_path.write_text('Synthetic package-copy license fixture, not redistributed media')
+ viewer=root/'scripts/human-review.html';viewer.parent.mkdir(parents=True)
+ viewer.write_text('<!doctype html><title>Synthetic package-copy viewer</title>')
+ monkeypatch.setattr(review_session,'ROOT',root)
 
 MANIFEST=dict(packet_id='test',cases=[dict(id='clip-001'),dict(id='clip-002')])
 def evidence():
