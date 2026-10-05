@@ -76,11 +76,14 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    timeout-minutes: 90
     env:
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
       HF_HUB_OFFLINE: "1"
       TRANSFORMERS_OFFLINE: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
     steps:
       - name: Check out public source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6

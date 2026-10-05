@@ -5,6 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'scripts'))
 from scipy.spatial.transform import Rotation
 from rigid_contact_normal_bound import pairwise_bound
+from rigid_normal_spread import bound as object_bound
 
 
 def test_exact_rotated_field_has_zero_bound_even_when_current_facing_fails():
@@ -61,3 +62,16 @@ def test_matching_populations_and_complete_budget_required():
     for bad in [True, 0, 65537, 3.0]:
         with pytest.raises(ValueError, match='budget'):
             pairwise_bound(good, good, maximum_pairs=bad)
+
+
+def test_existing_object_bound_agrees_for_rotating_common_target_frames():
+    rng = np.random.default_rng(763)
+    source = rng.normal(size=(7, 5, 3)); source /= np.linalg.norm(source, axis=2, keepdims=True)
+    local = rng.normal(size=(5, 3)); local /= np.linalg.norm(local, axis=1, keepdims=True)
+    rotations = Rotation.from_euler('xyz', rng.uniform(-180, 180, size=(7, 3)), degrees=True)
+    world = np.einsum('fij,pj->fpi', rotations.as_matrix(), local)
+    current = pairwise_bound(source, world)
+    legacy_report, legacy = object_bound(source, local, 15.)
+    np.testing.assert_allclose(current['lower_bound_degrees'], legacy['lower_bound_degrees'], atol=1e-12, rtol=0)
+    assert legacy_report['necessary_condition_only'] and not legacy_report['rigid_rotation_feasibility_proven']
+    assert not current['rotation_found'] and not current['skin_deformation_ruled_out']

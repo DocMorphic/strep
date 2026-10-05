@@ -7,8 +7,8 @@ DOM workflow. No live Studio connection or renderer is used. In
 the Linux source job and both adapter jobs passed. The Windows Python step
 reported 2,639 passed and three skipped in 1,761 seconds, then the 30-minute
 job limit canceled the run before its Node checks. This is an incomplete hosted
-run, not a passing Windows run. The source-job limit is now 45 minutes to allow
-its existing suite and subsequent editor checks to finish.
+run, not a passing Windows run. At that point the source-job limit was raised
+to 45 minutes for its existing suite and subsequent editor checks.
 
 The public repository now defines a GitHub Actions workflow for a suite that needs no motion checkpoint, gated text encoder, character payload, saved study or Godot executable. It runs on Windows and Linux with Python 3.10, pinned NumPy/SciPy/pytest/Trimesh/Rtree requirements and Node 24. Both push and pull-request events run it; manual dispatch is also available.
 
@@ -70,3 +70,9 @@ Both Windows and Linux source jobs run them. Locally, all 142 focused lock,
 native scene, clock, edit, rate and skin checks pass on Windows. Hosted Linux
 verification is separate from that local result. No model study is repeated,
 and no animation, import, training or release approval is granted.
+
+## Current execution headroom
+
+At commit `968d933`, [Windows job 111660213669](https://github.com/DocMorphic/strep/actions/runs/37276266024/job/111660213669) reported **3,300 passed and one skipped** in **3,562.97 seconds**. GitHub's check annotation then records that the job exceeded its **one-hour maximum execution time**. The subsequent Node editor checks were skipped, so the hosted Windows job remains cancelled rather than approved. Its Python result is useful partial evidence, not a completed CI result.
+
+The `source-checks` job now has **90 minutes** of execution headroom and explicitly sets `OPENBLAS_NUM_THREADS`, `OMP_NUM_THREADS` and `MKL_NUM_THREADS` to one, matching the bounded numerical runtime used for local studies. Other job budgets remain unchanged. YAML parsing and exact before/after comparison verify that all test lists, editor commands, matrices, dependencies, action pins and permissions are preserved. No assertion or acceptance limit is removed. Faster execution under these settings has not yet been demonstrated by a completed hosted run; current CI remains pending/in progress.

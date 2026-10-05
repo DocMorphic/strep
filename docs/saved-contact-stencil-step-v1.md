@@ -20,7 +20,12 @@ The [local finger experiment](local-finger-contact-response-v1.md) provides a de
 
 Adding probe 22 further lowers total predicted error to 7416.305085308059 but fails protected native row 260825 with normalized excess .006681365558722022. That three-component diagnostic writes no seed. This is a failed local prediction, not proof of global infeasibility or a reason to weaken a motion cap.
 
-The original single-finger full mesh worker continues its unchanged 2,552-sample audit. A separate actual two-finger export/decode check is queued on exact owned original process handles, verified by creation times and commands. It holds no production lock while waiting and starts only after zero original exits and a complete bound geometry receipt. It independently re-exports/re-decodes the baseline, requires exact reproduction of all original saved condition arrays, and then measures the composed candidate. It cannot retain a clip or claim that the earlier single-finger mesh audit covers a different candidate. Both the original full mesh result and the new actual combined result remain pending.
+The original single-finger full mesh audit completed all **2,552 fresh samples**, with all original sampled geometry conditions passing and zero reused queries. Exact owned original process handles record zero exits. The serial two-finger export/decode check then completed, independently reproducing every baseline condition array before measuring the composed candidate. Its actual **303,761 native/motion/point rows pass**, with zero guarded surface regressions; worst/total scores are `[1.9017585931868466, 7421.53309965045]`. All **2,066 authored surface failures remain**. This receipt cannot retain the clip or apply single-finger geometry to a different candidate.
+
+A fresh serial combined mesh study independently reproduces both completed GLBs and every native/surface array, checks all twelve permitted source-relative channels, and passes the original-source and preceding-baseline contact guards. Original source-derived caps are not rebuilt from the candidate. It now measures all **2,552 original geometry clocks** against complete meshes. Prior mesh observations can be reused only after donor receipt/runtime/method verification and exact equality of every geometry query input; otherwise the query is recomputed. The combined full mesh result remains pending. Original Studio selection is preserved, and engine/imported-surface, anatomical and human quality checks remain outstanding.
+
+Completed actual two-finger decode SHA256: `92fb196b95a8422f94d9f959287b952ad1cce3881f234df11b5ad82eef5dc9f1`.
+Completed single-finger geometry SHA256: `437c443343ea8f65771d2f6a9b005f6634949dd487cd2d4bb0810a682b9af420`.
 
 ## Source checks
 
