@@ -32,7 +32,7 @@ posed = surface.posed(patch, complete_node_world_matrices)
 
 `patch["vertices"]` feeds a native contact's `vertices` field. Partner target references must be authored separately, with explicit correspondence for distributed contact. Sorted material vertex IDs do not establish matching locations between different characters. The existing `individual` and `centroid` reductions retain their original semantics; a vertex centroid can lie off a curved or concave skin surface. Creating references does not create a timing schedule or resolve collisions. All original native, contact, geometry and engine checks remain necessary.
 
-Appending animation changes a GLB's full-file hash. A patch is therefore rejected against changed asset bytes, even when references appear identical. This version does not provide an automatic patch migration or topology-only rebind. Material ownership also does not supply finger articulation, grip intent, a partner response or an animator review.
+Appending animation changes a GLB's full-file hash. A patch is therefore rejected against changed asset bytes, even when references appear identical. The separate [explicit bundle transfer](material-patch-authoring-v1.md) checks the complete static deformation identity and creates new source-bound patches with retained parent evidence; it does not relax this API's source checks. Material ownership also does not supply finger articulation, grip intent, a partner response or an animator review.
 
 ## Complete reserved neutral inventory
 

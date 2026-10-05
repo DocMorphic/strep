@@ -78,6 +78,8 @@ jobs:
           tests/test_reserved_partner_fixtures.py
           tests/test_reserved_partner_engine.py
           tests/test_rig_material_patch.py
+          tests/test_material_patch_bundle.py
+          tests/test_material_patch_revision.py
           tests/test_reserved_partner_materials.py
           tests/test_boundary_motion.py
           tests/test_paired_stage_rates.py
