@@ -235,6 +235,7 @@ jobs:
           tests/test_native_rig_transfer_audit.py
           tests/test_studio_native_rig_transfer.py
           tests/test_native_transfer_scene.py
+          tests/test_native_transfer_calibration.py
           tests/test_native_scene_runtime.py
           tests/test_scene_prop_ownership.py
           tests/test_scene_prop_runtime.py

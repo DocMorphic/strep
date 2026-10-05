@@ -23,6 +23,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Scene contact retention during rig transfer](docs/native-transfer-scene-v1.md) preserves explicit world, object and partner targets through reviewed skin-vertex correspondence, compares both clips on a common clock and keeps every lost contact visible. The resulting scene feeds existing bounded editing and engine tools; this bridge does not solve contacts or approve motion quality.
 
+[Bounded transfer calibration](docs/native-transfer-calibration-v1.md) offers a separate whole-clip reference-profile correction with explicit rotation, root and joint limits, protected scene targets, source-rate checks and portable exported-file replay. Small generated contact mismatches can pass; larger reach conflicts stay rejected. Geometry, transition and human quality approval remain separate.
+
 [Cylinder penetration bounds](docs/cylinder-collision-bounds-v1.md) now cover box/sphere/cylinder pairs through analytic sphere offsets and complete nested-prism separating-axis checks. They report penetration uncertainty and preserve the current physics-release qualification; cylinder simulation and interaction acceptance remain open.
 
 [Scene reference checks before generation](docs/scene-target-preflight-v1.md) now catch contact, floor, object and partner failures after the actual model skeleton conversion. Strict preparation rejects incompatible references before encoding; explicit diagnostic comparisons preserve them. A passing constructive object reference and rejected real high-five references verify this path, without claiming realistic generated interactions.
