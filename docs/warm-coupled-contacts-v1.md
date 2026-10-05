@@ -11,3 +11,5 @@ Checked affine steps are proposals. Exported Float32 curves must still pass the 
 Validation includes exact-bound and full-row failures, dense/sparse parity, a real small CPU conic solve, actual serialized curves, reconstruction of complete tiny geometry observations, warm fallback, original source guards and worker/output exclusion. Fixture proposals injected into retention tests exercise the downstream gate; they are not model-generated motion. Production motion and the previously completed import/replay studies have not been rerun for this source change. All release evidence arrays remain empty, and real human ratings and timed cleanup records remain zero.
 
 The isolated public-source check run passed 188 tests in 87.86 seconds. Its archived source hashes and log are in `reports/warm-proposal-source-check-v1`; the result SHA256 is `eed8983a2968dd9b5a718f5483691dfe16dde2106b44c4fdd6c6a28e454aa503`. Generated fixture payloads remain local.
+
+The later full-motion experiment and its queued independent replay are described in [warm-contact-replay-v1.md](warm-contact-replay-v1.md).

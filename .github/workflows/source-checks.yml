@@ -212,6 +212,7 @@ jobs:
           tests/test_native_geometry_cache.py
           tests/test_cumulative_coupled_contacts.py
           tests/test_warm_coupled_contacts.py
+          tests/test_verify_warm_coupled_contacts.py
           tests/test_recentered_coupled_contacts.py
           tests/test_restore_coupled_contacts.py
           tests/test_verify_coupled_restoration.py
