@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-05T00:23:07.968275+00:00",
-  "last_progress": "Added complete static object engine-import reductions and a serial gated five-object audit. Fifty source-only synthetic checks and an actual busy-worker refusal pass; the new Godot script remains unexecuted, queued behind the exact independent-restoration-replay supervisor. Separately, the restored actor-only native-authoring import completed all 2552 times, preserving 18056 vertices and 36108 faces with passing pose/point-contact/skin/sampled-geometry checks. Combined scene and saved engine replay remain pending; 2066 surface-orientation failures remain. No motion, physics, human or release approval is granted, and all release criteria/evidence arrays are unchanged."
+  "last_progress_at": "2026-10-05T00:43:10.940912+00:00",
+  "last_progress": "Added exact necessary surface-normal displacement boxes, with 48 source-only checks and 110 complete reductions across all ten authored groups at one predetermined saved midpoint. Both failing patches exclude up to 10 micrometres per-coordinate vertex movement; 0.1 mm and larger tested boxes are inconclusive. These hypothetical vertex boxes do not establish global rig infeasibility or improve the retained motion. The full clock retains 2066 orientation failures. Existing engine, repair and replay workers remain serial; no frozen method, authored policy, release criterion or evidence array changed."
 }

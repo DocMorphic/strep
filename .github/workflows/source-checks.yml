@@ -325,6 +325,7 @@ jobs:
           tests/test_event_confirmation.py
           tests/test_rig_event_retime.py
           tests/test_contact_pose_reachability.py
+          tests/test_surface_normal_box.py
           tests/test_contact_pose_sphere_bound.py
           tests/test_desktop_build.py
           tests/test_desktop_build_preservation.py
