@@ -8,7 +8,6 @@ from scipy.spatial.transform import Rotation
 from strep import read, save, sha256, now
 from rig_asset import RigAsset, index
 from gltf_tools import local_matrix, append_accessor, write_glb, sample_animation
-from correct_stance import swing, load_motion
 from inspect_motion import validate_motion, contact_events
 
 ROLE_PARENTS = {'Hips': None, 'Spine2': 'Hips', 'Chest': 'Spine2', 'Neck1': 'Chest', 'Head': 'Neck1',
@@ -21,6 +20,25 @@ PRIMARY = {'Hips': 'Chest', 'Spine2': 'Chest', 'Chest': 'Neck1', 'Neck1': 'Head'
            'LeftArm': 'LeftForeArm', 'LeftForeArm': 'LeftHand', 'RightArm': 'RightForeArm', 'RightForeArm': 'RightHand',
            'LeftLeg': 'LeftShin', 'LeftShin': 'LeftFoot', 'LeftFoot': 'LeftToeBase',
            'RightLeg': 'RightShin', 'RightShin': 'RightFoot', 'RightFoot': 'RightToeBase'}
+
+
+def swing(a, b):
+    """Pure numeric helper retained here to avoid the legacy Torch import graph.
+
+    Matches correct_stance.swing; the archived correction module stays intact.
+    Keeping this helper in the transfer implementation also preserves existing
+    retarget_rig.py method bindings without adding an untracked dependency.
+    """
+    a, b = np.asarray(a, float), np.asarray(b, float)
+    a, b = a / np.linalg.norm(a), b / np.linalg.norm(b)
+    cross, dot = np.cross(a, b), float(np.clip(a @ b, -1, 1))
+    norm = np.linalg.norm(cross)
+    if norm < 1e-10:
+        if dot > 0:
+            return np.eye(3)
+        axis = np.cross(a, np.eye(3)[np.argmin(abs(a))])
+        return Rotation.from_rotvec(axis / np.linalg.norm(axis) * np.pi).as_matrix()
+    return Rotation.from_rotvec(cross / norm * np.arctan2(norm, dot)).as_matrix()
 
 
 def resolve_profile(rig, profile):
@@ -159,6 +177,7 @@ def transfer(rig, motion, skeleton, mapping, offset, overrides=None, *, context_
 
 
 def export(character, profile_path, source, output, fps=30):
+    from correct_stance import load_motion
     import torch
     from kimodo.skeleton import SOMASkeleton77
     character, source, profile_path, output = map(lambda p: Path(p).resolve(), (character, source, profile_path, output))

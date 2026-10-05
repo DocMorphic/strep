@@ -231,6 +231,8 @@ jobs:
           tests/test_native_contact_revision.py
           tests/test_native_scene_game_tracks.py
           tests/test_native_root_runtime.py
+          tests/test_native_rig_transfer.py
+          tests/test_native_rig_transfer_audit.py
           tests/test_native_scene_runtime.py
           tests/test_scene_prop_ownership.py
           tests/test_scene_prop_runtime.py

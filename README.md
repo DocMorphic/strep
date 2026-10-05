@@ -17,6 +17,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 ## Current evidence and limitations
 
+[Native rig-to-rig transfer](docs/native-rig-transfer-v1.md) transfers an existing GLB clip directly to a different explicitly mapped humanoid rig, without a motion checkpoint. It appends an editable animation while preserving the original target clips and mesh payload, measures interpolation error, and can verify a saved Godot resource. Generated fixtures exercise different hierarchies and reference poses; production-rig, contact and animator approval remain open.
+
 [Cylinder penetration bounds](docs/cylinder-collision-bounds-v1.md) now cover box/sphere/cylinder pairs through analytic sphere offsets and complete nested-prism separating-axis checks. They report penetration uncertainty and preserve the current physics-release qualification; cylinder simulation and interaction acceptance remain open.
 
 [Scene reference checks before generation](docs/scene-target-preflight-v1.md) now catch contact, floor, object and partner failures after the actual model skeleton conversion. Strict preparation rejects incompatible references before encoding; explicit diagnostic comparisons preserve them. A passing constructive object reference and rejected real high-five references verify this path, without claiming realistic generated interactions.
