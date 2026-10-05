@@ -113,3 +113,6 @@ Source/copy hashes remain unchanged. Local source-result SHA256:
 
 
 Follow-up: [saved actor and prop playback](baked-scene-runtime-v1.md) adds a standalone source-preserving Godot main scene and finite composed playback audit. Its original-end hold and Float32 key envelope preserve saved bytes; original contact, timing and import failures remain separate.
+
+
+Follow-up: [Studio saved-scene export](studio-baked-scene-v1.md) adds selected-bake binding, an asynchronous package/audit job, verified fixed downloads and preserved failure review. Its headless generated fixture supplies workflow evidence; its upstream Studio selection is explicitly doubled and no live browser is claimed.

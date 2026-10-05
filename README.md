@@ -307,3 +307,6 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 
 
 [Saved actor and prop playback](docs/baked-scene-runtime-v1.md) packages original actor clips and baked prop tracks into a finite Godot scene with no live prop physics. Two headless fixtures validate complete poses, root deltas, exact event callbacks and non-grid end holds; 197 frozen source tests pass. Original physics/import failures and all animation-quality/release gates remain open.
+
+
+[Studio saved-scene export](docs/studio-baked-scene-v1.md) connects completed animation bakes to source-bound Godot packages and headless playback verification. Review preserves original timing/contact/import failures and exposes five verified downloads. Final checks pass 61 Python tests and four offline UI suites; live UI and motion-quality approval remain open.

@@ -128,3 +128,6 @@ The parsed workflow adds only the new source suite; dependencies, action pins,
 matrix, permissions, environment and budgets remain unchanged. Hosted CI for
 the preceding Studio commit is queued at the recorded snapshot; hosted success
 for this update is not claimed.
+
+
+Follow-up: [Studio saved-scene export](studio-baked-scene-v1.md) adds selected-bake binding, an asynchronous package/audit job, verified fixed downloads and preserved failure review. Its headless generated fixture supplies workflow evidence; its upstream Studio selection is explicitly doubled and no live browser is claimed.

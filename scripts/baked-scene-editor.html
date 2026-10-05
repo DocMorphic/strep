@@ -1,0 +1,8 @@
+<details id="bakedScenePanel" class="rig-panel">
+ <summary>Export saved scene</summary>
+ <p class="small">Choose a completed prop animation bake above. Export original character clips and baked prop tracks together as a Godot scene, then verify their shared playback clock. Playback uses saved animation, without live prop physics.</p>
+ <div class="toolbar"><button class="btn" id="bakedSceneBind">Use selected animation bake</button><button class="btn primary" id="bakedSceneBuild">Export &amp; verify saved scene</button></div>
+ <p class="small" id="bakedSceneStatus" role="status">Bind a completed animation bake to begin.</p>
+ <div class="toolbar"><select id="bakedSceneJobs" aria-label="Saved scene export job"></select><button class="btn" id="bakedSceneRefresh">Refresh exports</button><button class="btn" id="bakedSceneReview">Show export &amp; results</button></div>
+ <div id="bakedSceneResults" aria-live="polite"></div>
+</details>
