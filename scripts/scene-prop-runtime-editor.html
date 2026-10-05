@@ -1,0 +1,46 @@
+<details id="scenePropRuntimePanel" class="rig-panel">
+ <summary>Grips &amp; physical props</summary>
+ <p class="small">Choose a completed game-track package above. Pick each prop’s playback mode, map grips to source joints, and use confirmed events for holds, handoffs and releases. Source contact results describe the authored reference; physical interaction needs separate review.</p>
+ <button class="btn" id="scenePropRuntimeBind">Use selected game package</button>
+ <div id="scenePropRuntimeActors"></div>
+ <div id="scenePropRuntimeObjects"></div>
+ <div class="rig-field-grid">
+  <label>Physics rate<select id="scenePropRuntimeRate"><option value="">Choose rate</option><option value="60">60 Hz</option><option value="120">120 Hz</option><option value="240">240 Hz</option></select></label>
+  <label>History records<input id="scenePropRuntimeHistory" type="number" value="1800" min="2" max="3600"></label>
+  <label>Grip agreement (m)<input id="scenePropRuntimePositionLimit" type="number" value="0.001" step="0.001"></label>
+  <label>Grip agreement (rad)<input id="scenePropRuntimeRotationLimit" type="number" value="0.001" step="0.001"></label>
+ </div>
+ <h4>Joint and prop offset</h4>
+ <div class="rig-field-grid">
+  <label>Grip ID<input id="scenePropRuntimeGripId" value="grip-1"></label>
+  <label>Character<select id="scenePropRuntimeActor"></select></label>
+  <label>Source joint<select id="scenePropRuntimeJoint"></select></label>
+  <label>Prop<select id="scenePropRuntimeProp"></select></label>
+  <label>Alignment event<select id="scenePropRuntimeAlignEvent"></select></label>
+ </div>
+ <p class="small">Offset is from the selected joint to the prop’s center. Rotation applies X, then Y, then Z. Alignment uses the parked prop at the chosen event; it does not verify hand contact.</p>
+ <div class="rig-field-grid">
+  <label>Offset X (m)<input id="scenePropRuntimeOffsetX" type="number" value="0" step="0.01"></label>
+  <label>Offset Y (m)<input id="scenePropRuntimeOffsetY" type="number" value="0" step="0.01"></label>
+  <label>Offset Z (m)<input id="scenePropRuntimeOffsetZ" type="number" value="0" step="0.01"></label>
+  <label>Rotation X (deg)<input id="scenePropRuntimeAngleX" type="number" value="0" step="1"></label>
+  <label>Rotation Y (deg)<input id="scenePropRuntimeAngleY" type="number" value="0" step="1"></label>
+  <label>Rotation Z (deg)<input id="scenePropRuntimeAngleZ" type="number" value="0" step="1"></label>
+ </div>
+ <div class="toolbar"><button class="btn" id="scenePropRuntimeAlign">Align offset at selected event</button><button class="btn" id="scenePropRuntimeAddGrip">Save grip for this prop</button></div>
+ <div id="scenePropRuntimeGrips"></div>
+ <h4>Ownership events</h4>
+ <div class="rig-field-grid">
+  <label>Grip<select id="scenePropRuntimeCommandGrip"></select></label>
+  <label>Prop<select id="scenePropRuntimeCommandProp"></select></label>
+  <label>Confirmed event<select id="scenePropRuntimeCommandEvent"></select></label>
+  <label>Change<select id="scenePropRuntimeAction"><option value="">Choose change</option><option value="acquire">Acquire</option><option value="release">Release</option></select></label>
+ </div>
+ <button class="btn" id="scenePropRuntimeAddCommand">Add ownership change</button>
+ <div id="scenePropRuntimeCommands"></div>
+ <p class="small">For a handoff, release and acquire at the same native event time. A partial release keeps remaining grips. Physical transitions apply at the next fixed boundary; all tested rates retain timing failures, and the 60 Hz study failed its collision-depth screen.</p>
+ <div class="toolbar"><button class="btn" id="scenePropRuntimeSave">Save grip request</button><button class="btn primary" id="scenePropRuntimeBuild">Build prop runtime package</button></div>
+ <p class="small" id="scenePropRuntimeStatus" role="status">Bind a completed game package to begin.</p>
+ <div class="toolbar"><select id="scenePropRuntimeJobs" aria-label="Prop runtime job"></select><button class="btn" id="scenePropRuntimeRefresh">Refresh jobs</button><button class="btn" id="scenePropRuntimeReview">Show package &amp; results</button></div>
+ <div id="scenePropRuntimeResults" aria-live="polite"></div>
+</details>

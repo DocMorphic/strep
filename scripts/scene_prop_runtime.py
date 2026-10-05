@@ -29,6 +29,13 @@ def matrix(value):
     rigid(t[:3,:3]);return t.tolist()
 
 
+def entry_files(physics_fps):
+    """Canonical startup files, also checked against completed Studio downloads."""
+    return {
+        'ownership-v1/scene.tscn':'[gd_scene load_steps=2 format=3]\n[ext_resource type="Script" path="res://ownership-v1/godot_scene_prop_boot.gd" id="1"]\n[node name="Strep" type="Node3D"]\nscript = ExtResource("1")\n',
+        'project.godot':'config_version=5\n[application]\nconfig/name="Strep explicit prop runtime"\nrun/main_scene="res://ownership-v1/scene.tscn"\n[physics]\ncommon/physics_ticks_per_second='+str(physics_fps)+'\n3d/physics_engine="Jolt Physics"\n[rendering]\nrenderer/rendering_method="gl_compatibility"\n'}
+
+
 def compile_request(request,config,scene,events,source_digest):
     fields={'schema','source_game_zip_sha256','root_modes','object_modes','grips','commands','physics','physics_fps','history_capacity'}
     require(isinstance(request,dict) and fields<=set(request) and set(request)<=fields|{'position_tolerance_m','rotation_tolerance_rad'}
@@ -99,9 +106,8 @@ def package(source,request_path,output):
             for n in GDS:shutil.copyfile(ROOT/'scripts'/n,runtime/n)
             save(runtime/'prop-runtime.json',compiled)
             (runtime/'ownership-authoring-request.json').write_bytes(request_bytes)
-            (runtime/'scene.tscn').write_text('[gd_scene load_steps=2 format=3]\n[ext_resource type="Script" path="res://ownership-v1/godot_scene_prop_boot.gd" id="1"]\n[node name="Strep" type="Node3D"]\nscript = ExtResource("1")\n',encoding='utf8')
             require(not (project/'project.godot').exists(),'Original package project entry conflicts with prop runtime')
-            (project/'project.godot').write_text('config_version=5\n[application]\nconfig/name="Strep explicit prop runtime"\nrun/main_scene="res://ownership-v1/scene.tscn"\n[physics]\ncommon/physics_ticks_per_second='+str(compiled['physics_fps'])+'\n3d/physics_engine="Jolt Physics"\n[rendering]\nrenderer/rendering_method="gl_compatibility"\n',encoding='utf8')
+            for n,text in entry_files(compiled['physics_fps']).items():(project/n).write_bytes(text.encode('utf8'))
             require(sha256(source)==source_digest and request_path.read_bytes()==request_bytes,'Source/request changed during packaging')
             require(all(sha256(project/n)==h for n,h in manifest['files_sha256'].items()),'Original source entry changed')
             require(all(sha256(ROOT/'scripts'/n)==sha256(runtime/n)==h for n,h in methods.items()),'Runtime implementation changed')

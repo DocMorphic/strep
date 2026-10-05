@@ -40,6 +40,10 @@ def allowed_file(url_path):
     if path=='/material-patch-loader.mjs':return ROOT/'scripts/material-patch-loader.mjs'
     if path=='/native-scene-editor.mjs':return ROOT/'scripts/native-scene-editor.mjs'
     if path=='/native-scene-game-editor.mjs':return ROOT/'scripts/native-scene-game-editor.mjs'
+    if path=='/scene-prop-runtime-editor.mjs':return ROOT/'scripts/scene-prop-runtime-editor.mjs'
+    if path.startswith('/files/scene-prop-runtime-jobs/'):
+        from studio_scene_prop_runtime import served_file
+        return served_file(path.removeprefix('/files/'))
     if path=='/native-scene-fit-editor.mjs':return ROOT/'scripts/native-scene-fit-editor.mjs'
     if path.startswith('/files/native-scene-fit-jobs/'):
         from studio_native_scene_fit import served_file
@@ -123,6 +127,16 @@ class Handler(BaseHTTPRequestHandler):
         if route=='/api/native-scene-game-jobs':
             from studio_native_scene_game import listing
             return self.respond(200,listing())
+        if route=='/api/scene-prop-runtime-jobs':
+            from studio_scene_prop_runtime import listing
+            return self.respond(200,listing())
+        if route in ('/api/scene-prop-runtime-source','/api/scene-prop-runtime-review'):
+            from studio_scene_prop_runtime import metadata,manifest
+            try:
+                query=parse_qs(urlsplit(self.path).query)
+                if set(query)!={'id'} or len(query['id'])!=1:raise ValueError('Exact game package selection required')
+                return self.respond(200,metadata(query['id'][0]) if route.endswith('-source') else manifest(query['id'][0]))
+            except (ValueError,TypeError,KeyError,OSError) as exc:return self.respond(400,dict(error=str(exc)))
         if route in ('/api/native-scene-game-source','/api/native-scene-game-review'):
             from studio_native_scene_game import metadata,manifest
             try:
@@ -296,7 +310,7 @@ class Handler(BaseHTTPRequestHandler):
         except (BrokenPipeError,ConnectionResetError):pass
 
     def do_POST(self):
-        if self.path not in ['/api/native-scene-fits','/api/native-scene-fit-catalog','/api/native-scene-material-patch','/api/native-scene-material-region-preview','/api/native-scene-material-region-save','/api/native-scene-material-region-pose','/api/native-scene-contact-revision','/api/native-scene-game-assets','/api/native-scene-assets','/api/correction-review-edit','/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission','/api/jobs','/api/scene-pair-fits','/api/scene-trims','/api/scene-releases','/api/scene-region-fits','/api/pose-target','/api/motion-brief','/api/contact-edits','/api/characters/import','/api/characters/sample','/api/characters/profile','/api/rig-jobs','/api/rig-contact-edits','/api/rig-contact-inspect','/api/rig-patch-selection','/api/native-support-edits','/api/rig-clip-edits','/api/rig-joint-edits','/api/rig-posture-edits','/api/rig-mirror-edits','/api/rig-transitions','/api/rig-loops','/api/rig-loop-search','/api/rig-events','/api/rig-prompt-edits','/api/rig-dynamics-edits']:return self.respond(404,{'error':'Unknown endpoint'})
+        if self.path not in ['/api/native-scene-fits','/api/native-scene-fit-catalog','/api/native-scene-material-patch','/api/native-scene-material-region-preview','/api/native-scene-material-region-save','/api/native-scene-material-region-pose','/api/native-scene-contact-revision','/api/native-scene-game-assets','/api/scene-prop-runtime-assets','/api/scene-prop-runtime-align','/api/native-scene-assets','/api/correction-review-edit','/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission','/api/jobs','/api/scene-pair-fits','/api/scene-trims','/api/scene-releases','/api/scene-region-fits','/api/pose-target','/api/motion-brief','/api/contact-edits','/api/characters/import','/api/characters/sample','/api/characters/profile','/api/rig-jobs','/api/rig-contact-edits','/api/rig-contact-inspect','/api/rig-patch-selection','/api/native-support-edits','/api/rig-clip-edits','/api/rig-joint-edits','/api/rig-posture-edits','/api/rig-mirror-edits','/api/rig-transitions','/api/rig-loops','/api/rig-loop-search','/api/rig-events','/api/rig-prompt-edits','/api/rig-dynamics-edits']:return self.respond(404,{'error':'Unknown endpoint'})
         host=self.headers.get('Host');origin=self.headers.get('Origin')
         if host not in self.server.allowed_hosts or origin!=f'http://{host}':return self.respond(403,{'error':'Submit from the local studio page'})
         if self.path=='/api/characters/import':
@@ -312,9 +326,18 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get('Content-Type')!='application/json':return self.respond(415,{'error':'JSON required'})
         try:
             length=int(self.headers.get('Content-Length','0'))
-            limit=1048576 if self.path in ('/api/native-scene-fits','/api/native-scene-fit-catalog','/api/native-scene-material-patch','/api/native-scene-material-region-preview','/api/native-scene-material-region-save','/api/native-scene-material-region-pose','/api/native-scene-contact-revision','/api/native-scene-game-assets','/api/native-scene-assets','/api/correction-review-edit','/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission') else 32768
+            limit=1048576 if self.path in ('/api/native-scene-fits','/api/native-scene-fit-catalog','/api/native-scene-material-patch','/api/native-scene-material-region-preview','/api/native-scene-material-region-save','/api/native-scene-material-region-pose','/api/native-scene-contact-revision','/api/native-scene-game-assets','/api/scene-prop-runtime-assets','/api/scene-prop-runtime-align','/api/native-scene-assets','/api/correction-review-edit','/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission') else 32768
             if not 0<length<=limit:raise ValueError('Request too large or empty')
             payload=json.loads(self.rfile.read(length))
+            if self.path=='/api/scene-prop-runtime-align':
+                from studio_scene_prop_runtime import align
+                from action_worker_lock import worker_lock
+                try:
+                    with self.server.job_lock:
+                        if external_pair_fit_busy() or (self.server.worker is not None and self.server.worker.poll() is None):return self.respond(409,{'error':'A local request is running'})
+                        with worker_lock():result=align(payload)
+                except RuntimeError as exc:return self.respond(409,{'error':str(exc)})
+                return self.respond(200,result)
             if self.path in ('/api/native-scene-material-region-preview','/api/native-scene-material-region-save','/api/native-scene-material-region-pose'):
                 from studio_material_region import preview,save_region
                 from studio_material_region_pose import inspect_pose
@@ -427,6 +450,9 @@ class Handler(BaseHTTPRequestHandler):
             elif self.path=='/api/native-scene-game-assets':
                 from studio_native_scene_game import validate_request
                 validate_request(payload)
+            elif self.path=='/api/scene-prop-runtime-assets':
+                from studio_scene_prop_runtime import validate_request
+                validate_request(payload)
             elif self.path=='/api/rig-contact-edits':
                 from rig_contact_authoring import validate_request
                 validate_request(payload)
@@ -464,6 +490,18 @@ class Handler(BaseHTTPRequestHandler):
                     prepare(payload,folder)
                     with (folder/'supervisor.log').open('w',encoding='utf8') as log:
                         self.server.worker=subprocess.Popen([sys.executable,str(ROOT/'scripts/studio_native_scene_game.py'),str(folder)],cwd=ROOT,
+                            env=offline_environment(),stdout=log,stderr=subprocess.STDOUT,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+                except (ValueError,OSError) as exc:
+                    if folder.exists():save(folder/'pipeline.json',dict(status='failed',error=str(exc),original_selected=True,quality_approved=False))
+                    return self.respond(400,dict(error=str(exc)))
+                return self.respond(202,dict(id=job,status='starting'))
+            if self.path=='/api/scene-prop-runtime-assets':
+                from studio_scene_prop_runtime import folder_for,prepare
+                folder=folder_for(job)
+                try:
+                    prepare(payload,folder)
+                    with (folder/'supervisor.log').open('w',encoding='utf8') as log:
+                        self.server.worker=subprocess.Popen([sys.executable,str(ROOT/'scripts/studio_scene_prop_runtime.py'),str(folder)],cwd=ROOT,
                             env=offline_environment(),stdout=log,stderr=subprocess.STDOUT,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
                 except (ValueError,OSError) as exc:
                     if folder.exists():save(folder/'pipeline.json',dict(status='failed',error=str(exc),original_selected=True,quality_approved=False))
