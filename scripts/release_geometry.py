@@ -29,6 +29,12 @@ def require_release_geometry(geometry):
     return geometry
 
 
+def preview_penetration_bounds(first,p,r,second,other_p,other_r,**settings):
+    """Read-only cylinder-capable geometry preview, separate from release qualification."""
+    from primitive_penetration_bounds import bounds
+    return bounds(first,p,r,second,other_p,other_r,**settings)
+
+
 def primitive_gap(first,p,r,second,other_p,other_r):
     require_release_geometry(first);require_release_geometry(second)
     if first.shape=='sphere':
