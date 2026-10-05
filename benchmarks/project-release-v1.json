@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-05T00:08:16.333364+00:00",
-  "last_progress": "Constructed five reserved static object geometries across box, sphere and cylinder families. All 7368 saved vertices, 2456 triangles, normals and closed edge incidences pass independent primitive-distance arithmetic checks. Saved reductions replay exactly and repeat construction reproduces all five GLBs byte-for-byte. Thirty-seven source-only checks pass; zero motion trials or human measurements were collected. Engine import, task scenes, reachable contacts and full held-out bindings remain unapproved. Existing restored-clip engine audit remains active, with repair/replay queued serially. All release criteria and evidence arrays are unchanged."
+  "last_progress_at": "2026-10-05T00:23:07.968275+00:00",
+  "last_progress": "Added complete static object engine-import reductions and a serial gated five-object audit. Fifty source-only synthetic checks and an actual busy-worker refusal pass; the new Godot script remains unexecuted, queued behind the exact independent-restoration-replay supervisor. Separately, the restored actor-only native-authoring import completed all 2552 times, preserving 18056 vertices and 36108 faces with passing pose/point-contact/skin/sampled-geometry checks. Combined scene and saved engine replay remain pending; 2066 surface-orientation failures remain. No motion, physics, human or release approval is granted, and all release criteria/evidence arrays are unchanged."
 }
