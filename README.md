@@ -304,3 +304,6 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 [Offline prop motion baking](docs/scene-prop-bake-v1.md) exports explicitly bound runtime motion to editable GLB and saved Godot tracks while preserving original actor assets and event/contact references. Three headless fixtures verify configured import fidelity; the 30 FPS import error and 6.25 ms physical event delay remain recorded. Export success supplies no animation-quality or release approval.
 
 [Studio prop animation baking](docs/studio-prop-bake-v1.md) adds scene placement, explicit ground choices, asynchronous baking and verified editable-asset downloads. Review preserves original failures and separates import fidelity, physical timing and sampled grip/ground conditions. A generated headless worker case passes the workflow; live UI and production motion quality remain unverified.
+
+
+[Saved actor and prop playback](docs/baked-scene-runtime-v1.md) packages original actor clips and baked prop tracks into a finite Godot scene with no live prop physics. Two headless fixtures validate complete poses, root deltas, exact event callbacks and non-grid end holds; 197 frozen source tests pass. Original physics/import failures and all animation-quality/release gates remain open.

@@ -139,3 +139,6 @@ CLI to source-bound asynchronous authoring and completed download validation.
 Its headless worker fixture adds workflow evidence while retaining the timing,
 import and interaction-quality limits above; live browser verification remains
 separate.
+
+
+Follow-up: [saved actor and prop playback](baked-scene-runtime-v1.md) adds a standalone source-preserving Godot main scene and finite composed playback audit. Its original-end hold and Float32 key envelope preserve saved bytes; original contact, timing and import failures remain separate.

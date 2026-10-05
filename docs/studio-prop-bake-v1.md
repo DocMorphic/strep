@@ -110,3 +110,6 @@ gates, generated Studio preservation and stale/busy UI replies are covered.
 Source/copy hashes remain unchanged. Local source-result SHA256:
 `750abf2b932a1baccea49c74592f9d62bd00e4222cd669ee14b09e5589fd0631`. Parsed workflow proof SHA256:
 `8586fb56ffa839ffae55628508dbdaeb94d0318252f4692e2dfa7589cfbfbd8f`.
+
+
+Follow-up: [saved actor and prop playback](baked-scene-runtime-v1.md) adds a standalone source-preserving Godot main scene and finite composed playback audit. Its original-end hold and Float32 key envelope preserve saved bytes; original contact, timing and import failures remain separate.
