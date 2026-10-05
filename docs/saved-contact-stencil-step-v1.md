@@ -36,3 +36,6 @@ Two-component composition result SHA256: `a3afb3dceb8a04f20dcaf0b5b5d9e48b327741
 Rejected three-component result SHA256: `1e39f8074b2685b5d4c55f0362cc192b73519019bb3923dc5fc5f6bdfa2a007e`.
 
 Raw observations and the serial driver remain local under ignored `reports/`. All prior surface failures and original selection remain visible. Anatomical/human review, cleanup measurements, held-out action/rig/object/partner studies and release acceptance remain outstanding. The single full-project goal remains active.
+
+
+The [serial import and developer-review follow-up](combined-contact-import-review-v1.md) is now attached to the exact live combined mesh handles. It waits for successful original exits and complete bound numerical prerequisites, then runs whole-scene engine validation, imported facing/side auditing and complete saved surface replay. Forty-eight small supervisor gates pass; actual engine/imported-surface results remain pending. Original selection, contact intent and motion caps remain unchanged.
