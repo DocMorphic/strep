@@ -217,6 +217,8 @@ jobs:
           tests/test_cumulative_coupled_contacts.py
           tests/test_warm_coupled_contacts.py
           tests/test_contact_backend_refinement.py
+          tests/test_seeded_contact_refinement.py
+          tests/test_native_fraction_probe.py
           tests/test_verify_warm_coupled_contacts.py
           tests/test_recentered_coupled_contacts.py
           tests/test_restore_coupled_contacts.py
