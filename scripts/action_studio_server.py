@@ -35,6 +35,7 @@ def allowed_file(url_path):
     if path in ('/correction-review-panel.mjs','/native-reference-player.mjs'):return ROOT/'scripts'/path[1:]
     if path in ('/native-grey-loader.mjs','/native-support-editor.mjs','/native-support-viewer.mjs','/native-support-viewer.html','/native-contact-clock.mjs','/native-contact-diagnostics.mjs'):return ROOT/'scripts'/path[1:]
     if path=='/material-region-author.mjs':return ROOT/'scripts/material-region-author.mjs'
+    if path=='/material-region-orientation.mjs':return ROOT/'scripts/material-region-orientation.mjs'
     if path=='/material-patch-loader.mjs':return ROOT/'scripts/material-patch-loader.mjs'
     if path=='/native-scene-editor.mjs':return ROOT/'scripts/native-scene-editor.mjs'
     if path=='/native-scene-game-editor.mjs':return ROOT/'scripts/native-scene-game-editor.mjs'

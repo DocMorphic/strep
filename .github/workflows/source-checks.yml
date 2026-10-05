@@ -399,6 +399,7 @@ jobs:
           node tests/test_native_scene_editor.mjs
           node tests/test_native_scene_fit_editor.mjs
           node tests/test_material_region_author.mjs
+          node tests/test_material_region_orientation.mjs
           node tests/test_material_patch_loader.mjs
           node tests/test_native_contact_revision.mjs
           node tests/test_native_scene_game_editor.mjs

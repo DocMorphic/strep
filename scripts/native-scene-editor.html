@@ -72,7 +72,9 @@
     </div>
     <div class="toolbar"><button class="btn" id="nativeSceneRegionAuthorPreview">Preview selected triangles</button><button class="btn" id="nativeSceneRegionAuthorSave" disabled>Save selected region</button></div>
     <p class="small" id="nativeSceneRegionAuthorSummary" aria-live="polite"></p>
-    <details><summary>Exact triangles and default-pose vertices</summary><pre id="nativeSceneRegionAuthorFaces"></pre></details>
+    <div id="nativeSceneRegionAuthorOrientation" style="display:flex;flex-wrap:wrap;gap:10px" aria-label="Selected surface winding in the default pose"></div>
+    <p class="small">Gold arrows follow original triangle winding. A dot points toward you; a cross points away. Numbers identify vertices for explicit correspondence. These views use the character's default pose.</p>
+    <details><summary>Exact triangles, default-pose vertices and winding</summary><pre id="nativeSceneRegionAuthorFaces"></pre></details>
    </details>
   </details>
  </details>

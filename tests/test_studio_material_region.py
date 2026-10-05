@@ -104,7 +104,7 @@ def test_bad_or_incomplete_selections_reject_and_never_save_bundle(tmp_path,monk
     assert not regions.folder_for('bad','material-region-bundles').exists()
 
 
-@pytest.mark.parametrize('fault',['binding','patch','selection','request','input','method','extra-file','source','approval'])
+@pytest.mark.parametrize('fault',['binding','patch','selection','request','input','method','orientation-method','extra-file','source','approval'])
 def test_reviewed_save_rejects_changed_preview_before_bundle_creation(tmp_path,monkeypatch,fault):
     p,resolver,a=setup(tmp_path,monkeypatch);preview,request=save_preview(p,resolver);folder=regions.folder_for('preview')
     if fault=='binding':request['preview_sha256']='0'*64
@@ -113,6 +113,7 @@ def test_reviewed_save_rejects_changed_preview_before_bundle_creation(tmp_path,m
     elif fault=='request':v=read(folder/'request.json');v['role']='RightHand';save(folder/'request.json',v)
     elif fault=='input':(folder/'input/rig-profile.json').write_bytes(b'{}')
     elif fault=='method':(tmp_path/'scripts/studio_material_region.py').write_bytes(b'changed')
+    elif fault=='orientation-method':(tmp_path/'scripts/material_region_orientation.py').write_bytes(b'changed')
     elif fault=='extra-file':(folder/'unreviewed.json').write_bytes(b'{}')
     elif fault=='source':a.write_bytes(a.read_bytes()+b'x')
     else:
@@ -138,6 +139,51 @@ def test_actual_python_receipts_pass_browser_contract(tmp_path,monkeypatch):
     code="import {readFileSync} from 'node:fs'; import {checkedAuthorPreview,checkedAuthorSave} from "+json.dumps(module)+"; const v=JSON.parse(readFileSync(process.argv[1],'utf8')); checkedAuthorSave(v.saved,checkedAuthorPreview(v.preview,v.request));"
     result=subprocess.run(['node','--input-type=module','-e',code,str(payload)],capture_output=True,text=True)
     assert result.returncode==0,result.stdout+result.stderr
+
+
+def test_complete_orientation_keeps_original_triangles_and_is_bound_on_save(tmp_path,monkeypatch):
+    p,resolver,a=setup(tmp_path,monkeypatch);p['vertices']=[[6,0,i] for i in range(4)];before=sha256(a)
+    # The fixture's fourth vertex is deliberately 75% owned by this subtree.
+    p['selector']['minimum_weight']=.75
+    result,request=save_preview(p,resolver);value=result['orientation'];folder=regions.folder_for('preview')
+    assert value['face_references']==[[6,0,0],[6,0,1]] and value['triangle_vertex_indices']==[[0,1,2],[0,2,3]]
+    assert len(value['triangle_unit_winding_normals'])==2
+    assert np.allclose(np.linalg.norm(value['triangle_unit_winding_normals'],axis=1),1)
+    assert value['patch_winding']==result['patch']['winding'] and value['original_winding_preserved']
+    assert sha256(folder/'orientation.json')==result['orientation_sha256']
+    saved=regions.save_region(request,resolver,'saved')
+    assert saved['orientation_sha256']==result['orientation_sha256'] and sha256(a)==before
+    assert server.allowed_file('/material-region-orientation.mjs')==server.ROOT/'scripts/material-region-orientation.mjs'
+
+
+def test_actual_original_face_reversal_reverses_directions_without_editing_vertices(tmp_path,monkeypatch):
+    p,resolver,a=setup(tmp_path,monkeypatch);p['vertices']=[[6,0,i] for i in range(4)]
+    p['selector']['minimum_weight']=.75
+    first=regions.preview(p,resolver,'forward')
+    rig=RigAsset.load(a);doc=copy.deepcopy(rig.document);binary=bytearray(rig.binary)
+    doc['meshes'][0]['primitives'][0]['indices']=unsigned(doc,binary,[0,2,1,0,3,2],'SCALAR')
+    write_glb(a,doc,binary);p['actor']['sha256']=sha256(a)
+    profile=json.loads(p['profile_json']);profile['character_sha256']=sha256(a);p['profile_json']=json.dumps(profile)
+    p['profile_sha256']=hashlib.sha256(p['profile_json'].encode()).hexdigest()
+    second=regions.preview(p,resolver,'reverse')
+    assert first['patch']['reference_positions_m']==second['patch']['reference_positions_m']
+    assert second['orientation']['triangle_vertex_indices']==[[0,2,1],[0,3,2]]
+    assert np.array_equal(np.asarray(first['orientation']['triangle_unit_winding_normals']),-np.asarray(second['orientation']['triangle_unit_winding_normals']))
+    assert first['orientation']['triangle_twice_areas_m2']==second['orientation']['triangle_twice_areas_m2']
+
+
+@pytest.mark.parametrize('fault',['normal','indices','centroid','approval'])
+def test_orientation_replay_rejects_even_when_artifact_and_caller_hashes_are_refreshed(tmp_path,monkeypatch,fault):
+    p,resolver,_=setup(tmp_path,monkeypatch);result,request=save_preview(p,resolver);folder=regions.folder_for('preview')
+    value=read(folder/'orientation.json')
+    if fault=='normal':value['triangle_unit_winding_normals'][0]=[-x for x in value['triangle_unit_winding_normals'][0]]
+    elif fault=='indices':value['triangle_vertex_indices'][0].reverse()
+    elif fault=='centroid':value['triangle_centroids_m'][0][0]+=.1
+    else:value['contact_intent_approved']=True
+    save(folder/'orientation.json',value);stored=read(folder/'result.json');stored['orientation_sha256']=sha256(folder/'orientation.json')
+    save(folder/'result.json',stored);request['preview_sha256']=sha256(folder/'result.json')
+    with pytest.raises(ValueError,match='orientation replay'):regions.save_region(request,resolver,'rejected')
+    assert not regions.folder_for('rejected','material-region-bundles').exists()
 
 
 @pytest.mark.parametrize('fault,status',[('host',403),('origin',403),('type',415),('size',400),('busy',409),('valid',201)])

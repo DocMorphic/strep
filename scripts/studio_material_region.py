@@ -9,10 +9,11 @@ import numpy as np
 from urllib.parse import urlsplit
 from material_patch_bundle import create, verify, source_binding, fields, sha_binding, METHODS as BUNDLE_METHODS, SELECTION_SCHEMA
 from rig_material_patch import MaterialSurface, require
+from material_region_orientation import preview as orientation_preview
 from strep import ROOT, read, save, sha256, now
 
 SCHEMA='strep-studio-material-region-v1'
-METHODS=tuple(dict.fromkeys(BUNDLE_METHODS+('studio_material_region.py',)))
+METHODS=tuple(dict.fromkeys(BUNDLE_METHODS+('studio_material_region.py','material_region_orientation.py')))
 PREFIXES=('/files/rig-jobs/','/files/character-assets/','/files/native-correction-previews/',
           '/files/native-support-jobs/','/files/native-scene-jobs/','/files/native-scene-fit-jobs/')
 NAME=re.compile(r'[A-Za-z0-9_-]{1,64}')
@@ -83,6 +84,7 @@ def preview(payload,resolver,name):
         material=MaterialSurface(input_dir/'character.glb',input_dir/'rig-profile.json',
                                  character_sha256=binding['character_sha256'],profile_sha256=binding['profile_sha256'])
         patch=selected_patch(material,payload);save(folder/'patch.json',patch)
+        orientation=orientation_preview(material,patch);save(folder/'orientation.json',orientation)
         selection=dict(schema=SELECTION_SCHEMA,source=binding,patches=[dict(id=payload['patch_id'],role=payload['role'],
                            face_references=patch['face_references'],selector=copy.deepcopy(payload['selector']))])
         save(folder/'selection.json',selection);material.check_inputs()
@@ -92,11 +94,12 @@ def preview(payload,resolver,name):
         result=dict(schema=SCHEMA,status='complete',id=name,at=now(),request_sha256=sha256(folder/'request.json'),
                     input_sha256={n:sha256(input_dir/n) for n in ('character.glb','rig-profile.json')},
                     patch_sha256=sha256(folder/'patch.json'),selection_sha256=sha256(folder/'selection.json'),
+                    orientation_sha256=sha256(folder/'orientation.json'),
                     implementation_sha256=methods,all_picked_vertices_accounted=True,anatomical_review_pending=True,
                     animation_edited=False,motion_contacts_measured=False,engine_executed=False,human_reviewed=False,
                     quality_approved=False,training_admitted=False,release_approved=False)
         save(folder/'result.json',result);save(folder/'pipeline.json',dict(status='complete'))
-        return dict(result,result_sha256=sha256(folder/'result.json'),request=copy.deepcopy(payload),patch=patch)
+        return dict(result,result_sha256=sha256(folder/'result.json'),request=copy.deepcopy(payload),patch=patch,orientation=orientation)
     except Exception as exc:
         save(folder/'pipeline.json',dict(status='failed',error=str(exc),quality_approved=False,release_approved=False));raise
 
@@ -105,7 +108,7 @@ def checked_preview(name,bound,resolver):
     folder=folder_for(name);sha_binding(bound,'preview binding')
     require(sha256(folder/'result.json')==bound,'Region preview differs from caller binding')
     result=read(folder/'result.json');request=read(folder/'request.json');syntax(request)
-    fields(result,('schema','status','id','at','request_sha256','input_sha256','patch_sha256','selection_sha256',
+    fields(result,('schema','status','id','at','request_sha256','input_sha256','patch_sha256','selection_sha256','orientation_sha256',
                    'implementation_sha256','all_picked_vertices_accounted','anatomical_review_pending',
                    'animation_edited','motion_contacts_measured','engine_executed','human_reviewed',
                    'quality_approved','training_admitted','release_approved'),'region preview result')
@@ -117,11 +120,12 @@ def checked_preview(name,bound,resolver):
     require(set(result['implementation_sha256'])==set(METHODS)
             and all(sha256(ROOT/'scripts'/n)==h for n,h in result['implementation_sha256'].items()), 'Region methods changed')
     files={p.relative_to(folder).as_posix() for p in folder.rglob('*') if p.is_file()}
-    require(files=={'input/character.glb','input/rig-profile.json','request.json','result.json','pipeline.json','patch.json','selection.json'},
+    require(files=={'input/character.glb','input/rig-profile.json','request.json','result.json','pipeline.json','patch.json','selection.json','orientation.json'},
             'Complete exact region preview file population required')
     require(all(not p.is_symlink() and p.resolve().is_relative_to(folder) for p in folder.rglob('*')),'Region preview must stay local')
     require(result['request_sha256']==sha256(folder/'request.json') and result['patch_sha256']==sha256(folder/'patch.json')
             and result['selection_sha256']==sha256(folder/'selection.json')
+            and result['orientation_sha256']==sha256(folder/'orientation.json')
             and set(result['input_sha256'])=={'character.glb','rig-profile.json'}
             and all(sha256(folder/'input'/n)==h for n,h in result['input_sha256'].items()),'Region preview input changed')
     require((folder/'input/rig-profile.json').read_bytes()==request['profile_json'].encode('utf8')
@@ -130,13 +134,15 @@ def checked_preview(name,bound,resolver):
     material=MaterialSurface(folder/'input/character.glb',folder/'input/rig-profile.json',
             character_sha256=result['input_sha256']['character.glb'],profile_sha256=result['input_sha256']['rig-profile.json'])
     patch=selected_patch(material,request);require(read(folder/'patch.json')==patch,'Complete region replay differs')
+    require(read(folder/'orientation.json')==orientation_preview(material,patch),'Complete orientation replay differs')
     selection=dict(schema=SELECTION_SCHEMA,source=dict(material.source),patches=[dict(id=request['patch_id'],role=request['role'],
                     face_references=patch['face_references'],selector=copy.deepcopy(request['selector']))])
     require(read(folder/'selection.json')==selection,'Reviewed triangle selection differs')
     material.check_inputs();require(sha256(folder/'result.json')==bound
             and result['request_sha256']==sha256(folder/'request.json')
             and result['patch_sha256']==sha256(folder/'patch.json')
-            and result['selection_sha256']==sha256(folder/'selection.json'),'Region preview changed during replay')
+            and result['selection_sha256']==sha256(folder/'selection.json')
+            and result['orientation_sha256']==sha256(folder/'orientation.json'),'Region preview changed during replay')
     return folder,result,request,patch
 
 
@@ -153,6 +159,7 @@ def save_region(payload,resolver,name):
                bundle=f'material-region-bundles/{name}',result_sha256=bound,patch_id=request['patch_id'],
                character_sha256=request['actor']['sha256'],profile_sha256=result['input_sha256']['rig-profile.json'],
                faces=len(patch['face_references']),vertices=len(patch['vertices']),explicit_triangle_selection=True,
+               orientation_sha256=result['orientation_sha256'],
                original_selected=True,anatomical_review_pending=True,animation_edited=False,motion_contacts_measured=False,engine_executed=False,
                human_reviewed=False,quality_approved=False,training_admitted=False,release_approved=False)
     save(receipt,value);return value
