@@ -202,6 +202,7 @@ jobs:
           tests/test_coupled_native_contacts.py
           tests/test_central_coupled_contacts.py
           tests/test_budgeted_native_conic.py
+          tests/test_checked_native_proposal.py
           tests/test_measured_proposal_reserve.py
           tests/test_trust_box_reserve.py
           tests/test_native_contact_support.py
@@ -210,6 +211,7 @@ jobs:
           tests/test_native_scene_geometry.py
           tests/test_native_geometry_cache.py
           tests/test_cumulative_coupled_contacts.py
+          tests/test_warm_coupled_contacts.py
           tests/test_recentered_coupled_contacts.py
           tests/test_restore_coupled_contacts.py
           tests/test_verify_coupled_restoration.py
