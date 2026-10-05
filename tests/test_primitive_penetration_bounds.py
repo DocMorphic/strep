@@ -81,8 +81,9 @@ def test_near_parallel_edge_axes_are_retained_and_touch_remains_uncertain():
     assert tilted['axes_evaluated'] > parallel['axes_evaluated']
     assert not parallel['definitely_separated'] and not parallel['definitely_penetrating']
     assert parallel['penetration_lower_m'] == 0 and parallel['penetration_upper_m'] > 0
-    # The new read-only mathematical query must not silently promote physics.
-    with pytest.raises(ValueError, match='not qualified'): require_release_geometry(c)
+    # Mathematical uncertainty remains explicit even when release accepts this shape.
+    assert require_release_geometry(c)==c
+    assert not parallel['physics_release_qualified']
 
 
 def test_analytic_sphere_branch_needs_no_prism_even_when_budget_is_too_small_for_a_mesh():
@@ -104,7 +105,8 @@ def test_public_release_preview_is_bound_query_without_changing_qualification():
     c, box = Geometry('cylinder', (.2, 1.)), Geometry('box', (.3, .4, .5))
     result = preview_penetration_bounds(c, [0, 0, 0], I, box, [.1, 0, 0], I)
     assert result == bounds(c, [0, 0, 0], I, box, [.1, 0, 0], I)
-    with pytest.raises(ValueError, match='not qualified'): require_release_geometry(c)
+    assert require_release_geometry(c)==c
+    assert not result['physics_release_qualified'] and not result['release_approved']
 
 
 @pytest.mark.parametrize('seed', range(8))

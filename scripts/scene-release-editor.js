@@ -39,7 +39,7 @@ export function createSceneReleaseEditor({getContext,onComplete}){
    by('sceneReleaseFrame').value=data.earliest_release[data.objects[0]];by('sceneReleaseLabel').value='Object release';
    by('sceneReleaseMass').value='5';by('sceneReleaseFriction').value='.6';by('sceneReleaseRestitution').value='0';by('sceneReleaseCollisionMode').value='floor_only';
    try{const draft=JSON.parse(localStorage.getItem('strep:release:'+data.revision));if(draft)for(const name of fields)if(draft[name]!==undefined)by('sceneRelease'+name).value=draft[name];}catch{}
-   enabled();if(!busy)status('Saved scene ready. Boxes and spheres use their matching collision shapes. Static mode requires stationary props. Moving mode follows other props on the shared clock using Jolt; prescribed props do not react to impacts. Sphere release uses Jolt. Cylinder tracks can be previewed and exported; cylinder physics release is not available yet. Materials apply to both surfaces. Actors are not colliders in this mode.');
+   enabled();if(!busy)status('Saved scene ready. Boxes, spheres and cylinders use matching collision shapes. Static mode requires stationary props. Moving props follow the shared clock using Jolt and do not react to impacts. Sphere and cylinder release use Jolt. Review contact and settling results before using the bake. Materials apply to both surfaces. Actors are not colliders in this mode.');
   }catch(error){if(token===version){source=null;enabled();if(!busy)status(error.message);}}
  }};
 }

@@ -4,7 +4,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 from object_dynamics import finite_array
 from scene_constraints import sample_object
-from release_geometry import body_geometry,geometry_fields,primitive_gap,floor_gaps,require_release_geometry
+from release_geometry import body_geometry,geometry_fields,primitive_gap,floor_gaps,require_release_geometry,convex_test,convex_gap,preview_penetration_bounds
 
 
 def validate_colliders(values):
@@ -16,7 +16,7 @@ def validate_colliders(values):
         name=item['id']
         if not isinstance(name,str) or not re.fullmatch('[A-Za-z][A-Za-z0-9_:-]{0,80}',name) or name=='floor' or name in seen:raise ValueError('Invalid or duplicate collider ID')
         seen.add(name);p=finite_array(item['position_m'],(3,),'collider position');geometry=require_release_geometry(body_geometry(item));q=finite_array(item['rotation_xyzw'],(4,),'collider rotation')
-        if max(geometry.dimensions)*(2 if geometry.shape=='sphere' else 1)>100 or abs(np.linalg.norm(q)-1)>1e-6:raise ValueError('Invalid collider shape or orientation')
+        if max(geometry.local_size())>100 or abs(np.linalg.norm(q)-1)>1e-6:raise ValueError('Invalid collider shape or orientation')
         for field in ['friction','restitution']:
             if type(item[field]) not in (int,float) or not np.isfinite(item[field]) or not 0<=item[field]<=1:raise ValueError('Invalid collider material')
         result.append(dict(item,position_m=p.tolist(),rotation_xyzw=q.tolist()))
@@ -56,15 +56,26 @@ def audit_collisions(request,observations,release_frame):
         is_moving='positions_m' in item
         other_p=np.array(item['positions_m'][1:]) if is_moving else np.repeat([item['position_m']],len(p),axis=0)
         other_r=Rotation.from_quat(item['rotations_xyzw'][1:] if is_moving else [item['rotation_xyzw']]*len(p)).as_matrix()
+        bounds=[]
         if item.get('shape')=='convex':
-            from convex_colliders import ConvexBoxTest,ConvexSphereTest
-            test=ConvexBoxTest(item['points_m']) if geometry.shape=='box' else ConvexSphereTest(item['points_m'])
-            gaps=np.array([test.gap(pos,rot,geometry.dimensions,op,orr) if geometry.shape=='box' else test.gap(pos,geometry.dimensions[0],op,orr) for pos,rot,op,orr in zip(p,r,other_p,other_r)])
+            test=convex_test(geometry,item['points_m'])
+            if geometry.shape=='cylinder':
+                bounds=[test.bounds(pos,rot,geometry.dimensions,op,orr) for pos,rot,op,orr in zip(p,r,other_p,other_r)]
+            else:gaps=np.array([convex_gap(test,geometry,pos,rot,op,orr) for pos,rot,op,orr in zip(p,r,other_p,other_r)])
+        elif 'cylinder' in (geometry.shape,body_geometry(item).shape):
+            bounds=[preview_penetration_bounds(geometry,pos,rot,body_geometry(item),op,orr) for pos,rot,op,orr in zip(p,r,other_p,other_r)]
         else:gaps=np.array([primitive_gap(geometry,pos,rot,body_geometry(item),op,orr) for pos,rot,op,orr in zip(p,r,other_p,other_r)])
+        if bounds:gaps=np.array([b['outer_projection_gap_m']-b['numerical_padding_m'] for b in bounds])
         contacts=[o['tick'] for o in observations if item['id'] in o.get('contact_colliders',[])]
         rows.append(dict(id=item['id'],shape='convex' if item.get('shape')=='convex' else body_geometry(item).shape,motion='prescribed' if is_moving else 'static',max_penetration_m=float(max(0.,-gaps.min())),final_signed_axis_gap_m=float(gaps[-1]),
             first_contact_source_frame=release_frame+contacts[0]*30/request['physics_fps'] if contacts else None,
             ticks_with_reported_contact=len(contacts)))
+        if bounds:
+            rows[-1].update(penetration_bounds_by_tick=[dict(tick=o['tick'],**b) for o,b in zip(observations,bounds)],
+                max_penetration_lower_m=max(b['penetration_lower_m'] for b in bounds),
+                max_penetration_m=max(b['penetration_upper_m'] for b in bounds),
+                max_penetration_uncertainty_m=max(b['penetration_upper_m']-b['penetration_lower_m'] for b in bounds),
+                gap_method='Outer-prism projection minus arithmetic pad; penetration uses padded upper bounds')
     final_ids=sorted(set(observations[-1].get('contact_colliders',[])))
     final_speed=float(np.linalg.norm(observations[-1]['linear_velocity_m_s']))
     final_angular=float(np.linalg.norm(observations[-1]['angular_velocity_rad_s']))

@@ -33,7 +33,11 @@ def validate(request):
     result['inertia_diagonal_kg_m2']=np.diag(inertia).tolist()
     if type(request['physics_fps'])!=int or request['physics_fps'] not in (120,240,480):raise ValueError('Unsupported simulation clock')
     if type(request['steps'])!=int or not 1<=request['steps']<=14400:raise ValueError('Invalid simulation length')
-    backend=request.get('backend','Jolt Physics' if geometry.shape=='sphere' else 'GodotPhysics3D')
+    # Matched cylinder drops retain >10mm GodotPhysics3D floor penetration.
+    # Jolt is the measured default for any cylinder in this release world;
+    # explicit backend choices stay observable for comparison studies.
+    cylinder_world=geometry.shape=='cylinder' or any(body_geometry(c).shape=='cylinder' for c in result['static_colliders'])
+    backend=request.get('backend','Jolt Physics' if geometry.shape=='sphere' or cylinder_world else 'GodotPhysics3D')
     if backend not in ['GodotPhysics3D','Jolt Physics']:raise ValueError('Unsupported physics backend')
     result['backend']=backend
     from moving_release_colliders import validate_moving
@@ -57,6 +61,7 @@ def simulate(request,output):
     script=ROOT/'scripts/godot_object_release.gd';shutil.copyfile(script,project/'release.gd')
     save(output/'request.json',request)
     save(output/'provenance.json',dict(at=now(),engine_sha256=sha256(ENGINE),script_sha256=sha256(script),
+        collision_methods_sha256={name:sha256(ROOT/'scripts'/name) for name in ['release_colliders.py','moving_release_colliders.py','convex_colliders.py','primitive_penetration_bounds.py','object_geometry.py']},
         driver_sha256=sha256(__file__),geometry_driver_sha256=sha256(ROOT/'scripts/release_geometry.py'),geometry=body_geometry(request).record(),gravity_m_s2=[0,-9.81,0],
         backend=request['backend'],assumptions='Uniform solid primitive with centered COM; optional Y-up floor and explicit static or prescribed kinematic primitives. Prescribed props have infinite effective mass and do not react to impact. Optional actor-derived convex envelopes are approximations; no actor response. Hypothetical mass/material parameters. Zero damping, sleeping disabled, CCD enabled.',static_colliders=request['static_colliders'],moving_collider_ids=[x['id'] for x in request['moving_colliders']]))
     save(output/'pipeline.json',dict(status='running'))
@@ -137,7 +142,7 @@ def release_request(track,release_frame,*,mass_kg=5.,physics_fps=240,friction=.6
         floor_enabled=True,floor_height_m=0.,contact_max_allowed_penetration_m=contact_max_allowed_penetration_m)
     # The matched drop study retained a >10mm GodotPhysics3D/240Hz sphere
     # impact failure. Jolt/240Hz passed unchanged geometry/contact screens.
-    if body_geometry(track).shape=='sphere':request['backend']='Jolt Physics'
+    if body_geometry(track).shape in ['sphere','cylinder']:request['backend']='Jolt Physics'
     validate(request)
     return request
 

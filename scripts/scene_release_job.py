@@ -69,7 +69,7 @@ def metadata(url):
     source=source_metadata(url);scene=source['bundle']['scene']
     return dict(source_url=url,revision=source['revision'],frames=scene['frame_count'],objects=list(scene['objects']),
         earliest_release={name:max([2]+[c['end_frame']+1 for c in scene['contacts'] if c.get('target',{}).get('space')=='object' and c['target'].get('object')==name]) for name in scene['objects']},
-        supported='Saved native humanoid scenes; box/sphere release against floor, static primitives or prescribed moving primitives (Jolt). Prescribed objects retain authored motion and do not react to impacts. Optional actor proxies do not produce actor response.')
+        supported='Saved native humanoid scenes; box/sphere/cylinder release against floor, static primitives or prescribed moving primitives (Jolt). Cylinder overlap screens use padded nested-prism upper bounds and reject unresolved resource limits. Prescribed objects retain authored motion and do not react to impacts. Optional actor proxies do not produce actor response.')
 
 
 def validate(payload):
@@ -92,6 +92,8 @@ def validate(payload):
     track=dict(fps=30,object=name,**geometry_fields(scene['objects'][name]),positions_m=p.tolist(),rotations_xyzw=Rotation.from_matrix(r).as_quat().tolist())
     geometry=body_geometry(track)
     request=release_request(track,release,mass_kg=payload['mass_kg'],friction=payload['friction'],restitution=payload['restitution'])
+    if floor_gaps(geometry,p[release:release+1],r[release:release+1],request['floor_height_m'])[0] < -.001:
+        raise ValueError('Released object overlaps floor at release; choose a clear pose')
     if mode=='static_scene':
         from release_colliders import compile_colliders,box_separation
         request['static_colliders']=compile_colliders(scene,name,release,friction=payload['friction'],restitution=payload['restitution'])
@@ -108,11 +110,11 @@ def validate(payload):
                 raise ValueError('Released object overlaps moving collider '+collider['id']+' at release; choose a clear pose')
     if actor_mode=='convex_skin':
         from actor_collision_proxies import compile_actor_proxies
-        from convex_colliders import ConvexBoxTest,ConvexSphereTest
+        from release_geometry import convex_test,convex_gap
         proxies,calibration=compile_actor_proxies(scene,source['base'],release,physics_fps=request['physics_fps'],friction=payload['friction'],restitution=payload['restitution'])
         for collider in proxies:
             center=np.array(collider['positions_m'][1]);rotation=Rotation.from_quat(collider['rotations_xyzw'][1]).as_matrix()
-            gap=ConvexBoxTest(collider['points_m']).gap(p[release],r[release],geometry.dimensions,center,rotation) if geometry.shape=='box' else ConvexSphereTest(collider['points_m']).gap(p[release],geometry.dimensions[0],center,rotation)
+            gap=convex_gap(convex_test(geometry,collider['points_m']),geometry,p[release],r[release],center,rotation)
             if gap < -.001:
                 raise ValueError('Released object overlaps body proxy '+collider['id']+' at release; retain or revise the authored pose')
         request['backend']='Jolt Physics';request['moving_colliders']=request.get('moving_colliders',[])+proxies
@@ -147,7 +149,7 @@ def prepare(payload,folder):
     snapshot=folder/'source/implementation';snapshot.mkdir()
     for name in ['scene_release_job.py','scene_object_export.py','object_geometry_mesh.py','object_release.py','godot_object_release.gd','scene_constraints.py','object_geometry.py','audit_scene_orientation.py',
                  'strep.py','object_dynamics.py','gltf_tools.py','package_generated_scenes.py','inspect_motion.py','floor_contact.py','palm_contacts.py','build_soma_preview.py','release_colliders.py','moving_release_colliders.py',
-                 'convex_colliders.py','actor_collision_proxies.py','rig_asset.py','rig_clip_import.py','scene_runtime.py','godot_scene_clock.gd','release_geometry.py']:
+                 'convex_colliders.py','actor_collision_proxies.py','rig_asset.py','rig_clip_import.py','scene_runtime.py','godot_scene_clock.gd','release_geometry.py','primitive_penetration_bounds.py']:
         shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
     files={p.relative_to(folder).as_posix():sha256(p) for p in (folder/'source').rglob('*') if p.is_file()}
     save(folder/'request.json',dict(authored=payload,physics=physics,files=files,created_at=now()))

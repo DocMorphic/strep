@@ -11,7 +11,7 @@ from object_geometry import Geometry,scene_geometry
 from object_geometry_mesh import triangle_mesh
 from region_contact_objective import signed_distance
 from support_contact_v8 import torch_primitive_depth,torch_primitive_clearance_violation
-from release_geometry import floor_gaps,primitive_gap
+from release_geometry import floor_gaps
 from object_floor_placement import floor_lower_bound,place_above_floor
 
 CYLINDER=Geometry('cylinder',(.3,1.2))
@@ -95,19 +95,6 @@ def test_rotating_cylinder_placement_covers_interior_sweep():
 
 def test_cylinder_mesh_resource_limit_is_explicit():
     with pytest.raises(ValueError,match='resource limit'):triangle_mesh(CYLINDER,1e-9)
-
-
-def test_unqualified_release_is_rejected_at_all_public_entry_points():
-    from object_release import validate
-    from release_colliders import validate_colliders
-    from moving_release_colliders import validate_moving
-    body=dict(geometry=CYLINDER.record(),position_m=[0,1,0],rotation_xyzw=[0,0,0,1],friction=.4,restitution=0.)
-    request=dict(body,linear_velocity_m_s=[0,0,0],angular_velocity_rad_s=[0,0,0],mass_kg=1.,physics_fps=240,steps=8,floor_enabled=True,floor_height_m=0.)
-    with pytest.raises(ValueError,match='not qualified'):validate(request)
-    with pytest.raises(ValueError,match='not qualified'):validate_colliders([dict(body,id='can')])
-    moving=dict(id='can',geometry=CYLINDER.record(),positions_m=[[0,1,0]]*10,rotations_xyzw=[[0,0,0,1]]*10,friction=.4,restitution=0.)
-    with pytest.raises(ValueError,match='not qualified'):validate_moving([moving],8)
-    with pytest.raises(ValueError,match='not qualified'):primitive_gap(CYLINDER,[0,0,0],np.eye(3),Geometry('sphere',(.1,)),[0,1,0],np.eye(3))
 
 
 def test_cylinder_export_preserves_geometry_and_all_animated_transforms(tmp_path):

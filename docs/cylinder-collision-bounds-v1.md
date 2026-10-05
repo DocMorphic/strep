@@ -1,6 +1,6 @@
 # Cylinder penetration bounds before physics integration
 
-Native object animation already exports boxes, spheres and cylinders. Physics release still accepts boxes/spheres: enabling a cylinder collision shape alone would leave its independent overlap audit incomplete. `primitive_penetration_bounds.py` adds the required read-only geometry query for every box/sphere/cylinder pair, with an explicit penetration interval and retained uncertainty. `release_geometry.preview_penetration_bounds` exposes it separately from the existing qualified release path. No model, motion, scene target, source cap or physics policy changes.
+This document records the initial read-only query experiment. Native object animation already exported boxes, spheres and cylinders, while physics release then accepted boxes/spheres. `primitive_penetration_bounds.py` supplied the prerequisite geometry query for every primitive pair, with an explicit penetration interval and retained uncertainty. `release_geometry.preview_penetration_bounds` remains a mathematical diagnostic, independent of any engine qualification. The subsequent [cylinder physics integration](cylinder-physics-release-v1.md) now connects its upper bounds to release guards/audits, actual shapes/inertia and complete convex-envelope checks, with measured failures retained. The mathematical query itself does not establish physical or animation approval.
 
 ```python
 import numpy as np

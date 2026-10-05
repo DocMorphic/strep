@@ -108,6 +108,7 @@ jobs:
           tests/test_saved_breadth_failure_profile.py
           tests/test_object_geometry_mesh.py
           tests/test_primitive_penetration_bounds.py
+          tests/test_cylinder_release.py
           tests/test_reserved_object_fixtures.py
           tests/test_reserved_object_engine.py
           tests/test_reserved_partner_fixtures.py

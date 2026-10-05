@@ -24,8 +24,8 @@ def floor_gaps(geometry,positions,rotations,height=0.):
 
 
 def require_release_geometry(geometry):
-    if geometry.shape not in ['box','sphere']:
-        raise ValueError('Cylinder physics release is not qualified; authored cylinder tracks remain supported')
+    if geometry.shape not in ['box','sphere','cylinder']:
+        raise ValueError('Unsupported release primitive')
     return geometry
 
 
@@ -37,12 +37,25 @@ def preview_penetration_bounds(first,p,r,second,other_p,other_r,**settings):
 
 def primitive_gap(first,p,r,second,other_p,other_r):
     require_release_geometry(first);require_release_geometry(second)
+    if 'cylinder' in (first.shape,second.shape):
+        result=preview_penetration_bounds(first,p,r,second,other_p,other_r)
+        return result['outer_projection_gap_m']-result['numerical_padding_m']
     if first.shape=='sphere':
         if second.shape=='sphere':return float(np.linalg.norm(np.asarray(p)-other_p)-first.dimensions[0]-second.dimensions[0])
         return float(second.distance_gradient(np.asarray(p)[None],other_p,other_r)[0][0]-first.dimensions[0])
     if second.shape=='sphere':return primitive_gap(second,other_p,other_r,first,p,r)
     from release_colliders import box_separation
     return box_separation(p,r,first.dimensions,other_p,other_r,second.dimensions)
+
+
+def convex_test(geometry,points):
+    from convex_colliders import ConvexBoxTest,ConvexSphereTest,ConvexCylinderTest
+    return {'box':ConvexBoxTest,'sphere':ConvexSphereTest,'cylinder':ConvexCylinderTest}[geometry.shape](points)
+
+
+def convex_gap(test,geometry,p,r,other_p,other_r):
+    if geometry.shape=='sphere':return test.gap(p,geometry.dimensions[0],other_p,other_r)
+    return test.gap(p,r,geometry.dimensions,other_p,other_r)
 
 
 def check_installed_geometry(expected,actual):

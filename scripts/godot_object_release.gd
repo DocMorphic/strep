@@ -78,6 +78,11 @@ func primitive_shape(item: Dictionary) -> Shape3D:
 		var sphere := SphereShape3D.new()
 		sphere.radius = descriptor.radius_m
 		return sphere
+	if descriptor.shape == "cylinder":
+		var cylinder := CylinderShape3D.new()
+		cylinder.radius = descriptor.radius_m
+		cylinder.height = descriptor.height_m
+		return cylinder
 	var box := BoxShape3D.new()
 	box.size = vector(descriptor.size_m)
 	return box
@@ -85,6 +90,8 @@ func primitive_shape(item: Dictionary) -> Shape3D:
 func geometry_record(shape: Shape3D) -> Dictionary:
 	if shape is SphereShape3D:
 		return {"schema":"strep-object-geometry-v1","shape":"sphere","radius_m":shape.radius}
+	if shape is CylinderShape3D:
+		return {"schema":"strep-object-geometry-v1","shape":"cylinder","radius_m":shape.radius,"height_m":shape.height}
 	return {"schema":"strep-object-geometry-v1","shape":"box","size_m":vec(shape.size)}
 
 func _initialize() -> void:
