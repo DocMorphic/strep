@@ -73,6 +73,7 @@ jobs:
         run: >-
           python -m pytest -q
           tests/test_object_geometry_mesh.py
+          tests/test_reserved_object_fixtures.py
           tests/test_boundary_motion.py
           tests/test_paired_stage_rates.py
           tests/test_paired_temporal_neighbor.py

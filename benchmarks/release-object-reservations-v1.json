@@ -1,0 +1,20 @@
+{
+  "schema": "strep-reserved-object-fixtures-v1",
+  "status": "reserved_not_motion_evaluated",
+  "use_policy": "Reserve exact dimensions for frozen evaluation. Do not use motion outcomes on these objects to tune the generator or correction method. Record and retire/version a reservation if used during development. Static construction and import checks do not evaluate motion.",
+  "limitations": [
+    "Five distinct dimension sets across three primitive shape families, not five independent shape classes",
+    "Analytic convex boxes, sphere and cylinders only; no arbitrary mesh, concave, deformable or articulated object coverage",
+    "Generic opposing X-axis anchors are geometric references, not certified reachable grips",
+    "Scene placement, task contacts, partner interactions, mass/material/physics, baseline/method and remaining release gates are not yet frozen",
+    "No exact historical geometry-exposure inventory or checkpoint-training independence claim",
+    "No motion, semantic, animator-cleanup or release evidence"
+  ],
+  "objects": [
+    {"id": "object-held-box-tall", "geometry": {"schema": "strep-object-geometry-v1", "shape": "box", "size_m": [0.31, 0.47, 0.23]}, "motion_trial_executed": false},
+    {"id": "object-held-box-flat", "geometry": {"schema": "strep-object-geometry-v1", "shape": "box", "size_m": [0.64, 0.18, 0.37]}, "motion_trial_executed": false},
+    {"id": "object-held-sphere", "geometry": {"schema": "strep-object-geometry-v1", "shape": "sphere", "radius_m": 0.173}, "motion_trial_executed": false},
+    {"id": "object-held-cylinder-tall", "geometry": {"schema": "strep-object-geometry-v1", "shape": "cylinder", "radius_m": 0.119, "height_m": 0.51}, "motion_trial_executed": false},
+    {"id": "object-held-cylinder-flat", "geometry": {"schema": "strep-object-geometry-v1", "shape": "cylinder", "radius_m": 0.287, "height_m": 0.136}, "motion_trial_executed": false}
+  ]
+}
