@@ -68,3 +68,7 @@ Anatomical facing, explicit material hand patches, task-specific targets/timing,
 motion/engine trials, method/baseline freeze and genuine human review remain
 required. The full release fixture set and acceptance matrix remain incomplete;
 `held_out_fixtures` is still unset and no release evidence is granted.
+
+The subsequent headless neutral import checker and its serial queue are described
+in [reserved-partner-engine-v1.md](reserved-partner-engine-v1.md). Actual engine
+execution for these layouts remains pending at that source publication.
