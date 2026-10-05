@@ -204,6 +204,7 @@ jobs:
           tests/test_cached_contact_norms.py
           tests/test_coupled_native_contacts.py
           tests/test_central_coupled_contacts.py
+          tests/test_stored_native_coupled_contacts.py
           tests/test_budgeted_native_conic.py
           tests/test_checked_native_proposal.py
           tests/test_measured_proposal_reserve.py
