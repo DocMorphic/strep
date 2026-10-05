@@ -1,0 +1,22 @@
+<details id="scenePropBakePanel" class="rig-panel">
+ <summary>Bake prop animation</summary>
+ <p class="small">Choose a completed prop runtime above. Bake its holds, handoffs and physical releases into editable animation tracks. Original character clips and contact intent remain preserved.</p>
+ <button class="btn" id="scenePropBakeBind">Use selected prop runtime</button>
+ <div class="rig-field-grid">
+  <label>Scene X (m)<input id="scenePropBakeX" type="number" value="0" step="0.01"></label>
+  <label>Scene Y (m)<input id="scenePropBakeY" type="number" value="0" step="0.01"></label>
+  <label>Scene Z (m)<input id="scenePropBakeZ" type="number" value="0" step="0.01"></label>
+  <label>Scene rotation X (deg)<input id="scenePropBakeRX" type="number" value="0" step="1"></label>
+  <label>Scene rotation Y (deg)<input id="scenePropBakeRY" type="number" value="0" step="1"></label>
+  <label>Scene rotation Z (deg)<input id="scenePropBakeRZ" type="number" value="0" step="1"></label>
+  <label>Ground<select id="scenePropBakeFloor"><option value="">Choose ground</option><option value="plane">World ground plane</option><option value="none">No ground collision</option></select></label>
+  <label>Ground height (m)<input id="scenePropBakeHeight" type="number" value="0" step="0.01"></label>
+  <label>Ground friction<input id="scenePropBakeFriction" type="number" value="0.6" min="0" max="1" step="0.1"></label>
+  <label>Ground restitution<input id="scenePropBakeRestitution" type="number" value="0" min="0" max="1" step="0.1"></label>
+ </div>
+ <p class="small">The scene transform stays fixed. The ground plane stays in world space. Review the baked contact and timing results before using the motion.</p>
+ <div class="toolbar"><button class="btn" id="scenePropBakeSave">Save bake request</button><button class="btn primary" id="scenePropBakeBuild">Bake editable animation</button></div>
+ <p class="small" id="scenePropBakeStatus" role="status">Bind a completed prop runtime to begin.</p>
+ <div class="toolbar"><select id="scenePropBakeJobs" aria-label="Prop animation bake job"></select><button class="btn" id="scenePropBakeRefresh">Refresh bakes</button><button class="btn" id="scenePropBakeReview">Show bake &amp; results</button></div>
+ <div id="scenePropBakeResults" aria-live="polite"></div>
+</details>

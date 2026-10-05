@@ -133,3 +133,9 @@ The final frozen regression covers 231 passing tests and 0 explicit
 engine skips across prop bake/runtime/ownership, native scene/clock/object
 assets and Studio grip packaging. All source/copy hashes remain bound. Its
 local result SHA256 is `ce59b02418d1892f9edf383d088e52516390d974e800b3fc35641cd6d32b2888`.
+
+Follow-up: [Studio prop animation baking](studio-prop-bake-v1.md) connects this
+CLI to source-bound asynchronous authoring and completed download validation.
+Its headless worker fixture adds workflow evidence while retaining the timing,
+import and interaction-quality limits above; live browser verification remains
+separate.
