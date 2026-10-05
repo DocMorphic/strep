@@ -295,3 +295,6 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 
 
 [Shared scene prop ownership](docs/scene-prop-ownership-v1.md) adds an opt-in native runtime for two-hand holds, partial releases, character handoffs and multiple dynamic props on one actor clock. Final validation passes 252 isolated source tests and completes 18 headless engine cases. Exact physical event timing fails at all tested rates, and 60 Hz floor penetration exceeds the original screen; both limits remain recorded. Application grip bindings, production motion review and release evidence are still required.
+
+
+[Source-bound prop runtime packages](docs/scene-prop-runtime-v1.md) now carry explicit joint/offset bindings, complete authored/physical prop modes, imported source meshes and a shared physics-driven Godot main scene. Actual generated GLB/native-resource studies complete 1,427 boundary records and verify exported startup; 281 isolated source tests pass. Fractional physics timing remains failed, source contact measurements remain reference-only, and Studio binding authoring/production review are still open.

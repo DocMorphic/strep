@@ -7,8 +7,9 @@ support two-hand holds, partial release, simultaneous changes, handoffs between
 characters, and independent release of several props. Events authorize intent;
 they do not certify a successful grasp or believable animation.
 
-This SDK requires application bindings. Studio and exported native packages do
-not automatically create these dynamic bodies or grip providers. The existing
+This SDK requires explicit bindings. The [source-bound package exporter](../../docs/scene-prop-runtime-v1.md)
+can install bodies and providers from authored source joint/offset choices;
+Studio does not yet create those bindings. The existing
 [single-prop consumer](OBJECT-EVENTS.md) and [baked scene clock](SCENES.md) retain
 their separate contracts. Do not attach them as additional drivers of this scene.
 

@@ -92,7 +92,7 @@ static func load_scene(parent: Node3D, folder: String, config: Dictionary) -> Di
 				for name in config.objects.names:
 					if node.name == "Object_" + str(name):
 						if objects.has(name): container.free(); return {}
-					objects[name] = node
+						objects[name] = node
 		if object_player == null or objects.size() != config.objects.names.size(): container.free(); return {}
 	var helper := ScenePlayer.new()
 	var code := helper.bind(entries, object_player, object_clip, objects, event_doc)

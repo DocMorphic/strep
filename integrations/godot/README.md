@@ -77,3 +77,6 @@ References: [AnimationPlayer seek](https://docs.godotengine.org/en/stable/classe
 
 
 [Shared scene prop ownership](SCENE-PROP-OWNERSHIP.md) provides an opt-in native SDK for multiple hands, dynamic props and atomic handoffs. It requires explicit providers and retains fixed-step event delays and measured collision failures.
+
+
+[Source-bound prop packages](../../docs/scene-prop-runtime-v1.md) automatically install the shared owner from explicit source joint/offset choices and per-prop authored/physics modes. The portable ZIP retains all original assets, contact failures and authoring request bytes.

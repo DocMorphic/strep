@@ -147,3 +147,6 @@ is false and the single full-project goal remains active.
 The implementation uses Godot's
 [RigidBody3D integration contract](https://docs.godotengine.org/en/stable/classes/class_rigidbody3d.html#class-rigidbody3d-private-method-integrate-forces)
 and [PhysicsDirectBodyState3D](https://docs.godotengine.org/en/stable/classes/class_physicsdirectbodystate3d.html).
+
+
+Follow-up: [source-bound native prop packages](scene-prop-runtime-v1.md) now install the SDK from explicit source-joint and prop-offset choices, with complete authored/physical ownership modes and actual exported boot evidence. This does not change the timing/collision failures or scope of the earlier ownership study; Studio grip authoring remains open.
