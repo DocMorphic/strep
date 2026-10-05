@@ -234,6 +234,7 @@ jobs:
           tests/test_native_scene_runtime.py
           tests/test_scene_prop_ownership.py
           tests/test_scene_prop_runtime.py
+          tests/test_scene_prop_bake.py
           tests/test_native_runtime_affine_skin.py
           tests/test_studio_native_scene_game.py
           tests/test_studio_scene_prop_runtime.py

@@ -187,3 +187,8 @@ existing native scene/root/ownership and cylinder regressions. This source run
 uses tiny generated fixtures and engine doubles where indicated; actual import
 and physics evidence comes from the separate engine study above. Source result
 SHA256: `e7a7ffe43aefe3cd86342785e55332cfe143ed159fd114e17e6b5112f9e1acf1`.
+
+Follow-up: [offline prop motion baking](scene-prop-bake-v1.md) captures this
+finite runtime into editable prop tracks and retains the original actor and
+intent assets. Its import-rate fix preserves the measured curve without
+removing the earlier timing/collision failures or approving interaction quality.

@@ -1,6 +1,9 @@
 extends SceneTree
 const NativeClock = preload("res://native_engine_clock.gd")
 
+func clock_bits(time: float) -> String:
+	var bytes := PackedByteArray(); bytes.resize(8); bytes.encode_double(0,time); return bytes.hex_encode()
+
 func descendants(node: Node) -> Array:
 	var result: Array = [node]
 	for child in node.get_children(): result.append_array(descendants(child))
@@ -15,6 +18,10 @@ func audit() -> void:
 		quit(2)
 		return
 	var request = JSON.parse_string(FileAccess.get_file_as_string(args[0]))
+	var bake_fps = request.get("import_bake_fps",30.0)
+	if typeof(bake_fps) not in [TYPE_INT,TYPE_FLOAT] or bake_fps not in [30.0,60.0,120.0,240.0]:
+		quit(15)
+		return
 	var times := NativeClock.decode(request.payload.sample_clock, request.payload.sample_times_s.size())
 	if times.size() != request.payload.sample_times_s.size():
 		quit(14)
@@ -27,7 +34,7 @@ func audit() -> void:
 	if state.get_animations().size() != 1:
 		quit(12)
 		return
-	var model := document.generate_scene(state, 30.0, false, false)
+	var model := document.generate_scene(state, float(bake_fps), false, false)
 	root.add_child(model)
 	await process_frame
 	var players: Array = []
@@ -49,7 +56,7 @@ func audit() -> void:
 	if selected == "":
 		quit(6)
 		return
-	var report: Dictionary = {"engine": Engine.get_version_info(), "default-import": {}, "native-authoring": {}}
+	var report: Dictionary = {"engine": Engine.get_version_info(), "import_bake_fps":bake_fps, "default-import": {}, "native-authoring": {}}
 	for channel in request.payload.channels:
 		if not nodes.has(channel.node_name):
 			quit(7)
@@ -65,7 +72,7 @@ func audit() -> void:
 		for object in report["default-import"]:
 			var node: Node3D = nodes["Object_" + object]
 			var q := node.quaternion.normalized()
-			report["default-import"][object].append({"time_s": time, "translation_m": [node.position.x,node.position.y,node.position.z], "rotation_xyzw": [q.x,q.y,q.z,q.w]})
+			report["default-import"][object].append({"time_s": time,"time_f64le":clock_bits(time), "translation_m": [node.position.x,node.position.y,node.position.z], "rotation_xyzw": [q.x,q.y,q.z,q.w]})
 	var animation := Animation.new()
 	animation.length = float(request.payload.duration_s)
 	animation.loop_mode = Animation.LOOP_NONE
@@ -110,7 +117,7 @@ func audit() -> void:
 		for object in report["native-authoring"]:
 			var node: Node3D = nodes["Object_" + object]
 			var q := node.quaternion.normalized()
-			report["native-authoring"][object].append({"time_s": time, "translation_m": [node.position.x,node.position.y,node.position.z], "rotation_xyzw": [q.x,q.y,q.z,q.w]})
+			report["native-authoring"][object].append({"time_s": time,"time_f64le":clock_bits(time), "translation_m": [node.position.x,node.position.y,node.position.z], "rotation_xyzw": [q.x,q.y,q.z,q.w]})
 	var file := FileAccess.open(args[1],FileAccess.WRITE)
 	file.store_string(JSON.stringify(report, "", true, true))
 	file.close()
