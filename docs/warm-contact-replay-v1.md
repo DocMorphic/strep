@@ -17,6 +17,8 @@ Local evidence:
 - `reports/warm-replay-source-check-v1/result.json`: SHA256 `89f2f0280dfb6b4e752710660eda2d3a5f2cfc496eb558c9b7fa655bf61a3bb8`.
 - `reports/warm-affine-saved-reduction-v1/result.json`: SHA256 `e94ba45bc71a608ac9fdd7a6304db55abf8449d8240a11d3a4a01fad3f80cc6d`.
 - `reports/warm-endpoint-contacts-replay-queue-v1/request.json`: SHA256 `342f33c1398735bca774d9d758efda34b84e8903100abf5f09e12557d8ddfef7`.
-- Completed producer: `reports/warm-endpoint-contacts-development-v1`, result SHA256 `a686037b2aef09f0dc49a1f9c63babdd09b9b6ed16bfc4a15affb05f5092e07a`; live replay: `reports/warm-endpoint-contacts-verification-v1`.
+- Completed producer: `reports/warm-endpoint-contacts-development-v1`, result SHA256 `a686037b2aef09f0dc49a1f9c63babdd09b9b6ed16bfc4a15affb05f5092e07a`.
+- Completed replay: `reports/warm-endpoint-contacts-verification-v1/result.json`, SHA256 `41ed32f6436c7bbc070c5b17a8f773503418fdfa607e503132e6a49a15637d7d`. All seven closed populations, 6,216 editable keys, complete native/contact arithmetic, affine selection and retention decisions reproduce. Every numeric input/output of the fresh 2,552-time sampled geometry replay matches exactly. All derivative columns remain unremeasured.
+- Completed exact-handle replay queue: `reports/warm-endpoint-contacts-replay-queue-v1/result.json`, SHA256 `ac47e1e0febcf953ed6140bf0621c523226c2cfd4633eb0ff3219defd56d1dba`.
 
 This remains one humanoid and two spheres. It does not validate a rectangular pickup, partner animation, every action family or professional motion quality. The earlier engine audit applies to the earlier retained motion; the new candidate has no engine-import approval. Real human ratings and timed cleanup records remain zero, all fourteen release-evidence arrays remain empty, and the full-project goal remains active.
