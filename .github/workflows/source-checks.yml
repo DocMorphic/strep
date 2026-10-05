@@ -105,6 +105,7 @@ jobs:
       - name: Verify geometry, contact certificates and Studio build
         run: >-
           python -m pytest -q
+          tests/test_saved_breadth_failure_profile.py
           tests/test_object_geometry_mesh.py
           tests/test_reserved_object_fixtures.py
           tests/test_reserved_object_engine.py

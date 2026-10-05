@@ -1,6 +1,6 @@
 # Combined contact correction: import and developer review
 
-The two-finger development candidate passes actual decoded motion and point-contact checks against the original source-derived caps. All 2,066 authored facing failures remain. A complete native mesh audit is running before a serial engine follow-up; this document records the next validation contract, not a successful import or solved grasp.
+The two-finger development candidate passes actual decoded motion and point-contact checks against the original source-derived caps. All 2,066 authored facing failures remain. The complete native mesh audit now passes all 2,552 samples, with 1,942 fresh measurements and 610 exact full-input reuses. Both exact original process exits are zero. The serial whole-scene engine job has started; final imported-surface results remain pending. This document records the validation contract, not a successful import or solved grasp.
 
 The study concerns one humanoid and two spheres. The object named `box` is a sphere with radius .25 m; the second sphere has radius .20 m. It does not establish a box pickup or partner interaction. Contact references, object geometry and paths, placements, timing, limits and all unselected native controls remain unchanged. These existing APIs accept other supplied actions and world/object/partner contacts through their schemas; action names are not a whitelist.
 
@@ -31,7 +31,7 @@ The corrected private supervisor passes **48 small gate/identity checks**, using
 
 Two earlier attachments are preserved as failures. Python 3.10 rejects the seven-digit fractional timestamp supplied by PowerShell's .NET formatter. After parsing that representation, a direct exact-tick comparison still rejects because CIM's creation-date conversion truncates the original FILETIME to microseconds: each observed kernel value has one additional 100 ns tick. The final supervisor pins a separate acquired kernel observation and compares every original tick exactly; the CIM timestamp is only an additional check at its actual precision. Both failed attachments close their handles and create no queue or engine output. No original worker is restarted.
 
-The final supervisor is attached to the live original processes and waiting on their exits. Full combined mesh and subsequent engine/imported-surface results are pending. Gate-check receipt SHA256: `26fc4df4aeda94afd5eb2c2b3dfd4cd69cbd010d801710fa4741a7c9b24ccfac`.
+The final supervisor acquired and consumed both original mesh handles with zero exits, verified the complete bound archive and retained development controls, and started the whole-scene engine job serially. Final engine/imported-surface results remain pending; original Studio selection is preserved. Gate-check receipt SHA256: `26fc4df4aeda94afd5eb2c2b3dfd4cd69cbd010d801710fa4741a7c9b24ccfac`.
 
 ## First developer inspection
 
@@ -42,3 +42,5 @@ Both figures derive from the same previously checked saved mesh snapshot. They g
 The developer is asked to clarify the intended grasp before replacement anatomical patches or target normals are authored. A response can establish that intent; it cannot silently rewrite prior benchmark evidence or count as a blind animation rating or timed cleanup test. Anatomical selection, full-motion review, held-out generalization and cleanup-time evidence remain outstanding. Review answers are empty, real human rating/cleanup counts remain zero, and all fourteen release evidence arrays remain empty.
 
 Raw receipts, supervisor versions, failed attachments and figures remain under ignored local `reports/`. The public repository contains this reproducible API contract and concise evidence summaries; it does not bundle private studies, downloaded characters, models or local dependencies. The single full-project goal remains active.
+
+Completed combined mesh result SHA256: `e31e362ff2b054623c6d143d9c53b1dad39cd6205e20e497105d8579cf8bd039`.
