@@ -283,3 +283,5 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 
 
 [Complete saved breadth failure profiling](docs/saved-breadth-failure-profile-v1.md) now joins all 390 development actor/seed rows and preserves the 190 context-dependent N/A entries. Eleven actions across five families fail the mesh-floor diagnostic at every fixed seed, providing broader correction/data-review targets. The isolated metadata-only source checks pass 46 cases; this creates no new animation, human rating or release approval.
+
+[Saved skin regions in Studio](docs/studio-saved-region-v1.md) connects verified bundles to explicit source/partner contact staging, protected preview/apply and downloadable provenance. Frozen source checks pass 32 Python cases, five offline editor suites and four desktop/template checks. Exact clip bindings and ordered indices remain required; the live server/browser has not loaded or verified the change.

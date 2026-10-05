@@ -1,6 +1,6 @@
 # Explicit skin-region authoring and contact revisions
 
-The material API now has a file workflow: inventory a supplied rig, explicitly select original triangles, verify a portable patch bundle, transfer that selection across animation edits with an unchanged rig and mesh, then apply explicitly ordered points to existing native contacts. This is a CLI/API workflow. Studio has no new selection UI and has not been visually verified for these changes.
+The material API now has a file workflow: inventory a supplied rig, explicitly select original triangles, verify a portable patch bundle, transfer that selection across animation edits with an unchanged rig and mesh, then apply explicitly ordered points to existing native contacts. Triangle authoring remains a CLI/API workflow. [Studio can now reuse a verified bundle](studio-saved-region-v1.md) with explicit point ordering and protected contact staging; the live server/browser has not loaded or visually verified that connection.
 
 ## Inventory and selection
 

@@ -1,3 +1,4 @@
+import {createMaterialPatchLoader} from './material-patch-loader.mjs';
 const clone=value=>structuredClone(value);
 const identity=()=>[0,0,0,1];
 const key=value=>JSON.stringify(value,(_,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.keys(v).sort().map(k=>[k,v[k]])):v);
@@ -39,7 +40,7 @@ export function contactFromPatch(draft,actor,patch,{id,target,mode,start,end,pos
 export function emptyDraft(){return {schema:'strep-studio-native-scene-v1',scene:{schema:'strep-native-scene-contacts-v1',duration_s:null,actors:{},objects:{},contacts:[]},
  geometry:{clock:{mode:'native-and-frame-populations',times_s:[]},limits:{penetration_m:.005,depth_resolution_m:1e-6,surface_tolerance_m:1e-8},planes:{}},object_edit:null};}
 export function createNativeSceneEditor({document=globalThis.document,api,post,getContext,getPatch,download=defaultDownload}={}){
- const el=name=>document.getElementById('nativeScene'+name);let draft=emptyDraft(),partner=null,busy=false,revisionBusy=false,revisionSource=null,revisionPartner=null,pendingRevision=null;
+ const el=name=>document.getElementById('nativeScene'+name);let draft=emptyDraft(),partner=null,busy=false,revisionBusy=false,revisionSource=null,revisionPartner=null,pendingRevision=null,regionLoader=null;
  const status=text=>{el('Status').textContent=text;};
  const number=name=>{const text=el(name).value;if(String(text).trim()==='')throw Error('Fill in '+name);const value=Number(text);if(!Number.isFinite(value))throw Error('Enter a finite '+name);return value;};
  const metres=(name,original)=>{const value=number(name);return original!==undefined&&value===original*1000?original:value/1000;};
@@ -48,7 +49,7 @@ export function createNativeSceneEditor({document=globalThis.document,api,post,g
  function targetOptions(){options('Target',el('TargetType').value==='actor'?Object.keys(draft.scene.actors):Object.keys(draft.scene.objects));}
  function ordinary(){if(draft.contact_revision)throw Error('Restore the original draft before changing other authoring fields.');}
  function rows(name,values,remove){el(name).replaceChildren(...values.map(([id,label])=>{const row=document.createElement('p');row.textContent=label+' ';const button=document.createElement('button');button.className='btn';button.textContent='Remove';button.disabled=!!draft.contact_revision;button.onclick=()=>{if(draft.contact_revision){status('Restore the original draft before removing authoring conditions.');return;}remove(id);partner=null;draw();};row.append(button);return row;}));}
- function resetRevision(){revisionSource=null;revisionPartner=null;pendingRevision=null;el('RevisionApply').disabled=true;el('RevisionResults').replaceChildren();
+ function resetRevision(){regionLoader?.clear();revisionSource=null;revisionPartner=null;pendingRevision=null;el('RevisionApply').disabled=true;el('RevisionResults').replaceChildren();
   const row=draft.scene.contacts.find(c=>c.id===el('RevisionContact').value);el('RevisionSourceReduction').value=row?.reduction??'centroid';el('RevisionPartnerReduction').value=row?.target.reduction??'centroid';el('RevisionPartner').disabled=!row||row.target.space!=='actor';el('RevisionPartnerReduction').disabled=!row||row.target.space!=='actor';}
  function draw(){
   rows('Actors',Object.entries(draft.scene.actors).map(([name,a])=>[name,`${name} · ${a.placement.translation_m.join(', ')} m`]),name=>{if(draft.scene.contacts.some(c=>c.actor===name||c.target.actor===name)){status('Remove this character’s contacts first.');return;}delete draft.scene.actors[name];});
@@ -100,11 +101,18 @@ export function createNativeSceneEditor({document=globalThis.document,api,post,g
  function invalidateRevision(){pendingRevision=null;el('RevisionApply').disabled=true;}
  el('RevisionContact').onchange=resetRevision;
  el('RevisionSourceReduction').onchange=invalidateRevision;el('RevisionPartnerReduction').onchange=invalidateRevision;
+ function stageRevisionPatch(side,patch){
+  if(revisionBusy||busy)throw Error('Wait for the current request.');const row=draft.scene.contacts.find(c=>c.id===el('RevisionContact').value);if(!row)throw Error('Choose an existing contact.');
+  if(side==='partner'&&row.target.space!=='actor')throw Error('This contact has no partner patch.');
+  const actor=side==='source'?row.actor:row.target.actor,reduction=side==='source'?'RevisionSourceReduction':'RevisionPartnerReduction';
+  const p=explicitPatch(patch,draft.scene.actors[actor],patch.reduction);
+  if(side==='source')revisionSource=p;else revisionPartner=p;el(reduction).value=p.reduction;invalidateRevision();
+ }
  for(const [side,button] of [['source','RevisionSource'],['partner','RevisionPartner']])el(button).onclick=guard(()=>{
   if(revisionBusy)throw Error('Wait for the contact review.');const row=draft.scene.contacts.find(c=>c.id===el('RevisionContact').value);if(!row)throw Error('Choose an existing contact.');
   if(side==='partner'&&row.target.space!=='actor')throw Error('This contact has no partner patch.');const actor=side==='source'?row.actor:row.target.actor;
   const p=explicitPatch(getPatch(),draft.scene.actors[actor],el(side==='source'?'RevisionSourceReduction':'RevisionPartnerReduction').value);
-  if(side==='source')revisionSource=p;else revisionPartner=p;invalidateRevision();status(`Staged ${p.vertices.length} ${side} vertices for ${row.id}. Preview before applying.`);
+  stageRevisionPatch(side,p);regionLoader.clear();status(`Staged ${p.vertices.length} ${side} vertices for ${row.id}. Preview before applying.`);
  });
  function checkedPreview(r,payload){
   const record=r?.record,expectedActors=Object.fromEntries(Object.entries(payload.scene.actors).map(([n,a])=>[n,a.sha256]));
@@ -151,6 +159,7 @@ export function createNativeSceneEditor({document=globalThis.document,api,post,g
   const text=document.createElement('p');text.textContent=r.status==='complete'?`Recorded sampled conditions: ${r.sampled_conditions_pass?'pass':'fail'} at ${r.samples} times. Original contacts: ${r.source_contacts_pass?'pass':'fail'}. Motion-quality, physics and runtime approval remain open.`:`${r.status}: ${r.stage||r.error||'waiting'} · ${r.completed_stages?.length??0} completed stage(s).`;el('Results').append(text);
   for(const entry of r.downloads||[]){const a=document.createElement('a');a.className='btn';a.href=entry.url;a.download='';a.textContent=entry.label;el('Results').append(a);}status(r.status==='complete'?'Recorded results and source-bound assets loaded.':text.textContent);
  });
+ regionLoader=createMaterialPatchLoader({document,post,getDraft:editable,getContact:()=>el('RevisionContact').value,stage:stageRevisionPatch,status,download});
  draw();return {bind,snapshot:editable,refresh};
 }
-function defaultDownload(value){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)+'\n'],{type:'application/json'})),a=globalThis.document.createElement('a');a.href=url;a.download='native-scene-draft.json';a.click();URL.revokeObjectURL(url);}
+function defaultDownload(value,filename='native-scene-draft.json'){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)+'\n'],{type:'application/json'})),a=globalThis.document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);}
