@@ -572,6 +572,18 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
  <div id="bakedSceneResults" aria-live="polite"></div>
 </details>
 
+   <details id="nativeTransferPanel" class="rig-panel">
+ <summary>Transfer an existing clip to another character</summary>
+ <p class="small">Import both characters and save their mappings first. Transfer an embedded LINEAR clip, retaining its original keys and duration. Source mappings need zero placement offset and no custom axis overrides.</p>
+ <div class="rig-toolbar"><label class="small">Source character<select id="nativeTransferSource" aria-label="Native transfer source character"></select></label><label class="small">Target character<select id="nativeTransferTarget" aria-label="Native transfer target character"></select></label><button class="btn" id="nativeTransferCharacters">Refresh characters</button><button class="btn" id="nativeTransferBind">Bind saved mappings</button></div>
+ <div class="rig-toolbar"><label class="small">Source clip<select id="nativeTransferClip" aria-label="Native transfer source clip" disabled></select></label><label class="small">Sampling rate<select id="nativeTransferRate" aria-label="Native transfer sampling rate"><option value="120">120 Hz</option><option value="60">60 Hz</option><option value="240">240 Hz</option></select></label><button class="btn primary" id="nativeTransferBuild">Transfer &amp; verify playback</button></div>
+ <p class="small" id="nativeTransferStatus" role="status">Bind two saved mappings to begin. Original characters stay selected.</p>
+ <div class="rig-toolbar"><select id="nativeTransferJobs" aria-label="Native transfer job"></select><button class="btn" id="nativeTransferRefresh">Refresh transfers</button><button class="btn" id="nativeTransferReview">Review candidate</button><button class="btn" id="nativeTransferImport" disabled>Add candidate &amp; mapping to library</button></div>
+ <div id="nativeTransferResults" aria-live="polite"></div>
+ <iframe id="nativeTransferPreview" title="Native source and transferred character comparison" style="width:100%;height:580px;border:0;border-radius:12px" hidden></iframe>
+ <p class="small">Contact targets, markers and interactions need review on the target rig. File/playback checks do not approve motion quality. Adding a candidate creates a separate character with an edit mapping for its baked clip.</p>
+</details>
+
    <div id="rigContactPanel" hidden>
  <div class="rig-toolbar"><strong>Mesh contacts</strong><button class="btn" id="rigContactClose">Back to mapping</button></div>
  <p class="small" id="rigContactBinding">Select an exported clip to edit.</p>
@@ -1656,6 +1668,8 @@ void (async function characterStudio(){
   createScenePropBakeEditor({api,post});},C('scenePropBakeStatus'),'Prop animation bake editor');
  await initializeOptionalRigEditor(async()=>{const {createBakedSceneEditor}=await import('/baked-scene-editor.mjs');
   createBakedSceneEditor({api,post});},C('bakedSceneStatus'),'Saved scene export editor');
+ await initializeOptionalRigEditor(async()=>{const {createNativeTransferEditor}=await import('/native-transfer-editor.mjs');
+  createNativeTransferEditor({api,post,onImported:async id=>{await assets(id);}});},C('nativeTransferStatus'),'Native clip transfer editor');
  const clipEditor=createRigClipEditor({C,api,post,status,sampleJoint:node=>{let joint;model.traverse(n=>{if(loaded.parser.associations.get(n)?.nodes===node)joint=n;});if(!joint)throw Error('Selected GLB joint is not available');model.updateMatrixWorld(true);return {position_m:joint.getWorldPosition(new THREE.Vector3()).toArray(),rotation_xyzw:joint.getWorldQuaternion(new THREE.Quaternion()).toArray()};},getContext:()=>({model,frame,result,job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),seek,pause:()=>{playing=false;C('rigPlay').textContent='Play';},closeContacts:()=>contactEditor.hide(),onJob:job=>{pending=job.id;controlsState();refreshJobs().catch(e=>status(e.message));}});
  const transitionEditor=createRigTransitionEditor({C,post,status,getContext:()=>({jobs,model,frame,result,job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),pause:()=>{playing=false;C('rigPlay').textContent='Play';},closeEditors:()=>{contactEditor.hide();clipEditor.hide();},onJob:job=>{pending=job.id;controlsState();refreshJobs().catch(e=>status(e.message));}});
  const loopEditor=createRigLoopEditor({C,post,status,getContext:()=>({result,job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),pause:()=>{playing=false;C('rigPlay').textContent='Play';},closeEditors:()=>{contactEditor.hide();clipEditor.hide();transitionEditor.hide();},onJob:job=>{pending=job.id;controlsState();refreshJobs().catch(e=>status(e.message));}});

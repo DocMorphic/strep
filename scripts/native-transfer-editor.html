@@ -1,0 +1,11 @@
+<details id="nativeTransferPanel" class="rig-panel">
+ <summary>Transfer an existing clip to another character</summary>
+ <p class="small">Import both characters and save their mappings first. Transfer an embedded LINEAR clip, retaining its original keys and duration. Source mappings need zero placement offset and no custom axis overrides.</p>
+ <div class="rig-toolbar"><label class="small">Source character<select id="nativeTransferSource" aria-label="Native transfer source character"></select></label><label class="small">Target character<select id="nativeTransferTarget" aria-label="Native transfer target character"></select></label><button class="btn" id="nativeTransferCharacters">Refresh characters</button><button class="btn" id="nativeTransferBind">Bind saved mappings</button></div>
+ <div class="rig-toolbar"><label class="small">Source clip<select id="nativeTransferClip" aria-label="Native transfer source clip" disabled></select></label><label class="small">Sampling rate<select id="nativeTransferRate" aria-label="Native transfer sampling rate"><option value="120">120 Hz</option><option value="60">60 Hz</option><option value="240">240 Hz</option></select></label><button class="btn primary" id="nativeTransferBuild">Transfer &amp; verify playback</button></div>
+ <p class="small" id="nativeTransferStatus" role="status">Bind two saved mappings to begin. Original characters stay selected.</p>
+ <div class="rig-toolbar"><select id="nativeTransferJobs" aria-label="Native transfer job"></select><button class="btn" id="nativeTransferRefresh">Refresh transfers</button><button class="btn" id="nativeTransferReview">Review candidate</button><button class="btn" id="nativeTransferImport" disabled>Add candidate &amp; mapping to library</button></div>
+ <div id="nativeTransferResults" aria-live="polite"></div>
+ <iframe id="nativeTransferPreview" title="Native source and transferred character comparison" style="width:100%;height:580px;border:0;border-radius:12px" hidden></iframe>
+ <p class="small">Contact targets, markers and interactions need review on the target rig. File/playback checks do not approve motion quality. Adding a candidate creates a separate character with an edit mapping for its baked clip.</p>
+</details>
