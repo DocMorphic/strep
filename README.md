@@ -292,3 +292,6 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 
 
 [Cylinder physics release](docs/cylinder-physics-release-v1.md) connects complete penetration bounds, installed shapes/inertia, static or prescribed supports and actor envelopes to editable bakes. Nineteen engine fixtures retain five contact/settling failures; Jolt is the measured cylinder-world default. Final checks pass 165 isolated source tests and 95 serial engine regressions. This extends prop geometry without certifying motion semantics, human review or release readiness.
+
+
+[Shared scene prop ownership](docs/scene-prop-ownership-v1.md) adds an opt-in native runtime for two-hand holds, partial releases, character handoffs and multiple dynamic props on one actor clock. Final validation passes 252 isolated source tests and completes 18 headless engine cases. Exact physical event timing fails at all tested rates, and 60 Hz floor penetration exceeds the original screen; both limits remain recorded. Application grip bindings, production motion review and release evidence are still required.

@@ -48,3 +48,6 @@ Development studies: `reports/godot-event-object-v2/verification.json` and `repo
 Use the packaged source with its provenance. These results do not establish Jolt/other engine behavior, GPU appearance, two-handed manipulation, crossfade attachment ownership, moving-world replay or motion quality.
 
 Implementation follows Godot's [RigidBody3D integration contract](https://docs.godotengine.org/en/stable/classes/class_rigidbody3d.html#class-rigidbody3d-private-method-integrate-forces) and [PhysicsDirectBodyState3D](https://docs.godotengine.org/en/stable/classes/class_physicsdirectbodystate3d.html). Body state changes happen in the physics callback; released bodies explicitly use the engine's gravity/damping force integration.
+
+
+For explicit multi-hand, multi-prop and character-to-character ownership on a shared finite native scene clock, see [Scene prop ownership](SCENE-PROP-OWNERSHIP.md). This is a separate opt-in SDK; it does not change this single-body consumer or provide automatic grip binding.

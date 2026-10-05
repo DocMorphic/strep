@@ -74,3 +74,6 @@ the separately downloaded scene pack.
 References: [AnimationPlayer seek](https://docs.godotengine.org/en/stable/classes/class_animationplayer.html#class-animationplayer-method-seek),
 [AnimationMixer root motion](https://docs.godotengine.org/en/stable/classes/class_animationmixer.html#class-animationmixer-property-root-motion-track),
 [runtime glTF loading](https://docs.godotengine.org/en/stable/classes/class_gltfdocument.html).
+
+
+[Shared scene prop ownership](SCENE-PROP-OWNERSHIP.md) provides an opt-in native SDK for multiple hands, dynamic props and atomic handoffs. It requires explicit providers and retains fixed-step event delays and measured collision failures.
