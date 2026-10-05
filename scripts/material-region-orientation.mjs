@@ -31,30 +31,40 @@ export function checkedRegionOrientation(value,patch){
 
 export function orientationViews(value,patch){
  checkedRegionOrientation(value,patch);
- const origin=patch.reference_positions_m[0],points=patch.reference_positions_m.map(p=>subtract(p,origin)),centers=value.triangle_centroids_m.map(p=>subtract(p,origin));
+ return projectRegionDirections(patch.reference_positions_m,value.triangle_vertex_indices,value.triangle_centroids_m,value.triangle_unit_winding_normals);
+}
+
+export function projectRegionDirections(positions,faces,centroids,normals){
+ const origin=positions[0],points=positions.map(p=>subtract(p,origin)),centers=centroids.map(p=>subtract(p,origin));
  const span=Math.max(...[0,1,2].map(k=>Math.max(...points.map(p=>p[k]))-Math.min(...points.map(p=>p[k]))));
  const length=span*.25;
  return [{label:'Front · X/Y',axes:[0,1],sign:[1,1],depth:2},{label:'Side · −Z/Y',axes:[2,1],sign:[-1,1],depth:0},{label:'Top · X/−Z',axes:[0,2],sign:[1,-1],depth:1}].map(view=>{
   const project=p=>view.axes.map((k,i)=>p[k]*view.sign[i]);
-  const vertices=points.map(project),arrows=centers.map((p,i)=>({start:project(p),end:project(p.map((v,k)=>v+value.triangle_unit_winding_normals[i][k]*length)),toward:value.triangle_unit_winding_normals[i][view.depth]>=0}));
+  const vertices=points.map(project),arrows=centers.map((p,i)=>({start:project(p),end:project(p.map((v,k)=>v+(normals[i]?.[k]??0)*length)),toward:normals[i]!==null&&normals[i][view.depth]>=0,...(normals[i]===null?{unavailable:true}:{})}));
   const population=[...vertices,...arrows.flatMap(a=>[a.start,a.end])];
   const low=[0,1].map(k=>Math.min(...population.map(p=>p[k]))),high=[0,1].map(k=>Math.max(...population.map(p=>p[k])));
-  const scale=Math.min(264/Math.max(high[0]-low[0],span*1e-6),156/Math.max(high[1]-low[1],span*1e-6));
+  const scale=Math.min(264/Math.max(high[0]-low[0],span*1e-6,1e-12),156/Math.max(high[1]-low[1],span*1e-6,1e-12));
   const center=low.map((v,k)=>(v+high[k])/2),screen=p=>[160+(p[0]-center[0])*scale,116-(p[1]-center[1])*scale];
-  return {label:view.label,vertices:vertices.map(screen),triangles:value.triangle_vertex_indices.map(face=>face.map(k=>screen(vertices[k]))),arrows:arrows.map(a=>({...a,start:screen(a.start),end:screen(a.end)}))};
+  return {label:view.label,vertices:vertices.map(screen),triangles:faces.map(face=>face.map(k=>screen(vertices[k]))),arrows:arrows.map(a=>({...a,start:screen(a.start),end:screen(a.end)}))};
  });
 }
 
 export function renderRegionOrientation(document,container,value,patch){
+ return renderDirectionViews(document,container,orientationViews(value,patch),'default-pose','Default pose · arrows follow original winding');
+}
+
+export function renderDirectionViews(document,container,views,scope,caption){
  const node=(tag,attrs={},text)=>{const el=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [k,v]of Object.entries(attrs))el.setAttribute(k,String(v));if(text!==undefined)el.textContent=text;return el;};
- const views=orientationViews(value,patch),svgs=[];
+ const svgs=[];
  for(const view of views){
-  const svg=node('svg',{viewBox:'0 0 320 220',role:'img','aria-label':`${view.label}; default-pose triangles and winding directions`,style:'width:100%;max-width:360px;border:1px solid #8095ac55;border-radius:12px;background:#101827'});
+  const svg=node('svg',{viewBox:'0 0 320 220',role:'img','aria-label':`${view.label}; ${scope} triangles and winding directions`,style:'width:100%;max-width:360px;border:1px solid #8095ac55;border-radius:12px;background:#101827'});
   svg.append(node('title',{},`${view.label}: every selected triangle, vertex index and winding direction`),node('text',{x:16,y:22,fill:'#e2e8f0','font-size':12},view.label));
   for(const triangle of view.triangles)svg.append(node('polygon',{points:triangle.map(p=>p.join(',')).join(' '),fill:'#2dd4bf33',stroke:'#7dd3fc88','stroke-width':.7}));
   for(const arrow of view.arrows){
    const [x,y]=arrow.start,[ex,ey]=arrow.end,dx=ex-x,dy=ey-y,magnitude=Math.hypot(dx,dy);
-   if(magnitude<1e-6){
+   if(arrow.unavailable){
+    svg.append(node('path',{d:`M ${x-3},${y} L ${x},${y-3} L ${x+3},${y} L ${x},${y+3} Z`,fill:'none',stroke:'#fb7185','stroke-width':1.5}),node('title',{},'Degenerate triangle: winding normal unavailable'));
+   }else if(magnitude<1e-6){
     svg.append(node('circle',{cx:x,cy:y,r:2.5,fill:arrow.toward?'#fbbf24':'none',stroke:'#fbbf24','stroke-width':1}));
     if(!arrow.toward)svg.append(node('path',{d:`M ${x-2},${y-2} L ${x+2},${y+2} M ${x+2},${y-2} L ${x-2},${y+2}`,stroke:'#fbbf24','stroke-width':1}));
    }else{
@@ -63,7 +73,7 @@ export function renderRegionOrientation(document,container,value,patch){
    }
   }
   view.vertices.forEach(([x,y],i)=>svg.append(node('circle',{cx:x,cy:y,r:1.8,fill:'#e2e8f0'}),node('text',{x:x+3,y:y-3,fill:'#e2e8f0','font-size':8},String(i))));
-  svg.append(node('text',{x:16,y:207,fill:'#94a3b8','font-size':10},'Default pose · arrows follow original winding'));
+  svg.append(node('text',{x:16,y:207,fill:'#94a3b8','font-size':10},caption));
   svgs.push(svg);
  }
  container.replaceChildren(...svgs);

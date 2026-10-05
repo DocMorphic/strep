@@ -1,4 +1,5 @@
 import {checkedRegionOrientation,renderRegionOrientation} from './material-region-orientation.mjs';
+import {poseRequest,checkedAuthorPose,renderRegionPose} from './material-region-pose.mjs';
 const clone=structuredClone;
 const key=v=>JSON.stringify(v,(_,x)=>x&&typeof x==='object'&&!Array.isArray(x)?Object.fromEntries(Object.keys(x).sort().map(k=>[k,x[k]])):x);
 const hash=v=>typeof v==='string'&&/^[a-f0-9]{64}$/.test(v);
@@ -33,30 +34,49 @@ export function checkedAuthorSave(value,preview){
  return clone(value);
 }
 export function createMaterialRegionAuthor({document=globalThis.document,post,getDraft,getContact,getSide,getPatch,saved,status,digest=async buffer=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',buffer))].map(b=>b.toString(16).padStart(2,'0')).join('')}={}){
- const el=n=>document.getElementById('nativeSceneRegionAuthor'+n);let busy=false,pending=null,serial=0;
+ const el=n=>document.getElementById('nativeSceneRegionAuthor'+n);let busy=false,pending=null,serial=0,poseSerial=0;
  const form=()=>({patchId:el('ID').value.trim(),role:el('Role').value.trim(),children:el('Children').checked,weight:Number(el('Weight').value)});
  const selection=()=>({draft:clone(getDraft()),contact:getContact(),side:getSide(),patch:clone(getPatch()),form:form(),file:el('Profile').files?.[0]});
  const stamp=v=>key({...v,file:null});
  const same=v=>{const now=selection();return v.file===now.file&&stamp(v)===stamp(now);};
- const clear=()=>{serial++;pending=null;el('Save').disabled=true;el('Summary').textContent='';el('Faces').textContent='';el('Orientation').replaceChildren();};
+ const clearPose=()=>{poseSerial++;el('PoseSummary').textContent='';el('PoseFaces').textContent='';el('PoseOrientation').replaceChildren();};
+ const clear=()=>{serial++;pending=null;el('Save').disabled=true;el('Pose').disabled=true;el('Summary').textContent='';el('Faces').textContent='';el('Orientation').replaceChildren();clearPose();};
+ el('Pose').disabled=true;
  el('Preview').onclick=async()=>{
   let started=false;
   try{
    if(busy)throw Error('Wait for the region request.');const before=selection(),token=++serial;
    if(!before.file||before.file.size<=0||before.file.size>128*1024)throw Error('Choose a UTF-8 rig profile up to 128 KiB.');
    busy=true;started=true;pending=null;el('Preview').disabled=true;el('Save').disabled=true;el('Summary').textContent='';el('Faces').textContent='';el('Orientation').replaceChildren();
+   el('Pose').disabled=true;clearPose();
    const buffer=await before.file.arrayBuffer(),text=new TextDecoder('utf-8',{fatal:true}).decode(buffer),bound=await digest(buffer);
    const request=authorRequest(before.draft,before.contact,before.side,before.patch,before.form,text,bound);
    if(token!==serial||!same(before))throw Error('Region selection changed; preview again.');
    const value=checkedAuthorPreview(await post('/api/native-scene-material-region-preview',request),request);
    if(token!==serial||!same(before))throw Error('Region selection changed; preview again.');
    renderRegionOrientation(document,el('Orientation'),value.orientation,value.patch);
-   pending={before,value,token};el('Save').disabled=false;
+   pending={before,value,token};el('Save').disabled=false;el('Pose').disabled=false;
    el('Summary').textContent=`${value.patch.face_references.length} complete connected triangles, ${value.patch.vertices.length} selected vertices. Review the default-pose directions; contact during animation has not been measured.`;
    el('Faces').textContent=JSON.stringify({faces:value.patch.face_references,vertices:value.patch.vertices,reference_positions_m:value.patch.reference_positions_m,orientation:value.orientation},null,2);
    status('Review the surface directions and every enclosed triangle, then save the selected region.');
   }catch(error){status(error.message);}finally{if(started){busy=false;el('Preview').disabled=false;}}
  };
+ el('Pose').onclick=async()=>{
+  let started=false;
+  try{
+   if(busy)throw Error('Wait for the region request.');const choice=pending;
+   if(!choice||choice.token!==serial||!same(choice.before))throw Error('Preview the current picked region first.');
+   const text=el('Time').value.trim();if(!text)throw Error('Enter an explicit character-local time.');
+   const request=poseRequest(choice.value,choice.before.draft,choice.before.contact,choice.before.side,Number(text));
+   clearPose();const token=poseSerial;busy=true;started=true;el('Pose').disabled=true;el('Save').disabled=true;el('Preview').disabled=true;
+   const result=checkedAuthorPose(await post('/api/native-scene-material-region-pose',request),request,choice.value);
+   if(choice!==pending||choice.token!==serial||token!==poseSerial||text!==el('Time').value.trim()||!same(choice.before))throw Error('Region or time changed; inspect again.');
+   renderRegionPose(document,el('PoseOrientation'),result.pose);el('PoseFaces').textContent=JSON.stringify(result,null,2);
+   el('PoseSummary').textContent=`${result.pose.animation_name}: ${result.pose.time_s} / ${result.pose.duration_s} s, ${result.pose.face_references.length} triangles, ${result.pose.patch_winding.degenerate_local_faces.length} unavailable triangle normals. Character animation coordinates; scene contacts have not been measured.`;
+   status('Recorded one native animation sample. Inspect its surface directions; object and partner contact need separate validation.');
+  }catch(error){status(error.message);}finally{if(started){busy=false;el('Preview').disabled=false;el('Save').disabled=!pending;el('Pose').disabled=!pending;}}
+ };
+ el('Time').onchange=clearPose;
  el('Save').onclick=async()=>{
   let started=false;
   try{
@@ -65,7 +85,7 @@ export function createMaterialRegionAuthor({document=globalThis.document,post,ge
    busy=true;started=true;el('Save').disabled=true;
    const result=checkedAuthorSave(await post('/api/native-scene-material-region-save',{schema:choice.value.schema,id:choice.value.id,preview_sha256:choice.value.result_sha256}),choice.value);
    if(choice!==pending||choice.token!==serial||!same(choice.before))throw Error('Region selection changed; saved output remains separate.');
-   saved(result);pending=null;status('Region bundle saved. Choose ordered vertex indices below, then load and stage it.');
+   saved(result);pending=null;el('Pose').disabled=true;status('Region bundle saved. Choose ordered vertex indices below, then load and stage it.');
   }catch(error){status(error.message);}finally{if(started){busy=false;el('Save').disabled=!pending;}}
  };
  for(const name of ['Profile','ID','Role','Children','Weight'])el(name).onchange=clear;

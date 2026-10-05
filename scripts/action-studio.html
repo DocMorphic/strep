@@ -409,6 +409,14 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
     <div id="nativeSceneRegionAuthorOrientation" style="display:flex;flex-wrap:wrap;gap:10px" aria-label="Selected surface winding in the default pose"></div>
     <p class="small">Gold arrows follow original triangle winding. A dot points toward you; a cross points away. Numbers identify vertices for explicit correspondence. These views use the character's default pose.</p>
     <details><summary>Exact triangles, default-pose vertices and winding</summary><pre id="nativeSceneRegionAuthorFaces"></pre></details>
+    <details><summary>Inspect this surface during its animation</summary>
+     <p class="small">After previewing the region, choose a time in the selected character's animation. This reads one native skin pose without looping or clamping. Scene placement, object contact and partner contact are not evaluated here.</p>
+     <div class="toolbar"><label>Character-local time (seconds)<input id="nativeSceneRegionAuthorTime" type="number" min="0" step="any" value="0"></label><button class="btn" id="nativeSceneRegionAuthorPose" disabled>Inspect animation surface</button></div>
+     <p class="small" id="nativeSceneRegionAuthorPoseSummary" aria-live="polite"></p>
+     <div id="nativeSceneRegionAuthorPoseOrientation" style="display:flex;flex-wrap:wrap;gap:10px" aria-label="Selected surface winding at an explicit animation time"></div>
+     <p class="small">A red diamond marks a degenerate triangle with no available winding normal. Every selected triangle remains in the inspection.</p>
+     <details><summary>Exact sampled geometry and receipt</summary><pre id="nativeSceneRegionAuthorPoseFaces"></pre></details>
+    </details>
    </details>
   </details>
  </details>
