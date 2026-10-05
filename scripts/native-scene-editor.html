@@ -60,6 +60,20 @@
    </div>
    <div class="toolbar"><button class="btn" id="nativeSceneRegionLoad">Load and stage region</button><button class="btn" id="nativeSceneRegionReceipt" disabled>Save region receipt</button></div>
    <p class="small" id="nativeSceneRegionSummary" aria-live="polite"></p>
+   <details>
+    <summary>Create a region from the mesh selection</summary>
+    <p class="small">Pick complete surface triangles in Mesh contacts, choose the matching rig profile and mapped role, then preview every enclosed triangle. All picked vertices must participate; disconnected or partial selections reject.</p>
+    <div class="rig-field-grid">
+     <label>Matching rig profile<input id="nativeSceneRegionAuthorProfile" type="file" accept=".json,application/json"></label>
+     <label>New patch ID<input id="nativeSceneRegionAuthorID" type="text" maxlength="64" placeholder="left-contact-surface"></label>
+     <label>Mapped role<input id="nativeSceneRegionAuthorRole" type="text" maxlength="64" placeholder="LeftHand"></label>
+     <label>Minimum ownership<input id="nativeSceneRegionAuthorWeight" type="number" min="0.000001" max="1" step="any" value="1"></label>
+     <label><input id="nativeSceneRegionAuthorChildren" type="checkbox"> Include child bones</label>
+    </div>
+    <div class="toolbar"><button class="btn" id="nativeSceneRegionAuthorPreview">Preview selected triangles</button><button class="btn" id="nativeSceneRegionAuthorSave" disabled>Save selected region</button></div>
+    <p class="small" id="nativeSceneRegionAuthorSummary" aria-live="polite"></p>
+    <details><summary>Exact triangles and default-pose vertices</summary><pre id="nativeSceneRegionAuthorFaces"></pre></details>
+   </details>
   </details>
  </details>
  <label><input id="nativeSceneFloor" type="checkbox"> Check a horizontal world plane</label>

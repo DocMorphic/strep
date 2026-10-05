@@ -69,7 +69,7 @@ jobs:
         run: >-
           python -m pip install --only-binary=:all: -r requirements-ci.txt
       - name: Verify portable material authoring and native job integration
-        run: python -m pytest -q tests/test_material_scene_package.py tests/test_material_scene_surface_job.py tests/test_studio_material_patch.py tests/test_rigid_contact_normal_bound.py tests/test_native_contact_mask_probe.py tests/test_saved_contact_stencil_step.py
+        run: python -m pytest -q tests/test_material_scene_package.py tests/test_material_scene_surface_job.py tests/test_studio_material_patch.py tests/test_studio_material_region.py tests/test_rigid_contact_normal_bound.py tests/test_native_contact_mask_probe.py tests/test_saved_contact_stencil_step.py
   source-checks:
     strategy:
       fail-fast: false
@@ -398,6 +398,7 @@ jobs:
           node tests/test_native_support_editor.mjs
           node tests/test_native_scene_editor.mjs
           node tests/test_native_scene_fit_editor.mjs
+          node tests/test_material_region_author.mjs
           node tests/test_material_patch_loader.mjs
           node tests/test_native_contact_revision.mjs
           node tests/test_native_scene_game_editor.mjs

@@ -1,3 +1,4 @@
+import {createMaterialRegionAuthor} from './material-region-author.mjs';
 import {createMaterialPatchLoader} from './material-patch-loader.mjs';
 const clone=value=>structuredClone(value);
 const identity=()=>[0,0,0,1];
@@ -40,7 +41,7 @@ export function contactFromPatch(draft,actor,patch,{id,target,mode,start,end,pos
 export function emptyDraft(){return {schema:'strep-studio-native-scene-v1',scene:{schema:'strep-native-scene-contacts-v1',duration_s:null,actors:{},objects:{},contacts:[]},
  geometry:{clock:{mode:'native-and-frame-populations',times_s:[]},limits:{penetration_m:.005,depth_resolution_m:1e-6,surface_tolerance_m:1e-8},planes:{}},object_edit:null};}
 export function createNativeSceneEditor({document=globalThis.document,api,post,getContext,getPatch,download=defaultDownload}={}){
- const el=name=>document.getElementById('nativeScene'+name);let draft=emptyDraft(),partner=null,busy=false,revisionBusy=false,revisionSource=null,revisionPartner=null,pendingRevision=null,regionLoader=null;
+ const el=name=>document.getElementById('nativeScene'+name);let draft=emptyDraft(),partner=null,busy=false,revisionBusy=false,revisionSource=null,revisionPartner=null,pendingRevision=null,regionLoader=null,regionAuthor=null;
  const status=text=>{el('Status').textContent=text;};
  const number=name=>{const text=el(name).value;if(String(text).trim()==='')throw Error('Fill in '+name);const value=Number(text);if(!Number.isFinite(value))throw Error('Enter a finite '+name);return value;};
  const metres=(name,original)=>{const value=number(name);return original!==undefined&&value===original*1000?original:value/1000;};
@@ -49,7 +50,7 @@ export function createNativeSceneEditor({document=globalThis.document,api,post,g
  function targetOptions(){options('Target',el('TargetType').value==='actor'?Object.keys(draft.scene.actors):Object.keys(draft.scene.objects));}
  function ordinary(){if(draft.contact_revision)throw Error('Restore the original draft before changing other authoring fields.');}
  function rows(name,values,remove){el(name).replaceChildren(...values.map(([id,label])=>{const row=document.createElement('p');row.textContent=label+' ';const button=document.createElement('button');button.className='btn';button.textContent='Remove';button.disabled=!!draft.contact_revision;button.onclick=()=>{if(draft.contact_revision){status('Restore the original draft before removing authoring conditions.');return;}remove(id);partner=null;draw();};row.append(button);return row;}));}
- function resetRevision(){regionLoader?.clear();revisionSource=null;revisionPartner=null;pendingRevision=null;el('RevisionApply').disabled=true;el('RevisionResults').replaceChildren();
+ function resetRevision(){regionAuthor?.clear();regionLoader?.clear();revisionSource=null;revisionPartner=null;pendingRevision=null;el('RevisionApply').disabled=true;el('RevisionResults').replaceChildren();
   const row=draft.scene.contacts.find(c=>c.id===el('RevisionContact').value);el('RevisionSourceReduction').value=row?.reduction??'centroid';el('RevisionPartnerReduction').value=row?.target.reduction??'centroid';el('RevisionPartner').disabled=!row||row.target.space!=='actor';el('RevisionPartnerReduction').disabled=!row||row.target.space!=='actor';}
  function draw(){
   rows('Actors',Object.entries(draft.scene.actors).map(([name,a])=>[name,`${name} · ${a.placement.translation_m.join(', ')} m`]),name=>{if(draft.scene.contacts.some(c=>c.actor===name||c.target.actor===name)){status('Remove this character’s contacts first.');return;}delete draft.scene.actors[name];});
@@ -160,6 +161,8 @@ export function createNativeSceneEditor({document=globalThis.document,api,post,g
   for(const entry of r.downloads||[]){const a=document.createElement('a');a.className='btn';a.href=entry.url;a.download='';a.textContent=entry.label;el('Results').append(a);}status(r.status==='complete'?'Recorded results and source-bound assets loaded.':text.textContent);
  });
  regionLoader=createMaterialPatchLoader({document,post,getDraft:editable,getContact:()=>el('RevisionContact').value,stage:stageRevisionPatch,status,download});
+ regionAuthor=createMaterialRegionAuthor({document,post,getDraft:editable,getContact:()=>el('RevisionContact').value,getSide:()=>el('RegionSide').value,getPatch,status,
+  saved:value=>{regionLoader.clear();el('RegionBundle').value=value.bundle;el('RegionResult').value=value.result_sha256;el('RegionPatch').value=value.patch_id;el('RegionIndices').value='';}});
  draw();return {bind,snapshot:editable,refresh};
 }
 function defaultDownload(value,filename='native-scene-draft.json'){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)+'\n'],{type:'application/json'})),a=globalThis.document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);}
