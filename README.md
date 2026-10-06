@@ -461,3 +461,9 @@ The backend API validates scene contracts and rejects frozen-partner reference/p
 
 
 [The separate articulation baseline](docs/pair-articulation-baseline-v2.md) adds joint freedom while preserving original motion, contact and reference limits. All baseline motion checks pass; complete geometry still fails. A full correction study will measure whether the additional freedom helps.
+
+
+[Reusable stored-value repair jobs](docs/native-stored-pair-repair-jobs-v1.md) now preserve source/reference limits across v1/v2 studies and frozen partners. Sixty-four focused tests pass. The fully replayed sixty-control study and bounded repair improve penetration to about 5.065 mm, but complete geometry and human quality remain unapproved.
+
+
+[Stored repair probe archives](docs/native-stored-pair-repair-jobs-v1.md) now release earlier pose arrays from memory and reload the final chosen probe for exact observation checks. The latest focused run passes 65 tests, including the memory regression. Larger pre-change study results remain preserved and geometry remains unapproved.
