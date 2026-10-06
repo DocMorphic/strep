@@ -221,6 +221,7 @@ jobs:
           tests/test_native_partner_depth_restore.py
           tests/test_native_partner_depth_phase_selection.py
           tests/test_native_affine_surface_restore.py
+          tests/test_native_affine_surface_box_conflict.py
           tests/test_native_stored_curve_proxy.py
           tests/test_native_stored_pair_model.py
           tests/test_native_stored_pair_job.py
