@@ -366,3 +366,6 @@ The [temporal-control/import-precision study](docs/transition-temporal-controls-
 
 
 The [offline reserve-guided transition workflow](docs/reserve-guided-transition-workflow-v1.md) now accepts bound recipes/reserves/seeds and preserves original clips, limits and unconfirmed tracks. All 44 focused tests, actual CLI replay, saved-resource contact/fidelity and three forged-copy rejection checks pass. Geometry, Studio Apply integration and broader production motion/release validation remain open.
+
+
+[Studio contact reserves and candidate bundles](docs/studio-transition-contact-reserves-v1.md) add explicit reserve generation, original/candidate check review and clips/tracks/history downloads. All 152 focused Python cases, five offline UI suites, actual Studio package replay, saved-resource contact/fidelity and three real-bundle tamper rejections pass. Geometry and production motion/release gates remain open; the live server has not been restarted.

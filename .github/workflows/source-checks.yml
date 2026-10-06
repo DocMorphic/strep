@@ -251,6 +251,8 @@ jobs:
           tests/test_studio_transition_fit_cache_routes.py
           tests/test_native_contact_reserve.py
           tests/test_native_transition_contact_fit.py
+          tests/test_studio_transition_contact_fit.py
+          tests/test_studio_transition_contact_routes.py
           tests/test_native_scene_runtime.py
           tests/test_scene_prop_ownership.py
           tests/test_scene_prop_runtime.py
@@ -437,6 +439,7 @@ jobs:
           node tests/test_native_scene_game_editor.mjs
           node tests/test_native_scene_transition_editor.mjs
           node tests/test_native_transition_fit_editor.mjs
+          node tests/test_native_transition_contact_editor.mjs
           node tests/test_scene_prop_runtime_editor.mjs
           node tests/test_scene_prop_bake_editor.mjs
           node tests/test_baked_scene_editor.mjs

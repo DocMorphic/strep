@@ -1,0 +1,18 @@
+<details id="nativeTransitionContactPanel" class="rig-panel">
+ <summary>Contact reserves and candidate export</summary>
+ <p class="small">Choose the transition channels and bounds above, then leave room for import precision with explicit contact reserves. Each candidate keeps the original acceptance limits. Original clips and scene selection stay preserved.</p>
+ <button class="btn" id="nativeTransitionContactInspect">Load original contact limits</button>
+ <div class="rig-grid">
+  <label>Contact<select id="nativeTransitionContactContact"></select></label>
+  <label>Solver reserve (µm)<input id="nativeTransitionContactReserve" type="number" min="0" step="any" placeholder="Choose an explicit reserve"></label>
+ </div>
+ <p class="small" id="nativeTransitionContactLimit">No contacts loaded.</p>
+ <div class="toolbar"><button class="btn" id="nativeTransitionContactAdd">Save contact reserve</button><button class="btn" id="nativeTransitionContactRemove">Remove reserve</button></div>
+ <div id="nativeTransitionContactSelections"></div>
+ <label><input id="nativeTransitionContactSeed" type="checkbox"> Start from the completed correction reviewed above</label>
+ <p class="small">Starting controls begin a new solve with the same source and bounds. They do not carry previous iteration counts or approval.</p>
+ <button class="btn primary" id="nativeTransitionContactBuild" disabled>Generate separate reserved candidate</button>
+ <p class="small" id="nativeTransitionContactStatus" role="status">Choose transition channels above, then load contacts.</p>
+ <div class="toolbar"><select id="nativeTransitionContactJobs" aria-label="Reserve-guided correction job"></select><button class="btn" id="nativeTransitionContactRefresh">Refresh jobs</button><button class="btn" id="nativeTransitionContactReview">Review and download candidate</button></div>
+ <div id="nativeTransitionContactResults" aria-live="polite"></div>
+</details>

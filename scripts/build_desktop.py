@@ -17,6 +17,7 @@ def render():
     html=html.replace('__NATIVE_SCENE_TRANSFER_EDITOR__',(scripts/'native-scene-transfer-editor.html').read_text(encoding='utf8'))
     html=html.replace('__NATIVE_SCENE_TRANSITION_EDITOR__',(scripts/'native-scene-transition-editor.html').read_text(encoding='utf8'))
     html=html.replace('__NATIVE_TRANSITION_FIT_EDITOR__',(scripts/'native-transition-fit-editor.html').read_text(encoding='utf8'))
+    html=html.replace('__NATIVE_TRANSITION_CONTACT_EDITOR__',(scripts/'native-transition-contact-editor.html').read_text(encoding='utf8'))
     html=html.replace('__NATIVE_SCENE_FIT_EDITOR__',(scripts/'native-scene-fit-editor.html').read_text(encoding='utf8'))
     html=html.replace('__NATIVE_SCENE_GAME_EDITOR__',(scripts/'native-scene-game-editor.html').read_text(encoding='utf8'))
     html=html.replace('__SCENE_PROP_RUNTIME_EDITOR__',(scripts/'scene-prop-runtime-editor.html').read_text(encoding='utf8'))
