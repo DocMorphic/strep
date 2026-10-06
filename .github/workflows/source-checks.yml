@@ -232,6 +232,7 @@ jobs:
           tests/test_native_stored_surface_restore_job.py
           tests/test_native_stored_pair_repair_job.py
           tests/test_native_control_axis_pair_repair_job.py
+          tests/test_native_axis_pair_repair_job.py
           tests/test_native_stored_pair_export_replay.py
           tests/test_native_static_rotation_variant.py
           tests/test_native_static_reference_job.py
