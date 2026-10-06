@@ -336,3 +336,6 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 
 
 [Shared native scene transitions](docs/native-scene-transition-v1.md) keep actors, rigid props, contact intent, roots and markers on one audited timeline. Thirty source cases pass; real two-actor/native-box resources match declared poses. Trimmed annotations remain traceable and marker confirmations reset. Default box import and incorrect partner/object contacts remain failed; Studio, coupled motion correction and production action review remain open.
+
+
+[Studio shared-transition staging](docs/studio-native-scene-transition-v1.md) saves multi-character/prop drafts and retains original clip/scene/timing history through native scene and game exports. Initial 90-case Python regressions, final 15-case staging checks and four offline UI suites pass. Three real headless engine processes verify 1688 times and unchanged package lineage; contact and default box-import failures remain visible. Live UI, coupled articulated correction and production motion review remain open.

@@ -445,6 +445,25 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
  <div id="nativeSceneResults" aria-live="polite"></div>
 </details>
 
+<details id="nativeSceneTransitionPanel" class="rig-panel">
+ <summary>Shared transitions</summary>
+ <p class="small">Open a saved transition, review its original checks, then stage all characters and props together. Failed contacts stay visible. Gameplay marker timing must be reviewed after the edit.</p>
+ <div class="rig-field-grid">
+  <label>Saved transition folder<input id="nativeSceneTransitionFolder" placeholder="Folder within project reports"></label>
+  <label>Saved result checksum<input id="nativeSceneTransitionHash" spellcheck="false" placeholder="SHA256 of result.json"></label>
+ </div>
+ <button class="btn" id="nativeSceneTransitionInspect">Inspect saved transition</button>
+ <div class="rig-field-grid">
+  <label><input id="nativeSceneTransitionFloor" type="checkbox"> Check a floor plane</label>
+  <label>Floor height (m)<input id="nativeSceneTransitionFloorHeight" type="number" step="any" value="0"></label>
+  <label>Penetration limit (mm)<input id="nativeSceneTransitionPenetration" type="number" min="0" max="100" step="any" value="0.01"></label>
+ </div>
+ <button class="btn" id="nativeSceneTransitionStage" disabled>Save separate scene draft</button>
+ <p class="small" id="nativeSceneTransitionStatus" role="status">No saved transition inspected.</p>
+ <div id="nativeSceneTransitionResults" aria-live="polite"></div>
+ <button class="btn" id="nativeSceneTransitionApply" disabled>Use staged scene and timing</button>
+</details>
+
    <details id="nativeSceneTransferPanel" class="rig-panel">
  <summary>Transfer a scene to new characters</summary>
  <p class="small">First assemble Scene contacts and finish each character's Native clip transfer. Choose the transferred actors below. Explicit mesh correspondence preserves hand, foot, object and partner targets; winding normals require authored surface conditions.</p>
@@ -1715,7 +1734,7 @@ void (async function characterStudio(){
  const {createNativeSupportEditor}=await import('/native-support-editor.mjs');
  const nativeSupportEditor=createNativeSupportEditor({getContext:()=>({job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value})});
  const contactEditor=createRigContactEditor({C,THREE,canvas,scene,camera,controls,api,post,status,getContext:()=>({model,loaded,frame,result,job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),pause:()=>{playing=false;C('rigPlay').textContent='Play';},seek,onFit:job=>{pending=job.id;controlsState();refreshJobs().catch(e=>status(e.message));}});
- let nativeSceneEditor=null;
+ let nativeSceneEditor=null,nativeSceneGameEditor=null;
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneEditor}=await import('/native-scene-editor.mjs');
   nativeSceneEditor=createNativeSceneEditor({api,post,getContext:()=>({job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),getPatch:()=>contactEditor.nativePatch()});},C('nativeSceneStatus'),'Scene editor');
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneTransferEditor}=await import('/native-scene-transfer-editor.mjs');
@@ -1723,7 +1742,10 @@ void (async function characterStudio(){
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneFitEditor}=await import('/native-scene-fit-editor.mjs');
   if(!nativeSceneEditor)throw Error('Scene editor is required');createNativeSceneFitEditor({api,post,getDraft:()=>nativeSceneEditor.snapshot(),setDraft:value=>nativeSceneEditor.bind(value)});},C('nativeSceneFitStatus'),'Character correction editor');
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneGameEditor}=await import('/native-scene-game-editor.mjs');
-  createNativeSceneGameEditor({api,post});},C('nativeSceneGameStatus'),'Game-track editor');
+  nativeSceneGameEditor=createNativeSceneGameEditor({api,post});},C('nativeSceneGameStatus'),'Game-track editor');
+ await initializeOptionalRigEditor(async()=>{const {createNativeSceneTransitionEditor}=await import('/native-scene-transition-editor.mjs');
+  if(!nativeSceneEditor||!nativeSceneGameEditor)throw Error('Scene and game-track editors are required');
+  createNativeSceneTransitionEditor({api,post,setDraft:value=>nativeSceneEditor.bind(value),queueGameTracks:value=>nativeSceneGameEditor.queueTransition(value)});},C('nativeSceneTransitionStatus'),'Shared transition editor');
  await initializeOptionalRigEditor(async()=>{const {createSurfaceExportEditor}=await import('/surface-export-editor.mjs');
   createSurfaceExportEditor({api,post});},C('surfaceExportStatus'),'Surface export editor');
  await initializeOptionalRigEditor(async()=>{const {createScenePropRuntimeEditor}=await import('/scene-prop-runtime-editor.mjs');

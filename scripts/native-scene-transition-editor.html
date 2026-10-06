@@ -1,0 +1,18 @@
+<details id="nativeSceneTransitionPanel" class="rig-panel">
+ <summary>Shared transitions</summary>
+ <p class="small">Open a saved transition, review its original checks, then stage all characters and props together. Failed contacts stay visible. Gameplay marker timing must be reviewed after the edit.</p>
+ <div class="rig-field-grid">
+  <label>Saved transition folder<input id="nativeSceneTransitionFolder" placeholder="Folder within project reports"></label>
+  <label>Saved result checksum<input id="nativeSceneTransitionHash" spellcheck="false" placeholder="SHA256 of result.json"></label>
+ </div>
+ <button class="btn" id="nativeSceneTransitionInspect">Inspect saved transition</button>
+ <div class="rig-field-grid">
+  <label><input id="nativeSceneTransitionFloor" type="checkbox"> Check a floor plane</label>
+  <label>Floor height (m)<input id="nativeSceneTransitionFloorHeight" type="number" step="any" value="0"></label>
+  <label>Penetration limit (mm)<input id="nativeSceneTransitionPenetration" type="number" min="0" max="100" step="any" value="0.01"></label>
+ </div>
+ <button class="btn" id="nativeSceneTransitionStage" disabled>Save separate scene draft</button>
+ <p class="small" id="nativeSceneTransitionStatus" role="status">No saved transition inspected.</p>
+ <div id="nativeSceneTransitionResults" aria-live="polite"></div>
+ <button class="btn" id="nativeSceneTransitionApply" disabled>Use staged scene and timing</button>
+</details>
