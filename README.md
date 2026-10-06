@@ -421,3 +421,8 @@ Complete affine gap-change guards preserve original acceptance, but the retained
 ## Scalar partner guidance converges
 
 Hard partner gap-change halfspaces now solve, but their final step is effectively zero. All four exports match the starting clips and retain complete geometry failures; no animation is approved. [Method and evidence](docs/native-partner-scalar-guard-v1.md).
+
+
+## Local depth-floor conflict identified
+
+The authored 5 mm partner floors conflict jointly in the retained local model, even without native/contact norms. Four witnesses provide an independently verified exact rational certificate. No motion is exported or approved; nonlinear and broader correction remain open. [Method and evidence](docs/native-partner-depth-limit-v1.md).
