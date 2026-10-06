@@ -198,6 +198,7 @@ jobs:
           tests/test_native_scene_serialized_ray.py
           tests/test_native_scene_rotation_storage.py
           tests/test_native_rotation_storage_repair.py
+          tests/test_native_rotation_storage_search.py
           tests/test_native_scene_storage.py
           tests/test_native_scene_restore.py
           tests/test_native_scene_key_restore.py

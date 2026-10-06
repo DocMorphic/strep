@@ -406,3 +406,8 @@ The new proposal model retains all nine triangle vertex-pair derivatives and har
 ## Certified equivalent surface solver rows
 
 Whole-box certificates represent all 277410 surface conditions with 118137 solver rows, and the primary solve now converges. Exact rational replay verifies every implication. All four exported fractions still fail original native rates; full-size geometry also fails and worsens depth. No animation is accepted. [Method and evidence](docs/native-pair-surface-reduction-v1.md).
+
+
+## Bounded stored precision search
+
+All three smaller surface proposals now pass every original native/contact condition after bounded one-neighbour quaternion repair. All 31 raw probes and six original-preserving appended variants replay independently. Complete geometry still fails in every case, so no animation is accepted. [Method and evidence](docs/native-rotation-storage-search-v1.md).
