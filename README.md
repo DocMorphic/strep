@@ -363,3 +363,6 @@ The [temporal-control/import-precision study](docs/transition-temporal-controls-
 
 
 [Explicit contact reserves](docs/native-contact-reserve-v1.md) retain authored acceptance while tightening selected solver targets. Twenty focused software tests pass; a complete 1707-time saved-resource study passes native/imported contact under the original limit. Geometry still fails, and Studio integration and all release gates remain open.
+
+
+The [offline reserve-guided transition workflow](docs/reserve-guided-transition-workflow-v1.md) now accepts bound recipes/reserves/seeds and preserves original clips, limits and unconfirmed tracks. All 44 focused tests, actual CLI replay, saved-resource contact/fidelity and three forged-copy rejection checks pass. Geometry, Studio Apply integration and broader production motion/release validation remain open.
