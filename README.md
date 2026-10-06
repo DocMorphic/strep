@@ -431,3 +431,8 @@ The authored 5 mm partner floors conflict jointly in the retained local model, e
 ## Depth restoration advances the retained scene
 
 A depth-first proposal and bounded storage repair produce a native/contact/reference-passing correction anchor with lower measured penetration. Complete geometry still fails, so the anchor remains unapproved and requires freshly rebuilt guidance. [Method and evidence](docs/native-partner-depth-restore-v1.md).
+
+
+## Stored motion and proposal curves aligned
+
+A freshly recentered correction lowers measured partner penetration, but complete geometry still fails. The new stored-centered smooth proposal preserves exported bytes and matches the native anchor. [Method and evidence](docs/native-stored-curve-proxy-v1.md).
