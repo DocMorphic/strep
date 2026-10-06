@@ -470,3 +470,6 @@ The backend API validates scene contracts and rejects frozen-partner reference/p
 
 
 [Reusable stored-pair export replay](docs/native-stored-pair-export-replay-v1.md) now checks every actual fraction and original motion/contact/reference limit. Twenty-four CPU tests pass. A fully replayed fresh correction lowers partner penetration to about 5.032 mm; complete collisions remain failed and solver-phase priority checks need correction.
+
+
+[Verified solver phase selection](docs/native-depth-phase-selection-v1.md) preserves native constraints and depth priority before accepting later solve phases. Fifty-two focused tests pass. Independent full-step storage repair clears motion/contact failures; complete geometry still fails at about 5.000779 mm penetration and retained crossings.

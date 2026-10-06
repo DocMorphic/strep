@@ -37,7 +37,12 @@ def test_depth_precedes_complete_surface_and_native_penalty_coefficients_are_zer
     args,kwargs=fixture();before={n:getattr(args[0],n).tobytes() for n in ('vectors','caps','scales')}
     delta,info,reduction=module.direction(*args,**kwargs)
     assert delta is not None and abs(delta[0]-.0005)<1e-8
-    assert len(calls)==3
+    assert len(calls) in (2,3) and len(calls)==len(info['phase_checks'])
+    assert info['phase_checks'][0]['accepted']
+    if len(calls)==2:
+        assert not info['phase_checks'][1]['accepted'] and info['minimum_norm_phase_status']=='not-run'
+    assert info['predicted_native_excess']<=info['phase_native_check_tolerance']
+    assert info['predicted_partner_depth_deficit']<=info['depth_phase_optimum']+info['phase_lock_tolerance']
     np.testing.assert_array_equal(calls[0][1],[0.,1.,0.]);np.testing.assert_array_equal(calls[1][1],[0.,0.,1.])
     np.testing.assert_array_equal(calls[0][2][4:8,1:].toarray(),np.zeros((4,2)))
     np.testing.assert_array_equal(calls[0][2][-2:,1:].toarray(),np.array([[-1.,0.],[-1.,0.]]))
@@ -85,6 +90,10 @@ def test_failed_later_phase_retains_last_successful_point(monkeypatch,failed_pha
             calls.append(1)
             if len(calls)==failed_phase:
                 return SimpleNamespace(solve=lambda:SimpleNamespace(status='InsufficientProgress',x=None))
+            if len(calls)==2 and failed_phase==3:
+                # A genuinely feasible surface point lets this test inject
+                # failure in phase three rather than stopping in phase two.
+                return SimpleNamespace(solve=lambda:SimpleNamespace(status='Solved',x=np.array([.025,.3,1.9]),iterations=1))
             return clarabel.DefaultSolver(p,q,a,b,cones,settings)
     monkeypatch.setattr(module,'solver_module',lambda:Solver)
     args,kwargs=fixture();delta,info,reduction=module.direction(*args,**kwargs)
@@ -118,7 +127,7 @@ def test_solver_edge_tolerance_is_projected_into_original_trust_box(monkeypatch)
             point=np.array([1.+1e-10,10.,10.])
             return SimpleNamespace(solve=lambda:SimpleNamespace(status='Solved',x=point,iterations=1))
     monkeypatch.setattr(module,'solver_module',lambda:Solver)
-    args,kwargs=fixture();delta,info,reduction=module.direction(*args,**kwargs)
+    args,kwargs=fixture();args[0]=NormRows([[0.,0,0]],[.03],[1.]);delta,info,reduction=module.direction(*args,**kwargs)
     assert delta is not None and delta[0]==.02
     assert info['trust_projection_maximum_change']>0.
     assert delta[0]<=reduction.report['proof_delta_upper'][0]

@@ -82,41 +82,66 @@ def direction(native, native_jac, gaps, surface_jac, offsets, blocks, value, low
     info.update(status=str(first.status), iterations=first.iterations, active_native_cones=len(active),
         omitted_fixed_passing_native_rows=int(fixed.sum()), omitted_affine_box_passing_native_rows=int(box_passing.sum()),
         priority='depth deficit, then complete surface excess, then normalized control norm',
-        phase_lock_tolerance=1e-9, native_norms_always_hard=True)
-    if str(first.status) not in ('Solved', 'AlmostSolved'):return None, info, reduction
-    point = np.asarray(first.x)
-    if not np.isfinite(point).all():return None, dict(info, invalid_solution=True), reduction
-    depth_optimum = max(0.,float(point[n]))
+        phase_lock_tolerance=1e-9, phase_native_check_tolerance=settings.tol_feas,
+        native_norms_always_hard=True, depth_phase_status=str(first.status),
+        surface_phase_status='not-run', minimum_norm_phase_status='not-run', selected_phase=None, phase_checks=[])
+    def checked(solution, name, *, depth_bound=None, surface_bound=None):
+        record=dict(phase=name,status=str(solution.status),accepted=False,rejections=[])
+        info['phase_checks'].append(record)
+        if str(solution.status) not in ('Solved','AlmostSolved'):
+            record['rejections'].append('solver_status');return None
+        point=np.asarray(solution.x,float)
+        if point.shape!=(n+2,) or not np.isfinite(point).all():
+            record['rejections'].append('finite_complete_point');return None
+        raw=point[:n]*trust
+        if np.any(raw<lo*trust-1e-9) or np.any(raw>hi*trust+1e-9):
+            record['rejections'].append('trust_box');return None
+        # Check the exact projected step that will be exported, not solver slack.
+        delta=np.clip(raw,lo*trust,hi*trust)
+        projection=float(abs(delta-raw).max())
+        delta=np.clip(value+delta,lower,upper)-value
+        if np.any(delta<reduction.report['proof_delta_lower']) or np.any(delta>reduction.report['proof_delta_upper']):
+            record['rejections'].append('certificate_box');return None
+        full=(clearance-gaps-surface_jac@delta)/scale
+        np.testing.assert_allclose(full.max(),full[retained].max(),atol=1e-10,rtol=1e-12)
+        depth=float(max(0.,((-gaps[ids]-surface_jac[ids]@delta-limit)/scale).max())) if len(ids) else 0.
+        surface=float(max(0.,full.max()));native_excess=float(native.residual(native_jac,delta).max())
+        record.update(predicted_native_excess=native_excess,predicted_partner_depth_deficit=depth,
+            full_affine_surface_excess=surface,reported_depth_epigraph=float(point[n]),reported_surface_epigraph=float(point[n+1]),
+            trust_projection_maximum_change=projection)
+        tolerance=info['phase_lock_tolerance']
+        if native_excess>settings.tol_feas:record['rejections'].append('native_conditions')
+        if np.any(point[n:] < -settings.tol_feas):record['rejections'].append('nonnegative_epigraphs')
+        if depth>max(0.,float(point[n]))+tolerance:record['rejections'].append('depth_epigraph')
+        if surface>max(0.,float(point[n+1]))+tolerance:record['rejections'].append('surface_epigraph')
+        if depth_bound is not None and depth>depth_bound+tolerance:record['rejections'].append('depth_priority')
+        if surface_bound is not None and surface>surface_bound+tolerance:record['rejections'].append('surface_priority')
+        record['accepted']=not record['rejections']
+        return (point,delta,record) if record['accepted'] else None
+    candidate=checked(first,'depth')
+    if candidate is None:
+        return None,dict(info,status='UnverifiedDepthPhase',invalid_solution=True),reduction
+    point,delta,selected=candidate;info['selected_phase']='depth'
+    depth_optimum=max(0.,float(point[n]))
     depth_lock = sparse.csc_matrix(np.r_[np.zeros(n),1.,0.][None])
     second_matrix = sparse.vstack([matrix,depth_lock],format='csc')
     second_bound = np.r_[bound,depth_optimum+1e-9]
     second_cones = cones+[solver.NonnegativeConeT(1)]
     second = solver.DefaultSolver(zero,np.r_[np.zeros(n),0.,1.],second_matrix,second_bound,second_cones,settings).solve()
     info.update(depth_phase_optimum=depth_optimum,surface_phase_status=str(second.status),minimum_norm_phase_status='not-run')
-    if str(second.status) in ('Solved','AlmostSolved') and np.isfinite(second.x).all():
-        point = np.asarray(second.x);surface_optimum=max(0.,float(point[n+1]))
+    candidate=checked(second,'surface',depth_bound=depth_optimum)
+    if candidate is not None:
+        point,delta,selected=candidate;info['selected_phase']='surface';surface_optimum=max(0.,float(point[n+1]))
         surface_lock=sparse.csc_matrix(np.r_[np.zeros(n),0.,1.][None])
         third_matrix=sparse.vstack([second_matrix,surface_lock],format='csc')
         third=solver.DefaultSolver(sparse.diags(np.r_[np.ones(n),0.,0.],format='csc'),np.zeros(n+2),
             third_matrix,np.r_[second_bound,surface_optimum+1e-9],second_cones+[solver.NonnegativeConeT(1)],settings).solve()
         info.update(surface_phase_optimum=surface_optimum,minimum_norm_phase_status=str(third.status))
-        if str(third.status) in ('Solved','AlmostSolved') and np.isfinite(third.x).all():point=np.asarray(third.x)
-    delta = point[:n]*trust
-    if np.any(delta < lo*trust-1e-9) or np.any(delta > hi*trust+1e-9):
-        return None, dict(info, invalid_solution=True), reduction
-    # Solver box tolerances may leave a point beyond the certificate padding.
-    # Project onto the original trust box before the authoring-box conversion.
-    raw_delta = delta.copy()
-    delta = np.clip(delta, lo*trust, hi*trust)
-    info['trust_projection_maximum_change'] = float(abs(delta-raw_delta).max())
-    delta = np.clip(value+delta, lower, upper)-value
-    if np.any(delta < reduction.report['proof_delta_lower']) or np.any(delta > reduction.report['proof_delta_upper']):
-        return None, dict(info, outside_certificate_box=True), reduction
-    full = (clearance-gaps-surface_jac @ delta)/scale
-    np.testing.assert_allclose(full.max(), full[retained].max(), atol=1e-10, rtol=1e-12)
-    depth_residual = (-gaps[ids]-surface_jac[ids] @ delta-limit)/scale
-    info.update(maximum_control_step=float(abs(delta).max()), predicted_native_excess=float(native.residual(native_jac, delta).max()),
-        full_affine_surface_excess=float(max(0., full.max())), selected_affine_surface_excess=float(max(0., full[retained].max())),
-        predicted_partner_depth_deficit=float(max(0., depth_residual.max())) if len(ids) else 0.,
+        candidate=checked(third,'minimum-norm',depth_bound=depth_optimum,surface_bound=surface_optimum)
+        if candidate is not None:point,delta,selected=candidate;info['selected_phase']='minimum-norm'
+    info.update(maximum_control_step=float(abs(delta).max()),predicted_native_excess=selected['predicted_native_excess'],
+        trust_projection_maximum_change=selected['trust_projection_maximum_change'],
+        full_affine_surface_excess=selected['full_affine_surface_excess'],selected_affine_surface_excess=selected['full_affine_surface_excess'],
+        predicted_partner_depth_deficit=selected['predicted_partner_depth_deficit'],
         all_original_affine_surface_rows_evaluated=True, every_guarded_affine_gap_evaluated=True)
     return delta, info, reduction
