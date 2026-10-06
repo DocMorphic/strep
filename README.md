@@ -330,3 +330,6 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 
 
 [Native tangent-matched transitions](docs/native-rig-transition-v1.md) retain original clips and use native endpoint rates with explicit floor/support screens. A matched generated gesture fixture reduces the largest angular boundary jump by 98.14%; moving-support and penetration failures remain retained. Thirty-four source cases pass, and actual saved-resource support passes after removing redundant static tracks. Scene/contact correction, Studio integration and production quality review remain open.
+
+
+[Native transition root support correction](docs/native-transition-root-support-v1.md) appends a bounded root-only repair while retaining every original clip and unchanged contact/floor/rate limits. Twenty-six source cases and actual saved-resource support/bridge-floor checks pass on the retained moving-root fixture. The whole-clip source floor failure remains explicit; articulated contacts, Studio integration and production quality remain open.
