@@ -449,3 +449,6 @@ The backend API validates scene contracts and rejects frozen-partner reference/p
 
 
 [Offline stored-pair correction jobs](docs/native-stored-pair-job-v1.md) now expose the verified backend as a pinned command. It recomputes original rate caps and audits every exported fraction against native, original-reference and complete sampled geometry checks while preserving originals and rejected proposals. Forty-six focused CPU tests pass on generated fixtures; the larger retained anchor still fails geometry, and production motion and human review remain open.
+
+
+[Complete offline stored-pair job study](docs/offline-stored-pair-study-v1.md) independently replays the full correction model and audits every raw export. A bounded storage repair clears motion/contact failures while preserving original budgets, but its 5.101 mm penetration and persistent triangle crossings still fail geometry. The repaired candidate remains an unapproved diagnostic anchor.
