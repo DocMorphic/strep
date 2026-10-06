@@ -467,3 +467,6 @@ The backend API validates scene contracts and rejects frozen-partner reference/p
 
 
 [Stored repair probe archives](docs/native-stored-pair-repair-jobs-v1.md) now release earlier pose arrays from memory and reload the final chosen probe for exact observation checks. The latest focused run passes 65 tests, including the memory regression. Larger pre-change study results remain preserved and geometry remains unapproved.
+
+
+[Reusable stored-pair export replay](docs/native-stored-pair-export-replay-v1.md) now checks every actual fraction and original motion/contact/reference limit. Twenty-four CPU tests pass. A fully replayed fresh correction lowers partner penetration to about 5.032 mm; complete collisions remain failed and solver-phase priority checks need correction.
