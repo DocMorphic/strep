@@ -140,3 +140,27 @@ def manifest(job):
     if declared is None:
         return studio.manifest(job)
     return _CACHE.read(job, studio.manifest, declared)
+
+
+def served_file(relative):
+    """Resolve the same exact published population after cached/full review.
+
+    This is opt-in; the existing server and producer do not call it yet.
+    Hash the selected payload again before returning its contained path.
+    """
+    import studio_native_transition_scene_fit as studio
+    parts = relative.split('/')
+    studio.require(len(parts) >= 3 and parts[0] == studio.NAMESPACE
+                   and all(x not in ('', '.', '..') for x in parts)
+                   and not any(c in relative for c in ('\\', '%', '?', '#')),
+                   'Contained published bridge artifact required')
+    value = manifest(parts[1])
+    name = '/'.join(parts[2:])
+    studio.require(value['status'] == 'complete' and name in value['files_sha256'],
+                   'Unpublished bridge artifact')
+    folder = studio.folder_for(parts[1])
+    path = (folder / name).resolve()
+    studio.require(path.is_relative_to(folder), 'Bridge artifact escapes job')
+    studio.require(studio.sha256(path) == value['files_sha256'][name],
+                   'Bridge artifact changed after review')
+    return path

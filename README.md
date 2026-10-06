@@ -348,3 +348,6 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 
 
 [Verified-read cache groundwork](docs/verified-transition-read-cache-v1.md) adds byte/population-bound reuse helpers with 37 passing integrity and metadata graph tests. Full numerical cold/warm equivalence and Studio transport integration remain pending; the original verifier remains in use.
+
+
+The verified-read cache groundwork now includes exact published-file resolution and 47 passing integrity/metadata cases. It remains disconnected from Studio pending numerical equivalence; the completed engine processes and byte-exact scene/game history checks do not yet establish whole-study completion or motion quality.

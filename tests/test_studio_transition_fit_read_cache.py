@@ -144,3 +144,66 @@ def test_public_adapter_keeps_ineligible_requests_with_the_full_reader(transport
     assert provider.dependencies('job') is None
     provider.manifest('job'); provider.manifest('job')
     assert calls == ['job', 'job'] and not provider._CACHE._entries
+
+
+@pytest.fixture
+def publication(transport, monkeypatch):
+    import hashlib
+    layout, calls, stub = transport
+    *_, job, _ = layout
+    artifact = job / 'candidate/actors/0.glb'
+    artifact.parent.mkdir(parents=True, exist_ok=True)
+    artifact.write_bytes(b'not a GLB; metadata-only publication fixture')
+    stub.NAMESPACE = 'native-transition-fit-jobs'
+    def require(ok, message):
+        if not ok: raise ValueError(message)
+    stub.require = require
+    stub.sha256 = lambda path: hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    original = stub.manifest
+    def full(key):
+        value = original(key)
+        value['files_sha256'] = {'candidate/actors/0.glb': stub.sha256(artifact)}
+        return value
+    stub.manifest = full
+    return layout, calls, stub, artifact
+
+
+def test_published_resolver_retains_exact_contained_paths_and_cached_review(publication):
+    _, calls, _, artifact = publication
+    relative = 'native-transition-fit-jobs/job/candidate/actors/0.glb'
+    assert provider.served_file(relative) == artifact.resolve()
+    assert provider.served_file(relative) == artifact.resolve()
+    assert calls == ['job']
+
+
+@pytest.mark.parametrize('path', ['wrong/job/candidate/actors/0.glb',
+    'native-transition-fit-jobs/job/../candidate/actors/0.glb',
+    'native-transition-fit-jobs/job/candidate//actors/0.glb',
+    'native-transition-fit-jobs/job/candidate/actors/0.glb?x=1',
+    'native-transition-fit-jobs/job/candidate/actors/0.glb#x',
+    'native-transition-fit-jobs/job/candidate/actors/%30.glb',
+    'native-transition-fit-jobs/job/candidate\\actors/0.glb'])
+def test_invalid_published_paths_reject_before_any_review(publication, path):
+    _, calls, _, _ = publication
+    with pytest.raises(ValueError, match='Contained published'):
+        provider.served_file(path)
+    assert not calls
+
+
+def test_unpublished_and_processing_artifacts_never_resolve(publication):
+    layout, _, _, _ = publication
+    with pytest.raises(ValueError, match='Unpublished'):
+        provider.served_file('native-transition-fit-jobs/job/request.json')
+    *_, job, _ = layout
+    save(job / 'pipeline.json', {'status': 'processing'})
+    with pytest.raises(ValueError, match='Unpublished'):
+        provider.served_file('native-transition-fit-jobs/job/candidate/actors/0.glb')
+
+
+def test_selected_payload_change_after_manifest_rejects(publication, monkeypatch):
+    _, _, _, artifact = publication
+    value = provider.manifest('job')
+    artifact.write_bytes(b'changed after the verified read')
+    monkeypatch.setattr(provider, 'manifest', lambda _: value)
+    with pytest.raises(ValueError, match='changed after review'):
+        provider.served_file('native-transition-fit-jobs/job/candidate/actors/0.glb')
