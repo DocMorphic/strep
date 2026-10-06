@@ -345,3 +345,6 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 
 
 [Studio shared-transition correction](docs/studio-transition-scene-fit-v1.md) proposes bounded edits to saved multi-character transitions, preserves original clip/contact/object/timing history and stages appended clips only after explicit Apply. All 201 focused Python cases and four offline UI suites pass. The serial saved-resource scene/game export check is still running; live UI, production motion quality and release validation remain open.
+
+
+[Verified-read cache groundwork](docs/verified-transition-read-cache-v1.md) adds byte/population-bound reuse helpers with 37 passing integrity and metadata graph tests. Full numerical cold/warm equivalence and Studio transport integration remain pending; the original verifier remains in use.
