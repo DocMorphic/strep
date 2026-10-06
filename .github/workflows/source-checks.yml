@@ -248,6 +248,7 @@ jobs:
           tests/test_studio_native_transition_scene_fit.py
           tests/test_verified_read_cache.py
           tests/test_studio_transition_fit_read_cache.py
+          tests/test_studio_transition_fit_cache_routes.py
           tests/test_native_scene_runtime.py
           tests/test_scene_prop_ownership.py
           tests/test_scene_prop_runtime.py

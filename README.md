@@ -354,3 +354,6 @@ The verified-read cache groundwork now includes exact published-file resolution 
 
 
 The [Studio shared-transition scene/game study](docs/studio-transition-scene-fit-v1.md) is now complete: three owned engine checks, 1688 saved pose/root samples per actor and complete byte-exact correction history pass fidelity/preservation checks. The continued contact and geometry conditions still fail. Numerical cache equivalence is being measured before its Studio hook; broad motion quality and all release gates remain open.
+
+
+[Verified shared-transition reads](docs/verified-transition-read-cache-v1.md) now connect the source review/download routes to the unchanged numerical verifier with byte-bound reuse. All 69 integrity/handler cases pass; actual in-memory handlers preserve complete review JSON and exact actor/event downloads. Fixture review improves from about 161 seconds cold to 7.5 seconds warm. The existing server has not been restarted; live UI, production motion quality and all release gates remain open.

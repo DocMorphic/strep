@@ -63,7 +63,7 @@ def allowed_file(url_path):
         return served_file(path.removeprefix('/files/'))
     if path=='/native-transition-fit-editor.mjs':return ROOT/'scripts/native-transition-fit-editor.mjs'
     if path.startswith('/files/native-transition-fit-jobs/'):
-        from studio_native_transition_scene_fit import served_file
+        from studio_transition_fit_read_cache import served_file
         return served_file(path.removeprefix('/files/'))
     if path=='/native-scene-transition-editor.mjs':return ROOT/'scripts/native-scene-transition-editor.mjs'
     if path.startswith('/files/native-scene-transition-jobs/'):
@@ -160,11 +160,13 @@ class Handler(BaseHTTPRequestHandler):
             from studio_native_transition_scene_fit import listing
             return self.respond(200,listing())
         if route=='/api/native-transition-fit-review':
-            from studio_native_transition_scene_fit import manifest
+            from studio_transition_fit_read_cache import manifest
+            from verified_read_cache import EvidenceChangedError
             try:
-                q=parse_qs(urlsplit(self.path).query)
-                if set(q)!={'id'} or len(q['id'])!=1:raise ValueError('Exact bridge correction selection required')
+                q=parse_qs(urlsplit(self.path).query,keep_blank_values=True)
+                if set(q)!={'id'} or len(q['id'])!=1 or not q['id'][0]:raise ValueError('Exact bridge correction selection required')
                 return self.respond(200,manifest(q['id'][0]))
+            except EvidenceChangedError as exc:return self.respond(409,dict(error=str(exc)))
             except (ValueError,TypeError,KeyError,OSError) as exc:return self.respond(400,dict(error=str(exc)))
         if route=='/api/native-scene-transition-jobs':
             from studio_native_scene_transition import listing
@@ -396,7 +398,10 @@ class Handler(BaseHTTPRequestHandler):
                 studies.insert(0,{'id':(folder/'result').relative_to(ROOT/'reports').as_posix(),'status':state['status'],
                     'kind':'contact_edit','ready':state['status']=='complete' and (folder/'result/summary.json').is_file(), 'error':state.get('error'), **timing_listing(folder,state)})
             return self.respond(200,{'studies':studies,'busy':worker_busy() or external_pair_fit_busy() or (self.server.worker is not None and self.server.worker.poll() is None)})
-        target=allowed_file(self.path)
+        from verified_read_cache import EvidenceChangedError
+        try:target=allowed_file(self.path)
+        except EvidenceChangedError as exc:return self.respond(409,dict(error=str(exc)))
+        except (ValueError,TypeError,KeyError,OSError) as exc:return self.respond(400,dict(error=str(exc)))
         if target is None or not target.is_file():return self.respond(404,{'error':'File not found'})
         if target.name=='manifest.json' and (target.parent/'review-update.json').is_file():
             from scene_review_update import displayed_manifest
