@@ -416,3 +416,8 @@ All three smaller surface proposals now pass every original native/contact condi
 ## Hard local partner depth guidance
 
 Complete affine gap-change guards preserve original acceptance, but the retained fixture solve stops without a proposal. All focused tests and independent complete-model replay pass; geometry quality remains unresolved. [Method and evidence](docs/native-partner-depth-guard-v1.md).
+
+
+## Scalar partner guidance converges
+
+Hard partner gap-change halfspaces now solve, but their final step is effectively zero. All four exports match the starting clips and retain complete geometry failures; no animation is approved. [Method and evidence](docs/native-partner-scalar-guard-v1.md).
