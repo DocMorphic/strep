@@ -244,6 +244,7 @@ jobs:
           tests/test_native_transition_root_support.py
           tests/test_native_scene_transition.py
           tests/test_studio_native_scene_transition.py
+          tests/test_native_transition_scene_fit.py
           tests/test_native_scene_runtime.py
           tests/test_scene_prop_ownership.py
           tests/test_scene_prop_runtime.py
