@@ -1,5 +1,5 @@
 """Stored-anchor alignment and byte-identical export with frozen offsets."""
-import sys
+import copy,sys
 from pathlib import Path
 import numpy as np
 import pytest
@@ -9,6 +9,8 @@ from native_rotation_storage_repair import StorageAdjustedEdits
 from native_stored_curve_proxy import StoredCurveProxy
 from rig_asset import RigAsset
 from native_support_clock import NativeSupportSampler
+from native_scene_fit import SceneProblem
+from native_scene_norms import rows,linearize
 from strep import sha256
 
 
@@ -42,6 +44,29 @@ def test_frozen_offsets_remain_smooth_and_original_quantization_is_unchanged(tmp
         for key,values in proxy.values('A',other,quantized=False).items():np.testing.assert_array_equal(values,continuous[key]+before[key])
         for key,values in proxy.values('A',other).items():np.testing.assert_array_equal(values,editor.values('A',other)[key])
     for key in before:np.testing.assert_array_equal(proxy.offsets['A'][key],before[key])
+
+
+def test_every_native_derivative_matches_direct_scalar_trs_sampling(tmp_path):
+    editor,x,path,proxy=prepare(tmp_path);problem=SceneProblem(editor.scene,editor)
+    centered=copy.copy(problem);centered.edits=proxy
+    original={k:v.copy() for k,v in editor.values('A',x,quantized=False).items()}
+    rig=RigAsset.load(path);reader=NativeSupportSampler(rig.document,rig.binary,0)
+    stored={(node,track):values.astype(float).copy() for node,track,clock,values,mode in reader.channels}
+    offsets={k:stored[k]-v for k,v in original.items()};channels=reader.channels
+    def vectors(value):
+        keys=editor.values('A',value,quantized=False)
+        reader.channels=[(node,track,clock,keys[node,track]+offsets[node,track] if (node,track) in keys else payload,mode)
+            for node,track,clock,payload,mode in channels]
+        worlds={'A':np.array([reader.sample(float(t)) for t in problem.times])}
+        return rows(problem,value,worlds)
+    _,jacobian,report=linearize(centered,x,step=.001,difference_source='continuous',difference_scheme='central')
+    assert report['central_difference_columns']==problem.size
+    for i in range(problem.size):
+        plus,minus=x.copy(),x.copy();plus[i]+=.001;minus[i]-=.001
+        a,b=vectors(plus),vectors(minus)
+        np.testing.assert_array_equal(a.caps,b.caps);np.testing.assert_array_equal(a.scales,b.scales)
+        expected=((a.vectors-b.vectors)/.002).ravel()
+        np.testing.assert_allclose(jacobian[:,i].toarray().ravel(),expected,atol=2e-9,rtol=1e-8)
 
 
 def test_export_and_original_library_are_identical_to_existing_editor(tmp_path):

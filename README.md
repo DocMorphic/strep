@@ -436,3 +436,8 @@ A depth-first proposal and bounded storage repair produce a native/contact/refer
 ## Stored motion and proposal curves aligned
 
 A freshly recentered correction lowers measured partner penetration, but complete geometry still fails. The new stored-centered smooth proposal preserves exported bytes and matches the native anchor. [Method and evidence](docs/native-stored-curve-proxy-v1.md).
+
+
+## Complete stored-centered correction tested
+
+The rebuilt model and bounded raw-key repair improve measured penetration while preserving original sampled motion/contact limits. Complete geometry still fails; the new anchor remains unapproved. [Method and evidence](docs/stored-centered-depth-correction-v1.md).
