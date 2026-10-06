@@ -411,3 +411,8 @@ Whole-box certificates represent all 277410 surface conditions with 118137 solve
 ## Bounded stored precision search
 
 All three smaller surface proposals now pass every original native/contact condition after bounded one-neighbour quaternion repair. All 31 raw probes and six original-preserving appended variants replay independently. Complete geometry still fails in every case, so no animation is accepted. [Method and evidence](docs/native-rotation-storage-search-v1.md).
+
+
+## Hard local partner depth guidance
+
+Complete affine gap-change guards preserve original acceptance, but the retained fixture solve stops without a proposal. All focused tests and independent complete-model replay pass; geometry quality remains unresolved. [Method and evidence](docs/native-partner-depth-guard-v1.md).

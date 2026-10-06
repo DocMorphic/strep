@@ -215,6 +215,7 @@ jobs:
           tests/test_native_pair_surface_conic.py
           tests/test_native_pair_surface_reduction.py
           tests/test_native_pair_surface_reduced_conic.py
+          tests/test_native_partner_depth_guard.py
           tests/test_native_object_surface_rows.py
           tests/test_native_object_hold_fit.py
           tests/test_native_object_correspondence_fit.py
