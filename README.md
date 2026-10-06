@@ -333,3 +333,6 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 
 
 [Native transition root support correction](docs/native-transition-root-support-v1.md) appends a bounded root-only repair while retaining every original clip and unchanged contact/floor/rate limits. Twenty-six source cases and actual saved-resource support/bridge-floor checks pass on the retained moving-root fixture. The whole-clip source floor failure remains explicit; articulated contacts, Studio integration and production quality remain open.
+
+
+[Shared native scene transitions](docs/native-scene-transition-v1.md) keep actors, rigid props, contact intent, roots and markers on one audited timeline. Thirty source cases pass; real two-actor/native-box resources match declared poses. Trimmed annotations remain traceable and marker confirmations reset. Default box import and incorrect partner/object contacts remain failed; Studio, coupled motion correction and production action review remain open.
