@@ -357,3 +357,6 @@ The [Studio shared-transition scene/game study](docs/studio-transition-scene-fit
 
 
 [Verified shared-transition reads](docs/verified-transition-read-cache-v1.md) now connect the source review/download routes to the unchanged numerical verifier with byte-bound reuse. All 69 integrity/handler cases pass; actual in-memory handlers preserve complete review JSON and exact actor/event downloads. Fixture review improves from about 161 seconds cold to 7.5 seconds warm. The existing server has not been restarted; live UI, production motion quality and all release gates remain open.
+
+
+The [temporal-control/import-precision study](docs/transition-temporal-controls-v1.md) diagnoses a boundary acceleration blocker and passes native contact with five authored timing points under unchanged bounds. All 1707 saved-resource pose/root samples pass fidelity, but import moves the 19.995 micrometre gap to 20.056 micrometres and fails the unchanged 20 micrometre contact limit. Geometry and all release gates remain open.
