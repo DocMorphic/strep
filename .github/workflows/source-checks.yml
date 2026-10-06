@@ -240,6 +240,7 @@ jobs:
           tests/test_studio_native_scene_transfer.py
           tests/test_studio_surface_export.py
           tests/test_native_transfer_library.py
+          tests/test_native_rig_transition.py
           tests/test_native_scene_runtime.py
           tests/test_scene_prop_ownership.py
           tests/test_scene_prop_runtime.py

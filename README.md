@@ -327,3 +327,6 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 
 
 [Shared-reference native clip libraries](docs/native-transfer-library-v1.md) append varied selected motions using one rig calibration while preserving existing animations. Offline replay separates endpoint pose agreement from velocity jumps; matching poses in the generated fixture still fail both rate limits. Twenty-six source tests and a real two-clip saved-resource check pass within their software scope. Blending, Studio integration and production motion review remain open.
+
+
+[Native tangent-matched transitions](docs/native-rig-transition-v1.md) retain original clips and use native endpoint rates with explicit floor/support screens. A matched generated gesture fixture reduces the largest angular boundary jump by 98.14%; moving-support and penetration failures remain retained. Thirty-four source cases pass, and actual saved-resource support passes after removing redundant static tracks. Scene/contact correction, Studio integration and production quality review remain open.
