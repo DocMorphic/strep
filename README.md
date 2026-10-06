@@ -458,3 +458,6 @@ The backend API validates scene contracts and rejects frozen-partner reference/p
 
 
 [Static-joint rotation variants](docs/native-static-rotation-variants-v1.md) add editable curves in a separate clip while preserving originals and measuring Float32 pose drift. Explicit v2 correction jobs retain original static reference transforms and motion/contact/geometry limits. Sixty-six focused CPU tests pass; the retained fixture's geometry and human quality remain unapproved.
+
+
+[The separate articulation baseline](docs/pair-articulation-baseline-v2.md) adds joint freedom while preserving original motion, contact and reference limits. All baseline motion checks pass; complete geometry still fails. A full correction study will measure whether the additional freedom helps.
