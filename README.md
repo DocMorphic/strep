@@ -351,3 +351,6 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 
 
 The verified-read cache groundwork now includes exact published-file resolution and 47 passing integrity/metadata cases. It remains disconnected from Studio pending numerical equivalence; the completed engine processes and byte-exact scene/game history checks do not yet establish whole-study completion or motion quality.
+
+
+The [Studio shared-transition scene/game study](docs/studio-transition-scene-fit-v1.md) is now complete: three owned engine checks, 1688 saved pose/root samples per actor and complete byte-exact correction history pass fidelity/preservation checks. The continued contact and geometry conditions still fail. Numerical cache equivalence is being measured before its Studio hook; broad motion quality and all release gates remain open.
