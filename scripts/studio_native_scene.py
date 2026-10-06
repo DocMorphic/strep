@@ -20,7 +20,7 @@ NAMESPACE='native-scene-jobs'
 NAME=re.compile(r'[A-Za-z0-9_-]{1,100}')
 SCRIPT_ROOT=Path(__file__).resolve().parent
 METHODS=tuple(dict.fromkeys(AUTHOR_METHODS+('studio_native_scene.py','native_contact_revision.py','native_correction_lineage.py')))
-ASSET_PREFIXES=('/files/rig-jobs/','/files/character-assets/','/files/native-correction-previews/','/files/native-support-jobs/','/files/native-scene-jobs/','/files/native-scene-fit-jobs/','/files/native-scene-transfer-jobs/','/files/native-scene-transition-jobs/')
+ASSET_PREFIXES=('/files/rig-jobs/','/files/character-assets/','/files/native-correction-previews/','/files/native-support-jobs/','/files/native-scene-jobs/','/files/native-scene-fit-jobs/','/files/native-scene-transfer-jobs/','/files/native-scene-transition-jobs/','/files/native-transition-fit-jobs/')
 
 
 def require(condition,message):
@@ -89,6 +89,10 @@ def method_names(payload,*,corrections=None):
     if has_origins(payload):
         from studio_native_scene_transition import METHODS as TRANSITION_METHODS
         result=tuple(dict.fromkeys(result+TRANSITION_METHODS+('native_transition_lineage.py',)))
+    from native_transition_scene_fit_lineage import has_origins as has_bridge_edits
+    if has_bridge_edits(payload):
+        from studio_native_transition_scene_fit import METHODS as BRIDGE_METHODS
+        result=tuple(dict.fromkeys(result+BRIDGE_METHODS+('native_transition_scene_fit_lineage.py','native_transition_lineage.py')))
     return result
 
 
@@ -149,6 +153,8 @@ def prepare(payload,folder,resolver):
         correction_lineage=snapshot(payload,folder/'correction-lineage') if has_origins(payload) else None
         from native_transition_lineage import has_origins as has_transitions,snapshot as transition_snapshot
         transition_lineage=transition_snapshot(payload,folder/'transition-lineage') if has_transitions(payload) else None
+        from native_transition_scene_fit_lineage import has_origins as has_bridge_edits,snapshot as bridge_snapshot
+        transition_correction_lineage=bridge_snapshot(payload,folder/'transition-correction-lineage') if has_bridge_edits(payload) else None
         geometry['contacts_sha256']=digest;save(folder/'geometry-policy.json',geometry)
         edit_path=None
         if edit is not None:
@@ -156,7 +162,7 @@ def prepare(payload,folder,resolver):
         plan(folder/'contacts.json',folder/'geometry-policy.json',engine,folder/'recipe.json',edit_path)
         names=['draft.json','contacts.json','geometry-policy.json','recipe.json']+(['object-edit.json'] if edit is not None else [])
         prepared=dict(schema='strep-studio-native-scene-prepared-v1',sources=sources,
-            correction_lineage=correction_lineage,transition_lineage=transition_lineage,
+            correction_lineage=correction_lineage,transition_lineage=transition_lineage,transition_correction_lineage=transition_correction_lineage,
             contact_revision_requested='contact_revision' in payload,
             files_sha256={n:sha256(folder/n) for n in names},implementation_sha256=methods,
             engine_path=str(engine),engine_sha256=sha256(engine),original_selected=True,quality_approved=False,
@@ -187,6 +193,10 @@ def frozen(folder,*,current_methods=True):
     transition_lineage=p.get('transition_lineage')
     require((transition_lineage is not None)==has_transitions(draft),'Scene transition lineage selection changed')
     if transition_lineage is not None:verify_transition(draft,folder/'transition-lineage',transition_lineage)
+    from native_transition_scene_fit_lineage import has_origins as has_bridge_edits,verify as verify_bridge
+    bridge_lineage=p.get('transition_correction_lineage')
+    require((bridge_lineage is not None)==has_bridge_edits(draft),'Bridge correction lineage selection changed')
+    if bridge_lineage is not None:verify_bridge(draft,folder/'transition-correction-lineage',bridge_lineage)
     require(p.get('contact_revision_requested',False)==('contact_revision' in draft),'Scene revision selection changed')
     for n,h in p['implementation_sha256'].items():
         require(sha256(folder/'implementation'/n)==h,'Scene method archive changed')
@@ -219,7 +229,7 @@ def frozen(folder,*,current_methods=True):
 
 def download_names(prepared):
     actors_only='verify_native_actor_scene_engine.py' in prepared['implementation_sha256']
-    return ({'transition-lineage/record.json'} if prepared.get('transition_lineage') is not None else set()) | ({'correction-lineage/record.json'} if prepared.get('correction_lineage') is not None else set()) | ({'exports/contact-revision.json'} if prepared.get('contact_revision_requested',False) else set()) | {f'input/actor-{i}.glb' for i in range(len(prepared['sources']))} | {
+    return ({'transition-correction-lineage/record.json'} if prepared.get('transition_correction_lineage') is not None else set()) | ({'transition-lineage/record.json'} if prepared.get('transition_lineage') is not None else set()) | ({'correction-lineage/record.json'} if prepared.get('correction_lineage') is not None else set()) | ({'exports/contact-revision.json'} if prepared.get('contact_revision_requested',False) else set()) | {f'input/actor-{i}.glb' for i in range(len(prepared['sources']))} | {
         'authoring/result.json','authoring/replay/result.json','assets.zip'} | ({'authoring/actors-engine/geometry.json'} if actors_only else {
         'authoring/objects-common/objects.glb','authoring/objects-engine/native-animation.res','authoring/combined-engine/geometry.json'}) | {
         f'authoring/actors-engine/{name}-animation.res' for name in prepared['sources']}
@@ -258,6 +268,10 @@ def package(folder,prepared,result):
         from native_transition_lineage import verify as verify_transition,package_files as transition_files
         verify_transition(read(folder/'draft.json'),folder/'transition-lineage',prepared['transition_lineage'])
         files.update(transition_files(folder/'transition-lineage',prepared['transition_lineage']))
+    if prepared.get('transition_correction_lineage') is not None:
+        from native_transition_scene_fit_lineage import verify as verify_bridge,package_files as bridge_files
+        verify_bridge(read(folder/'draft.json'),folder/'transition-correction-lineage',prepared['transition_correction_lineage'])
+        files.update(bridge_files(folder/'transition-correction-lineage',prepared['transition_correction_lineage']))
     receipts={n:sha256(path) for n,path in files.items()}
     save(exports/'package.json',dict(schema='strep-native-scene-asset-package-v1',files_sha256=receipts,
         selected_animations={name:a['animation_index'] for name,a in scene['actors'].items()},
@@ -306,6 +320,8 @@ def run(folder):
             outputs['correction-lineage/record.json']=dict(label='Character correction provenance',sha256=sha256(folder/'correction-lineage/record.json'))
         if prepared.get('transition_lineage') is not None:
             outputs['transition-lineage/record.json']=dict(label='Transition sources and timing history',sha256=sha256(folder/'transition-lineage/record.json'))
+        if prepared.get('transition_correction_lineage') is not None:
+            outputs['transition-correction-lineage/record.json']=dict(label='Bridge correction source constraints and history',sha256=sha256(folder/'transition-correction-lineage/record.json'))
         frozen(folder)
         completion=dict(schema='strep-studio-native-scene-completion-v1',prepared_sha256=sha256(folder/'prepared.json'),
             result_sha256=sha256(folder/'authoring/result.json'),replay_sha256=sha256(folder/'authoring/replay/result.json'),

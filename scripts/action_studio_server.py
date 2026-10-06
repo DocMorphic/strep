@@ -61,6 +61,10 @@ def allowed_file(url_path):
     if path.startswith('/files/surface-export-jobs/'):
         from studio_surface_export import served_file
         return served_file(path.removeprefix('/files/'))
+    if path=='/native-transition-fit-editor.mjs':return ROOT/'scripts/native-transition-fit-editor.mjs'
+    if path.startswith('/files/native-transition-fit-jobs/'):
+        from studio_native_transition_scene_fit import served_file
+        return served_file(path.removeprefix('/files/'))
     if path=='/native-scene-transition-editor.mjs':return ROOT/'scripts/native-scene-transition-editor.mjs'
     if path.startswith('/files/native-scene-transition-jobs/'):
         from studio_native_scene_transition import served_file
@@ -152,6 +156,16 @@ class Handler(BaseHTTPRequestHandler):
                 if set(q)!={'id'} or len(q['id'])!=1:raise ValueError('Exact surface export selection required')
                 return self.respond(200,manifest(q['id'][0]))
             except (ValueError,TypeError,KeyError,OSError,zipfile.BadZipFile) as exc:return self.respond(400,dict(error=str(exc)))
+        if route=='/api/native-transition-fit-jobs':
+            from studio_native_transition_scene_fit import listing
+            return self.respond(200,listing())
+        if route=='/api/native-transition-fit-review':
+            from studio_native_transition_scene_fit import manifest
+            try:
+                q=parse_qs(urlsplit(self.path).query)
+                if set(q)!={'id'} or len(q['id'])!=1:raise ValueError('Exact bridge correction selection required')
+                return self.respond(200,manifest(q['id'][0]))
+            except (ValueError,TypeError,KeyError,OSError) as exc:return self.respond(400,dict(error=str(exc)))
         if route=='/api/native-scene-transition-jobs':
             from studio_native_scene_transition import listing
             return self.respond(200,listing())
@@ -398,7 +412,7 @@ class Handler(BaseHTTPRequestHandler):
         except (BrokenPipeError,ConnectionResetError):pass
 
     def do_POST(self):
-        if self.path not in ['/api/native-scene-transition-inspect','/api/native-scene-transition-stage','/api/surface-export-assets','/api/native-scene-transfer-assets','/api/native-scene-transfer-catalog','/api/native-transfer-assets','/api/native-transfer-import','/api/native-scene-fits','/api/native-scene-fit-catalog','/api/native-scene-material-patch','/api/native-scene-material-region-preview','/api/native-scene-material-region-save','/api/native-scene-material-region-pose','/api/native-scene-contact-revision','/api/native-scene-game-assets','/api/scene-prop-runtime-assets','/api/scene-prop-runtime-align','/api/scene-prop-bake-assets','/api/baked-scene-assets','/api/native-scene-assets','/api/correction-review-edit','/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission','/api/jobs','/api/scene-pair-fits','/api/scene-trims','/api/scene-releases','/api/scene-region-fits','/api/pose-target','/api/motion-brief','/api/contact-edits','/api/characters/import','/api/characters/sample','/api/characters/profile','/api/rig-jobs','/api/rig-contact-edits','/api/rig-contact-inspect','/api/rig-patch-selection','/api/native-support-edits','/api/rig-clip-edits','/api/rig-joint-edits','/api/rig-posture-edits','/api/rig-mirror-edits','/api/rig-transitions','/api/rig-loops','/api/rig-loop-search','/api/rig-events','/api/rig-prompt-edits','/api/rig-dynamics-edits']:return self.respond(404,{'error':'Unknown endpoint'})
+        if self.path not in ['/api/native-transition-fit-catalog','/api/native-transition-fits','/api/native-scene-transition-inspect','/api/native-scene-transition-stage','/api/surface-export-assets','/api/native-scene-transfer-assets','/api/native-scene-transfer-catalog','/api/native-transfer-assets','/api/native-transfer-import','/api/native-scene-fits','/api/native-scene-fit-catalog','/api/native-scene-material-patch','/api/native-scene-material-region-preview','/api/native-scene-material-region-save','/api/native-scene-material-region-pose','/api/native-scene-contact-revision','/api/native-scene-game-assets','/api/scene-prop-runtime-assets','/api/scene-prop-runtime-align','/api/scene-prop-bake-assets','/api/baked-scene-assets','/api/native-scene-assets','/api/correction-review-edit','/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission','/api/jobs','/api/scene-pair-fits','/api/scene-trims','/api/scene-releases','/api/scene-region-fits','/api/pose-target','/api/motion-brief','/api/contact-edits','/api/characters/import','/api/characters/sample','/api/characters/profile','/api/rig-jobs','/api/rig-contact-edits','/api/rig-contact-inspect','/api/rig-patch-selection','/api/native-support-edits','/api/rig-clip-edits','/api/rig-joint-edits','/api/rig-posture-edits','/api/rig-mirror-edits','/api/rig-transitions','/api/rig-loops','/api/rig-loop-search','/api/rig-events','/api/rig-prompt-edits','/api/rig-dynamics-edits']:return self.respond(404,{'error':'Unknown endpoint'})
         host=self.headers.get('Host');origin=self.headers.get('Origin')
         if host not in self.server.allowed_hosts or origin!=f'http://{host}':return self.respond(403,{'error':'Submit from the local studio page'})
         if self.path=='/api/characters/import':
@@ -414,7 +428,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get('Content-Type')!='application/json':return self.respond(415,{'error':'JSON required'})
         try:
             length=int(self.headers.get('Content-Length','0'))
-            limit=1048576 if self.path in ('/api/native-scene-transition-inspect','/api/native-scene-transition-stage','/api/surface-export-assets','/api/native-scene-transfer-assets','/api/native-scene-transfer-catalog','/api/native-transfer-assets','/api/native-transfer-import','/api/native-scene-fits','/api/native-scene-fit-catalog','/api/native-scene-material-patch','/api/native-scene-material-region-preview','/api/native-scene-material-region-save','/api/native-scene-material-region-pose','/api/native-scene-contact-revision','/api/native-scene-game-assets','/api/scene-prop-runtime-assets','/api/scene-prop-runtime-align','/api/scene-prop-bake-assets','/api/baked-scene-assets','/api/native-scene-assets','/api/correction-review-edit','/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission') else 32768
+            limit=1048576 if self.path in ('/api/native-transition-fit-catalog','/api/native-transition-fits','/api/native-scene-transition-inspect','/api/native-scene-transition-stage','/api/surface-export-assets','/api/native-scene-transfer-assets','/api/native-scene-transfer-catalog','/api/native-transfer-assets','/api/native-transfer-import','/api/native-scene-fits','/api/native-scene-fit-catalog','/api/native-scene-material-patch','/api/native-scene-material-region-preview','/api/native-scene-material-region-save','/api/native-scene-material-region-pose','/api/native-scene-contact-revision','/api/native-scene-game-assets','/api/scene-prop-runtime-assets','/api/scene-prop-runtime-align','/api/scene-prop-bake-assets','/api/baked-scene-assets','/api/native-scene-assets','/api/correction-review-edit','/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission') else 32768
             if not 0<length<=limit:raise ValueError('Request too large or empty')
             payload=json.loads(self.rfile.read(length))
             if self.path=='/api/native-transfer-import':
@@ -453,6 +467,9 @@ class Handler(BaseHTTPRequestHandler):
                         result=load(payload,allowed_file)
                 except RuntimeError as exc:return self.respond(409,{'error':str(exc)})
                 return self.respond(200,result)
+            if self.path=='/api/native-transition-fit-catalog':
+                from studio_native_transition_scene_fit import catalog
+                return self.respond(200,catalog(payload))
             if self.path=='/api/native-scene-transition-inspect':
                 from studio_native_scene_transition import inspect
                 return self.respond(200,inspect(payload))
@@ -561,6 +578,9 @@ class Handler(BaseHTTPRequestHandler):
             elif self.path=='/api/native-scene-transfer-assets':
                 from studio_native_scene_transfer import validate_request
                 validate_request(payload,allowed_file)
+            elif self.path=='/api/native-transition-fits':
+                from studio_native_transition_scene_fit import validate_request
+                validate_request(payload)
             elif self.path=='/api/native-scene-fits':
                 from studio_native_scene_fit import validate_request
                 validate_request(payload,allowed_file)
@@ -627,6 +647,17 @@ class Handler(BaseHTTPRequestHandler):
                         except psutil.NoSuchProcess:pass
                 except (ValueError,OSError) as exc:
                     if folder.exists():save(folder/'pipeline.json',dict(status='failed',error=str(exc),original_selected=True,quality_approved=False))
+                    return self.respond(400,dict(error=str(exc)))
+                return self.respond(202,dict(id=job,status='starting'))
+            if self.path=='/api/native-transition-fits':
+                from studio_native_transition_scene_fit import folder_for,prepare
+                folder=folder_for(job)
+                try:
+                    prepare(payload,folder)
+                    with (folder/'supervisor.log').open('w',encoding='utf8') as log:
+                        self.server.worker=subprocess.Popen([sys.executable,str(ROOT/'scripts/studio_native_transition_scene_fit.py'),str(folder)],cwd=ROOT,env=offline_environment(),stdout=log,stderr=subprocess.STDOUT,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+                except (ValueError,OSError) as exc:
+                    if folder.exists():save(folder/'pipeline.json',dict(status='failed',error=str(exc),original_selected=True))
                     return self.respond(400,dict(error=str(exc)))
                 return self.respond(202,dict(id=job,status='starting'))
             if self.path=='/api/native-scene-fits':

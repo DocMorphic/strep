@@ -445,7 +445,7 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
  <div id="nativeSceneResults" aria-live="polite"></div>
 </details>
 
-<details id="nativeSceneTransitionPanel" class="rig-panel">
+   <details id="nativeSceneTransitionPanel" class="rig-panel">
  <summary>Shared transitions</summary>
  <p class="small">Open a saved transition, review its original checks, then stage all characters and props together. Failed contacts stay visible. Gameplay marker timing must be reviewed after the edit.</p>
  <div class="rig-field-grid">
@@ -462,6 +462,43 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
  <p class="small" id="nativeSceneTransitionStatus" role="status">No saved transition inspected.</p>
  <div id="nativeSceneTransitionResults" aria-live="polite"></div>
  <button class="btn" id="nativeSceneTransitionApply" disabled>Use staged scene and timing</button>
+</details>
+
+   <details id="nativeTransitionFitPanel" class="rig-panel">
+ <summary>Correct a shared transition</summary>
+ <p class="small">Choose how each character may move inside the saved transition. Original clips, contacts and object paths remain available. Inspect every result before using its separate draft.</p>
+ <div class="rig-field-grid">
+  <label>Saved transition folder<input id="nativeTransitionFitFolder" placeholder="Folder within project reports"></label>
+  <label>Result checksum<input id="nativeTransitionFitHash" spellcheck="false" placeholder="SHA256 of result.json"></label>
+ </div>
+ <button class="btn" id="nativeTransitionFitInspect">Load transition channels</button>
+ <p class="small" id="nativeTransitionFitBridge">No transition loaded.</p>
+ <div class="rig-field-grid">
+  <label>Character<select id="nativeTransitionFitActor"></select></label>
+  <label>Motion channel<select id="nativeTransitionFitTrack"></select></label>
+  <label>Channel change limit<input id="nativeTransitionFitBound" type="number" min="0.000001" step="any" value="5"></label>
+ </div>
+ <p class="small" id="nativeTransitionFitUnits">Rotation bounds use degrees; translation bounds use millimetres. Boundary motion stays protected.</p>
+ <button class="btn" id="nativeTransitionFitAdd">Add channel to this character</button>
+ <div class="rig-field-grid">
+  <label>Control times (s)<input id="nativeTransitionFitKnots"></label>
+  <label>Additional protected ranges (s)<input id="nativeTransitionFitProtected" value="[]"></label>
+  <label>Maximum joint movement (mm)<input id="nativeTransitionFitDisplacement" type="number" min="0.001" max="220" step="any" value="30"></label>
+ </div>
+ <div class="toolbar"><button class="btn" id="nativeTransitionFitSaveActor">Save character bounds</button><button class="btn" id="nativeTransitionFitRemoveActor">Remove character bounds</button></div>
+ <div id="nativeTransitionFitSelections"></div>
+ <div class="rig-field-grid">
+  <label>Variant name<input id="nativeTransitionFitLabel" value="Corrected transition"></label>
+  <label>Correction iterations<input id="nativeTransitionFitIterations" type="number" min="1" max="16" step="1" value="1"></label>
+  <label>Complete query budget<input id="nativeTransitionFitBudget" type="number" min="1" max="1000000" step="1" value="1000000"></label>
+  <label>Penetration limit (mm)<input id="nativeTransitionFitPenetration" type="number" min="0" max="100" step="any" value="0.01"></label>
+ </div>
+ <button class="btn primary" id="nativeTransitionFitBuild" disabled>Propose separate correction</button>
+ <p class="small" id="nativeTransitionFitStatus" role="status">No transition loaded.</p>
+ <div class="toolbar"><select id="nativeTransitionFitJobs" aria-label="Bridge correction job"></select><button class="btn" id="nativeTransitionFitRefresh">Refresh jobs</button><button class="btn" id="nativeTransitionFitReview">Review original and candidate checks</button><button class="btn" id="nativeTransitionFitResume">Continue reviewed source epoch</button></div>
+ <div id="nativeTransitionFitResults" aria-live="polite"></div>
+ <button class="btn" id="nativeTransitionFitApply" disabled>Use reviewed candidate in a separate draft</button>
+ <p class="small">Failed candidates may be staged for further editing. Their failures remain recorded; staging does not approve game use or animation quality. Marker timings remain unconfirmed.</p>
 </details>
 
    <details id="nativeSceneTransferPanel" class="rig-panel">
@@ -1746,6 +1783,9 @@ void (async function characterStudio(){
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneTransitionEditor}=await import('/native-scene-transition-editor.mjs');
   if(!nativeSceneEditor||!nativeSceneGameEditor)throw Error('Scene and game-track editors are required');
   createNativeSceneTransitionEditor({api,post,setDraft:value=>nativeSceneEditor.bind(value),queueGameTracks:value=>nativeSceneGameEditor.queueTransition(value)});},C('nativeSceneTransitionStatus'),'Shared transition editor');
+ await initializeOptionalRigEditor(async()=>{const {createNativeTransitionFitEditor}=await import('/native-transition-fit-editor.mjs');
+  if(!nativeSceneEditor||!nativeSceneGameEditor)throw Error('Scene and game-track editors are required');
+  createNativeTransitionFitEditor({api,post,getDraft:()=>nativeSceneEditor.snapshot(),setDraft:value=>nativeSceneEditor.bind(value),queueGameTracks:value=>nativeSceneGameEditor.queueTransition(value)});},C('nativeTransitionFitStatus'),'Bridge correction editor');
  await initializeOptionalRigEditor(async()=>{const {createSurfaceExportEditor}=await import('/surface-export-editor.mjs');
   createSurfaceExportEditor({api,post});},C('surfaceExportStatus'),'Surface export editor');
  await initializeOptionalRigEditor(async()=>{const {createScenePropRuntimeEditor}=await import('/scene-prop-runtime-editor.mjs');

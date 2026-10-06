@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {createNativeSceneTransitionEditor,stagedTransition} from '../scripts/native-scene-transition-editor.mjs';
 import {createNativeSceneGameEditor} from '../scripts/native-scene-game-editor.mjs';
 class Element{constructor(){this.value='';this.children=[];this.checked=false;this.disabled=false;this.textContent='';}replaceChildren(...items){this.children=items;this.value=items[0]?.value??'';}append(...items){this.children.push(...items);}}
-const html=await readFile(new URL('../scripts/native-scene-transition-editor.html',import.meta.url),'utf8');const nodes=new Map();
+const html=await readFile(new URL('../scripts/native-scene-transition-editor.html',import.meta.url),'utf8').then(x=>x.replace(/\r\n/g,'\n'));const nodes=new Map();
 for(const m of html.matchAll(/<[^>]*id="(nativeSceneTransition[^"]+)"[^>]*>/g)){const item=new Element();item.value=m[0].match(/value="([^"]*)"/)?.[1]??'';item.disabled=m[0].includes('disabled');nodes.set(m[1],item);}
 const doc={getElementById:id=>nodes.get(id),createElement:()=>new Element()},el=n=>nodes.get('nativeSceneTransition'+n);
 const source={folder:'saved/transition',result_sha256:'a'.repeat(64)},inspection={source,actors:['A','B'],objects:['box'],duration_s:1.2,bridge_interval_s:[.4,.6],checks:{contacts:false,objects:true},timeline_mapping:[{}],times_s:[0,.4,.5,.6,1.2],floor:null,original_selected:true,quality_approved:false,release_approved:false};
@@ -30,5 +30,5 @@ ge.queueTransition(queued);assert.throws(()=>ge.snapshot(),/Bind/);await gn.get(
 const invalid=structuredClone(queued);invalid.request.markers[0].confirmed=true;assert.throws(()=>ge.queueTransition(invalid));
 ge.queueTransition(queued);metadata.actors.B.animation_index=4;await gn.get('nativeSceneGameBind').onclick();assert.match(gn.get('nativeSceneGameStatus').textContent,/different scene clips/);metadata.actors.B.animation_index=3;
 ge.queueTransition(queued);metadata.times_s=[0,1.2];await gn.get('nativeSceneGameBind').onclick();assert.match(gn.get('nativeSceneGameStatus').textContent,/clock or participants changed/);
-const studio=await readFile(new URL('../scripts/action-studio.html',import.meta.url),'utf8');assert(studio.includes(html));assert(studio.includes("import('/native-scene-transition-editor.mjs')"));assert(studio.includes('nativeSceneGameEditor.queueTransition(value)'));
+const studio=await readFile(new URL('../scripts/action-studio.html',import.meta.url),'utf8').then(x=>x.replace(/\r\n/g,'\n'));assert(studio.includes(html));assert(studio.includes("import('/native-scene-transition-editor.mjs')"));assert(studio.includes('nativeSceneGameEditor.queueTransition(value)'));
 console.log('Shared transition staging, retained failures, typed downloads, stale selection and unconfirmed exact-clip timing passed offline.');

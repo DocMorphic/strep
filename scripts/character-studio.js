@@ -15,7 +15,7 @@ void (async function characterStudio(){
  const {createNativeSupportEditor}=await import('/native-support-editor.mjs');
  const nativeSupportEditor=createNativeSupportEditor({getContext:()=>({job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value})});
  const contactEditor=createRigContactEditor({C,THREE,canvas,scene,camera,controls,api,post,status,getContext:()=>({model,loaded,frame,result,job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),pause:()=>{playing=false;C('rigPlay').textContent='Play';},seek,onFit:job=>{pending=job.id;controlsState();refreshJobs().catch(e=>status(e.message));}});
- let nativeSceneEditor=null;
+ let nativeSceneEditor=null,nativeSceneGameEditor=null;
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneEditor}=await import('/native-scene-editor.mjs');
   nativeSceneEditor=createNativeSceneEditor({api,post,getContext:()=>({job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),getPatch:()=>contactEditor.nativePatch()});},C('nativeSceneStatus'),'Scene editor');
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneTransferEditor}=await import('/native-scene-transfer-editor.mjs');
@@ -23,7 +23,13 @@ void (async function characterStudio(){
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneFitEditor}=await import('/native-scene-fit-editor.mjs');
   if(!nativeSceneEditor)throw Error('Scene editor is required');createNativeSceneFitEditor({api,post,getDraft:()=>nativeSceneEditor.snapshot(),setDraft:value=>nativeSceneEditor.bind(value)});},C('nativeSceneFitStatus'),'Character correction editor');
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneGameEditor}=await import('/native-scene-game-editor.mjs');
-  createNativeSceneGameEditor({api,post});},C('nativeSceneGameStatus'),'Game-track editor');
+  nativeSceneGameEditor=createNativeSceneGameEditor({api,post});},C('nativeSceneGameStatus'),'Game-track editor');
+ await initializeOptionalRigEditor(async()=>{const {createNativeSceneTransitionEditor}=await import('/native-scene-transition-editor.mjs');
+  if(!nativeSceneEditor||!nativeSceneGameEditor)throw Error('Scene and game-track editors are required');
+  createNativeSceneTransitionEditor({api,post,setDraft:value=>nativeSceneEditor.bind(value),queueGameTracks:value=>nativeSceneGameEditor.queueTransition(value)});},C('nativeSceneTransitionStatus'),'Shared transition editor');
+ await initializeOptionalRigEditor(async()=>{const {createNativeTransitionFitEditor}=await import('/native-transition-fit-editor.mjs');
+  if(!nativeSceneEditor||!nativeSceneGameEditor)throw Error('Scene and game-track editors are required');
+  createNativeTransitionFitEditor({api,post,getDraft:()=>nativeSceneEditor.snapshot(),setDraft:value=>nativeSceneEditor.bind(value),queueGameTracks:value=>nativeSceneGameEditor.queueTransition(value)});},C('nativeTransitionFitStatus'),'Bridge correction editor');
  await initializeOptionalRigEditor(async()=>{const {createSurfaceExportEditor}=await import('/surface-export-editor.mjs');
   createSurfaceExportEditor({api,post});},C('surfaceExportStatus'),'Surface export editor');
  await initializeOptionalRigEditor(async()=>{const {createScenePropRuntimeEditor}=await import('/scene-prop-runtime-editor.mjs');

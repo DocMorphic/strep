@@ -22,6 +22,25 @@ def origin(url):
 def has_origins(draft):return any(origin(a['glb']) is not None for a in draft['scene']['actors'].values())
 
 
+def transition_material(artifact,base,material,document,bindings):
+    """Portable original sources and annotations, without creating another stage."""
+    artifact=Path(artifact);prepared=read(artifact/'prepared.json');recipe=read(artifact/'recipe.json')
+    for side,bind in enumerate(recipe['sources']):
+        sp=(Path(prepared['recipe_base'])/bind['scene']['path']).resolve();gp=(Path(prepared['recipe_base'])/bind['game_tracks']['path']).resolve()
+        require(sha256(sp)==bind['scene']['sha256'] and sha256(gp)==bind['game_tracks']['sha256'],'Original transition scene/timing changed')
+        bindings[str(sp)]=sha256(sp);bindings[str(gp)]=sha256(gp);spec=read(sp)
+        for a in spec['actors'].values():
+            path=(sp.parent/a['glb']).resolve();require(sha256(path)==a['sha256'],'Original clip library changed')
+            name='libraries/'+a['sha256']+'.glb';material(base+'/'+name,path);a['glb']=name
+        document(base+('/first-scene.json' if side==0 else '/second-scene.json'),spec)
+        document(base+('/first-game-tracks.json' if side==0 else '/second-game-tracks.json'),read(gp))
+    spec=read(artifact/'scene.json')
+    for name,a in spec['actors'].items():
+        path=(artifact/a['glb']).resolve();material(base+'/candidate/'+name+'.glb',path);a['glb']='candidate/'+name+'.glb'
+    document(base+'/candidate-scene.json',spec)
+    for n in ('result.json','game-tracks-request.json','events.json','contacts.json','roots.json'):material(base+'/'+n,artifact/n)
+
+
 def plan(draft):
     import studio_native_scene_transition as stages
     selection={};jobs={};files={};bindings={}
@@ -37,20 +56,7 @@ def plan(draft):
         if job in jobs:continue
         require(len(jobs)<8,'At most eight complete transition origins; no truncation')
         base='jobs/'+job;artifact=folder/'transition';prepared=read(artifact/'prepared.json');recipe=read(artifact/'recipe.json')
-        for side,bind in enumerate(recipe['sources']):
-            sp=(Path(prepared['recipe_base'])/bind['scene']['path']).resolve();gp=(Path(prepared['recipe_base'])/bind['game_tracks']['path']).resolve()
-            require(sha256(sp)==bind['scene']['sha256'] and sha256(gp)==bind['game_tracks']['sha256'],'Original transition scene/timing changed')
-            bindings[str(sp)]=sha256(sp);bindings[str(gp)]=sha256(gp);spec=read(sp)
-            for a in spec['actors'].values():
-                path=(sp.parent/a['glb']).resolve();require(sha256(path)==a['sha256'],'Original clip library changed')
-                name='libraries/'+a['sha256']+'.glb';material(base+'/'+name,path);a['glb']=name
-            document(base+('/first-scene.json' if side==0 else '/second-scene.json'),spec)
-            document(base+('/first-game-tracks.json' if side==0 else '/second-game-tracks.json'),read(gp))
-        spec=read(artifact/'scene.json')
-        for name,a in spec['actors'].items():
-            path=(artifact/a['glb']).resolve();material(base+'/candidate/'+name+'.glb',path);a['glb']='candidate/'+name+'.glb'
-        document(base+'/candidate-scene.json',spec)
-        for n in ('result.json','game-tracks-request.json','events.json','contacts.json','roots.json'):material(base+'/'+n,artifact/n)
+        transition_material(artifact,base,material,document,bindings)
         material(base+'/stage-result.json',folder/'result.json')
         jobs[job]=dict(stage_result_sha256=sha256(folder/'result.json'),assembly_result_sha256=sha256(artifact/'result.json'),
             source_scene_sha256=[b['scene']['sha256'] for b in recipe['sources']],source_game_tracks_sha256=[b['game_tracks']['sha256'] for b in recipe['sources']],
