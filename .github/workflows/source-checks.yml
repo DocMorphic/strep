@@ -201,6 +201,7 @@ jobs:
           tests/test_native_rotation_storage_search.py
           tests/test_native_rate_storage_search.py
           tests/test_native_best_rate_storage_search.py
+          tests/test_native_balanced_rate_storage_search.py
           tests/test_native_scene_storage.py
           tests/test_native_scene_restore.py
           tests/test_native_scene_key_restore.py
@@ -237,6 +238,7 @@ jobs:
           tests/test_native_axis_pair_repair_job.py
           tests/test_native_rate_axis_pair_repair_job.py
           tests/test_native_best_rate_axis_pair_repair_job.py
+          tests/test_native_balanced_rate_axis_pair_repair_job.py
           tests/test_native_stored_pair_export_replay.py
           tests/test_native_static_rotation_variant.py
           tests/test_native_static_reference_job.py
