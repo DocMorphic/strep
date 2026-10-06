@@ -369,3 +369,6 @@ The [offline reserve-guided transition workflow](docs/reserve-guided-transition-
 
 
 [Studio contact reserves and candidate bundles](docs/studio-transition-contact-reserves-v1.md) add explicit reserve generation, original/candidate check review and clips/tracks/history downloads. All 152 focused Python cases, five offline UI suites, actual Studio package replay, saved-resource contact/fidelity and three real-bundle tamper rejections pass. Geometry and production motion/release gates remain open; the live server has not been restarted.
+
+
+[Protected source geometry diagnosis](docs/geometry-source-blockers-v1.md) confirms partner crossings already present in immutable source phases. All 83 focused tests pass; complete frozen poses/skins and 52 exact triangle certificates support the finding. Bridge-only correction cannot clear this scene, so the next edit needs broader explicit source/scene permissions. Geometry and all release gates remain open.
