@@ -426,3 +426,8 @@ Hard partner gap-change halfspaces now solve, but their final step is effectivel
 ## Local depth-floor conflict identified
 
 The authored 5 mm partner floors conflict jointly in the retained local model, even without native/contact norms. Four witnesses provide an independently verified exact rational certificate. No motion is exported or approved; nonlinear and broader correction remain open. [Method and evidence](docs/native-partner-depth-limit-v1.md).
+
+
+## Depth restoration advances the retained scene
+
+A depth-first proposal and bounded storage repair produce a native/contact/reference-passing correction anchor with lower measured penetration. Complete geometry still fails, so the anchor remains unapproved and requires freshly rebuilt guidance. [Method and evidence](docs/native-partner-depth-restore-v1.md).
