@@ -224,6 +224,7 @@ jobs:
           tests/test_native_stored_curve_proxy.py
           tests/test_native_stored_pair_model.py
           tests/test_native_stored_pair_job.py
+          tests/test_native_stored_surface_restore_job.py
           tests/test_native_stored_pair_repair_job.py
           tests/test_native_stored_pair_export_replay.py
           tests/test_native_static_rotation_variant.py
