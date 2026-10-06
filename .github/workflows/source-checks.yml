@@ -206,6 +206,8 @@ jobs:
           tests/test_native_scene_stage.py
           tests/test_native_skin_export.py
           tests/test_native_partner_surface_rows.py
+          tests/test_native_compact_surface_rows.py
+          tests/test_native_compact_surface_model.py
           tests/test_native_object_surface_rows.py
           tests/test_native_object_hold_fit.py
           tests/test_native_object_correspondence_fit.py
