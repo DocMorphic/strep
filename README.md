@@ -446,3 +446,6 @@ The rebuilt model and bounded raw-key repair improve measured penetration while 
 ## Reusable stored-centered scene model
 
 The backend API validates scene contracts and rejects frozen-partner reference/playback drift. Its retained correction improves measured penetration while complete geometry still fails. [API, regression and evidence](docs/reusable-stored-pair-model-v1.md).
+
+
+[Offline stored-pair correction jobs](docs/native-stored-pair-job-v1.md) now expose the verified backend as a pinned command. It recomputes original rate caps and audits every exported fraction against native, original-reference and complete sampled geometry checks while preserving originals and rejected proposals. Forty-six focused CPU tests pass on generated fixtures; the larger retained anchor still fails geometry, and production motion and human review remain open.
