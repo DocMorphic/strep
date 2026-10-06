@@ -177,6 +177,16 @@ def test_input_mutation_after_preflight_rejects(tmp_path):
     with pytest.raises(ValueError,match='input bytes changed'):r.check()
 
 
+@pytest.mark.parametrize('version',[1,2])
+def test_nested_output_cannot_change_original_study_population(tmp_path,version):
+    path=prepare(tmp_path,version);source=Path(read(path)['study']['path']).parent
+    before={str(p.relative_to(source)):sha256(p) for p in source.rglob('*') if p.is_file()}
+    out=source/'nested'/'correction'
+    with pytest.raises(ValueError,match='outside the immutable saved study'):module.run(path,out)
+    assert not (source/'nested').exists()
+    assert {str(p.relative_to(source)):sha256(p) for p in source.rglob('*') if p.is_file()}==before
+
+
 def test_runtime_failure_is_archived_without_success(tmp_path,monkeypatch):
     path=prepare(tmp_path)
     def fail(*args,**kwargs):raise RuntimeError('deliberate runtime failure')
