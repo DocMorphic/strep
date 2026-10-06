@@ -111,6 +111,16 @@ def test_repinned_false_raw_observation_retains_failure_without_success(tmp_path
     assert (out/'start'/'A.glb').is_file() and (out/'implementation'/'native_stored_pair_repair_job.py').is_file()
 
 
+@pytest.mark.parametrize('version',[1,2])
+def test_nested_output_preserves_original_study_inventory(tmp_path,version):
+    path=prepare(tmp_path,version);source=Path(read(path)['study']['path']).parent
+    before={str(p.relative_to(source)):sha256(p) for p in source.rglob('*') if p.is_file()}
+    out=source/'nested'/'repair'
+    with pytest.raises(ValueError,match='outside the immutable saved study'):run(path,out)
+    assert not (source/'nested').exists()
+    assert {str(p.relative_to(source)):sha256(p) for p in source.rglob('*') if p.is_file()}==before
+
+
 def test_input_mutation_after_preflight_rejects(tmp_path):
     path=prepare(tmp_path);job=RepairJob(path);p=job.roles['independent_replay'];p.write_bytes(p.read_bytes()+b' ')
     with pytest.raises(ValueError,match='input bytes changed'):job.check()

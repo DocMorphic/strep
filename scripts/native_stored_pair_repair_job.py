@@ -84,7 +84,9 @@ def run(request_path,output):
     output=Path(output).resolve()
     with worker_lock(),threadpool_limits(limits=1):
         if output.exists():raise ValueError('Fresh immutable repair output required')
-        request=RepairJob(request_path);job=request.job;problem=request.problem;value=request.value;selected=request.selected
+        request=RepairJob(request_path)
+        if output.is_relative_to(request.folder):raise ValueError('Repair output must be outside the immutable saved study')
+        job=request.job;problem=request.problem;value=request.value;selected=request.selected
         hashes={n:sha256(ROOT/'scripts'/n) for n in METHODS};output.mkdir(parents=True);(output/'implementation').mkdir();(output/'inputs').mkdir()
         for n in hashes:shutil.copyfile(ROOT/'scripts'/n,output/'implementation'/n)
         for role,p in request.roles.items():shutil.copyfile(p,output/'inputs'/(role+p.suffix))
