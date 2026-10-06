@@ -401,3 +401,8 @@ Methodology: [Stored quaternion repair](docs/stored-rotation-repair-v1.md).
 ## Complete vertex pair surface proposals
 
 The new proposal model retains all nine triangle vertex-pair derivatives and hard original native norms. All 277410 actual surface rows are evaluated, but the solver stops with InsufficientProgress. Independent full-row/derivative replay and an explicit affine feasible witness distinguish convergence failure from infeasibility. No new motion is accepted. [Method and evidence](docs/native-pair-surface-guidance-v1.md).
+
+
+## Certified equivalent surface solver rows
+
+Whole-box certificates represent all 277410 surface conditions with 118137 solver rows, and the primary solve now converges. Exact rational replay verifies every implication. All four exported fractions still fail original native rates; full-size geometry also fails and worsens depth. No animation is accepted. [Method and evidence](docs/native-pair-surface-reduction-v1.md).
