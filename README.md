@@ -441,3 +441,8 @@ A freshly recentered correction lowers measured partner penetration, but complet
 ## Complete stored-centered correction tested
 
 The rebuilt model and bounded raw-key repair improve measured penetration while preserving original sampled motion/contact limits. Complete geometry still fails; the new anchor remains unapproved. [Method and evidence](docs/stored-centered-depth-correction-v1.md).
+
+
+## Reusable stored-centered scene model
+
+The backend API validates scene contracts and rejects frozen-partner reference/playback drift. Its retained correction improves measured penetration while complete geometry still fails. [API, regression and evidence](docs/reusable-stored-pair-model-v1.md).
