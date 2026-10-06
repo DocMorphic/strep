@@ -455,3 +455,6 @@ The backend API validates scene contracts and rejects frozen-partner reference/p
 
 
 [Edit influence and crossing diagnostics](docs/native-edit-crossing-diagnostics-v1.md) now classify every actual partner-surface record against permitted interpolation, hierarchy and all skin influences. The retained fixture has 30432 potentially editable crossings and no wholly fixed pair. Investigation also exposes missing static-joint animation channels, which need an explicit clip-variant preparation before finer articulation can be tested; geometry and human quality remain unapproved.
+
+
+[Static-joint rotation variants](docs/native-static-rotation-variants-v1.md) add editable curves in a separate clip while preserving originals and measuring Float32 pose drift. Explicit v2 correction jobs retain original static reference transforms and motion/contact/geometry limits. Sixty-six focused CPU tests pass; the retained fixture's geometry and human quality remain unapproved.

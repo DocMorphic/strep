@@ -21,9 +21,11 @@ from sampled_motion_caps import SampledMotionCaps,features
 from rig_asset import RigAsset
 from action_worker_lock import worker_lock
 from strep import ROOT,read,save,sha256,now
+from native_static_rotation_variant import static_quaternion,METHODS as STATIC_METHODS
 
 SCHEMA='strep-native-stored-pair-job-v1'
-METHODS=tuple(sorted(set(FIT_METHODS)|set(MODEL_METHODS)|{
+STATIC_SCHEMA='strep-native-stored-pair-job-v2'
+METHODS=tuple(sorted(set(FIT_METHODS)|set(MODEL_METHODS)|set(STATIC_METHODS)|{
     'native_stored_pair_job.py','native_partner_depth_guard.py','native_partner_depth_limit.py',
     'native_partner_depth_restore.py','native_pair_surface_reduction.py',
     'native_pair_surface_reduced_conic.py','native_pair_surface_conic.py'}))
@@ -33,9 +35,10 @@ class Job:
     def __init__(self,path):
         self.path=Path(path).resolve();self.request=read(self.path);self.inputs={str(self.path):sha256(self.path)};self.roles={}
         r=self.request
+        extra=('static_reference_tracks',) if isinstance(r,dict) and r.get('schema')==STATIC_SCHEMA else ()
         fields(r,('schema','source_scene','reference_scene','edit_request','storage_policy','geometry_policy',
-            'source_rate_caps','anchor','settings'),'stored-pair job')
-        if r['schema']!=SCHEMA:raise ValueError('Explicit stored-pair job schema required')
+            'source_rate_caps','anchor','settings')+extra,'stored-pair job')
+        if r['schema'] not in (SCHEMA,STATIC_SCHEMA):raise ValueError('Explicit stored-pair job schema required')
         def pin(value,role):
             fields(value,('path','sha256'),'pinned '+role)
             if not isinstance(value['path'],str) or not value['path']:raise ValueError('Explicit pinned file path required')
@@ -43,7 +46,7 @@ class Job:
             if not p.is_file() or sha256(p)!=value['sha256']:raise ValueError('Pinned '+role+' bytes differ')
             self.inputs[str(p)]=value['sha256'];self.roles[role]=p;return p
         self.pin=pin
-        for role in ('source_scene','reference_scene','edit_request','storage_policy','geometry_policy','source_rate_caps'):pin(r[role],role)
+        for role in ('source_scene','reference_scene','edit_request','storage_policy','geometry_policy','source_rate_caps')+extra:pin(r[role],role)
         a=r['anchor'];fields(a,('controls','array','corrections','actor_files'),'stored anchor')
         if not isinstance(a['array'],str) or not a['array'] or not isinstance(a['actor_files'],dict):raise ValueError('Explicit anchor array and actor files required')
         control_path=pin(a['controls'],'anchor_controls')
@@ -75,6 +78,37 @@ class Job:
         self.geometry_times=policy_for(self.policy,self.scene,digest)[0]
         base=BoundarySceneEdits(read(self.roles['edit_request']),self.scene,digest,rotation_storage_policy='source-scale')
         self.edits=StorageAdjustedEdits(base,read(self.roles['storage_policy']),r['anchor']['corrections'])
+        declared={}
+        if extra:
+            contract=read(self.roles['static_reference_tracks'])
+            fields(contract,('schema','source_scene_sha256','reference_scene_sha256','actors','acknowledge_original_static_baselines'),'static reference tracks')
+            if (contract['schema']!='strep-native-static-reference-tracks-v1' or contract['source_scene_sha256']!=digest
+                    or contract['reference_scene_sha256']!=sha256(self.roles['reference_scene']) or contract['acknowledge_original_static_baselines'] is not True
+                    or not isinstance(contract['actors'],dict) or not contract['actors'] or not set(contract['actors'])<=set(base.actors)):
+                raise ValueError('Explicit source/reference-bound original static baselines required')
+            for n,tracks in contract['actors'].items():
+                if not isinstance(tracks,list) or not tracks:raise ValueError('Explicit added static tracks required')
+                for track in tracks:
+                    fields(track,('node','path','clock_from'),'static reference track')
+                    node,path=track['node'],track['path'];key=n,node,path
+                    if type(node) is not int or path!='rotation' or key in declared:raise ValueError('Distinct explicit static rotation tracks required')
+                    match=[e for e in base.actors[n]['tracks'] if (e['node'],e['path'])==(node,path)]
+                    if len(match)!=1 or any(c[:2]==(node,path) for c in self.reference.actors[n]['sampler'].channels):raise ValueError('Static baseline must be an edited track absent from original reference animation')
+                    original=self.reference.actors[n]['rig'].document['nodes'][node];raw,seed=static_quaternion(original);e=match[0]
+                    if not np.array_equal(e['source'],np.tile(seed,(len(e['clock']),1))):raise ValueError('Added source channel must be the constant nearest Float32 original static rotation')
+                    template=track['clock_from'];fields(template,('node','path'),'static clock template')
+                    if type(template['node']) is not int or template['path'] not in ('rotation','translation','scale'):raise ValueError('Existing original clock template required')
+                    clocks=[[c for c in a[n]['sampler'].channels if c[:2]==(template['node'],template['path'])] for a in (self.scene.actors,self.reference.actors)]
+                    if any(len(c)!=1 for c in clocks) or any(not np.array_equal(c[0][2],e['clock']) for c in clocks):raise ValueError('Static channel requires unchanged source and original reference template clocks')
+                    if float(e['clock'][0])!=0 or float(e['clock'][-1])!=self.scene.duration:raise ValueError('Static reference clock must cover the full clip')
+                    declared[key]=(node,path,e['clock'],np.tile(raw,(len(e['clock']),1)),'LINEAR')
+        self.reference_tracks={};self.static_reference_keys=set(declared)
+        for n,actor in base.actors.items():
+            for e in actor['tracks']:
+                key=n,e['node'],e['path'];matches=[c for c in self.reference.actors[n]['sampler'].channels if c[:2]==(e['node'],e['path'])]
+                if key in declared:self.reference_tracks[key]=declared[key]
+                elif len(matches)==1 and np.array_equal(matches[0][2],e['clock']):self.reference_tracks[key]=matches[0]
+                else:raise ValueError('Permitted tracks require matching original reference clocks or explicit v2 static baselines')
         if set(self.files)!=set(base.actors):raise ValueError('Exact edited anchor actor population required')
         self.value=base.controls(self.value)
         for n,p in self.files.items():
@@ -94,10 +128,6 @@ class Job:
                     stored=data[n+'_metric_'+str(i)]
                     if stored.dtype!=v.dtype or not np.array_equal(stored,v):raise ValueError('Rate caps must exactly recompute from pinned reference motion')
                 if n in base.actors:self.problem.caps[n]=caps
-        for n,actor in base.actors.items():
-            for e in actor['tracks']:
-                matches=[c for c in self.reference.actors[n]['sampler'].channels if c[:2]==(e['node'],e['path'])]
-                if len(matches)!=1 or not np.array_equal(matches[0][2],e['clock']):raise ValueError('Permitted tracks require matching original reference clocks')
         self.check()
 
     def check(self):
@@ -111,11 +141,13 @@ class Job:
             displacement[n]=maximum;passed=passed and maximum<=actor['displacement']
             rig=RigAsset.load(files[n]);sampler=NativeSupportSampler(rig.document,rig.binary,self.scene.actors[n]['animation_index'])
             for e in actor['tracks']:
-                before=next(c for c in self.reference.actors[n]['sampler'].channels if c[:2]==(e['node'],e['path']))
+                before=self.reference_tracks[n,e['node'],e['path']]
                 after=next(c for c in sampler.channels if c[:2]==(e['node'],e['path']))
                 if not np.array_equal(before[2],after[2]):raise ValueError('Export changed original reference key clock')
                 change=float(np.rad2deg((Rotation.from_quat(before[3]).inv()*Rotation.from_quat(after[3])).magnitude()).max()) if e['path']=='rotation' else float(np.linalg.norm(after[3]-before[3],axis=1).max())
-                passed=passed and change<=e['maximum'];tracks.append(dict(actor=n,node=e['node'],path=e['path'],maximum_change=change,limit=e['maximum']))
+                passed=passed and change<=e['maximum'];record=dict(actor=n,node=e['node'],path=e['path'],maximum_change=change,limit=e['maximum'])
+                if (n,e['node'],e['path']) in self.static_reference_keys:record['baseline']='original-static-transform'
+                tracks.append(record)
         return dict(passed=bool(passed),joint_displacement_m=displacement,tracks=tracks)
 
 
@@ -181,7 +213,7 @@ def run(request_path,output):
                     save(folder/'result.json',record);records.append(record)
             job.check()
             if any(sha256(ROOT/'scripts'/n)!=h or sha256(output/'implementation'/n)!=h for n,h in hashes.items()):raise ValueError('Worker implementation bytes changed')
-            result=dict(schema=SCHEMA,status='complete',at=now(),original_selected=True,job_request_sha256=sha256(job.path),inputs_sha256=job.inputs,methods_sha256=hashes,
+            result=dict(schema=job.request['schema'],status='complete',at=now(),original_selected=True,job_request_sha256=sha256(job.path),inputs_sha256=job.inputs,methods_sha256=hashes,
                 input_snapshots=snapshots,original_rate_caps_recomputed=True,complete_native_samples=len(problem.times),geometry_samples=len(job.geometry_times),controls=problem.size,
                 original_native_norms=len(native.caps),surface_rows=len(gaps),partner_guard_rows=len(ids),equivalent_encoded_rows=len(reduction.retained),solver_status=solver['status'],
                 records=records,files_sha256={str(p.relative_to(output)):sha256(p) for p in output.rglob('*') if p.is_file() and p.name!='pipeline.json'},
