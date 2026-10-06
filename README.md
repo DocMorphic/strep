@@ -452,3 +452,6 @@ The backend API validates scene contracts and rejects frozen-partner reference/p
 
 
 [Complete offline stored-pair job study](docs/offline-stored-pair-study-v1.md) independently replays the full correction model and audits every raw export. A bounded storage repair clears motion/contact failures while preserving original budgets, but its 5.101 mm penetration and persistent triangle crossings still fail geometry. The repaired candidate remains an unapproved diagnostic anchor.
+
+
+[Edit influence and crossing diagnostics](docs/native-edit-crossing-diagnostics-v1.md) now classify every actual partner-surface record against permitted interpolation, hierarchy and all skin influences. The retained fixture has 30432 potentially editable crossings and no wholly fixed pair. Investigation also exposes missing static-joint animation channels, which need an explicit clip-variant preparation before finer articulation can be tested; geometry and human quality remain unapproved.
