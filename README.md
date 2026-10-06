@@ -360,3 +360,6 @@ The [Studio shared-transition scene/game study](docs/studio-transition-scene-fit
 
 
 The [temporal-control/import-precision study](docs/transition-temporal-controls-v1.md) diagnoses a boundary acceleration blocker and passes native contact with five authored timing points under unchanged bounds. All 1707 saved-resource pose/root samples pass fidelity, but import moves the 19.995 micrometre gap to 20.056 micrometres and fails the unchanged 20 micrometre contact limit. Geometry and all release gates remain open.
+
+
+[Explicit contact reserves](docs/native-contact-reserve-v1.md) retain authored acceptance while tightening selected solver targets. Twenty focused software tests pass; a complete 1707-time saved-resource study passes native/imported contact under the original limit. Geometry still fails, and Studio integration and all release gates remain open.
