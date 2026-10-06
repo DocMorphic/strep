@@ -372,3 +372,6 @@ The [offline reserve-guided transition workflow](docs/reserve-guided-transition-
 
 
 [Protected source geometry diagnosis](docs/geometry-source-blockers-v1.md) confirms partner crossings already present in immutable source phases. All 83 focused tests pass; complete frozen poses/skins and 52 exact triangle certificates support the finding. Bridge-only correction cannot clear this scene, so the next edit needs broader explicit source/scene permissions. Geometry and all release gates remain open.
+
+
+[Explicit clip boundary editing](docs/native-scene-boundary-edit-v1.md) adds bounded opening/ending-pose authoring while protecting interior spans and retaining original clips. All 120 focused tests pass. Four actual broader proposals keep contacts but fail original acceleration caps; unrounded/exported comparisons expose serialization sensitivity. Complete surface guidance also exceeds the current row budget. Geometry, production motion quality and release gates remain open.

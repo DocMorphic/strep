@@ -254,6 +254,7 @@ jobs:
           tests/test_native_geometry_failure_profile.py
           tests/test_exact_triangle_crossing_witness.py
           tests/test_native_geometry_source_blockers.py
+          tests/test_native_scene_boundary_edit.py
           tests/test_studio_transition_contact_fit.py
           tests/test_studio_transition_contact_routes.py
           tests/test_native_scene_runtime.py
