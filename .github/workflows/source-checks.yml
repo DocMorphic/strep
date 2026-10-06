@@ -237,6 +237,7 @@ jobs:
           tests/test_native_transfer_scene.py
           tests/test_native_transfer_calibration.py
           tests/test_native_transfer_surface_calibration.py
+          tests/test_studio_native_scene_transfer.py
           tests/test_native_scene_runtime.py
           tests/test_scene_prop_ownership.py
           tests/test_scene_prop_runtime.py
@@ -413,6 +414,7 @@ jobs:
           node tests/test_native_support_editor.mjs
           node tests/test_native_scene_editor.mjs
           node tests/test_native_scene_fit_editor.mjs
+          node tests/test_native_scene_transfer_editor.mjs
           node tests/test_material_region_author.mjs
           node tests/test_material_region_orientation.mjs
           node tests/test_material_region_pose.mjs

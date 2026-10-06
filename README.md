@@ -27,6 +27,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Surface-aware transfer calibration](docs/native-transfer-surface-calibration-v1.md) adds authored facing constraints to the search and checks complete exported meshes against objects, partners and declared planes. Passing point contacts cannot hide failed normals or sampled geometry. Transitions, production motion and human quality review remain open.
 
+[Studio scene transfer](docs/studio-scene-transfer-v1.md) exposes explicit contact correspondence, authored normals and bounded calibration for multiple transferred characters. Originals remain selected; only passing native conditions can stage a separate draft. Scene export, engine surface checks, transition review and human quality approval remain separate.
+
 [Cylinder penetration bounds](docs/cylinder-collision-bounds-v1.md) now cover box/sphere/cylinder pairs through analytic sphere offsets and complete nested-prism separating-axis checks. They report penetration uncertainty and preserve the current physics-release qualification; cylinder simulation and interaction acceptance remain open.
 
 [Scene reference checks before generation](docs/scene-target-preflight-v1.md) now catch contact, floor, object and partner failures after the actual model skeleton conversion. Strict preparation rejects incompatible references before encoding; explicit diagnostic comparisons preserve them. A passing constructive object reference and rejected real high-five references verify this path, without claiming realistic generated interactions.

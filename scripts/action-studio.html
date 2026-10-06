@@ -445,6 +445,49 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
  <div id="nativeSceneResults" aria-live="polite"></div>
 </details>
 
+   <details id="nativeSceneTransferPanel" class="rig-panel">
+ <summary>Transfer a scene to new characters</summary>
+ <p class="small">First assemble Scene contacts and finish each character's Native clip transfer. Choose the transferred actors below. Explicit mesh correspondence preserves hand, foot, object and partner targets; winding normals require authored surface conditions.</p>
+ <div class="toolbar"><button class="btn" id="nativeSceneTransferRefresh">Load scene &amp; completed transfers</button></div>
+ <div class="rig-field-grid">
+  <label>Scene character<select id="nativeSceneTransferActor"></select></label>
+  <label>Completed character transfer<select id="nativeSceneTransferTransfer"></select></label>
+ </div>
+ <button class="btn" id="nativeSceneTransferLoad">Load required contact vertices</button>
+ <p class="small">Source references include incoming partner contacts. Enter the corresponding target [mesh node, primitive, vertex] for every row. A picked target patch can fill the rows in its displayed order; verify that order yourself.</p>
+ <div id="nativeSceneTransferVertices"></div>
+ <button class="btn" id="nativeSceneTransferPick">Use picked target patch in this order</button>
+ <p class="small">Choose mapped reference rotations that may change, with degree bounds. These are whole-clip changes and may change transition endpoints.</p>
+ <div id="nativeSceneTransferRoles"></div>
+ <div class="rig-field-grid">
+  <label>Maximum root offset (mm)<input id="nativeSceneTransferRoot" type="number" min="0" max="220" step="any" value="0"></label>
+  <label>Maximum joint movement (mm)<input id="nativeSceneTransferDisplacement" type="number" min="0.001" max="220" step="any" value="20"></label>
+ </div>
+ <div class="toolbar"><button class="btn" id="nativeSceneTransferSaveActor">Save character correspondence &amp; bounds</button><button class="btn" id="nativeSceneTransferRemove">Remove character transfer</button></div>
+ <div id="nativeSceneTransferSelections"></div>
+ <label class="small">Target surface normals by contact (JSON)
+  <textarea id="nativeSceneTransferNormals" rows="6" spellcheck="false" aria-label="Authored target normals">{}</textarea>
+ </label>
+ <p class="small">For world/object targets, replace null with one unit normal per contact point, in that target's coordinates. Partner normals use the explicit target mesh patch. Mesh winding does not establish an anatomical palm or outward surface.</p>
+ <div class="rig-field-grid">
+  <label>Maximum normal opposition error (degrees)<input id="nativeSceneTransferAngle" type="number" min="0" max="90" step="any" value="1"></label>
+  <label>Backface allowance (mm)<input id="nativeSceneTransferBackface" type="number" min="0" max="5" step="any" value="0.05"></label>
+  <label>Minimum normal area (m²)<input id="nativeSceneTransferArea" type="number" min="0.0000000000000001" max="0.0001" step="any" value="0.000000000001"></label>
+  <label>Minimum normal coherence<input id="nativeSceneTransferCoherence" type="number" min="0.000001" max="1" step="any" value="0.1"></label>
+  <label>Surface pose query budget<input id="nativeSceneTransferQueries" type="number" min="1" max="20000" value="20000"></label>
+  <label>Total search evaluations<input id="nativeSceneTransferEvaluations" type="number" min="1" max="300" value="60"></label>
+  <label>Objective call budget<input id="nativeSceneTransferCalls" type="number" min="1" max="10000" value="400"></label>
+  <label>Search time budget (s)<input id="nativeSceneTransferSeconds" type="number" min="1" max="3600" value="90"></label>
+  <label>Search starts<input id="nativeSceneTransferStarts" type="number" min="1" max="7" value="1"></label>
+ </div>
+ <div class="toolbar"><button class="btn" id="nativeSceneTransferSave">Save request</button><button class="btn primary" id="nativeSceneTransferBuild">Build separate transferred scene</button></div>
+ <p class="small" id="nativeSceneTransferStatus" role="status">No scene transfer selected.</p>
+ <div class="toolbar"><select id="nativeSceneTransferJobs" aria-label="Scene transfer job"></select><button class="btn" id="nativeSceneTransferReview">Review source &amp; candidate checks</button></div>
+ <div id="nativeSceneTransferResults" aria-live="polite"></div>
+ <button class="btn" id="nativeSceneTransferStage" disabled>Stage all candidate clips as a new scene draft</button>
+ <p class="small">Staging requires contact, surface, source-rate, movement and declared geometry samples to pass. Then build Scene contacts assets for saved-resource engine checks and previews. Review animation quality and transitions before game use.</p>
+</details>
+
    <details id="nativeSceneFitPanel" class="rig-panel">
  <summary>Correct character motion</summary>
  <p class="small">Assemble characters and contacts in Scene contacts first. Choose the joints and timing that may change. Original clips stay selected; proposals and failed checks remain available for review. Object paths stay as declared.</p>
@@ -1658,6 +1701,8 @@ void (async function characterStudio(){
  let nativeSceneEditor=null;
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneEditor}=await import('/native-scene-editor.mjs');
   nativeSceneEditor=createNativeSceneEditor({api,post,getContext:()=>({job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),getPatch:()=>contactEditor.nativePatch()});},C('nativeSceneStatus'),'Scene editor');
+ await initializeOptionalRigEditor(async()=>{const {createNativeSceneTransferEditor}=await import('/native-scene-transfer-editor.mjs');
+  if(!nativeSceneEditor)throw Error('Scene editor is required');createNativeSceneTransferEditor({api,post,getDraft:()=>nativeSceneEditor.snapshot(),setDraft:value=>nativeSceneEditor.bind(value),getPatch:()=>contactEditor.nativePatch()});},C('nativeSceneTransferStatus'),'Scene transfer editor');
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneFitEditor}=await import('/native-scene-fit-editor.mjs');
   if(!nativeSceneEditor)throw Error('Scene editor is required');createNativeSceneFitEditor({api,post,getDraft:()=>nativeSceneEditor.snapshot(),setDraft:value=>nativeSceneEditor.bind(value)});},C('nativeSceneFitStatus'),'Character correction editor');
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneGameEditor}=await import('/native-scene-game-editor.mjs');
