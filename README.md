@@ -324,3 +324,6 @@ The [Kimodo adapter feasibility audit](docs/kimodo-adapter-feasibility-v1.md) no
 
 
 [Studio saved-scene export](docs/studio-baked-scene-v1.md) connects completed animation bakes to source-bound Godot packages and headless playback verification. Review preserves original timing/contact/import failures and exposes five verified downloads. Final checks pass 61 Python tests and four offline UI suites; live UI and motion-quality approval remain open.
+
+
+[Shared-reference native clip libraries](docs/native-transfer-library-v1.md) append varied selected motions using one rig calibration while preserving existing animations. Offline replay separates endpoint pose agreement from velocity jumps; matching poses in the generated fixture still fail both rate limits. Twenty-six source tests and a real two-clip saved-resource check pass within their software scope. Blending, Studio integration and production motion review remain open.
