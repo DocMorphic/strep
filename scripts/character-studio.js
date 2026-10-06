@@ -24,6 +24,8 @@ void (async function characterStudio(){
   if(!nativeSceneEditor)throw Error('Scene editor is required');createNativeSceneFitEditor({api,post,getDraft:()=>nativeSceneEditor.snapshot(),setDraft:value=>nativeSceneEditor.bind(value)});},C('nativeSceneFitStatus'),'Character correction editor');
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneGameEditor}=await import('/native-scene-game-editor.mjs');
   createNativeSceneGameEditor({api,post});},C('nativeSceneGameStatus'),'Game-track editor');
+ await initializeOptionalRigEditor(async()=>{const {createSurfaceExportEditor}=await import('/surface-export-editor.mjs');
+  createSurfaceExportEditor({api,post});},C('surfaceExportStatus'),'Surface export editor');
  await initializeOptionalRigEditor(async()=>{const {createScenePropRuntimeEditor}=await import('/scene-prop-runtime-editor.mjs');
   createScenePropRuntimeEditor({api,post});},C('scenePropRuntimeStatus'),'Grip runtime editor');
  await initializeOptionalRigEditor(async()=>{const {createScenePropBakeEditor}=await import('/scene-prop-bake-editor.mjs');

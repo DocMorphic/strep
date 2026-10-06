@@ -1,0 +1,16 @@
+<details id="surfaceExportPanel" class="rig-panel">
+ <summary>Check surfaces &amp; package engine assets</summary>
+ <p class="small">Choose a completed scene or root/game-track package. This reuses its saved engine observations to check authored contact-facing conditions. Exact character, object, root and event files are preserved in a separate checked package.</p>
+ <div class="rig-field-grid"><label>Source package<select id="surfaceExportKind"><option value="scene">Scene assets</option><option value="game">Root &amp; game-track assets</option></select></label><label>Completed source<select id="surfaceExportSource"></select></label></div>
+ <div class="toolbar"><button class="btn" id="surfaceExportRefresh">Refresh completed sources &amp; results</button><button class="btn" id="surfaceExportBind">Bind selected engine package</button></div>
+ <div id="surfaceExportSourceInfo"></div>
+ <label class="small">Surface conditions (JSON)<textarea id="surfaceExportPolicy" rows="8" spellcheck="false">{}</textarea></label>
+ <p class="small">Inherited transfer normals are loaded when scene intent matches. Otherwise author one unit normal per world/object contact point in its target coordinates, or use the exact partner-surface declaration. Include angle, side, area/coherence and complete pose-query limits. Winding normals do not identify anatomical palms.</p>
+ <label class="small"><input id="surfaceExportRevise" type="checkbox"> I am authoring separate normal/contact intent from the inherited transfer conditions</label>
+ <label class="small">Reason for the changed normal intent<textarea id="surfaceExportNotes" rows="2" maxlength="1500"></textarea></label>
+ <div class="toolbar"><button class="btn" id="surfaceExportSave">Save bound request</button><button class="btn primary" id="surfaceExportBuild">Check imported surfaces &amp; package</button></div>
+ <p class="small" id="surfaceExportStatus" role="status">No saved engine package bound.</p>
+ <div class="toolbar"><select id="surfaceExportJobs" aria-label="Surface export job"></select><button class="btn" id="surfaceExportReview">Review all checks &amp; files</button></div>
+ <div id="surfaceExportResults" aria-live="polite"></div>
+ <p class="small">The checked ZIP is available only when scene, contact, surface and any selected root/event checks pass. Failed audits remain available. No automatic clip selection, animation-quality approval, physical grasp, continuous collision or real-time playback is inferred.</p>
+</details>

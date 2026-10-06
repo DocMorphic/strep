@@ -29,6 +29,8 @@ The first implementation targets rigged 3D humanoids. Single-image reconstructio
 
 [Studio scene transfer](docs/studio-scene-transfer-v1.md) exposes explicit contact correspondence, authored normals and bounded calibration for multiple transferred characters. Originals remain selected; only passing native conditions can stage a separate draft. Scene export, engine surface checks, transition review and human quality approval remain separate.
 
+[Surface-checked engine assets](docs/studio-surface-export-v1.md) binds authored facing conditions to completed scene or root/game-track packages. Passing checks create a separate ZIP with every original animation/resource/root/event file unchanged; failed checks retain their audit without a checked download. Inherited transfer normals require explicit revision notes when changed. Offline software checks do not imply live UI, physical interaction or human quality approval.
+
 [Cylinder penetration bounds](docs/cylinder-collision-bounds-v1.md) now cover box/sphere/cylinder pairs through analytic sphere offsets and complete nested-prism separating-axis checks. They report penetration uncertainty and preserve the current physics-release qualification; cylinder simulation and interaction acceptance remain open.
 
 [Scene reference checks before generation](docs/scene-target-preflight-v1.md) now catch contact, floor, object and partner failures after the actual model skeleton conversion. Strict preparation rejects incompatible references before encoding; explicit diagnostic comparisons preserve them. A passing constructive object reference and rejected real high-five references verify this path, without claiming realistic generated interactions.
