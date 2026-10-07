@@ -4593,3 +4593,8 @@ Fresh native and complete-component derivatives now cover every original geometr
 ## Complete timeline solver progress
 
 Added the complete-clock correction solver; all 47 focused tests pass. Three full 1,763-variable conics and eight stored exports were independently replayed. The motion-passing quarter improves the timeline deficit but fails original material ceilings; no output is approved. Complete native/material prediction errors are retained for the next correction. See [the trial](full-trajectory-step-v1.md).
+
+
+## Material-aware stored rotation progress
+
+Added the material-aware bounded storage search; all 39 focused tests pass. Separate original-context replay verifies 129 complete exported pairs and both finite search stages. The largest material failure shrinks to 61.432 nm, but three original rows still reject the output. No limits or release criteria change. See [the measured trial](material-storage-search-v1.md).
