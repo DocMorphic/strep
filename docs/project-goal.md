@@ -4633,3 +4633,8 @@ The bounded stored-rotation correction removes the staged quarter's three motion
 ## Staged clearance history progress
 
 Added complete indexed protection transfer through fresh point columns; all 77 focused tests pass. The new pose measurement and separate replay preserve all 107,072 rows and 100 clear samples. A full trial retains 19,908 earlier protections alongside new guards, but all eight exports remain unapproved. Separate replay verifies the full trial, including its rejected numerical solve. See [the measured study](staged-clearance-protection-v1.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.
+
+
+## Verified stored-motion recovery with retained clearances
+
+The event-preserved quarter's two motion failures are removed by two bounded stored-quaternion changes at fixed numeric controls. Separate replay verifies all 66 export pairs and complete search decisions. All material and 23,508 clearance protections pass, but the full original scene still fails: 29,790 proper crossings across 1,572 samples. Complete record replay and a verified 60-choice internal seed support fresh measurements; no clip or release is approved. See [the measured result](staged-native-storage-results-v2.md). All fourteen release evidence arrays remain empty; the full-project goal stays active.
