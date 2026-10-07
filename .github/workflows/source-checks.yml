@@ -252,6 +252,7 @@ jobs:
           tests/test_native_uniform_control_increment.py
           tests/test_native_norm_guided_step.py
           tests/test_native_norm_hinge_guided_step.py
+          tests/test_native_finite_guide_iterate.py
           tests/test_native_unapproved_anchor.py
           tests/test_native_unapproved_storage_anchor.py
           tests/test_native_pair_clearance_guide.py
