@@ -28,7 +28,7 @@ The multi-time command additionally accepts `uniform-control-increment` in `fami
 
 The complete grouping is saved as `uniform-support.json`, and `system.npz` records `uniform_parameter_rows`. The solver retains its existing parameter-equality proposal tolerance. This is a numerical proposal constraint: protected/boundary basis weights, rotations, descendants, skinning and storage can produce nonuniform world effects. All actual stored exports still receive the original strict decoded motion/contact/reference tests. Only the declared eligible selection receives full scene geometry.
 
-No scientific improvement is claimed for this variant yet. The next measured comparison must create fresh complete differences at the verified changed seed, retain every requested export and independently replay the full model and observations.
+The [first measured comparison](uniform-control-comparison-v1.md) creates fresh complete differences at the verified changed seed and independently replays the entire model and every requested export. All twelve proposals fail original decoded motion, and sampled depth worsens even while the guide score improves. No scientific motion-quality improvement is established for this variant.
 
 ## Verified generated-fixture seed
 
