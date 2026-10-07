@@ -14,6 +14,7 @@ from native_stored_pair_model import centered_problem
 from native_pair_clearance_guides import linearize_pair_guides
 from native_pair_guide_axis import choose_axis
 from native_key_control_support import effective_basis
+from native_uniform_control_increment import parameter_rows as uniform_increment_rows
 from native_norm_hinge_guided_step import direction
 from native_scene_conic import solver_identity
 from native_scene_norms import rows
@@ -27,7 +28,7 @@ from strep import ROOT,read,save,sha256,now
 SCHEMA='strep-native-pair-clearance-guides-job-v1'
 METHODS=tuple(sorted(set(JOB_METHODS)|set(GEOMETRY_METHODS)|{
     'native_pair_clearance_guides_job.py','native_pair_clearance_guides.py','native_pair_guide_axis.py',
-    'native_key_control_support.py','native_norm_hinge_guided_step.py','native_affine_ray_retreat.py'}))
+    'native_key_control_support.py','native_uniform_control_increment.py','native_norm_hinge_guided_step.py','native_affine_ray_retreat.py'}))
 
 
 def run(request_path,output):
@@ -44,10 +45,10 @@ def run(request_path,output):
             if not path.is_file() or sha256(path)!=pin['sha256']:raise ValueError('Pinned '+role+' bytes differ')
             paths[role]=path;inputs[str(path)]=pin['sha256']
         families=request['families'];events=request['event_times_s']
-        if (not isinstance(families,list) or not families or len(families)>2
-                or any(not isinstance(f,str) or f not in ('original-norms','event-key-preserved') for f in families)
+        if (not isinstance(families,list) or not families or len(families)>3
+                or any(not isinstance(f,str) or f not in ('original-norms','event-key-preserved','uniform-control-increment') for f in families)
                 or len(set(families))!=len(families)):
-            raise ValueError('Choose unique explicit original-norm/event-key guide variants')
+            raise ValueError('Choose unique explicit original-norm/event-key/uniform-increment guide variants')
         if not isinstance(events,list) or len(events)>16:raise ValueError('Explicit bounded event-time list required')
         if ('event-key-preserved' in families)!=bool(events):raise ValueError('Event-key variant requires explicit preservation times')
         axis_mode=request['axis_mode']
@@ -74,11 +75,13 @@ def run(request_path,output):
                         row=np.zeros(len(x));row[entry['controls'][:,component]]=basis;parameter.append(row)
         if len(parameter)>96:raise ValueError('Event preservation exceeds the complete 96-row parameter budget')
         eq=np.asarray(parameter).reshape(len(parameter),len(x))
+        uniform_rows,uniform_support=uniform_increment_rows(job.edits) if 'uniform-control-increment' in families else (None,None)
         output.mkdir(parents=True);(output/'implementation').mkdir();(output/'stencils').mkdir()
         methods={n:sha256(ROOT/'scripts'/n) for n in METHODS}
         for n in methods:shutil.copyfile(ROOT/'scripts'/n,output/'implementation'/n)
         save(output/'request.json',request);save(output/'job.json',job.request);save(output/'input-guides.json',guides)
         save(output/'event-support.json',support)
+        if uniform_support is not None:save(output/'uniform-support.json',uniform_support)
         def phase(name,**kw):
             status=name if name in ('complete','failed') else 'processing'
             data=dict(status=status,phase=name,at=now());data.update(kw);save(output/'pipeline.json',data)
@@ -123,7 +126,8 @@ def run(request_path,output):
             save(output/'model.json',dict(model.identity,stored_pair_centering=centering))
             np.savez_compressed(output/'system.npz',controls=x,lower=job.problem.lower,upper=job.problem.upper,
                 vectors=native.vectors,caps=native.caps,scales=native.scales,guide_residual=model.guide_residual,
-                guide_points=model.points,gaps_m=model.gaps_m,continuous_origin_points=model.continuous_origin_points,parameter_rows=eq)
+                guide_points=model.points,gaps_m=model.gaps_m,continuous_origin_points=model.continuous_origin_points,parameter_rows=eq,
+                **({} if uniform_rows is None else dict(uniform_parameter_rows=uniform_rows)))
             sparse.save_npz(output/'native-jacobian.npz',model.native_jacobian);sparse.save_npz(output/'guide-jacobian.npz',model.guide_jacobian)
             records=[];faces={n:faces_for(a['rig'])[0] for n,a in job.scene.actors.items()}
             row_scales=np.concatenate([np.full(len(g['vertices_a'])*len(g['vertices_b']),g['scale_m']) for g in guides])
@@ -143,7 +147,8 @@ def run(request_path,output):
             for family in families:
                 phase('guide-solve',family=family)
                 delta,info=direction(native,model.native_jacobian,model.guide_residual,model.guide_jacobian,
-                    x,job.problem.lower,job.problem.upper,settings['trust'],parameter_rows=eq if family=='event-key-preserved' else None)
+                    x,job.problem.lower,job.problem.upper,settings['trust'],
+                    parameter_rows=eq if family=='event-key-preserved' else uniform_rows if family=='uniform-control-increment' else None)
                 save(output/(family+'-solver.json'),dict(identity=solver_identity(),result=info,delta=None if delta is None else delta.tolist()))
                 if delta is None:continue
                 for i,fraction in enumerate(settings['fractions']):

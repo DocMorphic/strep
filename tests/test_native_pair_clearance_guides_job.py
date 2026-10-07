@@ -230,3 +230,88 @@ def test_pinned_input_mutation_during_solver_rejects(tmp_path, monkeypatch):
     assert read(out / 'failure.json')['status'] == 'failed' and not (out / 'result.json').exists()
     assert read(out / 'input-guides.json') == read(file)
     assert read(out / 'request.json')['guides']['sha256'] == r['guides']['sha256']
+
+
+@pytest.mark.parametrize('controlled', [False, True])
+def test_uniform_family_uses_complete_multiknot_rows_and_original_stored_acceptance(tmp_path, monkeypatch, controlled):
+    from native_scene_boundary_edit import BoundarySceneEdits
+    from native_rotation_storage_repair import StorageAdjustedEdits, authoring_digest
+
+    path = request(tmp_path)
+    spec = read(path)
+    original = Job(spec['job']['path'])
+    # A real three-knot editable track, including its endpoints. The original
+    # scene, rate caps, contact and geometry limits stay untouched.
+    edit = read(original.roles['edit_request'])
+    edit['boundary_keys']['A'] = dict(start='edit', end='edit')
+    edit['acknowledge_changed_boundary_compatibility'] = True
+    save(original.roles['edit_request'], edit)
+    base = BoundarySceneEdits(edit, original.scene, sha256(original.roles['source_scene']),
+                              rotation_storage_policy='source-scale')
+    policy = read(original.roles['storage_policy'])
+    policy['authoring_sha256'] = authoring_digest(base)
+    save(original.roles['storage_policy'], policy)
+    editor = StorageAdjustedEdits(base, policy, [])
+    controls = tmp_path / 'uniform-controls.npz'
+    np.savez(controls, controls=base.initial)
+    actor = tmp_path / 'uniform-anchor.glb'
+    editor.export('A', base.initial, actor)
+    pin = lambda p: dict(path=str(p), sha256=sha256(p))
+    job_spec = copy.deepcopy(original.request)
+    for role in ('edit_request', 'storage_policy'):
+        job_spec[role] = pin(original.roles[role])
+    job_spec['anchor'].update(controls=pin(controls), actor_files={'A': pin(actor)})
+    job_path = tmp_path / 'uniform-job.json'
+    save(job_path, job_spec)
+    spec.update(job=pin(job_path), families=['original-norms', 'event-key-preserved', 'uniform-control-increment'])
+    save(path, spec)
+    job = Job(job_path)
+    expected = np.zeros((6, 9))
+    for i in range(6):
+        expected[i, i % 3] = -1.
+        expected[i, i + 3] = 1.
+    seen = []
+    real = module.direction
+    def solve(*args, **kw):
+        supplied = kw['parameter_rows']
+        seen.append(None if supplied is None else supplied.copy())
+        if controlled:
+            return np.zeros(9), dict(status='controlled-uniform-acceptance-path')
+        return real(*args, **kw)
+    monkeypatch.setattr(module, 'direction', solve)
+    out = tmp_path / 'uniform-output'
+    result = run(path, out)
+    assert seen[0] is None and seen[1].shape == (3, 9)
+    np.testing.assert_array_equal(seen[2], expected)
+    with np.load(out / 'system.npz', allow_pickle=False) as z:
+        np.testing.assert_array_equal(z['uniform_parameter_rows'], expected)
+        np.testing.assert_array_equal(z['parameter_rows'], seen[1])
+    support = read(out / 'uniform-support.json')
+    assert support['controls'] == 9 and support['parameter_rows'] == 6
+    assert support['groups'][0]['controls'] == [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+    uniform_solver = read(out / 'uniform-control-increment-solver.json')
+    if uniform_solver['delta'] is not None:
+        assert np.max(abs(expected @ np.array(uniform_solver['delta']))) <= 1e-9
+    uniform = [r for r in result['records'] if r['label'].startswith('uniform-control-increment-')]
+    if controlled:
+        assert len(uniform) == 1 and uniform[0]['native_conditions_pass']
+        # Identical zero proposals tie: stable original-family order wins.
+        assert result['full_geometry_selection'] == 'original-norms-fraction-00'
+        assert not uniform[0]['full_geometry_assessed']
+    for record in uniform:
+        folder = out / record['label']
+        with np.load(folder / 'observations.npz', allow_pickle=False) as z:
+            value = z['controls'].copy()
+            residual, worlds = job.problem.decoded({'A': folder / 'A.glb'}, value)
+            native = rows(job.problem, value, worlds)
+            np.testing.assert_array_equal(residual, z['residual'])
+            for key in ('vectors', 'caps', 'scales'):
+                np.testing.assert_array_equal(getattr(native, key), z[key])
+            for name, world in worlds.items():
+                np.testing.assert_array_equal(world, z[name + '_worlds'])
+        assert job.edits.audit('A', folder / 'A.glb', job.scene.actors['A']['animation_index'], value=value)['passed']
+        assert record['reference_bounds'] == job.reference_bounds({'A': folder / 'A.glb'}, worlds)
+        assert record['native_conditions_pass'] is bool(np.all(residual <= 0) and np.all(native.residual() <= 0))
+        assert not record['retained'] and not record['quality_approved'] and not record['release_approved']
+    assert result['status'] == read(out / 'pipeline.json')['status'] == 'complete'
+    assert result['original_selected'] and not result['quality_approved'] and not result['release_approved']
