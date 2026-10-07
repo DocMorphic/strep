@@ -109,3 +109,7 @@ Inference for Strep: tuning the existing body representation alone cannot introd
 ### Native rig transfer reference - 2026-10-05
 
 Checked the primary [Khronos glTF 2.0 specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html) for local TRS, parent-composed joint transforms, quaternion interpolation and Float32 animation storage. These format rules support decoded/native-key fidelity checks; reference-pose calibration and root-displacement scaling are Strep implementation policies, not motion-quality guarantees supplied by glTF. No third-party models, data, code or dependency acquired. Methodology and generated fixture results: [native rig transfer](native-rig-transfer-v1.md).
+
+### Material surface witnesses - 2026-10-07
+
+Checked Trimesh's primary [proximity API](https://trimesh.org/trimesh.proximity.html) for nearest point, distance, original triangle identity and its inside-positive signed-distance convention, including its near-surface tolerance region. Checked the [triangle API](https://trimesh.org/trimesh.triangles.html) for barycentric conversion. Existing Trimesh 5.1.0 is retained; local proximity/triangle source hashes bind the generated-fixture experiment. Strep records complete original crossing and vertex-containment proposal populations, then checks actual stored motion and mesh outputs separately. These numerical primitives provide no rig-constrained motion or quality guarantee. No model, dataset, character payload or dependency acquired. See [material witness methodology and failures](material-witness-guides-v1.md).

@@ -256,6 +256,7 @@ jobs:
           tests/test_native_unapproved_storage_anchor.py
           tests/test_native_pair_clearance_guide.py
           tests/test_native_pair_clearance_guides.py
+          tests/test_native_material_witness_guides.py
           tests/test_native_pair_guide_axis.py
           tests/test_native_pair_clearance_job.py
           tests/test_native_pair_clearance_guides_job.py
