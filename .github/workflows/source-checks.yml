@@ -247,6 +247,8 @@ jobs:
           tests/test_native_static_rotation_variant.py
           tests/test_native_static_reference_job.py
           tests/test_native_edit_crossing_diagnostics.py
+          tests/test_rigid_rotation_halfspace_screen.py
+          tests/test_native_key_control_support.py
           tests/test_native_object_surface_rows.py
           tests/test_native_object_hold_fit.py
           tests/test_native_object_correspondence_fit.py
