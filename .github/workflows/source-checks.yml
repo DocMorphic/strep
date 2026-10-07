@@ -224,6 +224,7 @@ jobs:
           tests/test_native_partner_depth_restore.py
           tests/test_native_partner_target_depth_restore.py
           tests/test_native_partner_accurate_depth_restore.py
+          tests/test_native_affine_ray_retreat.py
           tests/test_native_partner_depth_phase_selection.py
           tests/test_native_affine_surface_restore.py
           tests/test_native_affine_surface_box_conflict.py
