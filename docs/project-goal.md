@@ -4638,3 +4638,8 @@ Added complete indexed protection transfer through fresh point columns; all 77 f
 ## Verified stored-motion recovery with retained clearances
 
 The event-preserved quarter's two motion failures are removed by two bounded stored-quaternion changes at fixed numeric controls. Separate replay verifies all 66 export pairs and complete search decisions. All material and 23,508 clearance protections pass, but the full original scene still fails: 29,790 proper crossings across 1,572 samples. Complete record replay and a verified 60-choice internal seed support fresh measurements; no clip or release is approved. See [the measured result](staged-native-storage-results-v2.md). All fourteen release evidence arrays remain empty; the full-project goal stays active.
+
+
+## Verified third clearance-history trial
+
+Fresh complete measurements and independent replay cover all 180 stencils, 107,072 rows and 101 clear samples. A third trial retains 29,908 historical protections with fresh guards, 33,490 total, but all twelve exports remain unapproved. Separate replay verifies the complete trial after preserving and diagnosing a dense/sparse report mismatch; no tolerance changes. Complete error tracing selects a bounded continuation that retains the other gates and a larger guidance improvement. No new full-scene scan or release approval. See [the measured study](staged-clearance-history-trial-v3.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.
