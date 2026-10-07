@@ -262,6 +262,7 @@ jobs:
           tests/test_native_material_guarded_crossing_step.py
           tests/test_native_material_grouped_crossing_step.py
           tests/test_native_material_component_support_step.py
+          tests/test_native_material_component_guarded_support_step.py
           tests/test_native_observed_secant_model.py
           tests/test_native_unapproved_anchor.py
           tests/test_native_unapproved_storage_anchor.py
