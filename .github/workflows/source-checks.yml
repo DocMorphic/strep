@@ -239,6 +239,7 @@ jobs:
           tests/test_native_stored_pair_repair_job.py
           tests/test_native_control_axis_pair_repair_job.py
           tests/test_native_axis_pair_repair_job.py
+          tests/test_native_ray_axis_pair_repair_job.py
           tests/test_native_rate_axis_pair_repair_job.py
           tests/test_native_best_rate_axis_pair_repair_job.py
           tests/test_native_balanced_rate_axis_pair_repair_job.py
