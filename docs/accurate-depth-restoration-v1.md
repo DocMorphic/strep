@@ -1,0 +1,11 @@
+# Stricter solver accuracy with original acceptance
+
+Source validated at 2026-10-07T00:40:54.105185+00:00.
+
+The [first preferred-depth comparison](preferred-depth-restoration-v1.md) rejected its initial solver point because the reported native residual exceeded the original phase tolerance. `scripts/native_partner_accurate_depth_restore.py` is a separately versioned variant requesting 1e-11 feasibility, absolute-gap and relative-gap solver accuracy. Historical methods and studies remain unchanged.
+
+Original phase native checks and priority locks remain **1e-9**. Native norms stay hard, all original surface rows remain represented, and control/trust boxes, preferred zero-depth target, external 5 mm limit, contacts, source rates, static references and decoded export/geometry checks retain their meaning. Solver status alone cannot approve a point. Finite normalized phase solutions and projected control steps are saved even when subsequent native/priority validation rejects them, enabling independent recomputation of the failure. Later rejected phases retain the last verified candidate.
+
+**61 source tests pass**, zero skips: the unchanged 29 preferred-target tests and 32 accuracy-variant tests. Actual small conic tests cover preferred-depth behavior, original-limit guidance, hard norms, complete surfaces, control projection and later-phase fallback. Injected `Solved` points with normalized excess 1.3244607357135744e-9 and 1.01e-9 are rejected under the unchanged 1e-9 check. Saved phase steps are separately evaluated against original vectors and caps in the tests. The suite is registered in Linux/Windows source checks; hosted success remains unverified.
+
+A new explicitly typed matched driver reuses the complete independently replayed original model at the exact same 44-choice anchor with no new derivatives or changed fraction/resource budgets. Every actual export and complete geometry gate must be saved and independently checked; phase points must be independently evaluated, including failures. The new study remains pending. Stricter requested tolerances do not guarantee convergence, feasibility or better motion, and the real study may still fail. These source tests do not establish production anatomy, semantic realism, engine or human cleanup quality. All fourteen release evidence arrays remain empty.
