@@ -4603,3 +4603,8 @@ Added the material-aware bounded storage search; all 39 focused tests pass. Sepa
 ## Empirical material proposal progress
 
 Added complete source-bound empirical margins and a separate buffered trajectory solver. All117 focused tests pass, including47 original regressions. Independent saved-data replay verifies all13680 endpoint observations and every1710 margin. Original acceptance limits stay unchanged; no new animation is approved. The full export trial awaits disk reserve. See [the calibration](empirical-material-margins-v1.md).
+
+
+## Prepared buffered trial progress
+
+Prepared a pinned full-trial runner with strict storage and actual-export gates; all117 focused tests pass. Complete saved-data replay retains rejection of all eight prior exports. The real launch stops before scientific work because space is below the unchanged reserve; the new numerical branch remains unexecuted. See [the prepared trial](buffered-component-trial-v1.md).
