@@ -879,3 +879,8 @@ Added an opt-in alternative-axis proposal builder; all 144 focused and regressio
 ## Staged correction with fixed original limits
 
 Fresh complete measurements and independent replay now cover the corrected pose. The new staged solver passes all 107 focused tests and carries original material limits across pose changes. Independent replay verifies three full conics and eight exports; all remain unapproved because motion or geometry guards still fail. The complete saved error trace supports the next bounded correction. See [the measured study](docs/staged-fixed-ceiling-correction-v1.md). All fourteen release evidence arrays remain empty; the project-wide goal stays active.
+
+
+## Staged stored-rotation recovery
+
+The bounded stored-rotation correction removes the staged quarter's three motion failures at fixed numeric controls. Separate replay verifies all 23 export pairs and the complete finite search. The full scene still fails with 29,807 proper crossings across 1,573 samples. Complete record replay and a verified separate internal seed support fresh measurements; no clip or release is approved. See [the measured result](docs/staged-native-storage-results-v1.md). All fourteen release evidence arrays remain empty; the full-project goal stays active.
