@@ -4618,3 +4618,8 @@ Completed and independently replayed the buffered trial. All four exports pass o
 ## Complete timeline axis and staged correction progress
 
 Added an opt-in alternative-axis proposal builder; all 144 focused and regression tests pass. Complete separate replay verifies both original-box conflict scans and every signed candidate, selected row and derivative column. The full experiment barely changes local sample reachability and remains unapproved. A separately verified 57-choice internal seed preserves the original motion contract and known scene failure, ready for fresh staged measurements. Original source, all limits and release gates stay unchanged. See [the measured axis experiment](component-axis-reachability-v1.md).
+
+
+## Staged complete-timeline correction progress
+
+Fresh complete measurements and independent replay now cover the corrected pose. The new staged solver passes all 107 focused tests and carries original material limits across pose changes. Independent replay verifies three full conics and eight exports; all remain unapproved because motion or geometry guards still fail. The complete saved error trace supports the next bounded correction. See [the measured study](staged-fixed-ceiling-correction-v1.md). All fourteen release evidence arrays remain empty; the project-wide goal stays active.

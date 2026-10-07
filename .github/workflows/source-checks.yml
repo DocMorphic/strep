@@ -262,6 +262,7 @@ jobs:
           tests/test_native_component_trajectory_model.py
           tests/test_native_reachable_component_axes.py
           tests/test_native_component_trajectory_step.py
+          tests/test_native_component_trajectory_fixed_ceiling_step.py
           tests/test_native_empirical_material_margins.py
           tests/test_native_component_trajectory_margin_step.py
           tests/test_buffered_component_trial.py
