@@ -259,6 +259,7 @@ jobs:
           tests/test_native_triangle_separation_guards.py
           tests/test_native_material_guarded_crossing_step.py
           tests/test_native_material_grouped_crossing_step.py
+          tests/test_native_observed_secant_model.py
           tests/test_native_unapproved_anchor.py
           tests/test_native_unapproved_storage_anchor.py
           tests/test_native_pair_clearance_guide.py
