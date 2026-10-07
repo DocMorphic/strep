@@ -257,6 +257,7 @@ jobs:
           tests/test_native_material_priority_projection.py
           tests/test_native_material_crossing_step.py
           tests/test_native_triangle_separation_guards.py
+          tests/test_native_staged_clearance_protection.py
           tests/test_native_convex_component_support.py
           tests/test_native_component_separation_guards.py
           tests/test_native_component_trajectory_model.py

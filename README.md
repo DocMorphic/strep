@@ -884,3 +884,8 @@ Fresh complete measurements and independent replay now cover the corrected pose.
 ## Staged stored-rotation recovery
 
 The bounded stored-rotation correction removes the staged quarter's three motion failures at fixed numeric controls. Separate replay verifies all 23 export pairs and the complete finite search. The full scene still fails with 29,807 proper crossings across 1,573 samples. Complete record replay and a verified separate internal seed support fresh measurements; no clip or release is approved. See [the measured result](docs/staged-native-storage-results-v1.md). All fourteen release evidence arrays remain empty; the full-project goal stays active.
+
+
+## Carry clearances through staged corrections
+
+Added complete indexed protection transfer through fresh point columns; all 77 focused tests pass. The new pose measurement and separate replay preserve all 107,072 rows and 100 clear samples. A full trial retains 19,908 earlier protections alongside new guards, but all eight exports remain unapproved. Separate replay verifies the full trial, including its rejected numerical solve. See [the measured study](docs/staged-clearance-protection-v1.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.
