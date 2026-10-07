@@ -253,6 +253,7 @@ jobs:
           tests/test_native_norm_hinge_guided_step.py
           tests/test_native_unapproved_anchor.py
           tests/test_native_pair_clearance_guide.py
+          tests/test_native_pair_clearance_job.py
           tests/test_native_object_surface_rows.py
           tests/test_native_object_hold_fit.py
           tests/test_native_object_correspondence_fit.py
