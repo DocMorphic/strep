@@ -4598,3 +4598,8 @@ Added the complete-clock correction solver; all 47 focused tests pass. Three ful
 ## Material-aware stored rotation progress
 
 Added the material-aware bounded storage search; all 39 focused tests pass. Separate original-context replay verifies 129 complete exported pairs and both finite search stages. The largest material failure shrinks to 61.432 nm, but three original rows still reject the output. No limits or release criteria change. See [the measured trial](material-storage-search-v1.md).
+
+
+## Empirical material proposal progress
+
+Added complete source-bound empirical margins and a separate buffered trajectory solver. All117 focused tests pass, including47 original regressions. Independent saved-data replay verifies all13680 endpoint observations and every1710 margin. Original acceptance limits stay unchanged; no new animation is approved. The full export trial awaits disk reserve. See [the calibration](empirical-material-margins-v1.md).
