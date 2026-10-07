@@ -32,3 +32,8 @@ All 47 new tests and 70 margin/solver tests pass without skips. Checks cover sou
 A complete saved-data audit reproduces all eight prior export eligibility masks, including every 30,450 scalar/vector native row, contact row identity, 1,710 material rows, 3,636 mesh rows, 107,072 component observations, all 6,336 positive rows, controls and equality conditions. References and decoded GLB provenance are bound to the completed original reader rather than recomputed here. No producer numerical runner is called, no new animation is generated, and all eight exports remain rejected.
 
 The real full-launch attempt exits 2 with 915,828,736 bytes free. Its receipt records `scientific_work_started: false` and `numerical_validation_complete: false`; the trial directory does not exist. Next supply sufficient space and run this unchanged request, then independently replay every new numerical result before considering source promotion. Keep prior failures, immutable science and the earlier lower-depth branch. All fourteen release evidence arrays remain empty and the full-project goal stays active.
+
+
+## Completed follow-up on 2026-10-07
+
+The storage-blocked state above records the earlier preparation and failed launch. Storage later became available and the unchanged pinned request completed. See [the full buffered trial results](buffered-component-trial-results-v1.md) and [the finite native correction and full scene assessment](buffered-native-storage-results-v1.md). All original acceptance limits remain unchanged; neither experiment approves an animation or release.

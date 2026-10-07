@@ -864,3 +864,8 @@ Added complete source-bound empirical margins and a separate buffered trajectory
 ## Prepared buffered complete-clock trial
 
 Prepared a pinned full-trial runner with strict storage and actual-export gates; all117 focused tests pass. Complete saved-data replay retains rejection of all eight prior exports. The real launch stops before scientific work because space is below the unchanged reserve; the new numerical branch remains unexecuted. See [the prepared trial](docs/buffered-component-trial-v1.md).
+
+
+## Buffered trial and full scene validation
+
+Completed and independently replayed the buffered trial. All four exports pass original material ceilings; the quarter-strength export has one remaining motion failure. A bounded stored-rotation adjustment removes it, but the full scene still rejects the clip at 1,574 of 1,673 samples. All 29,712 partner records are proper crossings within the selected fixture component. Original limits and selected source remain unchanged; no animation or release is approved. See [the buffered trial](docs/buffered-component-trial-results-v1.md) and [the stored correction and full scene result](docs/buffered-native-storage-results-v1.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.
