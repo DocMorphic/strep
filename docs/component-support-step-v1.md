@@ -26,12 +26,14 @@ All twelve exports satisfy the represented affine guards. The original full step
 
 The original stable selection rule chooses the lowest ten-frame maximum partner vertex depth, then crossing count, among changed exports passing original motion/reference/trust and actual positive guards. It selects the original-norm quarter, whose actual maximum control step is 0.0049999952316263085. The full original 1,673-sample scan is run once for that changed export. All other exports and their ten-frame queries remain saved without speculative full-scene approval.
 
-| Complete scene | Maximum partner vertex depth, mm | Proper crossing records | Samples with crossings | Over-limit vertices |
-| --- | ---: | ---: | ---: | ---: |
-| Starting verified storage-corrected anchor | 4.680554928 | 29,642 | 1,575 | 0 |
-| Component objective, selected original quarter | 4.680528900 | 29,805 | 1,577 | 0 |
+| Complete scene | Maximum partner vertex depth, mm | Proper crossing records | Unresolved near-contact records | Samples with proper crossings | Over-limit vertices |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Starting verified storage-corrected anchor | 4.680554928 | 29,642 | 0 | 1,575 | 0 |
+| Component objective, selected original quarter | 4.680528900 | 29,798 | 7 | 1,577 | 0 |
 
-The selected actual fixed-axis component deficit sum falls from 0.126649833271653 m to 0.125893915144876 m across the ten groups. Its vertex depth changes by only approximately 26 nanometres, while 163 crossing records and two crossing samples are added. All ten-frame exports retain 164 recorded triangle crossings at the declared guide times. This is a failed collision correction, despite an improved guide objective and motion-passing selected export. The historical lower-depth branch stays retained; this is not a matched comparison against the earlier triangle objective, whose anchor and guide population differ.
+The selected actual fixed-axis component deficit sum falls from 0.126649833271653 m to 0.125893915144876 m across the ten groups. Its vertex depth changes by only approximately 26 nanometres, while 156 proper crossing records, seven unresolved near-contact records and two crossing samples are added. All ten-frame exports retain 164 recorded triangle crossings at the declared guide times. This is a failed collision correction, despite an improved guide objective and motion-passing selected export. The historical lower-depth branch stays retained; this is not a matched comparison against the earlier triangle objective, whose anchor and guide population differ.
+
+The [complete export trace](component-export-regressions-v1.md) corrects the initial publication's label for the aggregate score of 29,805. That score counts all surface records, including unresolved kinds; it is not the proper-crossing count. Scientific outputs, aggregate values and collision rejection are unchanged.
 
 ## Verification and next action
 
