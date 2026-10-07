@@ -844,3 +844,8 @@ Methodology: `docs/guarded-storage-correction-v1.md`.
 ## Complete sampled component model
 
 Fresh native and complete-component derivatives now cover every original geometry sample: 1,673 groups, 107,072 ordered pair rows and all 90 controls. The new bounded model passes 36 tests; separate original-context replay verifies every fresh stencil, projected column, margin and clock weight. The authenticated starting motion still fails collision. No new solved animation or release approval is claimed. See [the complete-clock study](docs/full-component-trajectory-v1.md).
+
+
+## Complete timeline correction trial
+
+Added the complete-clock correction solver; all 47 focused tests pass. Three full 1,763-variable conics and eight stored exports were independently replayed. The motion-passing quarter improves the timeline deficit but fails original material ceilings; no output is approved. Complete native/material prediction errors are retained for the next correction. See [the trial](docs/full-trajectory-step-v1.md).

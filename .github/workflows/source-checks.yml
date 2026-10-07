@@ -260,6 +260,7 @@ jobs:
           tests/test_native_convex_component_support.py
           tests/test_native_component_separation_guards.py
           tests/test_native_component_trajectory_model.py
+          tests/test_native_component_trajectory_step.py
           tests/test_native_material_guarded_crossing_step.py
           tests/test_native_material_grouped_crossing_step.py
           tests/test_native_material_component_support_step.py
