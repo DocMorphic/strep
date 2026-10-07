@@ -4613,3 +4613,8 @@ Prepared a pinned full-trial runner with strict storage and actual-export gates;
 ## Buffered trial and full scene progress
 
 Completed and independently replayed the buffered trial. All four exports pass original material ceilings; the quarter-strength export has one remaining motion failure. A bounded stored-rotation adjustment removes it, but the full scene still rejects the clip at 1,574 of 1,673 samples. All 29,712 partner records are proper crossings within the selected fixture component. Original limits and selected source remain unchanged; no animation or release is approved. See [the buffered trial](buffered-component-trial-results-v1.md) and [the stored correction and full scene result](buffered-native-storage-results-v1.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.
+
+
+## Complete timeline axis and staged correction progress
+
+Added an opt-in alternative-axis proposal builder; all 144 focused and regression tests pass. Complete separate replay verifies both original-box conflict scans and every signed candidate, selected row and derivative column. The full experiment barely changes local sample reachability and remains unapproved. A separately verified 57-choice internal seed preserves the original motion contract and known scene failure, ready for fresh staged measurements. Original source, all limits and release gates stay unchanged. See [the measured axis experiment](component-axis-reachability-v1.md).
