@@ -72,6 +72,17 @@ def import_baseline_cache(batch, cache):
 
 def prepare(scene_path, plan_path, output, reuse_baseline=False,diagnostic_targets=False):
     source=read(scene_path);scene=source.get('scene',source);plan=read(plan_path)
+    from scene_contact_consistency import diagnose
+    validate_actor_plan(scene,plan);consistency=diagnose(scene)
+    if consistency['has_proven_pair_conflict']:
+        out=Path(output).resolve();out.mkdir(parents=True,exist_ok=False)
+        save(out/'authored-scene.json',scene);save(out/'actor-plan.json',plan)
+        save(out/'contact-consistency.json',consistency)
+        snapshot=out/'source-snapshot';snapshot.mkdir()
+        shutil.copyfile(ROOT/'scripts/scene_contact_consistency.py',snapshot/'scene_contact_consistency.py')
+        save(out/'pipeline.json',dict(status='rejected',failed_stage='scene_contact_consistency',finished_at=now(),
+            conflicting_pairs=consistency['conflicting_pairs'],source_pose_geometry_checked=False,quality_approved=False))
+        raise ValueError('Overlapping rigid-point contact targets conflict; retained audit: '+str(out/'contact-consistency.json'))
     batch=requests(scene,plan)
     skin=dict(np.load(ASSET,allow_pickle=False));source_evaluation=evaluate(scene,skin)
     source_orientation=orientation(scene,skin)
@@ -82,6 +93,7 @@ def prepare(scene_path, plan_path, output, reuse_baseline=False,diagnostic_targe
     out=Path(output).resolve();out.mkdir(parents=True,exist_ok=False)
     save(out/'authored-scene.json',scene);save(out/'actor-plan.json',plan);save(out/'request.json',batch)
     save(out/'generation-guide-plan.json',audit_plan(scene,plan))
+    save(out/'contact-consistency.json',consistency)
     save(out/'source-contact-evaluation.json',source_evaluation);save(out/'source-orientation.json',source_orientation)
     preflight=write_preflight(scene,out/'target-preflight',scene_file=out/'authored-scene.json')
     profile_binding = dict(profile_compiler_sha256=sha256(ROOT/'scripts/motion_profile.py')) if any('motion_profile' in entry for entry in plan.values()) else {}
@@ -89,13 +101,15 @@ def prepare(scene_path, plan_path, output, reuse_baseline=False,diagnostic_targe
         request_sha256=request_digest(batch),compiler_sha256=sha256(__file__),actor_order=list(plan),
         generation_guide_plan_sha256=sha256(out/'generation-guide-plan.json'),
         guide_planner_sha256=sha256(ROOT/'scripts/scene_generation_guides.py'),
+        contact_consistency_sha256=sha256(out/'contact-consistency.json'),
+        contact_consistency_method_sha256=sha256(ROOT/'scripts/scene_contact_consistency.py'),
         source_file=str(Path(scene_path).resolve()),source_file_sha256=sha256(scene_path),
         target_preflight_sha256=sha256(out/'target-preflight/audit.json'),
         target_preflight_mode='diagnostic' if diagnostic_targets else 'strict',
         **profile_binding,
         scope='Fitted native actor poses used as generation conditions with a separately recorded temporal guide policy. Independent actor sampling with fixed authored placement/clock; no object/partner awareness, anatomy approval or collision solve. All source and output defects remain reportable.'))
     snapshot=out/'source-snapshot';snapshot.mkdir()
-    for name in ['scene_generation.py','scene_generation_guides.py','scene_target_preflight.py','generation_constraints.py','generate_actions.py','run_actions.py','audit_generation_guides.py']:
+    for name in ['scene_generation.py','scene_generation_guides.py','scene_contact_consistency.py','scene_target_preflight.py','generation_constraints.py','generate_actions.py','run_actions.py','audit_generation_guides.py']:
         shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
     if profile_binding:shutil.copyfile(ROOT/'scripts/motion_profile.py',snapshot/'motion_profile.py')
     if not preflight['reference_screens_passed'] and not diagnostic_targets:

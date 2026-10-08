@@ -35,7 +35,7 @@ def test_actor_plan_preview_preserves_profiles_and_full_clock():
     assert data==original and result['plan']==guides.audit_plan(data['scene'],data['actor_plan'])
     assert all(a['complete_target_frames']==list(range(120)) for a in result['plan']['actors'].values())
     assert result['source_pose_geometry_checked'] is result['generated_motion_checked'] is False
-    assert len(result['input_sha256'])==64 and len(result['implementation_sha256'])==5
+    assert len(result['input_sha256'])==64 and len(result['implementation_sha256'])==6
     changed=copy.deepcopy(data);changed['actor_plan']['B']['motion_profile']['stats'][-1]['value']=80
     assert guides.authoring_preview(changed)['input_sha256']!=result['input_sha256']
 
@@ -63,6 +63,15 @@ def test_single_actor_object_plan_can_be_previewed_without_loading_geometry():
     data['scene']['contacts'][0]['target']=dict(space='object',object='parcel')
     result=guides.authoring_preview(data)
     assert list(result['plan']['actors'])==['A'] and result['source_pose_geometry_checked'] is False
+
+
+def test_preview_retains_failed_contact_intent_and_exact_conflict_witness():
+    from test_scene_contact_consistency import scene
+    data=payload();data['scene']=scene();data['actor_plan'].pop('B')
+    result=guides.authoring_preview(data)
+    assert result['contact_consistency']['conflicting_pairs']==[[0,1]]
+    assert result['contact_consistency']['overlapping_pairs'][0]['overlap_frames']==[50,90]
+    assert result['quality_approved'] is result['release_approved'] is False
 
 
 def test_changed_methods_rejected_during_preview(monkeypatch):

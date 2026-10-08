@@ -390,7 +390,8 @@
     "tests/test_native_storage_exchange_index.py",
     "tests/test_scene_generation_guides.py",
     "tests/test_scene_motion_profiles.py",
-    "tests/test_scene_generation_authoring.py"
+    "tests/test_scene_generation_authoring.py",
+    "tests/test_scene_contact_consistency.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",

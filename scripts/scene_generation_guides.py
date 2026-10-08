@@ -145,7 +145,8 @@ def validate_prepared_guidance(folder, freeze, batch):
     snapshot = folder/'source-snapshot/scene_generation_guides.py'
     expected = freeze.get('generation_guide_plan_sha256')
     if expected is None:
-        if artifact.exists() or snapshot.exists():
+        if (artifact.exists() or snapshot.exists() or (folder/'contact-consistency.json').exists()
+                or freeze.get('contact_consistency_sha256') is not None):
             raise ValueError('Generation guide-plan binding was dropped')
         return None
     if not artifact.is_file() or not snapshot.is_file():
@@ -155,6 +156,8 @@ def validate_prepared_guidance(folder, freeze, batch):
     scene, plan = read(folder/'authored-scene.json'), read(folder/'actor-plan.json')
     if sha256(folder/'authored-scene.json') != freeze['scene_sha256'] or sha256(folder/'actor-plan.json') != freeze['plan_sha256']:
         raise ValueError('Changed scene or actor plan')
+    from scene_contact_consistency import validate_prepared
+    validate_prepared(folder, freeze, scene)
     if (sha256(snapshot) != freeze.get('guide_planner_sha256')
             or sha256(ROOT/'scripts/scene_generation_guides.py') != freeze['guide_planner_sha256']):
         raise ValueError('Changed generation guide planner')
@@ -223,14 +226,17 @@ def authoring_preview(payload):
             raise ValueError('Contact target object is missing')
     methods = Path(__file__).resolve().parent
     bindings = {name: sha256(methods/name) for name in
-                ['scene_generation_guides.py', 'motion_profile.py', 'action_requests.py', 'generation_constraints.py', 'strep.py']}
+                ['scene_generation_guides.py', 'scene_contact_consistency.py', 'motion_profile.py', 'action_requests.py', 'generation_constraints.py', 'strep.py']}
     result = audit_plan(scene, payload['actor_plan'])
+    from scene_contact_consistency import diagnose
+    consistency = diagnose(scene)
     if len({len(entry['seeds']) for entry in payload['actor_plan'].values()}) != 1:
         raise ValueError('Each actor needs the same seed count for paired scenes')
     if any(sha256(methods/name) != digest for name, digest in bindings.items()):
         raise ValueError('Scene planning methods changed during preview')
     encoded = json.dumps(payload, sort_keys=True, ensure_ascii=False, allow_nan=False).encode('utf-8')
     return dict(schema='strep-scene-generation-authoring-preview-v1', plan=result,
+                contact_consistency=consistency,
                 input_sha256=hashlib.sha256(encoded).hexdigest(), implementation_sha256=bindings,
                 source_pose_geometry_checked=False, generated_motion_checked=False,
                 quality_approved=False, release_approved=False)
@@ -243,9 +249,11 @@ def preview(scene_path, plan_path, output):
         raise ValueError('Preserve the previous guide preview; select a new output')
     methods=Path(__file__).resolve().parent
     bindings={str(Path(p).resolve()):sha256(p) for p in
-              [scene_path,plan_path,Path(__file__),methods/'action_requests.py',methods/'generation_constraints.py',methods/'motion_profile.py',methods/'strep.py']}
+              [scene_path,plan_path,Path(__file__),methods/'scene_contact_consistency.py',methods/'action_requests.py',methods/'generation_constraints.py',methods/'motion_profile.py',methods/'strep.py']}
     source=read(scene_path);scene=source.get('scene',source);plan=read(plan_path)
+    from scene_contact_consistency import diagnose
     result=dict(schema='strep-scene-generation-guide-preview-v1',plan=audit_plan(scene,plan),
+                contact_consistency=diagnose(scene),
                 inputs_sha256=bindings,source_pose_geometry_checked=False,
                 generated_motion_checked=False,quality_approved=False,release_approved=False)
     if any(sha256(p)!=h for p,h in bindings.items()):

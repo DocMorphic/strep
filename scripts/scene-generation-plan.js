@@ -72,7 +72,12 @@ export function createSceneGenerationPlan({getContext,createProfile=createMotion
     const brief=result.plan.motion_profiles?.[name];for(const segment of brief?.segments??draft.actor_plan[name].segments)by('Results').append(make('p',segment.conditioning_prompt??segment.prompt));
     if(brief?.unmapped_stats?.length)by('Results').append(make('p','Saved without motion rules: '+brief.unmapped_stats.map(s=>s.label).join(', ')));
    }
-   controls();status('Descriptions and contact timing checked. Source poses and generated quality still need validation.');
+   const consistency=result.contact_consistency;
+   for(const pair of consistency?.overlapping_pairs??[]){
+    const names=pair.contact_ids.map((id,i)=>id??'#'+pair.contact_indices[i]).join(' + ');
+    by('Results').append(make('p',`${names} · frames ${pair.overlap_frames.join('–')}: ${pair.status==='contradiction'?'fixed-point target distances conflict with their tolerances':pair.status==='unassessed'?pair.reason:'fixed-distance condition not contradicted; feasibility remains unverified'}`));
+   }
+   controls();status(consistency?.has_proven_pair_conflict?'Contact targets conflict. Revise before preparation; downloads retain this failed intent.':'Descriptions and contact timing checked. Source poses and generated quality still need validation.');
   }catch(error){if(token===undefined||token===version){checked=null;controls();status(error.message);}}
  };
  const saveDownload=download??((name,value)=>{const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)+'\n'],{type:'application/json'}));const link=make('a');link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
