@@ -9,6 +9,33 @@ func descendants(node: Node) -> Array:
 		found.append_array(descendants(child))
 	return found
 
+func exact_time(time: float) -> String:
+	var bytes := PackedByteArray()
+	bytes.resize(8)
+	bytes.encode_double(0, time)
+	return bytes.hex_encode()
+
+func sample_clock(item: Dictionary) -> PackedFloat64Array:
+	var times := PackedFloat64Array()
+	if item.has("sample_clock"):
+		var value: Dictionary = item.sample_clock
+		if value.get("schema") != "strep-native-engine-clock-f64le-v1" or value.get("count") != item.frames:
+			return times
+		var encoded = value.get("bytes_hex")
+		if not encoded is String or encoded.length() != int(item.frames) * 16:
+			return times
+		var bytes: PackedByteArray = encoded.hex_decode()
+		if bytes.size() != int(item.frames) * 8 or bytes.hex_encode() != encoded:
+			return times
+		for i in range(int(item.frames)):
+			var time := bytes.decode_double(i * 8)
+			if not is_finite(time) or (i == 0 and time != 0.0) or (i > 0 and time <= times[i-1]):
+				return PackedFloat64Array()
+			times.append(time)
+	else:
+		for i in range(int(item.frames)): times.append(float(i) / 30.0)
+	return times
+
 func _initialize() -> void:
 	call_deferred("run_audit")
 
@@ -20,6 +47,10 @@ func run_audit() -> void:
 	var request = JSON.parse_string(FileAccess.get_file_as_string(args[0]))
 	var report: Dictionary = {"engine":Engine.get_version_info(),"scenes":[]}
 	for item in request.scenes:
+		var times := sample_clock(item)
+		if times.size() != int(item.frames) or times.size() < 2:
+			quit(10)
+			return
 		var holder := Node3D.new()
 		root.add_child(holder)
 		var actors: Dictionary = {}
@@ -116,13 +147,19 @@ func run_audit() -> void:
 						normals.append([normal.x, normal.y, normal.z])
 					surfaces.append({"positions":positions,"normals":normals})
 				object_meshes[name] = surfaces
-		for frame in range(item.frames):
+		var clock_samples: Array = []
+		for time in times:
 			var sample: Dictionary = {}
+			var clock: Dictionary = {"requested_time_s":time,"actors":{},"objects_time_s":null,"requested_time_f64le":exact_time(time),"actor_times_f64le":{},"objects_time_f64le":null}
 			# Both actors exist in one scene and seek to the same source clock.
 			for name in actors:
-				actors[name].player.seek(float(frame)/30.0,true,true)
+				actors[name].player.seek(time,true,true)
+				clock.actors[name] = actors[name].player.current_animation_position
+				clock.actor_times_f64le[name] = exact_time(actors[name].player.current_animation_position)
 			if object_player != null:
-				object_player.seek(float(frame)/30.0,true,true)
+				object_player.seek(time,true,true)
+				clock.objects_time_s = object_player.current_animation_position
+				clock.objects_time_f64le = exact_time(object_player.current_animation_position)
 			var object_sample: Dictionary = {}
 			for name in objects:
 				object_sample[name] = matrix(objects[name].global_transform)
@@ -134,10 +171,11 @@ func run_audit() -> void:
 					bones.append(matrix(skeleton.global_transform*skeleton.get_bone_global_pose(bone)))
 				sample[name] = bones
 			frames.append(sample)
+			clock_samples.append(clock)
 		var metadata: Dictionary = {}
 		for name in actors:
-			metadata[name] = {"bone_names":actors[name].bone_names,"animation":actors[name].animation}
-		report.scenes.append({"id":item.id,"actors":metadata,"frames":frames,"object_frames":object_frames,"object_meshes":object_meshes})
+			metadata[name] = {"bone_names":actors[name].bone_names,"animation":actors[name].animation,"animation_index":0,"duration_s":actors[name].player.get_animation(actors[name].animation).length,"loop_mode":actors[name].player.get_animation(actors[name].animation).loop_mode}
+		report.scenes.append({"id":item.id,"actors":metadata,"frames":frames,"object_frames":object_frames,"object_meshes":object_meshes,"clock_samples":clock_samples})
 		holder.queue_free()
 		await process_frame
 	var output := FileAccess.open(args[1],FileAccess.WRITE)

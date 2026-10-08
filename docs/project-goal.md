@@ -4758,3 +4758,6 @@ Explicit point correction now reserves numerical headroom inside its working lim
 ## Complete object queries with recomputed activations
 
 The longer two-hand lift stops on the existing available-system-memory guard before producing a candidate; inputs, setup, logs and terminal failure are retained. V17 now recomputes temporary object-query activations while keeping V16 clocks, full contact-region populations, bounds, constraints and acceptance unchanged. An isolated complete-hand comparison across all 537 intermediate poses has identical residuals/loss/affine gradients and reduces sampled process RSS from 1162.1 to 744.7 MiB. All 166 focused Python tests pass, with 45 overlapping model-free tests. This is a measured kernel improvement, not completed lift, solver-memory, collision, dynamics or human-quality approval. All fourteen release capabilities remain unapproved and the full project goal stays active. See [the measured limits and recovery method](object-query-checkpoint-v1.md).
+
+
+2026-10-08: Synchronized dense scene import verification is available; four development scenes passed 2585 actor poses and 1407 object poses, with 108 local integration tests. Import fidelity does not approve the motions or any release capability. See [method and limits](synchronized-scene-playback-v1.md).
