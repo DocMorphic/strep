@@ -4648,3 +4648,8 @@ Fresh complete measurements and independent replay cover all 180 stencils, 107,0
 ## Third bounded stored-motion correction
 
 The completed search tests all 256 prescribed neighbors at fixed numeric controls and reduces seven native motion-rate failures to one, reaching the original 64-choice limit. Every tested export retains the material and clearance gates, but the candidate remains unapproved and no new full-scene scan runs. Independent replay is running, not yet complete. See [the producer-reported result](staged-native-storage-results-v3.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.
+
+
+## Source test coverage in four CI shards
+
+Split the original 384 Python test modules into four 96-module jobs per operating system after GitHub reports both full-source jobs exceeding the 90-minute limit. Every original Python module and all 36 Node scripts remain selected. Local checks verify exact coverage, command boundaries, failure propagation and workflow structure; hosted suite execution is pending. See [the CI change](source-checks-shards-v1.md). Motion replay remains in progress, and all fourteen release evidence arrays remain empty.

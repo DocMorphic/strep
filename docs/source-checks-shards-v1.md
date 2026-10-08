@@ -1,0 +1,11 @@
+# Preserve source coverage within the CI time limit
+
+The previous source-test workflow runs all 384 Python test modules in one job per operating system. GitHub's annotations for run `37700120577` report that both source jobs exceed their 90-minute execution limit. The adapter and material-package jobs pass in that run. Later canceled runs are not evidence of a passing full source suite.
+
+The source jobs now use four explicit file shards on both Ubuntu and Windows. Each shard selects 96 of the original Python modules. The manifest preserves their exact original order; interleaving the four selections reconstructs the original command with no omitted or duplicated module. All 36 original Node scripts still run once per operating system, on shard zero. Adapter and material-package jobs, dependency setup, environment, action pins, permissions, concurrency and time limits remain unchanged.
+
+The standard-library runner validates the entire inventory before executing a shard. It requires distinct test paths inside the checkout and rejects invalid or empty shard selections. Python execution retains the current interpreter and repository working directory. Both Python and Node failures propagate; Node execution stops on its first failure. The new manifest contains the original public tests. The separately developed clearance observer will be added with its validated source publication.
+
+Local checks execute all four CLI selections and verify the complete original Python and Node populations, rejected selections, subprocess arguments, working directory and failure propagation. YAML parsing rejects duplicate keys and verifies that the only workflow behavior changes are the source matrix and the two source execution steps. These checks do not execute the full Python or Node suites, and **hosted execution of the sharded workflow is still pending**. Equal file counts do not guarantee equal runtimes; a shard that still exceeds the limit must be diagnosed from its actual run.
+
+GitHub documents the operating-system and shard combination as a [matrix of job variations](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations). Source checks are model-free development verification, not animation-quality or release approval. The whole-project goal remains active.
