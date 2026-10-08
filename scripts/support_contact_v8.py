@@ -135,13 +135,16 @@ def object_sampling_layout(selected,vertex_count,full):
     return ids,np.searchsorted(ids,original)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=(),edit_window=None,export_point_rate_guard=False,authored_point_scaling="metres",export_floor_guard=False,export_point_position_guard=False,native_body_references=None,native_support_references=None,root_optimizer_scale_m=1.,constraint_restore_steps=0,intentional_object_contacts=False,object_subframe_divisions=1,object_sample_margin_m=0.,point_numerical_margin_m=0.):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=(),edit_window=None,export_point_rate_guard=False,authored_point_scaling="metres",export_floor_guard=False,export_point_position_guard=False,native_body_references=None,native_support_references=None,root_optimizer_scale_m=1.,constraint_restore_steps=0,intentional_object_contacts=False,object_subframe_divisions=1,object_sample_margin_m=0.,point_numerical_margin_m=0.,object_playback_checkpoint_frames=0):
     from point_numerical_headroom import validate_margin,working_limits
     validate_margin(point_numerical_margin_m)
     if point_numerical_margin_m and (contact_spec is None or region_fitting is not None):raise ValueError('Point numerical headroom requires an explicit point specification and no distributed fitter')
     if type(object_subframe_divisions) is not int or not 1<=object_subframe_divisions<=8:raise ValueError('Object playback divisions must be 1–8')
     if type(object_sample_margin_m) not in (int,float) or not np.isfinite(object_sample_margin_m) or not 0<=object_sample_margin_m<=.001:raise ValueError('Finite numerical object margin in [0,1mm] required')
     if (object_subframe_divisions>1 or object_sample_margin_m) and not object_inequalities:raise ValueError('Object playback guards require object inequalities')
+    from object_playback_checkpoint import validate_chunk_frames
+    validate_chunk_frames(object_playback_checkpoint_frames)
+    if object_playback_checkpoint_frames and (object_subframe_divisions<=1 or not object_inequalities):raise ValueError('Object activation recomputation requires intermediate object inequalities')
     if type(intentional_object_contacts)!=bool:raise ValueError('Explicit intentional object contact boolean required')
     if intentional_object_contacts and (not object_inequalities or region_fitting is not None or scene_context is None or 'intentional_object_clearance' not in scene_context):
         raise ValueError('Intentional object contact requires compiled point-contact policy and object inequalities')
@@ -444,8 +447,12 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
                 if subframe_clock is not None:
                     left,fraction=subframe_clock
                     between_r,between_p=playback_poses(local_keys,offsets,p[:,0],parents,left,fraction)
-                    between_vertices=vertices(between_r,between_p)
-                    between=[object_constraint_residuals(torch_primitive_clearance_violation(between_vertices,op,orr,geometry,margin),object_constraint_mode) for op,orr,geometry,margin in subframe_objects]
+                    if object_playback_checkpoint_frames:
+                        from object_playback_checkpoint import query_chunks
+                        between=query_chunks(between_r,between_p,vertices,subframe_objects,torch_primitive_clearance_violation,object_constraint_residuals,object_constraint_mode,object_playback_checkpoint_frames)
+                    else:
+                        between_vertices=vertices(between_r,between_p)
+                        between=[object_constraint_residuals(torch_primitive_clearance_violation(between_vertices,op,orr,geometry,margin),object_constraint_mode) for op,orr,geometry,margin in subframe_objects]
                     violations=[torch.cat([key,intermediate],dim=0) for key,intermediate in zip(violations,between)]
                 terms['object_collision']=torch.stack([object_constraint_merit(g,m,object_penalty,object_constraint_mode) for g,m in zip(violations,object_multiplier)]).mean()
                 last_objects=[g.detach() for g in violations]
@@ -584,6 +591,10 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         recipe['object_playback_guard']=dict(divisions=object_subframe_divisions,left_frames=subframe_clock[0].cpu().tolist(),fractions=subframe_clock[1].cpu().tolist(),
             key_samples=T,intermediate_samples=len(subframe_clock[0]),sampled_vertices=len(selected),objects=len(objects),numerical_margin_m=object_sample_margin_m,
             scope='Every adjacent key interval and declared object, shortest local-quaternion interpolation plus linear native offsets/root and hierarchical FK. Same selected skin set. Not float32 export or engine equivalence, full mesh or continuous collision proof.')
+    if object_playback_checkpoint_frames:
+        recipe['object_query_checkpoint']=dict(chunk_frames=object_playback_checkpoint_frames,intermediate_samples=len(subframe_clock[0]),
+            objects=len(subframe_objects),sampled_vertices=len(selected),backend=skin_backend,
+            scope='Recomputes temporary skin/distance activations on backward. Every original query frame, vertex, object, residual ordering and merit reduction retained. Fixed object trajectories and bind coefficients; no sampling or acceptance change.')
     recipe['object_clearance_target_m']=object_clearance
     recipe['object_clearance_margin_m']=object_clearance_margin_m
     if rate_objective is not None:recipe['export_rates']=rate_objective.record()
