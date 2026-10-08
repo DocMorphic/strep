@@ -4713,3 +4713,8 @@ The sixth fresh-pose trial and separate replay preserve all 60,120 inherited pro
 ## Sixth-pose repair passes native checks; scene remains failed
 
 The sixth-pose storage repair clears its native failure after three neighbors, retaining all four pairs and the complete 120-option/7,176-exchange plan within the original 64-correction limit. Separate replay verifies every original gate, export and selection. The full scene remains failed at 1,568 of 1,673 times with 29,821 proper crossings and two unresolved near-contact records. Complete trace and paired-record replay retain the failure. The slight severity improvement is not interaction or release approval. See [the measured result](staged-indexed-storage-exchange-results-v8.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.
+
+
+## Explicit sparse scene guidance
+
+Scene generation now supports explicit sparse guide plans that preserve contact boundaries, effector changes and both actors of partner contacts. Saved plans bind exact request frames, prompts, seeds and source snapshots before inference; complete reference/contact checks retain their authored clocks. Seventy model-free tests and one saved-scene metadata CLI preview pass. The hosted manifest contains 388 Python modules and 36 Node scripts per operating system; validation of this commit is pending. Motion generation, geometry quality, playback and human review remain unverified. See [the implementation and validation](sparse-scene-generation-guides-v1.md). All fourteen release capabilities remain unapproved; the whole-project goal stays active.

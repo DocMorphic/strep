@@ -204,9 +204,12 @@ def validate_preflight(folder,batch):
     """Reject stale/rejected references before encoding or scene assembly."""
     folder=Path(folder).resolve();freeze_path=folder/'freeze.json';audit_path=folder/'target-preflight/audit.json'
     freeze=read(freeze_path) if freeze_path.exists() else {}
+    from scene_generation_guides import validate_prepared_guidance
+    validate_prepared_guidance(folder,freeze,batch)
     expected=freeze.get('target_preflight_sha256')
     if expected is None:
-        if (folder/'target-preflight').exists() or (folder/'source-snapshot/scene_target_preflight.py').exists():
+        if ((folder/'target-preflight').exists() or (folder/'source-snapshot/scene_target_preflight.py').exists()
+                or (folder/'generation-guide-plan.json').exists()):
             raise ValueError('Scene target preflight binding was dropped')
         return None  # Historical ordinary batches have no preflight contract.
     mode=freeze.get('target_preflight_mode')

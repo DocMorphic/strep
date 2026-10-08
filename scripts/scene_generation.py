@@ -11,13 +11,14 @@ from pathlib import Path
 import numpy as np
 from strep import ROOT, read, save, sha256, now, source_check
 from action_requests import validate_batch, request_digest, conditioning_texts
-from generation_constraints import EFFECTORS, compile_guides
+from generation_constraints import compile_guides
 from scene_constraints import evaluate, pose, effector_track
 from build_soma_preview import ASSET
 from scene_target_preflight import orientation,write as write_preflight,validate_preflight
+from scene_generation_guides import plan_frames,guides_from_plan,audit_plan,validate_actor_plan
 
 
-def actor_guides(scene, name):
+def actor_guides(scene, name, *, guide_plan=None):
     """Combine simultaneous effectors, avoiding conflicting implicit root guides."""
     entry=scene['actors'][name]; path=(ROOT/entry['motion']).resolve()
     if not path.is_relative_to(ROOT.resolve()) or sha256(path)!=entry.get('source_sha256'):
@@ -25,34 +26,17 @@ def actor_guides(scene, name):
     translation, rotation=pose(entry['transform'])
     if abs(translation[1])>1e-6 or not np.allclose(rotation[:,1],[0,1,0],atol=1e-6):
         raise ValueError('Generation currently requires ground-level yaw-only actor placement')
-    frames={}
-    for contact in scene['contacts']:
-        joints=[]
-        if contact['actor']==name:joints.append(contact['effector'].get('joint'))
-        target=contact['target']
-        if target.get('space')=='actor' and target.get('actor')==name:joints.append(target.get('joint'))
-        if not joints:continue
-        if any(j not in EFFECTORS for j in joints):raise ValueError('Generation scene guides currently support hand/foot contacts only')
-        a,b=contact['start_frame'],contact['end_frame']
-        if type(a)!=int or type(b)!=int or not 0<=a<=b<scene['frame_count']:raise ValueError('Contact frame outside scene')
-        for frame in range(a,b+1):frames.setdefault(frame,set()).update(joints)
-    if not frames:raise ValueError('Scene actor needs at least one hand/foot contact pose')
-    groups={}
-    for frame,joints in sorted(frames.items()):groups.setdefault(tuple(sorted(joints)),[]).append(frame)
-    return [dict(type='end-effector',joint_names=list(joints),motion=entry['motion'],sha256=entry['source_sha256'],
-                 source_frames=indices,frame_indices=indices) for joints,indices in groups.items()]
+    return guides_from_plan(scene,name,plan_frames(scene,name,guide_plan))
 
 
 def requests(scene, plan):
-    if set(plan)!=set(scene['actors']):raise ValueError('Provide a prompt schedule and seeds for every scene actor')
+    validate_actor_plan(scene,plan)
     result=[]
     for i,(name,settings) in enumerate(plan.items()):
-        if set(settings)!={'segments','seeds'}:raise ValueError('Actor plan requires segments and seeds')
-        if sum(round(s['duration_s']*30) for s in settings['segments'])!=scene['frame_count']:
-            raise ValueError('Prompt schedule must match the shared scene clock')
         for mode in ['baseline','guided']:
-            value=dict(id=f'actor-{i}-{mode}',label=f'Actor {name} · {mode}',**copy.deepcopy(settings))
-            if mode=='guided':value['generation_constraints']=actor_guides(scene,name)
+            value=dict(id=f'actor-{i}-{mode}',label=f'Actor {name} · {mode}',
+                       segments=copy.deepcopy(settings['segments']),seeds=copy.deepcopy(settings['seeds']))
+            if mode=='guided':value['generation_constraints']=actor_guides(scene,name,guide_plan=settings.get('guide_plan'))
             result.append(value)
     batch=validate_batch(dict(schema_version=1,requests=result))
     for value in batch['requests']:compile_guides(value)
@@ -97,16 +81,19 @@ def prepare(scene_path, plan_path, output, reuse_baseline=False,diagnostic_targe
         raise ValueError('Fit source hand orientation to the scene before using it as a generation guide')
     out=Path(output).resolve();out.mkdir(parents=True,exist_ok=False)
     save(out/'authored-scene.json',scene);save(out/'actor-plan.json',plan);save(out/'request.json',batch)
+    save(out/'generation-guide-plan.json',audit_plan(scene,plan))
     save(out/'source-contact-evaluation.json',source_evaluation);save(out/'source-orientation.json',source_orientation)
     preflight=write_preflight(scene,out/'target-preflight',scene_file=out/'authored-scene.json')
     save(out/'freeze.json',dict(created_at=now(),scene_sha256=sha256(out/'authored-scene.json'),plan_sha256=sha256(out/'actor-plan.json'),
         request_sha256=request_digest(batch),compiler_sha256=sha256(__file__),actor_order=list(plan),
+        generation_guide_plan_sha256=sha256(out/'generation-guide-plan.json'),
+        guide_planner_sha256=sha256(ROOT/'scripts/scene_generation_guides.py'),
         source_file=str(Path(scene_path).resolve()),source_file_sha256=sha256(scene_path),
         target_preflight_sha256=sha256(out/'target-preflight/audit.json'),
         target_preflight_mode='diagnostic' if diagnostic_targets else 'strict',
-        scope='Fitted native actor poses used as sparse generation conditions. Independent actor sampling with fixed authored placement/clock; no object/partner awareness, anatomy approval or collision solve. All source and output defects remain reportable.'))
+        scope='Fitted native actor poses used as generation conditions with a separately recorded temporal guide policy. Independent actor sampling with fixed authored placement/clock; no object/partner awareness, anatomy approval or collision solve. All source and output defects remain reportable.'))
     snapshot=out/'source-snapshot';snapshot.mkdir()
-    for name in ['scene_generation.py','scene_target_preflight.py','generation_constraints.py','generate_actions.py','run_actions.py','audit_generation_guides.py']:
+    for name in ['scene_generation.py','scene_generation_guides.py','scene_target_preflight.py','generation_constraints.py','generate_actions.py','run_actions.py','audit_generation_guides.py']:
         shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
     if not preflight['reference_screens_passed'] and not diagnostic_targets:
         save(out/'pipeline.json',dict(status='rejected',failed_stage='scene_target_preflight',finished_at=now(),
