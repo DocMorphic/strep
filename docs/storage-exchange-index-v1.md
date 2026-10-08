@@ -17,3 +17,6 @@ A [second separately replayed pass](staged-indexed-storage-exchange-results-v3.m
 
 
 A [third separately replayed pass](staged-indexed-storage-exchange-results-v4.md) preserves all 200 new rate options and 12,170 exchanges at the same continuous controls. Its 64-neighbor batch retains every original gate apart from native motion failures; the selected continuation reduces two failures to one, with no full-scene scan or promotion. All previous results and original motion/scene limits remain unchanged.
+
+
+The [fourth indexed pass](staged-indexed-storage-exchange-results-v5.md) clears all native checks after five of at most 64 probes at the original correction limit. Complete separate replay preserves all six exports and the 4,868-proposal plan. The full scene still fails at 1,570 of 1,673 times with 29,822 proper crossings; every record is retained and verified. Only an authenticated internal measurement pose is created, requiring fresh derivatives and retaining the failed scene.
