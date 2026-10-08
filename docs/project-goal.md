@@ -4658,3 +4658,8 @@ Split the original 384 Python test modules into four 96-module jobs per operatin
 ## Verified indexed observations and bounded storage exchanges
 
 Separate replay reproduces all 257 stored export pairs and complete search decisions; the final one-rate-failure candidate remains unapproved. A complete indexed observer reproduces all 33,490 clearance rows exactly on both saved start/final exports. A new planner restores an existing absolute storage choice before adding one at capacity, retaining the original 64-choice limit. Both modules pass 38 isolated source tests each; the exchange motion study is prepared and has not run. See [observer validation](indexed-clearance-observation-v1.md) and [the exchange planner](storage-exchange-plan-v1.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.
+
+
+## Verified bounded storage exchange and complete scene failure
+
+The second exchange clears the remaining original motion-rate failure at fixed numeric controls and the unchanged 64-choice limit. Separate replay verifies all three export pairs and the complete 4,868-proposal plan. Material, clearance, contact and reference gates pass, but the full scene fails at 1,572 of 1,673 times, with 29,823 proper crossings and one boundary or near-contact record. Complete record replay and an authenticated internal seed retain that failure for fresh collision measurements. See [the measured result](staged-storage-exchange-results-v1.md). All fourteen release evidence arrays remain empty; no clip or release is approved.
