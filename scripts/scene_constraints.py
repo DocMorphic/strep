@@ -47,8 +47,18 @@ def transform_motion(motion,transform):
                 rotations=np.einsum('ij,fkjl->fkil',r,motion['global_rot_mats']))
 
 
-def joint_point(actor,joint,offset):
-    names,_,_=skeleton_metadata(77)
+def joint_point(actor,joint,offset,skin=None):
+    if skin is None:
+        names,_,_=skeleton_metadata(77)
+    else:
+        raw_names=np.asarray(skin.get('rig_joint_names'))
+        if raw_names.ndim!=1:raise ValueError('Supplied skin needs its joint-name mapping')
+        names=list(map(str,raw_names))
+        positions=np.asarray(actor['positions']);rotations=np.asarray(actor['rotations'])
+        if (not names or any(not name for name in names) or len(set(names))!=len(names)
+                or positions.ndim!=3 or positions.shape[1:]!=(len(names),3)
+                or rotations.shape!=(len(positions),len(names),3,3)):
+            raise ValueError('Distinct skin joint names must match the motion clock and joints')
     if joint not in names:raise ValueError('Unknown joint '+str(joint))
     j=names.index(joint);offset=vector(offset,3,'joint-local offset')
     return actor['positions'][:,j]+np.einsum('fij,j->fi',actor['rotations'][:,j],offset)
@@ -59,7 +69,7 @@ def effector_track(actor,effector,skin=None):
         if skin is None:raise ValueError('Surface contact requires skin geometry')
         from palm_contacts import surface_track
         return surface_track(actor,skin,effector['surface_vertex'])
-    return joint_point(actor,effector.get('joint'),effector.get('offset_m'))
+    return joint_point(actor,effector.get('joint'),effector.get('offset_m'),skin)
 
 
 def target_track(target,actors,objects,frames,skin=None):

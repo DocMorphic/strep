@@ -37,3 +37,24 @@ def test_invalid_quaternion_and_missing_object_do_not_silently_fallback():
 def test_short_object_track_is_not_silently_extrapolated():
     key=lambda f:dict(frame=f,translation_m=[0,0,0],rotation_xyzw=[0,0,0,1])
     with pytest.raises(ValueError):sample_object(dict(shape='box',size_m=[1,1,1],keyframes=[key(0),key(1)]),10)
+
+
+def test_joint_offsets_use_supplied_rig_order_without_downloaded_metadata(monkeypatch):
+    import scene_constraints as module
+    def forbidden(*args):raise AssertionError('Supplied rig must not read vendor metadata')
+    monkeypatch.setattr(module,'skeleton_metadata',forbidden)
+    actor=dict(positions=np.array([[[9.,9.,9.],[2.,3.,4.]]]),rotations=np.tile(np.eye(3),(1,2,1,1)))
+    actor['rotations'][0,1]=Rotation.from_euler('z',90,degrees=True).as_matrix()
+    skin=dict(rig_joint_names=np.array(['Hips','LeftHand']))
+    effector=dict(joint='LeftHand',offset_m=[.03,0,0])
+    expected=np.array([[2.,3.03,4.]])
+    np.testing.assert_allclose(module.effector_track(actor,effector,skin),expected,atol=1e-12)
+    np.testing.assert_allclose(module.target_track(dict(space='actor',actor='B',**effector),{'B':actor},{},1,skin),expected,atol=1e-12)
+
+
+@pytest.mark.parametrize('names',[['LeftHand','LeftHand'],['LeftHand'],[['LeftHand','Hips']],['','LeftHand']])
+def test_supplied_joint_mapping_must_be_distinct_and_match_motion(names):
+    from scene_constraints import effector_track
+    actor=dict(positions=np.zeros((1,2,3)),rotations=np.tile(np.eye(3),(1,2,1,1)))
+    with pytest.raises(ValueError):
+        effector_track(actor,dict(joint='LeftHand',offset_m=[0,0,0]),dict(rig_joint_names=np.array(names)))
