@@ -964,3 +964,8 @@ The second fifth-pose correction clears both native failures after 52 neighbors,
 ## Sixth fresh-pose trial and paired scene comparison
 
 The sixth fresh-pose trial and separate replay preserve all 60,120 inherited protections plus 3,528 fresh guards. All eight exports retain native failures and remain unapproved. A complete saved-row trace selects the event-preserved half step by original native merit for bounded continuation. The preceding paired scene comparison shows 26 times with fewer crossings and 25 with more, unchanged total crossings and no original geometry merit improvement. See [the measured result](docs/staged-fixed-ceiling-results-v6.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.
+
+
+## Sixth-pose repair passes native checks; scene remains failed
+
+The sixth-pose storage repair clears its native failure after three neighbors, retaining all four pairs and the complete 120-option/7,176-exchange plan within the original 64-correction limit. Separate replay verifies every original gate, export and selection. The full scene remains failed at 1,568 of 1,673 times with 29,821 proper crossings and two unresolved near-contact records. Complete trace and paired-record replay retain the failure. The slight severity improvement is not interaction or release approval. See [the measured result](docs/staged-indexed-storage-exchange-results-v8.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.

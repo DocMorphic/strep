@@ -28,3 +28,8 @@ The [first fifth-trial pass](staged-indexed-storage-exchange-results-v6.md) reta
 ## Fifth-pose native checks pass; scene remains failed
 
 The second fifth-pose correction clears both native failures after 52 neighbors, retaining all 53 pairs and the complete 176-option/10,508-exchange plan within the original 64-correction limit. Separate replay verifies all exports and selection. The full scene still fails at 1,569 of 1,673 times with 29,822 proper crossings; complete trace replay preserves the failure. A verified internal continuation anchor and fresh derivatives prepare further correction; no source, quality or release approval occurs. See [the measured result](staged-indexed-storage-exchange-results-v7.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.
+
+
+## Sixth-pose repair passes native checks; scene remains failed
+
+The sixth-pose storage repair clears its native failure after three neighbors, retaining all four pairs and the complete 120-option/7,176-exchange plan within the original 64-correction limit. Separate replay verifies every original gate, export and selection. The full scene remains failed at 1,568 of 1,673 times with 29,821 proper crossings and two unresolved near-contact records. Complete trace and paired-record replay retain the failure. The slight severity improvement is not interaction or release approval. See [the measured result](staged-indexed-storage-exchange-results-v8.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.
