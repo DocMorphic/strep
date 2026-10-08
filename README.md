@@ -919,3 +919,8 @@ Separate replay reproduces all 257 stored export pairs and complete search decis
 ## Verified bounded storage exchange and complete scene failure
 
 The second exchange clears the remaining original motion-rate failure at fixed numeric controls and the unchanged 64-choice limit. Separate replay verifies all three export pairs and the complete 4,868-proposal plan. Material, clearance, contact and reference gates pass, but the full scene fails at 1,572 of 1,673 times, with 29,823 proper crossings and one boundary or near-contact record. Complete record replay and an authenticated internal seed retain that failure for fresh collision measurements. See [the measured result](docs/staged-storage-exchange-results-v1.md). All fourteen release evidence arrays remain empty; no clip or release is approved.
+
+
+## Fourth complete clearance-history trial and hosted CI pass
+
+Fresh 180-stencil measurement and separate replay retain all 107,072 component rows and 101 clear samples at the verified 64-choice pose. The next full trial carries 39,954 protections plus fresh guards, 43,536 total, but all eight actual exports remain unapproved; the uniform proposal is rejected before export. Separate replay verifies every conic, strict step and export, with original ceilings and tolerances unchanged. Complete error tracing identifies a bounded event-quarter continuation with six native failures. The initial CI shard repair passes all twelve hosted jobs at b3cd4fe; newer module coverage remains separately pending. See [the verified study](docs/staged-clearance-history-trial-v4.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.
