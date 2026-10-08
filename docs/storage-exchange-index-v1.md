@@ -14,3 +14,6 @@ The [completed and separately replayed study](staged-indexed-storage-exchange-re
 
 
 A [second separately replayed pass](staged-indexed-storage-exchange-results-v3.md) preserves all 320 new rate options and 19,472 exchanges at the same continuous controls. Its 64-neighbor batch retains every original gate apart from native motion failures; the selected continuation reduces four failures to two, with no full-scene scan or promotion. The preceding 386-module CI run now passes all twelve hosted jobs; new index-module hosted coverage remains separate.
+
+
+A [third separately replayed pass](staged-indexed-storage-exchange-results-v4.md) preserves all 200 new rate options and 12,170 exchanges at the same continuous controls. Its 64-neighbor batch retains every original gate apart from native motion failures; the selected continuation reduces two failures to one, with no full-scene scan or promotion. All previous results and original motion/scene limits remain unchanged.
