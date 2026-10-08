@@ -77,3 +77,16 @@ def test_compiler_rejects_unsupported_or_ambiguous_constraints(skin,change):
     if change=='unknown_id':ids=['missing']
     if change=='hash':scene['actors']['A']['source_sha256']='bad'
     with pytest.raises(ValueError):compile_contacts(scene,'A',ids,skin)
+
+
+def test_compiler_keeps_authored_tolerance_in_native_track_and_provenance(skin):
+    scene=copy.deepcopy(read(ROOT/'reports/scene-preview-v1/lift-box-seed-11/palm.json')['scene'])
+    scene['contacts'][0]['tolerance_m']=.001
+    snapshot=copy.deepcopy(scene)
+    spec,provenance=compile_contacts(scene,'A',['left-grip'],skin)
+    assert scene==snapshot
+    assert spec['regions']['LeftHand']['segments'][0]['tolerance_m']==.001
+    assert provenance['contacts'][0]['tolerance_m']==.001
+    del scene['contacts'][0]['tolerance_m']
+    spec,provenance=compile_contacts(scene,'A',['left-grip'],skin)
+    assert spec['regions']['LeftHand']['segments'][0]['tolerance_m']==.03

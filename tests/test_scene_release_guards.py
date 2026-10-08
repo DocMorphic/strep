@@ -27,10 +27,11 @@ def test_guard_tracks_moving_rotating_object_at_release_not_previous_key():
 
 def test_guard_changes_only_solver_track_and_rejects_adjacent_handoff():
     g=compile_release_guards(fixture(),'A',['grip'])
-    segment=dict(start_frame=2,end_frame=5,space='track',positions_m=[[0,.5,0]]*4,vertex_id=123)
+    segment=dict(start_frame=2,end_frame=5,space='track',positions_m=[[0,.5,0]]*4,vertex_id=123,tolerance_m=.001)
     spec=dict(schema_version=2,fps=30,frame_count=10,regions=dict(LeftHand=dict(mode='explicit',segments=[segment])))
     before=copy.deepcopy(spec);extended=extend_solver_spec(spec,g)
     assert spec==before and extended['regions']['LeftHand']['segments'][0]['end_frame']==6
+    assert extended['regions']['LeftHand']['segments'][0]['tolerance_m']==.001
     assert extended['regions']['LeftHand']['segments'][0]['positions_m'][-1]==g[0]['position_m']
     spec['regions']['LeftHand']['segments'].append(dict(segment,start_frame=6,end_frame=7,positions_m=[[0,.5,0]]*2))
     with pytest.raises(ValueError,match='adjacent contact'):extend_solver_spec(spec,g)

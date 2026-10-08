@@ -122,3 +122,47 @@ def test_invalid_moving_tracks_are_rejected(fixture,version,points,extra):
     request=spec(dict(mode='explicit',segments=[dict(start_frame=2,end_frame=4,space='track',positions_m=points,**extra)]))
     request['schema_version']=version
     with pytest.raises(ValueError):validate(request,15,regions(skin))
+
+
+@pytest.mark.parametrize('tolerance',[0,-.001,float('nan'),float('inf'),True,'0.001',None])
+def test_invalid_interval_tolerances_reject(fixture,tolerance):
+    _,skin,_=fixture
+    request=spec(dict(mode='explicit',segments=[dict(start_frame=2,end_frame=4,space='baseline',tolerance_m=tolerance)]))
+    with pytest.raises(ValueError):validate(request,15,regions(skin))
+
+
+def test_authored_tolerance_overrides_looser_evaluator_fallback_per_interval(fixture):
+    from evaluate_contact_spec import evaluate
+    from floor_contact import Surface
+    base,skin,_=fixture
+    shifted={key:value.copy() for key,value in base.items()}
+    shifted['posed_joints'][:,:,0]+=.004
+    request=spec(dict(mode='explicit',segments=[
+        dict(start_frame=2,end_frame=4,space='baseline',tolerance_m=.001),
+        dict(start_frame=7,end_frame=9,space='baseline',tolerance_m=.01)]))
+    # Exact recorded surface tracks avoid the baseline floor-clamp policy.
+    vertex=int(regions(skin)['LeftHand'][0]);surface=Surface(skin)
+    request['schema_version']=2
+    for segment in request['regions']['LeftHand']['segments']:
+        segment.update(space='track',vertex_id=vertex,positions_m=[
+            surface.vertices(base['global_rot_mats'][f],base['posed_joints'][f],[vertex])[0].tolist()
+            for f in range(segment['start_frame'],segment['end_frame']+1)])
+    snapshot=copy.deepcopy(request)
+    result=evaluate(base,shifted,skin,request,tolerance_m=.1)
+    assert request==snapshot and not result['all_explicit_targets_within_tolerance']
+    assert [r['tolerance_m'] for r in result['intervals']]==[.001,.01]
+    assert [r['frames_outside_tolerance'] for r in result['intervals']]==[3,0]
+    with pytest.raises(ValueError):evaluate(base,base,skin,request,tolerance_m=float('nan'))
+
+
+def test_solver_tolerances_tighten_only_authored_keys_and_keep_original_limits():
+    from contact_spec import solver_point_tolerances
+    contacts={'RightHand':{},'LeftHand':{},'LeftFoot':{}}
+    request=dict(regions={'LeftHand':dict(mode='explicit',segments=[
+        dict(start_frame=2,end_frame=4,tolerance_m=.001),
+        dict(start_frame=7,end_frame=9,tolerance_m=.1)]),
+        'RightHand':dict(mode='disabled')})
+    values=solver_point_tolerances(contacts,request,12,.005)
+    expected=np.full((12,3),.005);expected[2:5,1]=.001
+    np.testing.assert_array_equal(values,expected)
+    np.testing.assert_array_equal(solver_point_tolerances(contacts,None,12,.005),np.full((12,3),.005))

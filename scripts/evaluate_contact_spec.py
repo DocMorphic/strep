@@ -9,12 +9,15 @@ from strep import read,save,sha256
 
 
 def evaluate(base,candidate,skin,spec,tolerance_m=.03):
+    if type(tolerance_m) not in [int,float] or not np.isfinite(tolerance_m) or tolerance_m<=0:
+        raise ValueError('Positive finite fallback contact tolerance required')
     groups=regions(skin);validate(spec,len(base['root_positions']),groups)
     surface=Surface(skin);records=[]
     for name,entry in spec['regions'].items():
         if entry['mode']!='explicit':continue
         for interval in entry['segments']:
             start,end=interval['start_frame'],interval['end_frame']
+            interval_tolerance=interval.get('tolerance_m',tolerance_m)
             ids=groups[name]
             if 'vertex_id' in interval:vertex=interval['vertex_id']
             else:
@@ -31,9 +34,9 @@ def evaluate(base,candidate,skin,spec,tolerance_m=.03):
                 errors.append(float(np.linalg.norm(p-target)))
             records.append(dict(region=name,start_frame=start,end_frame=end,vertex_id=vertex,space=interval['space'],
                 mean_error_m=float(np.mean(errors)),p95_error_m=float(np.percentile(errors,95)),max_error_m=max(errors),
-                frames_outside_tolerance=int(np.sum(np.array(errors)>tolerance_m)),frame_count=len(errors),per_frame_error_m=errors))
+                tolerance_m=interval_tolerance,frames_outside_tolerance=int(np.sum(np.array(errors)>interval_tolerance)),frame_count=len(errors),per_frame_error_m=errors))
     return dict(intervals=records,tolerance_m=tolerance_m,all_explicit_targets_within_tolerance=bool(records) and all(r['frames_outside_tolerance']==0 for r in records),
-        scope='Requested interval/point error, independent of optimization weights. No force, semantic, unrequested-contact or collision certification; empty explicit target list is not a pass.')
+        scope='Requested interval/point error using each interval tolerance or the reported fallback, independent of optimization weights. No force, semantic, unrequested-contact or collision certification; empty explicit target list is not a pass.')
 
 
 if __name__=='__main__':

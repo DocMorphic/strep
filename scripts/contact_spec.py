@@ -26,7 +26,8 @@ def validate(spec,frame_count,region_indices):
         if mode=='explicit' and not segments:raise ValueError('Explicit mode needs a contact interval')
         previous_end=-1
         for segment in segments:
-            if not isinstance(segment,dict) or set(segment)-{'start_frame','end_frame','space','position_m','positions_m','vertex_id'}:raise ValueError('Invalid segment fields')
+            if not isinstance(segment,dict) or set(segment)-{'start_frame','end_frame','space','position_m','positions_m','vertex_id','tolerance_m'}:raise ValueError('Invalid segment fields')
+            if 'tolerance_m' in segment and (type(segment['tolerance_m']) not in [int,float] or not np.isfinite(segment['tolerance_m']) or segment['tolerance_m']<=0):raise ValueError('Contact tolerance must be a positive finite metre distance')
             a,b=segment.get('start_frame'),segment.get('end_frame')
             if type(a)!=int or type(b)!=int or not 0<=a<=b<frame_count or a<=previous_end:raise ValueError('Intervals must be ordered, disjoint and within the clip')
             previous_end=b
@@ -47,6 +48,22 @@ def validate(spec,frame_count,region_indices):
             elif 'position_m' in segment:raise ValueError('Baseline targets do not accept world coordinates')
             if 'vertex_id' in segment and (type(segment['vertex_id'])!=int or segment['vertex_id'] not in region_indices[name]):raise ValueError('Vertex does not belong to support region')
     return spec
+
+
+def solver_point_tolerances(contacts,spec,frames,default):
+    """Tighten explicit solver keys without relaxing existing solver limits."""
+    if type(default) not in [int,float] or not np.isfinite(default) or default<=0:
+        raise ValueError('Positive finite default solver tolerance required')
+    limits=np.full((frames,len(contacts)),default,dtype=float)
+    if spec is not None:
+        for column,name in enumerate(contacts):
+            entry=spec['regions'].get(name)
+            if entry is None or entry['mode']!='explicit':continue
+            for segment in entry['segments']:
+                if 'tolerance_m' in segment:
+                    limits[segment['start_frame']:segment['end_frame']+1,column]=min(default,segment['tolerance_m'])
+    return limits
+
 
 
 def apply_overrides(contacts,base,skin,spec,fade_frames=2,clearance_m=.002):

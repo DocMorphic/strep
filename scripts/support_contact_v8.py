@@ -277,7 +277,8 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     cw=torch.stack([tensor(c['weights']) for c in contacts.values()],1)
     explicit_mask=torch.tensor([c.get('provenance')=='explicit' for c in contacts.values()])
     active=torch.stack([tensor(c['active']) for c in contacts.values()],1)*explicit_mask
-    point_tolerance=CONFIG['point_tolerance_m'] if region_fitting is None else tensor(region_fitting.point_tolerances(contacts,T,CONFIG['point_tolerance_m']))
+    from contact_spec import solver_point_tolerances
+    point_tolerance=tensor(solver_point_tolerances(contacts,effective_spec,T,CONFIG['point_tolerance_m'])) if region_fitting is None else tensor(region_fitting.point_tolerances(contacts,T,CONFIG['point_tolerance_m']))
     preserved_mask=torch.tensor(select_inferred_supports(contacts,preserve_support_regions))
     preserved_active=torch.stack([tensor(c['active']) for c in contacts.values()],1)*preserved_mask
     preserved_multiplier=torch.zeros_like(active)
@@ -541,6 +542,8 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     if point_rate_objective is not None:recipe['export_point_rates']=point_rate_objective.record()
     if body_objective is not None:recipe['native_body']=body_objective.record()
     if support_objective is not None:recipe['native_support']=support_objective.record()
+    recipe['point_tolerance_policy']=dict(default_m=CONFIG['point_tolerance_m'],per_frame_region_limits_m=point_tolerance.detach().cpu().tolist(),
+        scope='Explicit point intervals may tighten the existing solver limit; they never relax it. Distributed regions retain their own anchor limits. Numerical convergence still requires independent evaluation.')
     recipe['initialization']=initialization
     recipe['skin_backend']=skin_backend
     recipe['iterations_per_stage']=iterations

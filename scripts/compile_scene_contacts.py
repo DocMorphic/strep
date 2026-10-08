@@ -50,10 +50,10 @@ def compile_contacts(scene,actor_id,contact_ids,skin,project_root=ROOT):
         if type(a)!=int or type(b)!=int or not 0<=a<=b<frames:raise ValueError('Contact interval outside scene')
         world=target_track(c['target'],actors,objects,frames,skin)
         native=(world-origin)@rotation
-        segment=dict(start_frame=a,end_frame=b,space='track',positions_m=native[a:b+1].tolist(),vertex_id=vertex)
+        segment=dict(start_frame=a,end_frame=b,space='track',positions_m=native[a:b+1].tolist(),vertex_id=vertex,tolerance_m=c.get('tolerance_m',.03))
         spec['regions'].setdefault(region,dict(mode='explicit',segments=[]))['segments'].append(segment)
         compiled.append(dict(contact_id=c['id'],region=region,vertex_id=vertex,start_frame=a,end_frame=b,
-            target=c['target'],target_provenance='Frozen source actor surface/joint track' if c['target']['space']=='actor' else 'Authored scene trajectory'))
+            target=c['target'],tolerance_m=segment['tolerance_m'],target_provenance='Frozen source actor surface/joint track' if c['target']['space']=='actor' else 'Authored scene trajectory'))
     for entry in spec['regions'].values():entry['segments'].sort(key=lambda s:s['start_frame'])
     validate(spec,frames,groups)
     return spec,dict(scene_id=scene['id'],actor=actor_id,contacts=compiled,sources=sources,
