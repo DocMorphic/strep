@@ -4653,3 +4653,8 @@ The completed search tests all 256 prescribed neighbors at fixed numeric control
 ## Source test coverage in four CI shards
 
 Split the original 384 Python test modules into four 96-module jobs per operating system after GitHub reports both full-source jobs exceeding the 90-minute limit. Every original Python module and all 36 Node scripts remain selected. Local checks verify exact coverage, command boundaries, failure propagation and workflow structure; hosted suite execution is pending. See [the CI change](source-checks-shards-v1.md). Motion replay remains in progress, and all fourteen release evidence arrays remain empty.
+
+
+## Verified indexed observations and bounded storage exchanges
+
+Separate replay reproduces all 257 stored export pairs and complete search decisions; the final one-rate-failure candidate remains unapproved. A complete indexed observer reproduces all 33,490 clearance rows exactly on both saved start/final exports. A new planner restores an existing absolute storage choice before adding one at capacity, retaining the original 64-choice limit. Both modules pass 38 isolated source tests each; the exchange motion study is prepared and has not run. See [observer validation](indexed-clearance-observation-v1.md) and [the exchange planner](storage-exchange-plan-v1.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.
