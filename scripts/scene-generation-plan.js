@@ -39,7 +39,14 @@ export function createSceneGenerationPlan({getContext,createProfile=createMotion
  function payload(){
   if(!scene)throw Error('Select a saved scene.');
   const context=getContext();if(context.changed||JSON.stringify(context.spec)!==JSON.stringify(scene))throw Error('The scene changed. Reload the saved scene before checking its motion plan.');
-  saveActor();return {scene:clone(scene),actor_plan:clone(plan)};
+  saveActor();const draft={scene:clone(scene),actor_plan:clone(plan)};
+  const saved=context.referenceBundle;
+  if(saved){
+   const evaluation=saved.evaluation;if(!evaluation?.contact_tracks)throw Error('Saved scene has no complete target-track metadata.');
+   draft.reference_tracks={scene:clone(saved.scene),evaluation:{scene_id:evaluation.scene_id,fps:evaluation.fps,frame_count:evaluation.frame_count,
+    sources:clone(evaluation.sources),contact_tracks:Object.fromEntries(Object.entries(evaluation.contact_tracks).map(([id,track])=>[id,clone(track.target_world_m)]))}};
+  }
+  return draft;
  }
  by('Actor').onchange=()=>{saveActor();showActor(by('Actor').value);};
  by('Add').onclick=()=>{if(!scene)return;if(rows.length>=6){status('Use at most six action segments per character.');return;}addRow();saveActor();changed();};
@@ -77,7 +84,12 @@ export function createSceneGenerationPlan({getContext,createProfile=createMotion
     const names=pair.contact_ids.map((id,i)=>id??'#'+pair.contact_indices[i]).join(' + ');
     by('Results').append(make('p',`${names} · frames ${pair.overlap_frames.join('–')}: ${pair.status==='contradiction'?'fixed-point target distances conflict with their tolerances':pair.status==='unassessed'?pair.reason:'fixed-distance condition not contradicted; feasibility remains unverified'}`));
    }
-   controls();status(consistency?.has_proven_pair_conflict?'Contact targets conflict. Revise before preparation; downloads retain this failed intent.':'Descriptions and contact timing checked. Source poses and generated quality still need validation.');
+   const reference=result.saved_reference_consistency;
+   if(reference){
+    by('Results').append(make('h4','Saved reference targets'),make('p',`${reference.conflicting_pair_frames} fixed-reference conflicts across ${reference.assessed_pair_frames} assessed pair-frames; ${reference.unassessed_pairs} pairs unassessed. These targets are held fixed; changing a partner or object may change the result.`));
+    for(const pair of reference.overlapping_pairs)if(pair.status==='fixed_reference_pair_conflict')by('Results').append(make('p',pair.contact_ids.join(' + ')+': refit or review the saved reference; joint generation feasibility is unverified.'));
+   }
+   controls();status(consistency?.has_proven_pair_conflict?'Contact targets conflict. Revise before preparation; downloads retain this failed intent.':reference?.conflicting_pair_frames?'Saved reference targets need refitting or review. This does not block joint sampling or establish feasibility.':'Descriptions and contact timing checked. Source poses and generated quality still need validation.');
   }catch(error){if(token===undefined||token===version){checked=null;controls();status(error.message);}}
  };
  const saveDownload=download??((name,value)=>{const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)+'\n'],{type:'application/json'}));const link=make('a');link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});

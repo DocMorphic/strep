@@ -35,7 +35,7 @@ def test_actor_plan_preview_preserves_profiles_and_full_clock():
     assert data==original and result['plan']==guides.audit_plan(data['scene'],data['actor_plan'])
     assert all(a['complete_target_frames']==list(range(120)) for a in result['plan']['actors'].values())
     assert result['source_pose_geometry_checked'] is result['generated_motion_checked'] is False
-    assert len(result['input_sha256'])==64 and len(result['implementation_sha256'])==6
+    assert len(result['input_sha256'])==64 and len(result['implementation_sha256'])==7
     changed=copy.deepcopy(data);changed['actor_plan']['B']['motion_profile']['stats'][-1]['value']=80
     assert guides.authoring_preview(changed)['input_sha256']!=result['input_sha256']
 

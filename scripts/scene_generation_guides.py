@@ -208,7 +208,8 @@ def validate_take_record(request, seed, batch_sha256, record):
 
 def authoring_preview(payload):
     """Resolve an in-memory Studio draft without loading source poses or files."""
-    if (not isinstance(payload, dict) or set(payload) != {'scene', 'actor_plan'}
+    if (not isinstance(payload, dict) or not {'scene', 'actor_plan'} <= set(payload)
+            or set(payload)-{'scene','actor_plan','reference_tracks'}
             or not isinstance(payload['scene'], dict)):
         raise ValueError('Complete scene and actor_plan required')
     scene = payload['scene']; actors = scene.get('actors')
@@ -226,20 +227,26 @@ def authoring_preview(payload):
             raise ValueError('Contact target object is missing')
     methods = Path(__file__).resolve().parent
     bindings = {name: sha256(methods/name) for name in
-                ['scene_generation_guides.py', 'scene_contact_consistency.py', 'motion_profile.py', 'action_requests.py', 'generation_constraints.py', 'strep.py']}
+                ['scene_generation_guides.py', 'scene_contact_consistency.py', 'scene_reference_contact_consistency.py', 'motion_profile.py', 'action_requests.py', 'generation_constraints.py', 'strep.py']}
     result = audit_plan(scene, payload['actor_plan'])
     from scene_contact_consistency import diagnose
     consistency = diagnose(scene)
+    reference = None
+    if 'reference_tracks' in payload:
+        from scene_reference_contact_consistency import diagnose_reference
+        reference = diagnose_reference(scene,payload['reference_tracks'])
     if len({len(entry['seeds']) for entry in payload['actor_plan'].values()}) != 1:
         raise ValueError('Each actor needs the same seed count for paired scenes')
     if any(sha256(methods/name) != digest for name, digest in bindings.items()):
         raise ValueError('Scene planning methods changed during preview')
     encoded = json.dumps(payload, sort_keys=True, ensure_ascii=False, allow_nan=False).encode('utf-8')
-    return dict(schema='strep-scene-generation-authoring-preview-v1', plan=result,
+    report = dict(schema='strep-scene-generation-authoring-preview-v1', plan=result,
                 contact_consistency=consistency,
                 input_sha256=hashlib.sha256(encoded).hexdigest(), implementation_sha256=bindings,
                 source_pose_geometry_checked=False, generated_motion_checked=False,
                 quality_approved=False, release_approved=False)
+    if reference is not None:report['saved_reference_consistency']=reference
+    return report
 
 
 def preview(scene_path, plan_path, output):

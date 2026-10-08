@@ -17,7 +17,8 @@ const by=n=>elements.get('scenePlan'+n);
 let selectedProfile=null,profileChange;const fakeProfile=(_host,onChange)=>{profileChange=onChange;return{request:()=>structuredClone(selectedProfile),restore(value){selectedProfile=value?.enabled?structuredClone(value.profile):null;},setRequestSource(){},markChanged(){}};};
 const scene={frame_count:120,actors:{A:{},B:{}},contacts:[]};let context={spec:scene,changed:false},posted=[],downloads=[],reject=false,pending=null;
 let showConflict=false;
-const resultFor=draft=>({plan:{actors:Object.fromEntries(Object.keys(draft.actor_plan).map(name=>[name,{selected_frames:[60],complete_target_frames:[60]}]))},contact_consistency:{has_proven_pair_conflict:showConflict,overlapping_pairs:showConflict?[{contact_ids:['grip-1','grip-2'],contact_indices:[0,1],overlap_frames:[50,90],status:'contradiction'}]:[]}});
+let showReferenceConflict=false;
+const resultFor=draft=>({plan:{actors:Object.fromEntries(Object.keys(draft.actor_plan).map(name=>[name,{selected_frames:[60],complete_target_frames:[60]}]))},contact_consistency:{has_proven_pair_conflict:showConflict,overlapping_pairs:showConflict?[{contact_ids:['grip-1','grip-2'],contact_indices:[0,1],overlap_frames:[50,90],status:'contradiction'}]:[]},saved_reference_consistency:showReferenceConflict?{conflicting_pair_frames:1,assessed_pair_frames:41,unassessed_pairs:0,joint_generation_blocker:false,overlapping_pairs:[{contact_ids:['grip-1','grip-2'],status:'fixed_reference_pair_conflict'}]}:undefined});
 globalThis.fetch=async(url,options)=>{assert.equal(url,'/api/scene-generation-plan');const draft=JSON.parse(options.body);posted.push(draft);if(pending)return pending(draft);return{ok:!reject,json:async()=>reject?{error:'Duration does not match'}:resultFor(draft)};};
 const editor=createSceneGenerationPlan({getContext:()=>context,createProfile:fakeProfile,download:(name,value)=>downloads.push({name,value:structuredClone(value)})});
 const flush=async()=>{for(let i=0;i<4;i++)await new Promise(r=>setImmediate(r));};
@@ -41,6 +42,10 @@ const manual=structuredClone(imported);manual.A.guide_plan={mode:'sparse',frame_
 await by('Preview').onclick();assert.equal(posted.at(-1).actor_plan.A.motion_profile.name,'Lifter');assert.equal(posted.at(-1).actor_plan.B.motion_profile,undefined);
 showConflict=true;await by('Preview').onclick();assert.match(by('Status').textContent,/Contact targets conflict/);assert(by('Results').children.some(node=>node.textContent?.includes('grip-1 + grip-2')));
 by('Download').onclick();assert.equal(downloads.at(-1).value.result.contact_consistency.has_proven_pair_conflict,true);showConflict=false;
+context.referenceBundle={scene,evaluation:{scene_id:'fixture',fps:30,frame_count:120,sources:{A:{path:'A.npz',sha256:'a'.repeat(64)},B:{path:'B.npz',sha256:'b'.repeat(64)}},contact_tracks:{touch:{target_world_m:[[1,2,3]],actual_world_m:[[4,5,6]],errors_m:[1]}}}};
+showReferenceConflict=true;await by('Preview').onclick();assert.match(by('Status').textContent,/does not block joint sampling/);
+assert.deepEqual(posted.at(-1).reference_tracks.evaluation.contact_tracks.touch,[[1,2,3]]);
+by('Download').onclick();assert.equal(downloads.at(-1).value.result.saved_reference_consistency.joint_generation_blocker,false);showReferenceConflict=false;delete context.referenceBundle;
 editor.reset();assert.equal(by('Preview').disabled,true);assert.equal(by('Download').disabled,true);
 await editor.bind({...scene,frame_count:901},'long');assert.match(by('Status').textContent,/1–30/);
 // Actual reusable profile widgets retain unique IDs and discard slow templates on actor switches.
