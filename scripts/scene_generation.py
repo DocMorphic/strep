@@ -15,7 +15,7 @@ from generation_constraints import compile_guides
 from scene_constraints import evaluate, pose, effector_track
 from build_soma_preview import ASSET
 from scene_target_preflight import orientation,write as write_preflight,validate_preflight
-from scene_generation_guides import plan_frames,guides_from_plan,audit_plan,validate_actor_plan
+from scene_generation_guides import plan_frames,guides_from_plan,audit_plan,validate_actor_plan,actor_request_fields,validate_take_record
 
 
 def actor_guides(scene, name, *, guide_plan=None):
@@ -35,7 +35,7 @@ def requests(scene, plan):
     for i,(name,settings) in enumerate(plan.items()):
         for mode in ['baseline','guided']:
             value=dict(id=f'actor-{i}-{mode}',label=f'Actor {name} · {mode}',
-                       segments=copy.deepcopy(settings['segments']),seeds=copy.deepcopy(settings['seeds']))
+                       **actor_request_fields(settings))
             if mode=='guided':value['generation_constraints']=actor_guides(scene,name,guide_plan=settings.get('guide_plan'))
             result.append(value)
     batch=validate_batch(dict(schema_version=1,requests=result))
@@ -84,6 +84,7 @@ def prepare(scene_path, plan_path, output, reuse_baseline=False,diagnostic_targe
     save(out/'generation-guide-plan.json',audit_plan(scene,plan))
     save(out/'source-contact-evaluation.json',source_evaluation);save(out/'source-orientation.json',source_orientation)
     preflight=write_preflight(scene,out/'target-preflight',scene_file=out/'authored-scene.json')
+    profile_binding = dict(profile_compiler_sha256=sha256(ROOT/'scripts/motion_profile.py')) if any('motion_profile' in entry for entry in plan.values()) else {}
     save(out/'freeze.json',dict(created_at=now(),scene_sha256=sha256(out/'authored-scene.json'),plan_sha256=sha256(out/'actor-plan.json'),
         request_sha256=request_digest(batch),compiler_sha256=sha256(__file__),actor_order=list(plan),
         generation_guide_plan_sha256=sha256(out/'generation-guide-plan.json'),
@@ -91,10 +92,12 @@ def prepare(scene_path, plan_path, output, reuse_baseline=False,diagnostic_targe
         source_file=str(Path(scene_path).resolve()),source_file_sha256=sha256(scene_path),
         target_preflight_sha256=sha256(out/'target-preflight/audit.json'),
         target_preflight_mode='diagnostic' if diagnostic_targets else 'strict',
+        **profile_binding,
         scope='Fitted native actor poses used as generation conditions with a separately recorded temporal guide policy. Independent actor sampling with fixed authored placement/clock; no object/partner awareness, anatomy approval or collision solve. All source and output defects remain reportable.'))
     snapshot=out/'source-snapshot';snapshot.mkdir()
     for name in ['scene_generation.py','scene_generation_guides.py','scene_target_preflight.py','generation_constraints.py','generate_actions.py','run_actions.py','audit_generation_guides.py']:
         shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
+    if profile_binding:shutil.copyfile(ROOT/'scripts/motion_profile.py',snapshot/'motion_profile.py')
     if not preflight['reference_screens_passed'] and not diagnostic_targets:
         save(out/'pipeline.json',dict(status='rejected',failed_stage='scene_target_preflight',finished_at=now(),
             native_flags=preflight['native']['flags'],model_flags=preflight['model']['flags']))
@@ -107,11 +110,24 @@ def build(output):
     out=Path(output).resolve();freeze=read(out/'freeze.json');scene=read(out/'authored-scene.json');plan=read(out/'actor-plan.json')
     if sha256(out/'authored-scene.json')!=freeze['scene_sha256'] or sha256(out/'actor-plan.json')!=freeze['plan_sha256']:
         raise ValueError('Authored scene or actor plan changed')
-    if request_digest(read(out/'request.json'))!=freeze['request_sha256']:raise ValueError('Generation request changed')
-    preflight=validate_preflight(out,read(out/'request.json'))
+    batch=read(out/'request.json')
+    if request_digest(batch)!=freeze['request_sha256']:raise ValueError('Generation request changed')
+    preflight=validate_preflight(out,batch)
     if read(out/'pipeline.json')['status']!='complete':raise ValueError('Complete generation and exports first')
     if len({len(v['seeds']) for v in plan.values()})!=1:raise ValueError('Each actor needs the same number of seeds for paired scenes')
+    by_id={request['id']:request for request in batch['requests']}
+    records={}
+    for i,name in enumerate(freeze['actor_order']):
+        for mode in ['baseline','guided']:
+            for seed in plan[name]['seeds']:
+                take=out/'takes'/f'actor-{i}-{mode}-seed-{seed}'
+                record=read(take/'generation-record.json')
+                validate_take_record(by_id[f'actor-{i}-{mode}'],seed,freeze['request_sha256'],record)
+                if sha256(take/'motion.npz')!=record['npz_sha256']:raise ValueError('Generated actor changed')
+                records[(i,mode,seed)]=record
     skin=dict(np.load(ASSET,allow_pickle=False));manifest=dict(created_at=now(),scenes=[],assets={})
+    if any('motion_profile' in entry for entry in plan.values()):
+        manifest['motion_profiles']=audit_plan(scene,plan)['motion_profiles']
     from run_scene_fit import bundle
     for pair in range(len(next(iter(plan.values()))['seeds'])):
         for mode in ['baseline','guided']:
@@ -120,7 +136,7 @@ def build(output):
             candidate.pop('partner_cut_file',None);candidate.pop('partner_cut_sha256',None)
             for i,name in enumerate(freeze['actor_order']):
                 seed=plan[name]['seeds'][pair];take=out/'takes'/f'actor-{i}-{mode}-seed-{seed}'
-                record=read(take/'generation-record.json')
+                record=records[(i,mode,seed)]
                 if sha256(take/'motion.npz')!=record['npz_sha256']:raise ValueError('Generated actor changed')
                 entry=candidate['actors'][name];entry.update(motion=(take/'motion.npz').relative_to(ROOT).as_posix(),
                     preview_glb=(take/'soma.glb').relative_to(out).as_posix(),source_sha256=record['npz_sha256'])

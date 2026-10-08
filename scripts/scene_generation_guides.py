@@ -99,6 +99,11 @@ def guides_from_plan(scene, actor, record):
             for joints, indices in groups.items()]
 
 
+def actor_request_fields(entry):
+    """Keep each actor's authored controls independent of guide policy."""
+    return copy.deepcopy({key: entry[key] for key in ['segments', 'seeds', 'motion_profile'] if key in entry})
+
+
 def validate_actor_plan(scene, plan):
     """Validate arbitrary prompt schedules without importing a model runtime."""
     from action_requests import validate_request
@@ -106,10 +111,10 @@ def validate_actor_plan(scene, plan):
             or any(not isinstance(entry, dict) for entry in plan.values())):
         raise ValueError('Guide plan must cover every scene actor')
     for entry in plan.values():
-        if not {'segments','seeds'} <= set(entry) or set(entry)-{'segments','seeds','guide_plan'}:
-            raise ValueError('Actor plan requires segments, seeds and optional guide_plan')
+        if not {'segments','seeds'} <= set(entry) or set(entry)-{'segments','seeds','guide_plan','motion_profile'}:
+            raise ValueError('Actor plan requires segments, seeds and optional guide_plan/motion_profile')
         validate_request(dict(id='scene-guide-plan',label='Scene guide plan',
-                              segments=entry['segments'],seeds=entry['seeds']))
+                              **actor_request_fields(entry)))
         if sum(round(segment['duration_s']*30) for segment in entry['segments']) != scene['frame_count']:
             raise ValueError('Prompt schedule must match the complete scene clock')
     if any('guide_plan' in entry and not isinstance(entry['guide_plan'], dict) for entry in plan.values()):
@@ -118,11 +123,15 @@ def validate_actor_plan(scene, plan):
 
 def audit_plan(scene, plan):
     validate_actor_plan(scene, plan)
-    return dict(schema=SCHEMA, frame_count=scene['frame_count'],
+    result = dict(schema=SCHEMA, frame_count=scene['frame_count'],
                 actor_order=list(plan), actors={name: plan_frames(scene, name, entry.get('guide_plan'))
                                               for name, entry in plan.items()},
                 full_scene_evaluation_unchanged=True, sparse_guides_do_not_guarantee_contacts=True,
                 quality_approved=False, release_approved=False)
+    if any('motion_profile' in entry for entry in plan.values()):
+        from motion_profile import brief
+        result['motion_profiles'] = {name: brief(actor_request_fields(entry)) for name, entry in plan.items()}
+    return result
 
 
 def validate_prepared_guidance(folder, freeze, batch):
@@ -148,6 +157,14 @@ def validate_prepared_guidance(folder, freeze, batch):
     if (sha256(snapshot) != freeze.get('guide_planner_sha256')
             or sha256(ROOT/'scripts/scene_generation_guides.py') != freeze['guide_planner_sha256']):
         raise ValueError('Changed generation guide planner')
+    profile_snapshot = folder/'source-snapshot/motion_profile.py'
+    profile_hash = freeze.get('profile_compiler_sha256')
+    profiled = any('motion_profile' in entry for entry in plan.values())
+    if profiled or profile_hash is not None or profile_snapshot.exists():
+        if (not profiled or profile_hash is None or not profile_snapshot.is_file()
+                or sha256(profile_snapshot) != profile_hash
+                or sha256(ROOT/'scripts/motion_profile.py') != profile_hash):
+            raise ValueError('Missing or changed scene motion-profile compiler binding')
     result = read(artifact)
     if result != audit_plan(scene, plan) or freeze['actor_order'] != list(plan):
         raise ValueError('Rebound generation guide-plan population or decision')
@@ -162,10 +179,27 @@ def validate_prepared_guidance(folder, freeze, batch):
             request = requests[f'actor-{i}-{mode}']
             if request['segments'] != entry['segments'] or request['seeds'] != entry['seeds']:
                 raise ValueError('Generation prompt schedule or seeds changed')
+            if (('motion_profile' in request) != ('motion_profile' in entry)
+                    or request.get('motion_profile') != entry.get('motion_profile')):
+                raise ValueError('Generation actor motion profile changed')
             expected_guides = guides_from_plan(scene, name, result['actors'][name]) if mode == 'guided' else []
             if request.get('generation_constraints', []) != expected_guides:
                 raise ValueError('Generation guide frames or effectors changed')
     return copy.deepcopy(result)
+
+
+def validate_take_record(request, seed, batch_sha256, record):
+    """Check actor/seed and resolved conditioning before reading generated poses."""
+    from motion_profile import brief
+    if (not isinstance(record, dict) or record.get('status') != 'generated'
+            or record.get('request') != request or type(record.get('seed')) is not int
+            or record['seed'] != seed or record.get('request_sha256') != batch_sha256):
+        raise ValueError('Generated scene take does not match its actor request, seed or batch')
+    expected = brief(request)
+    if (('motion_brief' in record) != (expected is not None)
+            or record.get('motion_brief') != expected):
+        raise ValueError('Generated scene take motion-profile conditioning changed')
+    return copy.deepcopy(expected)
 
 
 def preview(scene_path, plan_path, output):
@@ -175,7 +209,7 @@ def preview(scene_path, plan_path, output):
         raise ValueError('Preserve the previous guide preview; select a new output')
     methods=Path(__file__).resolve().parent
     bindings={str(Path(p).resolve()):sha256(p) for p in
-              [scene_path,plan_path,Path(__file__),methods/'action_requests.py',methods/'generation_constraints.py',methods/'strep.py']}
+              [scene_path,plan_path,Path(__file__),methods/'action_requests.py',methods/'generation_constraints.py',methods/'motion_profile.py',methods/'strep.py']}
     source=read(scene_path);scene=source.get('scene',source);plan=read(plan_path)
     result=dict(schema='strep-scene-generation-guide-preview-v1',plan=audit_plan(scene,plan),
                 inputs_sha256=bindings,source_pose_geometry_checked=False,

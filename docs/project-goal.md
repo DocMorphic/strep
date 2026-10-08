@@ -4718,3 +4718,8 @@ The sixth-pose storage repair clears its native failure after three neighbors, r
 ## Explicit sparse scene guidance
 
 Scene generation now supports explicit sparse guide plans that preserve contact boundaries, effector changes and both actors of partner contacts. Saved plans bind exact request frames, prompts, seeds and source snapshots before inference; complete reference/contact checks retain their authored clocks. Seventy model-free tests and one saved-scene metadata CLI preview pass. The hosted manifest contains 388 Python modules and 36 Node scripts per operating system; validation of this commit is pending. Motion generation, geometry quality, playback and human review remain unverified. See [the implementation and validation](sparse-scene-generation-guides-v1.md). All fourteen release capabilities remain unapproved; the whole-project goal stays active.
+
+
+## Per-actor scene movement profiles
+
+Scene actor plans now preserve independent motion profiles in matched baseline/guided requests and saved resolved briefs. Pre-inference checks bind exact actor profiles and compiler snapshots; scene assembly rejects mismatched actor/seed/batch/conditioning records before asset loading. All 102 model-free profile/planner/preflight tests and a metadata-only saved-scene CLI preview pass. The hosted inventory contains 389 Python modules and 36 Node scripts per operating system; validation of this commit is pending. Generated motion response, scene geometry, playback and human review remain unverified. All fourteen release capabilities remain unapproved; the whole-project goal stays active. See [the implementation and validation](scene-motion-profiles-v1.md).

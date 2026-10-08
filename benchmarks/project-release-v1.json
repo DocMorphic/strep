@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-08T16:19:56.680010+00:00",
-  "last_progress": "Scene generation now supports explicit sparse guide plans that preserve contact boundaries, effector changes and both actors of partner contacts. Saved plans bind exact request frames, prompts, seeds and source snapshots before inference; complete reference/contact checks retain their authored clocks. Seventy model-free tests and one saved-scene metadata CLI preview pass. The hosted manifest contains 388 Python modules and 36 Node scripts per operating system; validation of this commit is pending. Motion generation, geometry quality, playback and human review remain unverified. All14 release evidence arrays empty; whole goal active."
+  "last_progress_at": "2026-10-08T16:37:23.067167+00:00",
+  "last_progress": "Scene actor plans now preserve independent motion profiles in matched baseline/guided requests and saved resolved briefs. Pre-inference checks bind exact actor profiles and compiler snapshots; scene assembly rejects mismatched actor/seed/batch/conditioning records before asset loading. All 102 model-free profile/planner/preflight tests and a metadata-only saved-scene CLI preview pass. The hosted inventory contains 389 Python modules and 36 Node scripts per operating system; validation of this commit is pending. Generated motion response, scene geometry, playback and human review remain unverified. All fourteen release capabilities remain unapproved; the whole-project goal stays active."
 }
