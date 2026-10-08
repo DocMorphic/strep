@@ -23,3 +23,8 @@ The [fourth indexed pass](staged-indexed-storage-exchange-results-v5.md) clears 
 
 
 The [first fifth-trial pass](staged-indexed-storage-exchange-results-v6.md) retains all 256 rate options and 15,250 exchanges, all 65 actual export pairs and every original non-native gate. Separate replay verifies complete payloads and finite selection. It reduces four native failures to two within the original 64-correction policy; the known full-scene failure remains unresolved and no new scene scan or promotion occurs.
+
+
+## Fifth-pose native checks pass; scene remains failed
+
+The second fifth-pose correction clears both native failures after 52 neighbors, retaining all 53 pairs and the complete 176-option/10,508-exchange plan within the original 64-correction limit. Separate replay verifies all exports and selection. The full scene still fails at 1,569 of 1,673 times with 29,822 proper crossings; complete trace replay preserves the failure. A verified internal continuation anchor and fresh derivatives prepare further correction; no source, quality or release approval occurs. See [the measured result](staged-indexed-storage-exchange-results-v7.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.
