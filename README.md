@@ -949,3 +949,8 @@ The fourth indexed pass clears the remaining native failure after five probes wi
 ## Fifth fresh-pose collision trial
 
 The changed motion-checked pose receives all 180 fresh native/component/full-guide stencils and separate complete replay. The fifth trial preserves all 50,000 inherited protections, original material ceilings and the 64-correction policy. Every solver record and actual export, including failed candidates, is retained and independently replayed within the documented shared-arithmetic scope. Expanded 387-module CI passes all twelve jobs at cfc4f46. See [the measured result](docs/staged-fixed-ceiling-results-v5.md). No clip or release is approved; all fourteen release evidence arrays remain empty and the whole-project goal stays active.
+
+
+## First indexed fifth-trial correction
+
+The complete 256-option/15,250-exchange plan retains all 65 exported pairs and every original non-native gate. Separate replay verifies all payloads, the complete plan and finite selection. The selected continuation reduces four native failures to two at unchanged controls and the original 64-correction limit; no new scene scan or promotion occurs. See [the verified result](docs/staged-indexed-storage-exchange-results-v6.md). Expanded 387-module source CI passes all twelve jobs at cfc4f46; all fourteen release evidence arrays remain empty and the whole-project goal stays active.

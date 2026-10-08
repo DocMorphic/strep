@@ -20,3 +20,6 @@ A [third separately replayed pass](staged-indexed-storage-exchange-results-v4.md
 
 
 The [fourth indexed pass](staged-indexed-storage-exchange-results-v5.md) clears all native checks after five of at most 64 probes at the original correction limit. Complete separate replay preserves all six exports and the 4,868-proposal plan. The full scene still fails at 1,570 of 1,673 times with 29,822 proper crossings; every record is retained and verified. Only an authenticated internal measurement pose is created, requiring fresh derivatives and retaining the failed scene.
+
+
+The [first fifth-trial pass](staged-indexed-storage-exchange-results-v6.md) retains all 256 rate options and 15,250 exchanges, all 65 actual export pairs and every original non-native gate. Separate replay verifies complete payloads and finite selection. It reduces four native failures to two within the original 64-correction policy; the known full-scene failure remains unresolved and no new scene scan or promotion occurs.
