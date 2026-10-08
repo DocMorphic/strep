@@ -944,3 +944,8 @@ A complete indexed plan preserves all 200 new rate options and 12,170 original-p
 ## Native motion checks cleared; complete scene failure retained
 
 The fourth indexed pass clears the remaining native failure after five probes within the unchanged 64-correction policy. Separate replay verifies all six exports and the complete 4,868-proposal plan, retaining every contact, reference, event, material and historical-clearance check. The full 1,673-time scene scan still fails at 1,570 times with 29,822 proper crossings; complete record replay preserves every identity and payload. A separately authenticated internal pose requires fresh collision derivatives and retains all original limits and the same known failed scene. See [the measured result](docs/staged-indexed-storage-exchange-results-v5.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.
+
+
+## Fifth fresh-pose collision trial
+
+The changed motion-checked pose receives all 180 fresh native/component/full-guide stencils and separate complete replay. The fifth trial preserves all 50,000 inherited protections, original material ceilings and the 64-correction policy. Every solver record and actual export, including failed candidates, is retained and independently replayed within the documented shared-arithmetic scope. Expanded 387-module CI passes all twelve jobs at cfc4f46. See [the measured result](docs/staged-fixed-ceiling-results-v5.md). No clip or release is approved; all fourteen release evidence arrays remain empty and the whole-project goal stays active.
