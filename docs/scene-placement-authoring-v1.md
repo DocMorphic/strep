@@ -84,9 +84,57 @@ coordinates. Studio applies each actor placement exactly once. The new point-onl
 assessment explicitly distinguishes anchor measurements from unevaluated contact
 regions and geometry.
 
-The saved 0.95 m draft is the next full-clock body-preserving V17 fitting
+The saved 0.95 m draft has now completed the full-clock body-preserving V17
 experiment, with the original contact/body/speed/geometry limits and six stages.
-Correction, independent imported measurements and human review remain required.
+The guard completes after 864.125 seconds, with 1,042,505,728 bytes peak process
+tree RSS. It preserves the unchanged 3600-second, 7 GiB process-tree and 600 MiB
+available-system-memory limits. Only the owned Studio server was temporarily
+closed for memory headroom; it is restored. No training or model sampling occurs.
+
+Independent complete native-key replay retains the following result:
+
+| Measurement | Result | Existing limit/outcome |
+| --- | --- | --- |
+| Left/right maximum anchor error, 61 samples each | 5.229 / 5.157 mm | Both pass authored 30 mm; 16 / 12 samples fail working 4.99 mm |
+| Maximum joint displacement against raw | 222.107 mm | Fails 220 mm at 65 joint/frame observations across frames 91–99 |
+| Maximum added joint speed against raw | 1.141228 m/s | All joint intervals pass 1.5 m/s |
+| Maximum candidate box vertex depth | 25.715 mm | Fails; 65 native poses exceed 10 mm |
+| Native floor vertex depth, source/candidate | 8.997 / 0 mm | Original floor failure retained |
+| Left/right normal diagnostic maximum | 28.519 / 18.855 degrees | 61 / 22 samples exceed provisional 15 degrees |
+
+Displacement and added-speed results against the independent limb and previous
+references agree to rounding. The worst raw displacement is `RightHandThumb1`
+at frame 98. The worst box penetration is vertex 8560, entirely influenced by
+`LeftHandIndex4`, at frame 72. A separate direct eight-influence LBS replay covers
+all 18,056 original vertices at every source/candidate native pose and reproduces
+the saved vertex-depth tracks within a 1e-12 m arithmetic comparison tolerance.
+This checks replay agreement, not physical measurement precision.
+The original motion under this newly authored trajectory has zero native box
+vertex depth. Candidate fitting therefore introduces a box collision; meeting
+point targets does not establish a usable grasp.
+
+The body-position inequality is an augmented penalty and still misses its
+unchanged limit by 2.107 mm. This result reinforces why the preflight has no
+converse guarantee. `pose_change_above_22cm` and
+`LeftHand_surface_slide_regression` remain in the fit flags. Both normal
+diagnostics fail. No threshold is rounded or relaxed into a pass.
+
+Studio now includes a separate **Authored-height lift** source/candidate
+comparison with native body/contact replay, vertex geometry replay, fit summary
+and guard receipts. It is unblinded and unapproved. This result has no complete
+imported triangle/volume audit or between-key certification. The next correction
+must address finger clearance, the small body/contact violations and hand
+orientation before considering a checked game export. Human quality, semantic
+and cleanup-time review remain required.
+The object-contact close-up also now places its camera outside the focused
+prop's bounding sphere. The prior camera position was inside the box at the
+measured failing pose and made the prop disappear through front-face culling.
+Camera framing changes no motion or measurement.
+Both saved actor GLBs pass the local glTF validator with zero errors and
+warnings. Desktop build checks and fractional preview checks pass after the
+camera change; browser review verifies the hand and box remain visible together.
+File validation and visual framing do not approve motion quality or engine
+precision.
 All fourteen release capabilities remain unapproved; the whole-project goal
 stays active.
 
@@ -95,4 +143,6 @@ all horizontal/height screens, snapshot verification and browser proof. The
 browser-authored context is
 `reports/scene-placement-jobs/placement-894a2d19cbd74c779c279227d008b4da/`;
 the guarded fitting experiment is `reports/box-lift-authored-height-v1/`.
+The developer comparison is
+`reports/scene-region-jobs/box-lift-authored-height-review-v1/`.
 Generated motion, third-party assets and bulky receipts remain excluded from Git.
