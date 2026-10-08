@@ -135,7 +135,10 @@ def object_sampling_layout(selected,vertex_count,full):
     return ids,np.searchsorted(ids,original)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=(),edit_window=None,export_point_rate_guard=False,authored_point_scaling="metres",export_floor_guard=False,export_point_position_guard=False,native_body_references=None,native_support_references=None,root_optimizer_scale_m=1.,constraint_restore_steps=0,intentional_object_contacts=False,object_subframe_divisions=1,object_sample_margin_m=0.):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=(),edit_window=None,export_point_rate_guard=False,authored_point_scaling="metres",export_floor_guard=False,export_point_position_guard=False,native_body_references=None,native_support_references=None,root_optimizer_scale_m=1.,constraint_restore_steps=0,intentional_object_contacts=False,object_subframe_divisions=1,object_sample_margin_m=0.,point_numerical_margin_m=0.):
+    from point_numerical_headroom import validate_margin,working_limits
+    validate_margin(point_numerical_margin_m)
+    if point_numerical_margin_m and (contact_spec is None or region_fitting is not None):raise ValueError('Point numerical headroom requires an explicit point specification and no distributed fitter')
     if type(object_subframe_divisions) is not int or not 1<=object_subframe_divisions<=8:raise ValueError('Object playback divisions must be 1–8')
     if type(object_sample_margin_m) not in (int,float) or not np.isfinite(object_sample_margin_m) or not 0<=object_sample_margin_m<=.001:raise ValueError('Finite numerical object margin in [0,1mm] required')
     if (object_subframe_divisions>1 or object_sample_margin_m) and not object_inequalities:raise ValueError('Object playback guards require object inequalities')
@@ -305,6 +308,11 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     active=torch.stack([tensor(c['active']) for c in contacts.values()],1)*explicit_mask
     from contact_spec import solver_point_tolerances
     point_tolerance=tensor(solver_point_tolerances(contacts,effective_spec,T,CONFIG['point_tolerance_m'])) if region_fitting is None else tensor(region_fitting.point_tolerances(contacts,T,CONFIG['point_tolerance_m']))
+    unbuffered_point_tolerance=point_tolerance
+    point_headroom=None
+    if point_numerical_margin_m:
+        limits,point_headroom=working_limits(point_tolerance.detach().cpu().numpy(),active.detach().cpu().numpy().astype(bool),point_numerical_margin_m)
+        point_tolerance=tensor(limits)
     preserved_mask=torch.tensor(select_inferred_supports(contacts,preserve_support_regions))
     preserved_active=torch.stack([tensor(c['active']) for c in contacts.values()],1)*preserved_mask
     preserved_multiplier=torch.zeros_like(active)
@@ -584,6 +592,10 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     if support_objective is not None:recipe['native_support']=support_objective.record()
     recipe['point_tolerance_policy']=dict(default_m=CONFIG['point_tolerance_m'],per_frame_region_limits_m=point_tolerance.detach().cpu().tolist(),
         scope='Explicit point intervals may tighten the existing solver limit; they never relax it. Distributed regions retain their own anchor limits. Numerical convergence still requires independent evaluation.')
+    if point_headroom is not None:
+        recipe['point_tolerance_policy']['numerical_headroom']=dict(requested_margin_m=point_numerical_margin_m,maximum_fraction=.01,
+            per_frame_region_unbuffered_limits_m=unbuffered_point_tolerance.detach().cpu().tolist(),per_frame_region_reserved_m=point_headroom.tolist(),
+            scope='Stricter working limits on active explicit keys only. Authored specifications and independent acceptance unchanged. No guaranteed solver, interpolation or export error bound.')
     recipe['initialization']=initialization
     recipe['skin_backend']=skin_backend
     recipe['iterations_per_stage']=iterations

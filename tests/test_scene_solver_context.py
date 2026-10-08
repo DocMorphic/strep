@@ -112,3 +112,15 @@ def test_playback_constraints_keep_all_intermediate_keys_and_do_not_lerp_global_
 def test_invalid_or_unenabled_object_playback_modes_fail_before_solving(extra):
     from support_contact_v8 import refine
     with pytest.raises(ValueError):refine({}, {}, {},**extra)
+
+
+@pytest.mark.parametrize('margin',[True,-.00001,.002,float('nan'),.00001])
+def test_invalid_or_unbound_point_headroom_rejects_before_solving(margin):
+    from support_contact_v8 import refine
+    with pytest.raises(ValueError):refine({}, {}, {},point_numerical_margin_m=margin)
+
+
+def test_point_headroom_never_replaces_a_distributed_region_fitter():
+    from support_contact_v8 import refine
+    with pytest.raises(ValueError,match='no distributed'):
+        refine({}, {}, {},contact_spec={},region_fitting=object(),point_numerical_margin_m=.00001)
