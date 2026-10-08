@@ -4,6 +4,7 @@ This plans samples from supplied fitted poses. It does not fit a pose, infer
 object/partner awareness, or certify that sparse targets are feasible.
 """
 import copy
+import hashlib
 import json
 from pathlib import Path
 from generation_constraints import EFFECTORS
@@ -200,6 +201,39 @@ def validate_take_record(request, seed, batch_sha256, record):
             or record.get('motion_brief') != expected):
         raise ValueError('Generated scene take motion-profile conditioning changed')
     return copy.deepcopy(expected)
+
+
+def authoring_preview(payload):
+    """Resolve an in-memory Studio draft without loading source poses or files."""
+    if (not isinstance(payload, dict) or set(payload) != {'scene', 'actor_plan'}
+            or not isinstance(payload['scene'], dict)):
+        raise ValueError('Complete scene and actor_plan required')
+    scene = payload['scene']; actors = scene.get('actors')
+    if not isinstance(actors, dict) or not 1 <= len(actors) <= 10:
+        raise ValueError('Scene generation supports 1–10 named actors per batch')
+    if scene.get('fps', 30) != 30:
+        raise ValueError('Scene generation requires the 30 fps authored clock')
+    for contact in scene.get('contacts', []):
+        if contact.get('actor') not in actors:
+            raise ValueError('Contact source actor is missing')
+        target = contact.get('target', {})
+        if target.get('space') == 'actor' and target.get('actor') not in actors:
+            raise ValueError('Contact partner actor is missing')
+        if target.get('space') == 'object' and target.get('object') not in scene.get('objects', {}):
+            raise ValueError('Contact target object is missing')
+    methods = Path(__file__).resolve().parent
+    bindings = {name: sha256(methods/name) for name in
+                ['scene_generation_guides.py', 'motion_profile.py', 'action_requests.py', 'generation_constraints.py', 'strep.py']}
+    result = audit_plan(scene, payload['actor_plan'])
+    if len({len(entry['seeds']) for entry in payload['actor_plan'].values()}) != 1:
+        raise ValueError('Each actor needs the same seed count for paired scenes')
+    if any(sha256(methods/name) != digest for name, digest in bindings.items()):
+        raise ValueError('Scene planning methods changed during preview')
+    encoded = json.dumps(payload, sort_keys=True, ensure_ascii=False, allow_nan=False).encode('utf-8')
+    return dict(schema='strep-scene-generation-authoring-preview-v1', plan=result,
+                input_sha256=hashlib.sha256(encoded).hexdigest(), implementation_sha256=bindings,
+                source_pose_geometry_checked=False, generated_motion_checked=False,
+                quality_approved=False, release_approved=False)
 
 
 def preview(scene_path, plan_path, output):

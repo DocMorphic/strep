@@ -1,0 +1,21 @@
+# Scene generation plan authoring in Studio
+
+The saved-scene workspace now includes **Plan new character motions**. Select a character, write one to six timed action segments, choose seeds and dense or automatic sparse contact guidance, and optionally edit its movement profile. Switching characters preserves independent prompts and profiles. The shared scene clock and original contact intervals remain unchanged. Descriptions are open vocabulary; action families are evaluation categories rather than available-action menus.
+
+**Check descriptions and contacts** resolves all actors through the same Python planner used by scene preparation. It displays selected/full contact-frame counts, effective descriptions and explicitly unmapped profile stats. Actor schedules must match the complete 30 fps scene clock, all actors need the same seed count, sparse budgets must preserve every required event, and missing contact actors/objects are rejected. The editor accepts scenes lasting 1–30 seconds with 1–10 actors, matching request batch limits.
+
+**Download checked plan** exports `actor-plan.json` for the existing pipeline and `scene-generation-planning.json` containing the exact scene draft and planning receipt. The receipt binds the complete draft and planning implementation. Changed inputs, locally changed scene placements, slow responses from older drafts and stale scene selections invalidate downloads. Local drafts are bound to the scene URL and a hash of its complete metadata. Importing an actor plan checks every actor and preserves custom profiles; unsupported manual guide selections are rejected with an explanation instead of silently discarded. Previously downloaded artifacts remain unchanged.
+
+Use the downloaded actor plan with the corresponding saved scene in the existing workflow:
+
+```text
+python scripts/scene_generation.py prepare scene.json actor-plan.json reports/my-scene-generation
+```
+
+That command requires actual fitted source poses and the existing model-representation/geometry preflight. The new editor's check does not load those poses, inspect their geometry, encode prompts, launch generation or claim that the scene is feasible. Inference and output assembly remain the existing pipeline steps; downloading the plan creates no animation. Native custom-rig scenes still require appropriate motion representation and transfer before this Kimodo path can consume them.
+
+The loopback `/api/scene-generation-plan` handler uses the existing exact-origin, content-type and 1 MiB input gates. Its in-memory preview remains independent of worker locks and launches no process. The source-built desktop includes the editor and module allowlist. The reusable profile widget now supports a separate ID prefix for scene controls, preserving composer IDs, and discards a delayed template after switching characters.
+
+Validation: 127 model-free Python tests pass with zero failures, errors or skips. They cover profile propagation, contact calendars/preflight contracts, direct handler stubs and gates, malformed drafts, object and partner metadata, compiler races, the reproducible desktop bundle and unique static DOM IDs. Two Node editor checks pass without a browser, covering independent character profiles, drafts/imports, checked downloads, stale checks, changed placements, unavailable storage, preserved partner controls and profile-template races. An in-memory preview of saved high-five metadata retains frame 60 for both actors and distinct profiles. Source and preview snapshots and the earlier failing Node development check are retained locally. Syntax checks pass for the changed modules.
+
+The hosted inventory now contains 390 Python modules in four shards of 98/98/97/97 and 37 Node scripts per operating system. Hosted validation of this commit is pending. No live HTTP/browser, model inference/training, dependency acquisition, engine playback or human review is performed. Existing collision failures, uncalibrated stat response and incomplete held-out/animator/cleanup evidence remain unresolved. All fourteen release capabilities remain unapproved and the whole-project goal remains active. Next improve interaction initialization diagnostics and connect checked scene plans to immutable prepared generation jobs when execution is permitted.

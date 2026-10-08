@@ -1,0 +1,12 @@
+<details id="scenePlanPanel"><summary>Plan new character motions</summary>
+<p class="small">Describe each character's actions on this scene's shared clock. Each character can have a different movement profile.</p>
+<label>Character<select id="scenePlanActor"></select></label>
+<div id="scenePlanSegments"></div><button class="btn" id="scenePlanAdd" type="button">Add action</button>
+<label>Seeds<input id="scenePlanSeeds" value="11, 22" maxlength="100"></label>
+<div class="contact-fields"><label>Contact guidance<select id="scenePlanMode"><option value="sparse">Sparse contact poses</option><option value="dense">Every contact frame</option></select></label><label>Maximum guide frames<input id="scenePlanBudget" type="number" min="1" max="19" step="1" value="19"></label></div>
+<div id="scenePlanProfile"></div>
+<label>Import actor plan<input id="scenePlanImport" type="file" accept=".json,application/json"></label>
+<div class="bar"><button class="btn" id="scenePlanPreview" type="button">Check descriptions and contacts</button><button class="btn" id="scenePlanDownload" type="button" disabled>Download checked plan</button></div>
+<p class="small" role="status" id="scenePlanStatus">Select a saved scene.</p><div id="scenePlanResults"></div>
+<p class="small">This checks descriptions and contact timing. Source poses still need fitting and geometry checks before generation. Downloading a plan creates no animation.</p>
+</details>

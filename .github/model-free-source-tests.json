@@ -389,7 +389,8 @@
     "tests/test_native_storage_exchange_plan.py",
     "tests/test_native_storage_exchange_index.py",
     "tests/test_scene_generation_guides.py",
-    "tests/test_scene_motion_profiles.py"
+    "tests/test_scene_motion_profiles.py",
+    "tests/test_scene_generation_authoring.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",
@@ -427,6 +428,7 @@
     "tests/test_native_preview_policy.mjs",
     "tests/test_native_contact_diagnostics.mjs",
     "tests/test_review_identity.mjs",
-    "tests/test_packet_review_form.mjs"
+    "tests/test_packet_review_form.mjs",
+    "tests/test_scene_generation_plan.mjs"
   ]
 }
