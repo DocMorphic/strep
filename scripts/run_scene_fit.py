@@ -44,7 +44,9 @@ def preview_asset(entry,preview_base=None):
     return path
 
 
-def run(scene_paths,output,solver_version=2,preview_base=None):
+def run(scene_paths,output,solver_version=2,preview_base=None,*,preserve_body=False):
+    from scene_fit_body_policy import validate_mode
+    validate_mode(solver_version,preserve_body)
     global refine,CONFIG
     if solver_version in [3,4,5,6,7,8,9,10,11,12,13,14,15,16,17]:
         import importlib
@@ -52,11 +54,16 @@ def run(scene_paths,output,solver_version=2,preview_base=None):
     out=Path(output).resolve();out.mkdir(parents=True,exist_ok=False);save(out/'pipeline.json',dict(status='processing'))
     sources=['run_scene_fit.py','compile_scene_contacts.py','contact_spec.py','scene_constraints.py','object_geometry.py','palm_contacts.py','support_contact_v2.py',
         'support_contact_v3.py','support_contact_v4.py','support_contact_v5.py','support_contact_v6.py','support_contact_v7.py','support_contact_v8.py','support_contact_v9.py','support_contact_v10.py','support_contact_v11.py','support_contact_v12.py','support_contact_v13.py','support_contact_v14.py','support_contact_v15.py','support_contact_v16.py','support_contact_v17.py','linear_skin_operator.py','object_playback_checkpoint.py','point_numerical_headroom.py','object_subframe_constraints.py','intentional_object_clearance.py','scene_release_guards.py','scene_solver_context.py','partner_surface_cuts.py','audit_scene_orientation.py','support_contact.py','floor_contact.py','body_contact.py','evaluate_contact_spec.py','evaluate_body_contact.py','evaluate_floor_contact.py','run_body_contact.py']
+    sources.append('scene_fit_body_policy.py')
+    if preserve_body:sources.append('native_body_objective.py')
     snapshot=out/'source-snapshot';snapshot.mkdir()
     for name in sources:shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
     skin=dict(np.load(ASSET));skeleton=SOMASkeleton77();summary=dict(created_at=now(),solver_version=solver_version,config=CONFIG,trials=[],
         implementation={name:sha256(snapshot/name) for name in sources},mesh_sha256=sha256(ASSET),
         scope=('In-sample deterministic point and surface-frame fitting with sampled primitive clearance; optional frozen partner cuts in v8.' if solver_version>=6 else 'In-sample deterministic point fitting; no orientation solve.')+' Not model training or scene-aware inference. All candidates unreviewed; no physical attachment, joint partner solve or dynamic simulation.')
+    if preserve_body:
+        from scene_fit_body_policy import description
+        summary['body_preservation']=description()
     manifest=dict(created_at=now(),scenes=[],assets={},scope=summary['scope'])
     shutil.copyfile(ROOT/'vendor/kimodo/LICENSE',out/'SOMA-preview-LICENSE.txt')
     try:
@@ -88,6 +95,9 @@ def run(scene_paths,output,solver_version=2,preview_base=None):
                     if solver_version>=6:
                         from scene_solver_context import compile_context
                         context_args['scene_context']=compile_context(original,name,ids,skin,release_endpoint_guards=solver_version>=11,intentional_object_contacts=solver_version>=14);save(path/'scene-context.json',context_args['scene_context'])
+                    if preserve_body:
+                        from scene_fit_body_policy import arguments
+                        context_args.update(arguments(raw,base,previous))
                     candidate,recipe=refine(base,previous,skin,lambda r:print(scene_id,name,r['evaluations'],round(r['loss'],5),flush=True),raw,spec,**context_args)
                     evaluation,body=body_evaluate(raw,base,candidate,skin,recipe);targets=target_evaluate(base,candidate,skin,spec)
                     lift=candidate['root_positions'][:,1]-base['root_positions'][:,1]
@@ -138,4 +148,5 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('scenes',nargs='+',type=Path);parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--solver-version',type=int,choices=[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17],default=2)
     parser.add_argument('--preview-base',type=Path,help='Explicit saved collection root for relative actor GLBs')
-    args=parser.parse_args();run(args.scenes,args.output,args.solver_version,args.preview_base)
+    parser.add_argument('--preserve-body',action='store_true',help='Experimental V17 body inequalities against raw/limb/previous references; no feasibility guarantee')
+    args=parser.parse_args();run(args.scenes,args.output,args.solver_version,args.preview_base,preserve_body=args.preserve_body)

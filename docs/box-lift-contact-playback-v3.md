@@ -106,3 +106,35 @@ force balance, independent animator review, held-out performance and all fourtee
 release capabilities remain unapproved. The next correction needs to address
 the missed tighter grip target and excessive motion distortion without relaxing
 the current contact or geometry limits.
+
+## Opt-in body-preserving fit
+
+Decomposing the saved motions identifies the source of the body distortion.
+The limb/floor preprocessing changes joint positions by at most 48.962 mm.
+The next body preprocessing stage leaves them unchanged. Contact fitting then
+introduces the 615.699 mm maximum at `HeadEnd`, frame 102, with 2,664 joint/frame
+observations above the existing 220 mm screen across 49 frames. The baseline
+constrains local rotation edits and root lift; its body-position screen is a
+post-fit diagnostic, not a guaranteed joint-position bound.
+
+The scene experiment now has an explicit `--preserve-body` option with solver
+17. It inserts the existing native body inequalities against separately copied
+raw, limb-corrected and previous joint tracks. Their existing 220 mm displacement
+and 1.5 m/s added-speed limits stay unchanged. Explicit point residuals use the
+existing tolerance normalization. The full clock, object query populations,
+quarter-key object queries, six optimizer stages and original acceptance limits
+remain unchanged. The ordinary baseline command retains its prior behavior.
+
+```powershell
+.venv/Scripts/python.exe scripts/run_scene_fit.py <authored-scene.json> `
+  --output <new-study-folder> --solver-version 17 --preserve-body `
+  --preview-base <saved-preview-folder>
+```
+
+This is an opt-in constrained optimization experiment, not a newly trained
+checkpoint or a promise of feasibility. The existing augmented penalties may
+still miss constraints. Keep any misses and independently reimport and review
+the resulting clip before interpreting it as an improvement. Thirty-four local
+tests pass: 22 reference/mode checks and 12 existing body-objective checks,
+including gradients and independent raw/limb limits. Model-free CI now declares
+401 Python modules and 38 Node scripts; hosted checks are separate evidence.
