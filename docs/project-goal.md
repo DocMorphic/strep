@@ -4668,3 +4668,8 @@ The second exchange clears the remaining original motion-rate failure at fixed n
 ## Fourth complete clearance-history trial and hosted CI pass
 
 Fresh 180-stencil measurement and separate replay retain all 107,072 component rows and 101 clear samples at the verified 64-choice pose. The next full trial carries 39,954 protections plus fresh guards, 43,536 total, but all eight actual exports remain unapproved; the uniform proposal is rejected before export. Separate replay verifies every conic, strict step and export, with original ceilings and tolerances unchanged. Complete error tracing identifies a bounded event-quarter continuation with six native failures. The initial CI shard repair passes all twelve hosted jobs at b3cd4fe; newer module coverage remains separately pending. See [the verified study](staged-clearance-history-trial-v4.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.
+
+
+## Indexed fourth-trial storage continuation
+
+A complete indexed plan preserves all 400 rate options and 24,214 original-policy exchanges without increasing the 64-correction motion limit. The bounded 64-neighbor study retains all 65 exported pairs and every original material, clearance, contact, event, reference and positive-component gate. Separate replay verifies all payloads, the complete plan and selection; the selected continuation reduces six native failures to four and remains unapproved. No new full-scene scan or derivative query occurs. Isolated planner validation passes 50 tests plus 27 subtests; the 387-module hosted workflow remains pending. See [the verified results](staged-indexed-storage-exchange-results-v2.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.
