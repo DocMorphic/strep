@@ -819,7 +819,8 @@
         "docs/native-support-breadth-v1.md",
         "docs/landing-root-scale-v1.md",
         "docs/contact-constraint-restoration-v1.md",
-        "docs/contact-restoration-policy-v2.md"
+        "docs/contact-restoration-policy-v2.md",
+        "docs/scene-placement-authoring-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1149,7 +1150,8 @@
         "docs/contact-breadth-crawl-v1.md",
         "docs/contact-breadth-kick-v1.md",
         "docs/contact-breadth-jump-v1.md",
-        "docs/preserved-export-repair-v1.md"
+        "docs/preserved-export-repair-v1.md",
+        "docs/scene-placement-authoring-v1.md"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -2799,7 +2801,8 @@
         "docs/native-support-breadth-v1.md",
         "docs/landing-root-scale-v1.md",
         "docs/contact-constraint-restoration-v1.md",
-        "docs/contact-restoration-policy-v2.md"
+        "docs/contact-restoration-policy-v2.md",
+        "docs/scene-placement-authoring-v1.md"
       ]
     }
   ],
@@ -3011,6 +3014,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-08T22:47:08.175882+00:00",
-  "last_progress": "Added opt-in V17 body-preserving scene fitting with the unchanged native 22 cm displacement and 1.5 m/s added-speed inequalities against raw/limb/previous references, plus existing point tolerance normalization. Saved-motion decomposition identifies contact fitting, rather than floor preprocessing, as the source of the 615.699 mm head-tip displacement. A conservative unchanged-skin reach bound proves the original lift targets incompatible with the simultaneous body budget: minimum remaining errors reach 103.431/115.247 mm; 27/36 native keys fail the 4.99 mm working target and 22/33 even fail authored 30 mm. The mode now preserves a preflight receipt and rejects proven conflicts before expensive evaluation/fitting. Model-free actual-fixture verification and a guarded actual compiler/run integration check pass; no new candidate or model is generated. All 37 policy/reach tests and 12 existing body-objective tests pass. Both attempted fitting launch memory failures remain intact. Studio is restored and a separate unapproved comparison includes the geometry, body-stage diagnosis and conflict receipts. All fourteen release capabilities remain unapproved and the whole goal stays active."
+  "last_progress_at": "2026-10-08T23:14:58.015927+00:00",
+  "last_progress": "2026-10-09: Studio now edits individual saved prop poses, checks necessary native anchor reach and saves immutable placement contexts with original motion/GLB bytes. All nine horizontal lift offsets retain proven conflicts; a separate 0.95 m final-height trajectory preserves initial poses, all times/grips/limits and avoids a proven conflict without certifying feasibility. Browser save/reload and independent asset/source/fitter bindings verify. Sixty-two model-free checks, three native handoff checks and all 39 Node suites pass. A passing-preflight directory bug and double-transformed preview markers are fixed. The new full-clock body-preserving V17 correction is running under unchanged guards; no candidate or release approval is inferred. All fourteen release capabilities remain unapproved; the whole-project goal stays active."
 }

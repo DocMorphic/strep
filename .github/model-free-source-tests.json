@@ -401,7 +401,8 @@
     "tests/test_intentional_object_clearance.py",
     "tests/test_point_numerical_headroom.py",
     "tests/test_studio_precision_export.py",
-    "tests/test_scene_fit_body_policy.py"
+    "tests/test_scene_fit_body_policy.py",
+    "tests/test_scene_placement_authoring.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",
@@ -441,6 +442,7 @@
     "tests/test_review_identity.mjs",
     "tests/test_packet_review_form.mjs",
     "tests/test_scene_generation_plan.mjs",
-    "tests/test_precision_export_editor.mjs"
+    "tests/test_precision_export_editor.mjs",
+    "tests/test_scene_placement_editor.mjs"
   ]
 }

@@ -32,7 +32,7 @@ def allowed_file(url_path):
     if path=='/motion-profile-editor.js':return ROOT/'scripts/motion-profile-editor.js'
     if path=='/scene-pair-editor.js':return ROOT/'scripts/scene-pair-editor.js'
     if path=='/scene-generation-plan.js':return ROOT/'scripts/scene-generation-plan.js'
-    if path in ['/pose-guide-editor.js','/soma-preview-skin.js','/rig-joint-editor.js','/rig-posture-editor.js','/scene-release-editor.js','/scene-region-editor.js','/scene-grip-picker.js','/scene-object-geometry.js','/scene-hand-patch.js','/scene-trim-editor.js']:return ROOT/'scripts'/path[1:]
+    if path in ['/pose-guide-editor.js','/soma-preview-skin.js','/rig-joint-editor.js','/rig-posture-editor.js','/scene-release-editor.js','/scene-region-editor.js','/scene-grip-picker.js','/scene-object-geometry.js','/scene-hand-patch.js','/scene-trim-editor.js','/scene-placement-editor.mjs','/scene-placement-controls.mjs']:return ROOT/'scripts'/path[1:]
     if path=='/native-review-panel.mjs':return ROOT/'scripts/native-review-panel.mjs'
     if path in ('/correction-review-panel.mjs','/native-reference-player.mjs'):return ROOT/'scripts'/path[1:]
     if path in ('/native-grey-loader.mjs','/native-support-editor.mjs','/native-support-viewer.mjs','/native-support-viewer.html','/native-contact-clock.mjs','/native-contact-diagnostics.mjs'):return ROOT/'scripts'/path[1:]
@@ -110,7 +110,7 @@ def allowed_file(url_path):
         prefixes=['character-assets','rig-jobs','rig-loop-searches','scene-preview-v1','scene-fitting-v1','scene-fitting-v2','scene-fitting-v3','scene-fitting-v4','scene-fitting-v5','scene-fitting-v6','scene-fitting-v7','hand-frame-fit-v1','partner-clearance-fit-v1','object-attachment-v1','action-coverage-v1','action-jobs','contact-jobs',*CORRECTION_STUDIES]
         prefixes.append('pose-targets')
         prefixes.extend(['object-release-v1','object-release-v2','static-collider-v1','moving-collider-v1'])
-        prefixes.extend(['scene-release-jobs','scene-region-jobs','scene-trim-jobs'])
+        prefixes.extend(['scene-release-jobs','scene-region-jobs','scene-trim-jobs','scene-placement-jobs'])
         if not any(relative.startswith(p+'/') for p in prefixes):return None
         root=(ROOT/'reports').resolve();target=(root/relative).resolve()
         allowed=[(root/p).resolve() for p in prefixes]
@@ -323,7 +323,7 @@ class Handler(BaseHTTPRequestHandler):
                    'hand-frame-fit-v1','partner-clearance-fit-v1','object-attachment-v1',
                    'object-release-v1','object-release-v2','static-collider-v1','moving-collider-v1']
             folders=[ROOT/'reports'/name for name in names]
-            for parent in ['action-jobs','scene-release-jobs','scene-region-jobs','scene-trim-jobs']:
+            for parent in ['action-jobs','scene-release-jobs','scene-region-jobs','scene-trim-jobs','scene-placement-jobs']:
                 folders.extend(sorted((ROOT/'reports'/parent).glob('*')))
             collections=[]
             for folder in folders:
@@ -358,6 +358,13 @@ class Handler(BaseHTTPRequestHandler):
                 jobs.append(dict(id=folder.name,collection='scene-trim-jobs/'+folder.name,
                     label=read(folder/'request.json')['authored']['label'],**observed_state(folder)))
             return self.respond(200,dict(jobs=jobs))
+        if route=='/api/scene-placement-source':
+            from scene_placement_authoring import metadata
+            try:
+                query=parse_qs(urlsplit(self.path).query)
+                if set(query)!={'path'} or len(query['path'])!=1:raise ValueError('Exact saved scene path required')
+                return self.respond(200,metadata(query['path'][0]))
+            except (ValueError,TypeError,KeyError,IndexError,OSError) as exc:return self.respond(400,{'error':str(exc)})
         if route=='/api/scene-region-source':
             from scene_region_job import metadata
             try:
@@ -446,7 +453,7 @@ class Handler(BaseHTTPRequestHandler):
         except (BrokenPipeError,ConnectionResetError):pass
 
     def do_POST(self):
-        if self.path not in ['/api/native-transition-contact-fit-catalog','/api/native-transition-contact-fits','/api/native-transition-fit-catalog','/api/native-transition-fits','/api/native-scene-transition-inspect','/api/native-scene-transition-stage','/api/precision-export-assets','/api/surface-export-assets','/api/native-scene-transfer-assets','/api/native-scene-transfer-catalog','/api/native-transfer-assets','/api/native-transfer-import','/api/native-scene-fits','/api/native-scene-fit-catalog','/api/native-scene-material-patch','/api/native-scene-material-region-preview','/api/native-scene-material-region-save','/api/native-scene-material-region-pose','/api/native-scene-contact-revision','/api/native-scene-game-assets','/api/scene-prop-runtime-assets','/api/scene-prop-runtime-align','/api/scene-prop-bake-assets','/api/baked-scene-assets','/api/native-scene-assets','/api/correction-review-edit','/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission','/api/jobs','/api/scene-pair-fits','/api/scene-trims','/api/scene-releases','/api/scene-region-fits','/api/pose-target','/api/scene-generation-plan','/api/motion-brief','/api/contact-edits','/api/characters/import','/api/characters/sample','/api/characters/profile','/api/rig-jobs','/api/rig-contact-edits','/api/rig-contact-inspect','/api/rig-patch-selection','/api/native-support-edits','/api/rig-clip-edits','/api/rig-joint-edits','/api/rig-posture-edits','/api/rig-mirror-edits','/api/rig-transitions','/api/rig-loops','/api/rig-loop-search','/api/rig-events','/api/rig-prompt-edits','/api/rig-dynamics-edits']:return self.respond(404,{'error':'Unknown endpoint'})
+        if self.path not in ['/api/scene-placement-check','/api/scene-placement-snapshots','/api/native-transition-contact-fit-catalog','/api/native-transition-contact-fits','/api/native-transition-fit-catalog','/api/native-transition-fits','/api/native-scene-transition-inspect','/api/native-scene-transition-stage','/api/precision-export-assets','/api/surface-export-assets','/api/native-scene-transfer-assets','/api/native-scene-transfer-catalog','/api/native-transfer-assets','/api/native-transfer-import','/api/native-scene-fits','/api/native-scene-fit-catalog','/api/native-scene-material-patch','/api/native-scene-material-region-preview','/api/native-scene-material-region-save','/api/native-scene-material-region-pose','/api/native-scene-contact-revision','/api/native-scene-game-assets','/api/scene-prop-runtime-assets','/api/scene-prop-runtime-align','/api/scene-prop-bake-assets','/api/baked-scene-assets','/api/native-scene-assets','/api/correction-review-edit','/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission','/api/jobs','/api/scene-pair-fits','/api/scene-trims','/api/scene-releases','/api/scene-region-fits','/api/pose-target','/api/scene-generation-plan','/api/motion-brief','/api/contact-edits','/api/characters/import','/api/characters/sample','/api/characters/profile','/api/rig-jobs','/api/rig-contact-edits','/api/rig-contact-inspect','/api/rig-patch-selection','/api/native-support-edits','/api/rig-clip-edits','/api/rig-joint-edits','/api/rig-posture-edits','/api/rig-mirror-edits','/api/rig-transitions','/api/rig-loops','/api/rig-loop-search','/api/rig-events','/api/rig-prompt-edits','/api/rig-dynamics-edits']:return self.respond(404,{'error':'Unknown endpoint'})
         host=self.headers.get('Host');origin=self.headers.get('Origin')
         if host not in self.server.allowed_hosts or origin!=f'http://{host}':return self.respond(403,{'error':'Submit from the local studio page'})
         if self.path=='/api/characters/import':
@@ -462,7 +469,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get('Content-Type')!='application/json':return self.respond(415,{'error':'JSON required'})
         try:
             length=int(self.headers.get('Content-Length','0'))
-            limit=1048576 if self.path in ('/api/scene-generation-plan','/api/native-transition-contact-fit-catalog','/api/native-transition-contact-fits','/api/native-transition-fit-catalog','/api/native-transition-fits','/api/native-scene-transition-inspect','/api/native-scene-transition-stage','/api/precision-export-assets','/api/surface-export-assets','/api/native-scene-transfer-assets','/api/native-scene-transfer-catalog','/api/native-transfer-assets','/api/native-transfer-import','/api/native-scene-fits','/api/native-scene-fit-catalog','/api/native-scene-material-patch','/api/native-scene-material-region-preview','/api/native-scene-material-region-save','/api/native-scene-material-region-pose','/api/native-scene-contact-revision','/api/native-scene-game-assets','/api/scene-prop-runtime-assets','/api/scene-prop-runtime-align','/api/scene-prop-bake-assets','/api/baked-scene-assets','/api/native-scene-assets','/api/correction-review-edit','/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission') else 32768
+            limit=1048576 if self.path in ('/api/scene-placement-check','/api/scene-placement-snapshots','/api/scene-generation-plan','/api/native-transition-contact-fit-catalog','/api/native-transition-contact-fits','/api/native-transition-fit-catalog','/api/native-transition-fits','/api/native-scene-transition-inspect','/api/native-scene-transition-stage','/api/precision-export-assets','/api/surface-export-assets','/api/native-scene-transfer-assets','/api/native-scene-transfer-catalog','/api/native-transfer-assets','/api/native-transfer-import','/api/native-scene-fits','/api/native-scene-fit-catalog','/api/native-scene-material-patch','/api/native-scene-material-region-preview','/api/native-scene-material-region-save','/api/native-scene-material-region-pose','/api/native-scene-contact-revision','/api/native-scene-game-assets','/api/scene-prop-runtime-assets','/api/scene-prop-runtime-align','/api/scene-prop-bake-assets','/api/baked-scene-assets','/api/native-scene-assets','/api/correction-review-edit','/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission') else 32768
             if not 0<length<=limit:raise ValueError('Request too large or empty')
             payload=json.loads(self.rfile.read(length))
             if self.path=='/api/native-transfer-import':
@@ -551,6 +558,12 @@ class Handler(BaseHTTPRequestHandler):
                 from motion_profile import brief
                 validate_request(payload)
                 return self.respond(200,{'motion_brief':brief(payload)})
+            if self.path=='/api/scene-placement-check':
+                from scene_placement_authoring import check
+                return self.respond(200,check(payload))
+            if self.path=='/api/scene-placement-snapshots':
+                from scene_placement_authoring import stage
+                return self.respond(201,stage(payload))
             if self.path=='/api/characters/sample':
                 if payload!={}:raise ValueError('Sample request must be empty')
                 from studio_characters import import_bytes

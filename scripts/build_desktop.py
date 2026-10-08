@@ -3,6 +3,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 def render():
     scripts=ROOT/'scripts';html=(scripts/'desktop-shell.html').read_text(encoding='utf8')
+    html=html.replace('__SCENE_PLACEMENT_EDITOR__',(scripts/'scene-placement-editor.html').read_text(encoding='utf8'))
     html=html.replace('__CONTROL_CENTER__',(scripts/'control-center.html').read_text(encoding='utf8'))
     html=html.replace('<details id="sceneTrimPanel">',(scripts/'scene-generation-plan.html').read_text(encoding='utf8')+'<details id="sceneTrimPanel">')
     html=html.replace('<details id="sceneRegionPanel">',(scripts/'scene-pair-editor.html').read_text(encoding='utf8')+'<details id="sceneRegionPanel">')

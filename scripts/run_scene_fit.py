@@ -101,7 +101,7 @@ def run(scene_paths,output,solver_version=2,preview_base=None,*,preserve_body=Fa
                     ids=[c['id'] for c in scene['contacts'] if c['actor']==name and c['target']['space']!='actor']
                     spec,compilation=compile_contacts(original,name,ids,skin)
                     source=ROOT/entry['motion'];digest=sha256(source);raw=dict(np.load(source));raw_motions[name]=raw
-                    path=out/'assets'/scene_id/name;path.mkdir(parents=True)
+                    path=out/'assets'/scene_id/name;path.mkdir(parents=True,exist_ok=True)
                     shutil.copyfile(source,path/'raw-motion.npz');save(path/'contact-spec.json',spec);save(path/'compilation.json',compilation)
                     raw_glb=preview_asset(entry,preview_base);shutil.copyfile(raw_glb,path/'raw.glb')
                     original['actors'][name].update(preview_glb=(path/'raw.glb').relative_to(out).as_posix())
