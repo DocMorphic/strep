@@ -1,6 +1,8 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_weight_derivative_fidelity.py",
+    "tests/test_godot_weight_derivative.py",
     "tests/test_imported_scene_geometry.py",
     "tests/test_scene_import_measurements.py",
     "tests/test_scene_import_clock.py",

@@ -1023,3 +1023,6 @@ The longer two-hand lift stops on the existing available-system-memory guard bef
 
 
 2026-10-08: Complete imported triangle/volume audits retain all 2585 actor poses and 1407 object poses. Both short corrected references pass sampled geometry; the longer lift fails floor checks and high-five reveals 21.010 mm partner containment plus 33 crossing poses. All four archives and exact input/method bindings verify. The focused model-free suite passes 146 tests. Whole-skin precision, naturalness and all fourteen release capabilities remain unapproved. See [method and retained failures](docs/imported-triangle-geometry-v1.md).
+
+
+2026-10-08: An opt-in weight derivative preserves original assets and checked joint/weight associations through the pinned Godot importer. Actual reimports of five actor instances reduce whole-skin error from 95-139 to 1.1-2.7 micrometres against the unchanged original skin; every original sample and vertex passes the existing 100-micrometre screen. Strict reference contacts remain intact, while longer interaction/floor failures remain visible. All five GLBs validate without errors or warnings and 71 focused model-free tests pass. This export experiment does not approve natural motion or any release capability. See [method, measurements and limits](docs/godot-weight-derivative-v1.md).
