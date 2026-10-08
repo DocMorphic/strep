@@ -55,7 +55,7 @@ def run(scene_paths,output,solver_version=2,preview_base=None,*,preserve_body=Fa
     sources=['run_scene_fit.py','compile_scene_contacts.py','contact_spec.py','scene_constraints.py','object_geometry.py','palm_contacts.py','support_contact_v2.py',
         'support_contact_v3.py','support_contact_v4.py','support_contact_v5.py','support_contact_v6.py','support_contact_v7.py','support_contact_v8.py','support_contact_v9.py','support_contact_v10.py','support_contact_v11.py','support_contact_v12.py','support_contact_v13.py','support_contact_v14.py','support_contact_v15.py','support_contact_v16.py','support_contact_v17.py','linear_skin_operator.py','object_playback_checkpoint.py','point_numerical_headroom.py','object_subframe_constraints.py','intentional_object_clearance.py','scene_release_guards.py','scene_solver_context.py','partner_surface_cuts.py','audit_scene_orientation.py','support_contact.py','floor_contact.py','body_contact.py','evaluate_contact_spec.py','evaluate_body_contact.py','evaluate_floor_contact.py','run_body_contact.py']
     sources.append('scene_fit_body_policy.py')
-    if preserve_body:sources.append('native_body_objective.py')
+    if preserve_body:sources.extend(['native_body_objective.py','skin_point_reach_bound.py'])
     snapshot=out/'source-snapshot';snapshot.mkdir()
     for name in sources:shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
     skin=dict(np.load(ASSET));skeleton=SOMASkeleton77();summary=dict(created_at=now(),solver_version=solver_version,config=CONFIG,trials=[],
@@ -78,6 +78,21 @@ def run(scene_paths,output,solver_version=2,preview_base=None,*,preserve_body=Fa
                     raise ValueError('Hand tangents and partner cuts require solver version 8 or newer')
                 if any(t['id']==scene_id for t in summary['trials']):raise ValueError('Duplicate scene id')
                 folder=out/scene_id;save(folder/'authored-scene.json',scene)
+                if preserve_body:
+                    from scene_fit_body_policy import reach_report
+                    incompatible=False
+                    for name,entry in scene['actors'].items():
+                        ids=[c['id'] for c in scene['contacts'] if c['actor']==name and c['target']['space']!='actor']
+                        spec,compilation=compile_contacts(scene,name,ids,skin)
+                        raw=dict(np.load(ROOT/entry['motion'],allow_pickle=False))
+                        path=out/'assets'/scene_id/name
+                        save(path/'contact-spec.json',spec);save(path/'compilation.json',compilation)
+                        reach=reach_report(raw,skin,spec);save(path/'body-reach-preflight.json',dict(**reach,
+                            source_sha256=sha256(ROOT/entry['motion']),skin_sha256=sha256(ASSET),
+                            contact_spec_sha256=sha256(path/'contact-spec.json')))
+                        incompatible |= reach['status']=='provably_incompatible_native_keys'
+                    if incompatible:
+                        raise ValueError('Requested native contacts conflict with the 22 cm body budget; see body-reach-preflight.json')
                 before=scene_evaluate(scene,skin);save(folder/'before.json',before)
                 original=copy.deepcopy(scene);raw_motions={};motions={};records={}
                 for name,entry in scene['actors'].items():

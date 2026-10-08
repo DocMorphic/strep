@@ -134,7 +134,49 @@ remain unchanged. The ordinary baseline command retains its prior behavior.
 This is an opt-in constrained optimization experiment, not a newly trained
 checkpoint or a promise of feasibility. The existing augmented penalties may
 still miss constraints. Keep any misses and independently reimport and review
-the resulting clip before interpreting it as an improvement. Thirty-four local
-tests pass: 22 reference/mode checks and 12 existing body-objective checks,
+the resulting clip before interpreting it as an improvement. Forty-nine local
+tests pass: 37 reference/mode/reach checks and 12 existing body-objective checks,
 including gradients and independent raw/limb limits. Model-free CI now declares
 401 Python modules and 38 Node scripts; hosted checks are separate evidence.
+
+## Proven target/body-budget conflict
+
+The original requested lift cannot simultaneously satisfy its grip targets and
+the 220 mm joint-position budget against raw motion. An unchanged LBS skin point
+can move by at most the weighted joint budget plus the weighted bind-point
+rotation radius. The new preflight uses actual source matrix operator norms,
+allows arbitrary new proper rotations, retains all eight influences and
+subtracts 1 µm arithmetic slack from its error lower bound. Reverse triangle
+inequality then supplies a conservative minimum remaining target error.
+
+| Native contact keys (61 per hand) | Left hand | Right hand |
+| --- | --- | --- |
+| Largest error lower bound with 220 mm body budget | 103.431 mm | 115.247 mm |
+| Keys incompatible with 4.99 mm working target | 27 | 36 |
+| Keys incompatible even with authored 30 mm target | 22 | 33 |
+
+These are native-key impossibility results, independent of optimizer iteration
+count. A zero lower bound for another key does **not** certify feasibility:
+anatomy, coupled joints, speed, normals, geometry and between-key behavior remain
+additional requirements. The bound applies to the original skin, target track
+and raw reference; changing any of these requires a new explicitly bound request.
+
+The opt-in mode records `body-reach-preflight.json` and rejects a proven conflict
+before the expensive scene evaluation, floor preprocessing or optimizer. The
+ordinary baseline remains available. An integration check with the actual source
+and compiler verifies that the incompatible request retains failed pipeline
+status, its input/method archive and its preflight receipt, produces no candidate,
+and never invokes the three expensive callbacks (they are replaced by rejecting
+test callbacks). That test completes under the unchanged guard; it is not an
+animation-generation or engine-playback study.
+
+Two attempted body-preserving fitting launches remain failed: the first missed
+the available-RAM precondition before starting a worker; the second stopped at
+38.782 seconds on the same 600 MiB guard, with 1,030,934,528 bytes peak tree RSS.
+Neither produced a candidate. The independent model-free bound and the subsequent
+preflight integration test provide useful evidence without promoting these runs.
+Only the owned Studio processes were temporarily closed, and Studio was restored.
+
+The next authored scene must review box placement, trajectory and contact timing
+explicitly while retaining the measured baseline. Increasing optimization time
+cannot reconcile the proven conflicting limits in this original request.
