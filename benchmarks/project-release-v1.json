@@ -3002,6 +3002,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-08T15:27:02.053370+00:00",
-  "last_progress": "The second fifth-pose correction clears both native failures after 52 neighbors, retaining all 53 pairs and the complete 176-option/10,508-exchange plan within the original 64-correction limit. Separate replay verifies all exports and selection. The full scene still fails at 1,569 of 1,673 times with 29,822 proper crossings; complete trace replay preserves the failure. A verified internal continuation anchor and fresh derivatives prepare further correction; no source, quality or release approval occurs. All14 release evidence arrays empty; whole-project goal active."
+  "last_progress_at": "2026-10-08T15:44:08.194417+00:00",
+  "last_progress": "The sixth fresh-pose trial and separate replay preserve all 60,120 inherited protections plus 3,528 fresh guards. All eight exports retain native failures and remain unapproved. A complete saved-row trace selects the event-preserved half step by original native merit for bounded continuation. The preceding paired scene comparison shows 26 times with fewer crossings and 25 with more, unchanged total crossings and no original geometry merit improvement. All14 release evidence arrays empty; whole-project goal active."
 }

@@ -959,3 +959,8 @@ The complete 256-option/15,250-exchange plan retains all 65 exported pairs and e
 ## Fifth-pose native checks pass; scene remains failed
 
 The second fifth-pose correction clears both native failures after 52 neighbors, retaining all 53 pairs and the complete 176-option/10,508-exchange plan within the original 64-correction limit. Separate replay verifies all exports and selection. The full scene still fails at 1,569 of 1,673 times with 29,822 proper crossings; complete trace replay preserves the failure. A verified internal continuation anchor and fresh derivatives prepare further correction; no source, quality or release approval occurs. See [the measured result](docs/staged-indexed-storage-exchange-results-v7.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.
+
+
+## Sixth fresh-pose trial and paired scene comparison
+
+The sixth fresh-pose trial and separate replay preserve all 60,120 inherited protections plus 3,528 fresh guards. All eight exports retain native failures and remain unapproved. A complete saved-row trace selects the event-preserved half step by original native merit for bounded continuation. The preceding paired scene comparison shows 26 times with fewer crossings and 25 with more, unchanged total crossings and no original geometry merit improvement. See [the measured result](docs/staged-fixed-ceiling-results-v6.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.

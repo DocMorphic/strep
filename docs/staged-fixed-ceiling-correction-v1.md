@@ -62,3 +62,8 @@ The next prepared continuation keeps the quarter's 90 numeric controls fixed and
 ## Scope and release status
 
 Local raw arrays, authenticated archived inputs, drivers and readers stay under ignored `reports/`; they are not bundled by the public repository. Public source and tests describe the bounded solver behavior, not a portable offline product. No source promotion, production anatomy, learned-model improvement, engine import, animator review or cleanup-time evidence follows from this study. All fourteen release evidence arrays remain empty and the project-wide goal stays active.
+
+
+## Sixth fresh-pose trial and paired scene comparison
+
+The sixth fresh-pose trial and separate replay preserve all 60,120 inherited protections plus 3,528 fresh guards. All eight exports retain native failures and remain unapproved. A complete saved-row trace selects the event-preserved half step by original native merit for bounded continuation. The preceding paired scene comparison shows 26 times with fewer crossings and 25 with more, unchanged total crossings and no original geometry merit improvement. See [the measured result](staged-fixed-ceiling-results-v6.md). All fourteen release evidence arrays remain empty; the whole-project goal stays active.
