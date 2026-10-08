@@ -38,6 +38,11 @@ skin displacement stays below 100 µm on both clips without applying the optiona
 precision derivative. Point and vertex measurements do not measure triangle
 interiors or establish that the box center lies outside the character volume.
 
+The stricter 4.99 mm working-target screen fails at every one of the 537 contact
+samples per hand. Candidate minimum errors are 15.926 mm left and 14.637 mm
+right. Passing the authored 30 mm tolerance therefore does not establish a
+precise grasp, even for the best sampled pose.
+
 The engine producer and independent input/method replay completed. A private
 post-run summary writer then failed because it requested `scene_id` where the
 row field is `id`. That wrapper failure remains intact; a separate verified
@@ -53,11 +58,50 @@ estimated surface support statistic, not an authored support contact. The fit
 also adds up to 1.212 m/s joint velocity and 10.001 m/s² acceleration. These
 measurements prevent a claim that meeting grip points made the action realistic.
 
-The first full imported triangle/volume/floor audit stopped after 509 of 1,601
-source samples when system available RAM fell below the unchanged 600 MiB guard.
-Its partial output remains a failure. A fresh retry preserves the complete source
-and candidate clocks, populations and geometry limits; its eventual outcome must
-be recorded explicitly. Natural motion, attachment,
+## Full imported surfaces and volume
+
+The full triangle/volume/floor audit now has independently verified results for
+all 1,601 source poses and all 1,601 candidate poses. The unchanged limits are
+5 mm penetration, 1 µm depth resolution and 10 nm surface tolerance. The actual
+imported mesh retains all 18,056 vertices and 36,108 triangles at every pose.
+
+| Full geometry measurement | Anatomical source | Fitted candidate |
+| --- | --- | --- |
+| Floor maximum depth | 8.997 mm | 0 mm |
+| Floor samples above 5 mm | 1,294 / 1,601 | 0 / 1,601 |
+| Box triangle depth upper bound | 0 mm | 2.225 mm |
+| Box samples above 5 mm | 0 / 1,601 | 0 / 1,601 |
+| Box center outside character volume | 1,601 / 1,601 | 1,601 / 1,601 |
+| Geometry conditions available / degenerate | 1,601 / 0 | 1,601 / 0 |
+
+The triangle interior maximum exceeds the earlier vertex-only 1.369 mm result.
+It stays below the unchanged 5 mm acceptance limit. The candidate passes these
+sampled geometry conditions; the original retains its floor failure. This is a
+finite playback audit, not continuous collision detection or a physical grasp
+test. Neither attachment correctness nor naturalness follows from this pass.
+
+Two guard failures remain intact. The first stopped after 509 source poses; the
+second completed the source but stopped after 1,462 candidate poses when system
+available RAM fell below 600 MiB. The second parent run remains failed. Its
+completed source artifact was verified separately, without relabeling the parent.
+A fresh candidate-only audit then completed every original sample using the
+model-free environment, with unchanged methods, geometry limits and populations.
+It took 463.750 seconds and peaked at 865,222,656 bytes tree RSS under the same
+one-hour / 7 GiB / 600 MiB guard. No partial candidate result was promoted.
+
+Both complete per-scene numeric archives verify all 4,804 arrays and
+2,312,369,128 logical bytes against the actual imported producer. Input, method,
+clock, topology and archive hashes remain bound. Archive transport verification
+itself does not certify geometry; the separate complete geometry reports supply
+the measurements above. Generated receipts and bulk arrays remain local.
+
+## Review and next correction
+
+Studio offers a separate, unblinded developer comparison of the preserved source
+and fitted candidate, with fit flags, dense contact measurements and full geometry
+receipts. It does not replace a selected animation or submit a human rating.
+The tighter hand target and excessive pose changes remain explicit failures.
+Natural motion, attachment,
 force balance, independent animator review, held-out performance and all fourteen
 release capabilities remain unapproved. The next correction needs to address
 the missed tighter grip target and excessive motion distortion without relaxing
