@@ -13,7 +13,7 @@ def context_primitives(context):
     return [(Geometry('box',tuple(item['size_m'])),item) for item in context.get('boxes',[])]
 
 
-def compile_context(scene,actor_id,contact_ids,skin,*,release_endpoint_guards=False):
+def compile_context(scene,actor_id,contact_ids,skin,*,release_endpoint_guards=False,intentional_object_contacts=False):
     if any('region_contact' in c for c in scene['contacts'] if c['id'] in contact_ids):
         raise ValueError('Legacy scene solver does not support distributed region contacts')
     origin,rotation=pose(scene['actors'][actor_id]['transform']);frames=scene['frame_count']
@@ -70,6 +70,9 @@ def compile_context(scene,actor_id,contact_ids,skin,*,release_endpoint_guards=Fa
     if release_endpoint_guards:
         from scene_release_guards import compile_release_guards
         result['release_guards']=compile_release_guards(scene,actor_id,contact_ids)
+    if intentional_object_contacts:
+        from intentional_object_clearance import compile_policy
+        result['intentional_object_clearance']=compile_policy(scene,actor_id,contact_ids,skin,result.get('release_guards',[]))
     return result
 
 

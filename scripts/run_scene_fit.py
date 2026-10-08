@@ -46,12 +46,12 @@ def preview_asset(entry,preview_base=None):
 
 def run(scene_paths,output,solver_version=2,preview_base=None):
     global refine,CONFIG
-    if solver_version in [3,4,5,6,7,8,9,10,11,12,13]:
+    if solver_version in [3,4,5,6,7,8,9,10,11,12,13,14,15]:
         import importlib
         solver=importlib.import_module('support_contact_v'+str(solver_version));refine,CONFIG=solver.refine,solver.CONFIG
     out=Path(output).resolve();out.mkdir(parents=True,exist_ok=False);save(out/'pipeline.json',dict(status='processing'))
     sources=['run_scene_fit.py','compile_scene_contacts.py','contact_spec.py','scene_constraints.py','object_geometry.py','palm_contacts.py','support_contact_v2.py',
-        'support_contact_v3.py','support_contact_v4.py','support_contact_v5.py','support_contact_v6.py','support_contact_v7.py','support_contact_v8.py','support_contact_v9.py','support_contact_v10.py','support_contact_v11.py','support_contact_v12.py','support_contact_v13.py','scene_release_guards.py','scene_solver_context.py','partner_surface_cuts.py','audit_scene_orientation.py','support_contact.py','floor_contact.py','body_contact.py','evaluate_contact_spec.py','evaluate_body_contact.py','evaluate_floor_contact.py','run_body_contact.py']
+        'support_contact_v3.py','support_contact_v4.py','support_contact_v5.py','support_contact_v6.py','support_contact_v7.py','support_contact_v8.py','support_contact_v9.py','support_contact_v10.py','support_contact_v11.py','support_contact_v12.py','support_contact_v13.py','support_contact_v14.py','support_contact_v15.py','object_subframe_constraints.py','intentional_object_clearance.py','scene_release_guards.py','scene_solver_context.py','partner_surface_cuts.py','audit_scene_orientation.py','support_contact.py','floor_contact.py','body_contact.py','evaluate_contact_spec.py','evaluate_body_contact.py','evaluate_floor_contact.py','run_body_contact.py']
     snapshot=out/'source-snapshot';snapshot.mkdir()
     for name in sources:shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
     skin=dict(np.load(ASSET));skeleton=SOMASkeleton77();summary=dict(created_at=now(),solver_version=solver_version,config=CONFIG,trials=[],
@@ -87,7 +87,7 @@ def run(scene_paths,output,solver_version=2,preview_base=None):
                     context_args={}
                     if solver_version>=6:
                         from scene_solver_context import compile_context
-                        context_args['scene_context']=compile_context(original,name,ids,skin,release_endpoint_guards=solver_version>=11);save(path/'scene-context.json',context_args['scene_context'])
+                        context_args['scene_context']=compile_context(original,name,ids,skin,release_endpoint_guards=solver_version>=11,intentional_object_contacts=solver_version>=14);save(path/'scene-context.json',context_args['scene_context'])
                     candidate,recipe=refine(base,previous,skin,lambda r:print(scene_id,name,r['evaluations'],round(r['loss'],5),flush=True),raw,spec,**context_args)
                     evaluation,body=body_evaluate(raw,base,candidate,skin,recipe);targets=target_evaluate(base,candidate,skin,spec)
                     lift=candidate['root_positions'][:,1]-base['root_positions'][:,1]
@@ -136,6 +136,6 @@ def run(scene_paths,output,solver_version=2,preview_base=None):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('scenes',nargs='+',type=Path);parser.add_argument('--output',type=Path,required=True)
-    parser.add_argument('--solver-version',type=int,choices=[2,3,4,5,6,7,8,9,10,11,12,13],default=2)
+    parser.add_argument('--solver-version',type=int,choices=[2,3,4,5,6,7,8,9,10,11,12,13,14,15],default=2)
     parser.add_argument('--preview-base',type=Path,help='Explicit saved collection root for relative actor GLBs')
     args=parser.parse_args();run(args.scenes,args.output,args.solver_version,args.preview_base)

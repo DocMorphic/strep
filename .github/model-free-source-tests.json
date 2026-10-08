@@ -392,7 +392,8 @@
     "tests/test_scene_motion_profiles.py",
     "tests/test_scene_generation_authoring.py",
     "tests/test_scene_contact_consistency.py",
-    "tests/test_scene_reference_contact_consistency.py"
+    "tests/test_scene_reference_contact_consistency.py",
+    "tests/test_intentional_object_clearance.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",

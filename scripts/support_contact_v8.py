@@ -89,7 +89,8 @@ def torch_primitive_clearance_violation(points,position,rotation,geometry,cleara
         return clearance-torch.linalg.vector_norm(torch.relu(q),dim=-1)-torch.minimum(q.amax(-1),q.new_tensor(0.))
     size=torch.as_tensor(geometry.dimensions,dtype=points.dtype,device=points.device)
     local=torch.einsum('fvi,fij->fvj',points-position[:,None,:],rotation)
-    return (size/2+clearance-local.abs()).amin(-1)
+    buffer=clearance[...,None] if torch.is_tensor(clearance) and clearance.ndim else clearance
+    return (size/2+buffer-local.abs()).amin(-1)
 
 
 def finger_rotation_budgets(names):
@@ -134,7 +135,15 @@ def object_sampling_layout(selected,vertex_count,full):
     return ids,np.searchsorted(ids,original)
 
 
-def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=(),edit_window=None,export_point_rate_guard=False,authored_point_scaling="metres",export_floor_guard=False,export_point_position_guard=False,native_body_references=None,native_support_references=None,root_optimizer_scale_m=1.,constraint_restore_steps=0):
+def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_context=None,*,finger_edits=False,physical_finger_parameters=False,release_endpoint_guards=False,object_inequalities=False,outer_stage_count=None,region_fitting=None,iteration_count=None,full_object_skin=False,object_constraint_mode="maximum",warm_start=None,object_clearance_margin_m=0.,export_rate_guard=False,export_acceleration_margin_fraction=0.,skin_backend="gather",root_coordinate_mode="legacy",shared_pose=False,preserve_support_regions=(),edit_window=None,export_point_rate_guard=False,authored_point_scaling="metres",export_floor_guard=False,export_point_position_guard=False,native_body_references=None,native_support_references=None,root_optimizer_scale_m=1.,constraint_restore_steps=0,intentional_object_contacts=False,object_subframe_divisions=1,object_sample_margin_m=0.):
+    if type(object_subframe_divisions) is not int or not 1<=object_subframe_divisions<=8:raise ValueError('Object playback divisions must be 1–8')
+    if type(object_sample_margin_m) not in (int,float) or not np.isfinite(object_sample_margin_m) or not 0<=object_sample_margin_m<=.001:raise ValueError('Finite numerical object margin in [0,1mm] required')
+    if (object_subframe_divisions>1 or object_sample_margin_m) and not object_inequalities:raise ValueError('Object playback guards require object inequalities')
+    if type(intentional_object_contacts)!=bool:raise ValueError('Explicit intentional object contact boolean required')
+    if intentional_object_contacts and (not object_inequalities or region_fitting is not None or scene_context is None or 'intentional_object_clearance' not in scene_context):
+        raise ValueError('Intentional object contact requires compiled point-contact policy and object inequalities')
+    if not intentional_object_contacts and scene_context is not None and 'intentional_object_clearance' in scene_context:
+        raise ValueError('Intentional clearance policy requires its explicit correction mode')
     if type(constraint_restore_steps) is not int or not 0<=constraint_restore_steps<=20:
         raise ValueError('Constraint restoration steps must be an integer in [0,20]')
     if constraint_restore_steps and (root_coordinate_mode!='physical_box' or not all([export_rate_guard,export_point_rate_guard,export_floor_guard,export_point_position_guard]) or native_support_references is None or scene_context is not None or finger_edits or region_fitting is not None or release_endpoint_guards or shared_pose or preserve_support_regions or object_inequalities):
@@ -259,6 +268,15 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
                     selected.update(np.argsort(distances)[:CONFIG['object_near_samples']].tolist())
     for cut in context.get('partner_cuts',[]):selected.add(cut['vertex'])
     selected,floor_indices=object_sampling_layout(selected,len(skin['bind_vertices']),full_object_skin)
+    contact_policy=None
+    if intentional_object_contacts:
+        from intentional_object_clearance import validate as validate_contact_policy,validate_constraints,margin_tracks
+        contact_policy=validate_contact_policy(context['intentional_object_clearance'],skin,primitive_records)
+        validate_constraints(contact_policy,effective_spec,primitive_records)
+        if contact_policy['frame_count']!=T:raise ValueError('Intentional contact clock differs from clip')
+        original_floor_vertices=selected[floor_indices].copy()
+        selected=np.unique(np.concatenate([selected,*[np.asarray(c['region_vertices'],dtype=int) for c in contact_policy['contacts']]]))
+        floor_indices=np.searchsorted(selected,original_floor_vertices)
     floor_indices=torch.tensor(floor_indices,dtype=torch.long)
     mapping={v:i for i,v in enumerate(selected)}
     if region_fitting is not None:region_fitting.bind(mapping)
@@ -269,7 +287,15 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
         for guard in guards:
             if guard['contact_id']==c['id']:mask[guard['frame']]=1
         normal_constraints.append((indices,tensor(c['directions']),tensor(mask)))
-    objects=[(tensor(b['positions_m']),tensor(b['rotations']),geometry) for geometry,b in primitive_records]
+    objects=[(tensor(b['positions_m']),tensor(b['rotations']),geometry,
+        (tensor(margin_tracks(contact_policy,b['id'],selected,object_clearance)) if contact_policy is not None else object_clearance)+object_sample_margin_m) for geometry,b in primitive_records]
+    subframe_clock=None;subframe_objects=[]
+    if object_subframe_divisions>1:
+        if not objects:raise ValueError('Object playback guards need declared geometry')
+        from object_subframe_constraints import clock as playback_clock,poses as playback_poses,linear as playback_linear,rotations as playback_rotations
+        left,fraction=playback_clock(T,object_subframe_divisions,device=root.device);subframe_clock=(left,fraction)
+        subframe_objects=[(playback_linear(op,left,fraction),playback_rotations(orr,left,fraction),geometry,
+            playback_linear(margin,left,fraction) if torch.is_tensor(margin) else margin) for op,orr,geometry,margin in objects]
 
     inds=skin['lbs_indices'][selected];weights=tensor(skin['lbs_weights'][selected])
     bind=tensor(np.einsum('vwij,vj->vwi',surface.inverse[inds],surface.points[selected])[:,:,:3])
@@ -292,7 +318,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     cut_normals=tensor([c['normal'] for c in cuts]).reshape(-1,3)
     cut_multiplier=torch.zeros(len(cuts),dtype=dtype);cut_penalty=CONFIG['partner_penalty']
     last_cuts=None;last_tangents=[]
-    last_objects=[];object_multiplier=[torch.zeros(T if object_constraint_mode=="maximum" else (T,len(selected)),dtype=dtype) for _ in objects]
+    last_objects=[];object_observation_count=T+(0 if subframe_clock is None else len(subframe_clock[0]));object_multiplier=[torch.zeros(object_observation_count if object_constraint_mode=="maximum" else (object_observation_count,len(selected)),dtype=dtype) for _ in objects]
     object_penalty=2*CONFIG['object_collision_weight']
     point_penalty=CONFIG['explicit_contact_weight'];normal_penalty=CONFIG['orientation_weight']
     stage_records=[];last_point=None;last_normals=[]
@@ -347,7 +373,7 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
     calls=0;last={}
     def closure():
         nonlocal calls,last,last_point,last_normals,last_cuts,last_tangents,last_objects
-        optimizer.zero_grad();r,p,_=fk();v=vertices(r,p)
+        optimizer.zero_grad();r,p,local_keys=fk();v=vertices(r,p)
         selected_contact=v[torch.arange(T)[:,None],ci]
         contact=((selected_contact-targets)**2).sum(-1)
         inferred_loss,explicit_loss=contact_losses(contact,cw,explicit_mask)
@@ -406,11 +432,17 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             if tangent_loss:terms['hand_tangent']=torch.stack(tangent_loss).mean()
         if objects:
             if object_inequalities:
-                violations=[object_constraint_residuals(torch_primitive_clearance_violation(v,op,orr,geometry,object_clearance),object_constraint_mode) for op,orr,geometry in objects]
+                violations=[object_constraint_residuals(torch_primitive_clearance_violation(v,op,orr,geometry,margin),object_constraint_mode) for op,orr,geometry,margin in objects]
+                if subframe_clock is not None:
+                    left,fraction=subframe_clock
+                    between_r,between_p=playback_poses(local_keys,offsets,p[:,0],parents,left,fraction)
+                    between_vertices=vertices(between_r,between_p)
+                    between=[object_constraint_residuals(torch_primitive_clearance_violation(between_vertices,op,orr,geometry,margin),object_constraint_mode) for op,orr,geometry,margin in subframe_objects]
+                    violations=[torch.cat([key,intermediate],dim=0) for key,intermediate in zip(violations,between)]
                 terms['object_collision']=torch.stack([object_constraint_merit(g,m,object_penalty,object_constraint_mode) for g,m in zip(violations,object_multiplier)]).mean()
                 last_objects=[g.detach() for g in violations]
             else:
-                terms['object_collision']=torch.stack([torch_primitive_depth(v,op,orr,geometry,object_clearance).square().amax(1).mean() for op,orr,geometry in objects]).mean()*CONFIG['object_collision_weight']
+                terms['object_collision']=torch.stack([torch_primitive_depth(v,op,orr,geometry,margin).square().amax(1).mean() for op,orr,geometry,margin in objects]).mean()*CONFIG['object_collision_weight']
         if cuts:
             signed=((v[cut_frames,cut_vertices]-cut_points)*cut_normals).sum(-1)
             g=CONFIG['partner_clearance_m']-signed
@@ -536,6 +568,14 @@ def refine(base,previous,skin,progress=None,raw=None,contact_spec=None,scene_con
             reduction='sum over vertex constraints, mean over frames and objects' if object_constraint_mode=='per_vertex' else 'maximum vertex constraint, mean over frames and objects',
             scope='Existing inflated geometry and selected skin vertices. Per-vertex mode has separate multipliers and greater total weight when multiple vertices violate. No continuous-time or feasibility guarantee.')
     if region_fitting is not None:recipe['distributed_regions']=region_fitting.record()
+    if contact_policy is not None:
+        recipe['intentional_object_clearance']=dict(policy=contact_policy,default_margin_m=object_clearance,
+            original_floor_vertices=original_floor_vertices.tolist(),
+            scope='Complete declared hand/foot skin regions have zero extra buffer only against their named object on contact/release keys. Every selected vertex retains nonpenetration; other regions, objects and times retain the configured buffer. Whole-skin independent checks remain required; no anatomical or force approval.')
+    if subframe_clock is not None:
+        recipe['object_playback_guard']=dict(divisions=object_subframe_divisions,left_frames=subframe_clock[0].cpu().tolist(),fractions=subframe_clock[1].cpu().tolist(),
+            key_samples=T,intermediate_samples=len(subframe_clock[0]),sampled_vertices=len(selected),objects=len(objects),numerical_margin_m=object_sample_margin_m,
+            scope='Every adjacent key interval and declared object, shortest local-quaternion interpolation plus linear native offsets/root and hierarchical FK. Same selected skin set. Not float32 export or engine equivalence, full mesh or continuous collision proof.')
     recipe['object_clearance_target_m']=object_clearance
     recipe['object_clearance_margin_m']=object_clearance_margin_m
     if rate_objective is not None:recipe['export_rates']=rate_objective.record()
