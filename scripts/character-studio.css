@@ -16,3 +16,8 @@
 .correction-review{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:4px 0}.correction-review>summary{padding:11px 12px;cursor:pointer;font-size:13px;font-weight:600}.correction-review>summary span{margin-left:8px;font-weight:400}.correction-review-body{padding:0 12px 12px}.correction-review-grid{display:grid;grid-template-columns:minmax(260px,1.3fr) minmax(200px,1fr);gap:14px;margin-top:10px}.correction-review .rig-transport{margin-top:9px}.correction-review .rig-stage{height:300px}.correction-review .rig-links{margin-top:12px}.correction-review [role=status]{font-weight:600}@media(max-width:760px){.correction-review-grid{grid-template-columns:1fr}}
 
 .correction-feedback{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}.correction-feedback summary{cursor:pointer;font-size:12px;font-weight:600}.correction-feedback fieldset{border:0;padding:0;margin:8px 0;min-width:0}.correction-feedback fieldset>label{display:grid;gap:5px;margin:9px 0;font-size:12px}.correction-feedback input,.correction-feedback textarea{width:100%;min-width:0;box-sizing:border-box}.correction-feedback textarea{resize:vertical;font:inherit}.correction-feedback .rig-toolbar>label{min-width:65px}
+
+/* Character windows respond to their own width, including desktop resizing. */
+.character-content{container-type:inline-size}
+@container(max-width:640px){.rig-grid{grid-template-columns:minmax(0,1fr)}}
+#precisionExportPanel .rig-toolbar{margin:8px 0}#precisionExportResults{margin:8px 0}#precisionExportResults>p{flex-basis:100%}#precisionExportResults>a{max-width:100%;overflow-wrap:anywhere}

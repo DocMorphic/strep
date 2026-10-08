@@ -33,6 +33,8 @@ void (async function characterStudio(){
  await initializeOptionalRigEditor(async()=>{const {createNativeTransitionContactEditor}=await import('/native-transition-contact-editor.mjs');
   if(!nativeTransitionFitEditor)throw Error('Transition channel editor is required');
   createNativeTransitionContactEditor({api,post,getBridgeRequest:()=>nativeTransitionFitEditor.request(),getBridgeReview:()=>nativeTransitionFitEditor.snapshot()});},C('nativeTransitionContactStatus'),'Contact reserve editor');
+ await initializeOptionalRigEditor(async()=>{const {createPrecisionExportEditor}=await import('/precision-export-editor.mjs');
+  createPrecisionExportEditor({api,post});},C('precisionExportStatus'),'Precision export editor');
  await initializeOptionalRigEditor(async()=>{const {createSurfaceExportEditor}=await import('/surface-export-editor.mjs');
   createSurfaceExportEditor({api,post});},C('surfaceExportStatus'),'Surface export editor');
  await initializeOptionalRigEditor(async()=>{const {createScenePropRuntimeEditor}=await import('/scene-prop-runtime-editor.mjs');

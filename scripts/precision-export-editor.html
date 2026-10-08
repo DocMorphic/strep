@@ -1,0 +1,8 @@
+<details id="precisionExportPanel" class="rig-panel">
+ <summary>Godot export precision</summary>
+ <p class="small">Build a separate precision copy of a completed scene or game package. Keep the original assets and constraints, rerun scene checks, and compare every imported vertex to the original skin. Motion quality still needs review.</p>
+ <div class="rig-toolbar"><label for="precisionExportKind">Package<select id="precisionExportKind"><option value="scene">Scene</option><option value="game">Game with root/events</option></select></label><select id="precisionExportSource" aria-label="Precision source package"></select><button class="btn" id="precisionExportRefresh">Refresh</button><button class="btn" id="precisionExportBind">Use selected package</button></div>
+ <div id="precisionExportSourceInfo"></div><button class="btn primary" id="precisionExportBuild">Build precision copy</button>
+ <p class="small" id="precisionExportStatus" role="status">Choose a completed package to begin.</p>
+ <div class="rig-toolbar"><select id="precisionExportJobs" aria-label="Precision export job"></select><button class="btn" id="precisionExportReview">Show results &amp; downloads</button></div><div id="precisionExportResults" class="rig-links" aria-live="polite"></div>
+</details>

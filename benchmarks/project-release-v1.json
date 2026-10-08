@@ -373,6 +373,8 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/studio-precision-export-v1.md",
+        "docs/box-lift-contact-playback-v3.md",
         "docs/contact-authoring-v2.md",
         "reports/contact-authoring-v2/explicit-contact-evaluation.json",
         "reports/contact-authoring-v2/verification.json",
@@ -835,6 +837,8 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/studio-precision-export-v1.md",
+        "docs/box-lift-contact-playback-v3.md",
         "docs/scene-retime-v1.md",
         "reports/scene-retime-import-v1/completion.json",
         "reports/scene-retime-import-v1/current-runtime-check/verification.json",
@@ -1163,6 +1167,7 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/studio-precision-export-v1.md",
         "docs/paired-stage-rates-v1.md",
         "reports/paired-stage-rates-v1/result.json",
         "reports/paired-stage-rates-review-v1/verification.json",
@@ -1827,6 +1832,7 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/studio-precision-export-v1.md",
         "docs/scene-retime-v1.md",
         "reports/scene-retime-import-v1/completion.json",
         "reports/scene-retime-import-v1/current-runtime-check/verification.json",
@@ -1953,6 +1959,7 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/studio-precision-export-v1.md",
         "docs/scene-retime-v1.md",
         "reports/scene-retime-import-v1/completion.json",
         "reports/scene-retime-import-v1/current-runtime-check/verification.json",
@@ -2290,6 +2297,8 @@
       "status": "incomplete",
       "release_evidence": [],
       "development_evidence": [
+        "docs/studio-precision-export-v1.md",
+        "docs/box-lift-contact-playback-v3.md",
         "docs/paired-stage-rates-v1.md",
         "reports/paired-stage-rates-v1/result.json",
         "reports/paired-stage-rates-review-v1/verification.json",
@@ -3002,6 +3011,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-08T21:27:16.008372+00:00",
-  "last_progress": "An opt-in largest-remainder weight derivative selects a checked cyclic order of ascending joint/weight pairs so the pinned sequential float32 normalization and unsigned16 packing preserve every allocated integer. Original character files, motion, contacts, clocks and acceptance tolerances remain unchanged. Actual Godot imports of five derivative actor instances retain 2585 actor poses and 1407 object poses. Independent comparison to the ORIGINAL skin reduces maximum displacement from 95-139 to 1.1-2.7 micrometres; all original samples and vertices pass the unchanged 100-micrometre screen. Both strict reference contacts persist, and fresh complete triangle/volume/floor audits of both derivative references pass all 261 samples each; their numeric archive receipts verify. Longer lift/high-five contact and floor failures remain. Five derivative GLBs have zero validation errors/warnings and 71 focused model-free tests pass. The encoding remains opt-in and is not the default Studio export. Original high-five body overlap, longer lift correction, physics, held-out naturalness and review remain unresolved. CI declares 399 Python modules and 37 Node scripts. All fourteen release capabilities remain unapproved; the whole goal stays active."
+  "last_progress_at": "2026-10-08T22:06:32.478183+00:00",
+  "last_progress": "Studio now offers separate source-bound precision copies of completed native scene/game packages. Original ZIPs, selected animations, intent, full clocks and the original skin reference remain preserved. Actual Godot canaries pass two-character/object scene and game export, regenerated root tracks and four event-dispatch scenarios; an incomplete actor-only scene retains failure and exposes no checked ZIP. Local coverage passes 150 distinct Python integration tests, four desktop build checks and all 38 registered Node scripts; browser verification includes binding, terminal downloads and responsive wrapping. The first completed longer two-hand lift fit retains all body-quality flags. Dense actual playback measures 21.797/21.931 mm grip maxima and zero candidate floor depth at all 1601 poses, but the approximately 5 mm solver target and 615.699 mm pose distortion remain failures. The first complete-surface attempt hit the unchanged available-memory guard at 509 source samples; a fresh same-limit/full-population retry is running. CI declares 400 Python modules and 38 Node scripts; hosted checks remain unconfirmed. No release evidence is added; all fourteen capabilities and the whole goal remain incomplete."
 }
