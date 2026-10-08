@@ -9,6 +9,28 @@ func descendants(node: Node) -> Array:
 		found.append_array(descendants(child))
 	return found
 
+func skin_surfaces(model: Node, skeleton: Skeleton3D) -> Array:
+	var result: Array = []
+	for node in descendants(model):
+		if not node is MeshInstance3D or node.skin == null: continue
+		if node.get_node(node.skeleton) != skeleton or node.get_blend_shape_count() != 0:
+			quit(11)
+			return []
+		var binds: Array = []
+		for bind in range(node.skin.get_bind_count()):
+			var name := str(node.skin.get_bind_name(bind))
+			var bone: int = skeleton.find_bone(name) if name != "" else node.skin.get_bind_bone(bind)
+			binds.append({"bone":bone,"pose":matrix(node.skin.get_bind_pose(bind))})
+		for surface in range(node.mesh.get_surface_count()):
+			var arrays: Array = node.mesh.surface_get_arrays(surface)
+			var positions: Array = []
+			for point in arrays[Mesh.ARRAY_VERTEX]: positions.append([point.x,point.y,point.z])
+			result.append({"node":str(node.get_path()),"surface":surface,"binds":binds,
+				"positions":positions,"weights":Array(arrays[Mesh.ARRAY_WEIGHTS]),"bones":Array(arrays[Mesh.ARRAY_BONES]),
+				"primitive_type":node.mesh.surface_get_primitive_type(surface),
+				"indices":Array(arrays[Mesh.ARRAY_INDEX]) if arrays[Mesh.ARRAY_INDEX] != null else []})
+	return result
+
 func exact_time(time: float) -> String:
 	var bytes := PackedByteArray()
 	bytes.resize(8)
@@ -95,7 +117,7 @@ func run_audit() -> void:
 			var names: Array = []
 			for bone in range(skeleton.get_bone_count()):
 				names.append(skeleton.get_bone_name(bone))
-			actors[name] = {"player":player,"skeleton":skeleton,"bone_names":names,"animation":selected}
+			actors[name] = {"player":player,"skeleton":skeleton,"bone_names":names,"animation":selected,"meshes":skin_surfaces(model,skeleton) if item.get("audit_actor_skin",false) else []}
 		var frames: Array = []
 		var object_player: AnimationPlayer
 		var objects: Dictionary = {}
@@ -174,7 +196,7 @@ func run_audit() -> void:
 			clock_samples.append(clock)
 		var metadata: Dictionary = {}
 		for name in actors:
-			metadata[name] = {"bone_names":actors[name].bone_names,"animation":actors[name].animation,"animation_index":0,"duration_s":actors[name].player.get_animation(actors[name].animation).length,"loop_mode":actors[name].player.get_animation(actors[name].animation).loop_mode}
+			metadata[name] = {"bone_names":actors[name].bone_names,"animation":actors[name].animation,"animation_index":0,"duration_s":actors[name].player.get_animation(actors[name].animation).length,"loop_mode":actors[name].player.get_animation(actors[name].animation).loop_mode,"meshes":actors[name].meshes}
 		report.scenes.append({"id":item.id,"actors":metadata,"frames":frames,"object_frames":object_frames,"object_meshes":object_meshes,"clock_samples":clock_samples})
 		holder.queue_free()
 		await process_frame

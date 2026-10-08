@@ -1017,3 +1017,6 @@ The longer two-hand lift stops on the existing available-system-memory guard bef
 
 
 2026-10-08: Added reusable synchronized dense scene playback checks: four development scenes, 2585 actor poses and 1407 object poses, plus 108 local integration tests. Motion quality and release gates remain unapproved. See [method and limits](docs/synchronized-scene-playback-v1.md).
+
+
+2026-10-08: Imported-skin scene measurements now expose the original lift/high-five contact and floor failures while both V16 reference clips retain their 1 mm contacts. Whole-skin comparison and full collision/quality gates remain unapproved. Local suites pass 153 integration tests and 118 overlapping model-free tests. See [measurements and limits](docs/imported-scene-measurements-v1.md).

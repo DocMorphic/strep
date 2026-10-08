@@ -1,6 +1,7 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_scene_import_measurements.py",
     "tests/test_scene_import_clock.py",
     "tests/test_saved_breadth_failure_profile.py",
     "tests/test_object_geometry_mesh.py",

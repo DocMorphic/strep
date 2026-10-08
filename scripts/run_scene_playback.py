@@ -3,6 +3,7 @@ import argparse
 from pathlib import Path
 import shutil
 import subprocess
+import numpy as np
 from threadpoolctl import threadpool_limits
 from action_worker_lock import worker_lock
 from strep import ROOT, read, save, sha256, now
@@ -12,12 +13,14 @@ from gltf_tools import read_glb
 from scene_object_export import export_objects
 from scene_import_clock import shared_clock, verify_scene
 from native_engine_clock import clock_wire
+from scene_import_measurements import measure, scalar
+from native_scene_engine import METHODS as NATIVE_METHODS
 
-METHODS = ('run_scene_playback.py', 'scene_import_clock.py', 'native_engine_clock.py',
+METHODS = tuple(dict.fromkeys(NATIVE_METHODS + ('run_scene_playback.py', 'scene_import_clock.py', 'native_engine_clock.py',
            'godot_scene_import_audit.gd', 'rig_asset.py', 'rig_clip_import.py',
            'gltf_tools.py', 'scene_object_export.py', 'scene_constraints.py',
            'object_geometry.py', 'object_geometry_mesh.py', 'inspect_motion.py',
-           'strep.py', 'action_worker_lock.py')
+           'strep.py', 'action_worker_lock.py', 'scene_import_measurements.py')))
 
 
 def bound_asset_digest(assets, relative_path):
@@ -28,8 +31,13 @@ def bound_asset_digest(assets, relative_path):
     return matches[0]
 
 
-def run(source, output, *, rate_hz=120, scene_ids=None, engine=None):
+def run(source, output, *, rate_hz=120, scene_ids=None, engine=None,
+        measure_skin=False, floor_y_m=0., penetration_limit_m=.005):
     source, output = Path(source).resolve(), Path(output).resolve()
+    if type(measure_skin) is not bool:
+        raise ValueError('Explicit boolean imported skin measurement option required')
+    scalar(floor_y_m, 'declared floor height', -1e6, 1e6)
+    scalar(penetration_limit_m, 'vertex penetration screen', 0., 1.)
     if output.exists():
         raise ValueError('Fresh playback evidence destination required')
     engine = (Path(engine).resolve() if engine else
@@ -96,11 +104,12 @@ def run(source, output, *, rate_hz=120, scene_ids=None, engine=None):
                                      [a[1] for a in actors.values()] + ([sampler] if objects else []))
                 request['scenes'].append(dict(id=scene['id'], frames=len(times),
                     source_frame_count=scene['frame_count'], sample_times_s=times.tolist(),
-                    sample_clock=clock_wire(times), actors=entries, **extra))
+                    sample_clock=clock_wire(times), actors=entries, audit_actor_skin=measure_skin, **extra))
                 objects_by_scene[scene['id']] = objects
             save(output / 'request.json', request)
             save(output / 'protocol.json', dict(at=now(), inputs_sha256=bindings,
-                 implementation_sha256=methods, rate_hz=rate_hz,
+                 implementation_sha256=methods, rate_hz=rate_hz, measure_imported_skin=measure_skin,
+                 declared_floor_y_m=floor_y_m, vertex_penetration_limit_m=penetration_limit_m,
                  clock='Complete shared uniform clock plus every actual stored actor/object key; exact deduplication only',
                  quality_approved=False))
             project = output / 'project'; project.mkdir()
@@ -117,8 +126,20 @@ def run(source, output, *, rate_hz=120, scene_ids=None, engine=None):
             if [s['id'] for s in report['scenes']] != [s['id'] for s in request['scenes']]:
                 raise ValueError('Complete unchanged observed scene population required')
             rows = []
-            for item, actual, (_, actors, _) in zip(request['scenes'], report['scenes'], prepared):
-                rows.append(dict(id=item['id'], **verify_scene(item, actual, actors, objects_by_scene[item['id']])))
+            for index, (item, actual, (scene, actors, _)) in enumerate(zip(request['scenes'], report['scenes'], prepared)):
+                row = dict(id=item['id'], **verify_scene(item, actual, actors, objects_by_scene[item['id']]))
+                if measure_skin:
+                    measurements, arrays = measure(scene, item, actual, actors, objects_by_scene[item['id']],
+                        floor_y_m=floor_y_m, penetration_limit_m=penetration_limit_m)
+                    path = output / f'measurements-{index}.npz'
+                    np.savez_compressed(path, **arrays)
+                    save(output / f'measurements-{index}.json', measurements)
+                    row['skin_measurements'] = dict(path=f'measurements-{index}.json',
+                        sha256=sha256(output / f'measurements-{index}.json'),
+                        observations_path=path.name, observations_sha256=sha256(path),
+                        point_contact_samples_passed=measurements['point_contact_samples_passed'],
+                        authored_requirements_fully_measured=measurements['authored_requirements_fully_measured'])
+                rows.append(row)
             for path, digest in bindings.items():
                 if sha256(path) != digest:
                     raise ValueError('Playback input changed during audit')
@@ -130,8 +151,8 @@ def run(source, output, *, rate_hz=120, scene_ids=None, engine=None):
                 engine_output_sha256=sha256(output / 'engine-output.json'),
                 request_sha256=sha256(output / 'request.json'),
                 all_precision_screens_passed=all(r['all_precision_screens_passed'] for r in rows),
-                quality_approved=False, release_approved=False,
-                scope='All actors and separately exported object GLBs present together; shared absolute manual seek, actual player clocks and every placed bone/object transform. Independent source local-track interpolation and hierarchy composition. No imported skin identity, collision/contact, GPU rendering, runtime physics/events or naturalness approval.')
+                quality_approved=False, release_approved=False, imported_skin_measurements=measure_skin,
+                scope='All actors and separately exported object GLBs present together; shared absolute manual seek, actual player clocks and every placed bone/object transform. Independent source local-track interpolation and hierarchy composition. Optional bound imported-skin point-contact and complete-vertex penetration diagnostics are saved separately. No full triangle/partner collision, GPU rendering, runtime physics/events or naturalness approval.')
             save(output / 'result.json', result)
             save(output / 'pipeline.json', dict(status='complete', quality_approved=False))
             return result
@@ -145,6 +166,13 @@ if __name__ == '__main__':
     parser.add_argument('source'); parser.add_argument('output')
     parser.add_argument('--rate-hz', type=int, default=120)
     parser.add_argument('--scene-id', action='append'); parser.add_argument('--engine')
+    parser.add_argument('--measure-skin', action='store_true')
+    parser.add_argument('--floor-y-m', type=float, default=0.)
+    parser.add_argument('--penetration-limit-m', type=float, default=.005)
     args = parser.parse_args()
-    result = run(args.source, args.output, rate_hz=args.rate_hz, scene_ids=args.scene_id, engine=args.engine)
-    print(dict(scenes=len(result['rows']), passed=result['all_precision_screens_passed']), flush=True)
+    result = run(args.source, args.output, rate_hz=args.rate_hz, scene_ids=args.scene_id, engine=args.engine,
+                 measure_skin=args.measure_skin, floor_y_m=args.floor_y_m, penetration_limit_m=args.penetration_limit_m)
+    summary = dict(scenes=len(result['rows']), pose_screens_passed=result['all_precision_screens_passed'])
+    if args.measure_skin:
+        summary['point_contact_samples_passed'] = all(r['skin_measurements']['point_contact_samples_passed'] for r in result['rows'])
+    print(summary, flush=True)
