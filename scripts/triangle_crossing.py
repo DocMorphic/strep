@@ -83,11 +83,35 @@ def _mesh(vertices, faces):
     return v[f]
 
 
+def whole_bounds_disjoint(left, right, tolerance_m):
+    """Reject only when every referenced triangle box is strictly separated."""
+    lo_a, hi_a = left.min(axis=(0,1)), left.max(axis=(0,1))
+    lo_b, hi_b = right.min(axis=(0,1)), right.max(axis=(0,1))
+    return bool(np.any(hi_a + tolerance_m < lo_b) or np.any(hi_b < lo_a - tolerance_m))
+
+
+def _summary(left, right, pairs, counts, records, tolerance_m, rejected):
+    degenerate = [np.flatnonzero(np.linalg.norm(np.cross(t[:,1]-t[:,0], t[:,2]-t[:,0]), axis=1) <= tolerance_m**2).tolist()
+                  for t in [left, right]]
+    return dict(left_faces=len(left), right_faces=len(right), candidate_pairs=pairs,
+                counts=dict(counts), records=records, degenerate_faces=degenerate, tolerance_m=tolerance_m,
+                whole_bounds_rejected=rejected,
+                quality_approved=False, collision_free_certified=False,
+                scope='Discrete triangle-surface diagnostic. Proper crossings are transverse interior intersections; '
+                'boundary/near/coplanar outcomes remain separate. No depth, enclosed-volume, self-collision, '
+                'continuous-time, exact-arithmetic or animation-quality certification. Retain vertex containment checks.')
+
+
 def audit(left_vertices, left_faces, right_vertices, right_faces, tolerance_m=1e-8, progress=None):
     """Stream all overlapping triangle boxes; no candidate truncation or NxM array."""
     if not np.isfinite(tolerance_m) or tolerance_m <= 0:
         raise ValueError('Positive finite distance tolerance required')
     left, right = _mesh(left_vertices, left_faces), _mesh(right_vertices, right_faces)
+    if whole_bounds_disjoint(left, right, tolerance_m):
+        if progress:
+            progress(dict(left_faces_processed=len(left), left_faces_total=len(left), candidate_pairs=0,
+                          whole_bounds_rejected=True))
+        return _summary(left, right, 0, {}, [], tolerance_m, True)
     lo, hi = right.min(axis=1), right.max(axis=1)
     properties = index.Property()
     properties.dimension = 3
@@ -106,11 +130,4 @@ def audit(left_vertices, left_faces, right_vertices, right_faces, tolerance_m=1e
                 progress(dict(left_faces_processed=i+1, left_faces_total=len(left), candidate_pairs=pairs))
     finally:
         tree.close()
-    degenerate = [np.flatnonzero(np.linalg.norm(np.cross(t[:,1]-t[:,0], t[:,2]-t[:,0]), axis=1) <= tolerance_m**2).tolist()
-                  for t in [left, right]]
-    return dict(left_faces=len(left), right_faces=len(right), candidate_pairs=pairs,
-                counts=dict(counts), records=records, degenerate_faces=degenerate, tolerance_m=tolerance_m,
-                quality_approved=False, collision_free_certified=False,
-                scope='Discrete triangle-surface diagnostic. Proper crossings are transverse interior intersections; '
-                'boundary/near/coplanar outcomes remain separate. No depth, enclosed-volume, self-collision, '
-                'continuous-time, exact-arithmetic or animation-quality certification. Retain vertex containment checks.')
+    return _summary(left, right, pairs, counts, records, tolerance_m, False)

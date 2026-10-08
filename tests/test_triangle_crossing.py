@@ -74,3 +74,21 @@ def test_spatial_index_preserves_all_bruteforce_intersections():
     expected={(i,j) for i,a in enumerate(left) for j,b in enumerate(right) if classify(a,b)['kind']!='disjoint'}
     result=audit(left.reshape(-1,3),np.arange(36).reshape(-1,3),right.reshape(-1,3),np.arange(36).reshape(-1,3))
     assert {(r['left_triangle'],r['right_triangle']) for r in result['records']} == expected
+
+
+def test_whole_bounds_separation_skips_index_but_keeps_every_degenerate_face(monkeypatch):
+    import triangle_crossing
+    def forbidden(*args, **kwargs): raise AssertionError('Separated bounds need no spatial index')
+    monkeypatch.setattr(triangle_crossing.index, 'Index', forbidden)
+    left = np.vstack([A, np.zeros((3, 3))])
+    right = B + [10., 0., 0.]
+    result = audit(left, [[0, 1, 2], [3, 4, 5]], right, [[0, 1, 2]])
+    assert result['whole_bounds_rejected'] and result['candidate_pairs'] == 0
+    assert result['left_faces'] == 2 and result['degenerate_faces'] == [[1], []]
+    assert not result['collision_free_certified']
+
+
+def test_near_touching_bounds_never_use_whole_box_rejection():
+    result = audit(A, [[0, 1, 2]], A + [0., 0., 1e-9], [[0, 1, 2]], tolerance_m=1e-8)
+    assert not result['whole_bounds_rejected'] and result['candidate_pairs'] == 1
+    assert result['records'][0]['kind'] == 'coplanar_or_near_parallel_overlap'

@@ -1020,3 +1020,6 @@ The longer two-hand lift stops on the existing available-system-memory guard bef
 
 
 2026-10-08: Imported-skin scene measurements now expose the original lift/high-five contact and floor failures while both V16 reference clips retain their 1 mm contacts. Whole-skin comparison and full collision/quality gates remain unapproved. Local suites pass 153 integration tests and 118 overlapping model-free tests. See [measurements and limits](docs/imported-scene-measurements-v1.md).
+
+
+2026-10-08: Complete imported triangle/volume audits retain all 2585 actor poses and 1407 object poses. Both short corrected references pass sampled geometry; the longer lift fails floor checks and high-five reveals 21.010 mm partner containment plus 33 crossing poses. All four archives and exact input/method bindings verify. The focused model-free suite passes 146 tests. Whole-skin precision, naturalness and all fourteen release capabilities remain unapproved. See [method and retained failures](docs/imported-triangle-geometry-v1.md).
