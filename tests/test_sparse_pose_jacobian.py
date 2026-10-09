@@ -73,3 +73,27 @@ def test_invalid_controls_rejected_before_pose_query(x):
     p=FixtureProblem('global','box')
     p.fk=lambda x:pytest.fail('Invalid controls reached the pose query')
     with pytest.raises(ValueError):SparsePoseJacobian(p)(x)
+
+
+def test_all_vector_reference_populations_match_original_rows_and_derivatives():
+    p=FixtureProblem('native-joint','box');sparse=SparsePoseJacobian(p,row_chunk=16);x=np.array([.03,-.02,.01,.003])
+    v=sparse.vector_linearization(x);values,jac=sparse(x)
+    offsets=v['offsets'];derivatives=v['jacobian'];radii=v['limits'];scales=v['scales'];distance=v['distance'];rows=v['rows']
+    length=np.linalg.norm(offsets,axis=1)
+    slacks=np.where(distance,(radii-length)/scales,1-length**2/radii**2)
+    gradients=np.where(distance[:,None],-np.einsum('rk,rkd->rd',offsets,derivatives)/np.maximum(length,1e-12)[:,None]/scales[:,None],
+        -2*np.einsum('rk,rkd->rd',offsets,derivatives)/radii[:,None]**2)
+    for row in set(rows):
+        active=(rows==row)&(slacks==slacks[rows==row].min())
+        np.testing.assert_allclose(slacks[active],values[row],rtol=1e-11,atol=1e-11)
+        np.testing.assert_allclose(gradients[active].mean(0),jac[row],rtol=1e-9,atol=1e-9)
+    for row in range(5,11):assert np.sum(rows==row)==3
+    assert np.sum(distance)==2 and len(v['offsets'])==21
+    direction=np.array([.2,-.3,.1,.4]);step=1e-6
+    plus=sparse.vector_linearization(x+step*direction);minus=sparse.vector_linearization(x-step*direction)
+    np.testing.assert_allclose((plus['offsets']-minus['offsets'])/(2*step),np.einsum('rkd,d->rk',derivatives,direction),rtol=1e-6,atol=1e-8)
+
+
+def test_geometry_vectors_reject_unsupported_grouping_before_fk():
+    p=FixtureProblem('global','box');p.fk=lambda x:pytest.fail('Unsupported vector grouping reached FK')
+    with pytest.raises(ValueError):SparsePoseJacobian(p).vector_linearization(np.zeros(4))

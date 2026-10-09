@@ -13,7 +13,7 @@ import guarded_pose_restoration as module
     dict(proposal='guess'),dict(solve_iterations=True),dict(solve_iterations=0),dict(row_chunk=True),dict(row_chunk=33),dict(point_policy='guess'),
     dict(point_proposal='guess'),dict(point_headroom=-1e-5),dict(point_headroom=float('nan')),dict(point_headroom=True),
     dict(tangent_guard=1),dict(tangent_guard=True),dict(resume=False),dict(resume=''),dict(body_proposal='guess'),
-    dict(proposal_start='guess'),dict(proposal_start=True),dict(proposal_start='linear-feasible')])
+    dict(proposal_start='guess'),dict(proposal_start=True),dict(proposal_start='linear-feasible'),dict(proposal_start='geometry-descent')])
 def test_invalid_options_never_acquire_or_run_worker(tmp_path,monkeypatch,options):
     def forbidden(*args,**kwargs):raise AssertionError('Invalid request reached worker')
     monkeypatch.setattr(module,'worker_lock',forbidden)

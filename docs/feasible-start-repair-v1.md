@@ -44,3 +44,6 @@ Use an owned supervisor for native work; both local supervisors preserved the ex
 Next: make starting directions compatible with merit descent and retain the full three-dimensional contact/reference distance in geometry-aware proposals. Test finite nonlinear backoffs before retention; a tiny negative first-order slope alone may be overwhelmed by second-order error. Then extend to coordinated windows and full temporal/geometry replay. Do not relax point, rotation, root, floor, reference or import limits to hide the failed experiment.
 
 Scope remains a diagnostic pose with fixed neighbors, not a generated or repaired full animation. No support-slide, between-key, triangle/volume, self-collision, anatomy, dynamics, engine import or human approval follows from this experiment. Licensed native acquisitions and generated study records remain outside the public source repository. All fourteen full-project release capabilities remain unapproved.
+
+
+The next comparison preserves vector distances and explicitly checks merit descent before nonlinear adoption; see [geometry-aware descent](geometry-descent-repair-v1.md) for six retained native steps and the remaining orientation, collision and displacement failures.

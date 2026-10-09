@@ -18,6 +18,45 @@ class SparsePoseJacobian:
             raise ValueError('Explicit bounded derivative-row chunk required')
         self.problem=problem;self.cache=None;self.dependencies=None;self.row_chunk=row_chunk
 
+    def vector_linearization(self,x):
+        """All contacts, normals, references/neighbors and rotation-norm vectors."""
+        problem=self.problem;x=np.asarray(x,dtype=float)
+        if x.shape!=(problem.dim,) or not np.isfinite(x).all() or problem.grouping!='native-joint':
+            raise ValueError('Finite complete native-joint vector controls required')
+        ids=sorted({c['vertex'] for c in problem.contacts}|{int(i) for _,faces,_ in problem.normals for i in np.asarray(faces).ravel()})
+        lookup={vertex:i for i,vertex in enumerate(ids)};variable=problem.t(x).requires_grad_()
+        rotation,positions=problem.fk(variable)[:2];indices=problem.indices[ids]
+        vertices=(((rotation[indices]@problem.bind[ids,:,:,None]).squeeze(-1)+positions[indices])*problem.weights[ids,:,None]).sum(1)
+        contact_vectors=[vertices[lookup[c['vertex']]]-problem.t(c['target']) for c in problem.contacts]
+        normal_vectors=[]
+        for _,faces,target in problem.normals:
+            triangles=vertices[np.array([[lookup[int(i)] for i in face] for face in faces])]
+            normal=torch.linalg.cross(triangles[:,1]-triangles[:,0],triangles[:,2]-triangles[:,0]).sum(0)
+            if torch.linalg.vector_norm(normal).item()<=1e-12:raise ValueError('Nondegenerate native surface normal required')
+            normal_vectors.append(normal/torch.linalg.vector_norm(normal)-target)
+        vectors=contact_vectors+normal_vectors+[point for point in positions]
+        components=torch.stack(vectors);derivatives=row_jacobian(components.flatten(),variable,self.row_chunk or 16).reshape(-1,3,len(x))
+        offsets=components.detach().numpy();records=[]
+        for i,limit in enumerate(problem.point_limits):records.append((offsets[i],derivatives[i],limit-problem.headroom_m,.01,i,True))
+        start=len(problem.contacts);chord=2*np.sin(np.deg2rad(problem.config['normal_tolerance_degrees']-.001)/2)
+        for i in range(len(normal_vectors)):records.append((offsets[start+i],derivatives[start+i],chord,chord,start+i,True))
+        position_start=start+len(normal_vectors);pos=offsets[position_start:];pjac=derivatives[position_start:];joints=len(pos)
+        body_start=len(problem.labels)-(1+len(problem.neighbors))*joints
+        if body_start<position_start+1:raise ValueError('Complete native reference row population required')
+        for reference in problem.references.values():
+            ref=reference.numpy()
+            for joint in range(joints):records.append((pos[joint]-ref[problem.frame,joint],pjac[joint],.22-problem.headroom_m,1.,body_start+joint,False))
+            for i,(frame,neighbor) in enumerate(sorted(problem.neighbors.items())):
+                for joint in range(joints):
+                    vector=((pos[joint]-ref[problem.frame,joint])-(neighbor.numpy()[joint]-ref[frame,joint]))*30
+                    records.append((vector,pjac[joint]*30,1.5-30*problem.headroom_m,1.,body_start+(i+1)*joints+joint,False))
+        for i,limit in enumerate(problem.limits):
+            jac=np.zeros((3,len(x)));jac[:,3*i:3*i+3]=np.eye(3)
+            records.append((x[3*i:3*i+3],jac,limit,1.,len(problem.labels)+i,False))
+        return dict(offsets=np.array([r[0] for r in records]),jacobian=np.array([r[1] for r in records]),
+            limits=np.array([r[2] for r in records]),scales=np.array([r[3] for r in records]),
+            rows=np.array([r[4] for r in records],dtype=int),distance=np.array([r[5] for r in records],dtype=bool))
+
     def __call__(self,x):
         x=np.asarray(x,dtype=float)
         if x.shape!=(self.problem.dim,) or not np.isfinite(x).all():raise ValueError('Finite complete pose controls required')

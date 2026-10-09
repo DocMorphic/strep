@@ -265,3 +265,67 @@ def test_claimed_linear_success_must_replay_bounds_and_complete_rows(monkeypatch
     def measure(x):return np.array([x[0]-.2,.4-x[0]])
     with pytest.raises(ValueError):fit(measure,lambda x:(measure(x),np.array([[1.],[-1.]])),[0.],[-1.],[1.],trust=.25,
         proposal='nonlinear',proposal_start='linear-feasible',proposal_feasible_mask=[True,False])
+
+
+def circle_vectors(x):
+    return dict(offsets=np.array([[x[0],x[1],0.]]),jacobian=np.array([[[1.,0.],[0.,1.],[0.,0.]]]),
+        limits=np.array([.1]),scales=np.array([.1]),rows=np.array([1]),distance=np.array([True]))
+
+
+def test_geometry_descent_preserves_transverse_distance_and_decreases_merit():
+    def measure(x):return np.array([x[1]-.05,(.1-np.linalg.norm(x))/.1])
+    def derivative(x):return measure(x),np.array([[0.,1.],-x/(.1*np.linalg.norm(x))])
+    value,r=fit(measure,derivative,[.1,0.],[-1.,-1.],[1.,1.],trust=.1,iterations=1,
+        proposal='nonlinear',proposal_start='geometry-descent',vectorize=circle_vectors,proposal_tangent_guard=True)
+    start=r['proposal_starts'][0]
+    assert start['success'] and start['directional_merit']<0 and start['minimum_vector_slack']>=-1e-8
+    assert value[1]>.05 and np.all(measure(value)>=0) and r['trials'][-1]['accepted']
+    assert r['trials'][-1]['stage']=='geometry-start' and not r['proposal_queries']
+    assert not start['retained'] and not r['quality_approved']
+    delta=np.asarray(start['delta']);assert np.linalg.norm(np.array([.1,0.])+delta)<=.1+1e-9
+
+
+@pytest.mark.parametrize('damage',['nonfinite','rows','width','scale','source'])
+def test_geometry_start_rejects_missing_or_changed_vector_population(damage):
+    def measure(x):return np.array([x[1]-.05,(.1-np.linalg.norm(x))/.1])
+    def derivative(x):return measure(x),np.array([[0.,1.],-x/(.1*np.linalg.norm(x))])
+    def vectors(x):
+        v=circle_vectors(x)
+        if damage=='nonfinite':v['jacobian'][0,0,0]=float('nan')
+        if damage=='rows':v['rows']=np.array([2])
+        if damage=='width':v['jacobian']=np.zeros((1,3,1))
+        if damage=='scale':v['scales'][0]=0
+        if damage=='source':v['offsets'][0,0]=.09
+        return v
+    with pytest.raises((ValueError,AssertionError)):fit(measure,derivative,[.1,0.],[-1.,-1.],[1.,1.],
+        proposal='nonlinear',proposal_start='geometry-descent',vectorize=vectors)
+
+
+def test_geometry_budget_expiry_keeps_only_fully_replayed_accepted_start():
+    def measure(x):return np.array([x[1]-.05,(.1-np.linalg.norm(x))/.1])
+    def derivative(x):return measure(x),np.array([[0.,1.],-x/(.1*np.linalg.norm(x))])
+    value,r=fit(measure,derivative,[.1,0.],[-1.,-1.],[1.,1.],trust=.1,maximum_calls=2,
+        proposal='nonlinear',proposal_start='geometry-descent',vectorize=circle_vectors,proposal_tangent_guard=True)
+    assert r['stop']=='time_or_measurement_budget' and r['proposal_starts'][0]['success']
+    assert r['trials'][-1]['accepted'] and r['trials'][-1]['stage']=='geometry-start'
+    np.testing.assert_array_equal(value,r['trials'][-1]['controls'])
+    assert np.all(measure(value)>=0) and not r['proposal_queries']
+
+
+def test_geometry_budget_expiry_never_selects_failed_nonlinear_start():
+    def measure(x):return np.array([x[1]-.05,(.1-np.linalg.norm(x+np.array([x[1]**2,0.])))/.1])
+    def derivative(x):
+        vector=x+np.array([x[1]**2,0.]);j=np.array([[1.,2*x[1]],[0.,1.]])
+        return measure(x),np.array([[0.,1.],-vector@j/(.1*np.linalg.norm(vector))])
+    value,r=fit(measure,derivative,[.1,0.],[-1.,-1.],[1.,1.],trust=.1,maximum_calls=2,
+        proposal='nonlinear',proposal_start='geometry-descent',vectorize=circle_vectors,proposal_tangent_guard=True)
+    np.testing.assert_array_equal(value,[.1,0.])
+    assert r['stop']=='time_or_measurement_budget' and r['proposal_starts'][0]['success']
+    assert len(r['trials'])==1 and not r['trials'][0]['accepted'] and not r['proposal_queries']
+
+
+@pytest.mark.parametrize('kwargs',[dict(proposal_start='geometry-descent',proposal='nonlinear'),
+    dict(vectorize=circle_vectors),dict(proposal_start='geometry-descent',proposal='nonlinear',vectorize=True)])
+def test_vector_initializer_contract_rejected_before_measurement(kwargs):
+    def forbidden(x):raise AssertionError('Invalid geometry request reached measurement')
+    with pytest.raises(ValueError):fit(forbidden,forbidden,[0.,0.],[-1.,-1.],[1.,1.],**kwargs)

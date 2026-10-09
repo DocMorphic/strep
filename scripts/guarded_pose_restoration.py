@@ -210,6 +210,10 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
     def linearize(z):
         values,jac=sparse(np.asarray(z)*scale)
         return values,jac*scale[None]
+    def vectorize(z):
+        vectors=sparse.vector_linearization(np.asarray(z)*scale)
+        vectors['jacobian']*=scale[None,None]
+        return vectors
     started=time.monotonic();dense_values,dense_jac=problem.pair(seed*scale);dense_seconds=time.monotonic()-started
     started=time.monotonic();sparse_values,sparse_jac=sparse(seed*scale);sparse_seconds=time.monotonic()-started
     np.testing.assert_allclose(sparse_values,dense_values,rtol=1e-10,atol=1e-10)
@@ -234,7 +238,8 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
         if retained and label!='final':print(dict(label=label,pose_checks_passed=audit['pose_checks_passed'],minimum_slack=float(slacks.min())),flush=True)
     value,report=fit(measure,linearize,seed,lower,upper,iterations=iterations,trust=trust,seconds=seconds,
         observer=observer,failure_policy=failure_policy,tradeoff_mask=mask,proposal=proposal,solve_iterations=solve_iterations,
-        proposal_feasible_mask=feasible,proposal_headroom=headroom,proposal_tangent_guard=tangent_guard,proposal_start=proposal_start)
+        proposal_feasible_mask=feasible,proposal_headroom=headroom,proposal_tangent_guard=tangent_guard,proposal_start=proposal_start,
+        vectorize=vectorize if proposal_start=='geometry-descent' else None)
     candidate,motion=problem.independent(value*scale)
     with torch.no_grad():_,_,_,vertices=problem.fk(problem.t(value*scale))
     error=float(np.abs(vertices.numpy()-problem.surface.vertices(motion['global_rot_mats'][0],motion['posed_joints'][0])).max())
@@ -275,7 +280,7 @@ def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='r
             or not np.isfinite(point_headroom) or not 0<=point_headroom<=1e-3
             or type(tangent_guard) is not bool or (tangent_guard and proposal!='nonlinear')
             or body_proposal not in ['preserve','feasible']
-            or proposal_start not in ['zero','linear-feasible'] or (proposal_start!='zero' and proposal!='nonlinear')
+            or proposal_start not in ['zero','linear-feasible','geometry-descent'] or (proposal_start!='zero' and proposal!='nonlinear')
             or (resume is not None and (not isinstance(resume,(str,Path)) or not str(resume).strip()))
             or type(solve_iterations) is not int or not 1<=solve_iterations<=300
             or (row_chunk is not None and (type(row_chunk) is not int or not 1<=row_chunk<=32))):
@@ -303,6 +308,6 @@ if __name__=='__main__':
     parser.add_argument('--tangent-guard',action='store_true')
     parser.add_argument('--resume',type=Path,help='Terminal guarded pose study to replay as a diagnostic warm start')
     parser.add_argument('--body-proposal',choices=['preserve','feasible'],default='preserve')
-    parser.add_argument('--proposal-start',choices=['zero','linear-feasible'],default='zero')
+    parser.add_argument('--proposal-start',choices=['zero','linear-feasible','geometry-descent'],default='zero')
     args=parser.parse_args();run(args.study,args.output,args.frame,args.iterations,args.trust,args.seconds,args.failure_policy,args.proposal,
         args.solve_iterations,args.row_chunk,args.point_policy,args.point_proposal,args.point_headroom,args.tangent_guard,args.resume,args.body_proposal,args.proposal_start)

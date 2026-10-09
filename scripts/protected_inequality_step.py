@@ -62,9 +62,64 @@ def _linear_feasible_start(values,jac,caps,lower,upper,seconds):
     return delta,report
 
 
+def _geometry_descent_start(values,jac,caps,lower,upper,seconds,vectors):
+    """Convex vector-distance proposal with a complete merit descent check."""
+    offsets=np.asarray(vectors['offsets'],dtype=float);derivatives=np.asarray(vectors['jacobian'],dtype=float)
+    radii=np.asarray(vectors['limits'],dtype=float);scales=np.asarray(vectors['scales'],dtype=float)
+    rows=np.asarray(vectors['rows']);distance=np.asarray(vectors['distance'])
+    count=len(radii);size=len(lower)
+    if (not count or offsets.shape!=(count,3) or derivatives.shape!=(count,3,size)
+            or scales.shape!=(count,) or rows.shape!=(count,) or rows.dtype.kind not in 'iu'
+            or distance.shape!=(count,) or distance.dtype!=bool or np.any(rows<0) or np.any(rows>=len(values))
+            or not np.isfinite(np.r_[offsets.ravel(),derivatives.ravel(),radii,scales]).all()
+            or np.any(radii<=0) or np.any(scales<=0)):
+        raise ValueError('Complete finite vector-distance controls, row identities and scales required')
+    length=np.linalg.norm(offsets,axis=1)
+    vector_values=np.where(distance,(radii-length)/scales,1-length**2/radii**2)
+    envelope=np.full(len(values),np.inf);np.minimum.at(envelope,rows,vector_values);covered=np.isfinite(envelope)
+    np.testing.assert_allclose(envelope[covered],values[covered],rtol=1e-10,atol=1e-10)
+    effective=np.empty_like(radii);effective[distance]=radii[distance]-scales[distance]*caps[rows[distance]]
+    effective[~distance]=radii[~distance]*np.sqrt(np.maximum(1-caps[rows[~distance]],0))
+    limit=min(20.,seconds);started=time.monotonic();gradient=2*jac.T@np.minimum(values,0)
+    report=dict(objective='Minimize first-order squared violation with vector-norm feasibility',
+        caps=caps.tolist(),lower_delta=lower.tolist(),upper_delta=upper.tolist(),time_limit_seconds=limit,
+        gradient=gradient.tolist(),vectors={k:np.asarray(vectors[k]).tolist() for k in ['offsets','jacobian','limits','scales','rows','distance']},
+        scope='Vector-affine geometry and first-order merit only; no nonlinear feasibility, retained-step or path certificate.')
+    if np.any(effective<=0):return None,dict(report,success=False,status='empty_vector_radius',seconds=time.monotonic()-started)
+    # Convex norm balls admit global supporting-plane relaxations. Replay every
+    # ball after each LP; cut-system feasibility alone never supplies a start.
+    planes=[];bounds=[];cuts=[];report.update(algorithm='Norm-ball supporting planes',cuts=cuts,effective_radii=effective.tolist())
+    for iteration in range(64):
+        remaining=limit-(time.monotonic()-started)
+        if remaining<=0:return None,dict(report,success=False,status='geometry_start_time_guard',seconds=time.monotonic()-started)
+        result=linprog(gradient,A_ub=np.vstack([-jac,*planes]) if planes else -jac,
+            b_ub=np.concatenate([values-caps,*bounds]),bounds=list(zip(lower,upper)),method='highs',
+            options=dict(time_limit=remaining,primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9))
+        report['linear_status']=int(result.status)
+        if not result.success:return None,dict(report,success=False,status='linear_start_unavailable',seconds=time.monotonic()-started)
+        raw=np.asarray(result.x,dtype=float)
+        if raw.shape!=(size,) or not np.isfinite(raw).all():raise ValueError('Finite complete geometry start required')
+        if np.any(raw<lower-1e-8) or np.any(raw>upper+1e-8):raise ValueError('Geometry start violated original step bounds')
+        delta=np.clip(raw,lower,upper);slack=values+jac@delta-caps
+        if np.any(slack< -1e-8):raise ValueError('Geometry start failed complete linear replay')
+        point=offsets+np.einsum('rkd,d->rk',derivatives,delta);length=np.linalg.norm(point,axis=1)
+        balls=1-length**2/effective**2;descent=float(gradient@delta)
+        report.update(raw_delta=raw.tolist(),delta=delta.tolist(),minimum_linear_slack=float(slack.min()),
+            minimum_vector_slack=float(balls.min()),directional_merit=descent,seconds=time.monotonic()-started)
+        if descent>=-1e-8:return None,dict(report,success=False,status='no_checked_geometry_descent')
+        if np.all(balls>=-1e-8):return delta,dict(report,success=True,status='usable')
+        ids=np.argsort(balls)[:32];ids=ids[balls[ids]<-1e-8]
+        normal=point[ids]/length[ids,None]
+        plane=np.einsum('rk,rkd->rd',normal,derivatives[ids])/effective[ids,None]
+        bound=np.einsum('rd,d->r',plane,delta)-(length[ids]/effective[ids]-1)
+        planes.append(plane);bounds.append(bound)
+        cuts.append(dict(iteration=iteration+1,controls_delta=delta.tolist(),vector_indices=ids.tolist(),planes=plane.tolist(),bounds=bound.tolist()))
+    return None,dict(report,success=False,status='geometry_cut_iteration_guard',seconds=time.monotonic()-started)
+
+
 def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_iterations=100,
         seconds=300,maximum_calls=1000,observer=None,failure_policy='rowwise',tradeoff_mask=None,
-        proposal='linear',proposal_feasible_mask=None,proposal_headroom=None,proposal_tangent_guard=False,proposal_start='zero'):
+        proposal='linear',proposal_feasible_mask=None,proposal_headroom=None,proposal_tangent_guard=False,proposal_start='zero',vectorize=None):
     seed=np.asarray(seed,dtype=float);lower=np.asarray(lower,dtype=float);upper=np.asarray(upper,dtype=float)
     if (seed.ndim!=1 or not len(seed) or lower.shape!=seed.shape or upper.shape!=seed.shape
             or not np.isfinite(np.r_[seed,lower,upper]).all() or np.any(lower>=upper)
@@ -75,7 +130,8 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
             or type(trust) not in (int,float) or not np.isfinite(trust) or not 1e-5<=trust<=.3
             or type(seconds) not in (int,float) or not np.isfinite(seconds) or not 1<=seconds<=1800
             or failure_policy not in ['rowwise','merit'] or proposal not in ['linear','nonlinear']
-            or proposal_start not in ['zero','linear-feasible'] or (proposal_start!='zero' and proposal!='nonlinear')
+            or proposal_start not in ['zero','linear-feasible','geometry-descent'] or (proposal_start!='zero' and proposal!='nonlinear')
+            or (proposal_start=='geometry-descent' and not callable(vectorize)) or (proposal_start!='geometry-descent' and vectorize is not None)
             or type(proposal_tangent_guard) is not bool or (proposal_tangent_guard and proposal!='nonlinear')):
         raise ValueError('Finite seed, matching control bounds and explicit step budgets required')
     started=time.monotonic();calls=0;history=[];trials=[];queries=[];clips=[];linearizations=[];starts=[];value=seed.copy()
@@ -158,40 +214,52 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
             if proposal_tangent_guard and hard.any():
                 constraints.append(dict(type='ineq',fun=lambda delta:current[hard]+jac[hard]@delta-tangent_caps,
                     jac=lambda delta:jac[hard]))
+            def attempt(direction,stage):
+                nonlocal value,current
+                for fraction in [1.,.5,.25,.125,.0625,.03125,.015625,.0078125]:
+                    candidate=value+fraction*direction
+                    if proposal=='nonlinear':candidate=np.clip(candidate,candidate_lower,candidate_upper)
+                    label=f'iteration-{iteration+1}-backoff-{len(trials)+1}'
+                    if np.any(candidate<lower) or np.any(candidate>upper):
+                        trials.append(dict(label=label,iteration=iteration+1,stage=stage,fraction=fraction,accepted=False,
+                            controls=candidate.tolist(),rejection='outside_normalized_control_bounds',nonlinear_replay=False))
+                        continue
+                    after=observed(candidate);replay_keep=retain(current,after,failure_policy=failure_policy,tradeoff_mask=mask)
+                    tangent=current[hard]+jac[hard]@(candidate-value)-preservation[hard]
+                    tangent_keep=not proposal_tangent_guard or bool(np.all(tangent>=0));keep=replay_keep and tangent_keep
+                    trials.append(dict(label=label,iteration=iteration+1,stage=stage,fraction=fraction,accepted=keep,
+                        score=list(score(after)),controls=candidate.tolist(),retention_guard_passed=replay_keep,
+                        tangent_guard_passed=tangent_keep,tangent_minimum_slack=float(tangent.min()) if proposal_tangent_guard and len(tangent) else None))
+                    if observer:observer(label,candidate.copy(),after.copy(),keep)
+                    if keep:value=candidate;current=after;return True
+                return False
             initial=np.zeros_like(value)
-            if proposal_start=='linear-feasible':
+            if proposal_start!='zero':
                 check();start_caps=caps.copy()
                 if proposal_tangent_guard:start_caps[hard]=np.maximum(start_caps[hard],tangent_caps)
                 remaining=seconds-(time.monotonic()-started)
                 if remaining<=0:raise Exhausted()
-                initial,start_report=_linear_feasible_start(current,jac,start_caps,
+                if proposal_start=='geometry-descent':
+                    vectors=vectorize(value);remaining=seconds-(time.monotonic()-started)
+                    if remaining<=0:raise Exhausted()
+                    initial,start_report=_geometry_descent_start(current,jac,start_caps,
+                        candidate_lower-value,candidate_upper-value,remaining,vectors)
+                else:initial,start_report=_linear_feasible_start(current,jac,start_caps,
                     candidate_lower-value,candidate_upper-value,remaining)
                 starts.append(dict(iteration=iteration+1,controls=value.tolist(),retained=False,**start_report))
                 check()
                 if initial is None:stop='linear_start_unavailable';break
+                if proposal_start=='geometry-descent' and attempt(initial,'geometry-start'):
+                    history.append(dict(iteration=iteration+1,accepted=True,solver_success=start_report['success'],
+                        solver_message='Checked geometry-start backoff; nonlinear inner solve skipped',
+                        score=list(score(current)),seconds=time.monotonic()-started))
+                    continue
             result=minimize(objective,initial,method='SLSQP',jac=True,bounds=bounds,constraints=constraints,
                 options=dict(maxiter=solve_iterations,ftol=1e-12))
             direction=np.asarray(result.x,dtype=float)
             if direction.shape!=value.shape or not np.isfinite(direction).all():raise ValueError('Finite proposal direction required')
             if proposal=='nonlinear':direction=bounded_candidate(direction)-value
-            accepted=False
-            for fraction in [1.,.5,.25,.125,.0625,.03125,.015625,.0078125]:
-                candidate=value+fraction*direction
-                if proposal=='nonlinear':candidate=np.clip(candidate,candidate_lower,candidate_upper)
-                label=f'iteration-{iteration+1}-backoff-{len(trials)+1}'
-                if np.any(candidate<lower) or np.any(candidate>upper):
-                    trials.append(dict(label=label,iteration=iteration+1,fraction=fraction,accepted=False,
-                        controls=candidate.tolist(),rejection='outside_normalized_control_bounds',nonlinear_replay=False))
-                    continue
-                after=observed(candidate);replay_keep=retain(current,after,failure_policy=failure_policy,tradeoff_mask=mask)
-                tangent=current[hard]+jac[hard]@(candidate-value)-preservation[hard]
-                tangent_keep=not proposal_tangent_guard or bool(np.all(tangent>=0))
-                keep=replay_keep and tangent_keep
-                trials.append(dict(label=label,iteration=iteration+1,fraction=fraction,accepted=keep,
-                    score=list(score(after)),controls=candidate.tolist(),retention_guard_passed=replay_keep,
-                    tangent_guard_passed=tangent_keep,tangent_minimum_slack=float(tangent.min()) if proposal_tangent_guard and len(tangent) else None))
-                if observer:observer(label,candidate.copy(),after.copy(),keep)
-                if keep:value=candidate;current=after;accepted=True;break
+            accepted=attempt(direction,'optimized')
             history.append(dict(iteration=iteration+1,accepted=accepted,solver_success=bool(result.success),
                 solver_message=str(result.message),score=list(score(current)),seconds=time.monotonic()-started))
             if not accepted:stop='no_guarded_improvement';break
