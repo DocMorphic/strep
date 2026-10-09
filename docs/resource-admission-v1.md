@@ -28,3 +28,9 @@ The 35 source checks pass both in the checkout and in a fresh asset-free fixture
 Traced protocol SHA-256: `b9185af27b2e7f37133416c68084b941beff87edcbe56e69bb419e5e1d1f35f8`. Resource trace SHA-256: `93ccc18437faf0b253deea276a92f04024f49a8c2c05bccb487751c4f96b35f0`.
 
 The contact study still has zero complete physical and keyed passes across its 62 contact keys. All fourteen release capabilities remain unapproved, and the full-project goal remains active.
+
+## Parent exit accounting correction (2026-10-09)
+
+Linux source CI for `04aee0d` found three failed guard tests: RAM, RSS and time guards recorded the expected failed status and reason, but the killed worker's reported exit was zero. The shared termination helper had waited for the parent with psutil before `Popen.wait()` could collect its exit status. The guarded-job wrapper now requests `kill_tree(..., reap_parent=False)`: descendants are still stopped and waited for, and the owning `Popen` handle alone reaps the parent. The helper retains its previous default for existing callers. Both the guard-stop and supervisor-exception paths use the new option; resource limits and failed-status decisions are unchanged.
+
+61 checks pass in a fresh asset-free source fixture without Torch. They exercise actual owned subprocess/descendant termination, RAM/RSS/time guards, supervisor exceptions, exact nonzero exit accounting, invalid options, and a platform-independent assertion that psutil never waits for the Popen-owned parent. The existing guarded-job module stays in the model-free manifest, and the previously undeclared process-monitor regression module now joins it, raising coverage to 412 Python modules and 41 Node suites. These local runs were on Windows; the Linux CI regression must still pass before claiming cross-platform validation. Existing historical records are immutable, and this correction adds no motion or release approval.

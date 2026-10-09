@@ -108,6 +108,16 @@ def test_actual_nonzero_exit_is_not_a_success(tmp_path,monkeypatch):
     assert result['status']=='failed' and result['exit_code']==7 and result['reason'] is None
 
 
+def test_supervisor_exception_keeps_the_owned_workers_actual_exit(tmp_path,monkeypatch):
+    worker,out,p=setup(tmp_path,monkeypatch,'import time;time.sleep(60)')
+    def unavailable(pid):raise RuntimeError('Process measurement unavailable')
+    monkeypatch.setattr(module,'tree_rss',unavailable)
+    with pytest.raises(RuntimeError,match='measurement unavailable'):module.run(worker,out,p)
+    result=json.loads((out/'pipeline.json').read_text())
+    assert result['status']=='failed' and result['reason']=='supervisor_exception'
+    assert result['exit_code']!=0 and not psutil.pid_exists(result['worker_pid'])
+
+
 def test_changed_worker_is_not_executed(tmp_path,monkeypatch):
     worker,out,p=setup(tmp_path,monkeypatch,'raise SystemExit(0)')
     def busy():

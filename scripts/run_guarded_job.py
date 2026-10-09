@@ -89,7 +89,7 @@ def run(worker,output,policy,*,worker_args=None):
                 elif rss>policy.max_tree_rss_bytes:reason='process_tree_rss_guard'
                 elif elapsed>policy.max_seconds:reason='execution_time_guard'
                 if reason:
-                    kill_tree(process.pid);break
+                    kill_tree(process.pid,reap_parent=False);break
                 time.sleep(policy.poll_seconds)
             status['exit_code']=process.wait()
         if sha256(worker)!=worker_digest or any(sha256(method_root/n)!=h or sha256(archive/n)!=h for n,h in methods.items()):
@@ -97,7 +97,7 @@ def run(worker,output,policy,*,worker_args=None):
         return finish('complete' if status['exit_code']==0 and reason is None else 'failed',reason)
     except BaseException as exc:
         if process is not None:
-            if process.poll() is None:kill_tree(process.pid)
+            if process.poll() is None:kill_tree(process.pid,reap_parent=False)
             status['exit_code']=process.wait()
         status.update(error_type=type(exc).__name__,error=str(exc))
         finish('failed','supervisor_exception')
