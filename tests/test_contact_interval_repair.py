@@ -129,6 +129,22 @@ def test_lock_covers_native_and_full_interval_lifecycle(tmp_path,monkeypatch):
     assert not active
 
 
+def test_optional_conic_solver_is_forwarded_inside_original_worker_lock(tmp_path,monkeypatch):
+    monkeypatch.setattr(module,'ROOT',tmp_path);monkeypatch.setattr(module,'worker_lock',nullcontext)
+    monkeypatch.setattr(module,'threadpool_limits',lambda **k:nullcontext())
+    def run(*args,**kwargs):
+        assert kwargs==dict(proposal_geometry_solver='conic')
+        return 'conic-with-original-gates'
+    monkeypatch.setattr(module,'_run',run)
+    assert module.run(tmp_path/'source',tmp_path/'out',[1,2],proposal_geometry_solver='conic')=='conic-with-original-gates'
+
+
+@pytest.mark.parametrize('solver',[None,'other',True])
+def test_invalid_start_solver_is_rejected_before_worker_lock(tmp_path,monkeypatch,solver):
+    monkeypatch.setattr(module,'ROOT',tmp_path);monkeypatch.setattr(module,'worker_lock',lambda:pytest.fail('Invalid solver acquired worker'))
+    with pytest.raises(ValueError):module.run(tmp_path/'source',tmp_path/'out',[1,2],proposal_geometry_solver=solver)
+
+
 def test_failed_study_preserved_and_existing_output_rejected_before_lock(tmp_path,monkeypatch):
     monkeypatch.setattr(module,'ROOT',tmp_path);monkeypatch.setattr(module,'worker_lock',nullcontext)
     monkeypatch.setattr(module,'threadpool_limits',lambda **k:nullcontext())

@@ -21,7 +21,7 @@ from pose_restoration_policy import proposal_headroom,row_diagnostics
 from pose_proposal_archive import ProposalArchive
 from contact_interval_resume import resume_interval,seed_window,IntervalReplaySession
 
-METHODS=AUDIT_METHODS+['repair_contact_interval.py','contact_interval_resume.py']
+METHODS=AUDIT_METHODS+['repair_contact_interval.py','contact_interval_resume.py','geometry_conic_start.py']
 
 
 class ExactSavedOrigin:
@@ -69,7 +69,7 @@ def compare_interval(labels,before,current_labels,after):
         quality_approved=False,release_approved=False),diagnostics
 
 
-def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,resume,exclusions,*,replay_session=None):
+def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,resume,exclusions,*,replay_session=None,proposal_geometry_solver='supporting-planes'):
     summary=read(study/'fit/summary.json')
     if (summary.get('solver_version')!=17 or read(study/'pipeline.json')['status']!='complete'
             or len(summary['trials'])!=1 or sha256(ASSET)!=summary['mesh_sha256']):
@@ -128,7 +128,7 @@ def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,res
     protocol.update(selected_frames=block,selection='Largest measured normalized violation, then squared violation, then earliest frame among explicitly unattempted windows.',
         original_limits=original_limits,pose_dim=window.pose_dim,inequality_labels=window.labels,representation_labels=window.representation_labels,
         tradeoff_mask=mask.tolist(),proposal_feasible_mask=point_rows.tolist(),proposal_headroom_normalized=headroom.tolist(),
-        proposal='nonlinear',proposal_start='geometry-descent',proposal_priority='worst-first',
+        proposal='nonlinear',proposal_start='geometry-descent',proposal_priority='worst-first',proposal_geometry_solver=proposal_geometry_solver,
         proposal_margin_fallback=True,proposal_trial_correction=True,proposal_tangent_guard=True,representation_guard=True)
     save(output/'protocol.json',protocol)
     def measure(candidate):
@@ -162,6 +162,7 @@ def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,res
         proposal_feasible_mask=point_rows,proposal_headroom=headroom,proposal_tangent_guard=True,
         proposal_start='geometry-descent',proposal_priority='worst-first',vectorize=vectorize,
         proposal_margin_fallback=True,proposal_trial_correction=True,record_store=ProposalArchive(output),observer=observer,
+        proposal_geometry_solver=proposal_geometry_solver,
         representation_measure=lambda candidate:origin.rows(origin.controls(candidate)))
     controls=origin.controls(value);motion=origin.motion(controls)
     np.testing.assert_array_equal(origin.initial_rows,report['initial_represented_slacks'])
@@ -186,13 +187,14 @@ def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,res
     return result
 
 
-def run(study,output,frames,*,width=3,iterations=8,trust=.03,seconds=300,solve_iterations=10,resume=None,exclusions=None):
+def run(study,output,frames,*,width=3,iterations=8,trust=.03,seconds=300,solve_iterations=10,resume=None,exclusions=None,proposal_geometry_solver='supporting-planes'):
     windows=partition_frames(frames,width);exclusions=[] if exclusions is None else exclusions
     select_window(frames,dict(ranked_windows=[dict(frames=w) for w in windows]),width,exclusions)
     if (type(iterations) is not int or not 1<=iterations<=100 or type(solve_iterations) is not int or not 1<=solve_iterations<=300
             or type(trust) not in [int,float] or not np.isfinite(trust) or not 1e-5<=trust<=.3
             or type(seconds) not in [int,float] or not np.isfinite(seconds) or not 1<=seconds<=1800
-            or (resume is not None and (not isinstance(resume,(str,Path)) or not str(resume)))):
+            or (resume is not None and (not isinstance(resume,(str,Path)) or not str(resume)))
+            or proposal_geometry_solver not in ['supporting-planes','conic']):
         raise ValueError('Explicit original-bound repair budgets required')
     study=Path(study).resolve();output=Path(output).resolve();resume=Path(resume).resolve() if resume is not None else None
     inputs=[study]+([resume] if resume is not None else [])
@@ -201,7 +203,8 @@ def run(study,output,frames,*,width=3,iterations=8,trust=.03,seconds=300,solve_i
         raise ValueError('Separate immutable in-project original source and repair output required')
     if output.exists():raise FileExistsError(output)
     with worker_lock(),threadpool_limits(limits=2):
-        try:return _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,resume,exclusions)
+        options={} if proposal_geometry_solver=='supporting-planes' else dict(proposal_geometry_solver=proposal_geometry_solver)
+        try:return _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,resume,exclusions,**options)
         except Exception as exc:
             if output.exists():save(output/'pipeline.json',dict(status='failed',error_type=type(exc).__name__,error=str(exc),quality_approved=False,release_approved=False))
             raise
@@ -213,6 +216,8 @@ if __name__=='__main__':
     parser.add_argument('--width',type=int,default=3);parser.add_argument('--iterations',type=int,default=8)
     parser.add_argument('--trust',type=float,default=.03);parser.add_argument('--seconds',type=float,default=300)
     parser.add_argument('--solve-iterations',type=int,default=10);parser.add_argument('--resume-interval',type=Path)
+    parser.add_argument('--proposal-geometry-solver',choices=['supporting-planes','conic'],default='supporting-planes')
     parser.add_argument('--exclude-window',type=int,nargs='+',action='append',default=[]);args=parser.parse_args()
     run(args.study,args.output,list(range(args.start,args.end+1)),width=args.width,iterations=args.iterations,
-        trust=args.trust,seconds=args.seconds,solve_iterations=args.solve_iterations,resume=args.resume_interval,exclusions=args.exclude_window)
+        trust=args.trust,seconds=args.seconds,solve_iterations=args.solve_iterations,resume=args.resume_interval,exclusions=args.exclude_window,
+        proposal_geometry_solver=args.proposal_geometry_solver)

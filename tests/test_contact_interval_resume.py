@@ -280,3 +280,67 @@ def test_failed_new_stage_does_not_replace_the_verified_parent(tmp_path,monkeypa
     restored=module.resume_interval(first,*args,replay_session=session)
     assert restored[0]['posed_joints'][1,0,0]==np.float32(.05)
     assert session.statistics()['cached_states']==1 and session.statistics()['full_native_replays']==1
+
+
+def conic_archive(directory,args,*,geometry_backoff=False):
+    from protected_inequality_step import _geometry_margin_start
+    result=module.read(directory/'result.json');protocol=module.read(directory/'protocol.json')
+    linear,_=module.load_record(directory,result['fit']['proposal_linearizations'][0],array_values=True)
+    values=np.asarray(linear['slacks']);jac=np.asarray(linear['jacobian']);floor=np.minimum(values,0)
+    caps=np.maximum(floor+protocol['proposal_headroom_normalized'],floor+1e-6)
+    derivative=np.zeros((2,3,8));derivative[0,0,0]=derivative[1,0,4]=-1.
+    vectors=dict(offsets=np.array([[.5,0.,0.],[.5,0.,0.]]),jacobian=derivative,
+        limits=np.full(2,.1),scales=np.ones(2),rows=np.arange(2),distance=np.ones(2,dtype=bool))
+    lower=np.tile(np.r_[np.full(3,-.1),0.],2);upper=np.full(8,.1)
+    _,start=_geometry_margin_start(values,jac,floor,caps,lower,upper,5.,vectors,'worst-first','conic')
+    assert start['success']
+    if geometry_backoff:
+        # The fixture's unused coordinates have identically zero scalar and
+        # vector derivatives. Zero them to match its original kept test pose.
+        start['delta']=np.asarray(start['delta']);start['delta'][[1,2,3,5,6,7]]=0.
+        start['delta']=start['delta'].tolist()
+        result['fit']['trials'][0].update(stage='geometry-start',fraction=.5)
+    # Reuse the fixture archive writer; it may add bound records after its creation.
+    store=object.__new__(ProposalArchive);store.directory=directory
+    ref=store('start',dict(start,iteration=1,controls=np.zeros(8).tolist(),retained=False))
+    result['fit']['proposal_starts']=[ref]
+    protocol['proposal_geometry_solver']=result['fit']['proposal_geometry_solver']='conic'
+    method=directory/'implementation/geometry_conic_start.py';method.write_text('pinned conic fixture method')
+    protocol['methods_sha256'][method.name]=module.sha256(method)
+    write(directory/'protocol.json',protocol);write(directory/'result.json',result);reseal(directory)
+    args[6].append('geometry_conic_start.py')
+    return args
+
+
+def test_complete_conic_proposals_replay_before_original_native_retention(tmp_path,monkeypatch):
+    make,args=fixture(tmp_path,monkeypatch);directory,expected,_=make('first');conic_archive(directory,args)
+    state,_,receipt,_=module.resume_interval(directory,*args)
+    for key in state:np.testing.assert_array_equal(state[key],expected[key])
+    assert receipt['original_references_preserved'] and not receipt['quality_approved']
+
+
+def test_conic_replay_requires_archived_solver_implementation(tmp_path,monkeypatch):
+    make,args=fixture(tmp_path,monkeypatch);directory,_,_=make('first');conic_archive(directory,args)
+    protocol=module.read(directory/'protocol.json');protocol['methods_sha256'].pop('geometry_conic_start.py')
+    write(directory/'protocol.json',protocol);reseal(directory)
+    with pytest.raises(ValueError,match='must be archived'):module.resume_interval(directory,*args)
+
+
+def test_conic_solver_choice_cannot_be_removed_from_protocol(tmp_path,monkeypatch):
+    make,args=fixture(tmp_path,monkeypatch);directory,_,_=make('first');conic_archive(directory,args)
+    protocol=module.read(directory/'protocol.json');protocol.pop('proposal_geometry_solver')
+    write(directory/'protocol.json',protocol);reseal(directory)
+    with pytest.raises(ValueError):module.resume_interval(directory,*args)
+
+
+def test_checked_conic_backoff_is_bound_to_its_saved_native_trial(tmp_path,monkeypatch):
+    make,args=fixture(tmp_path,monkeypatch);directory,expected,_=make('first');conic_archive(directory,args,geometry_backoff=True)
+    actual,_,_,_=module.resume_interval(directory,*args)
+    for key in actual:np.testing.assert_array_equal(actual[key],expected[key])
+
+
+def test_changed_conic_backoff_cannot_hide_a_different_saved_pose(tmp_path,monkeypatch):
+    make,args=fixture(tmp_path,monkeypatch);directory,_,_=make('first');conic_archive(directory,args,geometry_backoff=True)
+    result=module.read(directory/'result.json');result['fit']['trials'][0]['fraction']=.25
+    write(directory/'result.json',result);reseal(directory)
+    with pytest.raises(AssertionError):module.resume_interval(directory,*args)

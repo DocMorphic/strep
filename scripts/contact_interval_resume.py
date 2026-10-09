@@ -153,6 +153,9 @@ def replay_local(directory,protocol,result,window,origin,bind):
             ('proposal_tangent_guard',True),('proposal_margin_fallback',True),('proposal_trial_correction',True),('representation_guard',True),
             ('proposal_feasible_mask',point_rows),('proposal_headroom_normalized',headroom)]:
         if protocol.get(field)!=value or report.get(field)!=value:raise ValueError('Bound original proposal policy differs')
+    geometry_solver=protocol.get('proposal_geometry_solver','supporting-planes')
+    if geometry_solver not in ['supporting-planes','conic'] or report.get('proposal_geometry_solver','supporting-planes')!=geometry_solver:
+        raise ValueError('Bound original geometry-start solver differs')
     observations={}
     for entry in result['trials']:
         label=entry['label']
@@ -186,13 +189,27 @@ def replay_local(directory,protocol,result,window,origin,bind):
     linear_refs={r['iteration']:r for r in report['proposal_linearizations']}
     if len(linear_refs)!=len(report['proposal_linearizations']):raise ValueError('Unique complete tangent populations required')
     for r in linear_refs.values():record(r,'linearization')
+    start_records={}
     for reference in report['proposal_starts']:
         start=record(reference,'start');linear=record(linear_refs[start['iteration']],'linearization');before=np.asarray(linear['slacks'])
+        if start['iteration'] in start_records:raise ValueError('Unique complete start per iteration required')
+        # Later backoff checks need only this small identity/direction, not the
+        # complete norm/Jacobian archive for every preceding outer iteration.
+        start_records[start['iteration']]=dict(success=start['success'],
+            delta=np.asarray(start['delta']).copy() if start['success'] else None)
         if start.get('retained') is not False or start.get('priority')!='worst-first':raise ValueError('Initializer cannot be retained')
         floor=np.minimum(before,0);floor[point_rows]=np.maximum(floor[point_rows],0)
         caps=np.maximum(floor+headroom,np.minimum(before,0)+1e-6)
         np.testing.assert_array_equal(start['margin_floor_caps'],floor)
-        for attempt in margin_start_attempts(start):np.testing.assert_array_equal(attempt['caps'],floor+attempt['margin_factor']*(caps-floor))
+        for attempt in margin_start_attempts(start):
+            np.testing.assert_array_equal(attempt['caps'],floor+attempt['margin_factor']*(caps-floor))
+            if geometry_solver=='conic':
+                from geometry_conic_start import replay
+                center=bounded(linear['controls']);np.testing.assert_array_equal(start['controls'],center)
+                np.testing.assert_array_equal(attempt['lower_delta'],np.maximum(lower,center-trust)-center)
+                np.testing.assert_array_equal(attempt['upper_delta'],np.minimum(upper,center+trust)-center)
+                replay(attempt,before,linear['jacobian'])
+            elif attempt.get('algorithm')=='Complete affine norm cones':raise ValueError('Conic start requires explicit solver provenance')
     corrections={};counts={}
     for reference in report['proposal_corrections']:
         correction=record(reference,'correction');number=correction['attempt'];iteration=correction['iteration']
@@ -234,6 +251,12 @@ def replay_local(directory,protocol,result,window,origin,bind):
         np.testing.assert_array_equal(cached['protected_rows'],np.arange(size));np.testing.assert_array_equal(cached['slacks'],before)
         np.testing.assert_allclose(cached['controls'],last,rtol=0,atol=1e-12)
         np.testing.assert_array_equal(cached['preservation_caps'],np.minimum(before,0));np.testing.assert_array_equal(cached['tangent_proposal_caps'],np.minimum(before,0)+1e-6)
+        if geometry_solver=='conic' and trial['stage']=='geometry-start':
+            start=start_records.get(trial['iteration']);fraction=trial.get('fraction')
+            if start is None or start['success'] is not True or fraction not in [1.,.5,.25,.125,.0625,.03125,.015625,.0078125]:
+                raise ValueError('Conic trial must bind a checked complete start and backoff')
+            np.testing.assert_allclose(z,np.clip(last+fraction*np.asarray(start['delta']),
+                np.maximum(lower,last-trust),np.minimum(upper,last+trust)),rtol=0,atol=1e-12)
         if trial['stage']=='geometry-start-correction':
             correction=corrections[trial['correction_attempt']]
             if not correction['success'] or trial['parent_trial']!=correction['parent_trial'] or trial['iteration']!=correction['iteration']:
@@ -290,7 +313,11 @@ def resume_interval(directory,study,factory,source,frames,width,original_binding
     if any(inputs.get(p)!=h for p,h in original_bindings.items()):raise ValueError('Original interval inputs differ')
     for path,digest in inputs.items():bind(path,digest)
     archived=protocol.get('methods_sha256',{});expected=set(methods)
-    if set(archived) not in [expected,expected-{'contact_interval_resume.py'}]:raise ValueError('Complete archived interval implementation required')
+    if protocol.get('proposal_geometry_solver','supporting-planes')=='conic' and 'geometry_conic_start.py' not in archived:
+        raise ValueError('Conic-start implementation must be archived')
+    optional={'geometry_conic_start.py'} if protocol.get('proposal_geometry_solver','supporting-planes')=='supporting-planes' else set()
+    if set(archived) not in [expected,expected-{'contact_interval_resume.py'},expected-optional,expected-optional-{'contact_interval_resume.py'}]:
+        raise ValueError('Complete archived interval implementation required')
     for name,digest in archived.items():bind(directory/'implementation'/name,digest)
     if protocol.get('native_metadata_sha256')!=sha256(definitions):raise ValueError('Original native metadata differs')
     bind(directory/'implementation/kimodo-skeleton-definitions.py',protocol['native_metadata_sha256']);bind(directory/'protocol.json',result['protocol_sha256'])

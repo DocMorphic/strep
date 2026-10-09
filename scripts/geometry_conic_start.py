@@ -62,7 +62,7 @@ def direction(values, jac, caps, lower, upper, seconds, vectors, *, priority='wo
         raise ValueError('Finite derived norm radii and merit gradient required')
     worst = float(max(0., -values.min()))
     report = dict(algorithm='Complete affine norm cones', priority=priority, scalar_rows=len(values),
-        norm_cones=count, controls=n, time_limit_seconds=float(seconds), initial_worst=worst,
+        norm_cones=count, control_count=n, time_limit_seconds=float(seconds), initial_worst=worst,
         epigraph_tie_tolerance=TIE, retained=False, quality_approved=False, release_approved=False,
         scope='Checked affine proposal only; no nonlinear, saved-representation, path or animation approval.')
     def finish(status, success=False, **extra):
@@ -133,7 +133,7 @@ def direction(values, jac, caps, lower, upper, seconds, vectors, *, priority='wo
     delta, checked = check(primary.x)
     if delta is None:
         return None, finish('primary_replay_failed', **checked)
-    report['primary_delta'] = delta.tolist()
+    report['primary_delta'] = delta.tolist(); report['primary_replay'] = checked.copy()
     selected = 'primary'
     if priority == 'worst-first':
         ceiling = float(primary.x[-1])+TIE
@@ -147,3 +147,73 @@ def direction(values, jac, caps, lower, upper, seconds, vectors, *, priority='wo
             if alternate is not None:
                 delta, checked = alternate, alternate_check; selected = 'secondary'
     return delta, finish('usable', success=True, selected_phase=selected, delta=delta.tolist(), **checked)
+
+
+def replay(record, values, jac):
+    """Independently remeasure archived conic starts without invoking a solver.
+
+    The caller separately binds original caps, trust bounds and measured native
+    linearization. This verifies complete affine math, never pose retention.
+    """
+    values=np.asarray(values,dtype=float);jac=np.asarray(jac,dtype=float)
+    caps=np.asarray(record['caps'],dtype=float);lower=np.asarray(record['lower_delta'],dtype=float);upper=np.asarray(record['upper_delta'],dtype=float)
+    if (values.ndim!=1 or not len(values) or lower.ndim!=1 or not len(lower)
+            or jac.shape!=(len(values),len(lower)) or upper.shape!=lower.shape or caps.shape!=values.shape
+            or not all(np.isfinite(v).all() for v in (values,jac,caps,lower,upper)) or np.any(lower>upper)
+            or record.get('algorithm')!='Complete affine norm cones' or record.get('retained') is not False
+            or record.get('quality_approved') is not False or record.get('release_approved') is not False
+            or record.get('priority') not in ['merit','worst-first'] or type(record.get('success')) is not bool
+            or record.get('scalar_rows')!=len(values) or record.get('control_count')!=len(lower)
+            or record.get('epigraph_tie_tolerance')!=TIE):
+        raise ValueError('Bound complete unretained conic start required')
+    vectors=record['vectors'];radii=np.asarray(vectors['limits']);scales=np.asarray(vectors['scales']);rows=np.asarray(vectors['rows'])
+    offsets=np.asarray(vectors['offsets']);derivatives=np.asarray(vectors['jacobian']);distance=np.asarray(vectors['distance'])
+    count=len(radii) if radii.ndim==1 else 0
+    if (not count or scales.shape!=(count,) or rows.shape!=(count,) or rows.dtype.kind not in 'iu'
+            or distance.shape!=(count,) or distance.dtype!=bool or offsets.shape!=(count,3)
+            or derivatives.shape!=(count,3,len(lower)) or not all(np.isfinite(v).all() for v in (radii,scales,offsets,derivatives))
+            or np.any(radii<=0) or np.any(scales<=0) or np.any(rows<0) or np.any(rows>=len(values))
+            or record.get('norm_cones')!=count):
+        raise ValueError('Complete archived norm-vector population required')
+    lengths=np.linalg.norm(offsets,axis=1);measured=np.where(distance,(radii-lengths)/scales,1-lengths**2/radii**2)
+    envelope=np.full(len(values),np.inf);np.minimum.at(envelope,rows,measured);covered=np.isfinite(envelope)
+    if not np.isfinite(measured).all() or not np.allclose(envelope[covered],values[covered],rtol=1e-10,atol=1e-10):
+        raise ValueError('Archived vectors must describe the original measured population')
+    gradient=2*jac.T@np.minimum(values,0)
+    np.testing.assert_allclose(record['gradient'],gradient,rtol=1e-10,atol=1e-10)
+    worst=float(max(0.,-values.min()))
+    if record.get('initial_worst')!=worst:raise ValueError('Original worst violation required')
+    if not record['success']:
+        if record.get('status')=='usable':raise ValueError('Failed conic proposal cannot be usable')
+        return dict(verified_points=0,scalar_rows=len(values),norm_vectors=count,retained=False)
+    if record.get('status')!='usable' or record.get('primary_status') not in ['Solved','AlmostSolved']:
+        raise ValueError('Successful checked conic proposal identity required')
+    effective=np.where(distance,radii-scales*caps[rows],radii*np.sqrt(np.maximum(1-caps[rows],0)))
+    if not np.isfinite(effective).all() or np.any(effective<=0):raise ValueError('Nonempty finite replay radii required')
+    def checked(delta,details,ceiling=None):
+        delta=np.asarray(delta,dtype=float)
+        if delta.shape!=lower.shape or not np.isfinite(delta).all() or np.any(delta<lower) or np.any(delta>upper):
+            raise ValueError('Exactly bounded complete archived controls required')
+        scalar=values+jac@delta-caps
+        balls=np.array([1-np.linalg.norm(v+j@delta)**2/r**2 for v,j,r in zip(offsets,derivatives,effective)])
+        slope=float(gradient@delta);predicted=float(max(0.,-(values+jac@delta).min()))
+        if (not np.isfinite(np.r_[scalar,balls,slope]).all() or scalar.min() < -CHECK or balls.min() < -CHECK or slope>=-CHECK
+                or details.get('check_status')!='complete_affine_replay_passed'):
+            raise ValueError('Complete affine conic replay failed')
+        np.testing.assert_allclose([scalar.min(),balls.min(),slope,predicted],
+            [details['minimum_linear_slack'],details['minimum_vector_slack'],details['directional_merit'],details['predicted_worst']],rtol=1e-8,atol=1e-10)
+        if record['priority']=='worst-first':
+            epigraph=details['epigraph']
+            if (type(epigraph) not in [int,float] or not np.isfinite(epigraph) or not -CHECK<=epigraph<=worst+CHECK
+                    or predicted>epigraph+CHECK or predicted>=worst-CHECK or (ceiling is not None and epigraph>ceiling+CHECK)):
+                raise ValueError('Original checked epigraph required')
+        return delta
+    primary=checked(record['primary_delta'],record['primary_replay'])
+    phase=record.get('selected_phase')
+    if phase not in ['primary','secondary'] or (phase=='secondary' and (record['priority']!='worst-first' or record.get('secondary_status') not in ['Solved','AlmostSolved'])):
+        raise ValueError('Bound checked conic phase required')
+    selected=checked(record['delta'],record,record['primary_replay'].get('epigraph',0)+TIE if phase=='secondary' else None)
+    if phase=='primary':np.testing.assert_array_equal(primary,selected)
+    else:
+        checked(selected,record['secondary_replay'],record['primary_replay']['epigraph']+TIE)
+    return dict(verified_points=2,scalar_rows=len(values),norm_vectors=count,retained=False)

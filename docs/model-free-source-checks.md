@@ -1,6 +1,6 @@
 # Public source checks
 
-Latest proposal coverage: the explicit inventory now contains **415 Python modules and 41 Node suites**. Thirty-three new [direct norm-cone checks](geometry-conic-start-v1.md), ten [proposal callback regressions](proposal-callback-derivatives-v1.md) and the 82 existing solver checks pass without Torch. The earlier separate 527-check CPU fixture suite validates native coupling/replay. These are software checks, not motion-quality or release approval. Historical hosted results below retain their original scope.
+Latest proposal coverage: the explicit inventory now contains **416 Python modules and 41 Node suites**. Twenty new [guarded conic integration checks](guarded-conic-start-v1.md), 33 [direct norm-cone checks](geometry-conic-start-v1.md), ten [proposal callback regressions](proposal-callback-derivatives-v1.md) and the 82 existing solver checks pass without Torch. A separate 584-check frozen CPU fixture validates native coupling/replay, supplemented by all 62 final native continuation checks. These are software checks, not motion-quality or release approval. Historical hosted results below retain their original scope.
 
 The native character-correction workflow adds CPU job, continuation, contact
 revision, evidence-tampering and offline HTTP-handler regressions, plus a Node

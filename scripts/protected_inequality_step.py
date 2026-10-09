@@ -148,7 +148,17 @@ def _geometry_descent_start(values,jac,caps,lower,upper,seconds,vectors,priority
     return None,dict(report,success=False,status='geometry_cut_iteration_guard',seconds=time.monotonic()-started)
 
 
-def _geometry_margin_start(values,jac,floor,caps,lower,upper,seconds,vectors,priority):
+def _geometry_start(values,jac,caps,lower,upper,seconds,vectors,priority,solver):
+    if solver=='supporting-planes':return _geometry_descent_start(values,jac,caps,lower,upper,seconds,vectors,priority)
+    from geometry_conic_start import direction
+    delta,report=direction(values,jac,caps,lower,upper,min(20.,seconds),vectors,priority=priority)
+    report.update(caps=caps.tolist(),lower_delta=lower.tolist(),upper_delta=upper.tolist(),
+        gradient=(2*jac.T@np.minimum(values,0)).tolist(),
+        vectors={k:np.asarray(vectors[k]).tolist() for k in ['offsets','jacobian','limits','scales','rows','distance']})
+    return delta,report
+
+
+def _geometry_margin_start(values,jac,floor,caps,lower,upper,seconds,vectors,priority,solver='supporting-planes'):
     """Retry search margins inside one shared budget; physical gates stay fixed."""
     started=time.monotonic();limit=min(20.,seconds);attempts=[]
     shared={'vectors','gradient','lower_delta','upper_delta'}
@@ -156,7 +166,7 @@ def _geometry_margin_start(values,jac,floor,caps,lower,upper,seconds,vectors,pri
     for factor in [1.,.25,.0625,0.]:
         remaining=limit-(time.monotonic()-started)
         if remaining<=0:break
-        delta,last=_geometry_descent_start(values,jac,floor+factor*(caps-floor),lower,upper,remaining,vectors,priority)
+        delta,last=_geometry_start(values,jac,floor+factor*(caps-floor),lower,upper,remaining,vectors,priority,solver)
         last['margin_factor']=factor
         if delta is not None:break
         attempts.append({key:value for key,value in last.items() if key not in shared})
@@ -187,7 +197,7 @@ def margin_start_attempts(record):
 
 def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_iterations=100,
         seconds=300,maximum_calls=1000,observer=None,failure_policy='rowwise',tradeoff_mask=None,
-        proposal='linear',proposal_feasible_mask=None,proposal_headroom=None,proposal_tangent_guard=False,proposal_start='zero',vectorize=None,record_store=None,proposal_priority='merit',proposal_margin_fallback=False,proposal_trial_correction=False,representation_measure=None):
+        proposal='linear',proposal_feasible_mask=None,proposal_headroom=None,proposal_tangent_guard=False,proposal_start='zero',vectorize=None,record_store=None,proposal_priority='merit',proposal_margin_fallback=False,proposal_trial_correction=False,representation_measure=None,proposal_geometry_solver='supporting-planes'):
     seed=np.asarray(seed,dtype=float);lower=np.asarray(lower,dtype=float);upper=np.asarray(upper,dtype=float)
     if (seed.ndim!=1 or not len(seed) or lower.shape!=seed.shape or upper.shape!=seed.shape
             or not np.isfinite(np.r_[seed,lower,upper]).all() or np.any(lower>=upper)
@@ -203,6 +213,7 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
             or (record_store is not None and not callable(record_store))
             or (representation_measure is not None and not callable(representation_measure))
             or proposal_priority not in ['merit','worst-first'] or (proposal_priority!='merit' and proposal_start!='geometry-descent')
+            or proposal_geometry_solver not in ['supporting-planes','conic'] or (proposal_geometry_solver!='supporting-planes' and proposal_start!='geometry-descent')
             or type(proposal_margin_fallback) is not bool or (proposal_margin_fallback and proposal_start!='geometry-descent')
             or type(proposal_trial_correction) is not bool or (proposal_trial_correction and (proposal_start!='geometry-descent' or not proposal_tangent_guard))
             or type(proposal_tangent_guard) is not bool or (proposal_tangent_guard and proposal!='nonlinear')):
@@ -376,16 +387,16 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
                     if remaining<=0:raise Exhausted()
                     if proposal_margin_fallback:
                         initial,start_report=_geometry_margin_start(current,jac,margin_floor,start_caps,
-                            candidate_lower-value,candidate_upper-value,remaining,vectors,proposal_priority)
+                            candidate_lower-value,candidate_upper-value,remaining,vectors,proposal_priority,proposal_geometry_solver)
                         factor=start_report['margin_factor']
                         caps=margin_floor+factor*(caps-margin_floor)
                         if proposal_tangent_guard:tangent_caps=preservation[hard]+factor*1e-6
                     else:
-                        initial,start_report=_geometry_descent_start(current,jac,start_caps,
-                            candidate_lower-value,candidate_upper-value,remaining,vectors,proposal_priority)
+                        initial,start_report=_geometry_start(current,jac,start_caps,
+                            candidate_lower-value,candidate_upper-value,remaining,vectors,proposal_priority,proposal_geometry_solver)
                 else:initial,start_report=_linear_feasible_start(current,jac,start_caps,
                     candidate_lower-value,candidate_upper-value,remaining)
-                starts.append(store_record('start',dict(iteration=iteration+1,controls=value.tolist(),retained=False,**start_report)))
+                starts.append(store_record('start',dict(start_report,iteration=iteration+1,controls=value.tolist(),retained=False)))
                 check()
                 if initial is None:stop='linear_start_unavailable';break
                 if proposal_start=='geometry-descent' and attempt(initial,'geometry-start'):
@@ -416,6 +427,7 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
         failure_policy=failure_policy,tradeoff_mask=mask.tolist(),proposal=proposal,proposal_queries=queries,
         proposal_start=proposal_start,proposal_starts=starts,linear_start_max_seconds=20.,
         proposal_priority=proposal_priority,
+        proposal_geometry_solver=proposal_geometry_solver,
         proposal_margin_fallback=proposal_margin_fallback,
         proposal_trial_correction=proposal_trial_correction,proposal_corrections=corrections,
         representation_guard=representation_measure is not None,
