@@ -45,3 +45,14 @@ def test_organizer_file_is_never_accidentally_packed(tmp_path,monkeypatch):
 def test_changed_clip_blocks_packaging(tmp_path,monkeypatch):
     packet=fixture(tmp_path,monkeypatch);(packet/'clips/clip-001.glb').write_bytes(b'changed')
     with pytest.raises(ValueError,match='Changed'):portable.package(packet,tmp_path/'packet.zip')
+
+
+def test_cleanup_timer_dependency_is_inside_portable_packet(tmp_path,monkeypatch):
+    packet=fixture(tmp_path,monkeypatch)
+    timer=Path(__file__).resolve().parents[1]/'scripts/cleanup-timer.mjs'
+    target=portable.ROOT/'scripts/cleanup-timer.mjs';target.write_bytes(timer.read_bytes())
+    with (packet/'viewer.html').open('a',encoding='utf-8') as stream:stream.write(" import '../../scripts/cleanup-timer.mjs';")
+    portable.package(packet,tmp_path/'packet.zip')
+    assert (packet/'runtime/cleanup-timer.mjs').read_bytes()==timer.read_bytes()
+    assert './runtime/cleanup-timer.mjs' in (packet/'viewer.html').read_text()
+    assert read(packet/'package-integrity.json')['files']['runtime/cleanup-timer.mjs']==sha256(timer)

@@ -8,6 +8,8 @@ Strep combines an unchanged motion-generation checkpoint with tools for characte
 
 [Saved generation requests and exact retries](docs/studio-generation-resources-v1.md) now wait for measured memory headroom before loading models. Deferred requests keep their prompt, timing, style and seeds; existing previews remain available. This improves workflow reliability without approving motion quality.
 
+[Source-bound cleanup timing](docs/cleanup-timing-v1.md) adds active-edit intervals and verifiable trace exports to newly built reviewer packets. Ratings and outcomes remain human-entered; timed intervals do not establish animation quality.
+
 ## What is here
 
 - A local desktop-style Studio for free-text requests, sequences, previews, and authoring workflows.

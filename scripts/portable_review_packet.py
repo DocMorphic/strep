@@ -29,6 +29,9 @@ def package(packet,archive):
     if '../../scripts/review-identity.js' in html:
         shutil.copyfile(ROOT/'scripts/review-identity.js',runtime/'review-identity.js')
         html=html.replace('../../scripts/review-identity.js','./runtime/review-identity.js')
+    if '../../scripts/cleanup-timer.mjs' in html:
+        shutil.copyfile(ROOT/'scripts/cleanup-timer.mjs',runtime/'cleanup-timer.mjs')
+        html=html.replace('../../scripts/cleanup-timer.mjs','./runtime/cleanup-timer.mjs')
     if '../../' in html:raise ValueError('Viewer still references workspace files')
     (packet/'viewer.html').write_text(html,encoding='utf-8')
     shutil.copyfile(ROOT/'scripts/serve_review_packet.py',packet/'serve.py')

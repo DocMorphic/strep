@@ -410,7 +410,8 @@
     "tests/test_contact_interval_coverage.py",
     "tests/test_resource_admission.py",
     "tests/test_guarded_job.py",
-    "tests/test_studio_generation_resources.py"
+    "tests/test_studio_generation_resources.py",
+    "tests/test_cleanup_timing.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",
@@ -452,6 +453,7 @@
     "tests/test_scene_generation_plan.mjs",
     "tests/test_precision_export_editor.mjs",
     "tests/test_scene_placement_editor.mjs",
-    "tests/test_generation_job_status.mjs"
+    "tests/test_generation_job_status.mjs",
+    "tests/test_cleanup_timer.mjs"
   ]
 }
