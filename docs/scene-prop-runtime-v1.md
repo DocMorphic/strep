@@ -207,3 +207,9 @@ transactions that collapse onto one physics tick. Studio can check it before
 export; native startup and editable capture independently enforce it. Source
 timestamps remain unchanged, and meeting an explicit tolerance does not approve
 exact physical timing or animation quality.
+
+
+The [matched mass response experiment](prop-mass-response-v1.md) confirms that
+changing a held prop’s mass does not change the saved character motion. Native
+mass/inertia settings are distinct from load-aware posture, effort and lifting
+capacity; the Studio panel now states this measured limitation.

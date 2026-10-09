@@ -1259,3 +1259,10 @@ Carried optional collision profiles through Studio grip requests, complete nativ
 Added optional ownership timing limits with source-preserving preflight, native startup enforcement and downloadable editable-bake timing evidence. Final137 source checks, two Node editor suites,146 native timing cases and582 altered-report rejections pass. Two actual procedural playbacks reject42 malformed packages and meet an explicit16ms limit with14.583333ms delay; exact timing still fails. Actual editable export/import and independent numeric/resource replay pass; the default30fps diagnostic and unsuccessful/memory-stopped attempts remain retained. Native correction admission still defers, production motion quality and human review remain unresolved, and all14 release capabilities remain unapproved. The running Studio backend is not restarted; the full-project goal stays active.
 
 [Timing contract, native evidence and retained limits](docs/physical-timing-contract-v1.md).
+
+
+### 2026-10-09 - Measure held-prop mass response
+
+Measured current held-mass behavior in two matched actual native runs: changing2kg to200kg changes actual mass/inertia but leaves all79 held prop poses and both actor bone populations identical. Added a reproducible source-bound study,33 focused comparison tests and a Studio explanation; four preservation checks and the grip editor suite pass. Independent raw/package/resource replay verifies the result. This is fixed authored playback, not a generative heavy-object prompt trial or a liftability certificate. Two full contact replay attempts defer without a child; V7 stays trusted with0/62 complete contact passes. All14 capabilities remain unapproved, the running backend is not restarted, and the full-project goal stays active. Next pursue explicit load-aware authoring/correction and broader real motion/developer-review validation.
+
+[Matched mass experiment and remaining effort/strength limitation](docs/prop-mass-response-v1.md).
