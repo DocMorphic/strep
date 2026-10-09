@@ -33,3 +33,5 @@ The next real worker is bound to the independently verified V7 retained state an
 ## 2026-10-10 verification update
 
 The [complete V8 frozen replay](isolated-contact-replay-v1.md) now passes and V8 stage 2 becomes the latest verified contact state. This diagnostic keeps its predeclared V7 input for comparison. Its next full native guard defers without a child after60.688 seconds, with61 independently replayed observations and unchanged2GiB plus600MiB admission/fifteen-second stability. Conic native motion improvement remains unproven; no pose or quality gate changes.
+
+The later [admitted conic diagnostic and complete independent replay](native-conic-contact-v1.md) now retain six local improvements at117–119. Worst penetration in that window falls from24.379 to13.764mm; the full interval remains0/62 complete passes. The predeclared V7 comparison branch does not replace V8's additional retained edits. Batch coverage now supports explicit conic selection with unchanged default calls, scheduling and retention gates. Earlier pending descriptions and deferrals remain historical records.

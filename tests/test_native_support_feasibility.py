@@ -1,6 +1,8 @@
 """Independent linear constraints, structural differences and exported repair."""
 from pathlib import Path
 import sys
+import os
+import subprocess
 import numpy as np
 import pytest
 from scipy.sparse import csr_matrix
@@ -12,6 +14,32 @@ from native_leg_floor import export_rotations
 from native_support_clock import NativeSupportSampler
 from rig_asset import RigAsset
 from strep import read,save,sha256
+
+
+@pytest.mark.parametrize('initial_threads',[None,2])
+def test_repair_after_another_highs_scheduler_has_started(initial_threads):
+    """The public repair must work after a default or explicitly sized solve."""
+    root=Path(__file__).resolve().parents[1]
+    code='''
+import sys,warnings
+from scipy.optimize import linprog,OptimizeWarning
+options={} if sys.argv[1]=='None' else {'threads':int(sys.argv[1])}
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore',OptimizeWarning)
+    warm=linprog([1.],bounds=[(0.,1.)],method='highs',options=options)
+assert warm.success,warm.message
+import pytest
+names=['test_linear_direction_finds_smallest_feasible_step_inside_box',
+       'test_conflicting_linear_constraints_keep_positive_slack',
+       'test_restore_uses_serialized_samples_and_retains_each_probe',
+       'test_serialized_plateau_retains_original_controls']
+raise SystemExit(pytest.main(['-q',*[sys.argv[2]+'::'+name for name in names]]))
+'''
+    env=os.environ.copy();env['PYTEST_DISABLE_PLUGIN_AUTOLOAD']='1'
+    result=subprocess.run([sys.executable,'-c',code,str(initial_threads),str(Path(__file__).resolve())],
+        cwd=root,env=env,capture_output=True,text=True,timeout=60,
+        creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+    assert result.returncode==0,result.stdout+result.stderr
 
 
 def test_signed_constraints_keep_exact_parent_positive_residual(tmp_path):

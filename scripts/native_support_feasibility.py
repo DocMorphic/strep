@@ -4,9 +4,8 @@ Linearized models propose directions. Their LP status is never a nonlinear
 feasibility certificate; the independent native support job still selects clips.
 """
 from pathlib import Path
-import warnings
 import numpy as np
-from scipy.optimize import linprog, OptimizeWarning
+from scipy.optimize import linprog
 from scipy.sparse import csc_matrix, csr_matrix, hstack, vstack, eye
 from scipy.spatial.transform import Rotation
 from native_support_orientation import SupportOrientationProblem
@@ -80,20 +79,20 @@ def direction(x,g,j,lower,upper,trust=.0002):
         raise ValueError('Finite constraints/derivatives and bounded controls required')
     lo=np.maximum(-1.,(lower-x)/trust);hi=np.minimum(1.,(upper-x)/trust)
     matrix=hstack([j*trust,csr_matrix(-np.ones((len(g),1)))],format='csr')
-    options=dict(primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9,time_limit=20.,threads=1)
-    with warnings.catch_warnings():
-        # SciPy forwards this known HiGHS option but emits a generic notice.
-        warnings.filterwarnings('ignore',message='Unrecognized options detected:.*threads.*',category=OptimizeWarning)
-        fit=linprog(np.r_[np.zeros(n),1.],A_ub=matrix,b_ub=-g,bounds=list(zip(lo,hi))+[(0.,None)],method='highs',options=options)
-        record=dict(success=bool(fit.success),status=int(fit.status),message=str(fit.message),trust_radians=float(trust))
-        if not fit.success:return None,record
-        # The second LP retains the first LP's optimum (within 1e-10 normalized
-        # numerical slack), while avoiding a gratuitous box-corner direction.
-        identity=eye(n,format='csr');zero=csr_matrix((n,1));slack=csr_matrix((len(g),n))
-        second=vstack([hstack([matrix,slack]),hstack([identity,zero,-identity]),hstack([-identity,zero,-identity])],format='csr')
-        target=max(0.,float(fit.x[-1]))+1e-10
-        sparse_fit=linprog(np.r_[np.zeros(n+1),np.ones(n)],A_ub=second,b_ub=np.r_[-g,np.zeros(2*n)],
-            bounds=list(zip(lo,hi))+[(0.,target)]+[(0.,1.)]*n,method='highs',options=options)
+    # HiGHS owns a process-global scheduler. Changing its thread count after a
+    # different LP has started can return Not Set rather than solving this LP.
+    # Respect that scheduler; do not reset another caller's runtime state.
+    options=dict(primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9,time_limit=20.)
+    fit=linprog(np.r_[np.zeros(n),1.],A_ub=matrix,b_ub=-g,bounds=list(zip(lo,hi))+[(0.,None)],method='highs',options=options)
+    record=dict(success=bool(fit.success),status=int(fit.status),message=str(fit.message),trust_radians=float(trust))
+    if not fit.success:return None,record
+    # The second LP retains the first LP's optimum (within 1e-10 normalized
+    # numerical slack), while avoiding a gratuitous box-corner direction.
+    identity=eye(n,format='csr');zero=csr_matrix((n,1));slack=csr_matrix((len(g),n))
+    second=vstack([hstack([matrix,slack]),hstack([identity,zero,-identity]),hstack([-identity,zero,-identity])],format='csr')
+    target=max(0.,float(fit.x[-1]))+1e-10
+    sparse_fit=linprog(np.r_[np.zeros(n+1),np.ones(n)],A_ub=second,b_ub=np.r_[-g,np.zeros(2*n)],
+        bounds=list(zip(lo,hi))+[(0.,target)]+[(0.,1.)]*n,method='highs',options=options)
     selected=sparse_fit if sparse_fit.success else fit
     delta=selected.x[:n]*trust
     record.update(linearized_worst_excess=float(fit.x[-1]),l1_phase_success=bool(sparse_fit.success),

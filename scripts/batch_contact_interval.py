@@ -36,7 +36,7 @@ def attempted_history(directory,study,frames,width):
     return attempted,bindings
 
 
-def _run(study,output,frames,width,resume,stages,seconds,iterations,trust,solve_iterations,max_seconds):
+def _run(study,output,frames,width,resume,stages,seconds,iterations,trust,solve_iterations,max_seconds,*,proposal_geometry_solver='supporting-planes'):
     exclusions,bindings=attempted_history(resume,study,frames,width) if resume is not None else ([],{})
     windows=partition_frames(frames,width);canonical=dict(ranked_windows=[dict(frames=w) for w in windows])
     output.mkdir(parents=True,exist_ok=False);archive=output/'implementation';archive.mkdir()
@@ -50,13 +50,15 @@ def _run(study,output,frames,width,resume,stages,seconds,iterations,trust,solve_
         admission_budget_seconds=max_seconds,minimum_admission_seconds=seconds+300,
         history_reuse_policy='same-worker-last-verified-state-bindings-v1',
         scope='An attempted-window coverage pass; newly seen states receive full native replay, and previously verified ancestors can be reused within this worker after complete binding checks. Original retention gates remain unchanged. Admission budget is checked between stages; use an owned hard time/memory supervisor. No quality, metadata, engine or human approval.',quality_approved=False,release_approved=False)
+    if proposal_geometry_solver!='supporting-planes':protocol['proposal_geometry_solver']=proposal_geometry_solver
     save(output/'protocol.json',protocol);save(output/'pipeline.json',dict(status='processing',quality_approved=False,release_approved=False))
     started=time.monotonic();records=[];latest=resume;stop='stage_limit';replay_session=repair.IntervalReplaySession()
     for index in range(stages):
         if select_window(frames,canonical,width,exclusions) is None:stop='coverage_schedule_exhausted';break
         if max_seconds-(time.monotonic()-started)<seconds+300:stop='admission_budget';break
         directory=output/('stage-'+str(index+1))
-        result=repair._run(study,directory,frames,width,iterations,trust,seconds,solve_iterations,latest,exclusions.copy(),replay_session=replay_session)
+        options={} if proposal_geometry_solver=='supporting-planes' else dict(proposal_geometry_solver=proposal_geometry_solver)
+        result=repair._run(study,directory,frames,width,iterations,trust,seconds,solve_iterations,latest,exclusions.copy(),replay_session=replay_session,**options)
         if (result.get('status')!='complete' or any(result.get(k) is not False for k in ['quality_approved','release_approved'])
                 or result['selected_frames'] in exclusions):raise ValueError('Complete unapproved new-window diagnostic required')
         block=result['selected_frames'];select_window(frames,canonical,width,[block]);exclusions.append(block.copy())
@@ -82,14 +84,15 @@ def _run(study,output,frames,width,resume,stages,seconds,iterations,trust,solve_
     return result
 
 
-def run(study,output,frames,*,width=3,resume=None,stages=3,seconds=300,iterations=8,trust=.03,solve_iterations=10,max_seconds=1800):
+def run(study,output,frames,*,width=3,resume=None,stages=3,seconds=300,iterations=8,trust=.03,solve_iterations=10,max_seconds=1800,proposal_geometry_solver='supporting-planes'):
     partition_frames(frames,width)
     if (type(stages) is not int or not 1<=stages<=32 or type(iterations) is not int or not 1<=iterations<=100
             or type(solve_iterations) is not int or not 1<=solve_iterations<=300
             or type(seconds) not in [int,float] or not np.isfinite(seconds) or not 1<=seconds<=1800
             or type(max_seconds) not in [int,float] or not np.isfinite(max_seconds) or not seconds+300<=max_seconds<=3600
             or type(trust) not in [int,float] or not np.isfinite(trust) or not 1e-5<=trust<=.3
-            or (resume is not None and (not isinstance(resume,(str,Path)) or not str(resume)))):
+            or (resume is not None and (not isinstance(resume,(str,Path)) or not str(resume)))
+            or proposal_geometry_solver not in ['supporting-planes','conic']):
         raise ValueError('Explicit guarded stage and between-stage admission budgets required')
     study=Path(study).resolve();output=Path(output).resolve();resume=Path(resume).resolve() if resume is not None else None
     inputs=[study]+([resume] if resume is not None else [])
@@ -97,7 +100,9 @@ def run(study,output,frames,*,width=3,resume=None,stages=3,seconds=300,iteration
         raise ValueError('Separate immutable in-project batch sources and output required')
     if output.exists():raise FileExistsError(output)
     with worker_lock(),threadpool_limits(limits=2):
-        try:return _run(study,output,frames,width,resume,stages,seconds,iterations,trust,solve_iterations,max_seconds)
+        try:
+            options={} if proposal_geometry_solver=='supporting-planes' else dict(proposal_geometry_solver=proposal_geometry_solver)
+            return _run(study,output,frames,width,resume,stages,seconds,iterations,trust,solve_iterations,max_seconds,**options)
         except Exception as exc:
             if output.exists():save(output/'pipeline.json',dict(status='failed',error_type=type(exc).__name__,error=str(exc),quality_approved=False,release_approved=False))
             raise
@@ -109,6 +114,7 @@ if __name__=='__main__':
     parser.add_argument('--resume-interval',type=Path);parser.add_argument('--width',type=int,default=3)
     parser.add_argument('--stages',type=int,default=3);parser.add_argument('--max-seconds',type=float,default=1800)
     parser.add_argument('--seconds',type=float,default=300);parser.add_argument('--iterations',type=int,default=8)
-    parser.add_argument('--trust',type=float,default=.03);parser.add_argument('--solve-iterations',type=int,default=10);args=parser.parse_args()
+    parser.add_argument('--trust',type=float,default=.03);parser.add_argument('--solve-iterations',type=int,default=10)
+    parser.add_argument('--proposal-geometry-solver',choices=['supporting-planes','conic'],default='supporting-planes');args=parser.parse_args()
     run(args.study,args.output,list(range(args.start,args.end+1)),width=args.width,resume=args.resume_interval,stages=args.stages,
-        max_seconds=args.max_seconds,seconds=args.seconds,iterations=args.iterations,trust=args.trust,solve_iterations=args.solve_iterations)
+        max_seconds=args.max_seconds,seconds=args.seconds,iterations=args.iterations,trust=args.trust,solve_iterations=args.solve_iterations,proposal_geometry_solver=args.proposal_geometry_solver)

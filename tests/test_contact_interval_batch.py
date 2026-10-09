@@ -18,7 +18,7 @@ def fixture(tmp_path,monkeypatch,*,first_rejected=False,elapsed_per_stage=0):
         try:yield
         finally:active.pop()
     owned_session=[]
-    def stage(study,directory,frames,width,*args,replay_session=None):
+    def stage(study,directory,frames,width,*args,replay_session=None,proposal_geometry_solver='supporting-planes'):
         assert active and study==source
         assert type(replay_session) is module.repair.IntervalReplaySession
         if owned_session:assert replay_session is owned_session[0]
@@ -51,6 +51,25 @@ def test_admission_budget_keeps_complete_stage_and_remaining_failures_visible(tm
     assert not result['coverage_schedule_exhausted'] and result['latest_retained_interval']=='batch/stage-1'
 
 
+@pytest.mark.parametrize('solver',['supporting-planes','conic'])
+def test_solver_choice_reaches_every_stage_and_preserves_rejected_state(tmp_path,monkeypatch,solver):
+    source,calls,_=fixture(tmp_path,monkeypatch,first_rejected=True)
+    original=module.repair._run;choices=[]
+    def stage(*args,**kwargs):
+        choices.append(kwargs.get('proposal_geometry_solver','supporting-planes'))
+        assert ('proposal_geometry_solver' in kwargs)==(solver=='conic')
+        return original(*args,**kwargs)
+    monkeypatch.setattr(module.repair,'_run',stage)
+    output=tmp_path/'batch'
+    result=module.run(source,output,list(range(6)),width=2,stages=3,proposal_geometry_solver=solver)
+    assert choices==[solver]*3 and calls[1][0] is None
+    protocol=module.read(output/'protocol.json')
+    if solver=='conic':assert protocol['proposal_geometry_solver']=='conic'
+    else:assert 'proposal_geometry_solver' not in protocol
+    assert not result['quality_approved'] and not result['release_approved']
+    assert all(module.sha256(output/'implementation'/n)==h for n,h in protocol['methods_sha256'].items())
+
+
 def test_rewritten_stage_result_is_detected_before_batch_publication(tmp_path,monkeypatch):
     source,calls,_=fixture(tmp_path,monkeypatch);stage=module.repair._run
     def corrupt(*args,**kwargs):
@@ -66,7 +85,8 @@ def test_rewritten_stage_result_is_detected_before_batch_publication(tmp_path,mo
 
 
 @pytest.mark.parametrize('options',[dict(stages=0),dict(stages=True),dict(stages=33),dict(seconds=True),dict(seconds=0),
-    dict(max_seconds=599),dict(max_seconds=3601),dict(max_seconds=float('inf')),dict(iterations=0),dict(trust=True),dict(resume=False),dict(resume='')])
+    dict(max_seconds=599),dict(max_seconds=3601),dict(max_seconds=float('inf')),dict(iterations=0),dict(trust=True),dict(resume=False),dict(resume=''),
+    dict(proposal_geometry_solver=None),dict(proposal_geometry_solver='unknown'),dict(proposal_geometry_solver=True)])
 def test_invalid_batch_never_acquires_worker(tmp_path,monkeypatch,options):
     monkeypatch.setattr(module,'ROOT',tmp_path);monkeypatch.setattr(module,'worker_lock',lambda:pytest.fail('Invalid batch acquired worker'))
     with pytest.raises(ValueError):module.run(tmp_path/'source',tmp_path/'batch',[1,2],**options)

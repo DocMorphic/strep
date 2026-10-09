@@ -32,3 +32,5 @@ Batch result SHA-256: `d6ef61e89ffe5b9f90560a40d805d5ba866698dc9bc7886416112ec6d
 ## 2026-10-10 verification update
 
 The [complete isolated frozen-source replay](isolated-contact-replay-v1.md) now passes for both stages and the ancestral batch chain. All original numerical methods and limits remain unchanged. V8 stage 2 is now the latest verified retained contact state; the pending-adoption descriptions above record the original state of this study. All recorded improvements are independently reconstructed, while complete physical/keyed passes remain 0/62 and every release capability remains unapproved.
+
+The [separate conic diagnostic](native-conic-contact-v1.md) improves117–119 further and passes complete independent local/interval replay, but starts from V7 and does not replace this complete V8 state. Explicit conic solver selection is now available to subsequent coverage batches. Continue previously unattempted windows from V8, preserving75–77 and117–119 rather than dropping earlier work.
