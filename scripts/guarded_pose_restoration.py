@@ -24,7 +24,7 @@ METHODS=POSE_METHODS+['guarded_pose_restoration.py','protected_inequality_step.p
 DEFINITIONS=ROOT/'vendor/kimodo/kimodo/skeleton/definitions.py'
 
 
-def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom):
+def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard):
     summary=read(study/'fit/summary.json')
     if (summary.get('solver_version')!=17 or read(study/'pipeline.json')['status']!='complete'
             or len(summary['trials'])!=1 or sha256(ASSET)!=summary['mesh_sha256']):
@@ -62,6 +62,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
             root_lift_m=problem.config['max_root_lift_m'],rotation_radians=problem.limits.tolist()),
         failure_policy=failure_policy,point_policy=point_policy,point_proposal=point_proposal,
         proposal_feasible_mask=feasible.tolist(),proposal_headroom_normalized=headroom.tolist(),
+        proposal_tangent_guard=tangent_guard,tangent_proposal_headroom_normalized=1e-6 if tangent_guard else 0.,
         inequality_labels=labels,tradeoff_mask=mask.tolist(),
         normalization='Archived pose slack units: point/object/floor over 10 mm, normal chord ratio, '
             'squared body/speed and local rotation-norm ratios.',
@@ -106,7 +107,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
         if retained and label!='final':print(dict(label=label,pose_checks_passed=audit['pose_checks_passed'],minimum_slack=float(slacks.min())),flush=True)
     value,report=fit(measure,linearize,seed,lower,upper,iterations=iterations,trust=trust,seconds=seconds,
         observer=observer,failure_policy=failure_policy,tradeoff_mask=mask,proposal=proposal,solve_iterations=solve_iterations,
-        proposal_feasible_mask=feasible,proposal_headroom=headroom)
+        proposal_feasible_mask=feasible,proposal_headroom=headroom,proposal_tangent_guard=tangent_guard)
     candidate,motion=problem.independent(value*scale)
     with torch.no_grad():_,_,_,vertices=problem.fk(problem.t(value*scale))
     error=float(np.abs(vertices.numpy()-problem.surface.vertices(motion['global_rot_mats'][0],motion['posed_joints'][0])).max())
@@ -137,7 +138,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
 
 
 def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='rowwise',proposal='linear',solve_iterations=100,row_chunk=None,
-        point_policy='preserve',point_proposal='preserve',point_headroom=0.):
+        point_policy='preserve',point_proposal='preserve',point_headroom=0.,tangent_guard=False):
     study=Path(study).resolve();output=Path(output).resolve();existed=output.exists()
     if (type(frame) is not int or type(iterations) is not int or not 1<=iterations<=100
             or type(trust) not in (int,float) or not np.isfinite(trust) or not 1e-5<=trust<=.3
@@ -145,11 +146,12 @@ def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='r
             or failure_policy not in ['rowwise','merit'] or proposal not in ['linear','nonlinear'] or point_policy not in ['preserve','tradeoff']
             or point_proposal not in ['preserve','feasible'] or type(point_headroom) not in (int,float)
             or not np.isfinite(point_headroom) or not 0<=point_headroom<=1e-3
+            or type(tangent_guard) is not bool or (tangent_guard and proposal!='nonlinear')
             or type(solve_iterations) is not int or not 1<=solve_iterations<=300
             or (row_chunk is not None and (type(row_chunk) is not int or not 1<=row_chunk<=32))):
         raise ValueError('Explicit valid native frame and bounded repair options required')
     with worker_lock(),threadpool_limits(limits=2):
-        try:return _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom)
+        try:return _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard)
         except Exception as exc:
             if not existed and output.exists():save(output/'pipeline.json',dict(status='failed',error_type=type(exc).__name__,
                 error=str(exc),quality_approved=False,release_approved=False))
@@ -166,5 +168,6 @@ if __name__=='__main__':
     parser.add_argument('--point-policy',choices=['preserve','tradeoff'],default='preserve')
     parser.add_argument('--point-proposal',choices=['preserve','feasible'],default='preserve')
     parser.add_argument('--point-headroom',type=float,default=0.)
+    parser.add_argument('--tangent-guard',action='store_true')
     args=parser.parse_args();run(args.study,args.output,args.frame,args.iterations,args.trust,args.seconds,args.failure_policy,args.proposal,
-        args.solve_iterations,args.row_chunk,args.point_policy,args.point_proposal,args.point_headroom)
+        args.solve_iterations,args.row_chunk,args.point_policy,args.point_proposal,args.point_headroom,args.tangent_guard)

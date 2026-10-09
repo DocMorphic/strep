@@ -107,3 +107,8 @@ inferred. The full project goal still covers arbitrary actions, timed sequences,
 scene/partner interaction, editing/style, rig transfer, transitions, engine
 delivery and human validation. All fourteen release capabilities remain
 unapproved.
+
+The subsequent [tangent-protected proposal](tangent-protected-repair-v1.md)
+retains one native correction that restores the right point target without
+losing the left target. Orientation, penetration and displacement still fail;
+the original V5/V6/V7 failures remain intact.

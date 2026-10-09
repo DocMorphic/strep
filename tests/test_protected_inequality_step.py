@@ -158,3 +158,39 @@ def test_proposal_targets_require_complete_masks_and_bounded_finite_headroom(kwa
     def measure(x):return np.array([x[0]-.2,.3-x[0]])
     with pytest.raises(ValueError,match='Complete Boolean proposal'):
         fit(measure,lambda x:(measure(x),np.array([[1.],[-1.]])),[0.],[-1.],[1.],**kwargs)
+
+
+def test_tangent_guard_rejects_a_finite_feasible_endpoint_with_bad_initial_budget_direction(monkeypatch):
+    import protected_inequality_step as module
+    from types import SimpleNamespace
+    def measure(x):return np.array([x[0]-1,x[0]*(x[0]-.3)+x[1],.25-x[0],.08-x[1]])
+    def derivative(x):return measure(x),np.array([[1.,0.],[2*x[0]-.3,1.],[-1.,0.],[0.,-1.]])
+    def forced(fun,x0,**kwargs):return SimpleNamespace(x=np.array([.25,.0126]),success=True,message='fixture')
+    monkeypatch.setattr(module,'minimize',forced)
+    seed=[0.,0.];kwargs=dict(trust=.3,iterations=1,proposal='nonlinear',failure_policy='merit',tradeoff_mask=[True,False,False,False])
+    plain,r0=fit(measure,derivative,seed,[-1.,-1.],[1.,1.],**kwargs)
+    assert plain[0]==.25 and r0['trials'][0]['accepted']
+    value,r=fit(measure,derivative,seed,[-1.,-1.],[1.,1.],proposal_tangent_guard=True,**kwargs)
+    np.testing.assert_array_equal(value,seed)
+    full=r['trials'][0]
+    assert full['retention_guard_passed'] and not full['tangent_guard_passed'] and not full['accepted']
+    assert full['tangent_minimum_slack']==pytest.approx(-.0624)
+    assert r['proposal_linearizations'][0]['protected_rows']==[1,2,3]
+    assert r['source_passing_rows_preserved'] and not r['quality_approved']
+
+
+def test_real_tangent_proposal_moves_without_initial_protected_budget_regression():
+    def measure(x):return np.array([x[0]-1,x[0]*(x[0]-.3)+x[1],.25-x[0],.08-x[1]])
+    def derivative(x):return measure(x),np.array([[1.,0.],[2*x[0]-.3,1.],[-1.,0.],[0.,-1.]])
+    value,r=fit(measure,derivative,[0.,0.],[-1.,-1.],[1.,1.],trust=.3,iterations=1,
+        proposal='nonlinear',failure_policy='merit',tradeoff_mask=[True,False,False,False],proposal_tangent_guard=True)
+    assert value[0]>0 and value[1]-.3*value[0]>=0
+    assert r['trials'][-1]['accepted'] and r['trials'][-1]['tangent_guard_passed']
+    assert r['source_passing_rows_preserved'] and r['nontradeoff_rows_preserved']
+    assert not r['quality_approved'] and not r['release_approved']
+
+
+@pytest.mark.parametrize('kwargs',[dict(proposal_tangent_guard=1),dict(proposal_tangent_guard=True,proposal='linear')])
+def test_invalid_tangent_guard_never_measures(kwargs):
+    def forbidden(x):raise AssertionError('Invalid tangent request reached measurement')
+    with pytest.raises(ValueError):fit(forbidden,forbidden,[0.],[-1.],[1.],**kwargs)

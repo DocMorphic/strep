@@ -37,7 +37,7 @@ def retain(before,after,*,failure_policy='rowwise',tradeoff_mask=None):
 
 def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_iterations=100,
         seconds=300,maximum_calls=1000,observer=None,failure_policy='rowwise',tradeoff_mask=None,
-        proposal='linear',proposal_feasible_mask=None,proposal_headroom=None):
+        proposal='linear',proposal_feasible_mask=None,proposal_headroom=None,proposal_tangent_guard=False):
     seed=np.asarray(seed,dtype=float);lower=np.asarray(lower,dtype=float);upper=np.asarray(upper,dtype=float)
     if (seed.ndim!=1 or not len(seed) or lower.shape!=seed.shape or upper.shape!=seed.shape
             or not np.isfinite(np.r_[seed,lower,upper]).all() or np.any(lower>=upper)
@@ -47,9 +47,10 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
             or type(maximum_calls) is not int or not 1<=maximum_calls<=10000
             or type(trust) not in (int,float) or not np.isfinite(trust) or not 1e-5<=trust<=.3
             or type(seconds) not in (int,float) or not np.isfinite(seconds) or not 1<=seconds<=1800
-            or failure_policy not in ['rowwise','merit'] or proposal not in ['linear','nonlinear']):
+            or failure_policy not in ['rowwise','merit'] or proposal not in ['linear','nonlinear']
+            or type(proposal_tangent_guard) is not bool or (proposal_tangent_guard and proposal!='nonlinear')):
         raise ValueError('Finite seed, matching control bounds and explicit step budgets required')
-    started=time.monotonic();calls=0;history=[];trials=[];queries=[];clips=[];value=seed.copy()
+    started=time.monotonic();calls=0;history=[];trials=[];queries=[];clips=[];linearizations=[];value=seed.copy()
     class Exhausted(Exception):pass
     def check():
         if calls>=maximum_calls or time.monotonic()-started>=seconds:raise Exhausted()
@@ -79,6 +80,14 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
             caps[mask&(current<0)]=-score(current)[0]
             caps[feasible]=np.maximum(caps[feasible],0)
             caps+=headroom
+            hard=~(mask&(current<0));preservation=np.minimum(current,0)
+            if proposal_tangent_guard:
+                # Search-only interior margin; retained tangents still use the
+                # exact preservation caps. This is not a continuous-path gate.
+                tangent_caps=preservation[hard]+1e-6
+                linearizations.append(dict(iteration=iteration+1,controls=value.tolist(),slacks=current.tolist(),
+                    jacobian=jac.tolist(),protected_rows=np.flatnonzero(hard).tolist(),
+                    preservation_caps=preservation[hard].tolist(),tangent_proposal_caps=tangent_caps.tolist()))
             candidate_lower=np.maximum(lower,value-trust);candidate_upper=np.minimum(upper,value+trust)
             def bounded_candidate(delta):
                 delta=np.asarray(delta,dtype=float)
@@ -114,10 +123,13 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
                 residual=np.minimum(actual-1e-6,0)
                 return float(residual@residual+1e-8*(delta@delta)),2*(derivatives.T@residual+1e-8*delta)
             bounds=list(zip(candidate_lower-value,candidate_upper-value))
-            result=minimize(objective,np.zeros_like(value),method='SLSQP',jac=True,bounds=bounds,
-                constraints=[dict(type='ineq',
+            constraints=[dict(type='ineq',
                     fun=lambda delta:(query(delta)[0] if proposal=='nonlinear' else current+jac@delta)-caps,
-                    jac=lambda delta:query(delta)[1] if proposal=='nonlinear' else jac)],
+                    jac=lambda delta:query(delta)[1] if proposal=='nonlinear' else jac)]
+            if proposal_tangent_guard and hard.any():
+                constraints.append(dict(type='ineq',fun=lambda delta:current[hard]+jac[hard]@delta-tangent_caps,
+                    jac=lambda delta:jac[hard]))
+            result=minimize(objective,np.zeros_like(value),method='SLSQP',jac=True,bounds=bounds,constraints=constraints,
                 options=dict(maxiter=solve_iterations,ftol=1e-12))
             direction=np.asarray(result.x,dtype=float)
             if direction.shape!=value.shape or not np.isfinite(direction).all():raise ValueError('Finite proposal direction required')
@@ -131,9 +143,13 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
                     trials.append(dict(label=label,iteration=iteration+1,fraction=fraction,accepted=False,
                         controls=candidate.tolist(),rejection='outside_normalized_control_bounds',nonlinear_replay=False))
                     continue
-                after=observed(candidate);keep=retain(current,after,failure_policy=failure_policy,tradeoff_mask=mask)
+                after=observed(candidate);replay_keep=retain(current,after,failure_policy=failure_policy,tradeoff_mask=mask)
+                tangent=current[hard]+jac[hard]@(candidate-value)-preservation[hard]
+                tangent_keep=not proposal_tangent_guard or bool(np.all(tangent>=0))
+                keep=replay_keep and tangent_keep
                 trials.append(dict(label=label,iteration=iteration+1,fraction=fraction,accepted=keep,
-                    score=list(score(after)),controls=candidate.tolist()))
+                    score=list(score(after)),controls=candidate.tolist(),retention_guard_passed=replay_keep,
+                    tangent_guard_passed=tangent_keep,tangent_minimum_slack=float(tangent.min()) if proposal_tangent_guard and len(tangent) else None))
                 if observer:observer(label,candidate.copy(),after.copy(),keep)
                 if keep:value=candidate;current=after;accepted=True;break
             history.append(dict(iteration=iteration+1,accepted=accepted,solver_success=bool(result.success),
@@ -152,5 +168,7 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
         failure_policy=failure_policy,tradeoff_mask=mask.tolist(),proposal=proposal,proposal_queries=queries,
         bounded_proposal_queries=clips,
         proposal_feasible_mask=feasible.tolist(),proposal_headroom_normalized=headroom.tolist(),
+        proposal_tangent_guard=proposal_tangent_guard,proposal_linearizations=linearizations,
+        tangent_proposal_headroom_normalized=1e-6 if proposal_tangent_guard else 0.,
         solver_headroom_normalized=1e-6,
         quality_approved=False,release_approved=False)
