@@ -6,6 +6,8 @@ Strep combines an unchanged motion-generation checkpoint with tools for characte
 
 **Status: active development, not release-ready.** Successful generation or engine import does not establish realistic motion. Contact reliability, calibrated character controls, broad held-out evaluation, and human review remain open work.
 
+[Optional exact checkpoint transport](docs/motion-checkpoint-transport-v1.md) now loads large motion-model layers directly on CUDA while preserving upstream CPU buffers. Full checkpoint verification and eighteen historical motion replays match exactly, including fourteen clips through the generation CLI. Runtime guards, existing interaction failures and release requirements remain unchanged.
+
 [Saved generation requests and exact retries](docs/studio-generation-resources-v1.md) now wait for measured memory headroom before loading models. Deferred requests keep their prompt, timing, style and seeds; existing previews remain available. This improves workflow reliability without approving motion quality.
 
 [Source-bound cleanup timing](docs/cleanup-timing-v1.md) adds active-edit intervals and verifiable trace exports to newly built reviewer packets. Ratings and outcomes remain human-entered; timed intervals do not establish animation quality.

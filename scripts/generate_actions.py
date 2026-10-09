@@ -10,11 +10,22 @@ from generation_constraints import compile_guides,load_guides
 from motion_profile import brief,resolved_segments
 
 
-def main(request_path,folder):
+def load_motion_backend(encoder,checkpoint_transport):
+    """Explicit worker choice; the established upstream path stays the default."""
+    if checkpoint_transport=='upstream':
+        from kimodo import load_model
+        return load_model('Kimodo-SOMA-RP-v1.1',device='cuda',text_encoder=encoder),None
+    if checkpoint_transport=='cuda-streamed':
+        from motion_checkpoint_transport import load_cuda_motion_model
+        return load_cuda_motion_model(encoder)
+    raise ValueError('Unknown checkpoint transport')
+
+
+def main(request_path,folder,*,checkpoint_transport='upstream'):
+    if checkpoint_transport not in ('upstream','cuda-streamed'):raise ValueError('Unknown checkpoint transport')
     os.environ.update(offline_environment())
     import numpy as np
     import torch
-    from kimodo import load_model
     from kimodo.tools import seed_everything
     from kimodo.exports.motion_io import save_kimodo_npz
     from kimodo.exports.bvh import save_motion_bvh
@@ -29,7 +40,7 @@ def main(request_path,folder):
     for name,digest in entry['files_sha256'].items():
         if sha256(model_directory(entry)/name)!=digest:raise ValueError('Checkpoint checksum mismatch')
     encoder=ActionEncoder(folder/'conditioning',batch)
-    model=load_model('Kimodo-SOMA-RP-v1.1',device='cuda',text_encoder=encoder);skeleton=SOMASkeleton77()
+    model,transport_receipt=load_motion_backend(encoder,checkpoint_transport);skeleton=SOMASkeleton77()
     for request in batch['requests']:
         compiled,provenance=guides[request['id']]
         constraints=load_guides(compiled,model.skeleton,device=model.device)
@@ -51,6 +62,9 @@ def main(request_path,folder):
                 'scene_status':'Single humanoid only; no objects, partner tracks or scene-aware contact solving.',
                 'generation_script_sha256':sha256(Path(__file__))}
             record['first_heading_angle']=request.get('first_heading_angle',0.)
+            if transport_receipt is not None:
+                record['checkpoint_transport']=transport_receipt
+                record['checkpoint_transport_script_sha256']=sha256(ROOT/'scripts/motion_checkpoint_transport.py')
             if 'motion_profile' in request:record['motion_brief']=brief(request)
             save(attempt/'record.json',record);seed_everything(seed);started=time.perf_counter()
             try:
@@ -73,4 +87,6 @@ def main(request_path,folder):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('request',type=Path);p.add_argument('output',type=Path);a=p.parse_args();main(a.request,a.output)
+    p=argparse.ArgumentParser();p.add_argument('request',type=Path);p.add_argument('output',type=Path)
+    p.add_argument('--checkpoint-transport',choices=['upstream','cuda-streamed'],default='upstream')
+    a=p.parse_args();main(a.request,a.output,checkpoint_transport=a.checkpoint_transport)
