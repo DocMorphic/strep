@@ -90,6 +90,11 @@ def _resume_seed(directory,study,frame,bindings,limits,labels,problem,_ancestors
     normal_rows=np.array([label.startswith('normal:') for label in labels])
     if np.any(mask[normal_rows]!=(protocol['failure_policy']=='merit' and normal_policy=='tradeoff')):
         raise ValueError('Resume normal policy and actual tradeoff rows differ')
+    object_policy=protocol.get('object_policy','tradeoff')
+    if object_policy not in ['preserve','tradeoff']:raise ValueError('Known resume object policy required')
+    object_rows=np.array([label.startswith('object:') for label in labels])
+    if np.any(mask[object_rows]!=(protocol['failure_policy']=='merit' and object_policy=='tradeoff')):
+        raise ValueError('Resume object policy and actual tradeoff rows differ')
     def replay_record(reference,kind):
         external='archive_schema' in reference
         if external is not bool(protocol.get('archive_proposals',False)) or (external and reference.get('kind')!=kind):
@@ -174,7 +179,7 @@ def _resume_seed(directory,study,frame,bindings,limits,labels,problem,_ancestors
         scope='Verified diagnostic warm start; original budgets and fixed neighbors remain unchanged. No quality approval.'),checked
 
 
-def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal,proposal_start,body_headroom,archive_proposals,normal_policy,normal_headroom,proposal_priority):
+def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal,proposal_start,body_headroom,archive_proposals,normal_policy,normal_headroom,proposal_priority,object_policy,object_headroom):
     summary=read(study/'fit/summary.json')
     if (summary.get('solver_version')!=17 or read(study/'pipeline.json')['status']!='complete'
             or len(summary['trials'])!=1 or sha256(ASSET)!=summary['mesh_sha256']):
@@ -186,7 +191,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
     skin=dict(np.load(ASSET,allow_pickle=False));torch.set_num_threads(2)
     problem=RestorationProblem(folder,skin,frame,grouping='native-joint')
     labels,mask=tradeoff_policy(problem.labels,[problem.names[j] for j in problem.editable],
-        failure_policy=failure_policy,point_policy=point_policy,normal_policy=normal_policy)
+        failure_policy=failure_policy,point_policy=point_policy,normal_policy=normal_policy,object_policy=object_policy)
     original_limits=dict(position_m=.22,added_speed_m_s=1.5,point_working_m=problem.point_limits.tolist(),
         normal_degrees=problem.config['normal_tolerance_degrees'],floor_m=problem.config['clearance_m'],
         root_lift_m=problem.config['max_root_lift_m'],rotation_radians=problem.limits.tolist())
@@ -199,7 +204,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
     point_rows=np.array([label.startswith('point:') for label in labels],dtype=bool)
     feasible=point_rows.copy() if point_proposal=='feasible' else np.zeros_like(point_rows)
     if body_proposal=='feasible':feasible|=np.array([label.startswith('all-reference-') for label in labels],dtype=bool)
-    headroom=proposal_headroom(labels,point=point_headroom,body=body_headroom,normal=normal_headroom)
+    headroom=proposal_headroom(labels,point=point_headroom,body=body_headroom,normal=normal_headroom,object=object_headroom)
     seed_audit,seed_motion=problem.independent(seed_parameters)
     with torch.no_grad():rot,pos,_,vertices=problem.fk(problem.t(seed_parameters))
     seed_error=max(float(np.abs(pos.numpy()-expected['posed_joints'][0]).max()),
@@ -224,6 +229,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
         body_proposal_headroom_normalized=body_headroom,
         archive_proposals=archive_proposals,
         normal_policy=normal_policy,normal_proposal_headroom_normalized=normal_headroom,
+        object_policy=object_policy,object_proposal_headroom_normalized=object_headroom,
         proposal_priority=proposal_priority,
         proposal_tangent_guard=tangent_guard,tangent_proposal_headroom_normalized=1e-6 if tangent_guard else 0.,
         inequality_labels=labels,tradeoff_mask=mask.tolist(),
@@ -231,7 +237,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
             'squared body/speed and local rotation-norm ratios.',
         acceptance='Every complete nonlinear row replayed. Passing rows stay feasible; edit budgets and floor rows cannot worsen. '
             'Rowwise mode also protects each failed contact/object row. Default point preservation prevents every failed hand-distance increase. '
-            'When selected, normal preservation also prevents every failed orientation increase. Merit mode permits only explicitly masked failed-row tradeoffs '
+            'When selected, normal preservation also prevents every failed orientation increase; object preservation prevents every failed collision-row regression. Merit mode permits only explicitly masked failed-row tradeoffs '
             'when worst violation does not increase and squared violation decreases. Exact original thresholds decide feasibility.',
         scope='One native pose and fixed adjacent keys; no full-clip, support-slide, between-key, '
             'triangle/volume, self-collision, anatomy, dynamics, import or human certificate.',quality_approved=False,release_approved=False)
@@ -307,7 +313,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
 
 
 def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='rowwise',proposal='linear',solve_iterations=100,row_chunk=None,
-        point_policy='preserve',point_proposal='preserve',point_headroom=0.,tangent_guard=False,resume=None,body_proposal='preserve',proposal_start='zero',body_headroom=0.,archive_proposals=False,normal_policy='tradeoff',normal_headroom=0.,proposal_priority='merit'):
+        point_policy='preserve',point_proposal='preserve',point_headroom=0.,tangent_guard=False,resume=None,body_proposal='preserve',proposal_start='zero',body_headroom=0.,archive_proposals=False,normal_policy='tradeoff',normal_headroom=0.,proposal_priority='merit',object_policy='tradeoff',object_headroom=0.):
     study=Path(study).resolve();output=Path(output).resolve();existed=output.exists()
     if (type(frame) is not int or type(iterations) is not int or not 1<=iterations<=100
             or type(trust) not in (int,float) or not np.isfinite(trust) or not 1e-5<=trust<=.3
@@ -320,6 +326,9 @@ def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='r
             or normal_policy not in ['preserve','tradeoff']
             or type(normal_headroom) not in (int,float) or not np.isfinite(normal_headroom) or not 0<=normal_headroom<=1e-3
             or (normal_headroom>0 and normal_policy!='preserve')
+            or object_policy not in ['preserve','tradeoff']
+            or type(object_headroom) not in (int,float) or not np.isfinite(object_headroom) or not 0<=object_headroom<=1e-3
+            or (object_headroom>0 and object_policy!='preserve')
             or proposal_priority not in ['merit','worst-first'] or (proposal_priority!='merit' and proposal_start!='geometry-descent')
             or type(tangent_guard) is not bool or (tangent_guard and proposal!='nonlinear')
             or body_proposal not in ['preserve','feasible']
@@ -331,7 +340,7 @@ def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='r
     if resume is not None and (output.is_relative_to(Path(resume).resolve()) or Path(resume).resolve().is_relative_to(output)):
         raise ValueError('Resume artifacts and new output must be separate immutable studies')
     with worker_lock(),threadpool_limits(limits=2):
-        try:return _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal,proposal_start,body_headroom,archive_proposals,normal_policy,normal_headroom,proposal_priority)
+        try:return _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal,proposal_start,body_headroom,archive_proposals,normal_policy,normal_headroom,proposal_priority,object_policy,object_headroom)
         except Exception as exc:
             if not existed and output.exists():save(output/'pipeline.json',dict(status='failed',error_type=type(exc).__name__,
                 error=str(exc),quality_approved=False,release_approved=False))
@@ -357,5 +366,7 @@ if __name__=='__main__':
     parser.add_argument('--normal-policy',choices=['preserve','tradeoff'],default='tradeoff')
     parser.add_argument('--normal-headroom',type=float,default=0.,help='Bounded search-only orientation margin; requires normal preservation')
     parser.add_argument('--proposal-priority',choices=['merit','worst-first'],default='merit',help='Geometry-start objective only; actual retention and nonlinear refinement unchanged')
+    parser.add_argument('--object-policy',choices=['preserve','tradeoff'],default='tradeoff')
+    parser.add_argument('--object-headroom',type=float,default=0.,help='Bounded search-only collision margin; requires object preservation')
     args=parser.parse_args();run(args.study,args.output,args.frame,args.iterations,args.trust,args.seconds,args.failure_policy,args.proposal,
-        args.solve_iterations,args.row_chunk,args.point_policy,args.point_proposal,args.point_headroom,args.tangent_guard,args.resume,args.body_proposal,args.proposal_start,args.body_headroom,args.archive_proposals,args.normal_policy,args.normal_headroom,args.proposal_priority)
+        args.solve_iterations,args.row_chunk,args.point_policy,args.point_proposal,args.point_headroom,args.tangent_guard,args.resume,args.body_proposal,args.proposal_start,args.body_headroom,args.archive_proposals,args.normal_policy,args.normal_headroom,args.proposal_priority,args.object_policy,args.object_headroom)
