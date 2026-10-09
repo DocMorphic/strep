@@ -45,8 +45,11 @@ def save_preview(p,resolver):
     return result,dict(schema=regions.SCHEMA,id=result['id'],preview_sha256=result['result_sha256'])
 
 
-def test_end_to_end_bundle_load_preserves_animation_and_explicit_point_order(tmp_path,monkeypatch):
+@pytest.mark.parametrize('prefix,newline',[('', '\n'),('\ufeff','\n'),('\ufeff','\r\n')])
+def test_end_to_end_bundle_load_preserves_animation_and_explicit_point_order(tmp_path,monkeypatch,prefix,newline):
     p,resolver,a=setup(tmp_path,monkeypatch);before=sha256(a)
+    p['profile_json']=prefix+p['profile_json'].replace('\n',newline)
+    p['profile_sha256']=hashlib.sha256(p['profile_json'].encode('utf8')).hexdigest()
     preview,request=save_preview(p,resolver)
     assert preview['request']==p and preview['patch']['face_references']==[[6,0,0]]
     assert preview['patch']['vertices']==[[6,0,0],[6,0,1],[6,0,2]]

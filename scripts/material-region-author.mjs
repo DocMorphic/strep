@@ -49,7 +49,7 @@ export function createMaterialRegionAuthor({document=globalThis.document,post,ge
    if(!before.file||before.file.size<=0||before.file.size>128*1024)throw Error('Choose a UTF-8 rig profile up to 128 KiB.');
    busy=true;started=true;pending=null;el('Preview').disabled=true;el('Save').disabled=true;el('Summary').textContent='';el('Faces').textContent='';el('Orientation').replaceChildren();
    el('Pose').disabled=true;clearPose();
-   const buffer=await before.file.arrayBuffer(),text=new TextDecoder('utf-8',{fatal:true}).decode(buffer),bound=await digest(buffer);
+   const buffer=await before.file.arrayBuffer(),text=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(buffer),bound=await digest(buffer);
    const request=authorRequest(before.draft,before.contact,before.side,before.patch,before.form,text,bound);
    if(token!==serial||!same(before))throw Error('Region selection changed; preview again.');
    const value=checkedAuthorPreview(await post('/api/native-scene-material-region-preview',request),request);

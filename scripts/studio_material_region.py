@@ -43,7 +43,7 @@ def syntax(payload):
     require(payload['schema']==SCHEMA,'Picked region schema required')
     require(isinstance(payload['profile_json'],str) and 0<len(payload['profile_json'].encode('utf8'))<=128*1024,
             'Supply a UTF-8 rig profile up to 128 KiB')
-    require(isinstance(json.loads(payload['profile_json']),dict),'Rig profile JSON object required')
+    require(isinstance(json.loads(payload['profile_json'].encode('utf8')),dict),'Rig profile JSON object required')
     sha_binding(payload['profile_sha256'],'rig profile binding')
     require(hashlib.sha256(payload['profile_json'].encode('utf8')).hexdigest()==payload['profile_sha256'],
             'Exact submitted UTF-8 profile bytes required')

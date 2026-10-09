@@ -66,4 +66,16 @@ for(const fault of ['draft','pick','side','profile','time','clear']){
  const s=setup();await s.el('Preview').onclick();s.el('Time').value='';await s.el('Pose').onclick();assert.equal(s.posts.length,1);assert.match(s.status(),/explicit/);s.widget.clear();assert(s.el('Pose').disabled);
 }
 for(const suffix of ['Time','Pose','PoseSummary','PoseOrientation','PoseFaces'])assert.equal([...integrated.matchAll(new RegExp(`id="nativeSceneRegionAuthor${suffix}"`,'g'))].length,1);
-console.log('Picked-region preview/save, profile bindings, complete region receipts, stale edits, click ownership and explicit post-save correspondence passed offline.');
+for(const text of [profile, '\ufeff'+profile, '\ufeff'+profile+'\r\n']){
+ const s=setup(),bytes=new TextEncoder().encode(text),expected=createHash('sha256').update(bytes).digest('hex');
+ s.el('Profile').files=[{size:bytes.byteLength,arrayBuffer:async()=>bytes.buffer}];
+ await s.el('Preview').onclick();assert.equal(s.posts.length,1);
+ const request=s.posts[0][1];assert.equal(request.profile_json,text);assert.equal(request.profile_sha256,expected);
+ assert.deepEqual(new TextEncoder().encode(request.profile_json),bytes);assert(!s.el('Save').disabled);
+}
+{
+ const s=setup(),bytes=new Uint8Array([0xef,0xbb,0xbf,0xff]);
+ s.el('Profile').files=[{size:bytes.byteLength,arrayBuffer:async()=>bytes.buffer}];
+ await s.el('Preview').onclick();assert.equal(s.posts.length,0);assert(s.el('Save').disabled);
+}
+console.log('Picked-region preview/save, exact UTF-8 profile bytes including BOM, complete region receipts, stale edits, click ownership and explicit post-save correspondence passed offline.');
