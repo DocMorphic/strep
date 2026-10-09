@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from strep import ROOT,read,sha256
-from protected_inequality_step import retain,score
+from protected_inequality_step import retain,score,margin_start_attempts
 from pose_proposal_archive import load_record
 from pose_restoration_policy import row_diagnostics,tradeoff_policy,proposal_headroom
 
@@ -50,6 +50,9 @@ def resume_window(directory,study,window,original_bindings,limits,methods,defini
             ('proposal_priority','worst-first'),('proposal_tangent_guard',True)]:
         if report.get(field)!=value or protocol.get(field)!=value:raise ValueError('Window proposal/retention policy differs')
     if protocol.get('archive_proposals') is not True:raise ValueError('Complete streamed window reports required')
+    fallback=protocol.get('proposal_margin_fallback',False)
+    if type(fallback) is not bool or report.get('proposal_margin_fallback',False) is not fallback:
+        raise ValueError('Bound window margin-search policy required')
     if any(protocol.get(field)!='preserve' for field in ['point_policy','normal_policy','object_policy']):
         raise ValueError('Window point/normal/object policy differs')
     point_rows=[label.startswith('point:') for label in window.labels]
@@ -67,6 +70,16 @@ def resume_window(directory,study,window,original_bindings,limits,methods,defini
     for reference in report['proposal_starts']:
         value=record(reference,'start')
         if value.get('retained') is not False or value.get('priority')!='worst-first':raise ValueError('Window LP start cannot be promoted')
+        if ('margin_factor' in value) is not fallback:raise ValueError('Window margin history differs from its policy')
+        if fallback:
+            matching=[r for r in report['proposal_linearizations'] if r['iteration']==reference['iteration']]
+            if len(matching)!=1:raise ValueError('Complete margin-origin linearization required')
+            linear=record(matching[0],'linearization');current=np.asarray(linear['slacks'])
+            floor=np.minimum(current,0);floor[point_rows]=np.maximum(floor[point_rows],0)
+            caps=np.maximum(floor+headroom,np.minimum(current,0)+1e-6)
+            np.testing.assert_array_equal(value['margin_floor_caps'],floor)
+            for attempt in margin_start_attempts(value):
+                np.testing.assert_array_equal(attempt['caps'],floor+attempt['margin_factor']*(caps-floor))
     for reference in report['proposal_linearizations']:record(reference,'linearization')
     # Drop the last hydrated start before recursively loading predecessor history.
     value=None

@@ -148,9 +148,46 @@ def _geometry_descent_start(values,jac,caps,lower,upper,seconds,vectors,priority
     return None,dict(report,success=False,status='geometry_cut_iteration_guard',seconds=time.monotonic()-started)
 
 
+def _geometry_margin_start(values,jac,floor,caps,lower,upper,seconds,vectors,priority):
+    """Retry search margins inside one shared budget; physical gates stay fixed."""
+    started=time.monotonic();limit=min(20.,seconds);attempts=[]
+    shared={'vectors','gradient','lower_delta','upper_delta'}
+    last=None;delta=None
+    for factor in [1.,.25,.0625,0.]:
+        remaining=limit-(time.monotonic()-started)
+        if remaining<=0:break
+        delta,last=_geometry_descent_start(values,jac,floor+factor*(caps-floor),lower,upper,remaining,vectors,priority)
+        last['margin_factor']=factor
+        if delta is not None:break
+        attempts.append({key:value for key,value in last.items() if key not in shared})
+    if last is None:raise ValueError('Positive shared margin-search budget required')
+    # The final report is already at the top level; preserve earlier attempts
+    # without duplicating the complete vector population in every attempt.
+    if delta is None:attempts=attempts[:-1]
+    return delta,dict(last,margin_floor_caps=floor.tolist(),margin_fallback_attempts=attempts,
+        margin_fallback_max_seconds=limit,margin_fallback_seconds=time.monotonic()-started)
+
+
+def margin_start_attempts(record):
+    """Hydrate recorded margin attempts, sharing only unchanged vector data."""
+    if 'margin_factor' not in record:return [record]
+    previous=record['margin_fallback_attempts'];shared=['vectors','gradient','lower_delta','upper_delta']
+    factors=[attempt['margin_factor'] for attempt in previous]+[record['margin_factor']]
+    if (not isinstance(previous,list) or factors!=[1.,.25,.0625,0.][:len(factors)] or not 1<=len(factors)<=4
+            or any(type(factor) is not float for factor in factors)
+            or any(attempt.get('success') is not False or any(key in attempt for key in shared) for attempt in previous)
+            or type(record['margin_fallback_max_seconds']) not in [int,float]
+            or not np.isfinite(record['margin_fallback_max_seconds']) or not 0<record['margin_fallback_max_seconds']<=20):
+        raise ValueError('Ordered unretained margin attempts inside one shared budget required')
+    result=[dict(record,**attempt,**{key:record[key] for key in shared}) for attempt in previous]+[record]
+    if any(not 0<attempt['time_limit_seconds']<=record['margin_fallback_max_seconds'] for attempt in result):
+        raise ValueError('Margin attempts exceeded their shared declared budget')
+    return result
+
+
 def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_iterations=100,
         seconds=300,maximum_calls=1000,observer=None,failure_policy='rowwise',tradeoff_mask=None,
-        proposal='linear',proposal_feasible_mask=None,proposal_headroom=None,proposal_tangent_guard=False,proposal_start='zero',vectorize=None,record_store=None,proposal_priority='merit'):
+        proposal='linear',proposal_feasible_mask=None,proposal_headroom=None,proposal_tangent_guard=False,proposal_start='zero',vectorize=None,record_store=None,proposal_priority='merit',proposal_margin_fallback=False):
     seed=np.asarray(seed,dtype=float);lower=np.asarray(lower,dtype=float);upper=np.asarray(upper,dtype=float)
     if (seed.ndim!=1 or not len(seed) or lower.shape!=seed.shape or upper.shape!=seed.shape
             or not np.isfinite(np.r_[seed,lower,upper]).all() or np.any(lower>=upper)
@@ -165,6 +202,7 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
             or (proposal_start=='geometry-descent' and not callable(vectorize)) or (proposal_start!='geometry-descent' and vectorize is not None)
             or (record_store is not None and not callable(record_store))
             or proposal_priority not in ['merit','worst-first'] or (proposal_priority!='merit' and proposal_start!='geometry-descent')
+            or type(proposal_margin_fallback) is not bool or (proposal_margin_fallback and proposal_start!='geometry-descent')
             or type(proposal_tangent_guard) is not bool or (proposal_tangent_guard and proposal!='nonlinear')):
         raise ValueError('Finite seed, matching control bounds and explicit step budgets required')
     started=time.monotonic();calls=0;history=[];trials=[];queries=[];clips=[];linearizations=[];starts=[];value=seed.copy()
@@ -197,6 +235,7 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
             caps=np.minimum(current,0)
             caps[mask&(current<0)]=-score(current)[0]
             caps[feasible]=np.maximum(caps[feasible],0)
+            margin_floor=caps.copy()
             caps+=headroom
             hard=~(mask&(current<0));preservation=np.minimum(current,0)
             if proposal_tangent_guard:
@@ -276,8 +315,15 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
                 if proposal_start=='geometry-descent':
                     vectors=vectorize(value);remaining=seconds-(time.monotonic()-started)
                     if remaining<=0:raise Exhausted()
-                    initial,start_report=_geometry_descent_start(current,jac,start_caps,
-                        candidate_lower-value,candidate_upper-value,remaining,vectors,proposal_priority)
+                    if proposal_margin_fallback:
+                        initial,start_report=_geometry_margin_start(current,jac,margin_floor,start_caps,
+                            candidate_lower-value,candidate_upper-value,remaining,vectors,proposal_priority)
+                        factor=start_report['margin_factor']
+                        caps=margin_floor+factor*(caps-margin_floor)
+                        if proposal_tangent_guard:tangent_caps=preservation[hard]+factor*1e-6
+                    else:
+                        initial,start_report=_geometry_descent_start(current,jac,start_caps,
+                            candidate_lower-value,candidate_upper-value,remaining,vectors,proposal_priority)
                 else:initial,start_report=_linear_feasible_start(current,jac,start_caps,
                     candidate_lower-value,candidate_upper-value,remaining)
                 starts.append(store_record('start',dict(iteration=iteration+1,controls=value.tolist(),retained=False,**start_report)))
@@ -310,6 +356,7 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
         failure_policy=failure_policy,tradeoff_mask=mask.tolist(),proposal=proposal,proposal_queries=queries,
         proposal_start=proposal_start,proposal_starts=starts,linear_start_max_seconds=20.,
         proposal_priority=proposal_priority,
+        proposal_margin_fallback=proposal_margin_fallback,
         bounded_proposal_queries=clips,
         proposal_feasible_mask=feasible.tolist(),proposal_headroom_normalized=headroom.tolist(),
         proposal_tangent_guard=proposal_tangent_guard,proposal_linearizations=linearizations,

@@ -12,7 +12,7 @@ import guarded_window_restoration as module
     dict(iterations=0),dict(iterations=True),dict(solve_iterations=0),dict(solve_iterations=301),dict(row_chunk=0),dict(row_chunk=True),
     dict(trust=float('nan')),dict(trust=.31),dict(seconds=0),dict(seconds=True),dict(seconds=float('inf')),
     dict(resume=[]),dict(resume={4:'saved'}),dict(resume={True:'saved'}),dict(resume={1:False}),dict(resume={1:''}),
-    dict(window_resume=False),dict(window_resume=''),dict(window_resume='saved',resume={1:'pose'})])
+    dict(window_resume=False),dict(window_resume=''),dict(window_resume='saved',resume={1:'pose'}),dict(margin_fallback=1)])
 def test_invalid_inputs_never_acquire_worker_or_create_output(tmp_path,monkeypatch,options):
     monkeypatch.setattr(module,'ROOT',tmp_path)
     monkeypatch.setattr(module,'worker_lock',lambda:pytest.fail('Invalid window reached worker'))
@@ -37,7 +37,7 @@ def test_lock_covers_complete_lifecycle_and_forwards_each_resume(tmp_path,monkey
         finally:active.pop()
     def run(study,output,frames,*args):
         assert active and frames==[1,2]
-        assert args[-2]=={1:tmp_path/'first',2:tmp_path/'second'} and args[-1] is None
+        assert args[-3]=={1:tmp_path/'first',2:tmp_path/'second'} and args[-2] is None and args[-1] is False
         return 'preserved'
     monkeypatch.setattr(module,'worker_lock',lock);monkeypatch.setattr(module,'_run',run)
     monkeypatch.setattr(module,'threadpool_limits',lambda **k:nullcontext())
@@ -49,10 +49,10 @@ def test_window_predecessor_is_forwarded_and_cannot_overlap_output(tmp_path,monk
     monkeypatch.setattr(module,'ROOT',tmp_path);monkeypatch.setattr(module,'worker_lock',nullcontext)
     monkeypatch.setattr(module,'threadpool_limits',lambda **k:nullcontext())
     def run(*args):
-        assert args[-2]=={} and args[-1]==tmp_path/'saved'
+        assert args[-3]=={} and args[-2]==tmp_path/'saved' and args[-1] is True
         return 'verified-window'
     monkeypatch.setattr(module,'_run',run)
-    assert module.run(tmp_path/'source',tmp_path/'out',[1,2],window_resume=tmp_path/'saved')=='verified-window'
+    assert module.run(tmp_path/'source',tmp_path/'out',[1,2],window_resume=tmp_path/'saved',margin_fallback=True)=='verified-window'
     with pytest.raises(ValueError):module.run(tmp_path/'source',tmp_path/'saved/new',[1,2],window_resume=tmp_path/'saved')
 
 

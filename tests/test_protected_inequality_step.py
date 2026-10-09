@@ -404,3 +404,52 @@ def test_body_search_margin_preserves_curved_nonlinear_row_without_relaxing_rete
 def test_vector_initializer_contract_rejected_before_measurement(kwargs):
     def forbidden(x):raise AssertionError('Invalid geometry request reached measurement')
     with pytest.raises(ValueError):fit(forbidden,forbidden,[0.,0.],[-1.,-1.],[1.,1.],**kwargs)
+
+
+def test_margin_fallback_escapes_search_conflict_with_unchanged_physical_gates(tmp_path):
+    from pose_proposal_archive import ProposalArchive,load_record
+    from protected_inequality_step import margin_start_attempts
+    def measure(x):return np.array([x[1]-.05,(.1-np.linalg.norm(x))/.1])
+    def derivative(x):return measure(x),np.array([[0.,1.],-x/(.1*np.linalg.norm(x))])
+    options=dict(iterations=1,trust=.1,proposal='nonlinear',proposal_start='geometry-descent',vectorize=circle_vectors,
+        proposal_tangent_guard=True,proposal_headroom=[0.,1e-3],proposal_priority='worst-first')
+    old,a=fit(measure,derivative,[.1,0.],[.09995,-1.],[1.,1.],**options)
+    output=tmp_path/'study';output.mkdir()
+    value,b=fit(measure,derivative,[.1,0.],[.09995,-1.],[1.,1.],proposal_margin_fallback=True,record_store=ProposalArchive(output),**options)
+    assert a['stop']=='linear_start_unavailable' and not a['trials']
+    np.testing.assert_array_equal(old,[.1,0.])
+    assert value[1]>0 and b['trials'][-1]['accepted'] and measure(value)[1]>=0
+    assert b['source_passing_rows_preserved'] and b['nontradeoff_rows_preserved'] and not b['quality_approved']
+    start,_=load_record(output,b['proposal_starts'][0]);attempts=margin_start_attempts(start)
+    assert [attempt['margin_factor'] for attempt in attempts]==[1.,.25]
+    assert not attempts[0]['success'] and attempts[1]['success'] and not start['retained']
+    assert start['margin_fallback_max_seconds']<=20 and start['margin_floor_caps']==[-.05,0.]
+    assert start['caps'][1]==.00025 and b['proposal_headroom_normalized']==[0.,.001]
+    assert b['proposal_linearizations'][0]['kind']=='linearization'
+
+
+def test_margin_fallback_never_removes_declared_point_feasibility():
+    def measure(x):return np.array([x[1]-.05,(.1-np.linalg.norm(x))/.1])
+    def derivative(x):return measure(x),np.array([[0.,1.],-x/(.1*np.linalg.norm(x))])
+    value,r=fit(measure,derivative,[.1,0.],[.09995,-1.],[1.,1.],iterations=1,trust=.1,
+        proposal='nonlinear',proposal_start='geometry-descent',vectorize=circle_vectors,proposal_tangent_guard=True,
+        proposal_headroom=[1e-5,1e-3],proposal_feasible_mask=[True,False],proposal_priority='worst-first',proposal_margin_fallback=True)
+    np.testing.assert_array_equal(value,[.1,0.]);assert not r['trials'] and r['stop']=='linear_start_unavailable'
+    start=r['proposal_starts'][0]
+    assert start['margin_floor_caps'][0]==0 and start['caps'][0]==0
+    assert [attempt['margin_factor'] for attempt in start['margin_fallback_attempts']]+[start['margin_factor']]==[1.,.25,.0625,0.]
+
+
+def test_margin_fallback_keeps_original_budget_and_never_promotes_unmeasured_start():
+    def measure(x):return np.array([x[1]-.05,(.1-np.linalg.norm(x))/.1])
+    def derivative(x):return measure(x),np.array([[0.,1.],-x/(.1*np.linalg.norm(x))])
+    value,r=fit(measure,derivative,[.1,0.],[.09995,-1.],[1.,1.],iterations=1,trust=.1,maximum_calls=1,
+        proposal='nonlinear',proposal_start='geometry-descent',vectorize=circle_vectors,proposal_tangent_guard=True,
+        proposal_headroom=[0.,1e-3],proposal_priority='worst-first',proposal_margin_fallback=True)
+    np.testing.assert_array_equal(value,[.1,0.]);assert r['stop']=='time_or_measurement_budget' and not r['proposal_starts']
+
+
+@pytest.mark.parametrize('kwargs',[dict(proposal_margin_fallback=1),dict(proposal_margin_fallback=True)])
+def test_invalid_margin_fallback_rejected_before_measurement(kwargs):
+    def forbidden(x):raise AssertionError('Invalid fallback reached measurement')
+    with pytest.raises(ValueError):fit(forbidden,forbidden,[0.],[-1.],[1.],**kwargs)

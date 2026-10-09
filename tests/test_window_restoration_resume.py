@@ -121,3 +121,31 @@ def test_recursive_window_origin_is_bound_without_rebasing_controls(tmp_path,mon
     # A copied seed is still the original seed, so it cannot pretend to continue the retained ancestor.
     save(second/'protocol.json',protocol);result=module.read(second/'result.json');result['protocol_sha256']=module.sha256(second/'protocol.json');save(second/'result.json',result)
     with pytest.raises(AssertionError):module.resume_window(second,*args[1:])
+
+
+@pytest.mark.parametrize('damage',[None,'order','budget','promotion','caps','policy'])
+def test_margin_history_is_bound_and_only_search_margins_can_change(tmp_path,monkeypatch,damage):
+    from protected_inequality_step import _geometry_margin_start
+    args,save=fixture(tmp_path,monkeypatch);directory=args[0];window=args[2]
+    protocol=module.read(directory/'protocol.json');result=module.read(directory/'result.json')
+    protocol['proposal_margin_fallback']=True;result['fit']['proposal_margin_fallback']=True
+    linear=module.load_record(directory,result['fit']['proposal_linearizations'][0])[0]
+    linear.update(iteration=2,controls=[.05,0,0,0,.05,0,0,0],slacks=[-.35,-.35],preservation_caps=[-.35,-.35],tangent_proposal_caps=[-.35+1e-6]*2)
+    result['fit']['proposal_linearizations'].append(window.archive('linearization',linear))
+    derivatives=np.zeros((2,3,8));derivatives[0,0,0]=derivatives[1,0,4]=-1
+    vectors=dict(offsets=np.array([[1.35,0,0],[1.35,0,0]]),jacobian=derivatives,
+        limits=np.ones(2),scales=np.ones(2),rows=np.array([0,1]),distance=np.ones(2,dtype=bool))
+    _,start=_geometry_margin_start(np.array([-.35,-.35]),np.array(linear['jacobian']),np.zeros(2),np.ones(2)*1e-5,
+        np.ones(8)*-.1,np.ones(8)*.1,20.,vectors,'worst-first')
+    start.update(iteration=2,controls=linear['controls'],retained=False)
+    if damage=='order':start['margin_fallback_attempts'][0]['margin_factor']=.5
+    if damage=='budget':start['margin_fallback_attempts'][0]['time_limit_seconds']=21.
+    if damage=='promotion':start['margin_fallback_attempts'][0]['success']=True
+    if damage=='caps':start['caps'][0]=-.01
+    if damage=='policy':protocol['proposal_margin_fallback']=False
+    result['fit']['proposal_starts']=[window.archive('start',start)]
+    save(directory/'protocol.json',protocol);result['protocol_sha256']=module.sha256(directory/'protocol.json');save(directory/'result.json',result)
+    if damage is None:
+        parameters,*_=module.resume_window(*args);assert parameters[0]==parameters[4]==.05
+    else:
+        with pytest.raises((ValueError,AssertionError)):module.resume_window(*args)
