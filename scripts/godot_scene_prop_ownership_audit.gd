@@ -39,6 +39,8 @@ func begin() -> void:
 	if args.size()!=2: fail("Request/output paths required"); return
 	request=JSON.parse_string(FileAccess.get_file_as_string(args[0])); destination=args[1]
 	output.engine=Engine.get_version_info(); output.backend=ProjectSettings.get_setting("physics/3d/physics_engine")
+	output.collision_settings={}
+	for key in request.get("tracked_collision_settings",[]): output.collision_settings[key]=ProjectSettings.get_setting(key)
 	Engine.physics_ticks_per_second=int(request.physics_fps)
 	start_case()
 
@@ -125,6 +127,7 @@ func start_case() -> void:
 	var other = Owner.new()
 	if other.bind(motion,item.plan,props,providers,int(request.physics_fps),80)==OK: fail("Second clock owner accepted"); return
 	result={"id":item.id,"records":[],"actions":[],"faults":[],"source_events":[],"commit_receipts":[],"commit_callbacks":[],"detached_copies":0,"malformed_rejected":rejected,"second_owner_rejected":true}; stage="forward"; waits=0; finishing=false
+	result.continuous_cd={"P":props.P.continuous_cd,"Q":props.Q.continuous_cd}
 	result.installed_geometry={"P":{"schema":"strep-object-geometry-v1","shape":"cylinder","radius_m":props.P.get_child(0).shape.radius,"height_m":props.P.get_child(0).shape.height},"Q":{"schema":"strep-object-geometry-v1","shape":"sphere","radius_m":props.Q.get_child(0).shape.radius}}
 	motion.gameplay.connect(func(event): result.source_events.append({"id":event.id,"time_s":event.time_s,"pose_time_s":motion.pose_time_s}))
 	ownership.transaction_committed.connect(on_commit_first)

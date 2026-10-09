@@ -20,11 +20,12 @@ from release_geometry import floor_gaps,preview_penetration_bounds,check_install
 from scene_prop_ownership import compile_plan
 from strep import ROOT,now,read,save,sha256
 from scene_commit_receipts import audit as audit_commit_receipts
+from scene_collision_profile import PROFILES,TRACKED_SETTINGS,config_lines,verify_settings
 
 GDS=['godot_scene_prop_ownership_audit.gd','godot_scene_prop_owner.gd','godot_scene_prop_body.gd',
      'godot_native_scene_player.gd','godot_native_root_adapter.gd','godot_native_object_player.gd',
      'godot_scene_game_events.gd','native_engine_clock.gd','native_godot_preview.gd','godot_native_scene_observations.gd']
-METHODS=GDS+['study_scene_prop_ownership.py','scene_prop_ownership.py','scene_commit_receipts.py','native_engine_clock.py','object_geometry.py','release_geometry.py','primitive_penetration_bounds.py','action_worker_lock.py','strep.py']
+METHODS=GDS+['study_scene_prop_ownership.py','scene_collision_profile.py','scene_prop_ownership.py','scene_commit_receipts.py','native_engine_clock.py','object_geometry.py','release_geometry.py','primitive_penetration_bounds.py','action_worker_lock.py','strep.py']
 
 
 def fixture():
@@ -59,10 +60,17 @@ def observed_matrix(value):
 
 
 def verify(request,actual):
+    settings=None
+    if 'collision_profile' in request:
+        if actual.get('backend')!='Jolt Physics':raise ValueError('Actual Jolt backend required')
+        if request.get('tracked_collision_settings')!=list(TRACKED_SETTINGS):raise ValueError('Complete collision setting protocol required')
+        settings=verify_settings(request['collision_profile'],actual.get('collision_settings'),request['physics_fps'])
     rows=[]
     if len(actual['cases'])!=len(request['cases']):raise ValueError('Complete case population required')
     for case,observed in zip(request['cases'],actual['cases']):
         assert case['id']==observed['id'] and observed['malformed_rejected']==5 and observed['second_owner_rejected']
+        if settings is not None:
+            if observed.get('continuous_cd')!={'P':True,'Q':True}:raise ValueError('Both actual prop CCD flags required')
         records=observed['records'];actions=observed['actions'];fault=case.get('fault','')
         commit_check=audit_commit_receipts(case['plan'],{'A':'embedded','B':'extracted'},observed,physics_fps=request['physics_fps'])
         if fault:
@@ -133,10 +141,11 @@ def verify(request,actual):
         max_depth=max(b['penetration_upper_m'] for b in bounds)
         rows.append(dict(id=case['id'],records=len(records),actions=len(actions),commit_check=commit_check,held_pose_error=max(held_errors),action_pose_error=max(pose_errors),release_velocity_error_m_s=max(velocity_errors),release_spin_error_rad_s=max(spin_errors),whole_step_root_error=max(root_errors) if root_errors else None,both_dynamic_props_respond_to_contact=True,max_application_delay_s=max(delays),exact_physical_event_timing_passed=all(abs(x)<=1e-12 for x in delays),
                          max_floor_penetration_m=floor_depth,max_interprop_penetration_upper_m=max_depth,discrete_collision_depth_screens_passed=max_depth<=.01 and max(floor_depth.values())<=.01,all_checked_ownership_conditions_passed=True,quality_approved=False,release_approved=False))
-    return dict(schema='strep-scene-prop-ownership-study-v1',status='complete',cases=rows,actual_native_actors=True,actual_dynamic_props=True,renderer_executed=False,human_reviewed=False,quality_approved=False,release_approved=False)
+    return dict(schema='strep-scene-prop-ownership-study-v1',status='complete',cases=rows,collision_profile=request.get('collision_profile','legacy-unrecorded'),collision_settings=settings,actual_native_actors=True,actual_dynamic_props=True,renderer_executed=False,human_reviewed=False,quality_approved=False,release_approved=False)
 
 
-def study(output,rate):
+def study(output,rate,collision_profile='engine-default'):
+    collision_config=config_lines(collision_profile)
     output=Path(output).resolve()
     if not output.is_relative_to((ROOT/'reports').resolve()) or rate not in (60,120,240):raise ValueError('Fresh report path and supported physics rate required')
     with worker_lock():
@@ -145,10 +154,10 @@ def study(output,rate):
         methods=output/'methods';methods.mkdir()
         for n in METHODS:shutil.copyfile(ROOT/'scripts'/n,methods/n)
         for n in GDS:shutil.copyfile(ROOT/'scripts'/n,project/n)
-        (project/'project.godot').write_text('config_version=5\n[application]\nconfig/name="Shared prop ownership audit"\n[physics]\ncommon/physics_ticks_per_second='+str(rate)+'\n3d/physics_engine="Jolt Physics"\n3d/default_gravity=9.81\n3d/default_gravity_vector=Vector3(0,-1,0)\njolt_physics_3d/collisions/collision_margin_fraction=0.0\njolt_physics_3d/simulation/penetration_slop=0.001\n[rendering]\nrenderer/rendering_method="gl_compatibility"\n',encoding='utf8')
+        (project/'project.godot').write_text('config_version=5\n[application]\nconfig/name="Shared prop ownership audit"\n[physics]\ncommon/physics_ticks_per_second='+str(rate)+'\n3d/physics_engine="Jolt Physics"\n3d/default_gravity=9.81\n3d/default_gravity_vector=Vector3(0,-1,0)\njolt_physics_3d/collisions/collision_margin_fraction=0.0\njolt_physics_3d/simulation/penetration_slop=0.001\n'+collision_config+'[rendering]\nrenderer/rendering_method="gl_compatibility"\n',encoding='utf8')
         doc,plan=fixture();cases=[dict(id='shared',events=doc,plan=plan),dict(id='reverse-body-order',events=doc,plan=plan,reverse_bodies=True)]
         cases += [dict(id=fault,events=doc,plan=plan,fault=fault) for fault in ('conflict','outside','missing-body','provider-clock')]
-        request=dict(physics_fps=rate,cases=cases,methods_sha256=hashes,engine_sha256=sha256(ENGINE),at=now());save(output/'request.json',request)
+        request=dict(physics_fps=rate,collision_profile=collision_profile,tracked_collision_settings=list(TRACKED_SETTINGS),cases=cases,methods_sha256=hashes,engine_sha256=sha256(ENGINE),at=now());save(output/'request.json',request)
         env=os.environ.copy();env.update(HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1')
         save(output/'pipeline.json',dict(status='checking',at=now()))
         with (output/'compile.log').open('w',encoding='utf8') as log:
@@ -170,5 +179,5 @@ def study(output,rate):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('--output',required=True);parser.add_argument('--physics-fps',type=int,default=240)
-    args=parser.parse_args();study(args.output,args.physics_fps)
+    parser=argparse.ArgumentParser();parser.add_argument('--output',required=True);parser.add_argument('--physics-fps',type=int,default=240);parser.add_argument('--collision-profile',choices=tuple(PROFILES),default='engine-default')
+    args=parser.parse_args();study(args.output,args.physics_fps,args.collision_profile)

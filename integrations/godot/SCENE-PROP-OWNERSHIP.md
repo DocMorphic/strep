@@ -198,3 +198,27 @@ review, crossfade ownership, arbitrary moving-world replay or Studio integration
 has been validated here. Integration follows Godot's
 [RigidBody3D contract](https://docs.godotengine.org/en/stable/classes/class_rigidbody3d.html#class-rigidbody3d-private-method-integrate-forces)
 and [direct body state API](https://docs.godotengine.org/en/stable/classes/class_physicsdirectbodystate3d.html).
+
+## Explicit CCD comparison
+
+The original 60 Hz sampled floor-depth failure has a measured development remedy
+for the existing cylinder/sphere fixture. With both bodies' `continuous_cd`
+already enabled, an explicit project setting activates CCD at smaller motion:
+
+```ini
+[physics]
+jolt_physics_3d/simulation/continuous_cd_movement_threshold=0.05
+```
+
+The matched pinned-engine comparison reduces maximum sampled floor penetration
+from 63.229 mm to 1.008 mm in both body orders, without changing the physics rate,
+ownership clock, authored poses, release velocities, geometry or 10 mm depth
+screen. The native study CLI exposes this as `--collision-profile ccd-threshold`;
+its default remains `engine-default`. This setting is opt-in for an integrating
+project and is not applied globally by the ownership SDK or Studio. Other shapes,
+speeds, scales and production scenes need their own validation; CPU cost is not
+established by the single short fixture. Tighter CCD penetration fraction adds
+no measured benefit here. Exact physical event timing still fails by 11.6667 ms
+at 60 Hz, and held-prop collisions remain disabled.
+
+[Matched settings, retained raw failures and reproduction](../../docs/scene-collision-profiles-v1.md).
