@@ -1,5 +1,7 @@
 # Public source checks
 
+Latest callback coverage: the explicit inventory now contains **414 Python modules and 41 Node suites**. Ten new [proposal callback regressions](proposal-callback-derivatives-v1.md) run without Torch alongside the 82 existing solver checks; a separate 527-check CPU fixture suite validates native coupling/replay. These are software checks, not motion-quality or release approval. Historical hosted results below retain their original scope.
+
 The native character-correction workflow adds CPU job, continuation, contact
 revision, evidence-tampering and offline HTTP-handler regressions, plus a Node
 DOM workflow. No live Studio connection or renderer is used. In

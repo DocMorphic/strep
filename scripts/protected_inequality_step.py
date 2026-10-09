@@ -268,33 +268,43 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
                     clips.append(dict(iteration=iteration+1,requested_controls=raw.tolist(),bounded_controls=candidate.tolist()))
                 return candidate
             cached=(np.zeros_like(value),current,jac)
-            def query(delta):
+            def query(delta,need_derivatives=True):
                 nonlocal cached
                 check();candidate=bounded_candidate(delta);delta=candidate-value
-                if np.array_equal(delta,cached[0]):return cached[1:]
-                actual=observed(candidate);predicted,derivatives=linearize(candidate)
-                predicted=np.asarray(predicted,dtype=float);derivatives=np.asarray(derivatives,dtype=float)
-                if (actual.shape!=current.shape or predicted.shape!=current.shape
-                        or derivatives.shape!=jac.shape or not np.isfinite(derivatives).all()):
-                    raise ValueError('Every original nonlinear row and derivative required')
-                np.testing.assert_allclose(predicted,actual,rtol=1e-10,atol=1e-10)
-                label=f'iteration-{iteration+1}-query-{len(queries)+1}'
-                queries.append(dict(label=label,iteration=iteration+1,controls=candidate.tolist(),
-                    score=list(score(actual)),retained=False))
-                if observer:observer(label,candidate.copy(),actual.copy(),False)
-                cached=(delta.copy(),actual,derivatives)
-                return actual,derivatives
+                if not np.array_equal(delta,cached[0]):
+                    actual=observed(candidate).copy()
+                    if actual.shape!=current.shape:raise ValueError('Every original nonlinear row required')
+                    label=f'iteration-{iteration+1}-query-{len(queries)+1}'
+                    queries.append(dict(label=label,iteration=iteration+1,controls=candidate.tolist(),
+                        score=list(score(actual)),retained=False))
+                    if observer:observer(label,candidate.copy(),actual.copy(),False)
+                    cached=(delta.copy(),actual,None)
+                if need_derivatives and cached[2] is None:
+                    predicted,derivatives=linearize(candidate)
+                    predicted=np.asarray(predicted,dtype=float);derivatives=np.asarray(derivatives,dtype=float)
+                    if (predicted.shape!=current.shape or derivatives.shape!=jac.shape
+                            or not np.isfinite(derivatives).all()):
+                        raise ValueError('Every original nonlinear row and derivative required')
+                    np.testing.assert_allclose(predicted,cached[1],rtol=1e-10,atol=1e-10)
+                    cached=(cached[0],cached[1],derivatives)
+                return cached[1:]
             def objective(delta):
                 check()
                 if proposal=='nonlinear':delta=bounded_candidate(delta)-value
                 # Solver-only headroom prevents stopping just below zero;
                 # replay still uses each exact original inequality threshold.
+                actual=query(delta,False)[0] if proposal=='nonlinear' else current+jac@delta
+                residual=np.minimum(actual-1e-6,0)
+                return float(residual@residual+1e-8*(delta@delta))
+            def objective_jacobian(delta):
+                check()
+                if proposal=='nonlinear':delta=bounded_candidate(delta)-value
                 actual,derivatives=query(delta) if proposal=='nonlinear' else (current+jac@delta,jac)
                 residual=np.minimum(actual-1e-6,0)
-                return float(residual@residual+1e-8*(delta@delta)),2*(derivatives.T@residual+1e-8*delta)
+                return 2*(derivatives.T@residual+1e-8*delta)
             bounds=list(zip(candidate_lower-value,candidate_upper-value))
             constraints=[dict(type='ineq',
-                    fun=lambda delta:(query(delta)[0] if proposal=='nonlinear' else current+jac@delta)-caps,
+                    fun=lambda delta:(query(delta,False)[0] if proposal=='nonlinear' else current+jac@delta)-caps,
                     jac=lambda delta:query(delta)[1] if proposal=='nonlinear' else jac)]
             if proposal_tangent_guard and hard.any():
                 constraints.append(dict(type='ineq',fun=lambda delta:current[hard]+jac[hard]@delta-tangent_caps,
@@ -383,7 +393,7 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
                         solver_message='Checked geometry-start backoff; nonlinear inner solve skipped',
                         score=list(score(current)),seconds=time.monotonic()-started))
                     continue
-            result=minimize(objective,initial,method='SLSQP',jac=True,bounds=bounds,constraints=constraints,
+            result=minimize(objective,initial,method='SLSQP',jac=objective_jacobian,bounds=bounds,constraints=constraints,
                 options=dict(maxiter=solve_iterations,ftol=1e-12))
             direction=np.asarray(result.x,dtype=float)
             if direction.shape!=value.shape or not np.isfinite(direction).all():raise ValueError('Finite proposal direction required')
