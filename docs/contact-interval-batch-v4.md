@@ -31,3 +31,5 @@ Separate numerical diagnosis of the stalled 117–119 conic subproblem tries the
 V9 batch result SHA-256: `8503ea0bfe77311c7018bea710e653b53534119ed8623226238bfa45a3fc5a05`. Independent batch receipt: `d52e677ff90456217fa2f7a528f95bdd33103bea164c431d1483d2aef277c679`. Retained V8 result: `f04bc4286388447dce0f22d3b98e8eb0759b20d7f5b1f0e90d80a92aaaa5260f`. Raw immutable evidence remains under ignored `reports/box-lift-interval-batch-v9/`, `reports/batch-schedule-resume-v1/` and `reports/conic-numerical-diagnosis-v1/`.
 
 All fourteen release capabilities remain unapproved. This study does not validate between-key motion, full-clip realism, rig transfer, object/partner interactions generally, engine import or human cleanup. Continue remaining contact coverage and broad action, scene, partner, rig, editing, style, transition and engine validation plus actual developer review under the same project-wide goal.
+
+The [following V10 continuation](contact-interval-batch-v5.md) now independently verifies two retained windows. Its stage 2 becomes the verified motion; twelve windows have been attempted and nine remain. V9's rejected poses are still never adopted.
