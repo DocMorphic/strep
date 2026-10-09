@@ -2,25 +2,27 @@
 import numpy as np
 
 
-def proposal_headroom(labels,*,point=0.,body=0.):
-    """Search-only margins on grip distance and reference-position rows."""
+def proposal_headroom(labels,*,point=0.,body=0.,normal=0.):
+    """Search-only margins on grip distance, normal and position rows."""
     if (not isinstance(labels,list) or not labels
             or any(not isinstance(v,str) or not v for v in labels) or len(set(labels))!=len(labels)
-            or any(type(v) not in [int,float] or not np.isfinite(v) or not 0<=v<=1e-3 for v in [point,body])):
+            or any(type(v) not in [int,float] or not np.isfinite(v) or not 0<=v<=1e-3 for v in [point,body,normal])):
         raise ValueError('Complete unique row identities and bounded proposal margins required')
-    return np.array([point if label.startswith('point:') else body if label.startswith('all-reference-position:') else 0.
+    return np.array([point if label.startswith('point:') else body if label.startswith('all-reference-position:')
+        else normal if label.startswith('normal:') else 0.
         for label in labels],dtype=float)
 
 
-def tradeoff_policy(labels,rotation_names,*,failure_policy='rowwise',point_policy='preserve'):
+def tradeoff_policy(labels,rotation_names,*,failure_policy='rowwise',point_policy='preserve',normal_policy='tradeoff'):
     if (not isinstance(labels,list) or not labels or not isinstance(rotation_names,list)
             or any(not isinstance(v,str) or not v for v in labels+rotation_names)
             or len(set(labels))!=len(labels) or len(set(rotation_names))!=len(rotation_names)
-            or failure_policy not in ['rowwise','merit'] or point_policy not in ['preserve','tradeoff']):
+            or failure_policy not in ['rowwise','merit'] or point_policy not in ['preserve','tradeoff']
+            or normal_policy not in ['preserve','tradeoff']):
         raise ValueError('Complete unique row identities and explicit contact policy required')
     complete=labels+['rotation-budget:'+name for name in rotation_names]
     if len(set(complete))!=len(complete):raise ValueError('Complete row identities must remain unique')
-    prefixes=('normal:','object:')+(('point:',) if point_policy=='tradeoff' else ())
+    prefixes=('object:',)+(('normal:',) if normal_policy=='tradeoff' else ())+(('point:',) if point_policy=='tradeoff' else ())
     mask=np.array([failure_policy=='merit' and label.startswith(prefixes) for label in labels]
         +[False]*len(rotation_names),dtype=bool)
     return complete,mask

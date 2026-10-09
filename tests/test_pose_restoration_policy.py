@@ -24,11 +24,34 @@ def test_body_margin_only_tightens_position_proposals_and_leaves_other_rows_unch
         'all-reference-speed:97:Hand','rotation-budget:Arm','future-unknown-constraint']
     np.testing.assert_array_equal(proposal_headroom(labels),np.zeros(len(labels)))
     np.testing.assert_array_equal(proposal_headroom(labels,point=1e-5,body=1e-3),[1e-5,0,0,0,1e-3,0,0,0])
+    np.testing.assert_array_equal(proposal_headroom(labels,normal=1e-3),[0,1e-3,0,0,0,0,0,0])
+
+
+def test_collision_merit_cannot_hide_failed_normal_regression_under_preservation():
+    labels=['object:box','normal:Left','normal:Right','floor','rotation-budget:Arm']
+    before=[-.2,-.1,-.09,1.,1.];after=[-.1,-.11,-.08,1.,1.]
+    _,old=tradeoff_policy(labels,[],failure_policy='merit')
+    _,protected=tradeoff_policy(labels,[],failure_policy='merit',normal_policy='preserve')
+    assert retain(before,after,failure_policy='merit',tradeoff_mask=old)
+    assert not retain(before,after,failure_policy='merit',tradeoff_mask=protected)
+    np.testing.assert_array_equal(protected,[True,False,False,False,False])
+
+
+def test_nonlinear_correction_improves_contact_without_worsening_failed_normal():
+    labels=['object:box','normal:Left','floor','all-reference-position:Hand']
+    _,mask=tradeoff_policy(labels,[],failure_policy='merit',normal_policy='preserve')
+    def measure(x):return np.array([x[0]-.2,-.1-.05*x[0]+x[1],.1-x[0],.3-x[1]])
+    def derivative(x):return measure(x),np.array([[1.,0.],[-.05,1.],[-1.,0.],[0.,-1.]])
+    value,r=fit(measure,derivative,[0.,0.],[-1.,-1.],[1.,1.],trust=.1,iterations=1,
+        failure_policy='merit',tradeoff_mask=mask,proposal='nonlinear',proposal_headroom=proposal_headroom(labels,normal=1e-3))
+    assert value[0]>0 and measure(value)[1]>=-.1 and r['nontradeoff_rows_preserved']
+    assert not r['quality_approved'] and r['proposal_headroom_normalized']==[0,1e-3,0,0]
 
 
 @pytest.mark.parametrize('body',[True,-1e-6,1.0001e-3,float('nan'),float('inf'),'0.001'])
 def test_invalid_body_margin_rejected(body):
     with pytest.raises(ValueError):proposal_headroom(['all-reference-position:Hand'],body=body)
+    with pytest.raises(ValueError):proposal_headroom(['normal:Left'],normal=body)
 
 
 @pytest.mark.parametrize('labels',[[],['x','x'],[3],[['x']]])
@@ -64,7 +87,7 @@ def test_complete_diagnostics_distinguish_tight_passes_failures_and_unapproved_t
     assert not r['quality_approved'] and not r['release_approved']
 
 
-@pytest.mark.parametrize('options',[dict(failure_policy='guess'),dict(point_policy='guess')])
+@pytest.mark.parametrize('options',[dict(failure_policy='guess'),dict(point_policy='guess'),dict(normal_policy='guess')])
 def test_unknown_policy_rejected(options):
     with pytest.raises(ValueError):tradeoff_policy(['point:Left'],[],**options)
 
