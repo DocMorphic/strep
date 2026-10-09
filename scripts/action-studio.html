@@ -1064,7 +1064,7 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
   window.addEventListener('strep:take',e=>{const t=e.detail;$('previewTitle').textContent=t.label;$('inspectName').textContent=t.label+' / seed '+t.seed;$('clipFooter').textContent=`${t.frames} frames · 30 fps · SOMA77`;$('libraryList').querySelectorAll('button').forEach(b=>b.classList.toggle('selected',b.dataset.take===t.id));if(focused==='preview')$('menuApp').textContent=t.label;});
   initializeDesktop();
 })();
-</script><script type="importmap">{"imports":{"three":"/assets/build/three.module.js","three/addons/":"/assets/examples/jsm/"}}</script><script type="module">import {activeGenerationStatus,generationJobMessage,activityMessage,renderJobList} from '/generation-job-status.mjs';import {createMotionProfileEditor} from "/motion-profile-editor.js";
+</script><script type="importmap">{"imports":{"three":"/assets/build/three.module.js","three/addons/":"/assets/examples/jsm/"}}</script><script type="module">import {createMotionProfileEditor} from "/motion-profile-editor.js";
 // Render recorded numeric evidence without turning a partial screen into approval.
 function contactAuditRows(audit){
  const rows=[],finite=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0;
@@ -1193,6 +1193,7 @@ const contactEditor=(()=>{
 import {createPoseGuideEditor} from '/pose-guide-editor.js';
 import {createRigJointEditor} from '/rig-joint-editor.js';
 import {createRigPostureEditor} from '/rig-posture-editor.js';
+import {activeGenerationStatus,generationJobMessage,activityMessage,renderJobList} from '/generation-job-status.mjs';
 
 import * as THREE from 'three';import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 const $=id=>document.getElementById(id),loader=new GLTFLoader();let collection='',trials=[],current=null,model,mixer,action,clip,root,gltf,frame=0,running=false,last=performance.now(),elapsed=0,version=0,pendingJob=null;

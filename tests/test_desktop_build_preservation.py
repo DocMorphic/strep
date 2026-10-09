@@ -11,6 +11,16 @@ def test_checked_in_studio_matches_its_editable_sources():
     assert render()==(ROOT/'scripts/action-studio.html').read_text(encoding='utf8')
 
 
+def test_rebuild_retains_resource_deferral_and_saved_request_retry():
+    page=render()
+    assert page.count("renderJobList($('jobList'),studies,busy")==1
+    assert "from '/generation-job-status.mjs'" in page
+    assert 'activityMessage(studies,busy)' in page
+    assert "json('/api/jobs/retry'" in page and 'JSON.stringify({job:id})' in page
+    assert 'const active=data.studies.find(s=>activeGenerationStatus(s.status))' in page
+    assert 'generationJobMessage(job)' in page
+
+
 def test_rebuild_retains_scene_region_editor_and_grip_picker():
     page=render()
     assert 'id="sceneRegionStatus"' in page
