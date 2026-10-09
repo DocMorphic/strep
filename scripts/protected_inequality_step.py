@@ -187,7 +187,7 @@ def margin_start_attempts(record):
 
 def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_iterations=100,
         seconds=300,maximum_calls=1000,observer=None,failure_policy='rowwise',tradeoff_mask=None,
-        proposal='linear',proposal_feasible_mask=None,proposal_headroom=None,proposal_tangent_guard=False,proposal_start='zero',vectorize=None,record_store=None,proposal_priority='merit',proposal_margin_fallback=False,proposal_trial_correction=False):
+        proposal='linear',proposal_feasible_mask=None,proposal_headroom=None,proposal_tangent_guard=False,proposal_start='zero',vectorize=None,record_store=None,proposal_priority='merit',proposal_margin_fallback=False,proposal_trial_correction=False,representation_measure=None):
     seed=np.asarray(seed,dtype=float);lower=np.asarray(lower,dtype=float);upper=np.asarray(upper,dtype=float)
     if (seed.ndim!=1 or not len(seed) or lower.shape!=seed.shape or upper.shape!=seed.shape
             or not np.isfinite(np.r_[seed,lower,upper]).all() or np.any(lower>=upper)
@@ -201,6 +201,7 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
             or proposal_start not in ['zero','linear-feasible','geometry-descent'] or (proposal_start!='zero' and proposal!='nonlinear')
             or (proposal_start=='geometry-descent' and not callable(vectorize)) or (proposal_start!='geometry-descent' and vectorize is not None)
             or (record_store is not None and not callable(record_store))
+            or (representation_measure is not None and not callable(representation_measure))
             or proposal_priority not in ['merit','worst-first'] or (proposal_priority!='merit' and proposal_start!='geometry-descent')
             or type(proposal_margin_fallback) is not bool or (proposal_margin_fallback and proposal_start!='geometry-descent')
             or type(proposal_trial_correction) is not bool or (proposal_trial_correction and (proposal_start!='geometry-descent' or not proposal_tangent_guard))
@@ -216,6 +217,14 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
         check();calls+=1;result=np.asarray(measure(candidate),dtype=float);score(result)
         return result
     baseline=observed(value);mask=tradeoff_rows(len(baseline),failure_policy,tradeoff_mask)
+    def represented(candidate):
+        result=np.asarray(representation_measure(candidate),dtype=float);score(result)
+        if len(result)<len(baseline):
+            raise ValueError('Complete stable represented rows required')
+        return result.copy()
+    representation_baseline=represented(value) if representation_measure is not None else None
+    representation_current=None if representation_baseline is None else representation_baseline.copy()
+    representation_mask=None if representation_baseline is None else np.r_[mask,np.zeros(len(representation_baseline)-len(mask),dtype=bool)]
     feasible=np.zeros(len(baseline),dtype=bool) if proposal_feasible_mask is None else np.asarray(proposal_feasible_mask)
     headroom=np.zeros(len(baseline)) if proposal_headroom is None else np.asarray(proposal_headroom,dtype=float)
     if (feasible.shape!=baseline.shape or feasible.dtype!=bool or headroom.shape!=baseline.shape
@@ -226,7 +235,9 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
     try:
         for iteration in range(iterations):
             check()
-            if np.all(current>=0):stop='inequalities_satisfied';break
+            if np.all(current>=0):
+                stop='inequalities_satisfied' if representation_current is None or np.all(representation_current>=0) else 'solver_satisfied_saved_representation_failed'
+                break
             values,jac=linearize(value)
             values=np.asarray(values,dtype=float);jac=np.asarray(jac,dtype=float)
             if (values.shape!=current.shape or jac.shape!=(len(current),len(value))
@@ -290,15 +301,20 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
                     jac=lambda delta:jac[hard]))
             correction_count=0
             def replay_candidate(candidate,label,stage,fraction,**extra):
-                nonlocal value,current
+                nonlocal value,current,representation_current
                 after=observed(candidate);replay_keep=retain(current,after,failure_policy=failure_policy,tradeoff_mask=mask)
+                saved=represented(candidate) if representation_measure is not None else None
+                if saved is not None and saved.shape!=representation_baseline.shape:
+                    raise ValueError('Complete stable represented rows required')
+                saved_keep=saved is None or retain(representation_current,saved,failure_policy=failure_policy,tradeoff_mask=representation_mask)
                 tangent=current[hard]+jac[hard]@(candidate-value)-preservation[hard]
-                tangent_keep=not proposal_tangent_guard or bool(np.all(tangent>=0));keep=replay_keep and tangent_keep
+                tangent_keep=not proposal_tangent_guard or bool(np.all(tangent>=0));keep=replay_keep and tangent_keep and saved_keep
                 trials.append(dict(label=label,iteration=iteration+1,stage=stage,fraction=fraction,accepted=keep,
                     score=list(score(after)),controls=candidate.tolist(),retention_guard_passed=replay_keep,
                     tangent_guard_passed=tangent_keep,tangent_minimum_slack=float(tangent.min()) if proposal_tangent_guard and len(tangent) else None,**extra))
+                if saved is not None:trials[-1].update(representation_guard_passed=saved_keep,represented_slacks=saved.tolist())
                 if observer:observer(label,candidate.copy(),after.copy(),keep)
-                if keep:value=candidate;current=after
+                if keep:value=candidate;current=after;representation_current=saved
                 return keep,after
             def attempt(direction,stage):
                 nonlocal value,current
@@ -376,7 +392,8 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
             history.append(dict(iteration=iteration+1,accepted=accepted,solver_success=bool(result.success),
                 solver_message=str(result.message),score=list(score(current)),seconds=time.monotonic()-started))
             if not accepted:stop='no_guarded_improvement';break
-        if np.all(current>=0):stop='inequalities_satisfied'
+        if np.all(current>=0):
+            stop='inequalities_satisfied' if representation_current is None or np.all(representation_current>=0) else 'solver_satisfied_saved_representation_failed'
     except Exhausted:stop='time_or_measurement_budget'
     # The retained point was already measured; budget expiry never selects a
     # last unaccepted solver query or proposal.
@@ -391,6 +408,12 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
         proposal_priority=proposal_priority,
         proposal_margin_fallback=proposal_margin_fallback,
         proposal_trial_correction=proposal_trial_correction,proposal_corrections=corrections,
+        representation_guard=representation_measure is not None,
+        initial_represented_slacks=None if representation_baseline is None else representation_baseline.tolist(),
+        final_represented_slacks=None if representation_current is None else representation_current.tolist(),
+        representation_tradeoff_mask=None if representation_mask is None else representation_mask.tolist(),
+        represented_inequalities_satisfied=None if representation_current is None else bool(np.all(representation_current>=0)),
+        represented_source_rows_preserved=None if representation_current is None else bool(np.all(representation_current>=np.minimum(representation_baseline,0))),
         bounded_proposal_queries=clips,
         proposal_feasible_mask=feasible.tolist(),proposal_headroom_normalized=headroom.tolist(),
         proposal_tangent_guard=proposal_tangent_guard,proposal_linearizations=linearizations,

@@ -42,6 +42,69 @@ def test_complete_coupled_values_and_every_derivative_match_dense(monkeypatch):
         assert len(values)==len(w.labels) and jac.shape==(len(w.labels),12)
 
 
+def represented_window(monkeypatch):
+    from types import SimpleNamespace
+    w=window(monkeypatch)
+    for p in w.problems:
+        p.skin={'bind_vertices':np.zeros((6,3))}
+        p.previous={'local_rot_mats':np.tile(np.eye(3,dtype=np.float32),(5,2,1,1))}
+        p.base={'root_positions':np.tile(np.array([0,.4,0],dtype=np.float32),(5,1))}
+        def vertices(rot,pos,p=p):
+            return (((rot[p.indices]@p.bind.numpy()[:,:,:,None]).squeeze(-1)+pos[p.indices])*p.weights.numpy()[:,:,None]).sum(1)
+        p.surface=SimpleNamespace(vertices=vertices)
+        old=p.independent
+        def independent(x,*,neighbors=None,p=p,old=old):
+            audit,_=old(x,neighbors=neighbors);r,pos,_,_=p.fk(p.t(x))
+            local=np.stack([r[0].numpy(),np.eye(3)]).astype(np.float32)
+            return audit,dict(posed_joints=pos.numpy().astype(np.float32)[None],global_rot_mats=r.numpy().astype(np.float32)[None],
+                local_rot_mats=local[None],root_positions=pos.numpy().astype(np.float32)[:1])
+        p.independent=independent
+    return w
+
+
+def test_saved_population_uses_written_skin_and_coupled_neighbor_arrays(monkeypatch):
+    w=represented_window(monkeypatch);x=w.seed.copy();x[7]+=.004
+    _,motion=w.independent(x);saved=w.saved_representation(x,motion=motion)
+    assert len(saved)==len(w.labels)+9 and np.isfinite(saved).all()
+    row=w.labels.index('all-reference-speed:2:Root:frame-1')
+    ref=w.problems[0].references
+    # Use squared Euclidean speed, evaluated from saved frames on both sides.
+    expected=min(1-np.sum((((motion['posed_joints'][0,0]-v[1,0].numpy())-(motion['posed_joints'][1,0]-v[2,0].numpy()))*30)**2)/(1.5-30e-6)**2 for v in ref.values())
+    assert saved[row]==pytest.approx(expected,abs=1e-14)
+    assert not np.array_equal(saved[:len(w.labels)],w.pair(x)[0])
+    cached=w.saved_representation(x);cached[:]=0
+    np.testing.assert_array_equal(w.saved_representation(x),saved)
+
+
+def test_saved_root_and_fixed_rotation_bounds_use_actual_motion(monkeypatch):
+    w=represented_window(monkeypatch);_,motion=w.independent(w.seed)
+    motion['root_positions'][0,1]=np.float32(.4+.23)
+    motion['local_rot_mats'][1,1]=module.Rotation.from_rotvec([.002,0,0]).as_matrix().astype(np.float32)
+    saved=w.saved_representation(w.seed,motion=motion)
+    assert saved[w.representation_labels.index('saved-root-upper:frame-1')]<0
+    assert saved[w.representation_labels.index('saved-fixed-rotation:frame-2')]<0
+    assert w.saved_representation(w.seed)[-6]>0
+
+
+def test_saved_edit_budget_checks_geodesic_and_parameter_bound(monkeypatch):
+    w=represented_window(monkeypatch);_,motion=w.independent(w.seed)
+    motion['local_rot_mats'][0,0]=module.Rotation.from_rotvec([.401,0,0]).as_matrix().astype(np.float32)
+    saved=w.saved_representation(w.seed,motion=motion)
+    rows=[i for i,label in enumerate(w.labels) if label.startswith('rotation-budget:')]
+    assert rows and saved[rows[0]]<0
+
+
+def test_explicit_geometry_population_is_complete_and_does_not_reconstruct_pose(monkeypatch):
+    p=FixtureProblem('native-joint','box');p.skin={'bind_vertices':np.zeros((6,3))}
+    _,positions,_,vertices=p.fk(p.t([.03,-.02,.01,.003]))
+    expected=p.geometry_slack(p.t([.03,-.02,.01,.003]))
+    monkeypatch.setattr(p,'fk',lambda x:pytest.fail('Explicit rows reconstructed a solver pose'))
+    np.testing.assert_array_equal(p.geometry_rows(positions,vertices).numpy(),expected.numpy())
+    for pos,skin in [(positions[:1],vertices),(positions,vertices[:-1]),(positions.float(),vertices),
+        (positions,vertices*float('nan'))]:
+        with pytest.raises(ValueError):p.geometry_rows(pos,skin)
+
+
 def test_internal_speed_has_both_control_blocks_and_fixed_edges_do_not(monkeypatch):
     w=window(monkeypatch);x=w.seed.copy();x[7]+=.004
     _,jac=w.pair(x)

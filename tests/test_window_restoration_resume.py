@@ -14,7 +14,9 @@ from pose_restoration_policy import row_diagnostics
 class Window:
     frames=[1,2];pose_dim=4;dim=8;scale=np.ones(8);seed=np.zeros(8)
     labels=['point:left:frame-1','point:left:frame-2'];problems=[]
+    representation_labels=labels
     def geometry_slack(self,x):return torch.stack([x[0]-.4,x[4]-.4])
+    def saved_representation(self,x,*,motion=None):return self.geometry_slack(torch.as_tensor(x)).numpy()
     def independent(self,x):
         motion=dict(posed_joints=np.asarray(x).reshape(2,4)[:,:3,None].transpose(0,2,1).copy())
         return dict(window_checks_passed=False,positions=[float(x[0]),float(x[4])]),motion
@@ -73,6 +75,49 @@ def test_selects_only_replayed_terminal_window_and_binds_full_archives(tmp_path,
     assert receipt['replayed_observations']==4 and receipt['original_references_preserved']
     assert str(args[0]/'proposals/linearization-1.npz') in bindings
     assert str(args[0]/'trials/query/window.npz') in bindings
+
+
+def test_legacy_solver_pass_cannot_resume_if_actual_saved_failed_row_regressed(tmp_path,monkeypatch):
+    args,_=fixture(tmp_path,monkeypatch);w=args[2]
+    def representation(x,*,motion=None):
+        values=w.geometry_slack(torch.as_tensor(x)).numpy()
+        return np.r_[values,-.1-2e-7*(float(motion['posed_joints'][0,0,0])>0)]
+    w.saved_representation=representation
+    with pytest.raises(ValueError,match='Legacy window regressed'):
+        module.resume_window(*args)
+
+
+@pytest.mark.parametrize('damage',[None,'audit','trial','labels','diagnostics','policy','flags','terminal'])
+def test_bound_saved_guard_replays_complete_archived_representation(tmp_path,monkeypatch,damage):
+    args,save=fixture(tmp_path,monkeypatch);directory,w=args[0],args[2]
+    protocol=module.read(directory/'protocol.json');result=module.read(directory/'result.json');report=result['fit']
+    protocol.update(representation_guard=True,representation_labels=w.representation_labels)
+    report.update(representation_guard=True,initial_represented_slacks=report['initial_slacks'],
+        final_represented_slacks=report['final_slacks'],representation_tradeoff_mask=[False,False],
+        represented_source_rows_preserved=True,represented_inequalities_satisfied=False)
+    report['trials'][0].update(representation_guard_passed=True,represented_slacks=report['final_slacks'])
+    for entry in result['observations']:
+        path=directory/'trials'/entry['label']/'audit.json';audit=module.read(path)
+        audit['represented_slacks']=audit['solver_slacks'].copy()
+        if damage=='audit' and entry['label']=='kept':audit['represented_slacks'][0]-=2e-7
+        save(path,audit);entry['audit_sha256']=module.sha256(path)
+    if damage=='trial':report['trials'][0]['representation_guard_passed']=False
+    if damage=='labels':protocol['representation_labels']=['replaced','population']
+    if damage=='policy':report['representation_guard']=False
+    if damage=='flags':report['represented_inequalities_satisfied']=True
+    if damage=='terminal':
+        data=dict(np.load(directory/'window.npz'));data['posed_joints'][0,0,1]+=1e-7
+        np.savez_compressed(directory/'window.npz',**data);result['motion_sha256']=module.sha256(directory/'window.npz')
+    diagnostics=row_diagnostics(w.labels,report['initial_slacks'],report['final_slacks'],[False,False])
+    if damage=='diagnostics':diagnostics['protected_source_regressed']=['forged']
+    save(directory/'representation-diagnostics.json',diagnostics)
+    result['representation_diagnostics_sha256']=module.sha256(directory/'representation-diagnostics.json')
+    save(directory/'protocol.json',protocol);result['protocol_sha256']=module.sha256(directory/'protocol.json');save(directory/'result.json',result)
+    if damage:
+        with pytest.raises((ValueError,AssertionError)):module.resume_window(*args)
+    else:
+        parameters,_,_,bound=module.resume_window(*args)
+        assert parameters[0]==.05 and str(directory/'representation-diagnostics.json') in bound
 
 
 @pytest.mark.parametrize('damage',['clock','frames','limits','inputs','method','motion','metadata','mask','policy','margin','edges',

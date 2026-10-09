@@ -37,6 +37,13 @@ def resume_window(directory,study,window,original_bindings,limits,methods,defini
     bind(directory/'row-diagnostics.json',result['row_diagnostics_sha256'])
     for name in ['result.json','pipeline.json']:checked[str(directory/name)]=sha256(directory/name)
     report=result['fit'];mask=np.asarray(report['tradeoff_mask']);baseline=np.asarray(report['initial_slacks'],dtype=float)
+    represented_guard=protocol.get('representation_guard',False)
+    if type(represented_guard) is not bool or report.get('representation_guard',False) is not represented_guard:
+        raise ValueError('Bound saved-representation policy required')
+    if represented_guard:
+        if protocol.get('representation_labels')!=window.representation_labels:
+            raise ValueError('Complete original saved-representation labels required')
+        bind(directory/'representation-diagnostics.json',result['representation_diagnostics_sha256'])
     size=len(window.labels);scale=window.scale
     lower=np.tile(np.r_[np.full(window.pose_dim-1,-1.),0.],len(window.frames));upper=np.ones(window.dim)
     def controls(value):
@@ -127,10 +134,18 @@ def resume_window(directory,study,window,original_bindings,limits,methods,defini
             for key in motion:
                 if saved[key].dtype!=motion[key].dtype or saved[key].shape!=motion[key].shape:raise ValueError('Window array precision/shape differs')
                 np.testing.assert_allclose(saved[key],motion[key],rtol=0,atol=2e-6)
+            represented=window.saved_representation(parameters,motion={key:saved[key] for key in saved.files})
+        if represented_guard:np.testing.assert_array_equal(represented,audit['represented_slacks'])
+        audit['_replayed_representation']=represented
         observations[label]=audit
         if len(observations)%16==0:print(dict(stage='window_resume_replayed',observations=len(observations)),flush=True)
     np.testing.assert_allclose(observations['seed']['parameters'],origin,rtol=0,atol=1e-12)
     np.testing.assert_array_equal(observations['seed']['solver_slacks'],baseline)
+    represented_baseline=observations['seed']['_replayed_representation']
+    represented_before=represented_baseline.copy();represented_mask=np.zeros(len(represented_baseline),dtype=bool)
+    if represented_guard:
+        np.testing.assert_array_equal(report['initial_represented_slacks'],represented_baseline)
+        np.testing.assert_array_equal(report['representation_tradeoff_mask'],represented_mask)
     correction_records={};per_iteration={}
     for reference in report.get('proposal_corrections',[]):
         correction=record(reference,'correction');number=correction['attempt'];iteration=correction['iteration']
@@ -191,11 +206,19 @@ def resume_window(directory,study,window,original_bindings,limits,methods,defini
         np.testing.assert_array_equal(cached['tangent_proposal_caps'],np.minimum(before,0)+1e-6)
         keep=retain(before,after,failure_policy='merit',tradeoff_mask=mask)
         tangent=bool(np.all(before+jac@(z-last)>=np.minimum(before,0)))
+        represented_after=audit['_replayed_representation']
+        saved_keep=retain(represented_before,represented_after,failure_policy='merit',tradeoff_mask=represented_mask)
+        accepted=keep and tangent and (saved_keep if represented_guard else True)
         if (trial['retention_guard_passed'] is not keep or trial['tangent_guard_passed'] is not tangent
-                or trial['accepted'] is not (keep and tangent) or audit['retained'] is not (keep and tangent)):
+                or trial['accepted'] is not accepted or audit['retained'] is not accepted):
             raise ValueError('Window retained decision differs from complete replay')
+        if represented_guard:
+            np.testing.assert_array_equal(trial['represented_slacks'],represented_after)
+            if trial['representation_guard_passed'] is not saved_keep:raise ValueError('Saved representation decision differs')
+        elif accepted and np.any(represented_after<np.minimum(represented_before,0)):
+            raise ValueError('Legacy window regressed a saved passing/protected row')
         np.testing.assert_allclose(trial['score'],score(after),rtol=0,atol=1e-12)
-        if keep and tangent:before=after;last=z;retained.add(trial['label'])
+        if accepted:before=after;last=z;represented_before=represented_after;retained.add(trial['label'])
     if any(audit['retained'] is not (label in retained) for label,audit in observations.items()):raise ValueError('Unaccepted window record cannot be promoted')
     for query in report['proposal_queries']:
         audit=observations[query['label']]
@@ -208,6 +231,15 @@ def resume_window(directory,study,window,original_bindings,limits,methods,defini
     np.testing.assert_array_equal(before,report['final_slacks']);np.testing.assert_array_equal(before,observations['final']['solver_slacks'])
     if np.any(before<np.minimum(baseline,0)):raise ValueError('Window lost a passing/protected source row')
     if read(directory/'row-diagnostics.json')!=row_diagnostics(window.labels,baseline,before,mask):raise ValueError('Window diagnostics differ')
+    np.testing.assert_array_equal(represented_before,observations['final']['_replayed_representation'])
+    if np.any(represented_before<np.minimum(represented_baseline,0)):raise ValueError('Saved window lost a passing/protected source row')
+    if represented_guard:
+        np.testing.assert_array_equal(report['final_represented_slacks'],represented_before)
+        if (report.get('represented_source_rows_preserved') is not True
+                or report.get('represented_inequalities_satisfied') is not bool(np.all(represented_before>=0))):
+            raise ValueError('Saved representation terminal flags differ')
+        if read(directory/'representation-diagnostics.json')!=row_diagnostics(window.representation_labels,represented_baseline,represented_before,represented_mask):
+            raise ValueError('Saved representation diagnostics differ')
     actual,motion=window.independent(parameters)
     if actual!=result['candidate'] or actual!=observations['final']['candidate']:raise ValueError('Terminal window audit differs')
     with np.load(directory/'window.npz',allow_pickle=False) as saved:
@@ -215,6 +247,9 @@ def resume_window(directory,study,window,original_bindings,limits,methods,defini
         for key in motion:
             if saved[key].dtype!=motion[key].dtype or saved[key].shape!=motion[key].shape:raise ValueError('Terminal array precision/shape differs')
             np.testing.assert_allclose(saved[key],motion[key],rtol=0,atol=2e-6)
+        with np.load(directory/'trials/final/window.npz',allow_pickle=False) as retained_saved:
+            if set(saved.files)!=set(retained_saved.files):raise ValueError('Terminal retained arrays differ')
+            for key in saved.files:np.testing.assert_array_equal(saved[key],retained_saved[key])
     print(dict(stage='window_resume_verified',directory=directory.relative_to(ROOT).as_posix()),flush=True)
     return parameters,motion,dict(directory=directory.relative_to(ROOT).as_posix(),result_sha256=checked[str(directory/'result.json')],
         replayed_observations=len(observations),replayed_backoffs=len(report['trials']),original_references_preserved=True,

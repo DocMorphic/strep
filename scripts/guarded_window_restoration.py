@@ -71,8 +71,9 @@ def _run(study,output,frames,iterations,trust,seconds,solve_iterations,row_chunk
         archive_proposals=True,proposal_tangent_guard=True,
         proposal_margin_fallback=margin_fallback,
         proposal_trial_correction=trial_correction,
+        representation_guard=True,representation_labels=window.representation_labels,
         temporal_edges=[dict(frame=p.frame,neighbor=f,neighbor_edited=f in frames) for p in window.problems for f in p.neighbors],
-        acceptance='Every original row preserved against min(previous,0); complete worst/squared violation must improve. Internal speed rows use both candidate frames, outside keys stay fixed. No threshold relaxation.',
+        acceptance='Solver and saved float32/projected populations must each preserve every row against min(previous,0) and improve worst/squared violation. Saved rows also check actual rig edits and root bounds. Internal speed rows use both candidate frames; outside keys stay fixed. No threshold relaxation.',
         scope='Two to five native contact keys; no full-clip, between-key, anatomy/dynamics, self-collision, engine or human certificate.',
         quality_approved=False,release_approved=False)
     save(output/'protocol.json',protocol);save(output/'pipeline.json',dict(status='processing',quality_approved=False,release_approved=False))
@@ -102,6 +103,7 @@ def _run(study,output,frames,iterations,trust,seconds,solve_iterations,row_chunk
         directory=output/'trials'/label;directory.mkdir(parents=True,exist_ok=False)
         audit,motion=window.independent(candidate*scale);np.savez_compressed(directory/'window.npz',**motion)
         save(directory/'audit.json',dict(label=label,retained=retained,candidate=audit,solver_slacks=slacks.tolist(),
+            represented_slacks=window.saved_representation(candidate*scale,motion=motion).tolist(),
             parameters=(candidate*scale).tolist(),motion_sha256=sha256(directory/'window.npz'),quality_approved=False,release_approved=False))
         observations.append(dict(label=label,retained=retained,audit_sha256=sha256(directory/'audit.json'),window_checks_passed=audit['window_checks_passed']))
         save(output/'progress.json',dict(status='processing',observations=observations))
@@ -112,7 +114,8 @@ def _run(study,output,frames,iterations,trust,seconds,solve_iterations,row_chunk
         proposal_start='geometry-descent',proposal_priority='worst-first',vectorize=vectorize,
         proposal_margin_fallback=margin_fallback,
         proposal_trial_correction=trial_correction,
-        record_store=ProposalArchive(output),observer=observer)
+        record_store=ProposalArchive(output),observer=observer,
+        representation_measure=lambda candidate:window.saved_representation(candidate*scale))
     candidate,motion=window.independent(value*scale)
     if any(sha256(Path(path))!=digest for path,digest in bindings.items()):raise ValueError('Original/resume inputs changed')
     if any(sha256(ROOT/'scripts'/name)!=digest or sha256(archive/name)!=digest for name,digest in protocol['methods_sha256'].items()):
@@ -122,10 +125,19 @@ def _run(study,output,frames,iterations,trust,seconds,solve_iterations,row_chunk
     if diagnostics['source_passing_lost'] or diagnostics['protected_source_regressed']:raise ValueError('Window source protection failed')
     np.testing.assert_array_equal(final,report['final_slacks']);np.testing.assert_array_equal(source,report['initial_slacks'])
     save(output/'row-diagnostics.json',diagnostics);np.savez_compressed(output/'window.npz',**motion)
+    saved_source=window.saved_representation(z*scale);saved_final=window.saved_representation(value*scale,motion=motion)
+    saved_mask=np.zeros(len(window.representation_labels),dtype=bool)
+    saved_diagnostics=row_diagnostics(window.representation_labels,saved_source,saved_final,saved_mask)
+    if saved_diagnostics['source_passing_lost'] or saved_diagnostics['protected_source_regressed']:
+        raise ValueError('Saved window source protection failed')
+    np.testing.assert_array_equal(saved_source,report['initial_represented_slacks'])
+    np.testing.assert_array_equal(saved_final,report['final_represented_slacks'])
+    save(output/'representation-diagnostics.json',saved_diagnostics)
     status='interrupted_resource_guard' if report['stop']=='time_or_measurement_budget' else 'complete'
     result=dict(at=now(),status=status,seed=seed_audit,candidate=candidate,fit=report,observations=observations,
         parameters=(value*scale).tolist(),protocol_sha256=sha256(output/'protocol.json'),motion_sha256=sha256(output/'window.npz'),
         row_diagnostics_sha256=sha256(output/'row-diagnostics.json'),quality_approved=False,release_approved=False)
+    result['representation_diagnostics_sha256']=sha256(output/'representation-diagnostics.json')
     save(output/'result.json',result);save(output/'pipeline.json',dict(status=status,quality_approved=False,release_approved=False))
     return result
 

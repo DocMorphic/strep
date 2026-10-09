@@ -6,6 +6,45 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from protected_inequality_step import fit,retain,score
 
 
+def test_saved_rounding_regression_rejects_solver_improvement_without_relaxing_rows():
+    measure=lambda x:np.array([x[0]-.5,-.1])
+    pair=lambda x:(measure(x),np.array([[1.],[0.]]))
+    saved=lambda x:np.array([x[0]-.5,-.1-2e-7*(x[0]>0)])
+    value,report=fit(measure,pair,[0.],[-1.],[1.],trust=.1,representation_measure=saved)
+    np.testing.assert_array_equal(value,[0.])
+    assert all(t['retention_guard_passed'] and not t['representation_guard_passed'] for t in report['trials'])
+    assert report['initial_represented_slacks']==report['final_represented_slacks']
+
+
+def test_saved_only_original_bound_blocks_otherwise_acceptable_move():
+    measure=lambda x:np.array([x[0]-.5])
+    saved=lambda x:np.r_[measure(x),-x[0]]
+    value,report=fit(measure,lambda x:(measure(x),np.ones((1,1))),[0.],[-1.],[1.],representation_measure=saved)
+    assert value[0]==0 and report['representation_tradeoff_mask']==[False,False]
+
+
+def test_solver_success_cannot_hide_failed_saved_representation():
+    value,report=fit(lambda x:[1.],lambda x:pytest.fail('Solver rows already pass'),[0.],[-1.],[1.],
+        representation_measure=lambda x:[1.,-1e-7])
+    assert value[0]==0 and report['inequalities_satisfied'] and not report['represented_inequalities_satisfied']
+    assert report['stop']=='solver_satisfied_saved_representation_failed'
+
+
+def test_saved_guard_budget_expiry_returns_last_jointly_accepted_candidate():
+    measure=lambda x:np.array([x[0]-.5])
+    value,report=fit(measure,lambda x:(measure(x),np.ones((1,1))),[0.],[-1.],[1.],trust=.1,
+        maximum_calls=2,representation_measure=lambda x:measure(x).astype(np.float32))
+    assert value[0]==pytest.approx(.1) and report['stop']=='time_or_measurement_budget'
+    assert report['final_represented_slacks']==np.array([-.4],dtype=np.float32).astype(float).tolist()
+
+
+@pytest.mark.parametrize('saved',[False,lambda x:[],lambda x:[np.nan],lambda x:np.ones((2,2)),lambda x:[-.5] if x[0]==0 else [-.4,0.]])
+def test_invalid_or_changing_saved_population_is_rejected(saved):
+    measure=lambda x:np.array([x[0]-.5])
+    with pytest.raises(ValueError):
+        fit(measure,lambda x:(measure(x),np.ones((1,1))),[0.],[-1.],[1.],representation_measure=saved)
+
+
 def test_feasible_rows_and_every_original_failed_row_are_protected():
     assert retain([.01,-.1,-.2],[0.,-.09,-.19])
     assert not retain([.01,-.1,-.2],[-1e-12,0.,0.])

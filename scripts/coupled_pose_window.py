@@ -4,6 +4,7 @@ An experimental contact-window problem, not a full-clip quality certificate.
 """
 import numpy as np
 import torch
+from scipy.spatial.transform import Rotation
 from scene_pose_restoration import RestorationProblem
 from sparse_pose_jacobian import SparsePoseJacobian
 from pose_row_jacobian import row_jacobian
@@ -33,6 +34,9 @@ class CoupledPoseWindow:
         if len(set(self.labels))!=len(self.labels):raise ValueError('Unique complete window row identities required')
         self.sparse=[SparsePoseJacobian(p,row_chunk=row_chunk) for p in self.problems]
         self.cache=None
+        self.representation_cache=None
+        self.representation_labels=self.labels+[name+':frame-'+str(p.frame) for p in self.problems
+            for name in ['saved-root-lower','saved-root-upper','saved-fixed-rotation']]
 
     def controls(self,x):
         x=np.asarray(x,dtype=float)
@@ -127,3 +131,29 @@ class CoupledPoseWindow:
         return dict(frames=audits,window_checks_passed=all(a['pose_checks_passed'] for a in audits),
             scope='Complete keyed native window with coupled adjacent speeds and fixed exterior keys; no between-key, self-collision, anatomy, dynamics, engine or human certificate.',
             quality_approved=False,release_approved=False),motion
+
+    def saved_representation(self,x,*,motion=None):
+        """Complete rows from the same float32/projected arrays written to disk."""
+        x=self.controls(x)
+        cached=motion is None
+        if cached and self.representation_cache is not None and np.array_equal(x,self.representation_cache[0]):
+            return self.representation_cache[1].copy()
+        if motion is None:_,motion=self.independent(x)
+        positions={p.frame:p.t(motion['posed_joints'][i]) for i,p in enumerate(self.problems)}
+        values=[];extra=[]
+        for i,p in enumerate(self.problems):
+            vertices=p.t(p.surface.vertices(motion['global_rot_mats'][i],motion['posed_joints'][i]))
+            neighbors={f:positions.get(f,fixed) for f,fixed in p.neighbors.items()}
+            values.extend(p.geometry_rows(positions[p.frame],vertices,neighbors=neighbors).detach().numpy())
+            angles=Rotation.from_matrix(p.previous['local_rot_mats'][p.frame].transpose(0,2,1)@motion['local_rot_mats'][i]).magnitude()
+            parameters=x[i*self.pose_dim:(i+1)*self.pose_dim][:-1].reshape(-1,3)
+            values.extend(1-np.maximum((parameters**2).sum(-1),angles[p.editable]**2)/p.limits**2)
+            lift=float(motion['root_positions'][i,1])-float(p.base['root_positions'][p.frame,1])
+            fixed=[j for j in range(len(p.names)) if j not in p.editable]
+            extra.extend([lift/p.config['max_root_lift_m'],1-lift/p.config['max_root_lift_m'],
+                1-float(angles[fixed].max(initial=0))/1e-6])
+        result=np.r_[values,extra]
+        if result.shape!=(len(self.representation_labels),) or not np.isfinite(result).all():
+            raise ValueError('Complete finite saved geometry and original rig/root bounds required')
+        if cached:self.representation_cache=(x.copy(),result.copy())
+        return result

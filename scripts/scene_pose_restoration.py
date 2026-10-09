@@ -97,7 +97,18 @@ class RestorationProblem(PoseProblem):
 
     def geometry_slack(self,x,smooth_max_m=0.,*,neighbors=None):
         if smooth_max_m:raise ValueError('This restoration uses exact population maxima')
-        _,positions,_,vertices=self.fk(x);values=[]
+        _,positions,_,vertices=self.fk(x)
+        return self.geometry_rows(positions,vertices,neighbors=neighbors)
+
+    def geometry_rows(self,positions,vertices,*,neighbors=None):
+        """Evaluate unchanged geometry thresholds on explicit native pose data."""
+        expected=len(self.skin['bind_vertices']) if hasattr(self,'skin') else len(vertices)
+        if (not isinstance(positions,torch.Tensor) or positions.dtype!=torch.float64
+                or positions.shape!=next(iter(self.references.values())).shape[1:] or not torch.isfinite(positions).all()
+                or not isinstance(vertices,torch.Tensor) or vertices.dtype!=positions.dtype or vertices.device!=positions.device
+                or vertices.shape!=(expected,3) or not expected or not torch.isfinite(vertices).all()):
+            raise ValueError('Complete finite double native positions and original skin vertices required')
+        values=[]
         for contact,limit in zip(self.contacts,self.point_limits):
             values.append((limit-self.headroom_m-torch.linalg.vector_norm(vertices[contact['vertex']]-self.t(contact['target'])))/.01)
         chord=2*np.sin(np.deg2rad(self.config['normal_tolerance_degrees']-.001)/2)
