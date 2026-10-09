@@ -60,3 +60,18 @@ def rank_windows(frames,summary,width=3):
         ranked.append(dict(frames=window,maximum_violation=max(r['maximum_violation'] for r in values),
             squared_violation=sum(r['squared_violation'] for r in values),failed_frames=[r['frame'] for r in values if not r['keyed_rows_passed']]))
     return sorted(ranked,key=lambda r:(-r['maximum_violation'],-r['squared_violation'],r['frames'][0]))
+
+
+def select_window(frames,summary,width=3,exclusions=None):
+    """Highest measured priority not yet attempted in an explicitly bound pass."""
+    canonical={tuple(block) for block in partition_frames(frames,width)}
+    exclusions=[] if exclusions is None else exclusions
+    if (not isinstance(exclusions,list) or any(not isinstance(block,list) or any(type(f) is not int for f in block)
+            or tuple(block) not in canonical for block in exclusions)
+            or len({tuple(block) for block in exclusions})!=len(exclusions)):
+        raise ValueError('Distinct complete canonical attempted windows required')
+    ranked=summary['ranked_windows']
+    if not isinstance(ranked,list) or len(ranked)!=len(canonical) or {tuple(r['frames']) for r in ranked}!=canonical:
+        raise ValueError('Every measured canonical window must remain in the ranking')
+    skipped={tuple(block) for block in exclusions}
+    return next((r['frames'].copy() for r in ranked if tuple(r['frames']) not in skipped),None)

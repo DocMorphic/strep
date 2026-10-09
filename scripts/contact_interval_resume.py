@@ -7,7 +7,7 @@ from audit_contact_interval import pose_tracks,overlay_pose_tracks,evaluate_inte
 from pose_proposal_archive import load_record
 from pose_restoration_policy import row_diagnostics,proposal_headroom
 from protected_inequality_step import retain,score,margin_start_attempts
-from contact_interval_coverage import partition_frames
+from contact_interval_coverage import partition_frames,select_window
 
 FILES={'baseline-motion.npz','proposed-motion.npz','retained-motion.npz','baseline.json','proposed.json','row-diagnostics.json','preflight.json'}
 
@@ -206,7 +206,8 @@ def resume_interval(directory,study,factory,source,frames,width,original_binding
     baseline,labels,before=evaluate_interval(factory,frames,state,parameters,width=width)
     if baseline!=read(directory/'baseline.json'):raise ValueError('Complete saved starting interval differs')
     same_motion(dict(np.load(directory/'baseline-motion.npz',allow_pickle=False)),state)
-    block=baseline['ranked_windows'][0]['frames']
+    block=select_window(frames,baseline,width,protocol.get('selection_exclusions',[]))
+    if block is None:raise ValueError('Retained interval must select a remaining measured window')
     if protocol.get('selected_frames')!=block or result.get('selected_frames')!=block:raise ValueError('Bound failure-first selection differs')
     current={r['frame']:np.asarray(r['controls']) for r in baseline['parameters']}
     window=seed_window(factory,block,state,current);origin=origin_type(window,state)

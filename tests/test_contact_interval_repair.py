@@ -121,7 +121,7 @@ def test_lock_covers_native_and_full_interval_lifecycle(tmp_path,monkeypatch):
         try:yield
         finally:active.pop()
     def run(study,output,frames,*budgets):
-        assert active and budgets==(3,8,.03,300,10,None)
+        assert active and budgets==(3,8,.03,300,10,None,[])
         return 'whole-interval-checked'
     monkeypatch.setattr(module,'worker_lock',lock);monkeypatch.setattr(module,'threadpool_limits',lambda **k:nullcontext())
     monkeypatch.setattr(module,'_run',run)
@@ -152,7 +152,7 @@ def test_bound_interval_is_forwarded_inside_worker_lock(tmp_path,monkeypatch):
     monkeypatch.setattr(module,'ROOT',tmp_path);monkeypatch.setattr(module,'worker_lock',nullcontext)
     monkeypatch.setattr(module,'threadpool_limits',lambda **k:nullcontext())
     def run(*args):
-        assert args[-1]==tmp_path/'parent'
+        assert args[-2]==tmp_path/'parent' and args[-1]==[]
         return 'bound-interval'
     monkeypatch.setattr(module,'_run',run)
     assert module.run(tmp_path/'source',tmp_path/'out',[1,2],resume=tmp_path/'parent')=='bound-interval'

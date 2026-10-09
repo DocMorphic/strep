@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-from contact_interval_coverage import partition_frames,summarize_rows,rank_windows
+from contact_interval_coverage import partition_frames,summarize_rows,rank_windows,select_window
 
 
 @pytest.mark.parametrize('length',[2,3,4,5,6,7,11,62,1000])
@@ -46,6 +46,24 @@ def test_maximum_contact_interval_keeps_both_exterior_boundaries():
 def test_exterior_capacity_does_not_expand_requested_contact_interval():
     with pytest.raises(ValueError):partition_frames(list(range(1001)))
     with pytest.raises(ValueError):summarize_rows(list(range(1003)),['floor:frame-'+str(f) for f in range(1003)],np.ones(1003))
+
+
+def test_attempted_windows_are_skipped_without_removing_their_measurements():
+    frames=list(range(6));summary=summarize_rows(frames,['floor:frame-'+str(f) for f in frames],[-1,-1,-2,-2,-3,-3])
+    summary['ranked_windows']=rank_windows(frames,summary,width=2)
+    assert select_window(frames,summary,2)==[4,5]
+    assert select_window(frames,summary,2,[[4,5]])==[2,3]
+    assert select_window(frames,summary,2,[[4,5],[2,3],[0,1]]) is None
+    assert len(summary['frames'])==6 and not summary['complete_keyed_rows_passed']
+
+
+@pytest.mark.parametrize('exclusions',[[[0]],[[0,2]],[[True,1]],[[0,1],[0,1]],[(0,1)],'all'])
+def test_partial_unknown_or_duplicate_exclusions_rejected(exclusions):
+    with pytest.raises(ValueError):select_window(list(range(4)),dict(ranked_windows=[dict(frames=[0,1]),dict(frames=[2,3])]),2,exclusions)
+
+
+def test_exclusions_cannot_hide_missing_measurement_windows():
+    with pytest.raises(ValueError):select_window(list(range(4)),dict(ranked_windows=[dict(frames=[0,1])]),2,[[2,3]])
 
 
 @pytest.mark.parametrize('labels,values',[

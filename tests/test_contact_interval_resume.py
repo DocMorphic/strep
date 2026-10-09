@@ -126,7 +126,7 @@ def test_scope_clock_or_approval_changes_cannot_resume(tmp_path,monkeypatch,fiel
     with pytest.raises(ValueError):module.resume_interval(directory,*args)
 
 
-@pytest.mark.parametrize('damage',['hash','method','native','retained','baseline','selection','controls','passing-claim','trial-decision','trial-pose','rows','observation','archive','trust'])
+@pytest.mark.parametrize('damage',['hash','method','native','retained','baseline','selection','controls','passing-claim','trial-decision','trial-pose','rows','observation','archive','trust','exclude-selected'])
 def test_tampered_history_rejected_even_after_outer_hashes_resealed(tmp_path,monkeypatch,damage):
     make,args=fixture(tmp_path,monkeypatch);directory,_,_=make('first');result=module.read(directory/'result.json');p=module.read(directory/'protocol.json')
     if damage=='hash':(directory/'baseline.json').write_text('{}');
@@ -145,6 +145,7 @@ def test_tampered_history_rejected_even_after_outer_hashes_resealed(tmp_path,mon
     elif damage=='observation':result['observations'].pop()
     elif damage=='archive':result['fit']['proposal_linearizations'][0]['archive_sha256']='0'*64
     elif damage=='trust':p['trust_normalized']=True
+    elif damage=='exclude-selected':p['selection_exclusions']=[[1,2]]
     write(directory/'protocol.json',p);write(directory/'result.json',result)
     if damage!='hash':reseal(directory)
     with pytest.raises((ValueError,AssertionError)):module.resume_interval(directory,*args)

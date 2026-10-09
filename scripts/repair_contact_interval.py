@@ -14,7 +14,7 @@ from build_soma_preview import ASSET
 from action_worker_lock import worker_lock
 from guarded_pose_restoration import DEFINITIONS
 from audit_contact_interval import METHODS as AUDIT_METHODS,POSE_TRACKS,pose_tracks,overlay_pose_tracks,evaluate_interval
-from contact_interval_coverage import partition_frames
+from contact_interval_coverage import partition_frames,select_window
 from coupled_pose_window import CoupledPoseWindow
 from protected_inequality_step import fit,retain
 from pose_restoration_policy import proposal_headroom,row_diagnostics
@@ -69,7 +69,7 @@ def compare_interval(labels,before,current_labels,after):
         quality_approved=False,release_approved=False),diagnostics
 
 
-def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,resume):
+def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,resume,exclusions):
     summary=read(study/'fit/summary.json')
     if (summary.get('solver_version')!=17 or read(study/'pipeline.json')['status']!='complete'
             or len(summary['trials'])!=1 or sha256(ASSET)!=summary['mesh_sha256']):
@@ -93,7 +93,7 @@ def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,res
         native_metadata_sha256=sha256(DEFINITIONS),source_motion_sha256=sha256(folder/'motion.npz'),
         pose_tracks=list(POSE_TRACKS),omitted_source_tracks=sorted(set(source_payload)-set(POSE_TRACKS)),
         iterations=iterations,trust_normalized=trust,seconds=seconds,proposal_solve_iterations=solve_iterations,row_chunk=4,
-        interval_resume=receipt,
+        interval_resume=receipt,selection_exclusions=exclusions,
         origin='Exact saved original or fully replayed preserving interval state; reconstructed solver seed is never substituted for the saved origin. Original references and limits remain fixed.',
         acceptance='Every originally passing saved row stays passing, every failed saved row is nonregressing, and worst/squared violation improves. Check the complete requested interval and both exterior body boundaries after the bounded local fit.',
         metadata_approved=False,quality_approved=False,release_approved=False)
@@ -110,7 +110,9 @@ def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,res
         return observer
     baseline,labels,before=evaluate_interval(factory,frames,source,parameters,width=width,observer=observe('baseline'))
     parameters={r['frame']:np.asarray(r['controls']) for r in baseline['parameters']}
-    block=baseline['ranked_windows'][0]['frames'];window=seed_window(factory,block,source,parameters)
+    block=select_window(frames,baseline,width,exclusions)
+    if block is None:raise ValueError('Every window in this coverage pass has already been attempted')
+    window=seed_window(factory,block,source,parameters)
     origin=ExactSavedOrigin(window,source);scale=window.scale;z=origin.normalized_seed.copy()
     lower=np.tile(np.r_[np.full(window.pose_dim-1,-1.),0.],len(block));upper=np.ones(window.dim)
     if np.any(z<lower) or np.any(z>upper):raise ValueError('Original solver seed outside unchanged normalized bounds')
@@ -119,7 +121,7 @@ def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,res
         root_lift_m=p.config['max_root_lift_m'],rotation_radians=p.limits.tolist()) for p in window.problems]
     headroom=proposal_headroom(window.labels,point=1e-5,normal=1e-3,object=1e-3,body=1e-3)
     mask=np.zeros(len(window.labels),dtype=bool);point_rows=np.array([label.startswith('point:') for label in window.labels])
-    protocol.update(selected_frames=block,selection='Largest measured normalized violation, then squared violation, then earliest frame.',
+    protocol.update(selected_frames=block,selection='Largest measured normalized violation, then squared violation, then earliest frame among explicitly unattempted windows.',
         original_limits=original_limits,pose_dim=window.pose_dim,inequality_labels=window.labels,representation_labels=window.representation_labels,
         tradeoff_mask=mask.tolist(),proposal_feasible_mask=point_rows.tolist(),proposal_headroom_normalized=headroom.tolist(),
         proposal='nonlinear',proposal_start='geometry-descent',proposal_priority='worst-first',
@@ -180,8 +182,9 @@ def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,res
     return result
 
 
-def run(study,output,frames,*,width=3,iterations=8,trust=.03,seconds=300,solve_iterations=10,resume=None):
-    partition_frames(frames,width)
+def run(study,output,frames,*,width=3,iterations=8,trust=.03,seconds=300,solve_iterations=10,resume=None,exclusions=None):
+    windows=partition_frames(frames,width);exclusions=[] if exclusions is None else exclusions
+    select_window(frames,dict(ranked_windows=[dict(frames=w) for w in windows]),width,exclusions)
     if (type(iterations) is not int or not 1<=iterations<=100 or type(solve_iterations) is not int or not 1<=solve_iterations<=300
             or type(trust) not in [int,float] or not np.isfinite(trust) or not 1e-5<=trust<=.3
             or type(seconds) not in [int,float] or not np.isfinite(seconds) or not 1<=seconds<=1800
@@ -194,7 +197,7 @@ def run(study,output,frames,*,width=3,iterations=8,trust=.03,seconds=300,solve_i
         raise ValueError('Separate immutable in-project original source and repair output required')
     if output.exists():raise FileExistsError(output)
     with worker_lock(),threadpool_limits(limits=2):
-        try:return _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,resume)
+        try:return _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,resume,exclusions)
         except Exception as exc:
             if output.exists():save(output/'pipeline.json',dict(status='failed',error_type=type(exc).__name__,error=str(exc),quality_approved=False,release_approved=False))
             raise
@@ -205,6 +208,7 @@ if __name__=='__main__':
     parser.add_argument('--start',type=int,required=True);parser.add_argument('--end',type=int,required=True)
     parser.add_argument('--width',type=int,default=3);parser.add_argument('--iterations',type=int,default=8)
     parser.add_argument('--trust',type=float,default=.03);parser.add_argument('--seconds',type=float,default=300)
-    parser.add_argument('--solve-iterations',type=int,default=10);parser.add_argument('--resume-interval',type=Path);args=parser.parse_args()
+    parser.add_argument('--solve-iterations',type=int,default=10);parser.add_argument('--resume-interval',type=Path)
+    parser.add_argument('--exclude-window',type=int,nargs='+',action='append',default=[]);args=parser.parse_args()
     run(args.study,args.output,list(range(args.start,args.end+1)),width=args.width,iterations=args.iterations,
-        trust=args.trust,seconds=args.seconds,solve_iterations=args.solve_iterations,resume=args.resume_interval)
+        trust=args.trust,seconds=args.seconds,solve_iterations=args.solve_iterations,resume=args.resume_interval,exclusions=args.exclude_window)
