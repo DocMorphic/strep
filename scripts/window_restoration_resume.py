@@ -75,7 +75,7 @@ def resume_window(directory,study,window,original_bindings,limits,methods,defini
     if protocol.get('temporal_edges')!=edges:raise ValueError('Original edited/fixed temporal edges differ')
     def record(reference,kind):
         if reference.get('kind')!=kind or 'archive_schema' not in reference:raise ValueError('Bound streamed window record required')
-        value,extra=load_record(directory,reference)
+        value,extra=load_record(directory,reference,array_values=True)
         for path,digest in extra.items():bind(path,digest)
         return value
     for reference in report['proposal_starts']:

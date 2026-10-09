@@ -180,7 +180,7 @@ def replay_local(directory,protocol,result,window,origin,bind):
     np.testing.assert_array_equal(seed['represented_slacks'],report['initial_represented_slacks'])
     def record(reference,kind):
         if reference.get('kind')!=kind or 'archive_schema' not in reference:raise ValueError('Complete streamed proposal record required')
-        value,bindings=load_record(directory,reference)
+        value,bindings=load_record(directory,reference,array_values=True)
         for path,digest in bindings.items():bind(path,digest)
         return value
     linear_refs={r['iteration']:r for r in report['proposal_linearizations']}

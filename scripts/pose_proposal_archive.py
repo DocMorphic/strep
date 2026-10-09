@@ -48,8 +48,14 @@ class ProposalArchive:
             metadata_sha256=sha256(metadata),archive_sha256=sha256(path),receipt_sha256=sha256(Path(str(path)+'.receipt.json')))
 
 
-def load_record(directory,reference):
-    """Replay one report at a time; legacy inline reports need no conversion."""
+def load_record(directory,reference,*,array_values=False):
+    """Replay a bound report; numeric consumers may request read-only arrays.
+
+    The default retains plain JSON lists. Array mode preserves archived dtype,
+    shape and bytes without boxing every element; legacy inline reports stay
+    untouched. Both modes perform the same complete binding/population checks.
+    """
+    if type(array_values) is not bool:raise ValueError('Boolean array transport mode required')
     if 'archive_schema' not in reference:return reference,{}
     if reference['archive_schema']!=SCHEMA or reference.get('kind') not in ['start','linearization','correction']:
         raise ValueError('Known complete proposal archive required')
@@ -72,7 +78,12 @@ def load_record(directory,reference):
             if kind=='list':return [decode(v) for v in node['items']]
             if kind=='scalar':return node['value']
             if kind!='array' or node['name'] in seen:raise ValueError('Unique complete proposal array references required')
-            seen.add(node['name']);return saved[node['name']].tolist()
+            seen.add(node['name']);value=saved[node['name']]
+            if value.ndim<1 or value.dtype.kind not in 'biuf' or not np.isfinite(value).all():
+                raise ValueError('Finite plain JSON numeric list arrays required')
+            if not array_values:return value.tolist()
+            value.setflags(write=False)
+            return value
         record=decode(document['tree'])
         if seen!=set(saved.files):raise ValueError('Complete proposal array population required')
     if (record['iteration']!=reference['iteration'] or (reference['kind']=='correction' and record.get('attempt')!=reference['attempt'])
