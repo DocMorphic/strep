@@ -19,11 +19,11 @@ from grasp_pose_witness import norm_slack_and_jacobian
 from protected_inequality_step import fit
 from sparse_pose_jacobian import SparsePoseJacobian
 
-METHODS=POSE_METHODS+['guarded_pose_restoration.py','protected_inequality_step.py','sparse_pose_jacobian.py']
+METHODS=POSE_METHODS+['guarded_pose_restoration.py','protected_inequality_step.py','sparse_pose_jacobian.py','pose_row_jacobian.py']
 DEFINITIONS=ROOT/'vendor/kimodo/kimodo/skeleton/definitions.py'
 
 
-def _run(study,output,frame,iterations,trust,seconds,failure_policy):
+def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk):
     summary=read(study/'fit/summary.json')
     if (summary.get('solver_version')!=17 or read(study/'pipeline.json')['status']!='complete'
             or len(summary['trials'])!=1 or sha256(ASSET)!=summary['mesh_sha256']):
@@ -50,7 +50,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy):
         inputs_sha256=bindings,methods_sha256={n:sha256(ROOT/'scripts'/n) for n in METHODS},
         native_metadata_sha256=sha256(DEFINITIONS),runtime=dict(python=platform.python_version(),numpy=np.__version__,
         scipy=scipy.__version__,torch=str(torch.__version__)),iterations=iterations,trust_normalized=trust,
-        seconds=seconds,linear_solve_iterations=100,nonlinear_replay_call_limit=1000,
+        seconds=seconds,proposal=proposal,proposal_solve_iterations=solve_iterations,row_chunk=row_chunk,nonlinear_replay_call_limit=1000,
         solver_headroom_normalized=1e-6,grouping='native-joint',jacobian='Full-population active dependencies, all ties retained',
         geometry_constraint_rows=len(problem.labels),
         vertices_checked=len(skin['bind_vertices']),influences_per_vertex=8,
@@ -68,7 +68,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy):
     save(output/'protocol.json',protocol);save(output/'pipeline.json',dict(status='processing',stage='Guarded nonlinear restoration'))
     scale=np.r_[np.repeat(problem.limits,3),problem.config['max_root_lift_m']]
     seed=problem.seed/scale;lower=np.r_[np.full(problem.dim-1,-1.),0.];upper=np.ones(problem.dim)
-    sparse=SparsePoseJacobian(problem)
+    sparse=SparsePoseJacobian(problem,row_chunk=row_chunk)
     def measure(z):
         x=np.asarray(z)*scale
         with torch.no_grad():values=problem.geometry_slack(problem.t(x)).numpy()
@@ -99,7 +99,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy):
         save(output/'progress.json',dict(status='processing',observations=observed))
         if retained and label!='final':print(dict(label=label,pose_checks_passed=audit['pose_checks_passed'],minimum_slack=float(slacks.min())),flush=True)
     value,report=fit(measure,linearize,seed,lower,upper,iterations=iterations,trust=trust,seconds=seconds,
-        observer=observer,failure_policy=failure_policy,tradeoff_mask=mask)
+        observer=observer,failure_policy=failure_policy,tradeoff_mask=mask,proposal=proposal,solve_iterations=solve_iterations)
     candidate,motion=problem.independent(value*scale)
     with torch.no_grad():_,_,_,vertices=problem.fk(problem.t(value*scale))
     error=float(np.abs(vertices.numpy()-problem.surface.vertices(motion['global_rot_mats'][0],motion['posed_joints'][0])).max())
@@ -124,15 +124,17 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy):
     print(dict(status=status,stop=report['stop'],initial_score=report['initial_score'],final_score=report['final_score'],candidate=candidate),flush=True)
 
 
-def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='rowwise'):
+def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='rowwise',proposal='linear',solve_iterations=100,row_chunk=None):
     study=Path(study).resolve();output=Path(output).resolve();existed=output.exists()
     if (type(frame) is not int or type(iterations) is not int or not 1<=iterations<=100
             or type(trust) not in (int,float) or not np.isfinite(trust) or not 1e-5<=trust<=.3
             or type(seconds) not in (int,float) or not np.isfinite(seconds) or not 1<=seconds<=1800
-            or failure_policy not in ['rowwise','merit']):
+            or failure_policy not in ['rowwise','merit'] or proposal not in ['linear','nonlinear']
+            or type(solve_iterations) is not int or not 1<=solve_iterations<=300
+            or (row_chunk is not None and (type(row_chunk) is not int or not 1<=row_chunk<=32))):
         raise ValueError('Explicit valid native frame and bounded repair options required')
     with worker_lock(),threadpool_limits(limits=2):
-        try:return _run(study,output,frame,iterations,trust,seconds,failure_policy)
+        try:return _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk)
         except Exception as exc:
             if not existed and output.exists():save(output/'pipeline.json',dict(status='failed',error_type=type(exc).__name__,
                 error=str(exc),quality_approved=False,release_approved=False))
@@ -143,4 +145,7 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study');parser.add_argument('output');parser.add_argument('--frame',type=int,required=True)
     parser.add_argument('--iterations',type=int,default=30);parser.add_argument('--trust',type=float,default=.03);parser.add_argument('--seconds',type=float,default=300)
     parser.add_argument('--failure-policy',choices=['rowwise','merit'],default='rowwise')
-    args=parser.parse_args();run(args.study,args.output,args.frame,args.iterations,args.trust,args.seconds,args.failure_policy)
+    parser.add_argument('--proposal',choices=['linear','nonlinear'],default='linear')
+    parser.add_argument('--solve-iterations',type=int,default=100)
+    parser.add_argument('--row-chunk',type=int)
+    args=parser.parse_args();run(args.study,args.output,args.frame,args.iterations,args.trust,args.seconds,args.failure_policy,args.proposal,args.solve_iterations,args.row_chunk)

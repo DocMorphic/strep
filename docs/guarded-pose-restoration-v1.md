@@ -122,3 +122,91 @@ coordinated contact window. The whole-project goal still includes arbitrary
 actions, object/partner interaction, editing/style, rig transfer, transitions,
 engine delivery and human validation. All fourteen release capabilities remain
 unapproved.
+
+## Nonlinear proposal comparison
+
+The optional `--proposal nonlinear` mode evaluates the complete original
+inequalities and their current derivatives inside each bounded proposal solve.
+This accounts for the curvature of hand-target balls instead of constraining
+only their tangent approximation. The default remains the archived linear
+proposal. Both modes use the same full-population replay and retention policy;
+no proposal solver status can approve a pose.
+
+Each distinct inner query is saved with its pose, independent audit, parameters,
+complete inequalities and hashes. Inner queries are marked unretained. Only a
+backoff that passes the original retention checks can replace the current pose.
+Time or measurement expiry retains the last accepted pose, even when an inner
+candidate looks better. `--solve-iterations` explicitly bounds each proposal
+solve, and the shared elapsed-time and measurement budgets cover its queries.
+
+A synthetic circular target boundary demonstrates a tangent proposal stall and
+a successful nonlinear repair without losing the passing boundary constraint.
+Additional checks verify inner-query budget expiry retains the seed, changed
+derivative populations fail, and invalid options never acquire a worker.
+The fresh no-vendor source copy passes 136 distinct focused checks; 63 also pass
+without Torch. These checks do not establish native grasp feasibility.
+
+The actual comparison uses the same two source frames, masked merit policy,
+30 outer steps, 10 inner iterations and 300 seconds per pose under the unchanged
+global resource guard. The first nonlinear run in
+`reports/box-lift-guarded-restoration-v3/` fails at 295.375 seconds when an
+unwrapped SciPy constraint callback queries beyond a normalized control bound.
+The original error and pipeline remain failed. A separate NumPy replay verifies
+all 68 partial pose records and the two retained decisions, with last retained
+box depth 22.136 mm. There is no final result or frame-98 result for that attempt.
+
+The repaired nonlinear callback clips its search queries to the declared trust
+box and global controls before measurement, recording each clipped request.
+The final replay still uses exact original inequalities. A regression fixture
+forces a callback just past the bound and proves that measurement, derivatives
+and retained controls stay inside the original bound. This changes proposal
+handling, not contact or edit-budget acceptance limits.
+
+Optional `--row-chunk 16` groups exact derivative rows into bounded batches;
+all original rows and vertex dependencies remain present. [PyTorch documents
+batched vector-Jacobian products](https://docs.pytorch.org/docs/stable/generated/torch.autograd.grad.html)
+as experimental, so no speed improvement is assumed without measurement.
+Fixtures compare every row to scalar backward, including maximum/minimum ties,
+and compare the integrated sparse path to dense derivatives for all three
+primitive types and both constraint grouping modes. The default scalar path
+remains available. The chunk cap limits derivative batching, not total memory;
+the unchanged process-tree resource guard still applies.
+
+The bounded callback and chunked retry is preserved separately in
+`reports/box-lift-guarded-restoration-v4/`. Its supervisor completes in 232.14
+seconds with 666,415,104 bytes peak process-tree RSS. Pose solve times are
+121.266 / 93.375 seconds, retaining five / four steps before both stop with no
+guarded improvement. Dense/chunked initial derivative timings are
+6.031 / 1.453 seconds at frame 72 and 5.906 / 0.813 seconds at frame 98. All
+initial values and Jacobian entries match exactly in these recorded computations.
+These timings compare the combined sparse/batched path to dense scalar backward;
+they do not isolate batching alone or establish a full-clip speedup.
+
+| Measurement | Frame 72 | Frame 98 |
+| --- | --- | --- |
+| Left/right hand error | 4.755 / 4.989 mm | 4.944 / 11.144 mm |
+| Left/right normal error | 23.831 / 8.886 degrees | 19.505 / 17.327 degrees |
+| Prop vertex depth | 21.365 mm | 11.124 mm |
+| Maximum raw-relative joint displacement | 193.859 mm | 219.680 mm |
+| Added speed to fixed neighbors | 0.574 / 0.787 m/s | 0.531 / 0.456 m/s |
+| Minimum floor vertex Y | 5.277 mm | 7.121 mm |
+
+Both poses retain every originally passing row and every protected edit/floor
+row. Rotation/root limits pass. Frame 98's displacement now passes 220 mm, but
+its already-failed right hand worsens from 5.085 to 11.144 mm under the explicitly
+declared merit tradeoff. Neither pose passes the original grasp checks; neither
+is a usable animation. This regression prevents describing the lower collision
+depth as a successful interaction repair.
+
+A separate NumPy replay checks all 280 saved retry pose records, all nine retained
+decisions, all original/archive/protocol/audit/pose bindings, and complete native
+vertex floor/prop-depth. Every distinct inner query is verified as unretained.
+No full-clip, between-key, triangle/volume, imported rig, engine or human approval
+is inferred. The earlier failed partial study remains intact.
+
+The next proposal should protect even failed hand-distance rows from increasing,
+diagnose which original limits stall the repair, and coordinate the contact
+window. The whole-project goal and all fourteen unapproved capabilities remain
+unchanged. The preceding published batch's hosted native CPU jobs pass on both
+Windows and Ubuntu; its complete workflow and this newer batch are not yet
+reported as green.

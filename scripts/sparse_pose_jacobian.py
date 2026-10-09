@@ -8,12 +8,15 @@ import torch
 from grasp_pose_witness import norm_slack_and_jacobian
 from scene_pose_restoration import reference_slacks
 from support_contact_v8 import torch_primitive_clearance_violation
+from pose_row_jacobian import row_jacobian
 
 
 class SparsePoseJacobian:
-    def __init__(self,problem):
+    def __init__(self,problem,row_chunk=None):
         if problem.grouping not in ['global','native-joint']:raise ValueError('Known complete constraint grouping required')
-        self.problem=problem;self.cache=None;self.dependencies=None
+        if row_chunk is not None and (type(row_chunk) is not int or not 1<=row_chunk<=32):
+            raise ValueError('Explicit bounded derivative-row chunk required')
+        self.problem=problem;self.cache=None;self.dependencies=None;self.row_chunk=row_chunk
 
     def __call__(self,x):
         x=np.asarray(x,dtype=float)
@@ -57,10 +60,11 @@ class SparsePoseJacobian:
             1.5-30*problem.headroom_m,grouped=problem.grouping=='native-joint'))
         values=torch.stack(values)
         if len(values)!=len(problem.labels):raise ValueError('Complete original constraint rows must remain present')
-        jac=np.array([torch.autograd.grad(value,variable,retain_graph=True)[0].detach().numpy() for value in values])
+        jac=(np.array([torch.autograd.grad(value,variable,retain_graph=True)[0].detach().numpy() for value in values])
+            if self.row_chunk is None else row_jacobian(values,variable,self.row_chunk))
         slack=values.detach().numpy();bounds,bjac=norm_slack_and_jacobian(x,problem.limits)
         if not np.isfinite(slack).all() or not np.isfinite(jac).all():raise ValueError('Finite exact pose derivatives required')
         self.dependencies=dict(original_vertices=count,active_vertices=len(ids),object_rows=len(object_rows),all_maximum_ties_retained=True,
-            nonlinear_population_unchanged=True)
+            nonlinear_population_unchanged=True,row_chunk=self.row_chunk)
         self.cache=(x.copy(),np.r_[slack,bounds],np.concatenate([jac,bjac]))
         return self.cache[1:]

@@ -2,7 +2,7 @@
 
 Feasible rows remain feasible. Rowwise mode protects individual failures; merit
 mode permits explicitly selected failed-row tradeoffs with improving complete
-scores. The linearized subproblem never approves a pose.
+scores. Linear or nonlinear proposal subproblems never approve a pose.
 """
 import time
 import numpy as np
@@ -36,7 +36,8 @@ def retain(before,after,*,failure_policy='rowwise',tradeoff_mask=None):
 
 
 def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_iterations=100,
-        seconds=300,maximum_calls=1000,observer=None,failure_policy='rowwise',tradeoff_mask=None):
+        seconds=300,maximum_calls=1000,observer=None,failure_policy='rowwise',tradeoff_mask=None,
+        proposal='linear'):
     seed=np.asarray(seed,dtype=float);lower=np.asarray(lower,dtype=float);upper=np.asarray(upper,dtype=float)
     if (seed.ndim!=1 or not len(seed) or lower.shape!=seed.shape or upper.shape!=seed.shape
             or not np.isfinite(np.r_[seed,lower,upper]).all() or np.any(lower>=upper)
@@ -46,9 +47,9 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
             or type(maximum_calls) is not int or not 1<=maximum_calls<=10000
             or type(trust) not in (int,float) or not np.isfinite(trust) or not 1e-5<=trust<=.3
             or type(seconds) not in (int,float) or not np.isfinite(seconds) or not 1<=seconds<=1800
-            or failure_policy not in ['rowwise','merit']):
+            or failure_policy not in ['rowwise','merit'] or proposal not in ['linear','nonlinear']):
         raise ValueError('Finite seed, matching control bounds and explicit step budgets required')
-    started=time.monotonic();calls=0;history=[];trials=[];value=seed.copy()
+    started=time.monotonic();calls=0;history=[];trials=[];queries=[];clips=[];value=seed.copy()
     class Exhausted(Exception):pass
     def check():
         if calls>=maximum_calls or time.monotonic()-started>=seconds:raise Exhausted()
@@ -71,21 +72,53 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
             np.testing.assert_allclose(values,current,rtol=1e-10,atol=1e-10)
             caps=np.minimum(current,0)
             caps[mask&(current<0)]=-score(current)[0]
+            candidate_lower=np.maximum(lower,value-trust);candidate_upper=np.minimum(upper,value+trust)
+            def bounded_candidate(delta):
+                delta=np.asarray(delta,dtype=float)
+                if delta.shape!=value.shape or not np.isfinite(delta).all():
+                    raise ValueError('Finite complete nonlinear proposal query required')
+                raw=value+delta;candidate=np.clip(raw,candidate_lower,candidate_upper)
+                if not np.array_equal(raw,candidate):
+                    clips.append(dict(iteration=iteration+1,requested_controls=raw.tolist(),bounded_controls=candidate.tolist()))
+                return candidate
+            cached=(np.zeros_like(value),current,jac)
+            def query(delta):
+                nonlocal cached
+                check();candidate=bounded_candidate(delta);delta=candidate-value
+                if np.array_equal(delta,cached[0]):return cached[1:]
+                actual=observed(candidate);predicted,derivatives=linearize(candidate)
+                predicted=np.asarray(predicted,dtype=float);derivatives=np.asarray(derivatives,dtype=float)
+                if (actual.shape!=current.shape or predicted.shape!=current.shape
+                        or derivatives.shape!=jac.shape or not np.isfinite(derivatives).all()):
+                    raise ValueError('Every original nonlinear row and derivative required')
+                np.testing.assert_allclose(predicted,actual,rtol=1e-10,atol=1e-10)
+                label=f'iteration-{iteration+1}-query-{len(queries)+1}'
+                queries.append(dict(label=label,iteration=iteration+1,controls=candidate.tolist(),
+                    score=list(score(actual)),retained=False))
+                if observer:observer(label,candidate.copy(),actual.copy(),False)
+                cached=(delta.copy(),actual,derivatives)
+                return actual,derivatives
             def objective(delta):
                 check()
+                if proposal=='nonlinear':delta=bounded_candidate(delta)-value
                 # Solver-only headroom prevents stopping just below zero;
                 # replay still uses each exact original inequality threshold.
-                residual=np.minimum(current+jac@delta-1e-6,0)
-                return float(residual@residual+1e-8*(delta@delta)),2*(jac.T@residual+1e-8*delta)
-            bounds=list(zip(np.maximum(lower-value,-trust),np.minimum(upper-value,trust)))
+                actual,derivatives=query(delta) if proposal=='nonlinear' else (current+jac@delta,jac)
+                residual=np.minimum(actual-1e-6,0)
+                return float(residual@residual+1e-8*(delta@delta)),2*(derivatives.T@residual+1e-8*delta)
+            bounds=list(zip(candidate_lower-value,candidate_upper-value))
             result=minimize(objective,np.zeros_like(value),method='SLSQP',jac=True,bounds=bounds,
-                constraints=[dict(type='ineq',fun=lambda delta:current+jac@delta-caps,jac=lambda delta:jac)],
+                constraints=[dict(type='ineq',
+                    fun=lambda delta:(query(delta)[0] if proposal=='nonlinear' else current+jac@delta)-caps,
+                    jac=lambda delta:query(delta)[1] if proposal=='nonlinear' else jac)],
                 options=dict(maxiter=solve_iterations,ftol=1e-12))
             direction=np.asarray(result.x,dtype=float)
             if direction.shape!=value.shape or not np.isfinite(direction).all():raise ValueError('Finite proposal direction required')
+            if proposal=='nonlinear':direction=bounded_candidate(direction)-value
             accepted=False
             for fraction in [1.,.5,.25,.125,.0625,.03125,.015625,.0078125]:
                 candidate=value+fraction*direction
+                if proposal=='nonlinear':candidate=np.clip(candidate,candidate_lower,candidate_upper)
                 label=f'iteration-{iteration+1}-backoff-{len(trials)+1}'
                 if np.any(candidate<lower) or np.any(candidate>upper):
                     trials.append(dict(label=label,iteration=iteration+1,fraction=fraction,accepted=False,
@@ -109,6 +142,7 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
         source_rows_preserved=bool(np.all(current>=np.minimum(baseline,0))),inequalities_satisfied=bool(np.all(current>=0)),
         source_passing_rows_preserved=bool(np.all(current[baseline>=0]>=0)),
         nontradeoff_rows_preserved=bool(np.all(current[~mask]>=np.minimum(baseline[~mask],0))),
-        failure_policy=failure_policy,tradeoff_mask=mask.tolist(),
+        failure_policy=failure_policy,tradeoff_mask=mask.tolist(),proposal=proposal,proposal_queries=queries,
+        bounded_proposal_queries=clips,
         solver_headroom_normalized=1e-6,
         quality_approved=False,release_approved=False)

@@ -42,8 +42,9 @@ class FixtureProblem(RestorationProblem):
 
 @pytest.mark.parametrize('grouping',['global','native-joint'])
 @pytest.mark.parametrize('shape',['box','sphere','cylinder'])
-def test_sparse_values_and_every_derivative_match_dense_for_all_primitives(grouping,shape):
-    p=FixtureProblem(grouping,shape);sparse=SparsePoseJacobian(p)
+@pytest.mark.parametrize('row_chunk',[None,4,16])
+def test_sparse_values_and_every_derivative_match_dense_for_all_primitives(grouping,shape,row_chunk):
+    p=FixtureProblem(grouping,shape);sparse=SparsePoseJacobian(p,row_chunk=row_chunk)
     for x in [np.array([.03,-.02,.01,.003]),np.array([-.04,.03,.015,.007])]:
         dense_values,dense_jac=p.pair(x);values,jac=sparse(x)
         np.testing.assert_allclose(values,dense_values,rtol=1e-12,atol=1e-12)
@@ -56,7 +57,7 @@ def test_floor_and_object_maximum_ties_keep_all_dependent_vertices():
     p=FixtureProblem('native-joint','box')
     p.bind[1]=p.bind[0];p.bind[4]=p.bind[5];p.margins['object'][:]=1e-5
     p.contacts=[];p.normals=[];p.labels=['floor','object1','object2']+['body']*6
-    x=np.zeros(4);sparse=SparsePoseJacobian(p);values,jac=sparse(x);dense_values,dense_jac=p.pair(x)
+    x=np.zeros(4);sparse=SparsePoseJacobian(p,row_chunk=16);values,jac=sparse(x);dense_values,dense_jac=p.pair(x)
     np.testing.assert_allclose(values,dense_values,rtol=1e-12,atol=1e-12)
     np.testing.assert_allclose(jac,dense_jac,rtol=1e-10,atol=1e-10)
     assert sparse.dependencies['active_vertices']>=4

@@ -48,7 +48,7 @@ def test_score_rejects_incomplete_or_nonfinite_populations(bad):
     with pytest.raises(ValueError):score(bad)
 
 
-@pytest.mark.parametrize('kwargs',[dict(trust=0),dict(iterations=True),dict(maximum_calls=0),dict(seconds=float('inf'))])
+@pytest.mark.parametrize('kwargs',[dict(trust=0),dict(iterations=True),dict(maximum_calls=0),dict(seconds=float('inf')),dict(proposal='guess')])
 def test_invalid_step_budgets_do_not_run_measurement(kwargs):
     def forbidden(x):raise AssertionError('Invalid budgets must not call measurement')
     with pytest.raises(ValueError):fit(forbidden,forbidden,[0.],[-1.],[1.],**kwargs)
@@ -82,3 +82,58 @@ def test_merit_restoration_can_escape_rowwise_stall_without_losing_budget_pass()
 @pytest.mark.parametrize('mask',[[1,0],[True],[[True,False]]])
 def test_tradeoff_mask_must_declare_each_original_row(mask):
     with pytest.raises(ValueError):retain([-.2,-.1],[-.1,-.1],failure_policy='merit',tradeoff_mask=mask)
+
+
+def test_nonlinear_proposal_follows_curved_target_boundary_that_stalls_tangent_step():
+    radius_squared=.1**2
+    def measure(x):return np.array([x[1]-.05,radius_squared-x@x])
+    def linearize(x):return measure(x),np.array([[0.,1.],[-2*x[0],-2*x[1]]])
+    seed=[.1,0.];bounds=([-1.,-1.],[1.,1.])
+    tangent,tangent_report=fit(measure,linearize,seed,*bounds,trust=.1)
+    np.testing.assert_array_equal(tangent,seed)
+    assert tangent_report['stop']=='no_guarded_improvement'
+    value,report=fit(measure,linearize,seed,*bounds,trust=.1,proposal='nonlinear')
+    assert np.all(measure(value)>=0) and report['inequalities_satisfied']
+    assert report['source_passing_rows_preserved'] and report['proposal_queries']
+    assert not any(q['retained'] for q in report['proposal_queries'])
+    assert not report['quality_approved'] and not report['release_approved']
+
+
+def test_nonlinear_query_budget_never_selects_an_unretained_inner_candidate():
+    records=[]
+    def measure(x):return np.array([x[0]-.5])
+    value,report=fit(measure,lambda x:(measure(x),np.ones((1,1))),[0.],[-1.],[1.],trust=.1,
+        maximum_calls=2,proposal='nonlinear',observer=lambda label,x,slacks,keep:records.append((label,x.copy(),keep)))
+    np.testing.assert_array_equal(value,[0.])
+    assert report['stop']=='time_or_measurement_budget' and report['measurement_calls']==2
+    assert report['proposal_queries'] and not report['trials']
+    assert records[-1][0]=='final' and records[-1][1][0]==0.
+
+
+def test_nonlinear_query_rejects_derivatives_for_a_different_population():
+    def measure(x):return np.array([x[0]-.5,.8-x[0]])
+    def linearize(x):
+        if x[0]==0:return measure(x),np.array([[1.],[-1.]])
+        return np.array([x[0]-.5]),np.ones((1,1))
+    with pytest.raises(ValueError,match='Every original nonlinear'):
+        fit(measure,linearize,[0.],[-1.],[1.],proposal='nonlinear')
+
+
+def test_outside_solver_callback_is_bounded_and_recorded_without_relaxing_final_limits(monkeypatch):
+    import protected_inequality_step as module
+    from types import SimpleNamespace
+    measured=[]
+    def measure(x):
+        assert 0<=x[0]<=.1;measured.append(x.copy());return np.array([x[0]-.05])
+    def linearize(x):return measure(x),np.ones((1,1))
+    def minimize(fun,x0,**kwargs):
+        # Reproduce the unwrapped constraint callback passing beyond its bound.
+        kwargs['constraints'][0]['fun'](np.array([.10000000000000002]))
+        kwargs['constraints'][0]['jac'](np.array([.10000000000000002]))
+        fun(np.array([.10000000000000002]))
+        return SimpleNamespace(x=np.array([.10000000000000002]),success=True,message='fixture')
+    monkeypatch.setattr(module,'minimize',minimize)
+    value,report=fit(measure,linearize,[0.],[0.],[.1],trust=.1,proposal='nonlinear')
+    assert value[0]==.1 and report['inequalities_satisfied'] and report['bounded_proposal_queries']
+    assert all(record['bounded_controls'][0]==.1 for record in report['bounded_proposal_queries'])
+    assert all(x[0]<=.1 for x in measured)

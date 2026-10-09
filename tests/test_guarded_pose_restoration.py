@@ -7,7 +7,8 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 import guarded_pose_restoration as module
 
 
-@pytest.mark.parametrize('options',[dict(frame=True),dict(iterations=0),dict(trust=.31),dict(seconds=float('nan'))])
+@pytest.mark.parametrize('options',[dict(frame=True),dict(iterations=0),dict(trust=.31),dict(seconds=float('nan')),
+    dict(proposal='guess'),dict(solve_iterations=True),dict(solve_iterations=0),dict(row_chunk=True),dict(row_chunk=33)])
 def test_invalid_options_never_acquire_or_run_worker(tmp_path,monkeypatch,options):
     def forbidden(*args,**kwargs):raise AssertionError('Invalid request reached worker')
     monkeypatch.setattr(module,'worker_lock',forbidden)
