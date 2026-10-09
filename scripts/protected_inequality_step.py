@@ -37,7 +37,7 @@ def retain(before,after,*,failure_policy='rowwise',tradeoff_mask=None):
 
 def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_iterations=100,
         seconds=300,maximum_calls=1000,observer=None,failure_policy='rowwise',tradeoff_mask=None,
-        proposal='linear'):
+        proposal='linear',proposal_feasible_mask=None,proposal_headroom=None):
     seed=np.asarray(seed,dtype=float);lower=np.asarray(lower,dtype=float);upper=np.asarray(upper,dtype=float)
     if (seed.ndim!=1 or not len(seed) or lower.shape!=seed.shape or upper.shape!=seed.shape
             or not np.isfinite(np.r_[seed,lower,upper]).all() or np.any(lower>=upper)
@@ -58,6 +58,11 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
         check();calls+=1;result=np.asarray(measure(candidate),dtype=float);score(result)
         return result
     baseline=observed(value);mask=tradeoff_rows(len(baseline),failure_policy,tradeoff_mask)
+    feasible=np.zeros(len(baseline),dtype=bool) if proposal_feasible_mask is None else np.asarray(proposal_feasible_mask)
+    headroom=np.zeros(len(baseline)) if proposal_headroom is None else np.asarray(proposal_headroom,dtype=float)
+    if (feasible.shape!=baseline.shape or feasible.dtype!=bool or headroom.shape!=baseline.shape
+            or not np.isfinite(headroom).all() or np.any(headroom<0) or np.any(headroom>1e-3)):
+        raise ValueError('Complete Boolean proposal feasibility mask and bounded finite headroom required')
     current=baseline.copy();stop='iteration_limit'
     if observer:observer('seed',value.copy(),current.copy(),False)
     try:
@@ -72,6 +77,8 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
             np.testing.assert_allclose(values,current,rtol=1e-10,atol=1e-10)
             caps=np.minimum(current,0)
             caps[mask&(current<0)]=-score(current)[0]
+            caps[feasible]=np.maximum(caps[feasible],0)
+            caps+=headroom
             candidate_lower=np.maximum(lower,value-trust);candidate_upper=np.minimum(upper,value+trust)
             def bounded_candidate(delta):
                 delta=np.asarray(delta,dtype=float)
@@ -144,5 +151,6 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
         nontradeoff_rows_preserved=bool(np.all(current[~mask]>=np.minimum(baseline[~mask],0))),
         failure_policy=failure_policy,tradeoff_mask=mask.tolist(),proposal=proposal,proposal_queries=queries,
         bounded_proposal_queries=clips,
+        proposal_feasible_mask=feasible.tolist(),proposal_headroom_normalized=headroom.tolist(),
         solver_headroom_normalized=1e-6,
         quality_approved=False,release_approved=False)

@@ -1,6 +1,7 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_pose_restoration_policy.py",
     "tests/test_protected_inequality_step.py",
     "tests/test_inequality_restoration.py",
     "tests/test_weight_derivative_fidelity.py",

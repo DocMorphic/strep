@@ -22,6 +22,12 @@ Two explicit search policies retain the same final acceptance thresholds:
   normalized violation must not increase and squared violation must decrease.
   Rows that become feasible remain protected at subsequent steps.
 
+The current runner additionally defaults to `--point-policy preserve`, protecting
+even failed hand-distance rows. The point tradeoffs measured in the historical
+V2/V4 studies now require explicit `--point-policy tradeoff`. See
+[point-preserving repair](point-preserving-repair-v1.md) for the new comparison
+and complete named-row diagnostics. The original grasp thresholds remain fixed.
+
 The merit policy can retain an increased error in an already-failed contact;
 that contact still fails its original threshold. It does not approve that error,
 widen the threshold or permit increased edit-budget violations. The exact
@@ -29,7 +35,7 @@ Boolean tradeoff mask and normalization are recorded in the protocol and result.
 The strict policy remains the default.
 
 ```powershell
-.venv/Scripts/python.exe scripts/guarded_pose_restoration.py reports/box-lift-authored-height-v1 reports/my-fresh-guarded-study --frame 72 --iterations 60 --trust .03 --seconds 300 --failure-policy merit
+.venv/Scripts/python.exe scripts/guarded_pose_restoration.py reports/box-lift-authored-height-v1 reports/my-fresh-guarded-study --frame 72 --iterations 60 --trust .03 --seconds 300 --failure-policy merit --point-policy tradeoff
 ```
 
 Use the unchanged owned-process resource guard for heavy runs: 3600 seconds,

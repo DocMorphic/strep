@@ -137,3 +137,24 @@ def test_outside_solver_callback_is_bounded_and_recorded_without_relaxing_final_
     assert value[0]==.1 and report['inequalities_satisfied'] and report['bounded_proposal_queries']
     assert all(record['bounded_controls'][0]==.1 for record in report['bounded_proposal_queries'])
     assert all(x[0]<=.1 for x in measured)
+
+
+def test_explicit_proposal_can_restore_failed_point_with_search_headroom_and_original_retention():
+    def measure(x):return np.array([x[1]-.2,.01-x[0]])
+    def derivative(x):return measure(x),np.array([[0.,1.],[-1.,0.]])
+    value,r=fit(measure,derivative,[.02,0.],[-1.,-1.],[1.,1.],trust=.1,
+        failure_policy='merit',tradeoff_mask=[True,False],proposal='nonlinear',
+        proposal_feasible_mask=[False,True],proposal_headroom=[0.,1e-5])
+    assert np.all(measure(value)>=0) and measure(value)[1]>=1e-5-1e-12
+    assert r['inequalities_satisfied'] and r['nontradeoff_rows_preserved']
+    assert r['proposal_feasible_mask']==[False,True] and r['proposal_headroom_normalized']==[0.,1e-5]
+    assert not r['quality_approved'] and not r['release_approved']
+
+
+@pytest.mark.parametrize('kwargs',[dict(proposal_feasible_mask=[True]),dict(proposal_feasible_mask=[1,0]),
+    dict(proposal_headroom=[0.]),dict(proposal_headroom=[0.,float('nan')]),
+    dict(proposal_headroom=[0.,-.1]),dict(proposal_headroom=[0.,.1])])
+def test_proposal_targets_require_complete_masks_and_bounded_finite_headroom(kwargs):
+    def measure(x):return np.array([x[0]-.2,.3-x[0]])
+    with pytest.raises(ValueError,match='Complete Boolean proposal'):
+        fit(measure,lambda x:(measure(x),np.array([[1.],[-1.]])),[0.],[-1.],[1.],**kwargs)
