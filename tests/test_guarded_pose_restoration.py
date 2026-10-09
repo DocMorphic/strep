@@ -16,7 +16,8 @@ import guarded_pose_restoration as module
     dict(proposal_start='guess'),dict(proposal_start=True),dict(proposal_start='linear-feasible'),dict(proposal_start='geometry-descent'),
     dict(body_headroom=True),dict(body_headroom=-1e-5),dict(body_headroom=1.1e-3),dict(body_headroom=float('nan')),dict(archive_proposals=1),
     dict(normal_policy='guess'),dict(normal_headroom=True),dict(normal_headroom=-1e-5),dict(normal_headroom=1.1e-3),
-    dict(normal_headroom=float('nan')),dict(normal_headroom=1e-3)])
+    dict(normal_headroom=float('nan')),dict(normal_headroom=1e-3),dict(proposal_priority='guess'),dict(proposal_priority=True),
+    dict(proposal_priority='worst-first')])
 def test_invalid_options_never_acquire_or_run_worker(tmp_path,monkeypatch,options):
     def forbidden(*args,**kwargs):raise AssertionError('Invalid request reached worker')
     monkeypatch.setattr(module,'worker_lock',forbidden)
@@ -120,7 +121,7 @@ def test_resume_binds_streamed_reports_and_replays_the_same_retained_pose(tmp_pa
 
 
 @pytest.mark.parametrize('damage',['frame','budget','original','method','pose','promoted-query','last-query','slacks','tangent','ancestor',
-    'start-policy','linear-start-promotion','normal-policy','normal-mask'])
+    'start-policy','linear-start-promotion','normal-policy','normal-mask','priority','start-priority'])
 def test_resume_rejects_changed_provenance_or_unretained_selection(tmp_path,monkeypatch,damage):
     args=resume_fixture(tmp_path,monkeypatch);output=args[0]
     protocol=module.read(output/'protocol.json');result=module.read(output/'result.json')
@@ -138,6 +139,8 @@ def test_resume_rejects_changed_provenance_or_unretained_selection(tmp_path,monk
     if damage=='linear-start-promotion':result['fit']['proposal_starts']=[dict(retained=True)]
     if damage=='normal-policy':protocol['normal_policy']='unknown'
     if damage=='normal-mask':protocol['normal_policy']='preserve'
+    if damage=='priority':protocol['proposal_priority']='worst-first'
+    if damage=='start-priority':result['fit']['proposal_starts']=[dict(iteration=1,retained=False,priority='worst-first')]
     module.save(output/'protocol.json',protocol);result['protocol_sha256']=module.sha256(output/'protocol.json');module.save(output/'result.json',result)
     with pytest.raises((ValueError,AssertionError)):module._resume_seed(*args)
 

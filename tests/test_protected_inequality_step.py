@@ -285,6 +285,66 @@ def test_geometry_descent_preserves_transverse_distance_and_decreases_merit():
     delta=np.asarray(start['delta']);assert np.linalg.norm(np.array([.1,0.])+delta)<=.1+1e-9
 
 
+def test_worst_first_is_not_dominated_by_many_small_failures():
+    def measure(x):return np.r_[x[0]-.8,np.repeat(x[1]-.2,100),1-(x@x)/.1**2]
+    def derivative(x):return measure(x),np.vstack([[1.,0.],np.tile([0.,1.],(100,1)),-2*x/.1**2])
+    def vectors(x):return dict(offsets=np.array([[x[0],x[1],0.]]),jacobian=np.array([[[1.,0.],[0.,1.],[0.,0.]]]),
+        limits=np.array([.1]),scales=np.array([1.]),rows=np.array([101]),distance=np.array([False]))
+    options=dict(iterations=1,trust=.1,proposal='nonlinear',proposal_start='geometry-descent',vectorize=vectors,proposal_tangent_guard=True)
+    old,a=fit(measure,derivative,[0.,0.],[-1.,-1.],[1.,1.],**options)
+    focused,b=fit(measure,derivative,[0.,0.],[-1.,-1.],[1.,1.],proposal_priority='worst-first',**options)
+    assert old[0]<.01 and focused[0]>.09 and focused[0]>10*old[0]
+    assert b['final_score'][0]<a['final_score'][0] and b['final_score'][1]<b['initial_score'][1]
+    assert b['trials'][-1]['accepted'] and b['trials'][-1]['stage']=='geometry-start'
+    start=b['proposal_starts'][0];delta=np.array(start['delta']);primary=np.array(start['primary_proposals'][-1]['controls_delta'])
+    assert start['priority']=='worst-first' and start['directional_merit']<0 and not start['retained']
+    assert start['predicted_worst']<=start['primary_epigraph']+start['epigraph_tie_tolerance']+1e-8
+    assert np.max(-measure(np.zeros(2))-derivative(np.zeros(2))[1]@primary)<=start['primary_epigraph']+1e-8
+    assert np.linalg.norm(delta)<=.1 and b['source_passing_rows_preserved'] and not b['quality_approved']
+
+
+def test_false_priority_epigraph_never_reaches_nonlinear_retention(monkeypatch):
+    import protected_inequality_step as module
+    real=module.linprog;calls=[]
+    def lie(*args,**kwargs):
+        result=real(*args,**kwargs);calls.append(result)
+        if len(calls)==2:result.x[-1]=-1.
+        return result
+    monkeypatch.setattr(module,'linprog',lie)
+    def measure(x):return np.array([x[1]-.05,(.1-np.linalg.norm(x))/.1])
+    def derivative(x):return measure(x),np.array([[0.,1.],-x/(.1*np.linalg.norm(x))])
+    with pytest.raises(ValueError,match='epigraph'):fit(measure,derivative,[.1,0.],[-1.,-1.],[1.,1.],
+        proposal='nonlinear',proposal_start='geometry-descent',vectorize=circle_vectors,proposal_priority='worst-first')
+
+
+def test_priority_budget_expiry_keeps_checked_start_and_never_promotes_primary_lp():
+    def measure(x):return np.array([x[1]-.05,(.1-np.linalg.norm(x))/.1])
+    def derivative(x):return measure(x),np.array([[0.,1.],-x/(.1*np.linalg.norm(x))])
+    value,r=fit(measure,derivative,[.1,0.],[-1.,-1.],[1.,1.],trust=.1,maximum_calls=2,
+        proposal='nonlinear',proposal_start='geometry-descent',vectorize=circle_vectors,proposal_priority='worst-first',proposal_tangent_guard=True)
+    assert r['stop']=='time_or_measurement_budget' and r['trials'][-1]['accepted']
+    np.testing.assert_array_equal(value,r['trials'][-1]['controls'])
+    assert not r['proposal_starts'][0]['retained'] and not r['proposal_queries'] and np.all(measure(value)>=0)
+
+
+def test_no_worst_progress_is_a_search_failure_not_nonlinear_infeasibility():
+    def measure(x):return np.array([-.5,x[0]-.1,1-x[0]**2])
+    def derivative(x):return measure(x),np.array([[0.],[1.],[-2*x[0]]])
+    def vectors(x):return dict(offsets=np.array([[x[0],0.,0.]]),jacobian=np.array([[[1.],[0.],[0.]]]),
+        limits=np.array([1.]),scales=np.array([1.]),rows=np.array([2]),distance=np.array([False]))
+    value,r=fit(measure,derivative,[0.],[-1.],[1.],proposal='nonlinear',proposal_start='geometry-descent',
+        vectorize=vectors,proposal_priority='worst-first')
+    np.testing.assert_array_equal(value,[0.])
+    assert r['proposal_starts'][0]['status']=='no_checked_worst_descent' and not r['trials']
+    assert not r['quality_approved']
+
+
+@pytest.mark.parametrize('kwargs',[dict(proposal_priority='guess'),dict(proposal_priority=True),dict(proposal_priority='worst-first')])
+def test_invalid_priority_rejected_before_measurement(kwargs):
+    def forbidden(x):raise AssertionError('Invalid priority reached measurement')
+    with pytest.raises(ValueError):fit(forbidden,forbidden,[0.],[-1.],[1.],**kwargs)
+
+
 @pytest.mark.parametrize('damage',['nonfinite','rows','width','scale','source'])
 def test_geometry_start_rejects_missing_or_changed_vector_population(damage):
     def measure(x):return np.array([x[1]-.05,(.1-np.linalg.norm(x))/.1])

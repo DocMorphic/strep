@@ -97,7 +97,15 @@ def _resume_seed(directory,study,frame,bindings,limits,labels,problem,_ancestors
         record,extra=load_record(directory,reference)
         for path,digest in extra.items():bind(path,digest)
         return record
-    if report.get('proposal_start','zero')!=protocol.get('proposal_start','zero') or any(replay_record(start,'start').get('retained') is not False for start in report.get('proposal_starts',[])):
+    priority=protocol.get('proposal_priority','merit')
+    if priority not in ['merit','worst-first'] or report.get('proposal_priority','merit')!=priority:
+        raise ValueError('Resume geometry priority differs')
+    if priority!='merit' and protocol.get('proposal_start')!='geometry-descent':raise ValueError('Geometry priority requires vector proposals')
+    for reference in report.get('proposal_starts',[]):
+        start=replay_record(reference,'start')
+        if start.get('retained') is not False or start.get('priority','merit')!=priority:
+            raise ValueError('Resume initialization priority differs or start was promoted')
+    if report.get('proposal_start','zero')!=protocol.get('proposal_start','zero'):
         raise ValueError('Resume initialization policy differs or linear start was promoted')
     if protocol.get('archive_proposals',False):
         for reference in report['proposal_linearizations']:replay_record(reference,'linearization')
@@ -166,7 +174,7 @@ def _resume_seed(directory,study,frame,bindings,limits,labels,problem,_ancestors
         scope='Verified diagnostic warm start; original budgets and fixed neighbors remain unchanged. No quality approval.'),checked
 
 
-def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal,proposal_start,body_headroom,archive_proposals,normal_policy,normal_headroom):
+def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal,proposal_start,body_headroom,archive_proposals,normal_policy,normal_headroom,proposal_priority):
     summary=read(study/'fit/summary.json')
     if (summary.get('solver_version')!=17 or read(study/'pipeline.json')['status']!='complete'
             or len(summary['trials'])!=1 or sha256(ASSET)!=summary['mesh_sha256']):
@@ -216,6 +224,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
         body_proposal_headroom_normalized=body_headroom,
         archive_proposals=archive_proposals,
         normal_policy=normal_policy,normal_proposal_headroom_normalized=normal_headroom,
+        proposal_priority=proposal_priority,
         proposal_tangent_guard=tangent_guard,tangent_proposal_headroom_normalized=1e-6 if tangent_guard else 0.,
         inequality_labels=labels,tradeoff_mask=mask.tolist(),
         normalization='Archived pose slack units: point/object/floor over 10 mm, normal chord ratio, '
@@ -267,7 +276,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
     value,report=fit(measure,linearize,seed,lower,upper,iterations=iterations,trust=trust,seconds=seconds,
         observer=observer,failure_policy=failure_policy,tradeoff_mask=mask,proposal=proposal,solve_iterations=solve_iterations,
         proposal_feasible_mask=feasible,proposal_headroom=headroom,proposal_tangent_guard=tangent_guard,proposal_start=proposal_start,
-        vectorize=vectorize if proposal_start=='geometry-descent' else None,record_store=record_store)
+        vectorize=vectorize if proposal_start=='geometry-descent' else None,record_store=record_store,proposal_priority=proposal_priority)
     candidate,motion=problem.independent(value*scale)
     with torch.no_grad():_,_,_,vertices=problem.fk(problem.t(value*scale))
     error=float(np.abs(vertices.numpy()-problem.surface.vertices(motion['global_rot_mats'][0],motion['posed_joints'][0])).max())
@@ -298,7 +307,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
 
 
 def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='rowwise',proposal='linear',solve_iterations=100,row_chunk=None,
-        point_policy='preserve',point_proposal='preserve',point_headroom=0.,tangent_guard=False,resume=None,body_proposal='preserve',proposal_start='zero',body_headroom=0.,archive_proposals=False,normal_policy='tradeoff',normal_headroom=0.):
+        point_policy='preserve',point_proposal='preserve',point_headroom=0.,tangent_guard=False,resume=None,body_proposal='preserve',proposal_start='zero',body_headroom=0.,archive_proposals=False,normal_policy='tradeoff',normal_headroom=0.,proposal_priority='merit'):
     study=Path(study).resolve();output=Path(output).resolve();existed=output.exists()
     if (type(frame) is not int or type(iterations) is not int or not 1<=iterations<=100
             or type(trust) not in (int,float) or not np.isfinite(trust) or not 1e-5<=trust<=.3
@@ -311,6 +320,7 @@ def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='r
             or normal_policy not in ['preserve','tradeoff']
             or type(normal_headroom) not in (int,float) or not np.isfinite(normal_headroom) or not 0<=normal_headroom<=1e-3
             or (normal_headroom>0 and normal_policy!='preserve')
+            or proposal_priority not in ['merit','worst-first'] or (proposal_priority!='merit' and proposal_start!='geometry-descent')
             or type(tangent_guard) is not bool or (tangent_guard and proposal!='nonlinear')
             or body_proposal not in ['preserve','feasible']
             or proposal_start not in ['zero','linear-feasible','geometry-descent'] or (proposal_start!='zero' and proposal!='nonlinear')
@@ -321,7 +331,7 @@ def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='r
     if resume is not None and (output.is_relative_to(Path(resume).resolve()) or Path(resume).resolve().is_relative_to(output)):
         raise ValueError('Resume artifacts and new output must be separate immutable studies')
     with worker_lock(),threadpool_limits(limits=2):
-        try:return _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal,proposal_start,body_headroom,archive_proposals,normal_policy,normal_headroom)
+        try:return _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal,proposal_start,body_headroom,archive_proposals,normal_policy,normal_headroom,proposal_priority)
         except Exception as exc:
             if not existed and output.exists():save(output/'pipeline.json',dict(status='failed',error_type=type(exc).__name__,
                 error=str(exc),quality_approved=False,release_approved=False))
@@ -346,5 +356,6 @@ if __name__=='__main__':
     parser.add_argument('--archive-proposals',action='store_true',help='Stream complete bound proposal reports; preserve inline default')
     parser.add_argument('--normal-policy',choices=['preserve','tradeoff'],default='tradeoff')
     parser.add_argument('--normal-headroom',type=float,default=0.,help='Bounded search-only orientation margin; requires normal preservation')
+    parser.add_argument('--proposal-priority',choices=['merit','worst-first'],default='merit',help='Geometry-start objective only; actual retention and nonlinear refinement unchanged')
     args=parser.parse_args();run(args.study,args.output,args.frame,args.iterations,args.trust,args.seconds,args.failure_policy,args.proposal,
-        args.solve_iterations,args.row_chunk,args.point_policy,args.point_proposal,args.point_headroom,args.tangent_guard,args.resume,args.body_proposal,args.proposal_start,args.body_headroom,args.archive_proposals,args.normal_policy,args.normal_headroom)
+        args.solve_iterations,args.row_chunk,args.point_policy,args.point_proposal,args.point_headroom,args.tangent_guard,args.resume,args.body_proposal,args.proposal_start,args.body_headroom,args.archive_proposals,args.normal_policy,args.normal_headroom,args.proposal_priority)

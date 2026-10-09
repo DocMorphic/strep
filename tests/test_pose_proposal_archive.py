@@ -57,12 +57,13 @@ def test_legacy_inline_record_is_not_rewritten(tmp_path):
     assert restored is source and not bindings
 
 
-def test_streamed_solver_preserves_exact_controls_trials_and_recorded_population(tmp_path):
+@pytest.mark.parametrize('priority',['merit','worst-first'])
+def test_streamed_solver_preserves_exact_controls_trials_and_recorded_population(tmp_path,priority):
     def measure(x):return np.array([x[1]-.05,(.1-np.linalg.norm(x))/.1])
     def derivative(x):return measure(x),np.array([[0.,1.],-x/(.1*np.linalg.norm(x))])
     def vectors(x):return dict(offsets=np.array([[x[0],x[1],0.]]),jacobian=np.array([[[1.,0.],[0.,1.],[0.,0.]]]),
         limits=np.array([.1]),scales=np.array([.1]),rows=np.array([1]),distance=np.array([True]))
-    options=dict(iterations=1,trust=.1,proposal='nonlinear',proposal_start='geometry-descent',vectorize=vectors,proposal_tangent_guard=True)
+    options=dict(iterations=1,trust=.1,proposal='nonlinear',proposal_start='geometry-descent',vectorize=vectors,proposal_tangent_guard=True,proposal_priority=priority)
     x,inline=fit(measure,derivative,[.1,0.],[-1.,-1.],[1.,1.],**options)
     y,streamed=fit(measure,derivative,[.1,0.],[-1.,-1.],[1.,1.],record_store=ProposalArchive(tmp_path),**options)
     np.testing.assert_array_equal(x,y)

@@ -62,8 +62,9 @@ def _linear_feasible_start(values,jac,caps,lower,upper,seconds):
     return delta,report
 
 
-def _geometry_descent_start(values,jac,caps,lower,upper,seconds,vectors):
+def _geometry_descent_start(values,jac,caps,lower,upper,seconds,vectors,priority='merit'):
     """Convex vector-distance proposal with a complete merit descent check."""
+    if priority not in ['merit','worst-first']:raise ValueError('Explicit geometry proposal priority required')
     offsets=np.asarray(vectors['offsets'],dtype=float);derivatives=np.asarray(vectors['jacobian'],dtype=float)
     radii=np.asarray(vectors['limits'],dtype=float);scales=np.asarray(vectors['scales'],dtype=float)
     rows=np.asarray(vectors['rows']);distance=np.asarray(vectors['distance'])
@@ -81,7 +82,8 @@ def _geometry_descent_start(values,jac,caps,lower,upper,seconds,vectors):
     effective=np.empty_like(radii);effective[distance]=radii[distance]-scales[distance]*caps[rows[distance]]
     effective[~distance]=radii[~distance]*np.sqrt(np.maximum(1-caps[rows[~distance]],0))
     limit=min(20.,seconds);started=time.monotonic();gradient=2*jac.T@np.minimum(values,0)
-    report=dict(objective='Minimize first-order squared violation with vector-norm feasibility',
+    report=dict(objective='Minimize first-order squared violation with vector-norm feasibility' if priority=='merit'
+        else 'Minimize largest first-order violation, then squared-violation slope within 1e-6 of its LP epigraph',priority=priority,
         caps=caps.tolist(),lower_delta=lower.tolist(),upper_delta=upper.tolist(),time_limit_seconds=limit,
         gradient=gradient.tolist(),vectors={k:np.asarray(vectors[k]).tolist() for k in ['offsets','jacobian','limits','scales','rows','distance']},
         scope='Vector-affine geometry and first-order merit only; no nonlinear feasibility, retained-step or path certificate.')
@@ -89,15 +91,40 @@ def _geometry_descent_start(values,jac,caps,lower,upper,seconds,vectors):
     # Convex norm balls admit global supporting-plane relaxations. Replay every
     # ball after each LP; cut-system feasibility alone never supplies a start.
     planes=[];bounds=[];cuts=[];report.update(algorithm='Norm-ball supporting planes',cuts=cuts,effective_radii=effective.tolist())
+    if priority=='worst-first':report.update(primary_proposals=[],epigraph_tie_tolerance=1e-6,initial_worst=score(values)[0])
     for iteration in range(64):
         remaining=limit-(time.monotonic()-started)
         if remaining<=0:return None,dict(report,success=False,status='geometry_start_time_guard',seconds=time.monotonic()-started)
-        result=linprog(gradient,A_ub=np.vstack([-jac,*planes]) if planes else -jac,
-            b_ub=np.concatenate([values-caps,*bounds]),bounds=list(zip(lower,upper)),method='highs',
-            options=dict(time_limit=remaining,primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9))
+        matrix=np.vstack([-jac,*planes]) if planes else -jac;right=np.concatenate([values-caps,*bounds])
+        step_bounds=list(zip(lower,upper));options=dict(time_limit=remaining,primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9)
+        if priority=='worst-first':
+            matrix=np.vstack([np.c_[matrix,np.zeros(len(matrix))],np.r_[gradient,0.][None],np.c_[-jac,-np.ones(len(jac))]])
+            right=np.r_[right,-1e-8,values];step_bounds+=[(0.,report['initial_worst'])]
+            primary=linprog(np.r_[np.zeros(size),1.],A_ub=matrix,b_ub=right,bounds=step_bounds,method='highs',options=options)
+            report['primary_status']=int(primary.status)
+            if not primary.success:return None,dict(report,success=False,status='primary_start_unavailable',seconds=time.monotonic()-started)
+            raw_primary=np.asarray(primary.x,dtype=float)
+            if (raw_primary.shape!=(size+1,) or not np.isfinite(raw_primary).all()
+                    or np.any(matrix@raw_primary>right+1e-8) or np.any(raw_primary[:-1]<lower-1e-8)
+                    or np.any(raw_primary[:-1]>upper+1e-8) or not -1e-8<=raw_primary[-1]<=report['initial_worst']+1e-8):
+                raise ValueError('Complete primary epigraph bounds and scalar/cut rows must replay')
+            report['primary_proposals'].append(dict(iteration=iteration+1,controls_delta=raw_primary[:-1].tolist(),epigraph=float(raw_primary[-1])))
+            report['primary_epigraph']=float(raw_primary[-1]);remaining=limit-(time.monotonic()-started)
+            if remaining<=0:return None,dict(report,success=False,status='geometry_start_time_guard',seconds=time.monotonic()-started)
+            options['time_limit']=remaining
+            result=linprog(np.r_[gradient,0.],A_ub=np.vstack([matrix,np.r_[np.zeros(size),1.]]),
+                b_ub=np.r_[right,raw_primary[-1]+1e-6],bounds=step_bounds,method='highs',options=options)
+        else:result=linprog(gradient,A_ub=matrix,b_ub=right,bounds=step_bounds,method='highs',options=options)
         report['linear_status']=int(result.status)
         if not result.success:return None,dict(report,success=False,status='linear_start_unavailable',seconds=time.monotonic()-started)
         raw=np.asarray(result.x,dtype=float)
+        if priority=='worst-first':
+            if raw.shape!=(size+1,) or not np.isfinite(raw).all():raise ValueError('Complete finite epigraph proposal required')
+            epigraph=float(raw[-1]);raw=raw[:-1]
+            predicted=max(float(-(values+jac@raw).min()),0.)
+            if not -1e-8<=epigraph<=report['initial_worst']+1e-8 or predicted>epigraph+1e-8 or epigraph>report['primary_epigraph']+1e-6+1e-8:
+                raise ValueError('Complete priority epigraph must replay')
+            report.update(epigraph=epigraph,predicted_worst=predicted)
         if raw.shape!=(size,) or not np.isfinite(raw).all():raise ValueError('Finite complete geometry start required')
         if np.any(raw<lower-1e-8) or np.any(raw>upper+1e-8):raise ValueError('Geometry start violated original step bounds')
         delta=np.clip(raw,lower,upper);slack=values+jac@delta-caps
@@ -107,6 +134,10 @@ def _geometry_descent_start(values,jac,caps,lower,upper,seconds,vectors):
         report.update(raw_delta=raw.tolist(),delta=delta.tolist(),minimum_linear_slack=float(slack.min()),
             minimum_vector_slack=float(balls.min()),directional_merit=descent,seconds=time.monotonic()-started)
         if descent>=-1e-8:return None,dict(report,success=False,status='no_checked_geometry_descent')
+        if priority=='worst-first':
+            predicted=max(float(-(values+jac@delta).min()),0.);report['predicted_worst']=predicted
+            if predicted>epigraph+1e-8:raise ValueError('Clipped priority epigraph must replay')
+            if predicted>=report['initial_worst']-1e-8:return None,dict(report,success=False,status='no_checked_worst_descent')
         if np.all(balls>=-1e-8):return delta,dict(report,success=True,status='usable')
         ids=np.argsort(balls)[:32];ids=ids[balls[ids]<-1e-8]
         normal=point[ids]/length[ids,None]
@@ -119,7 +150,7 @@ def _geometry_descent_start(values,jac,caps,lower,upper,seconds,vectors):
 
 def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_iterations=100,
         seconds=300,maximum_calls=1000,observer=None,failure_policy='rowwise',tradeoff_mask=None,
-        proposal='linear',proposal_feasible_mask=None,proposal_headroom=None,proposal_tangent_guard=False,proposal_start='zero',vectorize=None,record_store=None):
+        proposal='linear',proposal_feasible_mask=None,proposal_headroom=None,proposal_tangent_guard=False,proposal_start='zero',vectorize=None,record_store=None,proposal_priority='merit'):
     seed=np.asarray(seed,dtype=float);lower=np.asarray(lower,dtype=float);upper=np.asarray(upper,dtype=float)
     if (seed.ndim!=1 or not len(seed) or lower.shape!=seed.shape or upper.shape!=seed.shape
             or not np.isfinite(np.r_[seed,lower,upper]).all() or np.any(lower>=upper)
@@ -133,6 +164,7 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
             or proposal_start not in ['zero','linear-feasible','geometry-descent'] or (proposal_start!='zero' and proposal!='nonlinear')
             or (proposal_start=='geometry-descent' and not callable(vectorize)) or (proposal_start!='geometry-descent' and vectorize is not None)
             or (record_store is not None and not callable(record_store))
+            or proposal_priority not in ['merit','worst-first'] or (proposal_priority!='merit' and proposal_start!='geometry-descent')
             or type(proposal_tangent_guard) is not bool or (proposal_tangent_guard and proposal!='nonlinear')):
         raise ValueError('Finite seed, matching control bounds and explicit step budgets required')
     started=time.monotonic();calls=0;history=[];trials=[];queries=[];clips=[];linearizations=[];starts=[];value=seed.copy()
@@ -245,7 +277,7 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
                     vectors=vectorize(value);remaining=seconds-(time.monotonic()-started)
                     if remaining<=0:raise Exhausted()
                     initial,start_report=_geometry_descent_start(current,jac,start_caps,
-                        candidate_lower-value,candidate_upper-value,remaining,vectors)
+                        candidate_lower-value,candidate_upper-value,remaining,vectors,proposal_priority)
                 else:initial,start_report=_linear_feasible_start(current,jac,start_caps,
                     candidate_lower-value,candidate_upper-value,remaining)
                 starts.append(store_record('start',dict(iteration=iteration+1,controls=value.tolist(),retained=False,**start_report)))
@@ -277,6 +309,7 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
         nontradeoff_rows_preserved=bool(np.all(current[~mask]>=np.minimum(baseline[~mask],0))),
         failure_policy=failure_policy,tradeoff_mask=mask.tolist(),proposal=proposal,proposal_queries=queries,
         proposal_start=proposal_start,proposal_starts=starts,linear_start_max_seconds=20.,
+        proposal_priority=proposal_priority,
         bounded_proposal_queries=clips,
         proposal_feasible_mask=feasible.tolist(),proposal_headroom_normalized=headroom.tolist(),
         proposal_tangent_guard=proposal_tangent_guard,proposal_linearizations=linearizations,
