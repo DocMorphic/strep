@@ -19,7 +19,7 @@ from window_restoration_resume import resume_window as _resume_window
 METHODS=POSE_METHODS+['coupled_pose_window.py','guarded_window_restoration.py','window_restoration_resume.py']
 
 
-def _run(study,output,frames,iterations,trust,seconds,solve_iterations,row_chunk,resume,window_resume,margin_fallback):
+def _run(study,output,frames,iterations,trust,seconds,solve_iterations,row_chunk,resume,window_resume,margin_fallback,trial_correction):
     summary=read(study/'fit/summary.json')
     if (summary.get('solver_version')!=17 or read(study/'pipeline.json')['status']!='complete'
             or len(summary['trials'])!=1 or sha256(ASSET)!=summary['mesh_sha256']):
@@ -70,6 +70,7 @@ def _run(study,output,frames,iterations,trust,seconds,solve_iterations,row_chunk
         failure_policy='merit',point_policy='preserve',normal_policy='preserve',object_policy='preserve',
         archive_proposals=True,proposal_tangent_guard=True,
         proposal_margin_fallback=margin_fallback,
+        proposal_trial_correction=trial_correction,
         temporal_edges=[dict(frame=p.frame,neighbor=f,neighbor_edited=f in frames) for p in window.problems for f in p.neighbors],
         acceptance='Every original row preserved against min(previous,0); complete worst/squared violation must improve. Internal speed rows use both candidate frames, outside keys stay fixed. No threshold relaxation.',
         scope='Two to five native contact keys; no full-clip, between-key, anatomy/dynamics, self-collision, engine or human certificate.',
@@ -110,6 +111,7 @@ def _run(study,output,frames,iterations,trust,seconds,solve_iterations,row_chunk
         proposal_feasible_mask=point_rows,proposal_headroom=headroom,proposal_tangent_guard=True,
         proposal_start='geometry-descent',proposal_priority='worst-first',vectorize=vectorize,
         proposal_margin_fallback=margin_fallback,
+        proposal_trial_correction=trial_correction,
         record_store=ProposalArchive(output),observer=observer)
     candidate,motion=window.independent(value*scale)
     if any(sha256(Path(path))!=digest for path,digest in bindings.items()):raise ValueError('Original/resume inputs changed')
@@ -128,7 +130,7 @@ def _run(study,output,frames,iterations,trust,seconds,solve_iterations,row_chunk
     return result
 
 
-def run(study,output,frames,*,iterations=3,trust=.03,seconds=300,solve_iterations=10,row_chunk=16,resume=None,window_resume=None,margin_fallback=False):
+def run(study,output,frames,*,iterations=3,trust=.03,seconds=300,solve_iterations=10,row_chunk=16,resume=None,window_resume=None,margin_fallback=False,trial_correction=False):
     study=Path(study).resolve();output=Path(output).resolve();resume={} if resume is None else resume
     if (not isinstance(frames,list) or not 2<=len(frames)<=5 or any(type(f) is not int or f<0 for f in frames)
             or frames!=list(range(frames[0],frames[0]+len(frames)))
@@ -136,6 +138,7 @@ def run(study,output,frames,*,iterations=3,trust=.03,seconds=300,solve_iteration
             or type(solve_iterations) is not int or not 1<=solve_iterations<=300
             or type(row_chunk) is not int or not 1<=row_chunk<=32
             or type(margin_fallback) is not bool
+            or type(trial_correction) is not bool
             or type(trust) not in [int,float] or not np.isfinite(trust) or not 1e-5<=trust<=.3
             or type(seconds) not in [int,float] or not np.isfinite(seconds) or not 1<=seconds<=1800
             or not isinstance(resume,dict) or any(type(f) is not int or f not in frames or not isinstance(p,(str,Path)) or not str(p) for f,p in resume.items())
@@ -150,7 +153,7 @@ def run(study,output,frames,*,iterations=3,trust=.03,seconds=300,solve_iteration
         raise ValueError('Window output and immutable pose resumes must remain separate')
     existed=output.exists()
     with worker_lock(),threadpool_limits(limits=2):
-        try:return _run(study,output,frames,iterations,trust,seconds,solve_iterations,row_chunk,resume,window_resume,margin_fallback)
+        try:return _run(study,output,frames,iterations,trust,seconds,solve_iterations,row_chunk,resume,window_resume,margin_fallback,trial_correction)
         except Exception as exc:
             if not existed and output.exists():save(output/'pipeline.json',dict(status='failed',error_type=type(exc).__name__,error=str(exc),quality_approved=False,release_approved=False))
             raise
@@ -164,7 +167,8 @@ if __name__=='__main__':
     parser.add_argument('--row-chunk',type=int,default=16);parser.add_argument('--resume',nargs=2,action='append',default=[],metavar=('FRAME','DIRECTORY'))
     parser.add_argument('--resume-window',help='Fully bind/replay a terminal window; cannot combine with individual pose resumes')
     parser.add_argument('--margin-fallback',action='store_true',help='Retry smaller search margins inside one shared initializer budget; original retention gates unchanged')
+    parser.add_argument('--trial-correction',action='store_true',help='Repair at most two rejected geometry trials per outer iteration; original nonlinear/tangent gates unchanged')
     args=parser.parse_args();resumes={int(frame):directory for frame,directory in args.resume}
     if len(resumes)!=len(args.resume):parser.error('Each resumed frame must appear once')
     run(args.study,args.output,args.frames,iterations=args.iterations,trust=args.trust,seconds=args.seconds,
-        solve_iterations=args.solve_iterations,row_chunk=args.row_chunk,resume=resumes,window_resume=args.resume_window,margin_fallback=args.margin_fallback)
+        solve_iterations=args.solve_iterations,row_chunk=args.row_chunk,resume=resumes,window_resume=args.resume_window,margin_fallback=args.margin_fallback,trial_correction=args.trial_correction)

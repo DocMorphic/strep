@@ -14,9 +14,10 @@ class ProposalArchive:
         (self.directory/'proposals').mkdir(exist_ok=False)
 
     def __call__(self,kind,record):
-        if kind not in ['start','linearization'] or type(record.get('iteration')) is not int or record['iteration']<1:
+        if (kind not in ['start','linearization','correction'] or type(record.get('iteration')) is not int or record['iteration']<1
+                or (kind=='correction' and (type(record.get('attempt')) is not int or record['attempt']<1))):
             raise ValueError('Explicit proposal kind and iteration required')
-        stem=f"{kind}-{record['iteration']}";path=self.directory/'proposals'/f'{stem}.npz'
+        stem=f"{kind}-{record['iteration']}"+(f"-{record['attempt']}" if kind=='correction' else '');path=self.directory/'proposals'/f'{stem}.npz'
         metadata=path.with_suffix('.json');count=0
         def leaves(value):
             for item in value:
@@ -40,16 +41,17 @@ class ProposalArchive:
                     raise ValueError('Finite plain JSON report values required')
                 return dict(kind='scalar',value=value)
             tree=encode(record)
-        write_receipt(metadata,dict(schema=SCHEMA,kind=kind,iteration=record['iteration'],tree=tree,
+        identity=dict(attempt=record['attempt']) if kind=='correction' else {}
+        write_receipt(metadata,dict(schema=SCHEMA,kind=kind,iteration=record['iteration'],**identity,tree=tree,
             quality_approved=False,release_approved=False))
-        return dict(archive_schema=SCHEMA,kind=kind,iteration=record['iteration'],metadata=metadata.relative_to(self.directory).as_posix(),
+        return dict(archive_schema=SCHEMA,kind=kind,iteration=record['iteration'],**identity,metadata=metadata.relative_to(self.directory).as_posix(),
             metadata_sha256=sha256(metadata),archive_sha256=sha256(path),receipt_sha256=sha256(Path(str(path)+'.receipt.json')))
 
 
 def load_record(directory,reference):
     """Replay one report at a time; legacy inline reports need no conversion."""
     if 'archive_schema' not in reference:return reference,{}
-    if reference['archive_schema']!=SCHEMA or reference.get('kind') not in ['start','linearization']:
+    if reference['archive_schema']!=SCHEMA or reference.get('kind') not in ['start','linearization','correction']:
         raise ValueError('Known complete proposal archive required')
     root=Path(directory).resolve();metadata=(root/reference['metadata']).resolve()
     if not metadata.is_relative_to(root/'proposals') or metadata.suffix!='.json':raise ValueError('Local proposal metadata required')
@@ -60,6 +62,8 @@ def load_record(directory,reference):
     if (document['schema']!=SCHEMA or document['kind']!=reference['kind'] or document['iteration']!=reference['iteration']
             or document['quality_approved'] is not False or document['release_approved'] is not False):
         raise ValueError('Proposal metadata identity differs')
+    if reference['kind']=='correction' and (type(reference.get('attempt')) is not int or reference['attempt']<1 or document.get('attempt')!=reference['attempt']):
+        raise ValueError('Bound correction-attempt identity required')
     seen=set()
     with np.load(path,allow_pickle=False) as saved:
         def decode(node):
@@ -71,6 +75,7 @@ def load_record(directory,reference):
             seen.add(node['name']);return saved[node['name']].tolist()
         record=decode(document['tree'])
         if seen!=set(saved.files):raise ValueError('Complete proposal array population required')
-    if record['iteration']!=reference['iteration'] or any(sha256(p)!=h for p,h in bindings.items()):
+    if (record['iteration']!=reference['iteration'] or (reference['kind']=='correction' and record.get('attempt')!=reference['attempt'])
+            or any(sha256(p)!=h for p,h in bindings.items())):
         raise ValueError('Proposal changed during replay')
     return record,{str(p):h for p,h in bindings.items()}

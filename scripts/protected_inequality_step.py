@@ -187,7 +187,7 @@ def margin_start_attempts(record):
 
 def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_iterations=100,
         seconds=300,maximum_calls=1000,observer=None,failure_policy='rowwise',tradeoff_mask=None,
-        proposal='linear',proposal_feasible_mask=None,proposal_headroom=None,proposal_tangent_guard=False,proposal_start='zero',vectorize=None,record_store=None,proposal_priority='merit',proposal_margin_fallback=False):
+        proposal='linear',proposal_feasible_mask=None,proposal_headroom=None,proposal_tangent_guard=False,proposal_start='zero',vectorize=None,record_store=None,proposal_priority='merit',proposal_margin_fallback=False,proposal_trial_correction=False):
     seed=np.asarray(seed,dtype=float);lower=np.asarray(lower,dtype=float);upper=np.asarray(upper,dtype=float)
     if (seed.ndim!=1 or not len(seed) or lower.shape!=seed.shape or upper.shape!=seed.shape
             or not np.isfinite(np.r_[seed,lower,upper]).all() or np.any(lower>=upper)
@@ -203,9 +203,10 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
             or (record_store is not None and not callable(record_store))
             or proposal_priority not in ['merit','worst-first'] or (proposal_priority!='merit' and proposal_start!='geometry-descent')
             or type(proposal_margin_fallback) is not bool or (proposal_margin_fallback and proposal_start!='geometry-descent')
+            or type(proposal_trial_correction) is not bool or (proposal_trial_correction and (proposal_start!='geometry-descent' or not proposal_tangent_guard))
             or type(proposal_tangent_guard) is not bool or (proposal_tangent_guard and proposal!='nonlinear')):
         raise ValueError('Finite seed, matching control bounds and explicit step budgets required')
-    started=time.monotonic();calls=0;history=[];trials=[];queries=[];clips=[];linearizations=[];starts=[];value=seed.copy()
+    started=time.monotonic();calls=0;history=[];trials=[];queries=[];clips=[];linearizations=[];starts=[];corrections=[];value=seed.copy()
     def store_record(kind,record):return record if record_store is None else record_store(kind,record)
     class Exhausted(Exception):pass
     def check():
@@ -287,8 +288,21 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
             if proposal_tangent_guard and hard.any():
                 constraints.append(dict(type='ineq',fun=lambda delta:current[hard]+jac[hard]@delta-tangent_caps,
                     jac=lambda delta:jac[hard]))
+            correction_count=0
+            def replay_candidate(candidate,label,stage,fraction,**extra):
+                nonlocal value,current
+                after=observed(candidate);replay_keep=retain(current,after,failure_policy=failure_policy,tradeoff_mask=mask)
+                tangent=current[hard]+jac[hard]@(candidate-value)-preservation[hard]
+                tangent_keep=not proposal_tangent_guard or bool(np.all(tangent>=0));keep=replay_keep and tangent_keep
+                trials.append(dict(label=label,iteration=iteration+1,stage=stage,fraction=fraction,accepted=keep,
+                    score=list(score(after)),controls=candidate.tolist(),retention_guard_passed=replay_keep,
+                    tangent_guard_passed=tangent_keep,tangent_minimum_slack=float(tangent.min()) if proposal_tangent_guard and len(tangent) else None,**extra))
+                if observer:observer(label,candidate.copy(),after.copy(),keep)
+                if keep:value=candidate;current=after
+                return keep,after
             def attempt(direction,stage):
                 nonlocal value,current
+                nonlocal correction_count
                 for fraction in [1.,.5,.25,.125,.0625,.03125,.015625,.0078125]:
                     candidate=value+fraction*direction
                     if proposal=='nonlinear':candidate=np.clip(candidate,candidate_lower,candidate_upper)
@@ -297,14 +311,33 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
                         trials.append(dict(label=label,iteration=iteration+1,stage=stage,fraction=fraction,accepted=False,
                             controls=candidate.tolist(),rejection='outside_normalized_control_bounds',nonlinear_replay=False))
                         continue
-                    after=observed(candidate);replay_keep=retain(current,after,failure_policy=failure_policy,tradeoff_mask=mask)
-                    tangent=current[hard]+jac[hard]@(candidate-value)-preservation[hard]
-                    tangent_keep=not proposal_tangent_guard or bool(np.all(tangent>=0));keep=replay_keep and tangent_keep
-                    trials.append(dict(label=label,iteration=iteration+1,stage=stage,fraction=fraction,accepted=keep,
-                        score=list(score(after)),controls=candidate.tolist(),retention_guard_passed=replay_keep,
-                        tangent_guard_passed=tangent_keep,tangent_minimum_slack=float(tangent.min()) if proposal_tangent_guard and len(tangent) else None))
-                    if observer:observer(label,candidate.copy(),after.copy(),keep)
-                    if keep:value=candidate;current=after;return True
+                    keep,after=replay_candidate(candidate,label,stage,fraction)
+                    if keep:return True
+                    if proposal_trial_correction and stage=='geometry-start' and fraction in [.25,.125] and correction_count<2:
+                        check();correction_count+=1
+                        measured,derivatives=linearize(candidate)
+                        measured=np.asarray(measured,dtype=float);derivatives=np.asarray(derivatives,dtype=float)
+                        if measured.shape!=current.shape or derivatives.shape!=jac.shape or not np.isfinite(derivatives).all():
+                            raise ValueError('Complete candidate correction derivatives required')
+                        np.testing.assert_allclose(measured,after,rtol=1e-10,atol=1e-10);check()
+                        tangent=current[hard]+jac[hard]@(candidate-value)
+                        correction_lower=np.maximum(candidate_lower-candidate,-.25*trust)
+                        correction_upper=np.minimum(candidate_upper-candidate,.25*trust)
+                        remaining=seconds-(time.monotonic()-started)
+                        if remaining<=0:raise Exhausted()
+                        correction,details=_linear_feasible_start(np.r_[after,tangent],np.vstack([derivatives,jac[hard]]),
+                            np.r_[margin_floor+1e-6,preservation[hard]+1e-6],correction_lower,correction_upper,remaining)
+                        number=len(corrections)+1
+                        corrections.append(store_record('correction',dict(iteration=iteration+1,attempt=number,parent_trial=label,
+                            controls=candidate.tolist(),base_controls=value.tolist(),slacks=after.tolist(),jacobian=derivatives.tolist(),
+                            correction_limit_normalized=.25*trust,retained=False,**details)))
+                        check()
+                        if correction is not None:
+                            corrected=np.clip(candidate+correction,candidate_lower,candidate_upper)
+                            corrected_label=f'iteration-{iteration+1}-backoff-{len(trials)+1}'
+                            keep,_=replay_candidate(corrected,corrected_label,'geometry-start-correction',fraction,
+                                parent_trial=label,correction_attempt=number)
+                            if keep:return True
                 return False
             initial=np.zeros_like(value)
             if proposal_start!='zero':
@@ -357,6 +390,7 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
         proposal_start=proposal_start,proposal_starts=starts,linear_start_max_seconds=20.,
         proposal_priority=proposal_priority,
         proposal_margin_fallback=proposal_margin_fallback,
+        proposal_trial_correction=proposal_trial_correction,proposal_corrections=corrections,
         bounded_proposal_queries=clips,
         proposal_feasible_mask=feasible.tolist(),proposal_headroom_normalized=headroom.tolist(),
         proposal_tangent_guard=proposal_tangent_guard,proposal_linearizations=linearizations,

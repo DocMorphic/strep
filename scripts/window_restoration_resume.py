@@ -53,6 +53,10 @@ def resume_window(directory,study,window,original_bindings,limits,methods,defini
     fallback=protocol.get('proposal_margin_fallback',False)
     if type(fallback) is not bool or report.get('proposal_margin_fallback',False) is not fallback:
         raise ValueError('Bound window margin-search policy required')
+    corrective=protocol.get('proposal_trial_correction',False)
+    if type(corrective) is not bool or report.get('proposal_trial_correction',False) is not corrective:
+        raise ValueError('Bound window trial-correction policy required')
+    if report.get('proposal_corrections') and not corrective:raise ValueError('Correction archives require explicit policy')
     if any(protocol.get(field)!='preserve' for field in ['point_policy','normal_policy','object_policy']):
         raise ValueError('Window point/normal/object policy differs')
     point_rows=[label.startswith('point:') for label in window.labels]
@@ -127,12 +131,52 @@ def resume_window(directory,study,window,original_bindings,limits,methods,defini
         if len(observations)%16==0:print(dict(stage='window_resume_replayed',observations=len(observations)),flush=True)
     np.testing.assert_allclose(observations['seed']['parameters'],origin,rtol=0,atol=1e-12)
     np.testing.assert_array_equal(observations['seed']['solver_slacks'],baseline)
+    correction_records={};per_iteration={}
+    for reference in report.get('proposal_corrections',[]):
+        correction=record(reference,'correction');number=correction['attempt'];iteration=correction['iteration']
+        if number!=len(correction_records)+1 or correction.get('retained') is not False:
+            raise ValueError('Ordered unretained correction records required')
+        per_iteration[iteration]=per_iteration.get(iteration,0)+1
+        if per_iteration[iteration]>2:raise ValueError('At most two correction attempts per outer iteration')
+        linear=[r for r in report['proposal_linearizations'] if r['iteration']==iteration]
+        if len(linear)!=1:raise ValueError('Complete correction-origin linearization required')
+        linear=record(linear[0],'linearization');base=np.asarray(linear['controls']);current=np.asarray(linear['slacks']);jac0=np.asarray(linear['jacobian'])
+        parent=observations[correction['parent_trial']];candidate=controls(correction['controls'])
+        parents=[t for t in report['trials'] if t['label']==correction['parent_trial']]
+        if len(parents)!=1 or parents[0]['accepted'] or parents[0]['stage']!='geometry-start' or parents[0]['fraction'] not in [.25,.125]:
+            raise ValueError('Correction must originate at a rejected bounded geometry trial')
+        np.testing.assert_allclose(candidate,np.asarray(parent['parameters'])/scale,rtol=0,atol=1e-12)
+        np.testing.assert_array_equal(correction['base_controls'],base);np.testing.assert_array_equal(correction['slacks'],parent['solver_slacks'])
+        jac=np.asarray(correction['jacobian'])
+        if jac.shape!=(size,window.dim) or not np.isfinite(jac).all():raise ValueError('Complete finite correction derivatives required')
+        trust=protocol['trust_normalized'];lo=np.maximum(lower,base-trust);hi=np.minimum(upper,base+trust)
+        np.testing.assert_equal(correction['correction_limit_normalized'],.25*trust)
+        np.testing.assert_array_equal(correction['lower_delta'],np.maximum(lo-candidate,-.25*trust))
+        np.testing.assert_array_equal(correction['upper_delta'],np.minimum(hi-candidate,.25*trust))
+        floor=np.minimum(current,0);floor[point_rows]=np.maximum(floor[point_rows],0)
+        caps=np.r_[floor+1e-6,np.minimum(current,0)+1e-6];np.testing.assert_array_equal(correction['caps'],caps)
+        if not 0<correction['time_limit_seconds']<=20:raise ValueError('Bounded correction LP budget required')
+        if correction['success']:
+            delta=controls(candidate+np.asarray(correction['delta']))-candidate
+            if np.any(delta<np.asarray(correction['lower_delta'])-1e-12) or np.any(delta>np.asarray(correction['upper_delta'])+1e-12):
+                raise ValueError('Correction exceeded its local bounds')
+            tangent=current+jac0@(candidate-base)
+            if np.any(np.r_[parent['solver_slacks'],tangent]+np.vstack([jac,jac0])@delta<caps-1e-8):
+                raise ValueError('Complete correction proposal failed linear replay')
+        correction_records[number]=correction
     before=baseline.copy();last=origin/scale;retained={'final'};cached=None
     for trial in report['trials']:
         if trial.get('nonlinear_replay') is False:
             if trial['accepted']:raise ValueError('Unmeasured window proposal cannot be retained')
             continue
         audit=observations[trial['label']];after=np.asarray(audit['solver_slacks']);z=controls(trial['controls'])
+        if trial.get('stage')=='geometry-start-correction':
+            correction=correction_records.get(trial.get('correction_attempt'))
+            if correction is None or not correction['success'] or trial.get('parent_trial')!=correction['parent_trial'] or trial['iteration']!=correction['iteration']:
+                raise ValueError('Corrected trial must bind its successful unretained proposal')
+            lo=np.maximum(lower,np.asarray(correction['base_controls'])-protocol['trust_normalized']);hi=np.minimum(upper,np.asarray(correction['base_controls'])+protocol['trust_normalized'])
+            expected=np.clip(np.asarray(correction['controls'])+correction['delta'],lo,hi)
+            np.testing.assert_allclose(z,expected,rtol=0,atol=1e-12)
         np.testing.assert_allclose(audit['parameters'],z*scale,rtol=0,atol=1e-12)
         if np.any(np.abs(z-last)>protocol['trust_normalized']+1e-12):raise ValueError('Window backoff exceeded its declared trust bounds')
         if cached is None or cached['iteration']!=trial['iteration']:

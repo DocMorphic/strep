@@ -453,3 +453,53 @@ def test_margin_fallback_keeps_original_budget_and_never_promotes_unmeasured_sta
 def test_invalid_margin_fallback_rejected_before_measurement(kwargs):
     def forbidden(x):raise AssertionError('Invalid fallback reached measurement')
     with pytest.raises(ValueError):fit(forbidden,forbidden,[0.],[-1.],[1.],**kwargs)
+
+
+def curved_surface(x):return np.array([x[1]-.05,.1-x[0]-x[1]**2])
+
+
+def curved_surface_pair(x):return curved_surface(x),np.array([[0.,1.],[-1.,-2*x[1]]])
+
+
+def curved_surface_vectors(x):
+    return dict(offsets=np.array([[x[0]+x[1]**2,0.,0.]]),jacobian=np.array([[[1.,2*x[1]],[0.,0.],[0.,0.]]]),
+        limits=np.array([.1]),scales=np.array([1.]),rows=np.array([1]),distance=np.array([True]))
+
+
+def test_trial_correction_repairs_curvature_without_losing_original_surface_constraint(tmp_path):
+    from pose_proposal_archive import ProposalArchive,load_record
+    options=dict(iterations=1,trust=.1,solve_iterations=1,proposal='nonlinear',proposal_start='geometry-descent',
+        vectorize=curved_surface_vectors,proposal_tangent_guard=True)
+    old,a=fit(curved_surface,curved_surface_pair,[.1,0.],[-1.,-1.],[1.,1.],**options)
+    output=tmp_path/'study';output.mkdir()
+    value,b=fit(curved_surface,curved_surface_pair,[.1,0.],[-1.,-1.],[1.,1.],proposal_trial_correction=True,record_store=ProposalArchive(output),**options)
+    assert value[1]>.02 and b['trials'][-1]['stage']=='geometry-start-correction' and b['trials'][-1]['accepted']
+    assert curved_surface(value)[1]>=0 and b['source_passing_rows_preserved'] and b['nontradeoff_rows_preserved']
+    assert b['final_score'][1]<a['final_score'][1] and not b['proposal_queries']
+    correction,_=load_record(output,b['proposal_corrections'][0])
+    assert correction['success'] and not correction['retained'] and correction['attempt']==1
+    assert correction['correction_limit_normalized']==.025 and len(correction['jacobian'])==2
+    assert b['trials'][-1]['parent_trial']==correction['parent_trial'] and not b['quality_approved']
+
+
+def test_correction_call_budget_does_not_promote_rejected_parent_or_unmeasured_proposal():
+    value,r=fit(curved_surface,curved_surface_pair,[.1,0.],[-1.,-1.],[1.,1.],iterations=1,trust=.1,maximum_calls=4,
+        proposal='nonlinear',proposal_start='geometry-descent',vectorize=curved_surface_vectors,
+        proposal_tangent_guard=True,proposal_trial_correction=True)
+    np.testing.assert_array_equal(value,[.1,0.]);assert not r['proposal_corrections'] and r['stop']=='time_or_measurement_budget'
+    assert len(r['trials'])==3 and not any(t['accepted'] for t in r['trials'])
+
+
+def test_invalid_candidate_derivative_never_reaches_correction_lp():
+    def broken(x):
+        if x[1]>0:return curved_surface(x),np.zeros((1,2))
+        return curved_surface_pair(x)
+    with pytest.raises(ValueError,match='correction derivatives'):fit(curved_surface,broken,[.1,0.],[-1.,-1.],[1.,1.],iterations=1,trust=.1,
+        proposal='nonlinear',proposal_start='geometry-descent',vectorize=curved_surface_vectors,
+        proposal_tangent_guard=True,proposal_trial_correction=True)
+
+
+@pytest.mark.parametrize('kwargs',[dict(proposal_trial_correction=1),dict(proposal_trial_correction=True)])
+def test_invalid_trial_correction_rejected_before_measurement(kwargs):
+    def forbidden(x):raise AssertionError('Invalid correction reached measurement')
+    with pytest.raises(ValueError):fit(forbidden,forbidden,[0.],[-1.],[1.],**kwargs)

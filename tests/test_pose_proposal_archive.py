@@ -79,3 +79,18 @@ def test_streamed_solver_preserves_exact_controls_trials_and_recorded_population
 def test_invalid_record_store_rejected_before_measurement():
     def forbidden(x):raise AssertionError('Invalid transport reached measurement')
     with pytest.raises(ValueError):fit(forbidden,forbidden,[0.],[-1.],[1.],record_store=True)
+
+
+def test_correction_attempts_have_distinct_bound_identity(tmp_path):
+    store=ProposalArchive(tmp_path);source=record()
+    first=store('correction',dict(source,attempt=1));second=store('correction',dict(source,attempt=2))
+    assert first['metadata']!=second['metadata'] and load_record(tmp_path,second)[0]['attempt']==2
+    changed=dict(first,attempt=2)
+    with pytest.raises(ValueError,match='identity'):load_record(tmp_path,changed)
+
+
+@pytest.mark.parametrize('attempt',[None,False,0,-1,1.5])
+def test_invalid_correction_attempt_rejected_before_writing(tmp_path,attempt):
+    store=ProposalArchive(tmp_path)
+    with pytest.raises(ValueError):store('correction',dict(record(),attempt=attempt))
+    assert not list((tmp_path/'proposals').iterdir())

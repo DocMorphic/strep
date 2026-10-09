@@ -76,7 +76,7 @@ def test_selects_only_replayed_terminal_window_and_binds_full_archives(tmp_path,
 
 
 @pytest.mark.parametrize('damage',['clock','frames','limits','inputs','method','motion','metadata','mask','policy','margin','edges',
-    'query-promotion','last-query','slacks','tangent','linear-promotion','archive','ancestor','precision','physical','trust','unbound-seed'])
+    'query-promotion','last-query','slacks','tangent','linear-promotion','archive','ancestor','precision','physical','trust','unbound-seed','correction-policy','correction-promotion'])
 def test_changed_history_or_unretained_query_is_rejected(tmp_path,monkeypatch,damage):
     args,save=fixture(tmp_path,monkeypatch);directory=args[0];protocol=module.read(directory/'protocol.json');result=module.read(directory/'result.json')
     if damage=='clock':protocol['fps']=60
@@ -88,6 +88,10 @@ def test_changed_history_or_unretained_query_is_rejected(tmp_path,monkeypatch,da
     if damage=='motion':(directory/'window.npz').write_bytes(b'changed')
     if damage=='mask':result['fit']['tradeoff_mask']=[True,False]
     if damage=='policy':protocol['normal_policy']='tradeoff'
+    if damage=='correction-policy':protocol['proposal_trial_correction']=True
+    if damage=='correction-promotion':
+        protocol['proposal_trial_correction']=True;result['fit']['proposal_trial_correction']=True
+        result['fit']['proposal_corrections']=[args[2].archive('correction',dict(iteration=1,attempt=1,retained=True,controls=[0.]*8))]
     if damage=='margin':protocol['proposal_headroom_normalized']=[0,0]
     if damage=='edges':protocol['temporal_edges']=[dict(frame=1,neighbor=2,neighbor_edited=False)]
     if damage=='query-promotion':result['fit']['proposal_queries'][0]['retained']=True
