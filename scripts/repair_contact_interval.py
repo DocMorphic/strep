@@ -19,8 +19,9 @@ from coupled_pose_window import CoupledPoseWindow
 from protected_inequality_step import fit,retain
 from pose_restoration_policy import proposal_headroom,row_diagnostics
 from pose_proposal_archive import ProposalArchive
+from contact_interval_resume import resume_interval,seed_window
 
-METHODS=AUDIT_METHODS+['repair_contact_interval.py']
+METHODS=AUDIT_METHODS+['repair_contact_interval.py','contact_interval_resume.py']
 
 
 class ExactSavedOrigin:
@@ -68,7 +69,7 @@ def compare_interval(labels,before,current_labels,after):
         quality_approved=False,release_approved=False),diagnostics
 
 
-def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations):
+def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,resume):
     summary=read(study/'fit/summary.json')
     if (summary.get('solver_version')!=17 or read(study/'pipeline.json')['status']!='complete'
             or len(summary['trials'])!=1 or sha256(ASSET)!=summary['mesh_sha256']):
@@ -76,10 +77,14 @@ def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations):
     folder=study/'fit/assets'/summary['trials'][0]['id']/'A'
     paths=[folder/name for name in ['raw-motion.npz','limb-motion.npz','previous-motion.npz','motion.npz','recipe.json']]
     paths+=[ASSET,DEFINITIONS,study/'fit/summary.json',study/'pipeline.json']
-    bindings={str(path):sha256(path) for path in paths}
+    bindings={str(path):sha256(path) for path in paths};original_bindings=bindings.copy()
     source_payload=dict(np.load(folder/'motion.npz',allow_pickle=False));source=pose_tracks(source_payload)
     skin=dict(np.load(ASSET,allow_pickle=False));torch.set_num_threads(2)
     factory=lambda block:CoupledPoseWindow(folder,skin,block,row_chunk=4)
+    parameters={};receipt=None
+    if resume is not None:
+        source,parameters,receipt,extra=resume_interval(resume,study,factory,source,frames,width,original_bindings,METHODS,DEFINITIONS,ExactSavedOrigin)
+        bindings.update(extra)
     output.mkdir(parents=True,exist_ok=False);archive=output/'implementation';archive.mkdir()
     for name in METHODS:shutil.copyfile(ROOT/'scripts'/name,archive/name)
     shutil.copyfile(DEFINITIONS,archive/'kimodo-skeleton-definitions.py')
@@ -88,7 +93,8 @@ def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations):
         native_metadata_sha256=sha256(DEFINITIONS),source_motion_sha256=sha256(folder/'motion.npz'),
         pose_tracks=list(POSE_TRACKS),omitted_source_tracks=sorted(set(source_payload)-set(POSE_TRACKS)),
         iterations=iterations,trust_normalized=trust,seconds=seconds,proposal_solve_iterations=solve_iterations,row_chunk=4,
-        origin='Exact original saved arrays; reconstructed solver seed is separately recorded and never substituted for the saved origin.',
+        interval_resume=receipt,
+        origin='Exact saved original or fully replayed preserving interval state; reconstructed solver seed is never substituted for the saved origin. Original references and limits remain fixed.',
         acceptance='Every originally passing saved row stays passing, every failed saved row is nonregressing, and worst/squared violation improves. Check the complete requested interval and both exterior body boundaries after the bounded local fit.',
         metadata_approved=False,quality_approved=False,release_approved=False)
     save(output/'protocol.json',protocol);save(output/'pipeline.json',dict(status='processing',quality_approved=False,release_approved=False))
@@ -102,10 +108,9 @@ def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations):
             save(output/'progress.json',dict(status='processing',observations=observations))
             print(dict(stage=kind,window=index,frames=block),flush=True)
         return observer
-    baseline,labels,before=evaluate_interval(factory,frames,source,width=width,observer=observe('baseline'))
-    block=baseline['ranked_windows'][0]['frames'];window=factory(block)
-    exterior={f for p in window.problems for f in p.neighbors if f not in block}
-    window.set_fixed_neighbors({f:source['posed_joints'][f] for f in exterior})
+    baseline,labels,before=evaluate_interval(factory,frames,source,parameters,width=width,observer=observe('baseline'))
+    parameters={r['frame']:np.asarray(r['controls']) for r in baseline['parameters']}
+    block=baseline['ranked_windows'][0]['frames'];window=seed_window(factory,block,source,parameters)
     origin=ExactSavedOrigin(window,source);scale=window.scale;z=origin.normalized_seed.copy()
     lower=np.tile(np.r_[np.full(window.pose_dim-1,-1.),0.],len(block));upper=np.ones(window.dim)
     if np.any(z<lower) or np.any(z>upper):raise ValueError('Original solver seed outside unchanged normalized bounds')
@@ -156,7 +161,7 @@ def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations):
     np.testing.assert_array_equal(origin.initial_rows,report['initial_represented_slacks'])
     np.testing.assert_array_equal(origin.rows(controls),report['final_represented_slacks'])
     proposed=overlay_pose_tracks(source,block,motion)
-    parameters={f:controls[i*window.pose_dim:(i+1)*window.pose_dim] for i,f in enumerate(block)}
+    parameters.update({f:controls[i*window.pose_dim:(i+1)*window.pose_dim] for i,f in enumerate(block)})
     current,current_labels,after=evaluate_interval(factory,frames,proposed,parameters,width=width,observer=observe('proposed'))
     decision,diagnostics=compare_interval(labels,before,current_labels,after)
     retained=proposed if decision['update_retained'] else source
@@ -175,19 +180,21 @@ def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations):
     return result
 
 
-def run(study,output,frames,*,width=3,iterations=8,trust=.03,seconds=300,solve_iterations=10):
+def run(study,output,frames,*,width=3,iterations=8,trust=.03,seconds=300,solve_iterations=10,resume=None):
     partition_frames(frames,width)
     if (type(iterations) is not int or not 1<=iterations<=100 or type(solve_iterations) is not int or not 1<=solve_iterations<=300
             or type(trust) not in [int,float] or not np.isfinite(trust) or not 1e-5<=trust<=.3
-            or type(seconds) not in [int,float] or not np.isfinite(seconds) or not 1<=seconds<=1800):
+            or type(seconds) not in [int,float] or not np.isfinite(seconds) or not 1<=seconds<=1800
+            or (resume is not None and (not isinstance(resume,(str,Path)) or not str(resume)))):
         raise ValueError('Explicit original-bound repair budgets required')
-    study=Path(study).resolve();output=Path(output).resolve()
-    if (any(not p.is_relative_to(ROOT.resolve()) for p in [study,output])
-            or output.is_relative_to(study) or study.is_relative_to(output)):
+    study=Path(study).resolve();output=Path(output).resolve();resume=Path(resume).resolve() if resume is not None else None
+    inputs=[study]+([resume] if resume is not None else [])
+    if (any(not p.is_relative_to(ROOT.resolve()) for p in inputs+[output])
+            or any(output.is_relative_to(p) or p.is_relative_to(output) for p in inputs)):
         raise ValueError('Separate immutable in-project original source and repair output required')
     if output.exists():raise FileExistsError(output)
     with worker_lock(),threadpool_limits(limits=2):
-        try:return _run(study,output,frames,width,iterations,trust,seconds,solve_iterations)
+        try:return _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,resume)
         except Exception as exc:
             if output.exists():save(output/'pipeline.json',dict(status='failed',error_type=type(exc).__name__,error=str(exc),quality_approved=False,release_approved=False))
             raise
@@ -198,6 +205,6 @@ if __name__=='__main__':
     parser.add_argument('--start',type=int,required=True);parser.add_argument('--end',type=int,required=True)
     parser.add_argument('--width',type=int,default=3);parser.add_argument('--iterations',type=int,default=8)
     parser.add_argument('--trust',type=float,default=.03);parser.add_argument('--seconds',type=float,default=300)
-    parser.add_argument('--solve-iterations',type=int,default=10);args=parser.parse_args()
+    parser.add_argument('--solve-iterations',type=int,default=10);parser.add_argument('--resume-interval',type=Path);args=parser.parse_args()
     run(args.study,args.output,list(range(args.start,args.end+1)),width=args.width,iterations=args.iterations,
-        trust=args.trust,seconds=args.seconds,solve_iterations=args.solve_iterations)
+        trust=args.trust,seconds=args.seconds,solve_iterations=args.solve_iterations,resume=args.resume_interval)

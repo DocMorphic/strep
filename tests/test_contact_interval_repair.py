@@ -97,7 +97,8 @@ def test_interval_row_population_cannot_change_between_original_and_proposed():
 @pytest.mark.parametrize('options',[
     dict(frames=[]),dict(frames=[1]),dict(frames=[1,3]),dict(width=6),dict(width=True),
     dict(iterations=True),dict(iterations=0),dict(iterations=101),dict(solve_iterations=0),dict(solve_iterations=301),
-    dict(trust=float('nan')),dict(trust=.31),dict(trust=True),dict(seconds=0),dict(seconds=1801),dict(seconds=True)])
+    dict(trust=float('nan')),dict(trust=.31),dict(trust=True),dict(seconds=0),dict(seconds=1801),dict(seconds=True),
+    dict(resume=False),dict(resume='')])
 def test_invalid_repair_never_acquires_worker(tmp_path,monkeypatch,options):
     monkeypatch.setattr(module,'ROOT',tmp_path);monkeypatch.setattr(module,'worker_lock',lambda:pytest.fail('Invalid repair acquired worker'))
     args=dict(frames=[1,2]);args.update(options)
@@ -120,7 +121,7 @@ def test_lock_covers_native_and_full_interval_lifecycle(tmp_path,monkeypatch):
         try:yield
         finally:active.pop()
     def run(study,output,frames,*budgets):
-        assert active and budgets==(3,8,.03,300,10)
+        assert active and budgets==(3,8,.03,300,10,None)
         return 'whole-interval-checked'
     monkeypatch.setattr(module,'worker_lock',lock);monkeypatch.setattr(module,'threadpool_limits',lambda **k:nullcontext())
     monkeypatch.setattr(module,'_run',run)
@@ -139,3 +140,19 @@ def test_failed_study_preserved_and_existing_output_rejected_before_lock(tmp_pat
     monkeypatch.setattr(module,'worker_lock',lambda:pytest.fail('Existing output acquired worker'))
     with pytest.raises(FileExistsError):module.run(tmp_path/'source',output,[1,2])
     assert (output/'pipeline.json').read_bytes()==before
+
+
+@pytest.mark.parametrize('output,resume',[('parent/new','parent'),('parent','parent/new')])
+def test_interval_predecessor_cannot_overlap_output(tmp_path,monkeypatch,output,resume):
+    monkeypatch.setattr(module,'ROOT',tmp_path);monkeypatch.setattr(module,'worker_lock',lambda:pytest.fail('Overlapping resume acquired worker'))
+    with pytest.raises(ValueError):module.run(tmp_path/'source',tmp_path/output,[1,2],resume=tmp_path/resume)
+
+
+def test_bound_interval_is_forwarded_inside_worker_lock(tmp_path,monkeypatch):
+    monkeypatch.setattr(module,'ROOT',tmp_path);monkeypatch.setattr(module,'worker_lock',nullcontext)
+    monkeypatch.setattr(module,'threadpool_limits',lambda **k:nullcontext())
+    def run(*args):
+        assert args[-1]==tmp_path/'parent'
+        return 'bound-interval'
+    monkeypatch.setattr(module,'_run',run)
+    assert module.run(tmp_path/'source',tmp_path/'out',[1,2],resume=tmp_path/'parent')=='bound-interval'
