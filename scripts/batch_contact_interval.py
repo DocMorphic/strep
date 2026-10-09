@@ -36,8 +36,93 @@ def attempted_history(directory,study,frames,width):
     return attempted,bindings
 
 
-def _run(study,output,frames,width,resume,stages,seconds,iterations,trust,solve_iterations,max_seconds,*,proposal_geometry_solver='supporting-planes'):
-    exclusions,bindings=attempted_history(resume,study,frames,width) if resume is not None else ([],{})
+def batch_attempted_history(directory,study,frames,width,resume):
+    """Replay completed schedules separately from retained native motion.
+
+    Rejected stages count as attempts, never as pose initialization. This checks
+    saved scheduling provenance; a new native stage still replays its motion.
+    """
+    root=ROOT.resolve();seen=set();bindings={}
+    windows=partition_frames(frames,width);canonical=dict(ranked_windows=[dict(frames=w) for w in windows])
+    def path(value):
+        if not isinstance(value,(str,Path)) or not str(value):raise ValueError('Bound in-project schedule path required')
+        p=(root/ value).resolve()
+        if not p.is_relative_to(root):raise ValueError('Bound in-project schedule path required')
+        return p
+    def bind(p):
+        digest=sha256(p)
+        if str(p) in bindings and bindings[str(p)]!=digest:raise ValueError('Scheduling input changed during replay')
+        bindings[str(p)]=digest
+        return digest
+    def completed(p):
+        protocol=read(p/'protocol.json');result=read(p/'result.json');pipeline=read(p/'pipeline.json')
+        if (bind(p/'protocol.json')!=result.get('protocol_sha256') or result.get('status')!='complete'
+                or pipeline.get('status')!='complete' or protocol.get('source_study')!=study.relative_to(root).as_posix()
+                or protocol.get('frames')!=frames or protocol.get('width')!=width
+                or any(d.get(k) is not False for d in [protocol,result,pipeline] for k in ['quality_approved','release_approved'])):
+            raise ValueError('Complete unapproved original-scope schedule required')
+        for name in ['result.json','pipeline.json']:bind(p/name)
+        return protocol,result
+    def visit(p,expected=None):
+        if p in seen or len(seen)>=32:raise ValueError('Bound acyclic batch scheduling history required')
+        seen.add(p);protocol,result=completed(p)
+        if expected is not None and bind(p/'result.json')!=expected:raise ValueError('Prior batch result changed')
+        latest=path(protocol['resume']) if protocol.get('resume') is not None else None
+        prior=protocol.get('schedule_resume')
+        if prior is not None:
+            attempted,prior_latest=visit(path(prior['directory']),prior['result_sha256'])
+            if prior_latest!=latest:raise ValueError('Schedule and native resume disagree')
+        else:
+            attempted,native_bindings=attempted_history(latest,study,frames,width) if latest is not None else ([],{})
+            for name,digest in native_bindings.items():
+                if bind(path(name))!=digest:raise ValueError('Native scheduling history changed')
+        if protocol.get('initial_exclusions')!=attempted:raise ValueError('Initial schedule must replay exactly')
+        for name,digest in protocol.get('scheduling_inputs_sha256',{}).items():
+            if bind(path(name))!=digest:raise ValueError('Recorded scheduling input changed')
+        methods=protocol.get('methods_sha256')
+        if not isinstance(methods,dict) or not methods:raise ValueError('Archived batch implementation required')
+        for name,digest in methods.items():
+            if Path(name).name!=name or bind(p/'implementation'/name)!=digest:raise ValueError('Archived batch implementation changed')
+        records=result.get('records')
+        if (not isinstance(records,list) or type(protocol.get('max_stages')) is not int
+                or not 1<=protocol['max_stages']<=32 or len(records)>protocol['max_stages']):
+            raise ValueError('Bounded complete batch records required')
+        for index,record in enumerate(records,1):
+            stage=path(record['directory'])
+            if stage!=p/('stage-'+str(index)):raise ValueError('Ordered owned batch stages required')
+            sp,sr=completed(stage);block=sr.get('selected_frames');decision=sr.get('decision',{})
+            select_window(frames,canonical,width,[block])
+            if (bind(stage/'result.json')!=record.get('result_sha256') or block in attempted
+                    or sp.get('selected_frames')!=block or record.get('selected_frames')!=block
+                    or sp.get('selection_exclusions')!=attempted or type(decision.get('update_retained')) is not bool
+                    or record.get('update_retained') is not decision['update_retained']
+                    or sr.get('local_stop')!=record.get('local_stop')):
+                raise ValueError('Each attempt must replay its bound stage and preceding exclusions')
+            interval=sp.get('interval_resume')
+            if latest is None:
+                if interval is not None:raise ValueError('Unexpected native interval resume')
+            elif (interval is None or path(interval['directory'])!=latest
+                    or bind(latest/'result.json')!=interval['result_sha256']):
+                raise ValueError('Stage must resume the last retained native state')
+            attempted.append(block.copy())
+            if decision['update_retained']:
+                if decision.get('source_rows_preserved') is not True:raise ValueError('Retained source preservation required')
+                latest=stage
+        remaining=[w for w in windows if w not in attempted]
+        saved_latest=path(result['latest_retained_interval']) if result.get('latest_retained_interval') is not None else None
+        if (result.get('attempted_windows')!=attempted or result.get('remaining_windows')!=remaining
+                or result.get('coverage_schedule_exhausted') is not (not remaining) or saved_latest!=latest):
+            raise ValueError('Final attempted coverage and retained state must reconstruct exactly')
+        return attempted,latest
+    attempted,latest=visit(path(directory))
+    if latest!=resume:raise ValueError('Explicit native resume must match completed batch')
+    if any(sha256(Path(name))!=digest for name,digest in bindings.items()):raise ValueError('Scheduling history changed')
+    return attempted,bindings
+
+
+def _run(study,output,frames,width,resume,stages,seconds,iterations,trust,solve_iterations,max_seconds,*,proposal_geometry_solver='supporting-planes',resume_batch=None):
+    if resume_batch is not None:exclusions,bindings=batch_attempted_history(resume_batch,study,frames,width,resume)
+    else:exclusions,bindings=attempted_history(resume,study,frames,width) if resume is not None else ([],{})
     windows=partition_frames(frames,width);canonical=dict(ranked_windows=[dict(frames=w) for w in windows])
     output.mkdir(parents=True,exist_ok=False);archive=output/'implementation';archive.mkdir()
     methods=repair.METHODS+['batch_contact_interval.py']
@@ -51,6 +136,7 @@ def _run(study,output,frames,width,resume,stages,seconds,iterations,trust,solve_
         history_reuse_policy='same-worker-last-verified-state-bindings-v1',
         scope='An attempted-window coverage pass; newly seen states receive full native replay, and previously verified ancestors can be reused within this worker after complete binding checks. Original retention gates remain unchanged. Admission budget is checked between stages; use an owned hard time/memory supervisor. No quality, metadata, engine or human approval.',quality_approved=False,release_approved=False)
     if proposal_geometry_solver!='supporting-planes':protocol['proposal_geometry_solver']=proposal_geometry_solver
+    if resume_batch is not None:protocol['schedule_resume']=dict(directory=resume_batch.relative_to(ROOT).as_posix(),result_sha256=bindings[str(resume_batch/'result.json')])
     save(output/'protocol.json',protocol);save(output/'pipeline.json',dict(status='processing',quality_approved=False,release_approved=False))
     started=time.monotonic();records=[];latest=resume;stop='stage_limit';replay_session=repair.IntervalReplaySession()
     for index in range(stages):
@@ -84,7 +170,7 @@ def _run(study,output,frames,width,resume,stages,seconds,iterations,trust,solve_
     return result
 
 
-def run(study,output,frames,*,width=3,resume=None,stages=3,seconds=300,iterations=8,trust=.03,solve_iterations=10,max_seconds=1800,proposal_geometry_solver='supporting-planes'):
+def run(study,output,frames,*,width=3,resume=None,stages=3,seconds=300,iterations=8,trust=.03,solve_iterations=10,max_seconds=1800,proposal_geometry_solver='supporting-planes',resume_batch=None):
     partition_frames(frames,width)
     if (type(stages) is not int or not 1<=stages<=32 or type(iterations) is not int or not 1<=iterations<=100
             or type(solve_iterations) is not int or not 1<=solve_iterations<=300
@@ -92,16 +178,19 @@ def run(study,output,frames,*,width=3,resume=None,stages=3,seconds=300,iteration
             or type(max_seconds) not in [int,float] or not np.isfinite(max_seconds) or not seconds+300<=max_seconds<=3600
             or type(trust) not in [int,float] or not np.isfinite(trust) or not 1e-5<=trust<=.3
             or (resume is not None and (not isinstance(resume,(str,Path)) or not str(resume)))
+            or (resume_batch is not None and (not isinstance(resume_batch,(str,Path)) or not str(resume_batch)))
             or proposal_geometry_solver not in ['supporting-planes','conic']):
         raise ValueError('Explicit guarded stage and between-stage admission budgets required')
     study=Path(study).resolve();output=Path(output).resolve();resume=Path(resume).resolve() if resume is not None else None
-    inputs=[study]+([resume] if resume is not None else [])
+    resume_batch=Path(resume_batch).resolve() if resume_batch is not None else None
+    inputs=[study]+([resume] if resume is not None else [])+([resume_batch] if resume_batch is not None else [])
     if any(not p.is_relative_to(ROOT.resolve()) for p in inputs+[output]) or any(output.is_relative_to(p) or p.is_relative_to(output) for p in inputs):
         raise ValueError('Separate immutable in-project batch sources and output required')
     if output.exists():raise FileExistsError(output)
     with worker_lock(),threadpool_limits(limits=2):
         try:
             options={} if proposal_geometry_solver=='supporting-planes' else dict(proposal_geometry_solver=proposal_geometry_solver)
+            if resume_batch is not None:options['resume_batch']=resume_batch
             return _run(study,output,frames,width,resume,stages,seconds,iterations,trust,solve_iterations,max_seconds,**options)
         except Exception as exc:
             if output.exists():save(output/'pipeline.json',dict(status='failed',error_type=type(exc).__name__,error=str(exc),quality_approved=False,release_approved=False))
@@ -112,9 +201,10 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('study');parser.add_argument('output')
     parser.add_argument('--start',type=int,required=True);parser.add_argument('--end',type=int,required=True)
     parser.add_argument('--resume-interval',type=Path);parser.add_argument('--width',type=int,default=3)
+    parser.add_argument('--resume-batch',type=Path,help='Completed attempted-window schedule; kept separate from retained motion')
     parser.add_argument('--stages',type=int,default=3);parser.add_argument('--max-seconds',type=float,default=1800)
     parser.add_argument('--seconds',type=float,default=300);parser.add_argument('--iterations',type=int,default=8)
     parser.add_argument('--trust',type=float,default=.03);parser.add_argument('--solve-iterations',type=int,default=10)
     parser.add_argument('--proposal-geometry-solver',choices=['supporting-planes','conic'],default='supporting-planes');args=parser.parse_args()
     run(args.study,args.output,list(range(args.start,args.end+1)),width=args.width,resume=args.resume_interval,stages=args.stages,
-        max_seconds=args.max_seconds,seconds=args.seconds,iterations=args.iterations,trust=args.trust,solve_iterations=args.solve_iterations,proposal_geometry_solver=args.proposal_geometry_solver)
+        max_seconds=args.max_seconds,seconds=args.seconds,iterations=args.iterations,trust=args.trust,solve_iterations=args.solve_iterations,proposal_geometry_solver=args.proposal_geometry_solver,resume_batch=args.resume_batch)

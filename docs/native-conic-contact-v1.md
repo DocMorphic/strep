@@ -41,3 +41,5 @@ The batch/coverage source suite passes 82 checks. Its first attempt fails during
 All 14 release capabilities remain unapproved. Continue broad action, scene, partner, rig, editing, style, transition and engine validation, plus actual developer ratings and timed cleanup under the single full-project goal.
 
 Native result SHA-256: `ea764d83bf1f054f8cf0478ec04e73ee1b75e1a045ed25796a00b82af0dd672e`. Independent local/interval receipts: `540636085b99e8a1279185eca09de59fad163a8831527a05b49ba7c073a049a6` / `44ffbb7f418c2c351c57796ead8289b28dea189c4872c8d3d5a8a07406cb6bea`. Raw studies, frozen sources, complete arrays, comparisons and traces remain under ignored `reports/conic-start-integration-v1/`.
+
+The [following V9 batch](contact-interval-batch-v4.md) now completes and independently verifies two rejected windows. The earlier queued wording above records the state at publication. No V9 motion is adopted; V8 remains the trusted continuation. A separately bound attempted-window schedule prevents those rejected windows from silently being selected again.
