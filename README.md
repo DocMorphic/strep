@@ -8,6 +8,8 @@ Strep combines an unchanged motion-generation checkpoint with tools for characte
 
 [Contact-window continuation](docs/contact-interval-batch-v3.md) completes two more native windows while keeping failed checks visible; independent geometry replay is pending. [Proposal callbacks](docs/proposal-callback-derivatives-v1.md) now defer full Jacobians until requested, with exact paired numerical results and unchanged retention gates. Neither result approves contact quality.
 
+[Direct norm-cone search](docs/geometry-conic-start-v1.md) finds independently checked starts for two complete saved contact problems, including the one whose prior search exhausted its limits. This isolated helper leaves the default fitter and motion states unchanged; nonlinear pose validation remains outstanding.
+
 [Optional exact checkpoint transport](docs/motion-checkpoint-transport-v1.md) now loads large motion-model layers directly on CUDA while preserving upstream CPU buffers. Full checkpoint verification and eighteen historical motion replays match exactly, including fourteen clips through the generation CLI. Runtime guards, existing interaction failures and release requirements remain unchanged.
 
 [Saved generation requests and exact retries](docs/studio-generation-resources-v1.md) now wait for measured memory headroom before loading models. Deferred requests keep their prompt, timing, style and seeds; existing previews remain available. This improves workflow reliability without approving motion quality.
