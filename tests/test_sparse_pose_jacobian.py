@@ -32,12 +32,25 @@ class FixtureProblem(RestorationProblem):
         self.labels=['point','normal','floor']+(['object:first','object:second'] if grouping=='native-joint' else ['object'])
         self.labels+=['body']*(6 if grouping=='native-joint' else 3)
 
-    def fk(self,x):
+    def fk(self,x,*,vertices=True):
         r=rodrigues(x[:3][None])[0];rot=torch.stack([r,r])
         root=torch.stack([x[-1]*0,x[-1]+.4,x[-1]*0])
         positions=torch.stack([root,root+r@self.t([.08,0,.02])])
-        vertices=(((rot[self.indices]@self.bind[:,:,:,None]).squeeze(-1)+positions[self.indices])*self.weights[:,:,None]).sum(1)
+        vertices=(((rot[self.indices]@self.bind[:,:,:,None]).squeeze(-1)+positions[self.indices])*self.weights[:,:,None]).sum(1) if vertices else None
         return rot,positions,rot,vertices
+
+
+def test_sparse_derivatives_keep_full_skin_selection_but_skip_discarded_mesh(monkeypatch):
+    p=FixtureProblem('native-joint','box');calls=[];original=p.fk
+    def record(x,*,vertices=True):
+        calls.append((vertices,torch.is_grad_enabled()))
+        return original(x,vertices=vertices)
+    monkeypatch.setattr(p,'fk',record)
+    sparse=SparsePoseJacobian(p,row_chunk=4);x=np.array([.03,-.02,.01,.003])
+    sparse(x)
+    assert calls==[(True,False),(False,True)]
+    calls.clear();sparse.vector_linearization(x)
+    assert calls==[(False,True)]
 
 
 @pytest.mark.parametrize('grouping',['global','native-joint'])

@@ -71,7 +71,8 @@ class PoseProblem:
         self.labels=['point:'+c['region'] for c in self.contacts]+['normal:'+c[0] for c in self.normals]+['floor']+['object:'+o[1] for o in self.objects]
         self.cache=None
 
-    def fk(self,x):
+    def fk(self,x,*,vertices=True):
+        """Native pose; omit mesh skinning only for joint-only consumers."""
         change=rodrigues(x[:-1].reshape(-1,3));rot=[];pos=[];local=[]
         for j,parent in enumerate(self.parents):
             r=self.initial[j] if j not in self.lookup else self.initial[j]@change[self.lookup[j]]
@@ -79,7 +80,7 @@ class PoseProblem:
             if parent<0:rot.append(r);pos.append(self.root+torch.stack([x[-1]*0,x[-1],x[-1]*0]))
             else:rot.append(rot[parent]@r);pos.append(pos[parent]+rot[parent]@self.offsets[j])
         r=torch.stack(rot);p=torch.stack(pos)
-        vertices=(((r[self.indices]@self.bind[:,:,:,None]).squeeze(-1)+p[self.indices])*self.weights[:,:,None]).sum(1)
+        vertices=(((r[self.indices]@self.bind[:,:,:,None]).squeeze(-1)+p[self.indices])*self.weights[:,:,None]).sum(1) if vertices else None
         return r,p,torch.stack(local),vertices
 
     def geometry_slack(self,x,smooth_max_m=0.):

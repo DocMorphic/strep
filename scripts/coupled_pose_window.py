@@ -62,7 +62,7 @@ class CoupledPoseWindow:
     def geometry_slack(self,x):
         if (not isinstance(x,torch.Tensor) or x.shape!=(self.dim,) or x.dtype!=torch.float64
                 or not torch.isfinite(x).all()):raise ValueError('Complete double-precision window controls required')
-        positions={p.frame:p.fk(x[i*self.pose_dim:(i+1)*self.pose_dim])[1] for i,p in enumerate(self.problems)}
+        positions={p.frame:p.fk(x[i*self.pose_dim:(i+1)*self.pose_dim],vertices=False)[1] for i,p in enumerate(self.problems)}
         values=[]
         for i,p in enumerate(self.problems):
             part=x[i*self.pose_dim:(i+1)*self.pose_dim]

@@ -25,7 +25,7 @@ class SparsePoseJacobian:
             raise ValueError('Finite complete native-joint vector controls required')
         ids=sorted({c['vertex'] for c in problem.contacts}|{int(i) for _,faces,_ in problem.normals for i in np.asarray(faces).ravel()})
         lookup={vertex:i for i,vertex in enumerate(ids)};variable=problem.t(x).requires_grad_()
-        rotation,positions=problem.fk(variable)[:2];indices=problem.indices[ids]
+        rotation,positions=problem.fk(variable,vertices=False)[:2];indices=problem.indices[ids]
         vertices=(((rotation[indices]@problem.bind[ids,:,:,None]).squeeze(-1)+positions[indices])*problem.weights[ids,:,None]).sum(1)
         contact_vectors=[vertices[lookup[c['vertex']]]-problem.t(c['target']) for c in problem.contacts]
         normal_vectors=[]
@@ -78,7 +78,7 @@ class SparsePoseJacobian:
         ids=np.array(sorted(selected),dtype=int)
         if not len(ids) or ids.min()<0 or ids.max()>=count:raise ValueError('Valid complete active skin dependencies required')
         lookup=np.full(count,-1,dtype=int);lookup[ids]=np.arange(len(ids))
-        variable=problem.t(x).requires_grad_();rotation,positions=problem.fk(variable)[:2]
+        variable=problem.t(x).requires_grad_();rotation,positions=problem.fk(variable,vertices=False)[:2]
         indices=problem.indices[ids]
         vertices=(((rotation[indices]@problem.bind[ids,:,:,None]).squeeze(-1)+positions[indices])*problem.weights[ids,:,None]).sum(1)
         values=[]
