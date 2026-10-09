@@ -36,7 +36,9 @@ def diagnose(positions_m,rotations_xyzw,*,fps,mass_kg,inertia_body_kg_m2,
     if not np.allclose(inertia,inertia.T,atol=1e-12,rtol=0):raise ValueError('Inertia must be symmetric')
     eigen=np.linalg.eigvalsh(inertia)
     if np.min(eigen)<=0 or eigen[-1]>eigen[0]+eigen[1]+1e-12:raise ValueError('Unphysical inertia')
-    gravity=finite_array(gravity_m_s2,(3,),'gravity')
+    try:gravity=np.asarray(gravity_m_s2,dtype=float)
+    except (TypeError,ValueError) as exc:raise ValueError('Invalid gravity') from exc
+    if gravity.shape not in ((3,),(frames,3)) or not np.isfinite(gravity).all():raise ValueError('Invalid gravity')
     if not isinstance(phases,list) or not phases:raise ValueError('Explicit phases required')
     labels=np.full(frames,-1,dtype=int);ids=set()
     for i,phase in enumerate(phases):
@@ -57,7 +59,7 @@ def diagnose(positions_m,rotations_xyzw,*,fps,mass_kg,inertia_body_kg_m2,
     w=(interval_w[1:]+interval_w[:-1])/2
     alpha=(interval_w[1:]-interval_w[:-1])/dt
     acceleration=(p[2:]-2*p[1:-1]+p[:-2])/dt**2
-    force=mass_kg*(acceleration-gravity)
+    force=mass_kg*(acceleration-(gravity if gravity.shape==(3,) else gravity[1:-1]))
     iw=r[1:-1]@inertia@r[1:-1].transpose(0,2,1)
     torque=np.einsum('fij,fj->fi',iw,alpha)+np.cross(w,np.einsum('fij,fj->fi',iw,w))
     valid=(labels[:-2]==labels[1:-1])&(labels[1:-1]==labels[2:])

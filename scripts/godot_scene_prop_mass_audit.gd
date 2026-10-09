@@ -38,7 +38,10 @@ func begin() -> void:
 	result.gravity_m_s2=float(ProjectSettings.get_setting("physics/3d/default_gravity"))
 	result.gravity_direction=serial(ProjectSettings.get_setting("physics/3d/default_gravity_vector"))
 	for id in runtime.bodies:
-		result.bodies[id]={"mass_kg":runtime.bodies[id].mass,"inertia_diagonal":serial(runtime.bodies[id].inertia),"continuous_cd":runtime.bodies[id].continuous_cd}
+		var body: RigidBody3D = runtime.bodies[id]
+		result.bodies[id]={"mass_kg":body.mass,"inertia_diagonal":serial(body.inertia),"continuous_cd":body.continuous_cd,
+			"center_of_mass_mode":body.center_of_mass_mode,"center_of_mass_local_m":serial(body.center_of_mass),
+			"center_of_mass_policy":"custom_zero_body_origin" if body.center_of_mass_mode==RigidBody3D.CENTER_OF_MASS_MODE_CUSTOM and body.center_of_mass==Vector3.ZERO else "unsupported"}
 	runtime.owner.faulted.connect(func(reason): result.faults.append(reason); fail(reason))
 	runtime.owner.sampled.connect(func(record):
 		var snapshot: Dictionary = serial(record); snapshot.scene=Observe.snapshot(runtime.loaded.player); result.records.append(snapshot)

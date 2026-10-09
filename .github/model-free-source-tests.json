@@ -247,6 +247,7 @@
     "tests/test_scene_prop_physics_timing.py",
     "tests/test_scene_prop_mass.py",
     "tests/test_isolated_python_replay.py",
+    "tests/test_scene_prop_load.py",
     "tests/test_scene_prop_runtime.py",
     "tests/test_scene_prop_bake.py",
     "tests/test_baked_scene_runtime.py",

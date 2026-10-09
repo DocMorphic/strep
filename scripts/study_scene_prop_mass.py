@@ -11,10 +11,11 @@ from object_release import ENGINE
 from prop_runtime_collision import verify_actual
 from scene_prop_runtime import package,GDS
 from scene_prop_physics_timing import first_tick
+from scene_prop_load import measure
 from strep import ROOT,read,save,sha256,offline_environment,now
 
 AUDIT='godot_scene_prop_mass_audit.gd'
-METHODS=tuple(dict.fromkeys(GDS+(AUDIT,'godot_native_scene_observations.gd','study_scene_prop_mass.py','scene_prop_runtime.py','scene_prop_ownership.py','scene_prop_physics_timing.py','prop_runtime_collision.py','scene_collision_profile.py','action_worker_lock.py','strep.py')))
+METHODS=tuple(dict.fromkeys(GDS+(AUDIT,'godot_native_scene_observations.gd','study_scene_prop_mass.py','scene_prop_load.py','object_dynamics.py','scene_prop_runtime.py','scene_prop_ownership.py','scene_prop_physics_timing.py','prop_runtime_collision.py','scene_collision_profile.py','action_worker_lock.py','strep.py')))
 ENGINE_SHA256='c8f0a6bc45a19b33541501e57f6f7cd972ab18453743266339d495cbbe846643'
 
 
@@ -102,9 +103,13 @@ def study(source,request_path,output,prop,masses):
                 require(all(z.read(n)==(project/n).read_bytes() for n in pack['files_sha256']),'Original complete packaged members changed')
             results.append(actual)
         measured=compare_runs(*results,prop,masses)
+        loads=[]
+        for index,actual in enumerate(results):
+            path=output/f'case-{index}/load.json';save(path,measure(actual,prop))
+            loads.append(dict(path=path.relative_to(output).as_posix(),sha256=sha256(path)))
         require(all(sha256(ROOT/'scripts'/n)==sha256(methods/n)==h for n,h in hashes.items()),'Methods changed during study')
         require(all(sha256(Path(p))==h for p,h in bindings.items()),'Original inputs changed')
-        result=dict(status='complete',at=now(),measurement=measured,protocol_sha256=sha256(output/'protocol.json'),raw_sha256=[sha256(output/f'case-{i}/engine.json') for i in range(2)],quality_approved=False,release_approved=False)
+        result=dict(status='complete',at=now(),measurement=measured,load_reports=loads,protocol_sha256=sha256(output/'protocol.json'),raw_sha256=[sha256(output/f'case-{i}/engine.json') for i in range(2)],quality_approved=False,release_approved=False)
         save(output/'result.json',result);save(output/'pipeline.json',dict(status='complete',at=now()));return result
     except Exception as exc:
         save(output/'pipeline.json',dict(status='failed',error=repr(exc),at=now(),quality_approved=False,release_approved=False));raise

@@ -77,3 +77,22 @@ def test_missing_phase_coverage_is_not_assumed_free_flight():
 def test_pi_rotation_step_rejected():
     args=setup();args['rotations_xyzw'][1]=[1,0,0,0]
     with pytest.raises(ValueError,match='near-pi'):diagnose(**args)
+
+
+def test_per_sample_gravity_matches_constant_vector_and_preserves_legacy_output():
+    args=setup();legacy=diagnose(**args);args['gravity_m_s2']=np.tile(args['gravity_m_s2'],(31,1));actual=diagnose(**args)
+    for name in legacy:
+        if name!='gravity_m_s2':assert actual[name]==legacy[name]
+
+
+def test_variable_native_gravity_uses_the_central_sample_without_smoothing():
+    args=setup();gravity=np.zeros((31,3));gravity[:,0]=np.arange(31);gravity[:,1]=-9.81
+    args['gravity_m_s2']=gravity;actual=diagnose(**args)
+    np.testing.assert_array_equal(actual['required_non_gravity_force_world_N'],-5*gravity[1:-1])
+    assert actual['gravity_m_s2']==gravity.tolist()
+
+
+@pytest.mark.parametrize('gravity',[np.zeros((30,3)),np.zeros((31,1)),np.full((31,3),np.nan)])
+def test_incomplete_or_nonfinite_gravity_tracks_are_rejected(gravity):
+    args=setup();args['gravity_m_s2']=gravity
+    with pytest.raises(ValueError,match='gravity'):diagnose(**args)
