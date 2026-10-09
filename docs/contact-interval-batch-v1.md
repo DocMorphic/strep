@@ -41,3 +41,21 @@ Batch protocol SHA-256: `11ec0a6a346b600fef9482046e39931af30fe3f5174e52fcdc940db
 The guard records 494,641,152 bytes available RAM below the unchanged 629,145,600-byte minimum. Elapsed time and process-tree RSS stay below their limits. Both owned processes terminate and the lock is free. No completed batch result or third-stage result exists; processing-state partial artifacts remain immutable beside the authoritative failed supervisor record. The latest eligible state is stage 2. The partial 63–65 fit must be retried from that state under the same guards.
 
 These studies cover exact saved native poses and measured geometry/reference/rig/root constraints. Between-key behavior, complete clip quality, self-collision and dynamics, omitted contact/heading/event metadata, retargeting, engine import and human cleanup are still outside approval. All fourteen release capabilities remain unapproved and the full-project goal stays active.
+
+## Completed retry at frames 63–65
+
+Native V6 resumes from the immutable V1 stage 2, replays all four retained ancestors, and completes the previously interrupted window in a fresh report. Admission retains the 2 GiB estimate, 600 MiB reserve and fifteen-second stable-headroom requirement. The worker exits zero after 509.672 seconds; local fitting takes 189.312 seconds, with 34 measurements and eight accepted steps. Sampled peak process-tree RSS is 1,264,013,312 bytes. Independent resource replay verifies all 489 observations, the admission decision, original limits and termination.
+
+| Frame | Prior penetration | Retained penetration | Prior maximum palm error | Retained maximum palm error |
+| --- | --- | --- | --- | --- |
+| 63 | 25.359 mm | 16.412 mm | 27.325° | 24.836° |
+| 64 | 25.050 mm | 16.250 mm | 27.975° | 25.167° |
+| 65 | 24.439 mm | 16.138 mm | 28.419° | 25.735° |
+
+Both original grip checks remain passing at the edited keys. Across all 22,720 original rows, no passing row is lost and no protected failed row regresses. All twelve previously edited keys outside the window remain exactly unchanged. The whole-interval maximum normalized violation changes 2.536970 → 2.535837 and squared violation 3526.205870 → 3362.982478. The new worst window is 81–83, with worst penetration 25.347 mm at frame 81. Five of 21 windows have completed an attempt; sixteen remain.
+
+Independent NumPy replay reconstructs 124 complete native contact poses, four exterior boundary evaluations and 45,440 whole-interval rows, plus 35 local windows / 105 local poses, eight retention decisions, eight margin attempts, eight correction proposals and 72 proposal archive files. It also binds the complete four-ancestor chain, selection exclusions, unchanged original references, carried pose arrays and batch state. The audit exits zero in 32.485 seconds, with 33 independently replayed resource observations and sampled peak RSS 1,850,830,848 bytes. Its initial 512 MiB admission estimate underestimated full NumPy replay memory; future full interval audits should reserve 2 GiB plus the unchanged 600 MiB floor. The actual RSS/time/RAM guards stayed active and passed. Derivatives and optimality are not independently certified.
+
+Stage result SHA-256: `42c7d008f4b2606fea2a7b6753cc6394d265026fd8e3aef2e8ab16d67073cf07`. Completed batch result SHA-256: `ff3d5ae2034754dd958b2b2781e2e5c84e78721271f5cabca035f8996b29c210`. Local immutable artifacts and bound independent auditors live under `reports/box-lift-interval-batch-v6/`; bulky outputs and vendor assets are excluded from the public repository.
+
+This is a retained diagnostic improvement: **complete physical and keyed passes remain 0/62 and 0/62**. All 62 keys still fail normal and object clearance; 27 fail point constraints and nine fail reference position. Original and earlier interrupted artifacts stay unchanged. No clip/preview replacement, newly generated or trained motion, engine acceptance, human cleanup evidence or release approval follows from this result. Continue from the verified V6 state, beginning with 81–83, under the original physical and resource limits.
