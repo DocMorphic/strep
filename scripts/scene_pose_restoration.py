@@ -95,7 +95,7 @@ class RestorationProblem(PoseProblem):
         self.labels=['point:'+c['region'] for c in self.contacts]+['normal:'+n[0] for n in self.normals]+['floor']+object_labels+body_labels
         self.headroom_m=1e-6
 
-    def geometry_slack(self,x,smooth_max_m=0.):
+    def geometry_slack(self,x,smooth_max_m=0.,*,neighbors=None):
         if smooth_max_m:raise ValueError('This restoration uses exact population maxima')
         _,positions,_,vertices=self.fk(x);values=[]
         for contact,limit in zip(self.contacts,self.point_limits):
@@ -111,11 +111,12 @@ class RestorationProblem(PoseProblem):
             if self.grouping=='native-joint':
                 values.extend((-violation[0,indices].amax()-self.headroom_m)/.01 for _,indices in self.vertex_groups)
             else:values.append((-violation.amax()-self.headroom_m)/.01)
-        values.extend(reference_slacks(positions,self.references,self.neighbors,self.frame,.22-self.headroom_m,1.5-30*self.headroom_m,
+        values.extend(reference_slacks(positions,self.references,self.neighbors if neighbors is None else neighbors,self.frame,.22-self.headroom_m,1.5-30*self.headroom_m,
             grouped=self.grouping=='native-joint'))
         return torch.stack(values)
 
-    def independent(self,x):
+    def independent(self,x,*,neighbors=None):
+        neighbors=self.neighbors if neighbors is None else neighbors
         _,motion=super().independent(x)
         vertices=self.surface.vertices(motion['global_rot_mats'][0],motion['posed_joints'][0])
         point=[];normal=[];objects=[]
@@ -133,9 +134,10 @@ class RestorationProblem(PoseProblem):
             objects.append(dict(id=name,maximum_clearance_violation_m=float(violation.max()),
                 maximum_physical_vertex_depth_m=float(geometry.penetration_depth(vertices,position.numpy()[0],rotation.numpy()[0]).max()),passed=bool((violation<=0).all())))
         positions=motion['posed_joints'][0];body={}
+        reference_slacks(torch.as_tensor(positions,dtype=torch.float64),self.references,neighbors,self.frame)
         for name,reference in self.references.items():
             ref=reference.numpy();delta=positions-ref[self.frame];peak=float(np.linalg.norm(delta,axis=1).max())
-            speeds=[float(np.linalg.norm((delta-(p.numpy()-ref[f]))*30,axis=1).max()) for f,p in sorted(self.neighbors.items())]
+            speeds=[float(np.linalg.norm((delta-(p.numpy()-ref[f]))*30,axis=1).max()) for f,p in sorted(neighbors.items())]
             body[name]=dict(max_displacement_m=peak,neighbor_max_added_speeds_m_s=speeds,passed=peak<=.22 and all(v<=1.5 for v in speeds))
         angle=Rotation.from_matrix(self.previous['local_rot_mats'][self.frame].transpose(0,2,1)@motion['local_rot_mats'][0]).magnitude()
         fixed=[j for j in range(77) if j not in self.editable]
