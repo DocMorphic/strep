@@ -6,6 +6,8 @@ Strep combines an unchanged motion-generation checkpoint with tools for characte
 
 **Status: active development, not release-ready.** Successful generation or engine import does not establish realistic motion. Contact reliability, calibrated character controls, broad held-out evaluation, and human review remain open work.
 
+[Saved generation requests and exact retries](docs/studio-generation-resources-v1.md) now wait for measured memory headroom before loading models. Deferred requests keep their prompt, timing, style and seeds; existing previews remain available. This improves workflow reliability without approving motion quality.
+
 ## What is here
 
 - A local desktop-style Studio for free-text requests, sequences, previews, and authoring workflows.

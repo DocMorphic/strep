@@ -20,7 +20,8 @@ from scene_pair_activity import external_pair_fit_busy
 def worker_busy():
     # Read-only serving does not load the Windows-only generation lock.
     from action_worker_lock import worker_busy as query_busy
-    return query_busy()
+    from studio_generation_resources import generation_worker_busy
+    return query_busy() or generation_worker_busy()
 
 
 CORRECTION_STUDIES = ['contact-authoring-v2', 'support-contact-v1', 'body-contact-v1', 'body-contact-holdout-v1', 'floor-contact-v1-reviewed', 'floor-contact-holdout-v1']
@@ -30,6 +31,7 @@ def allowed_file(url_path):
     path=unquote(urlsplit(url_path).path)
     if path in ['/','/studio']:return ROOT/'scripts/action-studio.html'
     if path=='/motion-profile-editor.js':return ROOT/'scripts/motion-profile-editor.js'
+    if path=='/generation-job-status.mjs':return ROOT/'scripts/generation-job-status.mjs'
     if path=='/scene-pair-editor.js':return ROOT/'scripts/scene-pair-editor.js'
     if path=='/scene-generation-plan.js':return ROOT/'scripts/scene-generation-plan.js'
     if path in ['/pose-guide-editor.js','/soma-preview-skin.js','/rig-joint-editor.js','/rig-posture-editor.js','/scene-release-editor.js','/scene-region-editor.js','/scene-grip-picker.js','/scene-object-geometry.js','/scene-hand-patch.js','/scene-trim-editor.js','/scene-placement-editor.mjs','/scene-placement-controls.mjs']:return ROOT/'scripts'/path[1:]
@@ -424,8 +426,15 @@ class Handler(BaseHTTPRequestHandler):
             studies=[]
             folders=[*[ROOT/'reports'/name for name in CORRECTION_STUDIES],ROOT/'reports/action-coverage-v1',*sorted((ROOT/'reports/action-jobs').glob('*'),reverse=True)]
             for folder in folders:
-                state=read(folder/'pipeline.json') if (folder/'pipeline.json').exists() else {'status':'unknown'}
-                if folder.is_dir():studies.append({'id':folder.relative_to(ROOT/'reports').as_posix(),'status':state['status'],'ready':(folder/'summary.json').exists() and (folder.name not in CORRECTION_STUDIES or state['status']=='complete'),'scene_ready':folder.parent==ROOT/'reports/action-jobs' and state['status']=='complete' and (folder/'manifest.json').is_file()})
+                generation=folder.parent==ROOT/'reports/action-jobs' and (folder/'studio-launch.json').exists()
+                if generation:
+                    from studio_generation_resources import observed_state
+                    state=observed_state(folder)
+                else:state=read(folder/'pipeline.json') if (folder/'pipeline.json').exists() else {'status':'unknown'}
+                if folder.is_dir():studies.append({'id':folder.relative_to(ROOT/'reports').as_posix(),'status':state['status'],
+                    'ready':(folder/'summary.json').exists() and (not generation or state['status']=='complete') and (folder.name not in CORRECTION_STUDIES or state['status']=='complete'),
+                    'scene_ready':folder.parent==ROOT/'reports/action-jobs' and state['status']=='complete' and (folder/'manifest.json').is_file(),
+                    **({'kind':'generation','can_retry':state.get('can_retry',False),'error':state.get('error')} if generation else {})})
             for folder in sorted((ROOT/'reports/contact-jobs').glob('*')):
                 if not folder.is_dir():continue
                 from contact_edit_job import observed_state
@@ -453,7 +462,7 @@ class Handler(BaseHTTPRequestHandler):
         except (BrokenPipeError,ConnectionResetError):pass
 
     def do_POST(self):
-        if self.path not in ['/api/scene-placement-check','/api/scene-placement-snapshots','/api/native-transition-contact-fit-catalog','/api/native-transition-contact-fits','/api/native-transition-fit-catalog','/api/native-transition-fits','/api/native-scene-transition-inspect','/api/native-scene-transition-stage','/api/precision-export-assets','/api/surface-export-assets','/api/native-scene-transfer-assets','/api/native-scene-transfer-catalog','/api/native-transfer-assets','/api/native-transfer-import','/api/native-scene-fits','/api/native-scene-fit-catalog','/api/native-scene-material-patch','/api/native-scene-material-region-preview','/api/native-scene-material-region-save','/api/native-scene-material-region-pose','/api/native-scene-contact-revision','/api/native-scene-game-assets','/api/scene-prop-runtime-assets','/api/scene-prop-runtime-align','/api/scene-prop-bake-assets','/api/baked-scene-assets','/api/native-scene-assets','/api/correction-review-edit','/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission','/api/jobs','/api/scene-pair-fits','/api/scene-trims','/api/scene-releases','/api/scene-region-fits','/api/pose-target','/api/scene-generation-plan','/api/motion-brief','/api/contact-edits','/api/characters/import','/api/characters/sample','/api/characters/profile','/api/rig-jobs','/api/rig-contact-edits','/api/rig-contact-inspect','/api/rig-patch-selection','/api/native-support-edits','/api/rig-clip-edits','/api/rig-joint-edits','/api/rig-posture-edits','/api/rig-mirror-edits','/api/rig-transitions','/api/rig-loops','/api/rig-loop-search','/api/rig-events','/api/rig-prompt-edits','/api/rig-dynamics-edits']:return self.respond(404,{'error':'Unknown endpoint'})
+        if self.path not in ['/api/scene-placement-check','/api/scene-placement-snapshots','/api/native-transition-contact-fit-catalog','/api/native-transition-contact-fits','/api/native-transition-fit-catalog','/api/native-transition-fits','/api/native-scene-transition-inspect','/api/native-scene-transition-stage','/api/precision-export-assets','/api/surface-export-assets','/api/native-scene-transfer-assets','/api/native-scene-transfer-catalog','/api/native-transfer-assets','/api/native-transfer-import','/api/native-scene-fits','/api/native-scene-fit-catalog','/api/native-scene-material-patch','/api/native-scene-material-region-preview','/api/native-scene-material-region-save','/api/native-scene-material-region-pose','/api/native-scene-contact-revision','/api/native-scene-game-assets','/api/scene-prop-runtime-assets','/api/scene-prop-runtime-align','/api/scene-prop-bake-assets','/api/baked-scene-assets','/api/native-scene-assets','/api/correction-review-edit','/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission','/api/jobs','/api/jobs/retry','/api/scene-pair-fits','/api/scene-trims','/api/scene-releases','/api/scene-region-fits','/api/pose-target','/api/scene-generation-plan','/api/motion-brief','/api/contact-edits','/api/characters/import','/api/characters/sample','/api/characters/profile','/api/rig-jobs','/api/rig-contact-edits','/api/rig-contact-inspect','/api/rig-patch-selection','/api/native-support-edits','/api/rig-clip-edits','/api/rig-joint-edits','/api/rig-posture-edits','/api/rig-mirror-edits','/api/rig-transitions','/api/rig-loops','/api/rig-loop-search','/api/rig-events','/api/rig-prompt-edits','/api/rig-dynamics-edits']:return self.respond(404,{'error':'Unknown endpoint'})
         host=self.headers.get('Host');origin=self.headers.get('Origin')
         if host not in self.server.allowed_hosts or origin!=f'http://{host}':return self.respond(403,{'error':'Submit from the local studio page'})
         if self.path=='/api/characters/import':
@@ -670,6 +679,9 @@ class Handler(BaseHTTPRequestHandler):
                     from checked_contact_job import validate_request
                     validate_request(payload)
                 else:source,spec=validate_contact_request(payload)
+            elif self.path=='/api/jobs/retry':
+                from studio_generation_resources import retry_request
+                batch=retry_request(payload)
             else:
                 batch=validate_batch(payload)
                 if len(batch['requests'])!=1:raise ValueError('The studio accepts one request at a time')
@@ -935,16 +947,22 @@ class Handler(BaseHTTPRequestHandler):
                     save(folder/'pipeline.json',{'status':'failed','error':str(exc)})
                     return self.respond(500,{'error':'Could not start local contact editor'})
                 return self.respond(202,{'id':'contact-jobs/'+job+'/result','status':'starting'})
-            folder=ROOT/'reports/action-jobs'/job;folder.mkdir(parents=True)
-            save(folder/'request.json',batch);save(folder/'pipeline.json',{'status':'starting'})
-            with (folder/'supervisor.log').open('w',encoding='utf8') as log:
-                self.server.worker=subprocess.Popen([sys.executable,str(ROOT/'scripts/run_actions.py'),str(folder/'request.json'),'--output',str(folder)],
-                    cwd=ROOT,env=offline_environment(),stdout=log,stderr=subprocess.STDOUT,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
-            return self.respond(202,{'id':'action-jobs/'+job,'status':'starting'})
+            from studio_generation_resources import prepare,launch,default_policy
+            folder=ROOT/'reports/action-jobs'/job
+            try:
+                prepare(batch,folder,getattr(self.server,'generation_resource_policy',default_policy()),
+                    retry_of=payload['job'] if self.path=='/api/jobs/retry' else None)
+                self.server.worker=launch(folder)
+            except (OSError,ValueError,KeyError,TypeError) as exc:
+                if folder.exists():save(folder/'pipeline.json',dict(status='failed',error=str(exc),quality_approved=False,release_approved=False))
+                return self.respond(500,{'error':'Could not start generation supervisor; any saved request and logs are preserved.'})
+            return self.respond(202,{'id':'action-jobs/'+job,'status':'waiting_resources'})
 
 
-def main(port):
+def main(port,generation_resource_policy=None):
+    from studio_generation_resources import default_policy
     server=ThreadingHTTPServer(('127.0.0.1',port),Handler)
+    server.generation_resource_policy=generation_resource_policy or default_policy()
     server.allowed_hosts={f'127.0.0.1:{port}',f'localhost:{port}'};server.worker=None;server.job_lock=threading.Lock()
     print(f'Action studio: http://127.0.0.1:{port}/studio',flush=True);server.serve_forever()
 
