@@ -12,7 +12,8 @@ import guarded_pose_restoration as module
 @pytest.mark.parametrize('options',[dict(frame=True),dict(iterations=0),dict(trust=.31),dict(seconds=float('nan')),
     dict(proposal='guess'),dict(solve_iterations=True),dict(solve_iterations=0),dict(row_chunk=True),dict(row_chunk=33),dict(point_policy='guess'),
     dict(point_proposal='guess'),dict(point_headroom=-1e-5),dict(point_headroom=float('nan')),dict(point_headroom=True),
-    dict(tangent_guard=1),dict(tangent_guard=True),dict(resume=False),dict(resume=''),dict(body_proposal='guess')])
+    dict(tangent_guard=1),dict(tangent_guard=True),dict(resume=False),dict(resume=''),dict(body_proposal='guess'),
+    dict(proposal_start='guess'),dict(proposal_start=True),dict(proposal_start='linear-feasible')])
 def test_invalid_options_never_acquire_or_run_worker(tmp_path,monkeypatch,options):
     def forbidden(*args,**kwargs):raise AssertionError('Invalid request reached worker')
     monkeypatch.setattr(module,'worker_lock',forbidden)
@@ -99,7 +100,8 @@ def test_resume_retains_checked_correction_instead_of_last_inner_query(tmp_path,
     assert str(args[0]/'trials/query/audit.json') in bindings
 
 
-@pytest.mark.parametrize('damage',['frame','budget','original','method','pose','promoted-query','last-query','slacks','tangent','ancestor'])
+@pytest.mark.parametrize('damage',['frame','budget','original','method','pose','promoted-query','last-query','slacks','tangent','ancestor',
+    'start-policy','linear-start-promotion'])
 def test_resume_rejects_changed_provenance_or_unretained_selection(tmp_path,monkeypatch,damage):
     args=resume_fixture(tmp_path,monkeypatch);output=args[0]
     protocol=module.read(output/'protocol.json');result=module.read(output/'result.json')
@@ -113,6 +115,8 @@ def test_resume_rejects_changed_provenance_or_unretained_selection(tmp_path,monk
     if damage=='tangent':result['fit']['proposal_linearizations'][0]['jacobian'][0][0]=-1
     if damage=='ancestor':protocol['resume']={'directory':'repair','result_sha256':module.sha256(output/'result.json')}
     if damage=='promoted-query':result['fit']['proposal_queries'][0]['retained']=True
+    if damage=='start-policy':result['fit']['proposal_start']='linear-feasible'
+    if damage=='linear-start-promotion':result['fit']['proposal_starts']=[dict(retained=True)]
     module.save(output/'protocol.json',protocol);result['protocol_sha256']=module.sha256(output/'protocol.json');module.save(output/'result.json',result)
     with pytest.raises((ValueError,AssertionError)):module._resume_seed(*args)
 

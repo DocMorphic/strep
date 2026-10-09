@@ -194,3 +194,74 @@ def test_real_tangent_proposal_moves_without_initial_protected_budget_regression
 def test_invalid_tangent_guard_never_measures(kwargs):
     def forbidden(x):raise AssertionError('Invalid tangent request reached measurement')
     with pytest.raises(ValueError):fit(forbidden,forbidden,[0.],[-1.],[1.],**kwargs)
+
+
+def test_feasible_start_initializes_inner_solver_but_does_not_retain_its_queries(monkeypatch):
+    import protected_inequality_step as module
+    from types import SimpleNamespace
+    starts=[];observations=[]
+    def measure(x):return np.array([x[0]-.2,.4-x[0]])
+    def derivative(x):return measure(x),np.array([[1.],[-1.]])
+    def solver(fun,x0,**kwargs):
+        starts.append(x0.copy());fun(x0)
+        return SimpleNamespace(x=x0.copy(),success=True,message='fixture')
+    monkeypatch.setattr(module,'minimize',solver)
+    value,r=fit(measure,derivative,[0.],[-1.],[1.],trust=.3,proposal='nonlinear',proposal_start='linear-feasible',
+        proposal_feasible_mask=[True,False],proposal_headroom=[1e-5,0.],proposal_tangent_guard=True,
+        observer=lambda label,x,slack,retained:observations.append((label,retained)))
+    assert starts[0][0]==pytest.approx(.20001) and value[0]==pytest.approx(.20001)
+    assert r['inequalities_satisfied'] and r['proposal_starts'][0]['success'] and not r['proposal_starts'][0]['retained']
+    assert r['proposal_queries'] and all(not q['retained'] for q in r['proposal_queries'])
+    assert r['trials'][0]['accepted'] and all(not kept for label,kept in observations if 'query' in label)
+    assert not r['quality_approved'] and not r['release_approved']
+
+
+def test_linear_start_with_nonlinear_budget_failure_is_not_promoted(monkeypatch):
+    import protected_inequality_step as module
+    from types import SimpleNamespace
+    def measure(x):return np.array([x[0]-.2,.01-x[0]**2])
+    def derivative(x):return measure(x),np.array([[1.],[-2*x[0]]])
+    def solver(fun,x0,**kwargs):return SimpleNamespace(x=x0.copy(),success=True,message='fixture')
+    monkeypatch.setattr(module,'minimize',solver)
+    value,r=fit(measure,derivative,[0.],[-1.],[1.],trust=.3,iterations=1,
+        proposal='nonlinear',proposal_start='linear-feasible',proposal_feasible_mask=[True,False],proposal_tangent_guard=True)
+    assert not r['trials'][0]['retention_guard_passed'] and not r['trials'][0]['accepted']
+    assert 0<value[0]<.2 and measure(value)[1]>=0
+    assert r['source_passing_rows_preserved'] and not r['inequalities_satisfied']
+
+
+def test_unavailable_linear_start_never_enters_solver_or_changes_seed(monkeypatch):
+    import protected_inequality_step as module
+    def forbidden(*args,**kwargs):raise AssertionError('Infeasible first-order start entered inner solve')
+    monkeypatch.setattr(module,'minimize',forbidden)
+    def measure(x):return np.array([x[0]-.2,.1-x[0]])
+    value,r=fit(measure,lambda x:(measure(x),np.array([[1.],[-1.]])),[0.],[-1.],[1.],trust=.3,
+        proposal='nonlinear',proposal_start='linear-feasible',proposal_feasible_mask=[True,False])
+    np.testing.assert_array_equal(value,[0.]);assert r['stop']=='linear_start_unavailable'
+    assert r['proposal_starts'][0]['status']==2 and not r['proposal_starts'][0]['success']
+    assert r['measurement_calls']==1 and not r['trials'] and not r['proposal_queries']
+    assert not r['quality_approved']
+
+
+def test_warm_start_query_budget_preserves_last_retained_point():
+    def measure(x):return np.array([x[0]-.2])
+    value,r=fit(measure,lambda x:(measure(x),np.ones((1,1))),[0.],[-1.],[1.],trust=.3,maximum_calls=2,
+        proposal='nonlinear',proposal_start='linear-feasible',proposal_feasible_mask=[True])
+    np.testing.assert_array_equal(value,[0.]);assert r['stop']=='time_or_measurement_budget'
+    assert r['proposal_starts'][0]['success'] and r['proposal_queries'] and not r['trials']
+
+
+@pytest.mark.parametrize('kwargs',[dict(proposal_start='guess'),dict(proposal_start=True),dict(proposal_start='linear-feasible')])
+def test_invalid_proposal_initialization_never_measures(kwargs):
+    def forbidden(x):raise AssertionError('Invalid starting policy reached measurement')
+    with pytest.raises(ValueError):fit(forbidden,forbidden,[0.],[-1.],[1.],**kwargs)
+
+
+@pytest.mark.parametrize('solution',[[float('nan'),0.],[.3,.3],[.2,0.],[.1,.1]])
+def test_claimed_linear_success_must_replay_bounds_and_complete_rows(monkeypatch,solution):
+    import protected_inequality_step as module
+    from types import SimpleNamespace
+    monkeypatch.setattr(module,'linprog',lambda *args,**kwargs:SimpleNamespace(status=0,success=True,message='fixture',x=np.array(solution)))
+    def measure(x):return np.array([x[0]-.2,.4-x[0]])
+    with pytest.raises(ValueError):fit(measure,lambda x:(measure(x),np.array([[1.],[-1.]])),[0.],[-1.],[1.],trust=.25,
+        proposal='nonlinear',proposal_start='linear-feasible',proposal_feasible_mask=[True,False])

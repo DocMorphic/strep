@@ -6,7 +6,7 @@ scores. Linear or nonlinear proposal subproblems never approve a pose.
 """
 import time
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import minimize,linprog
 
 
 def score(slacks):
@@ -35,9 +35,36 @@ def retain(before,after,*,failure_policy='rowwise',tradeoff_mask=None):
     return bool(np.all(after[protected]>=np.minimum(before[protected],0)) and new[0]<=old[0] and improved)
 
 
+def _linear_feasible_start(values,jac,caps,lower,upper,seconds):
+    """Smallest L1 step inside the complete first-order proposal system."""
+    size=len(lower);eye=np.eye(size);zeros=np.zeros_like(jac)
+    maximum=np.maximum(np.abs(lower),np.abs(upper))
+    started=time.monotonic()
+    result=linprog(np.r_[np.zeros(size),np.ones(size)],
+        A_ub=np.block([[-jac,zeros],[eye,-eye],[-eye,-eye]]),
+        b_ub=np.r_[values-caps,np.zeros(2*size)],
+        bounds=list(zip(lower,upper))+list(zip(np.zeros(size),maximum)),method='highs',
+        options=dict(time_limit=min(20.,seconds),primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9))
+    report=dict(status=int(result.status),success=bool(result.success),message=str(result.message),
+        seconds=time.monotonic()-started,time_limit_seconds=min(20.,seconds),
+        objective='Minimum L1 normalized step',caps=caps.tolist(),lower_delta=lower.tolist(),upper_delta=upper.tolist(),
+        scope='First-order proposal initialization only. No nonlinear feasibility, retained-step or path certificate.')
+    if not result.success:return None,report
+    raw=np.asarray(result.x,dtype=float)
+    if raw.shape!=(2*size,) or not np.isfinite(raw).all():raise ValueError('Complete finite linear-start controls required')
+    if (np.any(raw[size:]< -1e-8) or np.any(raw[size:]+1e-8<np.abs(raw[:size]))
+            or np.any(raw[:size]<lower-1e-8) or np.any(raw[:size]>upper+1e-8)):
+        raise ValueError('Linear start violated original step or auxiliary bounds')
+    delta=np.clip(raw[:size],lower,upper);slack=values+jac@delta-caps
+    if not np.isfinite(slack).all() or np.any(slack< -1e-8):raise ValueError('Linear start failed complete first-order replay')
+    report.update(raw_delta=raw[:size].tolist(),delta=delta.tolist(),minimum_linear_slack=float(slack.min()),
+        clipped_to_step_bounds=bool(np.any(delta!=raw[:size])),l1_step=float(np.abs(delta).sum()))
+    return delta,report
+
+
 def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_iterations=100,
         seconds=300,maximum_calls=1000,observer=None,failure_policy='rowwise',tradeoff_mask=None,
-        proposal='linear',proposal_feasible_mask=None,proposal_headroom=None,proposal_tangent_guard=False):
+        proposal='linear',proposal_feasible_mask=None,proposal_headroom=None,proposal_tangent_guard=False,proposal_start='zero'):
     seed=np.asarray(seed,dtype=float);lower=np.asarray(lower,dtype=float);upper=np.asarray(upper,dtype=float)
     if (seed.ndim!=1 or not len(seed) or lower.shape!=seed.shape or upper.shape!=seed.shape
             or not np.isfinite(np.r_[seed,lower,upper]).all() or np.any(lower>=upper)
@@ -48,9 +75,10 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
             or type(trust) not in (int,float) or not np.isfinite(trust) or not 1e-5<=trust<=.3
             or type(seconds) not in (int,float) or not np.isfinite(seconds) or not 1<=seconds<=1800
             or failure_policy not in ['rowwise','merit'] or proposal not in ['linear','nonlinear']
+            or proposal_start not in ['zero','linear-feasible'] or (proposal_start!='zero' and proposal!='nonlinear')
             or type(proposal_tangent_guard) is not bool or (proposal_tangent_guard and proposal!='nonlinear')):
         raise ValueError('Finite seed, matching control bounds and explicit step budgets required')
-    started=time.monotonic();calls=0;history=[];trials=[];queries=[];clips=[];linearizations=[];value=seed.copy()
+    started=time.monotonic();calls=0;history=[];trials=[];queries=[];clips=[];linearizations=[];starts=[];value=seed.copy()
     class Exhausted(Exception):pass
     def check():
         if calls>=maximum_calls or time.monotonic()-started>=seconds:raise Exhausted()
@@ -85,9 +113,10 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
                 # Search-only interior margin; retained tangents still use the
                 # exact preservation caps. This is not a continuous-path gate.
                 tangent_caps=preservation[hard]+1e-6
+            if proposal_tangent_guard or proposal_start!='zero':
                 linearizations.append(dict(iteration=iteration+1,controls=value.tolist(),slacks=current.tolist(),
                     jacobian=jac.tolist(),protected_rows=np.flatnonzero(hard).tolist(),
-                    preservation_caps=preservation[hard].tolist(),tangent_proposal_caps=tangent_caps.tolist()))
+                    preservation_caps=preservation[hard].tolist(),tangent_proposal_caps=tangent_caps.tolist() if proposal_tangent_guard else None))
             candidate_lower=np.maximum(lower,value-trust);candidate_upper=np.minimum(upper,value+trust)
             def bounded_candidate(delta):
                 delta=np.asarray(delta,dtype=float)
@@ -129,7 +158,18 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
             if proposal_tangent_guard and hard.any():
                 constraints.append(dict(type='ineq',fun=lambda delta:current[hard]+jac[hard]@delta-tangent_caps,
                     jac=lambda delta:jac[hard]))
-            result=minimize(objective,np.zeros_like(value),method='SLSQP',jac=True,bounds=bounds,constraints=constraints,
+            initial=np.zeros_like(value)
+            if proposal_start=='linear-feasible':
+                check();start_caps=caps.copy()
+                if proposal_tangent_guard:start_caps[hard]=np.maximum(start_caps[hard],tangent_caps)
+                remaining=seconds-(time.monotonic()-started)
+                if remaining<=0:raise Exhausted()
+                initial,start_report=_linear_feasible_start(current,jac,start_caps,
+                    candidate_lower-value,candidate_upper-value,remaining)
+                starts.append(dict(iteration=iteration+1,controls=value.tolist(),retained=False,**start_report))
+                check()
+                if initial is None:stop='linear_start_unavailable';break
+            result=minimize(objective,initial,method='SLSQP',jac=True,bounds=bounds,constraints=constraints,
                 options=dict(maxiter=solve_iterations,ftol=1e-12))
             direction=np.asarray(result.x,dtype=float)
             if direction.shape!=value.shape or not np.isfinite(direction).all():raise ValueError('Finite proposal direction required')
@@ -166,6 +206,7 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
         source_passing_rows_preserved=bool(np.all(current[baseline>=0]>=0)),
         nontradeoff_rows_preserved=bool(np.all(current[~mask]>=np.minimum(baseline[~mask],0))),
         failure_policy=failure_policy,tradeoff_mask=mask.tolist(),proposal=proposal,proposal_queries=queries,
+        proposal_start=proposal_start,proposal_starts=starts,linear_start_max_seconds=20.,
         bounded_proposal_queries=clips,
         proposal_feasible_mask=feasible.tolist(),proposal_headroom_normalized=headroom.tolist(),
         proposal_tangent_guard=proposal_tangent_guard,proposal_linearizations=linearizations,

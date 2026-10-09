@@ -42,3 +42,6 @@ Reproduction with the unchanged local native inputs:
 The local study supervisor retained the existing 3,600-second / 7 GiB process-tree / 600 MiB available-RAM guards. The command above is the pose-worker command; use an owned supervisor for a native run. Generated outputs stay in ignored `reports/`.
 
 Next: derive a feasibility-first proposal or warm proposal from the recorded linear system, test it against complete nonlinear rows before retention, and preserve both hand points. Then extend to coordinated frame windows and full temporal/geometry replay. No training, model generation, engine import, human review or release gate was approved by this experiment. All fourteen full-project capabilities remain unapproved.
+
+
+The next native comparison adds a bound first-order initializer; see [feasible-start repair](feasible-start-repair-v1.md) for the unchanged final pose and the measured distance-curvature and merit-direction limitations.

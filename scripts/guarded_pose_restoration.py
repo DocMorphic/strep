@@ -79,6 +79,8 @@ def _resume_seed(directory,study,frame,bindings,limits,labels,problem,_ancestors
         raise ValueError('Complete resume inequality rows required')
     if report['failure_policy']!=protocol['failure_policy'] or report['proposal_tangent_guard'] is not protocol['proposal_tangent_guard']:
         raise ValueError('Resume retention policy differs')
+    if report.get('proposal_start','zero')!=protocol.get('proposal_start','zero') or any(start.get('retained') is not False for start in report.get('proposal_starts',[])):
+        raise ValueError('Resume initialization policy differs or linear start was promoted')
     baseline=before.copy();last=controls(np.asarray(observations['seed']['parameters'])/scale)
     prior=protocol.get('resume')
     origin=problem.seed if prior is None else _resume_seed(ROOT/prior['directory'],study,frame,bindings,limits,labels,problem,
@@ -140,7 +142,7 @@ def _resume_seed(directory,study,frame,bindings,limits,labels,problem,_ancestors
         scope='Verified diagnostic warm start; original budgets and fixed neighbors remain unchanged. No quality approval.'),checked
 
 
-def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal):
+def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal,proposal_start):
     summary=read(study/'fit/summary.json')
     if (summary.get('solver_version')!=17 or read(study/'pipeline.json')['status']!='complete'
             or len(summary['trials'])!=1 or sha256(ASSET)!=summary['mesh_sha256']):
@@ -179,7 +181,8 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
         inputs_sha256=bindings,methods_sha256={n:sha256(ROOT/'scripts'/n) for n in METHODS},
         native_metadata_sha256=sha256(DEFINITIONS),runtime=dict(python=platform.python_version(),numpy=np.__version__,
         scipy=scipy.__version__,torch=str(torch.__version__)),iterations=iterations,trust_normalized=trust,
-        seconds=seconds,proposal=proposal,proposal_solve_iterations=solve_iterations,row_chunk=row_chunk,nonlinear_replay_call_limit=1000,
+        seconds=seconds,proposal=proposal,proposal_start=proposal_start,linear_start_max_seconds=20.,
+        proposal_solve_iterations=solve_iterations,row_chunk=row_chunk,nonlinear_replay_call_limit=1000,
         solver_headroom_normalized=1e-6,grouping='native-joint',jacobian='Full-population active dependencies, all ties retained',
         geometry_constraint_rows=len(problem.labels),
         vertices_checked=len(skin['bind_vertices']),influences_per_vertex=8,
@@ -231,7 +234,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
         if retained and label!='final':print(dict(label=label,pose_checks_passed=audit['pose_checks_passed'],minimum_slack=float(slacks.min())),flush=True)
     value,report=fit(measure,linearize,seed,lower,upper,iterations=iterations,trust=trust,seconds=seconds,
         observer=observer,failure_policy=failure_policy,tradeoff_mask=mask,proposal=proposal,solve_iterations=solve_iterations,
-        proposal_feasible_mask=feasible,proposal_headroom=headroom,proposal_tangent_guard=tangent_guard)
+        proposal_feasible_mask=feasible,proposal_headroom=headroom,proposal_tangent_guard=tangent_guard,proposal_start=proposal_start)
     candidate,motion=problem.independent(value*scale)
     with torch.no_grad():_,_,_,vertices=problem.fk(problem.t(value*scale))
     error=float(np.abs(vertices.numpy()-problem.surface.vertices(motion['global_rot_mats'][0],motion['posed_joints'][0])).max())
@@ -262,7 +265,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
 
 
 def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='rowwise',proposal='linear',solve_iterations=100,row_chunk=None,
-        point_policy='preserve',point_proposal='preserve',point_headroom=0.,tangent_guard=False,resume=None,body_proposal='preserve'):
+        point_policy='preserve',point_proposal='preserve',point_headroom=0.,tangent_guard=False,resume=None,body_proposal='preserve',proposal_start='zero'):
     study=Path(study).resolve();output=Path(output).resolve();existed=output.exists()
     if (type(frame) is not int or type(iterations) is not int or not 1<=iterations<=100
             or type(trust) not in (int,float) or not np.isfinite(trust) or not 1e-5<=trust<=.3
@@ -272,6 +275,7 @@ def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='r
             or not np.isfinite(point_headroom) or not 0<=point_headroom<=1e-3
             or type(tangent_guard) is not bool or (tangent_guard and proposal!='nonlinear')
             or body_proposal not in ['preserve','feasible']
+            or proposal_start not in ['zero','linear-feasible'] or (proposal_start!='zero' and proposal!='nonlinear')
             or (resume is not None and (not isinstance(resume,(str,Path)) or not str(resume).strip()))
             or type(solve_iterations) is not int or not 1<=solve_iterations<=300
             or (row_chunk is not None and (type(row_chunk) is not int or not 1<=row_chunk<=32))):
@@ -279,7 +283,7 @@ def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='r
     if resume is not None and (output.is_relative_to(Path(resume).resolve()) or Path(resume).resolve().is_relative_to(output)):
         raise ValueError('Resume artifacts and new output must be separate immutable studies')
     with worker_lock(),threadpool_limits(limits=2):
-        try:return _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal)
+        try:return _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal,proposal_start)
         except Exception as exc:
             if not existed and output.exists():save(output/'pipeline.json',dict(status='failed',error_type=type(exc).__name__,
                 error=str(exc),quality_approved=False,release_approved=False))
@@ -299,5 +303,6 @@ if __name__=='__main__':
     parser.add_argument('--tangent-guard',action='store_true')
     parser.add_argument('--resume',type=Path,help='Terminal guarded pose study to replay as a diagnostic warm start')
     parser.add_argument('--body-proposal',choices=['preserve','feasible'],default='preserve')
+    parser.add_argument('--proposal-start',choices=['zero','linear-feasible'],default='zero')
     args=parser.parse_args();run(args.study,args.output,args.frame,args.iterations,args.trust,args.seconds,args.failure_policy,args.proposal,
-        args.solve_iterations,args.row_chunk,args.point_policy,args.point_proposal,args.point_headroom,args.tangent_guard,args.resume,args.body_proposal)
+        args.solve_iterations,args.row_chunk,args.point_policy,args.point_proposal,args.point_headroom,args.tangent_guard,args.resume,args.body_proposal,args.proposal_start)
