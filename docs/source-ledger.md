@@ -2,6 +2,14 @@
 
 Checked 2026-09-24 unless marked otherwise. Preserve license files with assets and review the complete terms before distribution.
 
+## 2026-10-10: upstream scope recheck during contact continuation
+
+- The current [RP-v1.1 model card](https://huggingface.co/nvidia/Kimodo-SOMA-RP-v1.1) still describes one-character, object-unaware motion and possible prompt/skating failures. Game/media animation remains an intended use. This recheck does not establish successful general scene interaction or change the pinned local checkpoint, asset or data permissions.
+- NVIDIA's [best practices and limitations](https://research.nvidia.com/labs/sil/projects/kimodo/docs/key_concepts/limitations.html) recommend focused, self-contained action prompts, primarily sparse constraints and enough time for transitions at the start of later segments. The published limit is ten seconds per prompt. Complex descriptions or out-of-training behaviors can fail. Keep arbitrary input prompts, but measure their actual correctness rather than treating a supported input string as a supported motion.
+- The [constraint documentation](https://research.nvidia.com/labs/sil/projects/kimodo/docs/key_concepts/constraints.html) specifies reduced SOMA30 model conditioning, wrist/hand and heel/toe end-effector targets and optimization post-processing. Those controls do not by themselves certify full-mesh contact, object penetration, partner timing or anatomy. Existing Strep native and exported checks remain required.
+
+No new model, dependency, raw motion data or asset is acquired. The [verified failed contact continuation](contact-interval-batch-v4.md) remains a development study, not evidence that prompting has solved object interactions.
+
 | Source | Finding / project decision |
 |---|---|
 | [Kimodo-SOMA-RP-v1.1 card](https://huggingface.co/nvidia/Kimodo-SOMA-RP-v1.1) | Human skeletal motion checkpoint; game/media use listed. Single-character output, object-unaware, possible skating and prompt failures. Card describes 30 internal joints; current code exposes SOMA77. Inspect actual output metadata instead of assuming identical skeletons. |
