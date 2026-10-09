@@ -412,7 +412,8 @@
     "tests/test_guarded_job.py",
     "tests/test_studio_generation_resources.py",
     "tests/test_cleanup_timing.py",
-    "tests/test_process_monitor.py"
+    "tests/test_process_monitor.py",
+    "tests/test_scene_commit_receipts.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",

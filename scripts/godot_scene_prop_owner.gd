@@ -2,6 +2,7 @@ extends RefCounted
 ## One shared finite native clock; atomic grip sets, independently simulated props.
 signal sampled(record: Dictionary)
 signal actions_applied(records: Array)
+signal transaction_committed(receipt: Dictionary)
 signal faulted(reason: String)
 const Clock = preload("native_engine_clock.gd")
 const Body = preload("godot_scene_prop_body.gd")
@@ -48,6 +49,38 @@ static func spin_between(a: Basis,b: Basis,seconds: float) -> Vector3:
 
 func agree(a: Transform3D,b: Transform3D) -> bool:
 	return a.origin.distance_to(b.origin)<=plan.position_tolerance_m and spin_between(a.basis,b.basis,1.0).length()<=plan.rotation_tolerance_rad
+
+static func freeze_containers(value: Variant) -> void:
+	if value is Dictionary:
+		for child in value.values(): freeze_containers(child)
+		value.make_read_only()
+	elif value is Array:
+		for child in value: freeze_containers(child)
+		value.make_read_only()
+
+func commit_receipt(record: Dictionary) -> Dictionary:
+	var ids := {}; var source_events: Array = []; var root_modes := {}
+	var clock_bytes := PackedByteArray(); clock_bytes.resize(actions.size()*24)
+	for index in range(actions.size()):
+		var action: Dictionary = actions[index]
+		clock_bytes.encode_double(index*24,action.source_time_s)
+		clock_bytes.encode_double(index*24+8,action.physics_application_time_s)
+		clock_bytes.encode_double(index*24+16,action.application_delay_s)
+		for id in action.event_ids: ids[id]=true
+	for event in plan.source_events:
+		if ids.has(event.id):
+			var copy: Dictionary = event.duplicate(true)
+			copy.time_s=scene.times[int(event.sample_index)]; source_events.append(copy)
+	for id in scene.actors: root_modes[id]="extracted" if scene.actors[id].extracted else "embedded"
+	var owner_id := str(get_instance_id())
+	var receipt := {"schema":"strep-scene-prop-commit-v1","commit_id":owner_id+":"+str(session)+":"+str(tick),"owner_instance_id":owner_id,
+		"source_semantic_sha256":plan.get("source_semantic_sha256",""),"source_clock":plan.clock.duplicate(true),"source_events":source_events,
+		"action_clock":{"schema":"strep-scene-prop-action-clock-f64le-v1","count":actions.size(),"bytes_hex":clock_bytes.hex_encode()},"physics_rate_hz":rate,
+		"actions":actions.duplicate(true),"record":record.duplicate(true),"actor_root_motion":scene.playback_roots.duplicate(true),"root_modes":root_modes,
+		"props_state_phase":"assigned_before_force_integration",
+		"scene_pose_time_s":scene.pose_time_s,"scene_playback_time_s":scene.playback_time_s,"quality_approved":false,"release_approved":false}
+	freeze_containers(receipt)
+	return receipt
 
 func bind(native_scene,document: Dictionary,props: Dictionary,grips: Dictionary,physics_rate: int = 240,capacity: int = 1800) -> Error:
 	if configured or native_scene == null or not native_scene.bound or native_scene.playback_time_s != null or native_scene.pose_time_s != 0.0 or native_scene.has_meta("strep_prop_owner"): return ERR_INVALID_PARAMETER
@@ -239,6 +272,10 @@ func integrate_body(body: RigidBody3D,state: PhysicsDirectBodyState3D) -> void:
 		if transport=="live" and save_history:
 			history.append(record.duplicate(true))
 			if history.size()>history_limit: history.pop_front()
+		var receipt: Dictionary = commit_receipt(record) if not actions.is_empty() and failure.is_empty() else {}
+		var applied: Array = actions.duplicate(true)
 		busy=false
-		if not actions.is_empty() and failure.is_empty(): actions_applied.emit(actions.duplicate(true))
+		if not receipt.is_empty():
+			transaction_committed.emit(receipt)
+			actions_applied.emit(applied)
 		sampled.emit(record)

@@ -124,12 +124,40 @@ func start_case() -> void:
 	if ownership.bind(motion,item.plan,props,providers,int(request.physics_fps),80)!=OK: fail("Shared ownership bind rejected"); return
 	var other = Owner.new()
 	if other.bind(motion,item.plan,props,providers,int(request.physics_fps),80)==OK: fail("Second clock owner accepted"); return
-	result={"id":item.id,"records":[],"actions":[],"faults":[],"source_events":[],"malformed_rejected":rejected,"second_owner_rejected":true}; stage="forward"; waits=0; finishing=false
+	result={"id":item.id,"records":[],"actions":[],"faults":[],"source_events":[],"commit_receipts":[],"commit_callbacks":[],"detached_copies":0,"malformed_rejected":rejected,"second_owner_rejected":true}; stage="forward"; waits=0; finishing=false
 	result.installed_geometry={"P":{"schema":"strep-object-geometry-v1","shape":"cylinder","radius_m":props.P.get_child(0).shape.radius,"height_m":props.P.get_child(0).shape.height},"Q":{"schema":"strep-object-geometry-v1","shape":"sphere","radius_m":props.Q.get_child(0).shape.radius}}
 	motion.gameplay.connect(func(event): result.source_events.append({"id":event.id,"time_s":event.time_s,"pose_time_s":motion.pose_time_s}))
+	ownership.transaction_committed.connect(on_commit_first)
+	ownership.transaction_committed.connect(on_commit)
 	ownership.actions_applied.connect(func(actions): result.actions.append_array(serial(actions)))
 	ownership.faulted.connect(func(reason): result.faults.append(reason); call_deferred("finish_case"))
 	ownership.sampled.connect(on_sample)
+
+func all_read_only(value: Variant) -> bool:
+	if value is Dictionary:
+		if not value.is_read_only(): return false
+		for child in value.values():
+			if not all_read_only(child): return false
+	elif value is Array:
+		if not value.is_read_only(): return false
+		for child in value:
+			if not all_read_only(child): return false
+	return true
+
+func on_commit_first(receipt: Dictionary) -> void:
+	assert(all_read_only(receipt))
+	# A consumer's writable detached copy must not alter the later listener.
+	var copy: Dictionary = serial(receipt)
+	copy.actions.clear(); copy.record.members.clear(); result.detached_copies+=1
+
+func on_commit(receipt: Dictionary) -> void:
+	assert(all_read_only(receipt) and ownership.seen.size()==props.size())
+	assert(receipt.record.members==ownership.members and receipt.record.modes==ownership.modes)
+	assert(receipt.record.props==ownership.observations and receipt.actor_root_motion==motion.playback_roots)
+	assert(receipt.scene_pose_time_s==motion.pose_time_s and receipt.scene_playback_time_s==motion.playback_time_s)
+	assert(not receipt.actions.is_empty() and receipt.record.members.size()==props.size())
+	result.commit_receipts.append(serial(receipt))
+	result.commit_callbacks.append({"commit_id":receipt.commit_id,"all_containers_read_only":all_read_only(receipt),"all_bodies_seen":ownership.seen.size()==props.size(),"owner_state_matches":receipt.record.props==ownership.observations})
 
 func on_sample(record: Dictionary) -> void:
 	if finishing: return
@@ -154,4 +182,4 @@ func finish_case() -> void:
 		await process_frame
 		start_case()
 	else:
-		var file := FileAccess.open(destination,FileAccess.WRITE); file.store_string(JSON.stringify(output)); file.close(); quit(0)
+		var file := FileAccess.open(destination,FileAccess.WRITE); file.store_string(JSON.stringify(output,"",true,true)); file.close(); quit(0)

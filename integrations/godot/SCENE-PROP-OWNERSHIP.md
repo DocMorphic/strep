@@ -80,6 +80,7 @@ assert(owner.bind(native_scene, ownership_document, prop_bodies, grip_providers,
                  Engine.physics_ticks_per_second, 1800) == OK)
 owner.faulted.connect(func(reason): push_error(reason))
 owner.actions_applied.connect(func(actions): print(actions))
+owner.transaction_committed.connect(func(receipt): print(receipt.commit_id, receipt.record.members))
 owner.sampled.connect(func(record): print(record.physics_root_deltas))
 ```
 
@@ -147,11 +148,49 @@ to 2–3,600 records; expired previews reject without changing state. Actor pose
 holds at the finite endpoint while released prop physics continues.
 
 Other scene objects, solver contact caches, native gameplay listeners and their
-side effects are not rolled back. Listen to `actions_applied` for complete prop
-transactions after all bodies are sampled; source `gameplay` callbacks observe
-actor poses before the physical transaction completes. Neither callback grants
-grasp, realism or release approval. Faults require application recovery with a
-fresh binding; they do not undo already emitted gameplay effects.
+side effects are not rolled back. Use `transaction_committed` for an immutable
+whole-boundary receipt after every owned body supplies its assigned state.
+The existing `actions_applied` callback still receives the action list. Source
+`gameplay` callbacks observe actor poses before the physical transaction completes.
+Neither callback grants grasp, realism or release approval. Faults require application
+recovery with a fresh binding; they do not undo already emitted gameplay effects.
+
+## Consume a committed ownership receipt
+
+`transaction_committed(receipt)` emits once per successful live physics boundary
+that contains ownership changes. Simultaneous prop changes share one receipt.
+Failed preparation or a missing participant cannot dispatch a receipt for that
+boundary. Pause, retained preview and resume do not replay notifications; restart
+creates a new session and allows the authored changes again.
+
+All dictionaries and arrays in the receipt are recursively read-only, detached
+from the owner. Its `record` includes every prop's membership, mode, tracking pose,
+assigned direct-state pose/velocity/spin, contacts and physics properties. Actor
+root motion and extraction modes accompany that same source clock. `source_events`
+contains the original contracts used by these actions, in source order, once per
+event even when that event commands several hands or props.
+
+The `commit_id` combines the live `owner_instance_id`, session and physics tick.
+Keep the instance ID as a string: Godot RefCounted IDs may be negative and exceed
+JSON's exact floating-point integer range. This identifies a live binding, not a
+durable character or network identity. Bind your game's entity identity separately.
+
+Each action retains `source_time_s`, `physics_application_time_s` and
+`application_delay_s`. `action_clock` also stores those three values, in that order
+for every action, as little-endian Float64 bytes. Default decimal JSON output can
+round them; preserve the binary field or use full-precision serialization when
+recording receipts. `source_clock` remains the unchanged authored binary clock.
+
+`props_state_phase` is `assigned_before_force_integration`. The snapshots describe
+the states assigned during the body callbacks, before the owner invokes force
+integration. They are not settled post-collision results or a grasp certificate.
+The fixed-boundary application delay, disabled held-prop collisions and documented
+timing/depth failures remain. Listeners may queue transport commands for the next
+boundary; other gameplay side effects cannot be undone by this SDK.
+
+[Receipt validation and engine evidence](../../docs/scene-commit-receipts-v1.md)
+includes complete-state callbacks, detached-copy isolation, atomic handoff and
+partial release, restart/preview behavior and retained physical failures.
 
 [Development evidence](../../docs/scene-prop-ownership-v1.md) covers procedural
 fixtures and headless Jolt physics. No production character rendering, animator

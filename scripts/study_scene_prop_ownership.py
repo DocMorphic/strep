@@ -19,11 +19,12 @@ from object_geometry import Geometry
 from release_geometry import floor_gaps,preview_penetration_bounds,check_installed_geometry
 from scene_prop_ownership import compile_plan
 from strep import ROOT,now,read,save,sha256
+from scene_commit_receipts import audit as audit_commit_receipts
 
 GDS=['godot_scene_prop_ownership_audit.gd','godot_scene_prop_owner.gd','godot_scene_prop_body.gd',
      'godot_native_scene_player.gd','godot_native_root_adapter.gd','godot_native_object_player.gd',
      'godot_scene_game_events.gd','native_engine_clock.gd','native_godot_preview.gd','godot_native_scene_observations.gd']
-METHODS=GDS+['study_scene_prop_ownership.py','scene_prop_ownership.py','native_engine_clock.py','object_geometry.py','release_geometry.py','primitive_penetration_bounds.py','action_worker_lock.py','strep.py']
+METHODS=GDS+['study_scene_prop_ownership.py','scene_prop_ownership.py','scene_commit_receipts.py','native_engine_clock.py','object_geometry.py','release_geometry.py','primitive_penetration_bounds.py','action_worker_lock.py','strep.py']
 
 
 def fixture():
@@ -63,10 +64,11 @@ def verify(request,actual):
     for case,observed in zip(request['cases'],actual['cases']):
         assert case['id']==observed['id'] and observed['malformed_rejected']==5 and observed['second_owner_rejected']
         records=observed['records'];actions=observed['actions'];fault=case.get('fault','')
+        commit_check=audit_commit_receipts(case['plan'],{'A':'embedded','B':'extracted'},observed,physics_fps=request['physics_fps'])
         if fault:
             assert len(observed['faults'])==1
             assert all(not a['last_grip_released'] for a in actions)
-            rows.append(dict(id=case['id'],fault_detected=True,fault=observed['faults'][0],records=len(records),quality_approved=False));continue
+            rows.append(dict(id=case['id'],fault_detected=True,fault=observed['faults'][0],records=len(records),commit_check=commit_check,quality_approved=False));continue
         assert observed['faults']==[] and observed['expired_preview_rejected']
         # Six prop transactions per traversal: acquire P/Q, partial P, handoff
         # P, release P/Q. Their exact count is checked below against the plan.
@@ -129,7 +131,7 @@ def verify(request,actual):
             p,q=np.array(r['props']['P']['pose']),np.array(r['props']['Q']['pose'])
             bounds.append(preview_penetration_bounds(geometries['P'],p[:3,3],Rotation.from_matrix(p[:3,:3]).as_matrix(),geometries['Q'],q[:3,3],Rotation.from_matrix(q[:3,:3]).as_matrix()))
         max_depth=max(b['penetration_upper_m'] for b in bounds)
-        rows.append(dict(id=case['id'],records=len(records),actions=len(actions),held_pose_error=max(held_errors),action_pose_error=max(pose_errors),release_velocity_error_m_s=max(velocity_errors),release_spin_error_rad_s=max(spin_errors),whole_step_root_error=max(root_errors) if root_errors else None,both_dynamic_props_respond_to_contact=True,max_application_delay_s=max(delays),exact_physical_event_timing_passed=all(abs(x)<=1e-12 for x in delays),
+        rows.append(dict(id=case['id'],records=len(records),actions=len(actions),commit_check=commit_check,held_pose_error=max(held_errors),action_pose_error=max(pose_errors),release_velocity_error_m_s=max(velocity_errors),release_spin_error_rad_s=max(spin_errors),whole_step_root_error=max(root_errors) if root_errors else None,both_dynamic_props_respond_to_contact=True,max_application_delay_s=max(delays),exact_physical_event_timing_passed=all(abs(x)<=1e-12 for x in delays),
                          max_floor_penetration_m=floor_depth,max_interprop_penetration_upper_m=max_depth,discrete_collision_depth_screens_passed=max_depth<=.01 and max(floor_depth.values())<=.01,all_checked_ownership_conditions_passed=True,quality_approved=False,release_approved=False))
     return dict(schema='strep-scene-prop-ownership-study-v1',status='complete',cases=rows,actual_native_actors=True,actual_dynamic_props=True,renderer_executed=False,human_reviewed=False,quality_approved=False,release_approved=False)
 
