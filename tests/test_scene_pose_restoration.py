@@ -149,6 +149,29 @@ def test_active_anchor_audit_is_finite_json_serializable(monkeypatch):
     assert json.loads(json.dumps(audit,allow_nan=False))['points'][0]['passed'] is True
 
 
+def test_explicit_saved_audit_checks_actual_root_and_never_reconstructs(monkeypatch):
+    p,x,m=independent_problem(monkeypatch,[.201,.4,0]);p.base={'root_positions':np.zeros((3,3))}
+    m['root_positions']=np.array([[0.,.23,0.]])
+    monkeypatch.setattr(PoseProblem,'independent',lambda *a:pytest.fail('Saved audit reconstructed motion'))
+    before={k:v.copy() for k,v in m.items()};audit=p.audit_motion(m)
+    assert not audit['root_budget_passed'] and not audit['pose_checks_passed']
+    for key in m:np.testing.assert_array_equal(before[key],m[key])
+    m['root_positions'][0,1]=.01
+    assert p.audit_motion(m)['pose_checks_passed']
+
+
+@pytest.mark.parametrize('damage',['joints','local','global','root','nan'])
+def test_incomplete_saved_native_pose_is_rejected(monkeypatch,damage):
+    p,x,m=independent_problem(monkeypatch,[.201,.4,0]);p.base={'root_positions':np.zeros((3,3))}
+    m['root_positions']=np.zeros((1,3))
+    if damage=='joints':m['posed_joints']=m['posed_joints'][:,:76]
+    if damage=='local':m['local_rot_mats']=m['local_rot_mats'].astype(int)
+    if damage=='global':m['global_rot_mats']=m['global_rot_mats'][:,:76]
+    if damage=='root':m['root_positions']=m['root_positions'][0]
+    if damage=='nan':m['posed_joints'][0,0,0]=float('nan')
+    with pytest.raises(ValueError):p.audit_motion(m)
+
+
 def test_failed_new_study_has_terminal_failure_and_does_not_overwrite_old_output(tmp_path,monkeypatch):
     import scene_pose_restoration as module
     from contextlib import nullcontext

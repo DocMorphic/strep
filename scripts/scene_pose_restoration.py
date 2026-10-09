@@ -127,8 +127,16 @@ class RestorationProblem(PoseProblem):
         return torch.stack(values)
 
     def independent(self,x,*,neighbors=None):
-        neighbors=self.neighbors if neighbors is None else neighbors
         _,motion=super().independent(x)
+        return self.audit_motion(motion,neighbors=neighbors,parameter_root_lift=float(x[-1])),motion
+
+    def audit_motion(self,motion,*,neighbors=None,parameter_root_lift=None):
+        """Physical gates on explicit saved arrays, without reconstructing them."""
+        neighbors=self.neighbors if neighbors is None else neighbors
+        for key,shape in [('posed_joints',(1,77,3)),('local_rot_mats',(1,77,3,3)),('global_rot_mats',(1,77,3,3))]:
+            value=motion.get(key)
+            if not isinstance(value,np.ndarray) or value.shape!=shape or value.dtype.kind!='f' or not np.isfinite(value).all():
+                raise ValueError('Complete finite saved native pose arrays required')
         vertices=self.surface.vertices(motion['global_rot_mats'][0],motion['posed_joints'][0])
         point=[];normal=[];objects=[]
         for contact,limit in zip(self.contacts,self.point_limits):
@@ -153,11 +161,19 @@ class RestorationProblem(PoseProblem):
         angle=Rotation.from_matrix(self.previous['local_rot_mats'][self.frame].transpose(0,2,1)@motion['local_rot_mats'][0]).magnitude()
         fixed=[j for j in range(77) if j not in self.editable]
         rotations_pass=bool(np.all(angle[self.editable]<=self.limits+1e-8) and np.max(angle[fixed])<1e-6)
-        floor=float(vertices[:,1].min());root=bool(0<=x[-1]<=self.config['max_root_lift_m'])
+        if parameter_root_lift is None:
+            value=motion.get('root_positions')
+            if not isinstance(value,np.ndarray) or value.shape!=(1,3) or value.dtype.kind!='f' or not np.isfinite(value).all():
+                raise ValueError('Complete finite saved root position required')
+            lift=float(value[0,1])-float(self.base['root_positions'][self.frame,1])
+        else:
+            if not np.isfinite(parameter_root_lift):raise ValueError('Finite legacy root parameter required')
+            lift=parameter_root_lift
+        floor=float(vertices[:,1].min());root=bool(0<=lift<=self.config['max_root_lift_m'])
         passed=rotations_pass and root and floor>=self.config['clearance_m'] and all(r['passed'] for r in point+normal+objects+list(body.values()))
         return dict(points=point,normals=normal,objects=objects,body=body,minimum_floor_y_m=floor,
             rotation_budgets_passed=rotations_pass,root_budget_passed=root,pose_checks_passed=bool(passed),vertices_checked=len(vertices),
-            scope='One native pose and its fixed adjacent keys. No full-clip, between-key, support-slide, self-collision, anatomy, import, dynamics or human certificate.'),motion
+            scope='One native pose and its fixed adjacent keys. No full-clip, between-key, support-slide, self-collision, anatomy, import, dynamics or human certificate.')
 
 
 def _run(study,output,frame,iterations=100,seconds=300,strategy='slsqp',grouping='global'):

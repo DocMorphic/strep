@@ -43,6 +43,22 @@ class CoupledPoseWindow:
         if x.shape!=(self.dim,) or not np.isfinite(x).all():raise ValueError('Complete finite window controls required')
         return x
 
+    def set_fixed_neighbors(self,positions):
+        """Bind an explicit interval state's exterior keys; never rebase references."""
+        expected={f for p in self.problems for f in p.neighbors if f not in self.frames}
+        if not isinstance(positions,dict) or set(positions)!=expected or any(type(f) is not int for f in positions):
+            raise ValueError('Every exterior neighbor and no internal/unknown frame required')
+        arrays={f:np.asarray(value) for f,value in positions.items()}
+        shape=(len(self.problems[0].names),3)
+        if any(a.shape!=shape or a.dtype.kind!='f' or not np.isfinite(a).all() for a in arrays.values()):
+            raise ValueError('Complete finite exterior native joint positions required')
+        for p in self.problems:
+            for frame in p.neighbors:
+                if frame in arrays:p.neighbors[frame]=p.t(arrays[frame].copy())
+            p.cache=None
+        for sparse in self.sparse:sparse.cache=None;sparse.dependencies=None
+        self.cache=None;self.representation_cache=None
+
     def geometry_slack(self,x):
         if (not isinstance(x,torch.Tensor) or x.shape!=(self.dim,) or x.dtype!=torch.float64
                 or not torch.isfinite(x).all()):raise ValueError('Complete double-precision window controls required')

@@ -105,6 +105,29 @@ def test_explicit_geometry_population_is_complete_and_does_not_reconstruct_pose(
         with pytest.raises(ValueError):p.geometry_rows(pos,skin)
 
 
+def test_interval_exterior_context_invalidates_all_caches_without_rebasing(monkeypatch):
+    w=represented_window(monkeypatch);x=w.seed.copy();before,jac=w.pair(x);saved=w.saved_representation(x)
+    refs=[{k:v.numpy().copy() for k,v in p.references.items()} for p in w.problems]
+    positions={0:np.array([[0,.4,0],[.08,.4,.02]]),4:np.array([[0,.5,0],[.08,.5,.02]])}
+    w.set_fixed_neighbors(positions);positions[4][:]=0
+    after,derivatives=w.pair(x);dense,djac=w.dense_pair(x)
+    np.testing.assert_allclose(after,dense,rtol=1e-12,atol=1e-12)
+    np.testing.assert_allclose(derivatives,djac,rtol=1e-10,atol=1e-10)
+    row=w.labels.index('all-reference-speed:4:Root:frame-3')
+    assert before[row]>0 and after[row]<0 and w.saved_representation(x)[row]<0
+    for p,original in zip(w.problems,refs):
+        for key in original:np.testing.assert_array_equal(p.references[key].numpy(),original[key])
+
+
+@pytest.mark.parametrize('positions',[{0:np.zeros((2,3))},{0:np.zeros((2,3)),4:np.zeros((2,3)),2:np.zeros((2,3))},
+    {0:np.zeros((2,3)),4:np.zeros((1,3))},{0:np.zeros((2,3)),4:np.full((2,3),np.nan)}])
+def test_invalid_exterior_context_is_rejected_before_mutation(monkeypatch,positions):
+    w=window(monkeypatch);before={f:v.numpy().copy() for p in w.problems for f,v in p.neighbors.items()}
+    with pytest.raises(ValueError):w.set_fixed_neighbors(positions)
+    for p in w.problems:
+        for f,v in p.neighbors.items():np.testing.assert_array_equal(v.numpy(),before[f])
+
+
 def test_internal_speed_has_both_control_blocks_and_fixed_edges_do_not(monkeypatch):
     w=window(monkeypatch);x=w.seed.copy();x[7]+=.004
     _,jac=w.pair(x)

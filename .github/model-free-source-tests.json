@@ -406,7 +406,8 @@
     "tests/test_point_numerical_headroom.py",
     "tests/test_studio_precision_export.py",
     "tests/test_scene_fit_body_policy.py",
-    "tests/test_scene_placement_authoring.py"
+    "tests/test_scene_placement_authoring.py",
+    "tests/test_contact_interval_coverage.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",
