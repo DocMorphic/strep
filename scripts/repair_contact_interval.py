@@ -19,7 +19,7 @@ from coupled_pose_window import CoupledPoseWindow
 from protected_inequality_step import fit,retain
 from pose_restoration_policy import proposal_headroom,row_diagnostics
 from pose_proposal_archive import ProposalArchive
-from contact_interval_resume import resume_interval,seed_window
+from contact_interval_resume import resume_interval,seed_window,IntervalReplaySession
 
 METHODS=AUDIT_METHODS+['repair_contact_interval.py','contact_interval_resume.py']
 
@@ -69,7 +69,7 @@ def compare_interval(labels,before,current_labels,after):
         quality_approved=False,release_approved=False),diagnostics
 
 
-def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,resume,exclusions):
+def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,resume,exclusions,*,replay_session=None):
     summary=read(study/'fit/summary.json')
     if (summary.get('solver_version')!=17 or read(study/'pipeline.json')['status']!='complete'
             or len(summary['trials'])!=1 or sha256(ASSET)!=summary['mesh_sha256']):
@@ -81,9 +81,13 @@ def _run(study,output,frames,width,iterations,trust,seconds,solve_iterations,res
     source_payload=dict(np.load(folder/'motion.npz',allow_pickle=False));source=pose_tracks(source_payload)
     skin=dict(np.load(ASSET,allow_pickle=False));torch.set_num_threads(2)
     factory=lambda block:CoupledPoseWindow(folder,skin,block,row_chunk=4)
+    if replay_session is not None:
+        if type(replay_session) is not IntervalReplaySession:raise ValueError('Owned interval replay session required')
+        factory=replay_session.prepare(study,factory,source,frames,width,original_bindings,METHODS,DEFINITIONS,ExactSavedOrigin,
+            implementation_bindings={str(ROOT/'scripts'/n):sha256(ROOT/'scripts'/n) for n in METHODS})
     parameters={};receipt=None
     if resume is not None:
-        source,parameters,receipt,extra=resume_interval(resume,study,factory,source,frames,width,original_bindings,METHODS,DEFINITIONS,ExactSavedOrigin)
+        source,parameters,receipt,extra=resume_interval(resume,study,factory,source,frames,width,original_bindings,METHODS,DEFINITIONS,ExactSavedOrigin,replay_session=replay_session)
         bindings.update(extra)
     output.mkdir(parents=True,exist_ok=False);archive=output/'implementation';archive.mkdir()
     for name in METHODS:shutil.copyfile(ROOT/'scripts'/name,archive/name)

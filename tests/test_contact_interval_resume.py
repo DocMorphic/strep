@@ -164,3 +164,119 @@ def test_explicit_current_neighbors_and_controls_dont_rebase_factory_seed():
     assert w.problems[-1].neighbors[3][0,0]==pytest.approx(.12)
     m['posed_joints'][3,0,0]=0
     assert w.problems[-1].neighbors[3][0,0]==pytest.approx(.12) and not Window([1,2]).seed.any()
+
+
+def session_for(args):
+    session=module.IntervalReplaySession()
+    factory=session.prepare(*args,implementation_bindings={str(args[-2]):module.sha256(args[-2])})
+    assert factory is args[1]
+    return session
+
+
+def test_same_worker_reuse_skips_geometry_but_preserves_exact_state(tmp_path,monkeypatch):
+    make,args=fixture(tmp_path,monkeypatch);directory,_,_=make('first');calls=[]
+    def counted(*a,**k):calls.append(True);return evaluate(*a,**k)
+    monkeypatch.setattr(module,'evaluate_interval',counted);session=session_for(args)
+    cold=module.resume_interval(directory,*args,replay_session=session);assert len(calls)==2
+    warm=module.resume_interval(directory,*args,replay_session=session);assert len(calls)==2
+    for key in cold[0]:np.testing.assert_array_equal(cold[0][key],warm[0][key])
+    for key in cold[1]:np.testing.assert_array_equal(cold[1][key],warm[1][key])
+    assert cold[3]==warm[3] and warm[2]['geometry_replayed_this_call'] is False
+    assert warm[2]['replay_mode']=='same-worker-bound-reuse' and not warm[2]['quality_approved']
+    assert session.statistics()['reused_histories']==session.statistics()['full_native_replays']==1
+
+
+def test_cached_returned_arrays_receipts_and_bindings_are_detached(tmp_path,monkeypatch):
+    make,args=fixture(tmp_path,monkeypatch);directory,expected,_=make('first');session=session_for(args)
+    cold=module.resume_interval(directory,*args,replay_session=session)
+    cold[0]['posed_joints'][:]=99;cold[1][1][:]=99;cold[2]['release_approved']=True;cold[3].clear()
+    warm=module.resume_interval(directory,*args,replay_session=session)
+    for key in expected:np.testing.assert_array_equal(warm[0][key],expected[key])
+    assert warm[1][1][0]==.05 and warm[2]['release_approved'] is False and warm[3]
+    warm[0]['posed_joints'][:]=88;warm[2]['quality_approved']=True
+    again=module.resume_interval(directory,*args,replay_session=session)
+    assert again[0]['posed_joints'][1,0,0]==np.float32(.05) and not again[2]['quality_approved']
+
+
+def test_new_stage_fully_replays_with_one_verified_parent_and_cold_worker_matches(tmp_path,monkeypatch):
+    make,args=fixture(tmp_path,monkeypatch);first,_,_=make('first');session=session_for(args)
+    state,params,receipt,_=module.resume_interval(first,*args,replay_session=session)
+    second,expected,_=make('second',state,params,receipt);calls=[]
+    def counted(*a,**k):calls.append(True);return evaluate(*a,**k)
+    monkeypatch.setattr(module,'evaluate_interval',counted)
+    warm=module.resume_interval(second,*args,replay_session=session);assert len(calls)==2
+    fresh=session_for(args);cold=module.resume_interval(second,*args,replay_session=fresh);assert len(calls)==6
+    for key in expected:
+        np.testing.assert_array_equal(warm[0][key],expected[key]);np.testing.assert_array_equal(warm[0][key],cold[0][key])
+    assert warm[3]==cold[3] and warm[2]==cold[2]
+    assert session.statistics()['cached_states']==1 and session.statistics()['full_native_replays']==2
+    assert fresh.statistics()['reused_histories']==0 and fresh.statistics()['full_native_replays']==2
+
+
+@pytest.mark.parametrize('damage',['source','native','method','result','pipeline','protocol','retained','trial','observation','archive','ancestor'])
+def test_reuse_rechecks_every_bound_artifact_even_after_resealing(tmp_path,monkeypatch,damage):
+    make,args=fixture(tmp_path,monkeypatch);first,_,_=make('first');session=session_for(args)
+    state,params,receipt,_=module.resume_interval(first,*args,replay_session=session)
+    second,_,_=make('second',state,params,receipt);module.resume_interval(second,*args,replay_session=session)
+    targets={'source':args[0]/'motion.npz','native':args[-2],'method':second/'implementation/toy.py',
+        'result':second/'result.json','pipeline':second/'pipeline.json','protocol':second/'protocol.json',
+        'retained':second/'retained-motion.npz','trial':second/'trials/kept/audit.json',
+        'observation':second/'baseline/window-0.json','archive':next((second/'proposals').rglob('*.json')),
+        'ancestor':first/'result.json'}
+    target=targets[damage];target.write_bytes(target.read_bytes()+b' ')
+    if damage in ['trial','observation','retained']:reseal(second)
+    with pytest.raises((ValueError,AssertionError)):module.resume_interval(second,*args,replay_session=session)
+    assert session.statistics()['reused_histories']==1
+
+
+@pytest.mark.parametrize('change',['source-value','source-dtype','frames','width','inputs','methods','origin','factory'])
+def test_reuse_rejects_changed_runtime_context(tmp_path,monkeypatch,change):
+    make,args=fixture(tmp_path,monkeypatch);directory,_,_=make('first');session=session_for(args)
+    module.resume_interval(directory,*args,replay_session=session);changed=list(args)
+    if change.startswith('source-'):
+        changed[2]={k:v.copy() for k,v in args[2].items()}
+        if change=='source-value':changed[2]['posed_joints'][0,0,0]=np.nextafter(np.float32(0),np.float32(1))
+        else:changed[2]['posed_joints']=changed[2]['posed_joints'].astype(np.float64)
+    elif change=='frames':changed[3]=[2,3]
+    elif change=='width':changed[4]=2
+    elif change=='inputs':changed[5]={}
+    elif change=='methods':changed[6]=['toy.py']
+    elif change=='origin':changed[-1]=type('DifferentOrigin',(ExactSavedOrigin,),{})
+    elif change=='factory':changed[1]=lambda frames:Window(frames)
+    with pytest.raises(ValueError):module.resume_interval(directory,*changed,replay_session=session)
+    assert session.statistics()['reused_histories']==0
+
+
+def test_context_preparation_keeps_the_owned_factory_and_rejects_changed_bindings(tmp_path,monkeypatch):
+    make,args=fixture(tmp_path,monkeypatch);session=session_for(args);new=list(args)
+    new[1]=lambda frames:(_ for _ in ()).throw(AssertionError('Fresh factory must not replace the bound one'))
+    assert session.prepare(*new,implementation_bindings={str(args[-2]):module.sha256(args[-2])}) is Window
+    changed=list(args);changed[4]=2
+    with pytest.raises(ValueError):session.prepare(*changed,implementation_bindings={str(args[-2]):module.sha256(args[-2])})
+
+
+@pytest.mark.parametrize('bad_session',[{},True,None])
+def test_saved_attestations_and_unprepared_sessions_cannot_skip_replay(tmp_path,monkeypatch,bad_session):
+    make,args=fixture(tmp_path,monkeypatch);directory,_,_=make('first')
+    session=module.IntervalReplaySession() if bad_session is None else bad_session
+    with pytest.raises(ValueError):module.resume_interval(directory,*args,replay_session=session)
+
+
+@pytest.mark.parametrize('fault',['cycle','capacity'])
+def test_reused_ancestry_preserves_the_full_original_bound(tmp_path,monkeypatch,fault):
+    make,args=fixture(tmp_path,monkeypatch);first,_,_=make('first');session=session_for(args)
+    state,params,receipt,_=module.resume_interval(first,*args,replay_session=session)
+    second,_,_=make('second',state,params,receipt);module.resume_interval(second,*args,replay_session=session)
+    ancestors=(first,) if fault=='cycle' else tuple(tmp_path/str(i) for i in range(31))
+    with pytest.raises(ValueError):module.resume_interval(second,*args,ancestors=ancestors,replay_session=session)
+
+
+def test_failed_new_stage_does_not_replace_the_verified_parent(tmp_path,monkeypatch):
+    make,args=fixture(tmp_path,monkeypatch);first,_,_=make('first');session=session_for(args)
+    state,params,receipt,_=module.resume_interval(first,*args,replay_session=session)
+    second,_,_=make('second',state,params,receipt);result=module.read(second/'result.json')
+    result['fit']['trials'][0]['accepted']=False;write(second/'result.json',result);reseal(second)
+    with pytest.raises((ValueError,AssertionError)):module.resume_interval(second,*args,replay_session=session)
+    restored=module.resume_interval(first,*args,replay_session=session)
+    assert restored[0]['posed_joints'][1,0,0]==np.float32(.05)
+    assert session.statistics()['cached_states']==1 and session.statistics()['full_native_replays']==1

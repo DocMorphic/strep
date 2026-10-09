@@ -1,5 +1,8 @@
 """Replay globally preserving saved interval states without rebasing references."""
 from pathlib import Path
+import copy
+import hashlib
+import json
 import numpy as np
 import torch
 from strep import ROOT,read,sha256
@@ -10,6 +13,97 @@ from protected_inequality_step import retain,score,margin_start_attempts
 from contact_interval_coverage import partition_frames,select_window
 
 FILES={'baseline-motion.npz','proposed-motion.npz','retained-motion.npz','baseline.json','proposed.json','row-diagnostics.json','preflight.json'}
+
+
+class IntervalReplaySession:
+    """One worker's last fully replayed state; never loads a saved attestation."""
+    def __init__(self):
+        self.__context=None;self.__entry=None;self.__factory=None
+        self.__bindings={};self.hits=0;self.full_replays=0
+
+    @staticmethod
+    def source_digest(source):
+        digest=hashlib.sha256()
+        for key in sorted(source):
+            value=np.asarray(source[key])
+            if value.dtype.hasobject:raise ValueError('Numeric original pose arrays required')
+            digest.update(json.dumps([key,value.dtype.str,value.shape]).encode())
+            digest.update(np.ascontiguousarray(value).tobytes())
+        return digest.hexdigest()
+
+    @staticmethod
+    def request(study,source,frames,width,original_bindings,methods,definitions,origin_type):
+        return dict(study=str(Path(study).resolve()),source=IntervalReplaySession.source_digest(source),
+            frames=list(frames),width=width,original_bindings=dict(original_bindings),methods=list(methods),
+            definitions=str(Path(definitions).resolve()),definitions_sha256=sha256(definitions),
+            origin_type=id(origin_type))
+
+    @staticmethod
+    def check_bindings(bindings):
+        try:
+            if any(not Path(p).resolve().is_relative_to(ROOT.resolve()) or sha256(p)!=h for p,h in bindings.items()):
+                raise ValueError('Same-worker history binding changed')
+        except OSError as exc:raise ValueError('Same-worker history binding disappeared') from exc
+
+    def prepare(self,study,factory,source,frames,width,original_bindings,methods,definitions,origin_type,*,implementation_bindings):
+        partition_frames(frames,width)
+        if not callable(factory) or not isinstance(implementation_bindings,dict) or not implementation_bindings:
+            raise ValueError('Explicit bound implementation and owned factory required')
+        bindings={**original_bindings,**implementation_bindings}
+        self.check_bindings(bindings)
+        context=self.request(study,source,frames,width,original_bindings,methods,definitions,origin_type)
+        context['implementation_bindings']=dict(implementation_bindings)
+        if self.__context is None:
+            self.__context=copy.deepcopy(context);self.__factory=factory;self.__bindings=bindings.copy()
+        elif context!=self.__context:
+            raise ValueError('Same-worker history context changed; use a fresh session')
+        return self.__factory
+
+    def _check_request(self,study,factory,source,frames,width,original_bindings,methods,definitions,origin_type):
+        context=self.request(study,source,frames,width,original_bindings,methods,definitions,origin_type)
+        expected=None if self.__context is None else {k:v for k,v in self.__context.items() if k!='implementation_bindings'}
+        if factory is not self.__factory or context!=expected:
+            raise ValueError('History reuse requires the exact owned replay context')
+        self.check_bindings(self.__bindings)
+
+    @staticmethod
+    def clone(payload):
+        motion,parameters,receipt,bindings=payload
+        return ({k:v.copy() for k,v in motion.items()},{k:v.copy() for k,v in parameters.items()},copy.deepcopy(receipt),bindings.copy())
+
+    def _load_verified(self,directory,ancestors):
+        if self.__entry is None or self.__entry[0]!=directory:return None
+        _,lineage,payload=self.__entry
+        if len(ancestors)+len(lineage)>32 or set(ancestors).intersection(lineage):
+            raise ValueError('Reused history exceeds the original acyclic ancestry bound')
+        self.check_bindings(payload[3])
+        value=self.clone(payload)
+        value[2].update(replay_mode='same-worker-bound-reuse',geometry_replayed_this_call=False,
+            verified_chain_stages=len(lineage),scope='Same-worker reuse of a previously complete native replay; every artifact/input/implementation binding rechecked. No saved attestation, new geometry evaluation or quality approval.')
+        self.hits+=1
+        print(dict(stage='interval_resume_reused',directory=directory.relative_to(ROOT).as_posix(),verified_chain_stages=len(lineage)),flush=True)
+        return value
+
+    def _save_verified(self,directory,payload):
+        # This method is reached only after complete local/global replay succeeds.
+        bindings=payload[3];self.check_bindings(bindings);lineage=[];current=directory
+        while current is not None:
+            if current in lineage or len(lineage)>=32:
+                raise ValueError('Original acyclic ancestry bound required before reuse')
+            for name in ['protocol.json','result.json']:
+                if str(current/name) not in bindings:raise ValueError('Complete bound history lineage required')
+            lineage.append(current);protocol=read(current/'protocol.json');prior=protocol.get('interval_resume')
+            current=(ROOT/prior['directory']).resolve() if prior is not None else None
+            if prior is not None and bindings.get(str(current/'result.json'))!=prior['result_sha256']:
+                raise ValueError('Exact verified ancestor result required')
+        self.check_bindings(bindings)
+        self.__entry=(directory,tuple(lineage),self.clone(payload));self.full_replays+=1
+
+    def statistics(self):
+        return dict(schema='strep-same-worker-history-v1',cached_states=int(self.__entry is not None),
+            reused_histories=self.hits,full_native_replays=self.full_replays,
+            scope='One in-memory state, fixed original context, full binding checks; new stages still receive complete local/global replay. No cross-worker saved cache or quality approval.',
+            quality_approved=False,release_approved=False)
 
 
 def original_limits(window):
@@ -169,10 +263,15 @@ def replay_local(directory,protocol,result,window,origin,bind):
     return controls,dict(np.load(directory/'trials/final/window.npz',allow_pickle=False)),len(observations)
 
 
-def resume_interval(directory,study,factory,source,frames,width,original_bindings,methods,definitions,origin_type,*,ancestors=()):
+def resume_interval(directory,study,factory,source,frames,width,original_bindings,methods,definitions,origin_type,*,ancestors=(),replay_session=None):
     directory=Path(directory).resolve()
     if not directory.is_relative_to(ROOT.resolve()) or directory in ancestors or len(ancestors)>=32:
         raise ValueError('In-project acyclic interval chain of at most32 stages required')
+    if replay_session is not None:
+        if type(replay_session) is not IntervalReplaySession:raise ValueError('Owned in-memory interval session required')
+        replay_session._check_request(study,factory,source,frames,width,original_bindings,methods,definitions,origin_type)
+        reused=replay_session._load_verified(directory,ancestors)
+        if reused is not None:return reused
     print(dict(stage='interval_resume_reading',directory=directory.relative_to(ROOT).as_posix()),flush=True)
     protocol=read(directory/'protocol.json');result=read(directory/'result.json');pipeline=read(directory/'pipeline.json')
     partition_frames(protocol.get('frames'),protocol.get('width'))
@@ -200,7 +299,7 @@ def resume_interval(directory,study,factory,source,frames,width,original_binding
     for name in ['result.json','pipeline.json']:checked[str(directory/name)]=sha256(directory/name)
     prior=protocol.get('interval_resume');state=pose_tracks(source);parameters={}
     if prior is not None:
-        state,parameters,receipt,extra=resume_interval(ROOT/prior['directory'],study,factory,source,frames,width,original_bindings,methods,definitions,origin_type,ancestors=ancestors+(directory,))
+        state,parameters,receipt,extra=resume_interval(ROOT/prior['directory'],study,factory,source,frames,width,original_bindings,methods,definitions,origin_type,ancestors=ancestors+(directory,),replay_session=replay_session)
         if receipt['result_sha256']!=prior['result_sha256']:raise ValueError('Interval ancestor result differs')
         checked.update(extra)
     baseline,labels,before=evaluate_interval(factory,frames,state,parameters,width=width)
@@ -239,4 +338,6 @@ def resume_interval(directory,study,factory,source,frames,width,original_binding
         original_references_preserved=True,quality_approved=False,release_approved=False,
         scope='Fully bound diagnostic interval history with exact saved origins, current exterior keys and complete local/global retention replay; no animation/export/engine/human certificate.')
     print(dict(stage='interval_resume_verified',directory=receipt['directory']),flush=True)
-    return proposed,current,receipt,checked
+    payload=(proposed,current,receipt,checked)
+    if replay_session is not None:replay_session._save_verified(directory,payload)
+    return payload

@@ -17,8 +17,12 @@ def fixture(tmp_path,monkeypatch,*,first_rejected=False,elapsed_per_stage=0):
         active.append(True)
         try:yield
         finally:active.pop()
-    def stage(study,directory,frames,width,*args):
+    owned_session=[]
+    def stage(study,directory,frames,width,*args,replay_session=None):
         assert active and study==source
+        assert type(replay_session) is module.repair.IntervalReplaySession
+        if owned_session:assert replay_session is owned_session[0]
+        else:owned_session.append(replay_session)
         latest,excluded=args[-2:];windows=module.partition_frames(frames,width)
         block=next(w for w in windows if w not in excluded);calls.append((latest,excluded.copy(),block))
         directory.mkdir();result=dict(status='complete',selected_frames=block,decision=dict(update_retained=not(first_rejected and len(calls)==1),source_rows_preserved=True),
@@ -49,8 +53,8 @@ def test_admission_budget_keeps_complete_stage_and_remaining_failures_visible(tm
 
 def test_rewritten_stage_result_is_detected_before_batch_publication(tmp_path,monkeypatch):
     source,calls,_=fixture(tmp_path,monkeypatch);stage=module.repair._run
-    def corrupt(*args):
-        result=stage(*args)
+    def corrupt(*args,**kwargs):
+        result=stage(*args,**kwargs)
         if len(calls)==2:module.save(tmp_path/'batch/stage-1/result.json',{})
         return result
     monkeypatch.setattr(module.repair,'_run',corrupt)

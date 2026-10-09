@@ -48,14 +48,15 @@ def _run(study,output,frames,width,resume,stages,seconds,iterations,trust,solve_
         scheduling_inputs_sha256=bindings,methods_sha256=method_hashes,max_stages=stages,
         local_fit_seconds=seconds,iterations=iterations,trust_normalized=trust,proposal_solve_iterations=solve_iterations,
         admission_budget_seconds=max_seconds,minimum_admission_seconds=seconds+300,
-        scope='An attempted-window coverage pass with full native state replay/retention per stage; admission budget is checked between stages. Use an owned hard time/memory supervisor. No quality, metadata, engine or human approval.',quality_approved=False,release_approved=False)
+        history_reuse_policy='same-worker-last-verified-state-bindings-v1',
+        scope='An attempted-window coverage pass; newly seen states receive full native replay, and previously verified ancestors can be reused within this worker after complete binding checks. Original retention gates remain unchanged. Admission budget is checked between stages; use an owned hard time/memory supervisor. No quality, metadata, engine or human approval.',quality_approved=False,release_approved=False)
     save(output/'protocol.json',protocol);save(output/'pipeline.json',dict(status='processing',quality_approved=False,release_approved=False))
-    started=time.monotonic();records=[];latest=resume;stop='stage_limit'
+    started=time.monotonic();records=[];latest=resume;stop='stage_limit';replay_session=repair.IntervalReplaySession()
     for index in range(stages):
         if select_window(frames,canonical,width,exclusions) is None:stop='coverage_schedule_exhausted';break
         if max_seconds-(time.monotonic()-started)<seconds+300:stop='admission_budget';break
         directory=output/('stage-'+str(index+1))
-        result=repair._run(study,directory,frames,width,iterations,trust,seconds,solve_iterations,latest,exclusions.copy())
+        result=repair._run(study,directory,frames,width,iterations,trust,seconds,solve_iterations,latest,exclusions.copy(),replay_session=replay_session)
         if (result.get('status')!='complete' or any(result.get(k) is not False for k in ['quality_approved','release_approved'])
                 or result['selected_frames'] in exclusions):raise ValueError('Complete unapproved new-window diagnostic required')
         block=result['selected_frames'];select_window(frames,canonical,width,[block]);exclusions.append(block.copy())
@@ -66,7 +67,7 @@ def _run(study,output,frames,width,resume,stages,seconds,iterations,trust,solve_
         records.append(dict(directory=directory.relative_to(ROOT).as_posix(),result_sha256=sha256(directory/'result.json'),
             selected_frames=block,update_retained=result['decision']['update_retained'],local_stop=result['local_stop']))
         save(output/'progress.json',dict(status='processing',records=records,attempted_windows=exclusions,
-            latest_retained_interval=None if latest is None else latest.relative_to(ROOT).as_posix(),quality_approved=False,release_approved=False))
+            latest_retained_interval=None if latest is None else latest.relative_to(ROOT).as_posix(),history_reuse=replay_session.statistics(),quality_approved=False,release_approved=False))
         print(dict(stage='batch_retained' if result['decision']['update_retained'] else 'batch_rejected',index=index+1,frames=block),flush=True)
     remaining=[w for w in windows if w not in exclusions]
     if any(sha256(Path(path))!=digest for path,digest in bindings.items()):raise ValueError('Bound scheduling history changed')
@@ -76,7 +77,7 @@ def _run(study,output,frames,width,resume,stages,seconds,iterations,trust,solve_
     result=dict(at=now(),status='complete',stop=stop,seconds=time.monotonic()-started,records=records,
         attempted_windows=exclusions,remaining_windows=remaining,coverage_schedule_exhausted=not remaining,
         latest_retained_interval=None if latest is None else latest.relative_to(ROOT).as_posix(),protocol_sha256=sha256(output/'protocol.json'),
-        scope=protocol['scope'],quality_approved=False,release_approved=False)
+        scope=protocol['scope'],history_reuse=replay_session.statistics(),quality_approved=False,release_approved=False)
     save(output/'result.json',result);save(output/'pipeline.json',dict(status='complete',quality_approved=False,release_approved=False))
     return result
 
