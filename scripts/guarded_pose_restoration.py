@@ -19,8 +19,10 @@ from grasp_pose_witness import norm_slack_and_jacobian
 from protected_inequality_step import fit,retain
 from sparse_pose_jacobian import SparsePoseJacobian
 from pose_restoration_policy import tradeoff_policy,row_diagnostics,proposal_headroom
+from pose_proposal_archive import ProposalArchive,load_record
 
-METHODS=POSE_METHODS+['guarded_pose_restoration.py','protected_inequality_step.py','sparse_pose_jacobian.py','pose_row_jacobian.py','pose_restoration_policy.py']
+ARCHIVE_METHODS={'pose_proposal_archive.py','native_observation_archive.py'}
+METHODS=POSE_METHODS+['guarded_pose_restoration.py','protected_inequality_step.py','sparse_pose_jacobian.py','pose_row_jacobian.py','pose_restoration_policy.py']+sorted(ARCHIVE_METHODS)
 DEFINITIONS=ROOT/'vendor/kimodo/kimodo/skeleton/definitions.py'
 
 
@@ -47,7 +49,9 @@ def _resume_seed(directory,study,frame,bindings,limits,labels,problem,_ancestors
         checked[str(path)]=digest
     for path,digest in old.items():bind(path,digest)
     methods=protocol.get('methods_sha256',{})
-    if set(methods)!=set(METHODS):raise ValueError('Complete archived resume implementation required')
+    if type(protocol.get('archive_proposals',False)) is not bool:raise ValueError('Explicit resume proposal transport flag required')
+    if set(methods) not in [set(METHODS),set(METHODS)-ARCHIVE_METHODS]:raise ValueError('Complete archived resume implementation required')
+    if protocol.get('archive_proposals',False) and not ARCHIVE_METHODS.issubset(methods):raise ValueError('Archived proposal transport implementation required')
     for name,digest in methods.items():bind(directory/'implementation'/name,digest)
     if protocol.get('native_metadata_sha256')!=sha256(DEFINITIONS):raise ValueError('Resume native metadata differs')
     bind(directory/'implementation/kimodo-skeleton-definitions.py',protocol['native_metadata_sha256'])
@@ -79,8 +83,17 @@ def _resume_seed(directory,study,frame,bindings,limits,labels,problem,_ancestors
         raise ValueError('Complete resume inequality rows required')
     if report['failure_policy']!=protocol['failure_policy'] or report['proposal_tangent_guard'] is not protocol['proposal_tangent_guard']:
         raise ValueError('Resume retention policy differs')
-    if report.get('proposal_start','zero')!=protocol.get('proposal_start','zero') or any(start.get('retained') is not False for start in report.get('proposal_starts',[])):
+    def replay_record(reference,kind):
+        external='archive_schema' in reference
+        if external is not bool(protocol.get('archive_proposals',False)) or (external and reference.get('kind')!=kind):
+            raise ValueError('Resume proposal transport policy differs')
+        record,extra=load_record(directory,reference)
+        for path,digest in extra.items():bind(path,digest)
+        return record
+    if report.get('proposal_start','zero')!=protocol.get('proposal_start','zero') or any(replay_record(start,'start').get('retained') is not False for start in report.get('proposal_starts',[])):
         raise ValueError('Resume initialization policy differs or linear start was promoted')
+    if protocol.get('archive_proposals',False):
+        for reference in report['proposal_linearizations']:replay_record(reference,'linearization')
     baseline=before.copy();last=controls(np.asarray(observations['seed']['parameters'])/scale)
     prior=protocol.get('resume')
     origin=problem.seed if prior is None else _resume_seed(ROOT/prior['directory'],study,frame,bindings,limits,labels,problem,
@@ -92,6 +105,7 @@ def _resume_seed(directory,study,frame,bindings,limits,labels,problem,_ancestors
     with torch.no_grad():origin_values=problem.geometry_slack(problem.t(origin)).numpy()
     np.testing.assert_allclose(np.r_[origin_values,norm_slack_and_jacobian(origin,problem.limits)[0]],before,rtol=1e-10,atol=1e-10)
     retained_labels={'final'}
+    current_linear=None
     for trial in report['trials']:
         if trial.get('nonlinear_replay') is False:
             if trial['accepted']:raise ValueError('Unmeasured resume proposal cannot be retained')
@@ -103,7 +117,8 @@ def _resume_seed(directory,study,frame,bindings,limits,labels,problem,_ancestors
         if report['proposal_tangent_guard']:
             matches=[l for l in report['proposal_linearizations'] if l['iteration']==trial['iteration']]
             if len(matches)!=1:raise ValueError('Unique resume linearization required')
-            linear=matches[0];ids=np.flatnonzero(~(mask&(before<0)));jac=np.asarray(linear['jacobian'])
+            if current_linear is None or current_linear['iteration']!=trial['iteration']:current_linear=replay_record(matches[0],'linearization')
+            linear=current_linear;ids=np.flatnonzero(~(mask&(before<0)));jac=np.asarray(linear['jacobian'])
             if jac.shape!=(len(labels),problem.dim) or not np.isfinite(jac).all():raise ValueError('Complete resume tangent rows required')
             np.testing.assert_array_equal(linear['protected_rows'],ids)
             np.testing.assert_array_equal(linear['slacks'],before)
@@ -142,7 +157,7 @@ def _resume_seed(directory,study,frame,bindings,limits,labels,problem,_ancestors
         scope='Verified diagnostic warm start; original budgets and fixed neighbors remain unchanged. No quality approval.'),checked
 
 
-def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal,proposal_start,body_headroom):
+def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal,proposal_start,body_headroom,archive_proposals):
     summary=read(study/'fit/summary.json')
     if (summary.get('solver_version')!=17 or read(study/'pipeline.json')['status']!='complete'
             or len(summary['trials'])!=1 or sha256(ASSET)!=summary['mesh_sha256']):
@@ -190,6 +205,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
         failure_policy=failure_policy,point_policy=point_policy,point_proposal=point_proposal,
         proposal_feasible_mask=feasible.tolist(),proposal_headroom_normalized=headroom.tolist(),
         body_proposal_headroom_normalized=body_headroom,
+        archive_proposals=archive_proposals,
         proposal_tangent_guard=tangent_guard,tangent_proposal_headroom_normalized=1e-6 if tangent_guard else 0.,
         inequality_labels=labels,tradeoff_mask=mask.tolist(),
         normalization='Archived pose slack units: point/object/floor over 10 mm, normal chord ratio, '
@@ -201,6 +217,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
         scope='One native pose and fixed adjacent keys; no full-clip, support-slide, between-key, '
             'triangle/volume, self-collision, anatomy, dynamics, import or human certificate.',quality_approved=False,release_approved=False)
     save(output/'protocol.json',protocol);save(output/'pipeline.json',dict(status='processing',stage='Guarded nonlinear restoration'))
+    record_store=ProposalArchive(output) if archive_proposals else None
     scale=np.r_[np.repeat(problem.limits,3),problem.config['max_root_lift_m']]
     seed=seed_parameters/scale;lower=np.r_[np.full(problem.dim-1,-1.),0.];upper=np.ones(problem.dim)
     sparse=SparsePoseJacobian(problem,row_chunk=row_chunk)
@@ -240,7 +257,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
     value,report=fit(measure,linearize,seed,lower,upper,iterations=iterations,trust=trust,seconds=seconds,
         observer=observer,failure_policy=failure_policy,tradeoff_mask=mask,proposal=proposal,solve_iterations=solve_iterations,
         proposal_feasible_mask=feasible,proposal_headroom=headroom,proposal_tangent_guard=tangent_guard,proposal_start=proposal_start,
-        vectorize=vectorize if proposal_start=='geometry-descent' else None)
+        vectorize=vectorize if proposal_start=='geometry-descent' else None,record_store=record_store)
     candidate,motion=problem.independent(value*scale)
     with torch.no_grad():_,_,_,vertices=problem.fk(problem.t(value*scale))
     error=float(np.abs(vertices.numpy()-problem.surface.vertices(motion['global_rot_mats'][0],motion['posed_joints'][0])).max())
@@ -271,7 +288,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
 
 
 def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='rowwise',proposal='linear',solve_iterations=100,row_chunk=None,
-        point_policy='preserve',point_proposal='preserve',point_headroom=0.,tangent_guard=False,resume=None,body_proposal='preserve',proposal_start='zero',body_headroom=0.):
+        point_policy='preserve',point_proposal='preserve',point_headroom=0.,tangent_guard=False,resume=None,body_proposal='preserve',proposal_start='zero',body_headroom=0.,archive_proposals=False):
     study=Path(study).resolve();output=Path(output).resolve();existed=output.exists()
     if (type(frame) is not int or type(iterations) is not int or not 1<=iterations<=100
             or type(trust) not in (int,float) or not np.isfinite(trust) or not 1e-5<=trust<=.3
@@ -280,6 +297,7 @@ def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='r
             or point_proposal not in ['preserve','feasible'] or type(point_headroom) not in (int,float)
             or not np.isfinite(point_headroom) or not 0<=point_headroom<=1e-3
             or type(body_headroom) not in (int,float) or not np.isfinite(body_headroom) or not 0<=body_headroom<=1e-3
+            or type(archive_proposals) is not bool
             or type(tangent_guard) is not bool or (tangent_guard and proposal!='nonlinear')
             or body_proposal not in ['preserve','feasible']
             or proposal_start not in ['zero','linear-feasible','geometry-descent'] or (proposal_start!='zero' and proposal!='nonlinear')
@@ -290,7 +308,7 @@ def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='r
     if resume is not None and (output.is_relative_to(Path(resume).resolve()) or Path(resume).resolve().is_relative_to(output)):
         raise ValueError('Resume artifacts and new output must be separate immutable studies')
     with worker_lock(),threadpool_limits(limits=2):
-        try:return _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal,proposal_start,body_headroom)
+        try:return _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal,proposal_start,body_headroom,archive_proposals)
         except Exception as exc:
             if not existed and output.exists():save(output/'pipeline.json',dict(status='failed',error_type=type(exc).__name__,
                 error=str(exc),quality_approved=False,release_approved=False))
@@ -312,5 +330,6 @@ if __name__=='__main__':
     parser.add_argument('--body-proposal',choices=['preserve','feasible'],default='preserve')
     parser.add_argument('--proposal-start',choices=['zero','linear-feasible','geometry-descent'],default='zero')
     parser.add_argument('--body-headroom',type=float,default=0.,help='Search-only normalized margin for reference-position rows; final limits unchanged')
+    parser.add_argument('--archive-proposals',action='store_true',help='Stream complete bound proposal reports; preserve inline default')
     args=parser.parse_args();run(args.study,args.output,args.frame,args.iterations,args.trust,args.seconds,args.failure_policy,args.proposal,
-        args.solve_iterations,args.row_chunk,args.point_policy,args.point_proposal,args.point_headroom,args.tangent_guard,args.resume,args.body_proposal,args.proposal_start,args.body_headroom)
+        args.solve_iterations,args.row_chunk,args.point_policy,args.point_proposal,args.point_headroom,args.tangent_guard,args.resume,args.body_proposal,args.proposal_start,args.body_headroom,args.archive_proposals)

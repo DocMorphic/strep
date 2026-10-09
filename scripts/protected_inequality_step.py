@@ -119,7 +119,7 @@ def _geometry_descent_start(values,jac,caps,lower,upper,seconds,vectors):
 
 def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_iterations=100,
         seconds=300,maximum_calls=1000,observer=None,failure_policy='rowwise',tradeoff_mask=None,
-        proposal='linear',proposal_feasible_mask=None,proposal_headroom=None,proposal_tangent_guard=False,proposal_start='zero',vectorize=None):
+        proposal='linear',proposal_feasible_mask=None,proposal_headroom=None,proposal_tangent_guard=False,proposal_start='zero',vectorize=None,record_store=None):
     seed=np.asarray(seed,dtype=float);lower=np.asarray(lower,dtype=float);upper=np.asarray(upper,dtype=float)
     if (seed.ndim!=1 or not len(seed) or lower.shape!=seed.shape or upper.shape!=seed.shape
             or not np.isfinite(np.r_[seed,lower,upper]).all() or np.any(lower>=upper)
@@ -132,9 +132,11 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
             or failure_policy not in ['rowwise','merit'] or proposal not in ['linear','nonlinear']
             or proposal_start not in ['zero','linear-feasible','geometry-descent'] or (proposal_start!='zero' and proposal!='nonlinear')
             or (proposal_start=='geometry-descent' and not callable(vectorize)) or (proposal_start!='geometry-descent' and vectorize is not None)
+            or (record_store is not None and not callable(record_store))
             or type(proposal_tangent_guard) is not bool or (proposal_tangent_guard and proposal!='nonlinear')):
         raise ValueError('Finite seed, matching control bounds and explicit step budgets required')
     started=time.monotonic();calls=0;history=[];trials=[];queries=[];clips=[];linearizations=[];starts=[];value=seed.copy()
+    def store_record(kind,record):return record if record_store is None else record_store(kind,record)
     class Exhausted(Exception):pass
     def check():
         if calls>=maximum_calls or time.monotonic()-started>=seconds:raise Exhausted()
@@ -170,9 +172,9 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
                 # exact preservation caps. This is not a continuous-path gate.
                 tangent_caps=preservation[hard]+1e-6
             if proposal_tangent_guard or proposal_start!='zero':
-                linearizations.append(dict(iteration=iteration+1,controls=value.tolist(),slacks=current.tolist(),
+                linearizations.append(store_record('linearization',dict(iteration=iteration+1,controls=value.tolist(),slacks=current.tolist(),
                     jacobian=jac.tolist(),protected_rows=np.flatnonzero(hard).tolist(),
-                    preservation_caps=preservation[hard].tolist(),tangent_proposal_caps=tangent_caps.tolist() if proposal_tangent_guard else None))
+                    preservation_caps=preservation[hard].tolist(),tangent_proposal_caps=tangent_caps.tolist() if proposal_tangent_guard else None)))
             candidate_lower=np.maximum(lower,value-trust);candidate_upper=np.minimum(upper,value+trust)
             def bounded_candidate(delta):
                 delta=np.asarray(delta,dtype=float)
@@ -246,7 +248,7 @@ def fit(measure,linearize,seed,lower,upper,*,iterations=30,trust=.03,solve_itera
                         candidate_lower-value,candidate_upper-value,remaining,vectors)
                 else:initial,start_report=_linear_feasible_start(current,jac,start_caps,
                     candidate_lower-value,candidate_upper-value,remaining)
-                starts.append(dict(iteration=iteration+1,controls=value.tolist(),retained=False,**start_report))
+                starts.append(store_record('start',dict(iteration=iteration+1,controls=value.tolist(),retained=False,**start_report)))
                 check()
                 if initial is None:stop='linear_start_unavailable';break
                 if proposal_start=='geometry-descent' and attempt(initial,'geometry-start'):

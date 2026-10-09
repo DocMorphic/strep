@@ -14,7 +14,7 @@ import guarded_pose_restoration as module
     dict(point_proposal='guess'),dict(point_headroom=-1e-5),dict(point_headroom=float('nan')),dict(point_headroom=True),
     dict(tangent_guard=1),dict(tangent_guard=True),dict(resume=False),dict(resume=''),dict(body_proposal='guess'),
     dict(proposal_start='guess'),dict(proposal_start=True),dict(proposal_start='linear-feasible'),dict(proposal_start='geometry-descent'),
-    dict(body_headroom=True),dict(body_headroom=-1e-5),dict(body_headroom=1.1e-3),dict(body_headroom=float('nan'))])
+    dict(body_headroom=True),dict(body_headroom=-1e-5),dict(body_headroom=1.1e-3),dict(body_headroom=float('nan')),dict(archive_proposals=1)])
 def test_invalid_options_never_acquire_or_run_worker(tmp_path,monkeypatch,options):
     def forbidden(*args,**kwargs):raise AssertionError('Invalid request reached worker')
     monkeypatch.setattr(module,'worker_lock',forbidden)
@@ -99,6 +99,22 @@ def test_resume_retains_checked_correction_instead_of_last_inner_query(tmp_path,
     np.testing.assert_array_equal(parameters,[.5,0,0,0]);np.testing.assert_array_equal(motion['posed_joints'],[[.5,0,0,0]])
     assert receipt['last_retained_label']=='kept' and receipt['original_references_preserved']
     assert str(args[0]/'trials/query/audit.json') in bindings
+
+
+def test_resume_binds_streamed_reports_and_replays_the_same_retained_pose(tmp_path,monkeypatch):
+    args=resume_fixture(tmp_path,monkeypatch);output=args[0]
+    protocol=module.read(output/'protocol.json');result=module.read(output/'result.json')
+    # The fixture substitutes its one method; real archived modes require both transport methods.
+    monkeypatch.setattr(module,'ARCHIVE_METHODS',set())
+    store=module.ProposalArchive(output);protocol['archive_proposals']=True
+    result['fit']['proposal_linearizations']=[store('linearization',r) for r in result['fit']['proposal_linearizations']]
+    result['fit']['proposal_starts']=[store('start',dict(iteration=1,retained=False,controls=[0.,0.,0.,0.]))]
+    module.save(output/'protocol.json',protocol);result['protocol_sha256']=module.sha256(output/'protocol.json');module.save(output/'result.json',result)
+    parameters,_,_,bindings=module._resume_seed(*args)
+    np.testing.assert_array_equal(parameters,[.5,0,0,0])
+    assert str(output/'proposals/linearization-1.npz') in bindings and str(output/'proposals/start-1.json') in bindings
+    path=output/'proposals/start-1.json';path.write_bytes(path.read_bytes()+b'changed')
+    with pytest.raises(ValueError):module._resume_seed(*args)
 
 
 @pytest.mark.parametrize('damage',['frame','budget','original','method','pose','promoted-query','last-query','slacks','tangent','ancestor',
