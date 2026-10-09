@@ -47,6 +47,7 @@ func start() -> void:
 	runtime=Runtime.new()
 	if runtime.bind(parent,request.asset_folder,request.config)!=OK:
 		report.faults.append(runtime.last_error); finish(2); return
+	report.collision_settings=runtime.collision_settings.duplicate(true)
 	last_tick=int(request.last_tick); report.physics_fps=int(request.config.physics_fps)
 	runtime.loaded.player.gameplay.connect(func(event):
 		report.events.append({"id":event.id,"source_time_f64le":bits(event.time_s),"pose_time_f64le":bits(runtime.loaded.player.pose_time_s)})

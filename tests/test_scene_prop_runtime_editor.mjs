@@ -51,6 +51,9 @@ await command('grip-1','item','releaseA','release');assert.throws(()=>editor.sna
 el('Actor').value='B';await el('Actor').onchange();assert.equal(el('Joint').value,'');assert.deepEqual(el('AlignEvent').children.slice(1).map(e=>e.value),['acquireB','releaseB']);
 el('GripId').value='partner';el('Joint').value='3';await el('AddGrip').onclick();await command('partner','item','acquireB','acquire');await command('partner','item','releaseB','release');
 const snapshot=editor.snapshot();assert.deepEqual(snapshot.request.root_modes,{A:'embedded',B:'extracted'});
+assert.equal('collision_profile' in snapshot.request,false);
+for(const profile of ['engine-default','ccd-threshold','strict-ccd']){el('Collision').value=profile;assert.equal(editor.snapshot().request.collision_profile,profile);}
+el('Collision').value='unknown';assert.throws(()=>editor.snapshot(),/collision profile/);el('Collision').value='ccd-threshold';
 assert.deepEqual(snapshot.request.object_modes,{item:'grip-physics',reference:'authored'});assert.equal(snapshot.request.commands.length,4);
 assert.equal(snapshot.request.grips.partner.actor,'B');assert.equal(snapshot.request.grips['grip-1'].joint_node,4);
 assert.deepEqual(snapshot.request.grips.partner.prop_offsets.item,offsetMatrix([0,0,0],[0,0,0]));
@@ -67,6 +70,7 @@ resolveAlign({game_job:'game1',source_result_sha256:metadata.source_result_sha25
  selection:{actor:'B',joint_node:3,object:'item',event_id:'acquireB'},translation_m:[9,9,9],rotation_xyz_degrees:[0,0,0]});
 await alignPending;assert.equal(el('OffsetX').value,'8');assert.match(el('Status').textContent,/selection changed/);alignmentWaiting=null;
 await el('Save').onclick();assert.deepEqual(saved,editor.snapshot());await el('Build').onclick();assert.deepEqual(posted,saved);assert.equal(el('Build').disabled,false);
+assert.equal(saved.request.collision_profile,'ccd-threshold');assert.equal(posted.request.collision_profile,'ccd-threshold');
 assert.equal(nodes.get('nativeSceneGameJobs').value,'game1');assert.equal(el('Jobs').value,'prop1');
 await el('Review').onclick();assert.match(el('Results').children[0].textContent,/processing: packaging/);assert.equal(el('Results').children.length,1);
 review={status:'complete',source_scene_conditions_pass:false,root_samples_pass:true,downloads:[{url:'/files/scene-prop-runtime-jobs/prop1/runtime/prop-runtime-assets.zip',label:'package'}]};

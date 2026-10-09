@@ -4,7 +4,8 @@
 explicit source-joint grips and per-prop ownership modes. The Godot main scene
 imports the original actor GLBs, installs their saved native resources and binds
 the shared prop owner automatically. Applications supply a world, floor/colliders,
-camera and gameplay listeners. Studio authoring for these bindings remains open.
+camera and gameplay listeners. [Studio grip authoring](studio-prop-grips-v1.md)
+provides explicit source-joint and offset choices; it does not infer a grasp.
 
 Every source actor retains its chosen embedded/extracted root mode. Every source
 prop explicitly chooses `authored` playback or `grip-physics`. Authored props keep
@@ -192,3 +193,10 @@ Follow-up: [offline prop motion baking](scene-prop-bake-v1.md) captures this
 finite runtime into editable prop tracks and retains the original actor and
 intent assets. Its import-rate fix preserves the measured curve without
 removing the earlier timing/collision failures or approving interaction quality.
+
+The optional [packaged collision profile](prop-runtime-collision-v1.md) now carries
+the selected settings from a Studio request into the complete native ZIP and
+editable bake. Runtime binding checks the actual declared project settings before
+importing participants. Omitting the profile preserves legacy configuration and
+startup bytes. These procedural settings do not approve production collisions or
+solve the fixed-boundary physical timing delay.

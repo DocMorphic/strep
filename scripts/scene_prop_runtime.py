@@ -11,6 +11,7 @@ from native_scene_runtime import package_members,configure
 from scene_prop_ownership import compile_plan,name,require
 from primitive_penetration_bounds import rigid
 from strep import ROOT,now,read,save,sha256
+from prop_runtime_collision import profile_document,project_lines
 
 GDS=('godot_scene_prop_runtime.gd','godot_scene_prop_boot.gd','godot_scene_prop_owner.gd','godot_scene_prop_body.gd',
      'godot_native_scene_loader.gd','godot_native_scene_player.gd','godot_native_root_adapter.gd',
@@ -29,16 +30,16 @@ def matrix(value):
     rigid(t[:3,:3]);return t.tolist()
 
 
-def entry_files(physics_fps):
+def entry_files(physics_fps,collision_profile=None):
     """Canonical startup files, also checked against completed Studio downloads."""
     return {
         'ownership-v1/scene.tscn':'[gd_scene load_steps=2 format=3]\n[ext_resource type="Script" path="res://ownership-v1/godot_scene_prop_boot.gd" id="1"]\n[node name="Strep" type="Node3D"]\nscript = ExtResource("1")\n',
-        'project.godot':'config_version=5\n[application]\nconfig/name="Strep explicit prop runtime"\nrun/main_scene="res://ownership-v1/scene.tscn"\n[physics]\ncommon/physics_ticks_per_second='+str(physics_fps)+'\n3d/physics_engine="Jolt Physics"\n[rendering]\nrenderer/rendering_method="gl_compatibility"\n'}
+        'project.godot':'config_version=5\n[application]\nconfig/name="Strep explicit prop runtime"\nrun/main_scene="res://ownership-v1/scene.tscn"\n[physics]\ncommon/physics_ticks_per_second='+str(physics_fps)+'\n3d/physics_engine="Jolt Physics"\n'+project_lines(collision_profile,physics_fps)+'[rendering]\nrenderer/rendering_method="gl_compatibility"\n'}
 
 
 def compile_request(request,config,scene,events,source_digest):
     fields={'schema','source_game_zip_sha256','root_modes','object_modes','grips','commands','physics','physics_fps','history_capacity'}
-    require(isinstance(request,dict) and fields<=set(request) and set(request)<=fields|{'position_tolerance_m','rotation_tolerance_rad'}
+    require(isinstance(request,dict) and fields<=set(request) and set(request)<=fields|{'position_tolerance_m','rotation_tolerance_rad','collision_profile'}
         and request['schema']=='strep-scene-prop-runtime-request-v1','Complete explicit prop runtime request required')
     require(request['source_game_zip_sha256']==source_digest,'Request binds another source game ZIP')
     expected_modes={a['id']:'extracted' if a['extract'] else 'embedded' for a in config['actors']}
@@ -77,10 +78,12 @@ def compile_request(request,config,scene,events,source_digest):
         geometry=scene.objects[key]['geometry'];pos,rot=scene.object_poses(key,np.array([0.]))
         t=np.eye(4);t[:3,:3]=rot[0];t[:3,3]=pos[0]
         props[key]=dict(geometry=geometry.record(),initial_pose=matrix(t.tolist()),inertia_diagonal=np.diag(geometry.uniform_inertia(mass)).tolist(),physics=checked)
-    return dict(schema='strep-scene-prop-runtime-v1',native_scene=copy.deepcopy(config),object_modes=copy.deepcopy(modes),grip_bindings=bindings,
+    result=dict(schema='strep-scene-prop-runtime-v1',native_scene=copy.deepcopy(config),object_modes=copy.deepcopy(modes),grip_bindings=bindings,
                 ownership=plan,props=props,physics_fps=request['physics_fps'],history_capacity=request['history_capacity'],
                 source_game_zip_sha256=source_digest,source_contacts_apply_to='unchanged-authored-reference-only',
                 source_bytes_unchanged=True,physics_verified=False,animation_quality_approved=False,release_approved=False)
+    if 'collision_profile' in request:result['collision_profile']=profile_document(request['collision_profile'],request['physics_fps'])
+    return result
 
 
 def package(source,request_path,output):
@@ -107,7 +110,7 @@ def package(source,request_path,output):
             save(runtime/'prop-runtime.json',compiled)
             (runtime/'ownership-authoring-request.json').write_bytes(request_bytes)
             require(not (project/'project.godot').exists(),'Original package project entry conflicts with prop runtime')
-            for n,text in entry_files(compiled['physics_fps']).items():(project/n).write_bytes(text.encode('utf8'))
+            for n,text in entry_files(compiled['physics_fps'],compiled.get('collision_profile')).items():(project/n).write_bytes(text.encode('utf8'))
             require(sha256(source)==source_digest and request_path.read_bytes()==request_bytes,'Source/request changed during packaging')
             require(all(sha256(project/n)==h for n,h in manifest['files_sha256'].items()),'Original source entry changed')
             require(all(sha256(ROOT/'scripts'/n)==sha256(runtime/n)==h for n,h in methods.items()),'Runtime implementation changed')

@@ -9,6 +9,33 @@ var config: Dictionary = {}
 var bones: Dictionary = {}
 var bodies: Dictionary = {}
 var last_error := ""
+var collision_settings: Dictionary = {}
+
+static func profile_settings(name: String,rate: int) -> Dictionary:
+	if name not in ["engine-default","ccd-threshold","strict-ccd"]: return {}
+	var p := "physics/jolt_physics_3d/"
+	return {
+		p+"simulation/continuous_cd_movement_threshold":0.75 if name=="engine-default" else 0.05,
+		p+"simulation/continuous_cd_max_penetration":0.01 if name=="strict-ccd" else 0.25,
+		p+"simulation/penetration_slop":0.001,p+"simulation/baumgarte_stabilization_factor":0.2,
+		p+"simulation/position_steps":2,p+"simulation/velocity_steps":10,
+		p+"collisions/collision_margin_fraction":0.0,p+"simulation/speculative_contact_distance":0.02,
+		"physics/common/physics_ticks_per_second":rate,"physics/3d/default_gravity":9.81}
+
+func check_collision_profile(document: Dictionary) -> bool:
+	collision_settings.clear()
+	if not document.has("collision_profile"): return true
+	var profile = document.collision_profile
+	if not profile is Dictionary or profile.size()!=3 or profile.get("backend")!="Jolt Physics" or not profile.get("name") is String or not profile.get("settings") is Dictionary: return false
+	var expected := profile_settings(profile.name,int(document.physics_fps))
+	if expected.is_empty() or expected.size()!=profile.settings.size() or ProjectSettings.get_setting("physics/3d/physics_engine")!="Jolt Physics": return false
+	for key in expected:
+		var declared = profile.settings.get(key)
+		var actual = ProjectSettings.get_setting(key)
+		if typeof(declared) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(declared) or declared!=expected[key]: return false
+		if typeof(actual) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(actual) or abs(actual-expected[key])>1e-7: return false
+		collision_settings[key]=actual
+	return true
 
 static func integer(value: Variant,low: int,high: int) -> bool:
 	return typeof(value) in [TYPE_INT,TYPE_FLOAT] and is_finite(value) and value==floor(value) and value>=low and value<=high
@@ -60,6 +87,8 @@ func bind(parent: Node3D,folder: String,document: Dictionary) -> Error:
 	if document.get("schema")!="strep-scene-prop-runtime-v1" or not document.get("native_scene") is Dictionary or not document.get("object_modes") is Dictionary or not document.get("grip_bindings") is Dictionary or not document.get("props") is Dictionary or not document.get("ownership") is Dictionary: return ERR_INVALID_DATA
 	last_error="Physics step/history configuration differs from the running project"
 	if not integer(document.get("physics_fps"),60,240) or int(document.physics_fps) not in [60,120,240] or int(document.physics_fps)!=Engine.physics_ticks_per_second or not integer(document.get("history_capacity"),2,3600): return ERR_INVALID_DATA
+	last_error="Declared collision profile differs from the actual running project"
+	if not check_collision_profile(document): return ERR_INVALID_DATA
 	var scene_path := Loader.checked_path(folder,document.native_scene.get("scene",{}))
 	if scene_path.is_empty(): return ERR_INVALID_DATA
 	var intent = JSON.parse_string(FileAccess.get_file_as_string(scene_path))

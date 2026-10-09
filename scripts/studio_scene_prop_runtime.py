@@ -16,7 +16,7 @@ from strep import ROOT,now,read,save,sha256
 
 NAMESPACE='scene-prop-runtime-jobs'
 SCRIPT_ROOT=Path(__file__).resolve().parent
-METHODS=tuple(dict.fromkeys(NATIVE_METHODS+game.METHODS+GDS+('scene_prop_runtime.py','scene_prop_ownership.py','studio_scene_prop_runtime.py','studio_native_scene_game.py','primitive_penetration_bounds.py')))
+METHODS=tuple(dict.fromkeys(NATIVE_METHODS+game.METHODS+GDS+('scene_prop_runtime.py','scene_prop_ownership.py','studio_scene_prop_runtime.py','studio_native_scene_game.py','primitive_penetration_bounds.py','prop_runtime_collision.py','scene_collision_profile.py')))
 DOWNLOADS=('runtime/prop-runtime-assets.zip','runtime-request.json','runtime/result.json','result.json')
 
 
@@ -118,7 +118,10 @@ def frozen(folder,*,current_methods=True):
     require(read(folder/'runtime-request.json')==payload['request'],'Prop request snapshot differs')
     values=validate_request(payload)
     require(sha256(values[0]/'result.json')==p['source_result_sha256'] and sha256(values[0]/'game-assets.zip')==sha256(folder/'source-game-assets.zip')==p['source_game_zip_sha256'],'Source game package changed')
-    require(set(p['implementation_sha256'])==set(METHODS),'Complete prop method archive required')
+    expected_methods=set(METHODS)
+    if not current_methods and 'collision_profile' not in payload['request'] and not {'prop_runtime_collision.py','scene_collision_profile.py'}&set(p['implementation_sha256']):
+        expected_methods-= {'prop_runtime_collision.py','scene_collision_profile.py'}
+    require(set(p['implementation_sha256'])==expected_methods,'Complete prop method archive required')
     for n,h in p['implementation_sha256'].items():
         require(sha256(folder/'implementation'/n)==h,'Archived prop implementation changed')
         if current_methods:require(sha256(SCRIPT_ROOT/n)==h,'Prop implementation changed during worker')
@@ -179,7 +182,7 @@ def manifest(job):
         config,scene,_,events=configure(folder/'runtime/project',original_manifest,read(folder/'runtime-request.json')['root_modes'])
         expected=compile_request(read(folder/'runtime-request.json'),config,scene,events,p['source_game_zip_sha256'])
         require(json.loads(archive.read('ownership-v1/prop-runtime.json'))==expected,'Portable grip configuration differs from bound request/source')
-        for n,text in entry_files(expected['physics_fps']).items():require(archive.read(n)==text.encode('utf8'),'Portable startup differs from bound physics rate/entry')
+        for n,text in entry_files(expected['physics_fps'],expected.get('collision_profile')).items():require(archive.read(n)==text.encode('utf8'),'Portable startup differs from bound physics rate/entry')
     data.update(source_scene_conditions_pass=r['source_scene_conditions_pass'],root_samples_pass=r['root_samples_pass'],source_game_job=r['source_game_job'],source_bytes_unchanged=True)
     data['downloads']=[dict(label=n,url=f'/files/{NAMESPACE}/{job}/{n}',sha256=sha256(folder/n)) for n in DOWNLOADS];return data
 

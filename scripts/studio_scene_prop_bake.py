@@ -80,7 +80,10 @@ def frozen(folder,*,current_methods=True):
     values=validate_request(payload)
     require(read(folder/'bake-request.json')==values[4] and p['source_result_sha256']==sha256(values[0]/'result.json')
         and sha256(values[0]/'runtime/prop-runtime-assets.zip')==sha256(folder/'source-runtime.zip')==p['source_runtime_zip_sha256'],'Bake source snapshot changed')
-    require(set(p['implementation_sha256'])==set(METHODS),'Complete bake method archive required')
+    expected_methods=set(METHODS)
+    if not current_methods and 'collision_profile' not in values[3][4] and not {'prop_runtime_collision.py','scene_collision_profile.py'}&set(p['implementation_sha256']):
+        expected_methods-= {'prop_runtime_collision.py','scene_collision_profile.py'}
+    require(set(p['implementation_sha256'])==expected_methods,'Complete bake method archive required')
     for n,h in p['implementation_sha256'].items():
         require(sha256(folder/'implementation'/n)==h,'Archived bake implementation changed')
         if current_methods:require(sha256(SCRIPT_ROOT/n)==h,'Bake implementation changed during worker')
@@ -119,7 +122,10 @@ def verify_output(folder,p,values):
     require(all(m[k] is True for k in ('source_actors_unchanged','source_mesh_payload_unchanged','engine_import_verified','original_selected'))
         and all(m[k] is False for k in ('studio_selection_changed','physics_quality_approved','animation_quality_approved','release_approved'))
         and all(baked[k] is False for k in ('renderer_executed','human_reviewed')),'Baked scope/approval changed')
-    require(baked['methods_sha256']=={n:p['implementation_sha256'][n] for n in core.METHODS},'Baked method lineage differs')
+    expected_methods=set(core.METHODS)
+    if 'collision_profile' not in values[3][4] and not {'prop_runtime_collision.py','scene_collision_profile.py'}&set(p['implementation_sha256']):
+        expected_methods-= {'prop_runtime_collision.py','scene_collision_profile.py'}
+    require(baked['methods_sha256']=={n:p['implementation_sha256'][n] for n in expected_methods},'Baked method lineage differs')
     require(all(sha256(folder/'bake/methods'/n)==h for n,h in baked['methods_sha256'].items()),'Archived physical bake method changed')
     require(sha256(folder/'bake/source-runtime.zip')==p['source_runtime_zip_sha256'] and (folder/'bake/bake-request.json').read_bytes()==(folder/'bake-request.json').read_bytes(),'Baked input snapshot differs')
     require(sha256(folder/'bake/capture.json')==baked['capture_sha256'] and sha256(folder/'bake/capture-audit.json')==baked['capture_audit_sha256'],'Captured evidence changed')

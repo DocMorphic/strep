@@ -9,7 +9,8 @@ they do not certify a successful grasp or believable animation.
 
 This SDK requires explicit bindings. The [source-bound package exporter](../../docs/scene-prop-runtime-v1.md)
 can install bodies and providers from authored source joint/offset choices;
-Studio does not yet create those bindings. The existing
+[Studio grip authoring](../../docs/studio-prop-grips-v1.md) creates explicit source
+joint/offset bindings. The existing
 [single-prop consumer](OBJECT-EVENTS.md) and [baked scene clock](SCENES.md) retain
 their separate contracts. Do not attach them as additional drivers of this scene.
 
@@ -222,3 +223,11 @@ no measured benefit here. Exact physical event timing still fails by 11.6667 ms
 at 60 Hz, and held-prop collisions remain disabled.
 
 [Matched settings, retained raw failures and reproduction](../../docs/scene-collision-profiles-v1.md).
+
+The [package collision selector](../../docs/prop-runtime-collision-v1.md) can now
+carry a named profile through the authoring request, native ZIP and editable prop
+bake. Each named package profile pins all ten recorded controls; it includes the
+study's existing slop/margin settings as well as its CCD choices. The importer
+rejects a settings mismatch before installing participants. Omitting the field
+preserves the earlier default project bytes. No profile certifies production
+geometry or exact physical ownership timing.

@@ -16,12 +16,13 @@ from native_engine_clock import clock_wire
 from gltf_tools import read_glb,write_glb,append_accessor
 from object_release import ENGINE
 from strep import ROOT,now,read,save,sha256,offline_environment
+from prop_runtime_collision import verify_actual
 
 CAPTURE='godot_scene_prop_capture.gd'
 IMPORT='godot_native_object_asset.gd'
 ENGINE_SHA256='c8f0a6bc45a19b33541501e57f6f7cd972ab18453743266339d495cbbe846643'
 POSE_LIMIT=3e-5
-METHODS=tuple(dict.fromkeys(NATIVE_METHODS+GDS+(CAPTURE,IMPORT,'scene_prop_bake.py','scene_prop_runtime.py','scene_prop_ownership.py','primitive_penetration_bounds.py','process_monitor.py','object_release.py','release_geometry.py','release_colliders.py','moving_release_colliders.py','object_dynamics.py')))
+METHODS=tuple(dict.fromkeys(NATIVE_METHODS+GDS+(CAPTURE,IMPORT,'scene_prop_bake.py','scene_prop_runtime.py','scene_prop_ownership.py','primitive_penetration_bounds.py','process_monitor.py','object_release.py','release_geometry.py','release_colliders.py','moving_release_colliders.py','object_dynamics.py','prop_runtime_collision.py','scene_collision_profile.py')))
 
 
 def require(value,message):
@@ -60,7 +61,7 @@ def load_package(source,project):
     config,scene,times,events=configure(project,original,request['root_modes'])
     compiled=compile_request(request,config,scene,events,m['source_game_zip_sha256'])
     require(read(project/'ownership-v1/prop-runtime.json')==compiled,'Runtime bindings differ from bound authoring request')
-    for n,text in entry_files(compiled['physics_fps']).items():require((project/n).read_text().replace('\r\n','\n')==text,'Runtime startup/rate differs')
+    for n,text in entry_files(compiled['physics_fps'],compiled.get('collision_profile')).items():require((project/n).read_text().replace('\r\n','\n')==text,'Runtime startup/rate differs')
     return m,original,compiled,scene,times,events
 
 
@@ -106,6 +107,7 @@ def grip_pose(scene,binding,prop,time):
 
 
 def audit_capture(actual,compiled,scene,events,request,request_digest):
+    if 'collision_profile' in compiled:verify_actual(compiled['collision_profile'],actual.get('collision_settings'),compiled['physics_fps'])
     clock=physical_clock(scene.duration,compiled['physics_fps']);source=np.minimum(clock,scene.duration)
     require(actual['schema']=='strep-scene-prop-capture-v1' and actual['request_sha256']==request_digest and actual['physics_fps']==compiled['physics_fps'] and actual['faults']==[],'Capture request/physics/fault mismatch')
     rows=actual['records'];require(len(rows)==len(clock),'Complete finite capture required')

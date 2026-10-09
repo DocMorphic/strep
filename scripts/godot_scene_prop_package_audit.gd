@@ -17,6 +17,9 @@ class ParentListener extends Node3D:
 		var boot = get_node("Strep")
 		receipt.parent_ready=true
 		if boot.motion==null: receipt.faults.append("Exported boot binding failed"); done.emit(receipt); return
+		receipt.collision_settings=boot.runtime.collision_settings.duplicate(true)
+		receipt.continuous_cd={}
+		for id in boot.runtime.bodies: receipt.continuous_cd[id]=boot.runtime.bodies[id].continuous_cd
 		boot.gameplay.connect(func(event): receipt.events.append({"id":event.id,"source_time_s":event.time_s,"pose_time_s":boot.motion.pose_time_s,"source_time_f64le":bits(event.time_s),"pose_time_f64le":bits(boot.motion.pose_time_s),"parent_ready":receipt.parent_ready}))
 		boot.actions_applied.connect(func(actions): receipt.actions+=actions.size())
 		boot.faulted.connect(func(reason): receipt.faults.append(reason); done.emit(receipt))
@@ -24,7 +27,7 @@ class ParentListener extends Node3D:
 			receipt.samples+=1
 			for prop in record.props.values():
 				if "floor" in prop.contacts: receipt.floor_contact=true
-			if record.tick>=360:
+			if record.tick>=3*Engine.physics_ticks_per_second:
 				receipt.final_source_time_s=record.source_time_s; receipt.actors=boot.motion.actors.keys(); receipt.props=record.props.keys(); done.emit(receipt)
 		)
 
@@ -63,8 +66,12 @@ func begin() -> void:
 	var floor_body := StaticBody3D.new(); floor_body.set_meta("strep_collider_id","floor")
 	var collision := CollisionShape3D.new(); collision.shape=WorldBoundaryShape3D.new(); floor_body.add_child(collision); root.add_child(floor_body)
 	var child_count := parent.get_child_count()
-	for fault in ["offset","bone","node","geometry","inertia","object-mode","source-hash","event-clock","rate","mass"]:
+	var faults: Array = ["offset","bone","node","geometry","inertia","object-mode","source-hash","event-clock","rate","mass"]
+	if config.has("collision_profile"): faults.append_array(["collision-name","collision-value","collision-extra","collision-project"])
+	for fault in faults:
 		var bad: Dictionary = config.duplicate(true); var key: String = bad.grip_bindings.keys()[0]; var prop: String = bad.props.keys()[0]
+		var setting := "physics/jolt_physics_3d/simulation/continuous_cd_movement_threshold"
+		var saved_setting = ProjectSettings.get_setting(setting)
 		match fault:
 			"offset": bad.grip_bindings[key].prop_offsets[prop][0][0]=2
 			"bone": bad.grip_bindings[key].bone="ghost"
@@ -76,12 +83,20 @@ func begin() -> void:
 			"event-clock": bad.ownership.clock.bytes_hex="00"
 			"rate": bad.physics_fps=90
 			"mass": bad.props[prop].physics.mass_kg=false
+			"collision-name": bad.collision_profile.name="unknown"
+			"collision-value": bad.collision_profile.settings[setting]=false
+			"collision-extra": bad.collision_profile.settings["undocumented"]=1
+			"collision-project": ProjectSettings.set_setting(setting,0.04)
 		var candidate = Runtime.new()
-		if candidate.bind(parent,request.asset_folder,bad)==OK or parent.get_child_count()!=child_count: fail("Malformed staged prop runtime leaked participants: "+fault); return
+		var accepted: bool = candidate.bind(parent,request.asset_folder,bad)==OK
+		ProjectSettings.set_setting(setting,saved_setting)
+		if accepted or parent.get_child_count()!=child_count: fail("Malformed staged prop runtime leaked participants: "+fault); return
 		result.malformed_rejected+=1
 	runtime=Runtime.new()
 	if runtime.bind(parent,request.asset_folder,config)!=OK: fail("Packaged actual actors/props rejected: "+runtime.last_error); return
 	result.engine=Engine.get_version_info(); result.mode=config.object_modes; result.extraction={}
+	result.collision_settings=runtime.collision_settings.duplicate(true); result.continuous_cd={}
+	for id in runtime.bodies: result.continuous_cd[id]=runtime.bodies[id].continuous_cd
 	for id in runtime.loaded.player.actors: result.extraction[id]=runtime.loaded.player.actors[id].extracted
 	result.visibility={}
 	for id in runtime.loaded.objects: result.visibility[id]=runtime.loaded.objects[id].visible
