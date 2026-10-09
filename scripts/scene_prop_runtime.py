@@ -12,6 +12,7 @@ from scene_prop_ownership import compile_plan,name,require
 from primitive_penetration_bounds import rigid
 from strep import ROOT,now,read,save,sha256
 from prop_runtime_collision import profile_document,project_lines
+from scene_prop_physics_timing import timing,enforce
 
 GDS=('godot_scene_prop_runtime.gd','godot_scene_prop_boot.gd','godot_scene_prop_owner.gd','godot_scene_prop_body.gd',
      'godot_native_scene_loader.gd','godot_native_scene_player.gd','godot_native_root_adapter.gd',
@@ -39,7 +40,7 @@ def entry_files(physics_fps,collision_profile=None):
 
 def compile_request(request,config,scene,events,source_digest):
     fields={'schema','source_game_zip_sha256','root_modes','object_modes','grips','commands','physics','physics_fps','history_capacity'}
-    require(isinstance(request,dict) and fields<=set(request) and set(request)<=fields|{'position_tolerance_m','rotation_tolerance_rad','collision_profile'}
+    require(isinstance(request,dict) and fields<=set(request) and set(request)<=fields|{'position_tolerance_m','rotation_tolerance_rad','collision_profile','maximum_application_delay_s'}
         and request['schema']=='strep-scene-prop-runtime-request-v1','Complete explicit prop runtime request required')
     require(request['source_game_zip_sha256']==source_digest,'Request binds another source game ZIP')
     expected_modes={a['id']:'extracted' if a['extract'] else 'embedded' for a in config['actors']}
@@ -83,6 +84,7 @@ def compile_request(request,config,scene,events,source_digest):
                 source_game_zip_sha256=source_digest,source_contacts_apply_to='unchanged-authored-reference-only',
                 source_bytes_unchanged=True,physics_verified=False,animation_quality_approved=False,release_approved=False)
     if 'collision_profile' in request:result['collision_profile']=profile_document(request['collision_profile'],request['physics_fps'])
+    if 'maximum_application_delay_s' in request:result['physical_timing']=enforce(timing(plan,request['physics_fps'],request['maximum_application_delay_s']))
     return result
 
 

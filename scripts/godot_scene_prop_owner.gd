@@ -37,6 +37,64 @@ var busy := false
 var save_history := true
 var last_command := ""
 var physics_root_deltas: Dictionary = {}
+var physical_timing: Dictionary = {}
+
+static func timing_report(document: Dictionary,physics_rate: int,maximum_delay_bits: Variant) -> Dictionary:
+	if physics_rate not in [60,120,240] or not maximum_delay_bits is String or maximum_delay_bits.length()!=16: return {}
+	var cap_bytes: PackedByteArray = maximum_delay_bits.hex_decode()
+	if cap_bytes.size()!=8 or cap_bytes.hex_encode()!=maximum_delay_bits: return {}
+	var cap: float = cap_bytes.decode_double(0)
+	if not is_finite(cap) or cap<0.0: return {}
+	if not document.get("clock") is Dictionary or not document.get("groups") is Array or not document.get("objects") is Array: return {}
+	var times := Clock.decode(document.clock,int(document.clock.get("count",0)))
+	if times.is_empty() or document.groups.is_empty() or document.groups.size()>1024: return {}
+	var rows: Array = []; var collisions: Array = []; var seen := {}; var previous := -1; var maximum := 0.0
+	var bytes := PackedByteArray(); bytes.resize(document.groups.size()*24)
+	for index in range(document.groups.size()):
+		var group = document.groups[index]
+		if not group is Dictionary or not group.get("transitions") is Array or group.transitions.is_empty(): return {}
+		var sample = group.get("sample_index")
+		if typeof(sample) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(sample) or sample!=int(sample) or sample<=previous or sample>=times.size(): return {}
+		previous=int(sample); var time: float = times[previous]
+		if time>2147483647.0/physics_rate: return {}
+		var at: int = int(ceil(time*physics_rate))
+		while float(at)/physics_rate<time: at+=1
+		while at>0 and float(at-1)/physics_rate>=time: at-=1
+		if at>2147483647: return {}
+		var applied: float = float(at)/physics_rate; var delay: float = applied-time
+		maximum=max(maximum,delay); bytes.encode_double(index*24,time); bytes.encode_double(index*24+8,applied); bytes.encode_double(index*24+16,delay)
+		var names: Array = []
+		for transition in group.transitions:
+			if not transition is Dictionary or not transition.get("object") is String or transition.object not in document.objects or transition.object in names: return {}
+			names.append(transition.object)
+			var key: String = transition.object+":"+str(at)
+			if seen.has(key): collisions.append({"object":transition.object,"tick":at,"first_group":seen[key],"later_group":index})
+			else: seen[key]=index
+		rows.append({"group_index":index,"sample_index":previous,"tick":at,"objects":names})
+	return {"schema":"strep-scene-prop-physics-timing-v1","physics_fps":physics_rate,"maximum_delay_f64le":maximum_delay_bits,
+		"application_clock":{"schema":"strep-physics-event-clock-f64le-v1","count":rows.size(),"bytes_hex":bytes.hex_encode()},
+		"groups":rows,"collapsed_prop_transactions":collisions,"within_requested_delay":maximum<=cap,
+		"distinct_prop_boundaries":collisions.is_empty(),"contract_satisfied":maximum<=cap and collisions.is_empty(),"quality_approved":false,"release_approved":false}
+
+static func checked_timing(document: Dictionary,report: Variant,physics_rate: int) -> bool:
+	if not report is Dictionary: return false
+	var expected := timing_report(document,physics_rate,report.get("maximum_delay_f64le"))
+	if expected.is_empty() or not expected.contract_satisfied or report.size()!=expected.size(): return false
+	for key in ["schema","maximum_delay_f64le"]:
+		if report.get(key)!=expected[key]: return false
+	for key in ["within_requested_delay","distinct_prop_boundaries","contract_satisfied","quality_approved","release_approved"]:
+		if typeof(report.get(key))!=TYPE_BOOL or report[key]!=expected[key]: return false
+	if report.get("physics_fps")!=physics_rate or not report.get("application_clock") is Dictionary: return false
+	var clock: Dictionary = report.application_clock
+	if typeof(clock.get("count")) not in [TYPE_INT,TYPE_FLOAT]: return false
+	if clock.size()!=3 or clock.get("schema")!=expected.application_clock.schema or clock.get("count")!=expected.application_clock.count or clock.get("bytes_hex")!=expected.application_clock.bytes_hex: return false
+	if not report.get("collapsed_prop_transactions") is Array or not report.collapsed_prop_transactions.is_empty() or not report.get("groups") is Array or report.groups.size()!=expected.groups.size(): return false
+	for index in range(expected.groups.size()):
+		var row = report.groups[index]; var other: Dictionary = expected.groups[index]
+		if not row is Dictionary or row.size()!=4 or row.get("objects")!=other.objects: return false
+		for field in ["group_index","sample_index","tick"]:
+			if typeof(row.get(field)) not in [TYPE_INT,TYPE_FLOAT] or row[field]!=other[field]: return false
+	return true
 
 static func rigid(t: Transform3D) -> bool:
 	return t.is_finite() and abs(t.basis.determinant()-1.0)<0.00001 and t.basis.is_equal_approx(t.basis.orthonormalized())
@@ -82,7 +140,7 @@ func commit_receipt(record: Dictionary) -> Dictionary:
 	freeze_containers(receipt)
 	return receipt
 
-func bind(native_scene,document: Dictionary,props: Dictionary,grips: Dictionary,physics_rate: int = 240,capacity: int = 1800) -> Error:
+func bind(native_scene,document: Dictionary,props: Dictionary,grips: Dictionary,physics_rate: int = 240,capacity: int = 1800,timing_contract: Variant = null) -> Error:
 	if configured or native_scene == null or not native_scene.bound or native_scene.playback_time_s != null or native_scene.pose_time_s != 0.0 or native_scene.has_meta("strep_prop_owner"): return ERR_INVALID_PARAMETER
 	if physics_rate not in [60,120,240] or Engine.physics_ticks_per_second != physics_rate or capacity<2 or capacity>3600: return ERR_INVALID_PARAMETER
 	if document.get("schema") != "strep-scene-prop-ownership-v1" or not document.get("clock") is Dictionary or not document.get("objects") is Array or not document.get("grips") is Dictionary or not document.get("groups") is Array or not document.get("source_events") is Array: return ERR_INVALID_DATA
@@ -133,6 +191,9 @@ func bind(native_scene,document: Dictionary,props: Dictionary,grips: Dictionary,
 				if occupancy.has(grip): return ERR_INVALID_DATA
 				occupancy[grip]=true
 		checked=next
+	if timing_contract!=null:
+		if not checked_timing(document,timing_contract,physics_rate): return ERR_INVALID_DATA
+		physical_timing=timing_contract.duplicate(true)
 	# Whole source/participant/transition preflight precedes body mutation.
 	scene=native_scene; plan=document.duplicate(true); bodies=props.duplicate(); providers=grips.duplicate(); rate=physics_rate; history_limit=capacity
 	scene.set_meta("strep_prop_owner",get_instance_id())
@@ -204,6 +265,7 @@ func prepare_step() -> void:
 	while group_cursor<plan.groups.size():
 		var group: Dictionary = plan.groups[group_cursor]; var time: float = scene.times[int(group.sample_index)]
 		if time>target: break
+		if not physical_timing.is_empty() and physical_timing.groups[group_cursor].tick!=tick: stop("Ownership boundary differs from declared physical timing"); return
 		if not scene.advance_to(time).valid: stop("Native ownership event advance rejected"); return
 		var commits := {}; var planned_actions: Array = []
 		for transition in group.transitions:

@@ -17,12 +17,13 @@ from gltf_tools import read_glb,write_glb,append_accessor
 from object_release import ENGINE
 from strep import ROOT,now,read,save,sha256,offline_environment
 from prop_runtime_collision import verify_actual
+from scene_prop_physics_timing import timing,enforce
 
 CAPTURE='godot_scene_prop_capture.gd'
 IMPORT='godot_native_object_asset.gd'
 ENGINE_SHA256='c8f0a6bc45a19b33541501e57f6f7cd972ab18453743266339d495cbbe846643'
 POSE_LIMIT=3e-5
-METHODS=tuple(dict.fromkeys(NATIVE_METHODS+GDS+(CAPTURE,IMPORT,'scene_prop_bake.py','scene_prop_runtime.py','scene_prop_ownership.py','primitive_penetration_bounds.py','process_monitor.py','object_release.py','release_geometry.py','release_colliders.py','moving_release_colliders.py','object_dynamics.py','prop_runtime_collision.py','scene_collision_profile.py')))
+METHODS=tuple(dict.fromkeys(NATIVE_METHODS+GDS+(CAPTURE,IMPORT,'scene_prop_bake.py','scene_prop_runtime.py','scene_prop_ownership.py','primitive_penetration_bounds.py','process_monitor.py','object_release.py','release_geometry.py','release_colliders.py','moving_release_colliders.py','object_dynamics.py','prop_runtime_collision.py','scene_collision_profile.py','scene_prop_physics_timing.py')))
 
 
 def require(value,message):
@@ -127,6 +128,10 @@ def audit_capture(actual,compiled,scene,events,request,request_digest):
         require(type(action['tick']) is int and type(action['last_grip_released']) is bool,'Explicit captured application types required')
         pose(action['pose_f64le']);time=decoded(action['source_time_f64le'],1,'source time')[0];applied=decoded(action['application_time_f64le'],1,'application time')[0]
         applications.append({**expected,'application_delay_s':float(applied-time)})
+    if 'physical_timing' in compiled:
+        declared=compiled['physical_timing'];cap=decoded(declared['maximum_delay_f64le'],1,'maximum delay')[0]
+        require(declared==enforce(timing(compiled['ownership'],compiled['physics_fps'],float(cap))),'Declared physical timing differs from complete ownership plan')
+        require(all(a['application_delay_s']<=cap for a in applications),'Actual ownership delay exceeds requested timing limit')
     members={n:[] for n in compiled['props']};modes={n:'parked' for n in members};cursor=0;arrays={n:[] for n in scene.objects};held_error=0.;authored_error=0.;floor_depth={n:0. for n in scene.objects};orthogonal_error=0.
     parent=np.asarray(request['parent_world_transform']);allowed_contacts=set(compiled['props'])|({'floor'} if request['floor']['enabled'] else set())
     for index,row in enumerate(rows):
@@ -159,7 +164,8 @@ def audit_capture(actual,compiled,scene,events,request,request_digest):
         maximum_application_delay_s=delay,exact_physical_event_timing_pass=delay==0.,held_pose_maximum_element_error=held_error,authored_pose_maximum_element_error=authored_error,
         floor_sampled_depth_max_m=floor_depth,floor_sampled_screen_pass=all(d<=.01 for d in floor_depth.values()) if request['floor']['enabled'] else None,
         floor_depth_uses_orthogonalized_observed_basis=True,maximum_pose_rotation_projection_error=orthogonal_error,
-        continuous_collision_certified=False,physics_quality_approved=False,quality_approved=False,release_approved=False),{n:np.asarray(v) for n,v in arrays.items()}
+        continuous_collision_certified=False,physics_quality_approved=False,quality_approved=False,release_approved=False,
+        **({'physical_timing':copy.deepcopy(compiled['physical_timing'])} if 'physical_timing' in compiled else {})),{n:np.asarray(v) for n,v in arrays.items()}
 
 
 def interpolated(times,poses,query):

@@ -244,6 +244,7 @@
     "tests/test_scene_prop_ownership.py",
     "tests/test_scene_collision_profile.py",
     "tests/test_prop_runtime_collision.py",
+    "tests/test_scene_prop_physics_timing.py",
     "tests/test_scene_prop_runtime.py",
     "tests/test_scene_prop_bake.py",
     "tests/test_baked_scene_runtime.py",

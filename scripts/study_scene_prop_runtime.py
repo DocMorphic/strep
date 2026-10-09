@@ -29,7 +29,7 @@ def verify_event_bits(observed,events,times):
     for e in observed:assert e['source_time_f64le']==e['pose_time_f64le']==expected[e['id']]
 
 
-def execute_study(output,physics_fps=120,collision_profile=None):
+def execute_study(output,physics_fps=120,collision_profile=None,maximum_application_delay_s=None):
     if type(physics_fps) is not int or physics_fps not in (60,120,240):raise ValueError('Supported physics rate required')
     if collision_profile is not None:profile_document(collision_profile,physics_fps)
     output=Path(output).resolve()
@@ -40,7 +40,7 @@ def execute_study(output,physics_fps=120,collision_profile=None):
     methods=output/'methods';methods.mkdir();names=list(GDS)+[AUDIT,'native_godot_tracks.gd','godot_native_scene_observations.gd']
     hashes={n:sha256(ROOT/'scripts'/n) for n in names}
     for n in names:shutil.copyfile(ROOT/'scripts'/n,methods/n)
-    python_names=['study_scene_prop_runtime.py','scene_prop_runtime.py','scene_prop_ownership.py','native_scene_runtime.py','native_scene_contacts.py','native_scene_game_tracks.py','native_godot_payload.py','native_object_asset.py','object_geometry.py','release_geometry.py','study_scene_prop_ownership.py','action_worker_lock.py','strep.py','prop_runtime_collision.py','scene_collision_profile.py']
+    python_names=['study_scene_prop_runtime.py','scene_prop_runtime.py','scene_prop_ownership.py','native_scene_runtime.py','native_scene_contacts.py','native_scene_game_tracks.py','native_godot_payload.py','native_object_asset.py','object_geometry.py','release_geometry.py','study_scene_prop_ownership.py','action_worker_lock.py','strep.py','prop_runtime_collision.py','scene_collision_profile.py','scene_prop_physics_timing.py']
     python_hashes={n:sha256(ROOT/'scripts'/n) for n in python_names}
     for n in python_names:shutil.copyfile(ROOT/'scripts'/n,methods/n)
     fixture_methods=output/'fixture-methods';fixture_methods.mkdir()
@@ -90,6 +90,7 @@ def execute_study(output,physics_fps=120,collision_profile=None):
     authored=dict(schema='strep-scene-prop-runtime-request-v1',source_game_zip_sha256=sha256(source),root_modes=modes,object_modes={'item':'grip-physics','authored':'authored'},grips=grips,commands=commands,
                   physics={'item':dict(mass_kg=2,friction=.6,restitution=0,linear_damping=0,angular_damping=0,collision_layer=1,collision_mask=1)},physics_fps=physics_fps,history_capacity=80)
     if collision_profile is not None:authored['collision_profile']=collision_profile
+    if maximum_application_delay_s is not None:authored['maximum_application_delay_s']=maximum_application_delay_s
     save(output/'ownership-request.json',authored);packaged=package(source,output/'ownership-request.json',output/'runtime')
     project=output/'runtime/project'
     for n in (AUDIT,'native_godot_tracks.gd','godot_native_scene_observations.gd'):shutil.copyfile(methods/n,project/'ownership-v1'/n)
@@ -101,11 +102,12 @@ def execute_study(output,physics_fps=120,collision_profile=None):
         with worker_lock(),(output/(id+'-engine.log')).open('w',encoding='utf8') as log:
             run=subprocess.run([str(ENGINE),'--headless','--path',str(project),'--fixed-fps',str(physics_fps),'--script','ownership-v1/'+AUDIT,'--',str(req),str(raw)],stdout=log,stderr=subprocess.STDOUT,timeout=90,env=offline_environment(),creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
         if run.returncode:save(output/'pipeline.json',dict(status='failed',stage=id,exit_code=run.returncode));raise RuntimeError('Inspect '+id+'-engine.log')
-        actual=read(raw);assert not actual['faults'] and actual['malformed_rejected']==(14 if collision_profile is not None else 10) and actual['visibility']=={'item':False,'authored':True} and actual['extraction']=={'A':False,'B':True}
+        actual=read(raw);assert not actual['faults'] and actual['malformed_rejected']==(10+4*(collision_profile is not None)+7*(maximum_application_delay_s is not None)) and actual['visibility']=={'item':False,'authored':True} and actual['extraction']=={'A':False,'B':True}
         assert actual['continuous_cd']=={'item':True}
         if collision_profile is not None:verify_actual(profile_document(collision_profile,physics_fps),actual['collision_settings'],physics_fps)
         else:assert actual['collision_settings']=={}
         records=actual['records'];actions=actual['actions'];assert len(actions)==8
+        if maximum_application_delay_s is not None:assert all(a['application_delay_s']<=maximum_application_delay_s for a in actions)
         wanted=[e['id'] for e in events['events'] if e['runtime_dispatch_allowed']]
         assert [e['id'] for e in actual['events']]==wanted+[e['id'] for e in events['events'] if e['runtime_dispatch_allowed'] and times[e['sample_index']]<=1.4]
         assert [(a['before'],a['after']) for a in actions]==[([],['AL','AR']),(['AL','AR'],['AR']),(['AR'],['BL']),(['BL'],[])]*2
@@ -147,12 +149,12 @@ def execute_study(output,physics_fps=120,collision_profile=None):
     with zipfile.ZipFile(output/'runtime/prop-runtime-assets.zip') as archive:
         assert all(sha256(project/n)==h for n,h in packaged['files_sha256'].items())
         assert all(archive.read(n)==(project/n).read_bytes() for n in packaged['files_sha256'])
-    result=dict(schema='strep-scene-prop-runtime-study-v1',status='complete',at=now(),physics_fps=physics_fps,collision_profile=collision_profile,cases=results,boot=boot,engine_sha256=sha256(ENGINE),methods_sha256={**hashes,**python_hashes},fixture_methods_sha256=fixture_hashes,source_game_zip_sha256=sha256(source),packaged_zip_sha256=packaged['package_sha256'],source_and_copy_current=True,actual_glb_import=True,actual_native_resources=True,actual_physics=True,original_contact_measurements_retained=True,physical_contact_quality_approved=False,renderer_executed=False,human_reviewed=False,quality_approved=False,release_approved=False)
+    result=dict(schema='strep-scene-prop-runtime-study-v1',status='complete',at=now(),physics_fps=physics_fps,collision_profile=collision_profile,maximum_application_delay_s=maximum_application_delay_s,cases=results,boot=boot,engine_sha256=sha256(ENGINE),methods_sha256={**hashes,**python_hashes},fixture_methods_sha256=fixture_hashes,source_game_zip_sha256=sha256(source),packaged_zip_sha256=packaged['package_sha256'],source_and_copy_current=True,actual_glb_import=True,actual_native_resources=True,actual_physics=True,original_contact_measurements_retained=True,physical_contact_quality_approved=False,renderer_executed=False,human_reviewed=False,quality_approved=False,release_approved=False)
     save(output/'result.json',result);save(output/'pipeline.json',dict(status='complete',at=now()));print(json.dumps(result));return result
 
 
-def study(output,physics_fps=120,collision_profile=None):
-    try:return execute_study(output,physics_fps,collision_profile)
+def study(output,physics_fps=120,collision_profile=None,maximum_application_delay_s=None):
+    try:return execute_study(output,physics_fps,collision_profile,maximum_application_delay_s)
     except Exception as exc:
         p=Path(output).resolve()/'pipeline.json'
         if p.exists() and read(p).get('status')!='failed':save(p,dict(status='failed',stage='fixture_or_verification',error=repr(exc),at=now()))
@@ -160,4 +162,4 @@ def study(output,physics_fps=120,collision_profile=None):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('--output',required=True);parser.add_argument('--physics-fps',type=int,choices=(60,120,240),default=120);parser.add_argument('--collision-profile',choices=tuple(PROFILES));args=parser.parse_args();study(args.output,args.physics_fps,args.collision_profile)
+    parser=argparse.ArgumentParser();parser.add_argument('--output',required=True);parser.add_argument('--physics-fps',type=int,choices=(60,120,240),default=120);parser.add_argument('--collision-profile',choices=tuple(PROFILES));parser.add_argument('--maximum-application-delay-s',type=float);args=parser.parse_args();study(args.output,args.physics_fps,args.collision_profile,args.maximum_application_delay_s)

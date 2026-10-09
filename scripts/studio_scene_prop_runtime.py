@@ -13,10 +13,12 @@ from native_scene_contacts import fields
 from native_scene_runtime import METHODS as NATIVE_METHODS,configure,package_members
 from scene_prop_runtime import compile_request,package,GDS,entry_files,matrix as rigid_offset
 from strep import ROOT,now,read,save,sha256
+import copy
+from scene_prop_physics_timing import timing
 
 NAMESPACE='scene-prop-runtime-jobs'
 SCRIPT_ROOT=Path(__file__).resolve().parent
-METHODS=tuple(dict.fromkeys(NATIVE_METHODS+game.METHODS+GDS+('scene_prop_runtime.py','scene_prop_ownership.py','studio_scene_prop_runtime.py','studio_native_scene_game.py','primitive_penetration_bounds.py','prop_runtime_collision.py','scene_collision_profile.py')))
+METHODS=tuple(dict.fromkeys(NATIVE_METHODS+game.METHODS+GDS+('scene_prop_runtime.py','scene_prop_ownership.py','studio_scene_prop_runtime.py','studio_native_scene_game.py','primitive_penetration_bounds.py','prop_runtime_collision.py','scene_collision_profile.py','scene_prop_physics_timing.py')))
 DOWNLOADS=('runtime/prop-runtime-assets.zip','runtime-request.json','runtime/result.json','result.json')
 
 
@@ -110,6 +112,18 @@ def prepare(payload,folder):
         save(folder/'pipeline.json',dict(status='failed',error=str(exc),original_selected=True,quality_approved=False));raise
 
 
+def timing_preview(payload):
+    candidate=copy.deepcopy(payload)
+    require(isinstance(candidate,dict) and isinstance(candidate.get('request'),dict)
+            and 'maximum_application_delay_s' in candidate['request'],'Choose an explicit maximum physical delay')
+    cap=candidate['request'].pop('maximum_application_delay_s')
+    _,_,_,_,compiled=validate_request(candidate)
+    report=timing(compiled['ownership'],compiled['physics_fps'],cap)
+    return dict(game_job=payload['game_job'],source_result_sha256=payload['source_result_sha256'],
+        source_game_zip_sha256=compiled['source_game_zip_sha256'],physical_timing=report,
+        physics_verified=False,quality_approved=False,release_approved=False)
+
+
 def frozen(folder,*,current_methods=True):
     folder=Path(folder).resolve();require(folder==folder_for(folder.name),'Bound prop job folder required')
     p=read(folder/'prepared.json');payload=read(folder/'request.json')
@@ -119,6 +133,8 @@ def frozen(folder,*,current_methods=True):
     values=validate_request(payload)
     require(sha256(values[0]/'result.json')==p['source_result_sha256'] and sha256(values[0]/'game-assets.zip')==sha256(folder/'source-game-assets.zip')==p['source_game_zip_sha256'],'Source game package changed')
     expected_methods=set(METHODS)
+    if not current_methods and 'maximum_application_delay_s' not in payload['request'] and 'scene_prop_physics_timing.py' not in p['implementation_sha256']:
+        expected_methods.remove('scene_prop_physics_timing.py')
     if not current_methods and 'collision_profile' not in payload['request'] and not {'prop_runtime_collision.py','scene_collision_profile.py'}&set(p['implementation_sha256']):
         expected_methods-= {'prop_runtime_collision.py','scene_collision_profile.py'}
     require(set(p['implementation_sha256'])==expected_methods,'Complete prop method archive required')

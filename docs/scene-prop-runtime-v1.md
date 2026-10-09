@@ -200,3 +200,10 @@ editable bake. Runtime binding checks the actual declared project settings befor
 importing participants. Omitting the profile preserves legacy configuration and
 startup bytes. These procedural settings do not approve production collisions or
 solve the fixed-boundary physical timing delay.
+
+The optional [physical timing contract](physical-timing-contract-v1.md) adds an
+author-selected maximum ownership application delay and rejects same-prop source
+transactions that collapse onto one physics tick. Studio can check it before
+export; native startup and editable capture independently enforce it. Source
+timestamps remain unchanged, and meeting an explicit tolerance does not approve
+exact physical timing or animation quality.

@@ -68,6 +68,7 @@ func begin() -> void:
 	var child_count := parent.get_child_count()
 	var faults: Array = ["offset","bone","node","geometry","inertia","object-mode","source-hash","event-clock","rate","mass"]
 	if config.has("collision_profile"): faults.append_array(["collision-name","collision-value","collision-extra","collision-project"])
+	if config.has("physical_timing"): faults.append_array(["timing-clock","timing-group","timing-limit","timing-approved","timing-population","timing-count","timing-decision"])
 	for fault in faults:
 		var bad: Dictionary = config.duplicate(true); var key: String = bad.grip_bindings.keys()[0]; var prop: String = bad.props.keys()[0]
 		var setting := "physics/jolt_physics_3d/simulation/continuous_cd_movement_threshold"
@@ -83,6 +84,13 @@ func begin() -> void:
 			"event-clock": bad.ownership.clock.bytes_hex="00"
 			"rate": bad.physics_fps=90
 			"mass": bad.props[prop].physics.mass_kg=false
+			"timing-clock": bad.physical_timing.application_clock.bytes_hex="00"
+			"timing-group": bad.physical_timing.groups[0].tick+=1
+			"timing-limit": bad.physical_timing.maximum_delay_f64le="0000000000000000"
+			"timing-approved": bad.physical_timing.quality_approved=true
+			"timing-population": bad.physical_timing.groups.pop_back()
+			"timing-count": bad.physical_timing.application_clock.count=true
+			"timing-decision": bad.physical_timing.contract_satisfied=false
 			"collision-name": bad.collision_profile.name="unknown"
 			"collision-value": bad.collision_profile.settings[setting]=false
 			"collision-extra": bad.collision_profile.settings["undocumented"]=1

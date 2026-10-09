@@ -89,6 +89,8 @@ func bind(parent: Node3D,folder: String,document: Dictionary) -> Error:
 	if not integer(document.get("physics_fps"),60,240) or int(document.physics_fps) not in [60,120,240] or int(document.physics_fps)!=Engine.physics_ticks_per_second or not integer(document.get("history_capacity"),2,3600): return ERR_INVALID_DATA
 	last_error="Declared collision profile differs from the actual running project"
 	if not check_collision_profile(document): return ERR_INVALID_DATA
+	last_error="Ownership events cannot satisfy the declared physical timing"
+	if document.has("physical_timing") and not Owner.checked_timing(document.get("ownership",{}),document.physical_timing,int(document.physics_fps)): return ERR_INVALID_DATA
 	var scene_path := Loader.checked_path(folder,document.native_scene.get("scene",{}))
 	if scene_path.is_empty(): return ERR_INVALID_DATA
 	var intent = JSON.parse_string(FileAccess.get_file_as_string(scene_path))
@@ -179,7 +181,7 @@ func bind(parent: Node3D,folder: String,document: Dictionary) -> Error:
 	for key in config.grip_bindings: providers[key]=func(id: String) -> Transform3D: return grip(key,id)
 	owner=Owner.new()
 	last_error="Shared native scene owner rejected explicit membership/clock binding"
-	if owner.bind(loaded.player,config.ownership,bodies,providers,int(config.physics_fps),int(config.history_capacity))!=OK: discard(); return ERR_INVALID_DATA
+	if owner.bind(loaded.player,config.ownership,bodies,providers,int(config.physics_fps),int(config.history_capacity),config.get("physical_timing"))!=OK: discard(); return ERR_INVALID_DATA
 	for id in selected: loaded.objects[id].visible=false
 	last_error=""
 	return OK

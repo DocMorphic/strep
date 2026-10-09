@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {createScenePropRuntimeEditor,offsetMatrix} from '../scripts/scene-prop-runtime-editor.mjs';
+import {createScenePropRuntimeEditor,offsetMatrix,timingSummary} from '../scripts/scene-prop-runtime-editor.mjs';
 
 // Offline DOM double; this is not a browser, renderer or live Studio test.
 class Element{
@@ -20,13 +20,16 @@ const metadata={game_job:'game1',source_result_sha256:'a'.repeat(64),source_game
  objects:{item:{geometry:{shape:'sphere'}},reference:{geometry:{shape:'box'}}},
  confirmed_events:[{id:'acquireA',name:'grasp',actor:'A',time_s:1/480},{id:'releaseA',name:'handoff A',actor:'A',time_s:.8},
  {id:'acquireB',name:'handoff B',actor:'B',time_s:.8},{id:'releaseB',name:'release',actor:'B',time_s:2}],source_scene_conditions_pass:false};
-let waiting=null,alignmentWaiting=null,alignmentFault=false,saved=null,posted=null,jobs={jobs:[]},review={status:'processing',stage:'packaging',downloads:[]};
+let waiting=null,alignmentWaiting=null,alignmentFault=false,timingWaiting=null,saved=null,posted=null,jobs={jobs:[]},review={status:'processing',stage:'packaging',downloads:[]};
+function timingReport(cap){const clock=Buffer.alloc(24),limit=Buffer.alloc(8),source=1/480,applied=1/120,delay=applied-source;[source,applied,delay].forEach((v,i)=>clock.writeDoubleLE(v,i*8));limit.writeDoubleLE(cap);return {schema:'strep-scene-prop-physics-timing-v1',physics_fps:120,maximum_delay_f64le:limit.toString('hex'),application_clock:{schema:'strep-physics-event-clock-f64le-v1',count:1,bytes_hex:clock.toString('hex')},collapsed_prop_transactions:[],within_requested_delay:delay<=cap,distinct_prop_boundaries:true,contract_satisfied:delay<=cap,quality_approved:false,release_approved:false};}
+function timingResponse(payload){return {game_job:payload.game_job,source_result_sha256:payload.source_result_sha256,source_game_zip_sha256:payload.request.source_game_zip_sha256,physical_timing:timingReport(payload.request.maximum_application_delay_s)};}
 const api=async url=>{
  if(url.startsWith('/api/scene-prop-runtime-source?'))return waiting||structuredClone(metadata);
  if(url==='/api/scene-prop-runtime-jobs')return structuredClone(jobs);
  if(url.startsWith('/api/scene-prop-runtime-review?'))return structuredClone(review);throw Error(url);
 };
 const post=async(url,payload)=>{
+ if(url==='/api/scene-prop-runtime-timing')return timingWaiting||timingResponse(payload);
  if(url==='/api/scene-prop-runtime-align')return alignmentWaiting||{
   game_job:metadata.game_job,source_result_sha256:metadata.source_result_sha256,source_game_zip_sha256:metadata.source_game_zip_sha256,
   selection:{event_id:payload.request.event_id,object:payload.request.object,joint_node:payload.request.joint_node,actor:payload.request.actor},
@@ -51,6 +54,15 @@ await command('grip-1','item','releaseA','release');assert.throws(()=>editor.sna
 el('Actor').value='B';await el('Actor').onchange();assert.equal(el('Joint').value,'');assert.deepEqual(el('AlignEvent').children.slice(1).map(e=>e.value),['acquireB','releaseB']);
 el('GripId').value='partner';el('Joint').value='3';await el('AddGrip').onclick();await command('partner','item','acquireB','acquire');await command('partner','item','releaseB','release');
 const snapshot=editor.snapshot();assert.deepEqual(snapshot.request.root_modes,{A:'embedded',B:'extracted'});
+assert.equal('maximum_application_delay_s' in snapshot.request,false);
+await el('Timing').onclick();assert.match(el('Status').textContent,/Choose a maximum/);
+el('Delay').value='7';assert.equal(editor.snapshot().request.maximum_application_delay_s,.007);await el('Timing').onclick();assert.match(el('TimingResult').textContent,/Timing limit met/);
+el('Delay').value='0';el('Panel').oninput();assert.equal(el('TimingResult').textContent,'');await el('Timing').onclick();assert.match(el('TimingResult').textContent,/Timing limit failed/);assert.equal(editor.snapshot().request.maximum_application_delay_s,0);
+el('Delay').value='20';assert.equal(editor.snapshot().request.maximum_application_delay_s,.02);el('Delay').value='Infinity';assert.throws(()=>editor.snapshot(),/maximum physical delay/);el('Delay').value='-1';assert.throws(()=>editor.snapshot(),/maximum physical delay/);
+el('Delay').value='7';let resolveTiming;timingWaiting=new Promise(r=>resolveTiming=r);const timedPayload=editor.snapshot(),timingPending=el('Timing').onclick();el('Delay').value='6';el('Panel').oninput();resolveTiming(timingResponse(timedPayload));await timingPending;assert.equal(el('TimingResult').textContent,'');assert.match(el('Status').textContent,/Timing selections changed/);timingWaiting=null;el('Delay').value='';
+assert.throws(()=>timingSummary({...timingReport(.007),quality_approved:true},120,.007),/decision/);
+assert.throws(()=>timingSummary(timingReport(.007),120,.006),/selection changed/);
+assert.throws(()=>timingSummary({...timingReport(.007),application_clock:{schema:'strep-physics-event-clock-f64le-v1',count:2,bytes_hex:'00'}},120,.007),/clock/);
 assert.equal('collision_profile' in snapshot.request,false);
 for(const profile of ['engine-default','ccd-threshold','strict-ccd']){el('Collision').value=profile;assert.equal(editor.snapshot().request.collision_profile,profile);}
 el('Collision').value='unknown';assert.throws(()=>editor.snapshot(),/collision profile/);el('Collision').value='ccd-threshold';
