@@ -96,9 +96,11 @@ final attempts. These mixed outcomes do not repair the clip.
 All four completed attempts' original input, archived method, protocol, pose and
 intermediate restoration-pose hashes independently recheck. Their NumPy skin
 replays agree with Torch within 0.085 micrometres. The grouped direct experiment
-in `reports/box-lift-pose-restoration-v4/` is still running with 100 iterations
-and an explicit 600-second per-pose bound; the overall resource guard is unchanged.
-No result is inferred from this running handle.
+in `reports/box-lift-pose-restoration-v4/` finishes its supervisor in 1222.25 seconds;
+both poses stop at their explicit 600-second solve limits and remain failed.
+The overall resource guard is unchanged. Subsequent complete-replay protected
+steps and their measured limitations are documented in
+[guarded native contact repair](guarded-pose-restoration-v1.md).
 
 ## Portable source validation
 
