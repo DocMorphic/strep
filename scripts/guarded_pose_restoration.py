@@ -18,7 +18,7 @@ from scene_pose_restoration import RestorationProblem,METHODS as POSE_METHODS
 from grasp_pose_witness import norm_slack_and_jacobian
 from protected_inequality_step import fit,retain
 from sparse_pose_jacobian import SparsePoseJacobian
-from pose_restoration_policy import tradeoff_policy,row_diagnostics
+from pose_restoration_policy import tradeoff_policy,row_diagnostics,proposal_headroom
 
 METHODS=POSE_METHODS+['guarded_pose_restoration.py','protected_inequality_step.py','sparse_pose_jacobian.py','pose_row_jacobian.py','pose_restoration_policy.py']
 DEFINITIONS=ROOT/'vendor/kimodo/kimodo/skeleton/definitions.py'
@@ -142,7 +142,7 @@ def _resume_seed(directory,study,frame,bindings,limits,labels,problem,_ancestors
         scope='Verified diagnostic warm start; original budgets and fixed neighbors remain unchanged. No quality approval.'),checked
 
 
-def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal,proposal_start):
+def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal,proposal_start,body_headroom):
     summary=read(study/'fit/summary.json')
     if (summary.get('solver_version')!=17 or read(study/'pipeline.json')['status']!='complete'
             or len(summary['trials'])!=1 or sha256(ASSET)!=summary['mesh_sha256']):
@@ -167,7 +167,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
     point_rows=np.array([label.startswith('point:') for label in labels],dtype=bool)
     feasible=point_rows.copy() if point_proposal=='feasible' else np.zeros_like(point_rows)
     if body_proposal=='feasible':feasible|=np.array([label.startswith('all-reference-') for label in labels],dtype=bool)
-    headroom=point_rows.astype(float)*point_headroom
+    headroom=proposal_headroom(labels,point=point_headroom,body=body_headroom)
     seed_audit,seed_motion=problem.independent(seed_parameters)
     with torch.no_grad():rot,pos,_,vertices=problem.fk(problem.t(seed_parameters))
     seed_error=max(float(np.abs(pos.numpy()-expected['posed_joints'][0]).max()),
@@ -189,6 +189,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
         original_limits=original_limits,resume=resume_record,body_proposal=body_proposal,
         failure_policy=failure_policy,point_policy=point_policy,point_proposal=point_proposal,
         proposal_feasible_mask=feasible.tolist(),proposal_headroom_normalized=headroom.tolist(),
+        body_proposal_headroom_normalized=body_headroom,
         proposal_tangent_guard=tangent_guard,tangent_proposal_headroom_normalized=1e-6 if tangent_guard else 0.,
         inequality_labels=labels,tradeoff_mask=mask.tolist(),
         normalization='Archived pose slack units: point/object/floor over 10 mm, normal chord ratio, '
@@ -270,7 +271,7 @@ def _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,sol
 
 
 def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='rowwise',proposal='linear',solve_iterations=100,row_chunk=None,
-        point_policy='preserve',point_proposal='preserve',point_headroom=0.,tangent_guard=False,resume=None,body_proposal='preserve',proposal_start='zero'):
+        point_policy='preserve',point_proposal='preserve',point_headroom=0.,tangent_guard=False,resume=None,body_proposal='preserve',proposal_start='zero',body_headroom=0.):
     study=Path(study).resolve();output=Path(output).resolve();existed=output.exists()
     if (type(frame) is not int or type(iterations) is not int or not 1<=iterations<=100
             or type(trust) not in (int,float) or not np.isfinite(trust) or not 1e-5<=trust<=.3
@@ -278,6 +279,7 @@ def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='r
             or failure_policy not in ['rowwise','merit'] or proposal not in ['linear','nonlinear'] or point_policy not in ['preserve','tradeoff']
             or point_proposal not in ['preserve','feasible'] or type(point_headroom) not in (int,float)
             or not np.isfinite(point_headroom) or not 0<=point_headroom<=1e-3
+            or type(body_headroom) not in (int,float) or not np.isfinite(body_headroom) or not 0<=body_headroom<=1e-3
             or type(tangent_guard) is not bool or (tangent_guard and proposal!='nonlinear')
             or body_proposal not in ['preserve','feasible']
             or proposal_start not in ['zero','linear-feasible','geometry-descent'] or (proposal_start!='zero' and proposal!='nonlinear')
@@ -288,7 +290,7 @@ def run(study,output,frame,iterations=30,trust=.03,seconds=300,failure_policy='r
     if resume is not None and (output.is_relative_to(Path(resume).resolve()) or Path(resume).resolve().is_relative_to(output)):
         raise ValueError('Resume artifacts and new output must be separate immutable studies')
     with worker_lock(),threadpool_limits(limits=2):
-        try:return _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal,proposal_start)
+        try:return _run(study,output,frame,iterations,trust,seconds,failure_policy,proposal,solve_iterations,row_chunk,point_policy,point_proposal,point_headroom,tangent_guard,resume,body_proposal,proposal_start,body_headroom)
         except Exception as exc:
             if not existed and output.exists():save(output/'pipeline.json',dict(status='failed',error_type=type(exc).__name__,
                 error=str(exc),quality_approved=False,release_approved=False))
@@ -309,5 +311,6 @@ if __name__=='__main__':
     parser.add_argument('--resume',type=Path,help='Terminal guarded pose study to replay as a diagnostic warm start')
     parser.add_argument('--body-proposal',choices=['preserve','feasible'],default='preserve')
     parser.add_argument('--proposal-start',choices=['zero','linear-feasible','geometry-descent'],default='zero')
+    parser.add_argument('--body-headroom',type=float,default=0.,help='Search-only normalized margin for reference-position rows; final limits unchanged')
     args=parser.parse_args();run(args.study,args.output,args.frame,args.iterations,args.trust,args.seconds,args.failure_policy,args.proposal,
-        args.solve_iterations,args.row_chunk,args.point_policy,args.point_proposal,args.point_headroom,args.tangent_guard,args.resume,args.body_proposal,args.proposal_start)
+        args.solve_iterations,args.row_chunk,args.point_policy,args.point_proposal,args.point_headroom,args.tangent_guard,args.resume,args.body_proposal,args.proposal_start,args.body_headroom)

@@ -2,6 +2,16 @@
 import numpy as np
 
 
+def proposal_headroom(labels,*,point=0.,body=0.):
+    """Search-only margins on grip distance and reference-position rows."""
+    if (not isinstance(labels,list) or not labels
+            or any(not isinstance(v,str) or not v for v in labels) or len(set(labels))!=len(labels)
+            or any(type(v) not in [int,float] or not np.isfinite(v) or not 0<=v<=1e-3 for v in [point,body])):
+        raise ValueError('Complete unique row identities and bounded proposal margins required')
+    return np.array([point if label.startswith('point:') else body if label.startswith('all-reference-position:') else 0.
+        for label in labels],dtype=float)
+
+
 def tradeoff_policy(labels,rotation_names,*,failure_policy='rowwise',point_policy='preserve'):
     if (not isinstance(labels,list) or not labels or not isinstance(rotation_names,list)
             or any(not isinstance(v,str) or not v for v in labels+rotation_names)

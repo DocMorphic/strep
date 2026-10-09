@@ -324,6 +324,21 @@ def test_geometry_budget_expiry_never_selects_failed_nonlinear_start():
     assert len(r['trials'])==1 and not r['trials'][0]['accepted'] and not r['proposal_queries']
 
 
+def test_body_search_margin_preserves_curved_nonlinear_row_without_relaxing_retention():
+    def measure(x):return np.array([x[1]-.05,(.1-np.linalg.norm(x+np.array([x[1]**2,0.])))/.1])
+    def derivative(x):
+        vector=x+np.array([x[1]**2,0.]);j=np.array([[1.,2*x[1]],[0.,1.]])
+        return measure(x),np.array([[0.,1.],-vector@j/(.1*np.linalg.norm(vector))])
+    value,r=fit(measure,derivative,[.1,0.],[-1.,-1.],[1.,1.],trust=.1,iterations=1,
+        proposal='nonlinear',proposal_start='geometry-descent',vectorize=circle_vectors,proposal_tangent_guard=True,
+        proposal_headroom=[0.,1e-3])
+    assert value[1]>0 and r['trials'][-1]['accepted'] and r['trials'][-1]['stage']=='geometry-start'
+    assert r['trials'][-1]['fraction']<1 and measure(value)[1]>=0 and not r['proposal_queries']
+    assert not r['trials'][0]['accepted'] and not r['trials'][0]['retention_guard_passed']
+    assert r['proposal_starts'][0]['caps'][1]==1e-3 and r['proposal_linearizations'][0]['preservation_caps'][1]==0
+    assert r['source_passing_rows_preserved'] and not r['quality_approved']
+
+
 @pytest.mark.parametrize('kwargs',[dict(proposal_start='geometry-descent',proposal='nonlinear'),
     dict(vectorize=circle_vectors),dict(proposal_start='geometry-descent',proposal='nonlinear',vectorize=True)])
 def test_vector_initializer_contract_rejected_before_measurement(kwargs):

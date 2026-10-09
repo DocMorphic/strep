@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-from pose_restoration_policy import tradeoff_policy,row_diagnostics
+from pose_restoration_policy import tradeoff_policy,row_diagnostics,proposal_headroom
 from protected_inequality_step import retain,fit
 
 
@@ -17,6 +17,23 @@ def test_default_preserves_even_failed_point_rows_and_every_edit_floor_and_rotat
     assert old[:4].all() and not old[4:].any()
     _,strict=tradeoff_policy(labels,['Arm'],failure_policy='rowwise',point_policy='tradeoff')
     assert not strict.any()
+
+
+def test_body_margin_only_tightens_position_proposals_and_leaves_other_rows_unchanged():
+    labels=['point:Left','normal:Left','object:box','floor','all-reference-position:Hand',
+        'all-reference-speed:97:Hand','rotation-budget:Arm','future-unknown-constraint']
+    np.testing.assert_array_equal(proposal_headroom(labels),np.zeros(len(labels)))
+    np.testing.assert_array_equal(proposal_headroom(labels,point=1e-5,body=1e-3),[1e-5,0,0,0,1e-3,0,0,0])
+
+
+@pytest.mark.parametrize('body',[True,-1e-6,1.0001e-3,float('nan'),float('inf'),'0.001'])
+def test_invalid_body_margin_rejected(body):
+    with pytest.raises(ValueError):proposal_headroom(['all-reference-position:Hand'],body=body)
+
+
+@pytest.mark.parametrize('labels',[[],['x','x'],[3],[['x']]])
+def test_invalid_margin_row_identity_rejected(labels):
+    with pytest.raises(ValueError):proposal_headroom(labels,body=1e-3)
 
 
 def test_decreased_collision_merit_cannot_hide_a_failed_hand_distance_regression():
