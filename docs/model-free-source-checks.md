@@ -1,6 +1,8 @@
 # Public source checks
 
-Latest proposal coverage: the explicit inventory now contains **416 Python modules and 41 Node suites**. Twenty new [guarded conic integration checks](guarded-conic-start-v1.md), 33 [direct norm-cone checks](geometry-conic-start-v1.md), ten [proposal callback regressions](proposal-callback-derivatives-v1.md) and the 82 existing solver checks pass without Torch. A separate 584-check frozen CPU fixture validates native coupling/replay, supplemented by all 62 final native continuation checks. These are software checks, not motion-quality or release approval. Historical hosted results below retain their original scope.
+The current explicit inventory contains **427 Python modules and 41 Node suites**. The latest [conditional force/dynamics checks](contact-force-balance-v1.md) pass all 82 focused tests. A separate [conic backoff fixture repair](conic-fixture-integrity-v1.md) passes 135 resume/conic/integration checks; hosted CI for that source fix remains pending. Software tests do not approve animation quality, inference, engine behavior or the release.
+
+Earlier proposal snapshot: the inventory contained 416 Python modules and 41 Node suites. Twenty new [guarded conic integration checks](guarded-conic-start-v1.md), 33 [direct norm-cone checks](geometry-conic-start-v1.md), ten [proposal callback regressions](proposal-callback-derivatives-v1.md) and the 82 existing solver checks passed without Torch. A separate 584-check frozen CPU fixture validated native coupling/replay, supplemented by all 62 final native continuation checks. Historical hosted results below retain their original scope.
 
 The native character-correction workflow adds CPU job, continuation, contact
 revision, evidence-tampering and offline HTTP-handler regressions, plus a Node
