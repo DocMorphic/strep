@@ -36,9 +36,19 @@ def audit(protocol_path, study, output):
             or result['protocol_sha256'] != digest(protocol_path)
             or result['embeddings_sha256'] != digest(study/'embeddings.json')):
         raise ValueError('Complete source-bound study required')
+    snapshot_count = 0
     for name, expected in plan['bindings'].items():
         path = (ROOT/name).resolve()
-        if not path.is_relative_to(ROOT) or digest(path) != expected:
+        if not path.is_relative_to(ROOT):
+            raise ValueError('Study input/method changed: '+name)
+        if path.is_file() and digest(path) == expected:
+            continue
+        snapshot = (study/'implementation'/name).resolve()
+        if (name.startswith(('scripts/', 'vendor/')) and name.endswith('.py')
+                and snapshot.is_relative_to(study/'implementation')
+                and snapshot.is_file() and digest(snapshot) == expected):
+            snapshot_count += 1
+        else:
             raise ValueError('Study input/method changed: '+name)
     tids = [t['id'] for t in plan['texts']]
     mids = [m['id'] for m in plan['motions']]
@@ -94,6 +104,7 @@ def audit(protocol_path, study, output):
                    protocol_sha256=digest(protocol_path), result_sha256=digest(study/'result.json'),
                    embeddings_sha256=digest(study/'embeddings.json'),
                    auditor_sha256=digest(Path(__file__).resolve()), binding_count=len(plan['bindings']),
+                   original_method_snapshots_used=snapshot_count,
                    score_population=len(mids)*len(tids), max_dot_replay_error=max_error,
                    population=len(mids), candidate_descriptions=len(tids), by_text=by_text,
                    conservative_top1_count=top1, conservative_top3_count=top3,

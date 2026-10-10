@@ -56,3 +56,18 @@ def test_rejects_changed_evidence(tmp_path,monkeypatch,damage):
     save(study/'result.json',result);update()
     with pytest.raises(ValueError):auditor.audit(protocol,study,out)
     assert not out.exists()
+
+
+def test_preserved_original_method_bytes_survive_source_upgrade(tmp_path,monkeypatch):
+    protocol,study,out,save,update=setup(tmp_path,monkeypatch)
+    original=tmp_path/'scripts/producer.py';original.parent.mkdir();original.write_text('original method')
+    plan=json.loads(protocol.read_text());plan['bindings']['scripts/producer.py']=auditor.digest(original)
+    save(protocol,plan)
+    result=json.loads((study/'result.json').read_text());result['protocol_sha256']=auditor.digest(protocol)
+    save(study/'result.json',result);update()
+    snapshot=study/'implementation/scripts/producer.py';snapshot.parent.mkdir(parents=True)
+    snapshot.write_bytes(original.read_bytes());original.write_text('later implementation')
+    receipt=auditor.audit(protocol,study,out)
+    assert receipt['original_method_snapshots_used']==1
+    out.unlink();snapshot.write_text('corrupted original method')
+    with pytest.raises(ValueError):auditor.audit(protocol,study,out)

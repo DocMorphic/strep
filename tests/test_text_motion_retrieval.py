@@ -41,6 +41,18 @@ def test_opposite_embeddings():
     assert evaluate(**data)['scores'][0]==[0,.5]
 
 
+def test_full_breadth_candidate_and_seed_population():
+    ids=['action-'+str(i) for i in range(78)]
+    data=dict(text_ids=ids,text_vectors=[basis(i) for i in range(78)],
+              motion_ids=['clip-'+str(i) for i in range(390)],
+              motion_vectors=[basis(i%78) for i in range(390)],
+              expected_text_ids=[ids[i%78] for i in range(390)])
+    result=evaluate(**data)
+    assert result['population']==390 and result['candidate_descriptions']==78
+    assert result['conservative_top1_count']==390
+    assert len(result['scores'])==390 and all(len(row)==78 for row in result['scores'])
+
+
 @pytest.mark.parametrize('change', ['nan','norm','dimension','missing','duplicate','unrepresented','boolean'])
 def test_invalid_population(change):
     data=fixture()

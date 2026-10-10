@@ -8,8 +8,8 @@ def evaluate(text_ids, text_vectors, motion_ids, motion_vectors, expected_text_i
                 or any(type(v) is not str or not v or len(v) > 256 for v in values)
                 or len(set(values)) != len(values)):
             raise ValueError('Distinct bounded identifiers required')
-    identifiers(text_ids, 64)
-    identifiers(motion_ids, 256)
+    identifiers(text_ids, 128)
+    identifiers(motion_ids, 512)
     if (not isinstance(expected_text_ids, list) or len(expected_text_ids) != len(motion_ids)
             or any(t not in text_ids for t in expected_text_ids)
             or set(expected_text_ids) != set(text_ids)):

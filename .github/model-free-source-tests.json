@@ -433,7 +433,8 @@
     "tests/test_scene_commit_receipts.py",
     "tests/test_project_release_status.py",
     "tests/test_text_motion_retrieval.py",
-    "tests/test_audit_text_motion_scores.py"
+    "tests/test_audit_text_motion_scores.py",
+    "tests/test_prepare_text_motion_study.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",

@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import sys
 import time
+import shutil
 from strep import ROOT, read, save, sha256
 from action_worker_lock import worker_lock
 from text_motion_retrieval import evaluate
@@ -19,7 +20,7 @@ def run(protocol_path, output):
     plan = read(protocol_path)
     if plan['schema'] != 'strep-tmr-development-study-v1':
         raise ValueError('Pinned development study required')
-    if (not 2 <= len(plan['texts']) <= 64 or not 1 <= len(plan['motions']) <= 256
+    if (not 2 <= len(plan['texts']) <= 128 or not 1 <= len(plan['motions']) <= 512
             or plan['fps'] != 30 or plan['split'] != 'development'):
         raise ValueError('Bounded 30 Hz development population required')
     bindings = plan['bindings']
@@ -43,6 +44,14 @@ def run(protocol_path, output):
     os.environ.update(HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1', OMP_NUM_THREADS='1',
                       MKL_NUM_THREADS='1', OPENBLAS_NUM_THREADS='1')
     output.mkdir(parents=True)
+    # Bind preserved method bytes to the original protocol across later source updates.
+    for name in bindings:
+        if name.startswith(('scripts/', 'vendor/')) and name.endswith('.py'):
+            destination = output/'implementation'/name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT/name, destination)
+            if sha256(destination) != bindings[name]:
+                raise ValueError('Method snapshot mismatch')
     state = dict(status='running', protocol_sha256=sha256(protocol_path),
                  quality_approved=False, release_approved=False, training_admitted=False)
     save(output/'pipeline.json', state)

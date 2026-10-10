@@ -8,7 +8,9 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
-- [Broad action retrieval](docs/text-motion-retrieval-v1.md): all 52 original development clips across twelve families are scored; 48 rank their intended description first. Handshake-role confusions remain visible. Eighteen checks and all 676 score calculations pass; physical/human quality remains unapproved.
+- [Complete action retrieval](docs/full-development-retrieval-v1.md): 390 clips across 72 cases/twelve families compete against 78 descriptions. Intended descriptions rank first for 295 clips; all 30,420 score cells independently replay. Twenty-seven source checks pass. The [fixed contact sweep](docs/contact-windows-90-101-v1.md) now covers all 21 windows; numerical motion audits are pending and physical acceptance remains unproven.
+
+- Earlier [small-bank action retrieval](docs/text-motion-retrieval-v1.md): all 52 original development clips across twelve families are scored; 48 rank their intended description first. Handshake-role confusions remain visible. Eighteen checks and all 676 score calculations pass; physical/human quality remains unapproved.
 
 - [Saved proposal history](docs/conic-margin-hydration-v1.md): primary-only rejected attempts retain their own solver phases when a later fallback solves twice. All 261 focused numerical/native fixture checks pass; strict original full affine replay now passes; fresh contact continuation remains separate.
 
