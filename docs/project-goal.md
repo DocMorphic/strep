@@ -5260,3 +5260,8 @@ The [forearm/wrist transition study](protected-hold-transitions-v1.md) independe
 
 
 The transition timing diagnostic independently replays all 38,784 local joint/time cases at two finite difference scales. Left-forearm peak relative speed increases from about 592 to 881 degrees/s at the 1/240-second half-step. This remains a timing concern, with no anatomical or physical rate budget approved. The corrected float64-key diagnostic and earlier unreplayed version are retained. Smoother timing, full-body/force validation and genuine developer/animator review remain required; the same goal stays active.
+
+
+### Native edit support and departure timing trial
+
+The full-project goal stays active. Added a generic fail-closed native LINEAR rotation support validator with 24 passing synthetic checks. Existing forearm repair support is restricted to entry [1.8333333730697632, 2.0] and departure [4.0333333015441895, 4.233333110809326] seconds, with separate scene/placement identity checks. Identity does not grant new geometry or physical approval; derivative probes require expanded support. A bounded left forearm/hand departure timing trial is running under the existing 1024-MiB expected RSS plus 600-MiB reserve policy. Its original contact hold, native clocks, 45-degree artist limits and complete two-forearm affected face checks stay fixed. No new result, release threshold, human rating or goal completion is claimed. See `protected-hold-transitions-v1.md`.
