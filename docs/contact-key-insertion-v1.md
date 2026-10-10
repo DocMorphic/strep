@@ -35,6 +35,18 @@ This is a finite pilot, not a continuous-time or globally optimal motion solver.
 
 The first skin-chord producer is interrupted by the original available-RAM guard after 114.359 execution seconds, one passing reported pose and no completed export. All 114 resource observations replay. Its partial solver report is retained; it is not a resumable full-array checkpoint or completed pose/clock proof. A fresh retry uses the same numerical method and records partial observation arrays and their hash after each completed pose. Neither memory budgets nor contact acceptance limits are reduced to obtain a run.
 
+## Completed skin-chord pilot
+
+The checkpointed retry completes in **486.235 execution seconds**. All nine actual skin poses pass, all original native quaternions remain exact, and independent replay again verifies 99 caps and 90 point correspondences. Four optimizations report convergence; five reach the 200-iteration limit. Preserve those statuses: actual feasibility does not establish optimality.
+
+At the complete exported clock, the revised pilot repairs **150 original sampled failures with zero previously passing conditions lost**. Per contact, it repairs 21 / 3 / 114 / 12 conditions for left center, right center, left neighbors and right neighbors. All 31 selected opposition/side failures disappear. Selected failing velocity pairs decrease from 23 / 3 / 91 / 12 to **2 / 0 / 8 / 0**. Worst selected speeds become 6.931 / 3.191 / 7.080 / 3.229 mm/s. Thus the finite pilot meets the predeclared expansion rule while still failing the original 5-mm/s speed threshold in ten selected point pairs.
+
+Full-clip worst speeds are 7.538 / 8.267 / 7.638 / 8.403 mm/s; unselected intervals retain failures. Both neighbor rows still fail the full-clip side test. Do not describe this as a completed contact correction or usable generation guide. Full-clock scalar preservation replay again checks 30,990 contact conditions and 16,960 velocity pairs. An additional original-source comparison verifies **11,451 rotation-cap conditions at 1,041 times**, with zero cap failures, protected-local differences below 7.78e-16 and preserved translations. It uses the previously explicit serialized-quaternion allowance of 1e-5 degrees; the unexported candidate allowance remains 1e-8 radians. Shared native samplers remain outside independence, and finite clocks do not establish continuous-time behavior.
+
+The next experiment expands the already frozen 45-interval/135-key population with this actual-skin/baseline-curve method, preserving the nine verified candidates and all original keys. Evaluate every remaining pose and the complete export clock, preserve failures and passing conditions, and assess geometry/force only after contact completion. More keys alone are not an acceptance condition.
+
+Expansion preflight verifies 135 distinct float32 interior times, all 45 selected intervals, exact inclusion of the nine verified candidates, a 315-key rotation clock and the original 192-added/512-total budgets. The first launch rejects a requested 7,200-second runtime before starting a worker because the unchanged supervisor permits at most 3,600 seconds. Preserve that policy rejection. A revised preflight and bounded first stage keep the complete population frozen while fitting at most eighteen new keys; immutable per-key NPZ/JSON checkpoints retain candidate arrays and hashes. Subsequent stages require separate candidate replay before carrying those keys forward. No partial stage is a completed 135-key asset.
+
 ## Evidence
 
 Immutable local inputs, raw candidates, assets, clock arrays, method snapshots and receipts remain ignored under `reports/central-hand-dense-pilot-v1`; the next experiment and its checkpointed retry are `reports/central-hand-skin-chord-pilot-v1` and `reports/central-hand-skin-chord-pilot-v2`. These machine-specific payloads are not distributed in GitHub.
@@ -46,5 +58,14 @@ Receipt SHA-256 identifiers:
 - Pose/export: `3e458362e2959fe9f46e0833e77751f8524ead9568b6eacd24836f1e0f3c1929`.
 - Complete clock: `f3354c794d41996effce45435a30e54e945eb48989a8d58f6bb154027d4e2fce`.
 - Scalar preservation comparison: `14125bf02e29443615fd7901dce9b53790da668f7835a24853c1bdf6ad5f887b`.
+
+Completed skin-chord retry receipts:
+
+- Pose/export: `36f738b05e165678c752975092cb41f8e06f06e162732097b0a3a340835bfaae`.
+- Complete clock: `4bed474bd3a8eba9744228f56da01967d70da8e3e51ae5b354c9b48e515802b1`.
+- Scalar preservation comparison: `08400cd280240cd4ec6e3a5676755e6ddb7d8b233337ca4ae7bb070755ad4fc0`.
+- Complete clock caps/protected transforms: `287254aea7123b7940eca68131787ca07e9eace6964af78572649200ef364f3a`.
+
+All 453 retry resource observations replay. Pose replay takes 2.219 seconds/eight observations; complete clock producer/replay take 8.641 / 4.359 seconds with fourteen / ten observations; scalar comparison producer/replay take 0.078 / 0.063 seconds with six / six observations; complete cap/protected replay takes 13.016 seconds/eighteen observations. All resource traces replay; their successful supervisor exits do not approve motion, the engine or human quality.
 
 The single full-project goal remains active. This contact fixture is one release dependency; action families remain evaluation categories rather than a prompt whitelist.

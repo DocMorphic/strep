@@ -8,7 +8,7 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
-- [Contact key-insertion pilot](docs/contact-key-insertion-v1.md): all nine poses and original-key preservation replay, but the exported clip loses 46 previously passing contact conditions despite repairing 103. The pilot is rejected; the complete 135-key expansion remains gated. A bounded skin-point fit tests joint-curve consistency under unchanged acceptance limits. The [previous-pose helper](docs/pose-continuation-v1.md) has 23 focused checks and three exact real-rig API replays.
+- [Contact key-insertion comparison](docs/contact-key-insertion-v1.md): the revised actual-skin/baseline-curve pilot repairs 150 sampled failures with zero regressions; all nine poses, native-key preservation and 11,451 sampled caps replay. Remaining sliding failures keep the clip unaccepted. The frozen 135-key expansion is proceeding in bounded stages with immutable checkpoints. The earlier wrist-guide pilot is preserved and rejected. The [previous-pose helper](docs/pose-continuation-v1.md) has 23 focused checks and three exact real-rig API replays.
 
 - [Complete action retrieval](docs/full-development-retrieval-v1.md): 390 clips across 72 cases/twelve families compete against 78 descriptions. Intended descriptions rank first for 295 clips; all 30,420 score cells independently replay. Twenty-seven source checks pass. The [fixed contact sweep](docs/contact-windows-90-101-v1.md) independently verifies all 21 windows with none remaining; original physical contact passes remain 0/62. The [new central hand-material study](docs/central-hand-contact-v1.md) tests explicit surface references without relabeling that failed fixture.
 
