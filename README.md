@@ -8,8 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
-- [Conditional object-contact forces](docs/contact-force-balance-v1.md): friction, total-force budgets and complete force/torque replay on immutable object tracks. A matched finite-span grip study verifies 157 conditional force witnesses; actual skinned grasp, human strength and whole-body dynamics remain unverified. All 82 focused checks pass.
-- [Contact correction](docs/contact-window-87-89-v1.md): independently verified frames 87–89 now join the 0.03 continuation. Coverage advances to 15/21 attempted windows with six remaining; existing passing checks and all poses outside the edited window are preserved. Contact passes remain 0/62.
+- [Supplied-rig scene forces](docs/scene-contact-forces-v1.md): actual skin contact and complete sampled geometry now accompany explicit object COM/inertia, friction and force budgets. All 95 focused checks pass. Hypothetical caps remain separate from calibrated human strength and whole-body dynamics; [the earlier force study](docs/contact-force-balance-v1.md) remains scoped to conditional witnesses.
+- [Contact correction](docs/contact-windows-111-116-v1.md): independently verified frames 111–113 join the 0.03 continuation; the 114–116 attempt is rejected. Coverage advances to 17/21 attempted windows with four remaining. Existing passing checks and poses outside each edited window are preserved; contact passes remain 0/62.
 - [Solver conditioning](docs/contact-conic-conditioning-v1.md): removing 727 exact duplicate cones still fails the original checks. Failed/deferred results remain recorded, and acceptance tolerances stay unchanged.
 - [Regression integrity](docs/conic-fixture-integrity-v1.md): corrected a synthetic fixture that altered solver coordinates after solving. All 135 focused checks pass; hosted CI for the fix remains separate and pending.
 
@@ -43,7 +43,7 @@ These development workflows retain failures and their stated limits. Scene conta
 
 ## Source checks
 
-The [public source-check workflow](docs/model-free-source-checks.md) declares 427 Python test modules and 41 Node suites on Linux and Windows, plus separate native CPU fixture jobs. It does not need motion checkpoints or local study outputs. Inference, engine, full-system and human-quality evaluation are separate. Some additional tests need acquired model/rig fixtures or Godot; a full fresh-clone suite pass is not established.
+The [public source-check workflow](docs/model-free-source-checks.md) declares 428 Python test modules and 41 Node suites on Linux and Windows, plus separate native CPU fixture jobs. It does not need motion checkpoints or local study outputs. Inference, engine, full-system and human-quality evaluation are separate. Some additional tests need acquired model/rig fixtures or Godot; a full fresh-clone suite pass is not established.
 
 | Path | Contents |
 |---|---|

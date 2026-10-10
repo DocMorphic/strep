@@ -373,6 +373,8 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/scene-contact-forces-v1.md",
+        "docs/contact-windows-111-116-v1.md",
         "docs/contact-window-87-89-v1.md",
         "docs/contact-force-balance-v1.md",
         "docs/contact-conic-conditioning-v1.md",
@@ -857,6 +859,8 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/scene-contact-forces-v1.md",
+        "docs/contact-windows-111-116-v1.md",
         "docs/contact-window-87-89-v1.md",
         "docs/contact-force-balance-v1.md",
         "docs/contact-conic-conditioning-v1.md",
@@ -2337,6 +2341,8 @@
       "status": "incomplete",
       "release_evidence": [],
       "development_evidence": [
+        "docs/scene-contact-forces-v1.md",
+        "docs/contact-windows-111-116-v1.md",
         "docs/contact-window-87-89-v1.md",
         "docs/contact-force-balance-v1.md",
         "docs/contact-conic-conditioning-v1.md",
@@ -3057,6 +3063,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-10T05:09:42.953417+00:00",
-  "last_progress": "Latest progress: the frames 87–89 conic continuation retains one independently verified backoff from the prior 0.03 state. Four fresh Torch-free audit phases bind 4788 files and reconstruct six local records/eighteen native poses, five margin attempts, one correction proposal, fifteen proposal archive files and both complete 22720-row interval populations. All original passing checks and protected source rows survive; all poses outside the three selected keys are exactly preserved. Worst selected penetration improves 21.999 to 20.962 mm, but full physical/keyed contact passes remain 0/62. The new V14 stage and its completed batch become the verified motion/schedule: 15/21 windows attempted, six remaining. Native and audit guards complete with 826 and 430 independently replayed observations and unchanged full 2 GiB plus 600 MiB reserve. Conditional object-force work remains scoped to explicit hypothetical contacts/capacities, not actual grasp or human strength. The synthetic solver-point fixture repair passes 135 focused tests without weakening production checks; hosted validation of the fixed source is still pending. Source coverage declares 427 Python modules and 41 Node suites. The concise README preserves all previous log bytes in development history. All fourteen release capabilities, 19 inventory gaps and genuine reviewer/cleanup evidence remain open. Continue the same active full-project goal across contact reliability and broader actions, scenes/partners, rigs, edits/style, transitions, engines and dynamics."
+  "last_progress_at": "2026-10-10T05:35:20.521284+00:00",
+  "last_progress": "Latest progress: supplied-rig scene contact forces now bind original GLBs, primitive targets, full sampled surface/geometry populations, explicit object COM/inertia and hypothetical friction/capacity assumptions. All 95 focused tests pass (13 new scene fixtures plus 82 existing force/dynamics/geometry checks); all 27 test resource observations independently replay. The actual exposed humanoid/sphere development assessment is separately pending and has no new quality/strength claim. Independent seven-process V15 replay binds 4764 artifacts, reconstructs 17 local records/51 native poses, 13 margin attempts, 3 corrections, 33 proposal archive files and both complete 22720-row populations per stage. Frames 114–116 retain no update; frames 111–113 retain two checked backoffs. The latter becomes current verified motion after preservation of every source passing/protected row and all outside selected keys. Coverage is 17/21 attempted windows, four remaining; physical/keyed contact passes remain 0/62. Native/audit supervisors complete with 989/133 independently replayed observations and unchanged full 2 GiB plus 600 MiB reserve. Public coverage declares 428 Python modules and 41 Node suites; hosted validation is separate and pending. All fourteen release capabilities, 19 gaps, four unfrozen gates and genuine review/cleanup evidence remain open. Continue the same full-project goal across broad actions, scenes/partners, rigs, edits/style, transitions, engines and dynamics."
 }

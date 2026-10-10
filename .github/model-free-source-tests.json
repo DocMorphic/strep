@@ -8,6 +8,7 @@
     "tests/test_geometry_conic_start.py",
     "tests/test_conic_start_integration.py",
     "tests/test_contact_force_balance.py",
+    "tests/test_scene_object_contact_forces.py",
     "tests/test_audit_object_contact_forces.py",
     "tests/test_object_dynamics.py",
     "tests/test_object_geometry.py",
