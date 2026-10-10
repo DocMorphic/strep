@@ -133,3 +133,58 @@ def test_expired_budget_before_primary_does_not_launch_solver(monkeypatch):
     clock=iter([0., 6., 6.]); monkeypatch.setattr(subject.time, 'monotonic', lambda:next(clock))
     delta, report=subject.direction(**problem())
     assert delta is None and report['status']=='geometry_start_time_guard' and not phases
+
+
+def test_rejected_complete_solver_point_is_preserved_without_becoming_a_start(monkeypatch):
+    fake_backend(monkeypatch, [[.5, 0.]])
+    delta, report=subject.direction(**problem())
+    assert delta is None and report['check_status']=='step_bounds_failed'
+    assert report['solver_point_schema']=='strep-conic-solver-points-v1'
+    assert report['solver_points']==[dict(phase=1,solver_status='Solved',solver_iterations=1,
+        point_shape=[2],finite_complete_point=True,point=[.5,0.])]
+    assert report['retained'] is False and report['release_approved'] is False
+
+
+@pytest.mark.parametrize('point', [[np.nan,.1], [np.inf,.1], [.4], [[.4,.1]]])
+def test_invalid_solver_points_have_json_safe_observations(monkeypatch, point):
+    import json
+    fake_backend(monkeypatch, [point])
+    delta, report=subject.direction(**problem())
+    assert delta is None and report['solver_points'][0]['point'] is None
+    assert report['solver_points'][0]['finite_complete_point'] is False
+    assert report['solver_points'][0]['point_shape']==list(np.asarray(point).shape)
+    json.dumps(report,allow_nan=False)
+
+
+def test_rejected_secondary_is_saved_and_primary_selection_stays_unchanged(monkeypatch):
+    fake_backend(monkeypatch, [[.4,.1], [.2,0.]])
+    delta, report=subject.direction(**problem())
+    np.testing.assert_array_equal(delta,[.4])
+    assert report['selected_phase']=='primary' and len(report['solver_points'])==2
+    assert report['solver_points'][1]['point']==[.2,0.]
+
+
+def test_unavailable_solver_status_still_records_its_finite_point(monkeypatch):
+    actual=subject.solver_module()
+    def solver(*args):return SimpleNamespace(solve=lambda:SimpleNamespace(x=[.4,.1],status='MaxTime',iterations=7))
+    monkeypatch.setattr(subject,'solver_module',lambda:SimpleNamespace(__version__=actual.__version__,
+        DefaultSettings=actual.DefaultSettings,NonnegativeConeT=actual.NonnegativeConeT,
+        SecondOrderConeT=actual.SecondOrderConeT,DefaultSolver=solver))
+    delta,report=subject.direction(**problem())
+    assert delta is None and report['status']=='primary_start_unavailable'
+    assert report['solver_points'][0]['solver_status']=='MaxTime'
+    assert report['solver_points'][0]['point']==[.4,.1]
+
+
+def test_failed_point_roundtrips_through_exact_archive_without_quality_credit(monkeypatch,tmp_path):
+    from pose_proposal_archive import ProposalArchive,load_record
+    data=problem();fake_backend(monkeypatch, [[.5,0.]])
+    delta,report=subject.direction(**data)
+    report.update(iteration=1,caps=data['caps'].tolist(),lower_delta=data['lower'].tolist(),upper_delta=data['upper'].tolist(),
+        gradient=(2*data['jac'].T@np.minimum(data['values'],0)).tolist(),vectors={k:v.tolist() for k,v in data['vectors'].items()})
+    reference=ProposalArchive(tmp_path)('start',report)
+    loaded,bindings=load_record(tmp_path,reference,array_values=True)
+    assert bindings and loaded['solver_points'][0]['point'].flags.writeable is False
+    np.testing.assert_array_equal(loaded['solver_points'][0]['point'],[.5,0.])
+    verified=subject.replay(loaded,data['values'],data['jac'])
+    assert delta is None and verified['verified_points']==0 and not verified['retained']

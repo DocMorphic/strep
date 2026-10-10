@@ -65,6 +65,7 @@ def direction(values, jac, caps, lower, upper, seconds, vectors, *, priority='wo
         norm_cones=count, control_count=n, time_limit_seconds=float(seconds), initial_worst=worst,
         epigraph_tie_tolerance=TIE, retained=False, quality_approved=False, release_approved=False,
         scope='Checked affine proposal only; no nonlinear, saved-representation, path or animation approval.')
+    report.update(solver_point_schema='strep-conic-solver-points-v1', solver_points=[])
     def finish(status, success=False, **extra):
         return dict(report, status=status, success=success, seconds=time.monotonic()-started, **extra)
     if np.any(effective <= 0):
@@ -99,7 +100,16 @@ def direction(values, jac, caps, lower, upper, seconds, vectors, *, priority='wo
         settings.tol_gap_abs = settings.tol_gap_rel = settings.tol_feas = 1e-10
         if hasattr(settings, 'max_threads'):
             settings.max_threads = 1
-        return backend.DefaultSolver(zero, q, a, b, types, settings).solve()
+        answer = backend.DefaultSolver(zero, q, a, b, types, settings).solve()
+        raw = np.asarray(answer.x, dtype=float)
+        complete = raw.shape == (width,) and np.isfinite(raw).all()
+        # Rejected coordinates are evidence, never a fallback start. Invalid
+        # points get no JSON payload, so NaN/Infinity cannot enter an archive.
+        report['solver_points'].append(dict(phase=len(report['solver_points'])+1,
+            solver_status=str(answer.status), solver_iterations=int(answer.iterations),
+            point_shape=list(raw.shape), finite_complete_point=bool(complete),
+            point=raw.tolist() if complete else None))
+        return answer
     def check(point, ceiling=None):
         point = np.asarray(point, dtype=float)
         if point.shape != (width,) or not np.isfinite(point).all():
@@ -183,6 +193,43 @@ def replay(record, values, jac):
     np.testing.assert_allclose(record['gradient'],gradient,rtol=1e-10,atol=1e-10)
     worst=float(max(0.,-values.min()))
     if record.get('initial_worst')!=worst:raise ValueError('Original worst violation required')
+    observations = record.get('solver_points')
+    if observations is not None or 'solver_point_schema' in record:
+        if (record.get('solver_point_schema') != 'strep-conic-solver-points-v1'
+                or not isinstance(observations, list) or not 0 <= len(observations) <= 2):
+            raise ValueError('Bound complete conic solver observations required')
+        expected_phases = int('primary_status' in record) + int(record.get('secondary_status') not in [None, 'budget_exhausted'])
+        if len(observations) != expected_phases:
+            raise ValueError('Every invoked conic phase must have one observation')
+        width = len(lower) + int(record['priority'] == 'worst-first')
+        for index, observation in enumerate(observations):
+            name = 'primary' if index == 0 else 'secondary'
+            shape = observation.get('point_shape') if isinstance(observation, dict) else None
+            if isinstance(shape, np.ndarray):shape = shape.tolist()
+            if (not isinstance(observation, dict) or set(observation) != {'phase', 'solver_status',
+                    'solver_iterations', 'point_shape', 'finite_complete_point', 'point'}
+                    or type(observation['phase']) is not int or observation['phase'] != index+1
+                    or observation['solver_status'] != record.get(name+'_status')
+                    or type(observation['solver_iterations']) is not int or observation['solver_iterations'] < 0
+                    or not isinstance(shape, list) or any(type(v) is not int or v < 0 for v in shape)
+                    or type(observation['finite_complete_point']) is not bool):
+                raise ValueError('Original conic phase identity required')
+            if index == 0 and observation['solver_iterations'] != record['primary_iterations']:
+                raise ValueError('Original primary iteration count required')
+            if observation['finite_complete_point']:
+                point = np.asarray(observation['point'], dtype=float)
+                if shape != [width] or point.shape != (width,) or not np.isfinite(point).all():
+                    raise ValueError('Complete finite conic observation required')
+                if record['success'] and (index == 0 or record.get('selected_phase') == 'secondary'):
+                    selected = record['primary_delta'] if index == 0 else record['delta']
+                    np.testing.assert_array_equal(np.clip(point[:len(lower)], lower, upper), selected)
+                    if record['priority'] == 'worst-first':
+                        details = record['primary_replay'] if index == 0 else record['secondary_replay']
+                        if details['epigraph'] != point[-1]:
+                            raise ValueError('Observed original epigraph required')
+            elif observation['point'] is not None or (record['success'] and
+                    (index == 0 or record.get('selected_phase') == 'secondary')):
+                raise ValueError('Invalid observations cannot supply an accepted conic point')
     if not record['success']:
         if record.get('status')=='usable':raise ValueError('Failed conic proposal cannot be usable')
         return dict(verified_points=0,scalar_rows=len(values),norm_vectors=count,retained=False)

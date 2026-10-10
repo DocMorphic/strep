@@ -83,3 +83,30 @@ def test_complete_norm_or_scalar_loss_fails_even_with_unchanged_solver_status():
     with pytest.raises(ValueError,match='affine'):replay(start,linear['slacks'],linear['jacobian'])
     start=copy.deepcopy(report['proposal_starts'][0]);start['caps'][0]=.9
     with pytest.raises(ValueError,match='affine'):replay(start,linear['slacks'],linear['jacobian'])
+
+
+@pytest.mark.parametrize('field,value', [('phase',2),('phase',True),('solver_status','MaxTime'),
+    ('solver_iterations',-1),('solver_iterations',True),('point_shape',[1]),
+    ('finite_complete_point',False),('finite_complete_point',1),('point',[.8,.1]),('point',None)])
+def test_tampered_solver_observation_cannot_supply_checked_motion(field,value):
+    args=motion_fixture();_,report=fit(**args)
+    start=copy.deepcopy(report['proposal_starts'][0]);linear=report['proposal_linearizations'][0]
+    start['solver_points'][0][field]=value
+    with pytest.raises((ValueError,AssertionError,TypeError)):
+        replay(start,linear['slacks'],linear['jacobian'])
+
+
+def test_every_invoked_phase_must_be_observed_and_legacy_reports_still_replay():
+    args=motion_fixture();_,report=fit(**args)
+    start=copy.deepcopy(report['proposal_starts'][0]);linear=report['proposal_linearizations'][0]
+    legacy=copy.deepcopy(start);legacy.pop('solver_point_schema');legacy.pop('solver_points')
+    assert replay(legacy,linear['slacks'],linear['jacobian'])['verified_points']==2
+    start['solver_points'].pop()
+    with pytest.raises(ValueError,match='phase'):replay(start,linear['slacks'],linear['jacobian'])
+
+
+def test_observation_cannot_rewrite_primary_epigraph():
+    args=motion_fixture();_,report=fit(**args)
+    start=copy.deepcopy(report['proposal_starts'][0]);linear=report['proposal_linearizations'][0]
+    start['solver_points'][0]['point'][-1]+=.01
+    with pytest.raises(ValueError,match='epigraph'):replay(start,linear['slacks'],linear['jacobian'])
