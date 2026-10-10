@@ -5188,3 +5188,8 @@ The complete body/force assessment defers after 600.875 seconds/595 independentl
 ### 2026-10-10 — complete-body surface phase passes; geometry running
 
 The second physical guard admits the unchanged request after 470.735 seconds. The complete body-surface phase reports point/orientation/side/velocity tests passing with 4,636 actual full-body pose queries; independent numerical replay remains pending. Full geometry runs on the 2,426-time union across approach, hold and departure, with both spheres and unchanged penetration/mechanical assumptions. Four replay programs and full-geometry-clock source-cap/protected-local checks are prepared without changing imported producer sources. A server-free review builder is prepared, syntax checked but neither packaged nor rendered. No physical, guide, engine, human, training or release admission follows; the same full-project goal remains active.
+
+
+### 2026-10-10 — self-contained developer review packaged
+
+The exact before/after review is packaged as a 10,442,812-byte offline HTML file with seven local modules, eleven saved payloads, unchanged GLB bytes and license texts. Source/payload/output hashes replay and JavaScript syntax passes. Rendering remains unverified: the in-app browser security policy rejects `file://`, and no alternate browser-control workaround is attempted. The user is asked to check the grey character and seek/play/version/grip controls in their usual browser; no answer or human rating/cleanup is fabricated. The independently admitted full geometry/force worker remains active. The same full-project goal remains active.
