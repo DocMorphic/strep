@@ -6,6 +6,8 @@ Strep combines an unchanged motion-generation checkpoint with tools for characte
 
 **Status: active development, not release-ready.** Successful generation or engine import does not establish realistic motion. Contact reliability, calibrated character controls, broad held-out evaluation, and human review remain open work.
 
+Latest: [saved-candidate recovery](docs/contact-candidate-recovery-v1.md) recovers three complete poses from a RAM-stopped contact fit through fresh native history/geometry replay and exact independent parity over 22,720 interval rows per candidate. Editable 180-key body GLBs preserve the original mesh and all eight weights. Scheduling remains 13 completed attempts with eight windows open; box-lift contact passes remain 0/62. The interrupted optimizer is not marked complete, and no release capability is approved. Earlier development checkpoints follow.
+
 [Contact-window continuation](docs/contact-interval-batch-v3.md) completes two more native windows while keeping failed checks visible; independent geometry replay is pending. [Proposal callbacks](docs/proposal-callback-derivatives-v1.md) now defer full Jacobians until requested, with exact paired numerical results and unchanged retention gates. Neither result approves contact quality.
 
 [Direct norm-cone search](docs/geometry-conic-start-v1.md) finds independently checked starts for two complete saved contact problems, including the one whose prior search exhausted its limits. This isolated helper leaves the default fitter and motion states unchanged; nonlinear pose validation remains outstanding.

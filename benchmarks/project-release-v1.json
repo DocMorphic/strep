@@ -828,7 +828,13 @@
         "reports/box-lift-partial-recovery-v1/local-replay.json",
         "reports/box-lift-partial-recovery-v1/interval-replay.json",
         "reports/box-lift-partial-recovery-v1/resource-audit-v2.json",
-        "reports/box-lift-candidate-recovery-v1/resource-audit-v1.json"
+        "reports/box-lift-candidate-recovery-v1/resource-audit-v1.json",
+        "reports/box-lift-candidate-recovery-v1/recovery/result.json",
+        "reports/box-lift-candidate-recovery-v1/resource-audit-v2.json",
+        "reports/box-lift-candidate-recovery-v1/native-independent-parity-v1.json",
+        "reports/box-lift-candidate-recovery-v1/schedule-replay-v1.json",
+        "reports/box-lift-candidate-preview-v1/verification.json",
+        "reports/box-lift-candidate-recovery-v1/export-resource-audit-v1.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1167,7 +1173,13 @@
         "reports/box-lift-partial-recovery-v1/local-replay.json",
         "reports/box-lift-partial-recovery-v1/interval-replay.json",
         "reports/box-lift-partial-recovery-v1/resource-audit-v2.json",
-        "reports/box-lift-candidate-recovery-v1/resource-audit-v1.json"
+        "reports/box-lift-candidate-recovery-v1/resource-audit-v1.json",
+        "reports/box-lift-candidate-recovery-v1/recovery/result.json",
+        "reports/box-lift-candidate-recovery-v1/resource-audit-v2.json",
+        "reports/box-lift-candidate-recovery-v1/native-independent-parity-v1.json",
+        "reports/box-lift-candidate-recovery-v1/schedule-replay-v1.json",
+        "reports/box-lift-candidate-preview-v1/verification.json",
+        "reports/box-lift-candidate-recovery-v1/export-resource-audit-v1.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -3030,6 +3042,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-10T00:58:33.670518+00:00",
-  "last_progress": "Latest progress: [saved candidate recovery](contact-candidate-recovery-v1.md) independently replays all 38 partial V12 observations / 114 poses and all 22,720 original interval rows for each of three retained candidates. No passing/protected row is lost; physical passes remain 0/62. A separately typed native recovery and continuation path preserves original bounds, references and failed scheduling attempts without manufacturing optimizer completion. Initial 119 focused interval checks and final 78 recovery/scheduling checks pass. Native confirmation defers after 600.109 seconds without a child; independent resource replay verifies all 594 samples. Pose/resource helper hashes are frozen before ancestry replay. Under the unchanged resource profile, V10 motion, V11 schedule, 13 completed attempts and eight remaining windows stay authoritative. V12 remains interrupted. Model-free inventory stays 423 Python modules / 41 Node suites; new native recovery tests are added to Linux/Windows CPU checks. All fourteen release capabilities remain unapproved. Continue guarded native confirmation and broad action/scene/partner/rig/edit/style/transition/engine and actual reviewer work under the same full-project goal."
+  "last_progress_at": "2026-10-10T01:23:09.028111+00:00",
+  "last_progress": "Latest progress: [native saved-candidate recovery](contact-candidate-recovery-v1.md) completes after 569.187 execution seconds, with all 728 resource samples independently checked. Three saved V12 candidates preserve every original interval row; complete arrays and all 22,720 rows per candidate exactly match independent geometry evidence. Actual production scheduling preserves all 13 completed attempts, including rejection, and eight remaining windows. Two editable 180-key SOMA77 body GLBs preserve the original mesh/materials/eight weights, with at most 0.102 micrometres of serialization position error; reconstruction, export and resource checks pass. The separate recovery is the verified diagnostic resume motion, V10 its replayed ancestor, V11 the completed schedule, and V12 remains interrupted. Final 78 recovery/scheduling source checks pass; model-free inventory remains 423 Python modules / 41 Node suites, with native recovery checks registered on Linux/Windows. Box-lift contact passes remain 0/62, all fourteen release capabilities remain unapproved, and the release inventory still has 19 evidence gaps. No new model sampling/training, engine playback or genuine human rating/cleanup result is claimed. Continue bounded native coverage and broad action/scene/partner/rig/edit/style/transition/engine plus real reviewer work under this same full-project goal."
 }
