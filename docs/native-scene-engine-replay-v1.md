@@ -61,3 +61,12 @@ RSS under the original 2,048 MiB plus 600 MiB reserve profile. Independent geome
 arithmetic and native-authoring measurements remain separate pending work.
 This one development fixture does not establish broader action, rig or object
 quality. All fourteen release capabilities remain unapproved.
+
+The new scene verifier subsequently completes on this actual import: all original
+pose/skin/contact observations and saved geometry reductions agree exactly,
+and the combined failed decision stays false. Its separately replayed resource
+record covers 292 observations and a 551,944,192-byte peak process-tree RSS,
+using the same full profile. The result is saved locally at
+`reports/central-hand-physical-v1/general-departure-engine-import-replay-v1`.
+This validates evidence consistency, not the independent triangle arithmetic
+or acceptability of the animation.
