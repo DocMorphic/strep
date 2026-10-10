@@ -859,6 +859,7 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/rig-articulated-dynamics-v1.md",
         "docs/scene-mechanics-study-v1.md",
         "docs/articulated-motion-dynamics-v1.md",
         "docs/scene-model-next-steps-v1.md",
@@ -2344,6 +2345,7 @@
       "status": "incomplete",
       "release_evidence": [],
       "development_evidence": [
+        "docs/rig-articulated-dynamics-v1.md",
         "docs/scene-mechanics-study-v1.md",
         "docs/articulated-motion-dynamics-v1.md",
         "docs/scene-model-next-steps-v1.md",
@@ -3069,6 +3071,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-10T06:43:17.175610+00:00",
-  "last_progress": "Latest progress: independently replayed original supplied-humanoid/sphere scene mechanics retain all 2379 geometry clocks, 171801864 triangle/object queries and ten grip correspondences. Geometry passes; original conditional forces, actual supported grip stencils and coupled consistency all fail 0/59. A separately authored equatorial target patch comparison retains identical object demand and hypothetical budgets and independently verifies 59/59 conditional witnesses; actual new skin contact, anatomy, generation and human quality remain unverified. Original benchmark and held-out reservations are unchanged; no clean human training admission. Full native/audit resource policy stays 2 GiB plus 600 MiB reserve. Source-humanoid producer/replay resource observations 2534/699 all verify; bounded matched force producer/replay seven records each verify. Full final four-window V16 sweep is processing, not yet numerically audited; current verified motion remains V15 stage two with 17/21 attempted and 0/62 contact passes. Hosted b3e040f passes all twelve Linux/Windows source jobs at its 428-module inventory; later body-tree source declares 429 modules and 41 Node suites, with 38 focused checks passed. All fourteen release capabilities, nineteen gaps, four unfrozen gates and real developer/animator ratings/cleanup remain open. Continue the same full-project goal."
+  "last_progress_at": "2026-10-10T07:03:22.477044+00:00",
+  "last_progress": "Latest progress: explicit supplied-GLB body/node COM and axis bindings now feed immutable articulated-demand jobs without modifying original clips or inferring anatomy/mass/strength. All 64 focused bridge/workflow/tree/rigid-body tests pass; fifteen resource observations independently replay. Source coverage declares 431 Python modules and 41 Node suites. The completed original humanoid/sphere study remains 0/59 force/contact consistency despite passing full geometry; separately authored equatorial targets have 59/59 independently checked conditional force witnesses but no actual new hand-contact approval. V16 stops during resume validation before any new window: attempt hydration wrongly inherits a later secondary solver status into earlier primary-only records. Raw records remain preserved, current verified motion remains V15 stage two at 17/21 attempted and 0/62 contact passes; the accounting repair is under separate validation before fresh continuation. Body-profile workflow success and synthetic root-balance positives leave physical approval unset and quality/release/training false. All fourteen release capabilities, nineteen gaps, four unfrozen gates and real human review/cleanup remain open. Continue the same full-project goal."
 }

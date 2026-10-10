@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Supplied-GLB body demands](docs/rig-articulated-dynamics-v1.md): explicit COM/body-axis tracks and immutable articulated diagnostics now sample original rig clips. All 64 focused checks pass; actual humanoid body profiles, reaction allocation and calibrated capacities remain unverified.
+
 - [Scene mechanics study](docs/scene-mechanics-study-v1.md): full supplied-humanoid/sphere geometry independently replays, while original forces/grips fail all 59 assessed samples. Separately rotated equatorial targets admit 59/59 conditional force witnesses under identical budgets; actual new hand contact and animation remain unverified.
 
 - [Explicit joint demand](docs/articulated-motion-dynamics-v1.md): rigid-body-tree forces/torques, original connected anchors and floating-root balance under supplied body properties and external wrenches. All 38 focused checks pass. Human capacities, rig-to-body conversion and contact allocation remain unverified; [the model decision record](docs/scene-model-next-steps-v1.md) sets the next comparisons.
@@ -47,7 +49,7 @@ These development workflows retain failures and their stated limits. Scene conta
 
 ## Source checks
 
-The [public source-check workflow](docs/model-free-source-checks.md) declares 429 Python test modules and 41 Node suites on Linux and Windows, plus separate native CPU fixture jobs. It does not need motion checkpoints or local study outputs. Inference, engine, full-system and human-quality evaluation are separate. Some additional tests need acquired model/rig fixtures or Godot; a full fresh-clone suite pass is not established.
+The [public source-check workflow](docs/model-free-source-checks.md) declares 431 Python test modules and 41 Node suites on Linux and Windows, plus separate native CPU fixture jobs. It does not need motion checkpoints or local study outputs. Inference, engine, full-system and human-quality evaluation are separate. Some additional tests need acquired model/rig fixtures or Godot; a full fresh-clone suite pass is not established.
 
 | Path | Contents |
 |---|---|

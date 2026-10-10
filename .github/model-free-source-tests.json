@@ -12,6 +12,8 @@
     "tests/test_audit_object_contact_forces.py",
     "tests/test_object_dynamics.py",
     "tests/test_articulated_motion_dynamics.py",
+    "tests/test_rig_body_tracks.py",
+    "tests/test_rig_articulated_dynamics.py",
     "tests/test_object_geometry.py",
     "tests/test_inequality_restoration.py",
     "tests/test_weight_derivative_fidelity.py",
