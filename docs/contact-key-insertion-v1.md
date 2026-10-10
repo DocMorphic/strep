@@ -141,3 +141,10 @@ Final receipt identifiers:
 - All nine original pilot candidates: `b5e7de4006a30d7c185717ed8edeed73683a9c55fbf25d396c53c0f0008e019f`.
 
 The single full-project goal remains active. This is one contact fixture on one rig. All fourteen release capabilities remain unapproved; nineteen gaps, four unfrozen gates and genuine developer/animator ratings and cleanup evidence remain outstanding.
+
+
+## Physical admission and review packaging
+
+The first complete body/force assessment defers after **600.875 admission seconds** and 595 resource observations without starting a worker or creating an assessment. Independent resource replay confirms the original 2,776,629,248-byte admission requirement, unchanged protocol and absence of a child. Preserve this resource deferral separately from the successful contact result. A fresh retry uses the exact same request, inputs, numerical limits and resource policy with new guard/output paths.
+
+An ignored before/after package under `reports/central-hand-contact-review-v1` binds both exact GLBs, original sphere tracks and independently replayed contact measurements. The baseline is the earlier 62-native-pose correction, not raw model output. The package retains the eight-influence preview shader, checks source hashes, supports a stable camera/time and grip close-up, and can download explicitly non-blind developer observations without submitting animator ratings or cleanup evidence. JavaScript syntax and immutable packaging/resource checks pass. Its twelve guard observations replay. Browser rendering and interactions remain **unverified**: automatic approval review rejects starting the hidden loopback preview server on port 8771 with the stated reason “blocked by policy”; existing preview services do not serve this package. No server starts, and no genuine human review is recorded by packaging it.
