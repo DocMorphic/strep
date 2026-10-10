@@ -203,3 +203,6 @@ The [subsequent thumb curve study](thumb-clearance-curves-v1.md) passes three fi
 
 
 The [six-pose refinement](thumb-clearance-curves-v1.md#six-pose-refinement) subsequently passes all 1,995 hold times for the complete edited triangle region at worst 4.998037 mm, while preserving every grip condition, original key times and source caps. All 11,441,016 triangle/object queries replay. Ten approach/departure times still fail, so the full curve remains rejected; no complete body or release approval follows. Both curves and all earlier failed pilots remain retained.
+
+
+The [subsequent complete-hand replay](thumb-clearance-curves-v1.md#complete-hands-remain-rejected) clarifies that the passing thumb region is insufficient: all 1,995 hold times still fail broader hand geometry at worst 7.796010 mm. All 114,351,936 triangle/object queries strictly replay after a preserved library-distance discrepancy is independently resolved. A fixed LeftHandMiddle4 face fails throughout the hold and cannot move under thumb-only permissions. Complete-hand sampled times repaired remain zero; useful additional finger permissions and broader verification are next.
