@@ -69,3 +69,6 @@ Scoped selected-surface/pose workers retain the existing 1,024 MiB plus 600 MiB 
 
 
 The complete hold producer/audit finish in **139.891 / 4.469 seconds** with **136 / 10** independently replayed resource observations. Export/clock producer/audit finish in **22.453 / 11.797 seconds** with **27 / 17** observations, all independently replayed. These resource receipts add no motion approval. Source inventory remains 436 Python modules / 41 Node suites; this continuation changes methodology/result documentation and runs ignored studies, not production source or its passing software-test scope.
+
+
+Later continuation: [previous-pose fitting and interval selection](pose-continuation-v1.md) independently isolate interpolation drift and test the complete 62-key continuation curve. That curve still fails actual sliding/side conditions; the reusable source helper is numerical infrastructure, not a motion approval. The next nine-key insertion pilot and complete 135-key proposal are frozen but not executed.
