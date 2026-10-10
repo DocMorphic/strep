@@ -70,3 +70,37 @@ using the same full profile. The result is saved locally at
 `reports/central-hand-physical-v1/general-departure-engine-import-replay-v1`.
 This validates evidence consistency, not the independent triangle arithmetic
 or acceptability of the animation.
+
+## Independent query diagnosis
+
+The first complete imported geometry arithmetic attempt stops at frame 585,
+time 2.36875 s, on face 11683's sphere closest-point witness. It is a failed
+attempt, not complete independent evidence. A second instrumented attempt
+preserves the same disagreement: the reference witness differs by up to
+1.37979517e-9 m, above the unchanged 2e-12 m comparison limit.
+
+An 80-digit Decimal plane/edge calculation using the exact binary64 diagnostic
+triangle finds the saved producer witness accurate to within 8e-16 m. The
+reference's squared edge distances rounded to a tie near a shared corner,
+selecting a distinct, incorrect point. The revised private reference retains
+its SVD/edge calculation and uses exact-input, 80-digit refinement where rounded
+edge distances are indistinguishable and the witnesses differ by more than the
+original comparison tolerance. This changes the calculation; it does not relax
+the witness, penetration or contact limits. All **33 focused numeric cases**
+pass, covering the recorded disagreement plus 32 synthetic triangles. Complete
+full-population replay of this revision is running and remains unproven.
+
+The failed runs, exact diagnostic inputs, high-precision calculation and numeric
+checks remain under `reports/central-hand-physical-v1`, respectively
+`departure-engine-import-independent-geometry-guard-v1`,
+`departure-engine-import-witness-forensics-guard-v1`,
+`engine-import-witness-forensics-v1.json`, `engine-import-witness-decimal-v1.json`
+and `engine-import-reference-checks-v2.json`. Their resource traces also replay;
+this does not turn either failed full audit into a successful one.
+
+Separately, the [pinned Godot glTF source](https://github.com/godotengine/godot/blob/ed1daf0bf001b61586d9930840f2f1394092c079/modules/gltf/gltf_document.cpp#L5472)
+resamples joint TRS tracks at a bake rate; the same revision's `generate_scene`
+binding defaults to 30 fps. The existing Strep import audit uses that default.
+Fixed-rate interpolation is a hypothesis for the larger measured pose drift,
+not an established causal attribution. Native-resource authoring preserves
+original LINEAR source keys and must still be measured on this complete fixture.
