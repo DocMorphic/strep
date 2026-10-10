@@ -827,7 +827,8 @@
         "docs/contact-candidate-recovery-v1.md",
         "reports/box-lift-partial-recovery-v1/local-replay.json",
         "reports/box-lift-partial-recovery-v1/interval-replay.json",
-        "reports/box-lift-partial-recovery-v1/resource-audit-v2.json"
+        "reports/box-lift-partial-recovery-v1/resource-audit-v2.json",
+        "reports/box-lift-candidate-recovery-v1/resource-audit-v1.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1165,7 +1166,8 @@
         "docs/contact-candidate-recovery-v1.md",
         "reports/box-lift-partial-recovery-v1/local-replay.json",
         "reports/box-lift-partial-recovery-v1/interval-replay.json",
-        "reports/box-lift-partial-recovery-v1/resource-audit-v2.json"
+        "reports/box-lift-partial-recovery-v1/resource-audit-v2.json",
+        "reports/box-lift-candidate-recovery-v1/resource-audit-v1.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -3028,6 +3030,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-10T00:52:07.707607+00:00",
-  "last_progress": "Latest progress: [saved candidate recovery](contact-candidate-recovery-v1.md) independently replays all 38 partial V12 observations / 114 poses and all 22,720 original interval rows for each of three retained candidates. No passing/protected row is lost; physical passes remain 0/62. A separately typed native recovery and continuation path preserves original bounds, references and failed scheduling attempts without manufacturing optimizer completion. Initial 119 focused interval checks and final 74 recovery/scheduling checks pass. Native confirmation is waiting under the unchanged resource profile; V10 motion, V11 schedule, 13 completed attempts and eight remaining windows stay authoritative. V12 remains interrupted. Model-free inventory stays 423 Python modules / 41 Node suites; new native recovery tests are added to Linux/Windows CPU checks. All fourteen release capabilities remain unapproved. Continue guarded native confirmation and broad action/scene/partner/rig/edit/style/transition/engine and actual reviewer work under the same full-project goal."
+  "last_progress_at": "2026-10-10T00:58:33.670518+00:00",
+  "last_progress": "Latest progress: [saved candidate recovery](contact-candidate-recovery-v1.md) independently replays all 38 partial V12 observations / 114 poses and all 22,720 original interval rows for each of three retained candidates. No passing/protected row is lost; physical passes remain 0/62. A separately typed native recovery and continuation path preserves original bounds, references and failed scheduling attempts without manufacturing optimizer completion. Initial 119 focused interval checks and final 78 recovery/scheduling checks pass. Native confirmation defers after 600.109 seconds without a child; independent resource replay verifies all 594 samples. Pose/resource helper hashes are frozen before ancestry replay. Under the unchanged resource profile, V10 motion, V11 schedule, 13 completed attempts and eight remaining windows stay authoritative. V12 remains interrupted. Model-free inventory stays 423 Python modules / 41 Node suites; new native recovery tests are added to Linux/Windows CPU checks. All fourteen release capabilities remain unapproved. Continue guarded native confirmation and broad action/scene/partner/rig/edit/style/transition/engine and actual reviewer work under the same full-project goal."
 }

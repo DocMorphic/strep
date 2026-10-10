@@ -16,6 +16,7 @@ from protected_inequality_step import retain
 from pose_restoration_policy import row_diagnostics
 
 SCHEMA = 'strep-saved-contact-candidate-recovery-v1'
+RESOURCE_METHODS = ['audit_guarded_job.py', 'resource_admission.py', 'process_monitor.py']
 FILES = {'baseline-motion.npz', 'retained-motion.npz', 'baseline.json',
          'proposed.json', 'row-diagnostics.json', 'candidate-replays.json'}
 SCOPE = ('Fresh native geometry replay of saved partial candidates, exact starting history, '
@@ -39,6 +40,18 @@ def binder(checked):
             raise ValueError('Conflicting recovery binding')
         checked[str(path)] = digest
     return bind
+
+
+def verify_implementation(implementation, archive=None):
+    """Check a worker's live source without pinning future resumes to that path.
+
+    Persistent histories bind the immutable archive. A subsequent source change
+    still requires complete fresh numeric replay, as for existing interval fits.
+    """
+    bind = binder({})
+    for path, digest in implementation.items():
+        bind(path, digest)
+        if archive is not None: bind(archive/Path(path).name, digest)
 
 
 def stopped_source(partial, guard, study, frames, width, original_bindings,
@@ -181,6 +194,9 @@ def replay_recovery(directory, study, factory, source, frames, width, original_b
         raise ValueError('Original recovery inputs differ')
     if set(protocol['methods_sha256']) != set(methods): raise ValueError('Complete recovery implementation required')
     for name, digest in protocol['methods_sha256'].items(): bind(directory/'implementation'/name, digest)
+    resources = protocol.get('resource_methods_sha256', {})
+    if set(resources) != set(RESOURCE_METHODS): raise ValueError('Complete resource replay implementation required')
+    for name, digest in resources.items(): bind(directory/'implementation'/name, digest)
     if protocol['native_metadata_sha256'] != sha256(definitions): raise ValueError('Native metadata differs')
     bind(directory/'implementation/kimodo-skeleton-definitions.py', protocol['native_metadata_sha256'])
     bind(directory/'protocol.json', result['protocol_sha256'])
@@ -230,6 +246,7 @@ def run(study, partial, guard, resume, output, frames, *, width=3):
     if output.exists(): raise FileExistsError(output)
     with worker_lock(), threadpool_limits(limits=2):
         torch.set_num_threads(2)
+        implementation = {str(ROOT/'scripts'/n): sha256(ROOT/'scripts'/n) for n in METHODS+RESOURCE_METHODS}
         summary = read(study/'fit/summary.json')
         if summary.get('solver_version') != 17 or read(study/'pipeline.json')['status'] != 'complete' or len(summary['trials']) != 1 or sha256(ASSET) != summary['mesh_sha256']:
             raise ValueError('Completed original V17 source and unchanged native skin required')
@@ -242,12 +259,15 @@ def run(study, partial, guard, resume, output, frames, *, width=3):
         state, parameters, receipt, extra = resume_interval(resume, study, factory, source, frames, width, original, METHODS, DEFINITIONS, ExactSavedOrigin)
         checked.update(extra)
         protocol, trials = stopped_source(partial, guard, study, frames, width, original, METHODS, DEFINITIONS, receipt, bind)
+        verify_implementation(implementation)
         output.mkdir(parents=True); archive = output/'implementation'; archive.mkdir()
-        for name in METHODS: shutil.copyfile(ROOT/'scripts'/name, archive/name)
+        for name in METHODS+RESOURCE_METHODS: shutil.copyfile(ROOT/'scripts'/name, archive/name)
+        verify_implementation(implementation, archive)
         shutil.copyfile(DEFINITIONS, archive/'kimodo-skeleton-definitions.py')
         recovery_protocol = dict(schema=SCHEMA, at=now(), source_study=study.relative_to(ROOT).as_posix(), frames=frames, width=width, fps=30,
             interrupted_stage=partial.relative_to(ROOT).as_posix(), interrupted_guard=guard.relative_to(ROOT).as_posix(),
             interval_resume=receipt, inputs_sha256=checked.copy(), methods_sha256={n: sha256(archive/n) for n in METHODS},
+            resource_methods_sha256={n: sha256(archive/n) for n in RESOURCE_METHODS},
             native_metadata_sha256=sha256(DEFINITIONS), metadata_approved=False, quality_approved=False, release_approved=False, scope=SCOPE)
         save(output/'protocol.json', recovery_protocol); save(output/'pipeline.json', dict(status='processing', quality_approved=False, release_approved=False))
         try:
@@ -255,8 +275,7 @@ def run(study, partial, guard, resume, output, frames, *, width=3):
             for name, motion in [('baseline-motion.npz', state), ('retained-motion.npz', proposed)]: np.savez_compressed(output/name, **motion)
             for name, value in [('baseline.json', baseline), ('proposed.json', summary), ('row-diagnostics.json', diagnostics), ('candidate-replays.json', records)]: save(output/name, value)
             for path, digest in checked.items(): bind(path, digest)
-            if any(sha256(ROOT/'scripts'/n) != h or sha256(archive/n) != h for n, h in recovery_protocol['methods_sha256'].items()):
-                raise ValueError('Recovery implementation changed')
+            verify_implementation(implementation, archive)
             save(output/'result.json', dict(status='complete', at=now(), schema=SCHEMA, decision=decision, interrupted_stage_complete=False,
                 selected_frames=protocol['selected_frames'], recovered_candidates=sum(r['globally_retained'] for r in records),
                 row_count=len(diagnostics['rows']), physical_contact_keys_passed=summary['physical_contact_keys_passed'],

@@ -117,10 +117,12 @@ def recovery_fixture(tmp_path, monkeypatch):
     directory = tmp_path/'recovery'; archive = directory/'implementation'; archive.mkdir(parents=True)
     methods = f[5][6]
     for name in methods: (archive/name).write_text('frozen recovery method')
+    for name in recovery.RESOURCE_METHODS: (archive/name).write_text('frozen resource replay method')
     (archive/'kimodo-skeleton-definitions.py').write_bytes(f[5][7].read_bytes())
     protocol = dict(schema=recovery.SCHEMA, source_study='source', frames=f[5][3], width=3, fps=30,
         interval_resume=f[6]['interval_resume'], interrupted_stage='attempt/stage', interrupted_guard='attempt/guard',
         inputs_sha256=f[8], methods_sha256={n: resume.sha256(archive/n) for n in methods},
+        resource_methods_sha256={n: resume.sha256(archive/n) for n in recovery.RESOURCE_METHODS},
         native_metadata_sha256=resume.sha256(f[5][7]), metadata_approved=False, quality_approved=False, release_approved=False)
     write(directory/'protocol.json', protocol)
     for name, m in [('baseline-motion.npz', f[3]), ('retained-motion.npz', proposed)]: np.savez_compressed(directory/name, **m)
@@ -150,6 +152,18 @@ def test_recovery_cannot_claim_old_optimizer_completed(tmp_path, monkeypatch):
     directory, _, f = recovery_fixture(tmp_path, monkeypatch)
     result = resume.read(directory/'result.json'); result['interrupted_stage_complete'] = True; write(directory/'result.json', result)
     with pytest.raises(ValueError, match='geometry recovery'): resume.resume_interval(directory, *f[5])
+
+
+@pytest.mark.parametrize('change',['missing','altered'])
+def test_recovery_resource_auditor_is_bound(tmp_path, monkeypatch, change):
+    directory, _, f = recovery_fixture(tmp_path, monkeypatch)
+    if change == 'altered':
+        (directory/'implementation/audit_guarded_job.py').write_text('changed resource interpretation')
+    else:
+        protocol = resume.read(directory/'protocol.json'); protocol['resource_methods_sha256'].pop('audit_guarded_job.py')
+        write(directory/'protocol.json', protocol)
+        result = resume.read(directory/'result.json'); result['protocol_sha256'] = resume.sha256(directory/'protocol.json'); write(directory/'result.json', result)
+    with pytest.raises(ValueError): resume.resume_interval(directory, *f[5])
 
 
 def test_recovery_cycle_is_rejected(tmp_path, monkeypatch):
@@ -189,3 +203,14 @@ def test_live_source_is_rejected_by_resource_replay(tmp_path, monkeypatch):
     monkeypatch.setattr(audit_guarded_job, 'audit', live)
     with pytest.raises(ValueError, match='remains live'):
         recovery.stopped_source(f[0], f[1], f[5][0], f[5][3], f[5][4], f[5][5], f[5][6], f[5][7], f[6]['interval_resume'], f[9])
+
+
+@pytest.mark.parametrize('change',['live','archive'])
+def test_worker_start_hashes_protect_source_and_archive_without_persistent_live_paths(tmp_path, monkeypatch, change):
+    monkeypatch.setattr(recovery, 'ROOT', tmp_path)
+    live = tmp_path/'source.py'; live.write_text('original worker code')
+    archive = tmp_path/'archive'; archive.mkdir(); saved = archive/live.name; saved.write_bytes(live.read_bytes())
+    bindings = {str(live): resume.sha256(live)}
+    recovery.verify_implementation(bindings, archive)
+    (live if change == 'live' else saved).write_text('different worker code')
+    with pytest.raises(ValueError, match='binding changed'): recovery.verify_implementation(bindings, archive)
