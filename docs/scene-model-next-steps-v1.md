@@ -2,7 +2,7 @@
 
 Research checked 2026-10-10. This is a development decision record, not a new checkpoint or a release approval. The [full-project goal](project-goal.md) remains active across arbitrary actions, objects, partners, styles, rigs and game assets.
 
-The current [complete contact continuation](contact-windows-111-116-v1.md) still has 0/62 physical/keyed contact passes. The [supplied-rig force component](scene-contact-forces-v1.md) adds actual contact/geometry and explicit object mechanics, but its synthetic positives are not clean human motion. Finish the four remaining canonical windows, retain every failure, and audit the exposed humanoid scene before selecting a learned change. This is a finite diagnostic sweep, not a plan to keep making tiny corrections indefinitely.
+The current [complete contact continuation](contact-windows-111-116-v1.md) still has 0/62 physical/keyed contact passes. The [supplied-rig force component](scene-contact-forces-v1.md) adds actual contact/geometry and explicit object mechanics, but its synthetic positives are not clean human motion. The [complete exposed humanoid scene audit](scene-mechanics-study-v1.md) now verifies the original force/contact failure and a separate 59/59 force-compatible equatorial target model under identical budgets. Actual new hand contact remains unverified. Finish the four remaining canonical windows and retain every failure before selecting a learned change. This is a finite diagnostic sweep, not a plan to keep making tiny corrections indefinitely.
 
 ## What the primary sources establish
 

@@ -859,6 +859,7 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/scene-mechanics-study-v1.md",
         "docs/articulated-motion-dynamics-v1.md",
         "docs/scene-model-next-steps-v1.md",
         "docs/scene-contact-forces-v1.md",
@@ -2343,6 +2344,7 @@
       "status": "incomplete",
       "release_evidence": [],
       "development_evidence": [
+        "docs/scene-mechanics-study-v1.md",
         "docs/articulated-motion-dynamics-v1.md",
         "docs/scene-model-next-steps-v1.md",
         "docs/scene-contact-forces-v1.md",
@@ -3067,6 +3069,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-10T06:22:44.552372+00:00",
-  "last_progress": "Latest progress: explicit body-tree inverse Newton–Euler diagnostics now preserve complete COM/rotation/external-wrench populations and physical assumptions, validate rigid joint anchors and recursively measure internal loads plus necessary floating-root balance. All 38 focused analytical/tree/rigid-body checks pass; eight test resource records replay. No inferred human profile, contact allocation, calibrated joint capacity, glTF conversion, human or release approval is added. Source coverage is 429 Python modules and 41 Node suites. The exposed humanoid/sphere scene-force producer completes all 2379 original/added geometry clocks with 2534 independently replayed resource observations: it reports 0/59 feasible force samples and failed actual grip orientation under explicit hypothetical mechanics, while sampled geometry passes. Its independent four-phase numeric replay is still pending and the raw conclusion is not promoted. Latest verified diagnostic motion remains V15 stage two: 17/21 attempted windows, four remaining, physical/keyed contact passes 0/62. Primary-source research retains unchanged Kimodo kinematic controls as the next scene-proposal comparison; any learned editor needs measured failures and admitted licensed clean demonstrations. All fourteen release capabilities, 19 gaps, four unfrozen gates and genuine developer/animator review/cleanup remain open. Continue the same full-project goal."
+  "last_progress_at": "2026-10-10T06:43:17.175610+00:00",
+  "last_progress": "Latest progress: independently replayed original supplied-humanoid/sphere scene mechanics retain all 2379 geometry clocks, 171801864 triangle/object queries and ten grip correspondences. Geometry passes; original conditional forces, actual supported grip stencils and coupled consistency all fail 0/59. A separately authored equatorial target patch comparison retains identical object demand and hypothetical budgets and independently verifies 59/59 conditional witnesses; actual new skin contact, anatomy, generation and human quality remain unverified. Original benchmark and held-out reservations are unchanged; no clean human training admission. Full native/audit resource policy stays 2 GiB plus 600 MiB reserve. Source-humanoid producer/replay resource observations 2534/699 all verify; bounded matched force producer/replay seven records each verify. Full final four-window V16 sweep is processing, not yet numerically audited; current verified motion remains V15 stage two with 17/21 attempted and 0/62 contact passes. Hosted b3e040f passes all twelve Linux/Windows source jobs at its 428-module inventory; later body-tree source declares 429 modules and 41 Node suites, with 38 focused checks passed. All fourteen release capabilities, nineteen gaps, four unfrozen gates and real developer/animator ratings/cleanup remain open. Continue the same full-project goal."
 }

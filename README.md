@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Scene mechanics study](docs/scene-mechanics-study-v1.md): full supplied-humanoid/sphere geometry independently replays, while original forces/grips fail all 59 assessed samples. Separately rotated equatorial targets admit 59/59 conditional force witnesses under identical budgets; actual new hand contact and animation remain unverified.
+
 - [Explicit joint demand](docs/articulated-motion-dynamics-v1.md): rigid-body-tree forces/torques, original connected anchors and floating-root balance under supplied body properties and external wrenches. All 38 focused checks pass. Human capacities, rig-to-body conversion and contact allocation remain unverified; [the model decision record](docs/scene-model-next-steps-v1.md) sets the next comparisons.
 
 - [Supplied-rig scene forces](docs/scene-contact-forces-v1.md): actual skin contact and complete sampled geometry now accompany explicit object COM/inertia, friction and force budgets. All 95 focused checks pass. Hypothetical caps remain separate from calibrated human strength and whole-body dynamics; [the earlier force study](docs/contact-force-balance-v1.md) remains scoped to conditional witnesses.
