@@ -47,6 +47,25 @@ The next experiment expands the already frozen 45-interval/135-key population wi
 
 Expansion preflight verifies 135 distinct float32 interior times, all 45 selected intervals, exact inclusion of the nine verified candidates, a 315-key rotation clock and the original 192-added/512-total budgets. The first launch rejects a requested 7,200-second runtime before starting a worker because the unchanged supervisor permits at most 3,600 seconds. Preserve that policy rejection. A revised preflight and bounded first stage keep the complete population frozen while fitting at most eighteen new keys; immutable per-key NPZ/JSON checkpoints retain candidate arrays and hashes. Subsequent stages require separate candidate replay before carrying those keys forward. No partial stage is a completed 135-key asset.
 
+## Verified staged expansion
+
+The first four stages complete with **72 passing inserted poses** in the frozen population. Each stage independently replays every accumulated candidate against the original source, actual partial skin, complete incident normals, contact decisions and source caps. The fourth stage includes all nine verified pilot candidates; the other 63 poses are new fits.
+
+| Stage | Accumulated passing poses | Replayed source caps | Replayed contact correspondences | Producer execution | Resource observations |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 18 | 198 | 180 | 299.437 seconds | 284 |
+| 2 | 36 | 396 | 360 | 241.578 seconds | 231 |
+| 3 | 54 | 594 | 540 | 225.687 seconds | 216 |
+| 4 | 72 | 792 | 720 | 356.797 seconds | 337 |
+
+All producer and pose-audit resource traces replay. The source foot-matrix difference remains below 6.67e-16. Separate continuation replay checks every carried array, report and numerical-policy field: stage 2 preserves 594 arrays / 124,182 scalar values from its eighteen-key predecessor exactly; stage 3 preserves 1,188 arrays / 248,364 scalar values from its thirty-six-key predecessor exactly. A separate stage-3 pilot comparison verifies all 99 arrays / 20,697 values for the three pilot keys included at that stage. Source/previous transforms, targets, all weights, caps, margins, iterations, clocks and original input hashes remain unchanged.
+
+Stage 4 independently preserves all 1,782 arrays / 372,546 scalar values and reports from its fifty-four-key predecessor. Separate pilot replay verifies **all nine** retained pilot candidates, comprising 297 arrays / 62,091 scalar values, exactly. No interpolated asset or guide is admitted from these pose-only results.
+
+The first stage-3 continuation auditor fails on a flat-manifest assumption: six ancestor inputs are carried through the exact bound parent-plan hash rather than duplicated directly in the child map. Preserve its source, log and all ten resource observations. The corrected auditor verifies that exact parent-plan binding, rechecks every ancestor file/hash, and repeats the full saved-array/report/policy comparison; all eight successful observations replay. Later stages also copy the parent's input mapping explicitly. This is an ancestry-accounting repair; no candidate, numerical condition or source artifact is altered to obtain a pass.
+
+The 135-key asset has not yet been exported or assessed at its full contact clock. Keep interpolation, geometry, force, model guidance, engine, human review and release approval unset while the remaining stages run.
+
 ## Evidence
 
 Immutable local inputs, raw candidates, assets, clock arrays, method snapshots and receipts remain ignored under `reports/central-hand-dense-pilot-v1`; the next experiment and its checkpointed retry are `reports/central-hand-skin-chord-pilot-v1` and `reports/central-hand-skin-chord-pilot-v2`. These machine-specific payloads are not distributed in GitHub.
@@ -67,5 +86,17 @@ Completed skin-chord retry receipts:
 - Complete clock caps/protected transforms: `287254aea7123b7940eca68131787ca07e9eace6964af78572649200ef364f3a`.
 
 All 453 retry resource observations replay. Pose replay takes 2.219 seconds/eight observations; complete clock producer/replay take 8.641 / 4.359 seconds with fourteen / ten observations; scalar comparison producer/replay take 0.078 / 0.063 seconds with six / six observations; complete cap/protected replay takes 13.016 seconds/eighteen observations. All resource traces replay; their successful supervisor exits do not approve motion, the engine or human quality.
+
+Staged outputs remain under ignored `reports/central-hand-skin-chord-hold-v1` through `central-hand-skin-chord-hold-v3`. Stage-3 receipt identifiers:
+
+- Complete accumulated pose replay: `8547130873cd1283d145fae90f642f9caaaee9682be3a492c7ece680969f1ebd`.
+- Exact continuation and ancestor bindings: `7e0cab78e2cbed41978fe2845ad42f4fa3551736446d441671b260e0c0391393`.
+- Included pilot preservation: `6f7a877ba2b0fbfa1e29f5617c72cc0b2c08f84229484b4f98a53bd38b5b7ccb`.
+
+Stage-4 receipt identifiers:
+
+- Complete accumulated pose replay: `280959d13121dfb9120ce13cb29c465e157f4a27779187860329254ffde63c34`.
+- Exact continuation and ancestor bindings: `48aeefa4f6183deaa49dd2b6c8e99da7dc866d927cfc07ade34b54710624a24c`.
+- All nine pilot candidates: `a42f2fb9816078d2f96b5136e65ac920e7755ab4e6c8579703a3e5427ce8bbf1`.
 
 The single full-project goal remains active. This contact fixture is one release dependency; action families remain evaluation categories rather than a prompt whitelist.
