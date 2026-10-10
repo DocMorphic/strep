@@ -41,3 +41,31 @@ Local immutable receipts:
 This is an affected-surface diagnostic. Untouched body geometry, sphere-center containment, self collision, continuous time, whole-body dynamics, game-engine import and genuine human review remain outside its approval. The original full-body assessment still records 2,009 failing times and a 20.339273-mm peak. No new training or generation guidance follows from these tests.
 
 Next: fit a curve from multiple contact-constrained poses, replay its complete clocks, then address the remaining full-body approach/departure failures. Preserve every rejected curve. The same full-project goal still includes broad actions, objects, partners, rig transfer, editing, style, transitions, engine checks and human cleanup evidence.
+
+## Six-pose refinement
+
+A fresh, separately retained pilot fits 2, 2.5, 3, 3.5, 4 and 4.0333333015441895 seconds. The optimizer's additional clearance margin increases from 1 to **10 micrometres**, based on the first curve's measured interpolation residual. Acceptance stays exactly 5 mm; edit caps and all original grip/surface conditions stay unchanged. Minimax slack cannot relax acceptance. All **6/6** poses independently replay and pass, each at approximately 4.990 mm affected-surface penetration.
+
+The second export uses the six fitted rotation vectors as interior knots through the existing timed-rotation API. Original 180-key clocks and native SLERP remain; no keys are added. All other channels, original binary prefix and static scene/mesh/skin data stay exact. The independent quaternion reconstruction error is zero. The complete original contact clock passes with zero lost conditions; all 11,590 normal correspondences, 16,960 velocity pairs and **33,964** source-cap conditions replay.
+
+| Affected-region result | First curve | Six-pose curve |
+| --- | ---: | ---: |
+| Full-clock times failing | 450 / 2,426 | **10 / 2,426** |
+| Hold times failing | 440 / 1,995 | **0 / 1,995** |
+| Worst hold penetration | 5.007019 mm | **4.998037 mm** |
+| Worst full-clock penetration | 18.267273 mm | 18.262187 mm |
+| Original failing times repaired | 1,557 | **1,997** |
+| Previously passing times lost | 0 | **0** |
+
+The complete affected-region hold now passes. The full-clock curve remains **rejected**: ten approach/departure times exceed the same 5-mm limit, between 1.9833333333333334 and 4.058333396911621 seconds. Passing this finite hold subset does not certify untouched body surfaces, sphere-center containment, continuous collision or full-scene consistency.
+
+All 11,441,016 original/candidate triangle/object queries independently replay. Maximum skin-point, nearest-distance and upper-depth reconstruction differences are 4.9960036108132e-16, 1.77635683940025e-15 and 3.88578058618805e-16 m. Production completes in 47.875 execution seconds, and independent replay in 41.312 seconds. All 50 producer and 44 auditor resource observations independently replay. Sixteen-time checkpoints and the original 1,024-MiB-plus-600-MiB resource policy remain; the fresh producer allows 160 new chunks per invocation without increasing its per-chunk population.
+
+Local immutable receipts:
+
+- Producer: `reports/central-thumb-curve-v2/affected-geometry-v2/result.json`, SHA-256 `547107866b3eefcbbf2d2010a222438c710f0f352eb16abd3da1528bc9b2fa2e`.
+- Independent replay: `reports/central-hand-physical-v1/independent-thumb-curve2-geometry-v2.json`; auditor SHA-256 `125e50c5bc380004e11e7a13b3b8c73e1064a87f752e369d5ce92e4dd3f6808e`.
+- Contact replay: `reports/central-thumb-curve-v2/contact-clock-v1/independent-clock-audit-v1.json`; contact result SHA-256 `b5d93005967f6a53a11d1e5f90b2f433b57d5b621a95f9a2e285b28b5c58d22d`.
+- Source caps: `reports/central-hand-physical-v1/thumb-curve-clock-cap-audit-v2.json`.
+
+Next: independently finish the original full-body geometry audit, inventory the second curve's remaining entry/exit failures and test bounded corrections that preserve the verified hold. No force, engine, genuine human, guidance or release approval is inferred. The full-project goal remains active.
