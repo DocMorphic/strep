@@ -1,0 +1,32 @@
+{
+  "schema": "strep-optional-text-motion-evaluator-v1",
+  "repo_id": "nvidia/TMR-SOMA-RP-v1",
+  "revision": "e427752ae3446dedba49e928c93ddc9f0e413401",
+  "license": "NVIDIA Open Model License; inspect the pinned LICENSE before use",
+  "directory": "models/checkpoints/TMR-SOMA-RP-v1",
+  "required_files_sha256": {
+    "config.yaml": "e3fb393c1ac2f83f11c86a8dd6dffe2b709756e011ad1709338f07cdca8c03d8",
+    "LICENSE": "11ccdcb47db87ac30b63765b5e5154403026c4fbb52c19919d99d912ec454e19",
+    "README.md": "f171a47fc902c1ef0ac2c8fecbfd92f0ef8b65c28535a4b085f59e33a9863a4b",
+    "last_weights/motion_encoder.pt": "1fe9861da891b83f29bb1600255c9e2b9d4fabb2a6f1c34a0c609adc18345605",
+    "last_weights/text_encoder.pt": "a5bcd3ad68fc42212f08686ff73f589115f79d6b4dfdb8ce5bddb6bddbfe3740",
+    "stats/motion/body/mean.npy": "c7910fb7f6c594153989996cac20a958c41466d2abc8f3c3eef9e97a6d23053e",
+    "stats/motion/body/std.npy": "60d36004772cbaa71e35bb45acc12e156b2dad00e960b13709d2aa5d0f652a3a",
+    "stats/motion/global_root/mean.npy": "04572543751d7c5fb45b6cde6472be4f495d94ad2ca5e29c36c804cb9684a123",
+    "stats/motion/global_root/std.npy": "7000e8d876f7b9b22a17c09a22e3a9517145bff8af1721ad468259ddda1217c5",
+    "stats/motion/local_root/mean.npy": "3764a583e8cabd16b5132b666ef108b30843c302689ce0119de1478ed167bf41",
+    "stats/motion/local_root/std.npy": "f579043030fcba03bd83f06a0add461aef09939cf347624edf986524364e1b20"
+  },
+  "policy": {
+    "device": "cpu",
+    "dtype": "float32",
+    "sample_mean": true,
+    "fps": 30,
+    "max_frames": 300,
+    "latent_dimensions": 256,
+    "quality_approved": false,
+    "release_approved": false,
+    "training_admitted": false
+  },
+  "scope": "Optional development retrieval critic. Acquire separately; weights are excluded from Git and existing offline installer evidence. No raw BONES data rights, calibrated semantic gate, scene physics or human quality approval."
+}

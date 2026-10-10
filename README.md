@@ -8,7 +8,9 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
-- [Saved proposal history](docs/conic-margin-hydration-v1.md): primary-only rejected attempts retain their own solver phases when a later fallback solves twice. All 261 focused numerical/native fixture checks pass; original full affine replay and fresh contact continuation are separate.
+- [Broad action retrieval](docs/text-motion-retrieval-v1.md): all 52 original development clips across twelve families are scored; 48 rank their intended description first. Handshake-role confusions remain visible. Eighteen checks and all 676 score calculations pass; physical/human quality remains unapproved.
+
+- [Saved proposal history](docs/conic-margin-hydration-v1.md): primary-only rejected attempts retain their own solver phases when a later fallback solves twice. All 261 focused numerical/native fixture checks pass; strict original full affine replay now passes; fresh contact continuation remains separate.
 
 - [Supplied-GLB body demands](docs/rig-articulated-dynamics-v1.md): explicit COM/body-axis tracks and immutable articulated diagnostics now sample original rig clips. All 64 focused checks pass; actual humanoid body profiles, reaction allocation and calibrated capacities remain unverified.
 
