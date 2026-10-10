@@ -6,20 +6,17 @@ from pathlib import Path
 import pytest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 import prepare_text_motion_study as subject
+from test_text_motion_checkpoint import fixture as checkpoint_fixture
 
 
 def fixtures(tmp_path,monkeypatch):
     monkeypatch.setattr(subject,'ROOT',tmp_path)
     def save(path,data):
         path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(data),encoding='utf-8')
-    model=tmp_path/'models/critic';model.mkdir(parents=True)
-    weights=model/'placeholder';weights.write_bytes(b'not loaded by protocol preparation')
-    save(model/'hub-metadata.json',dict(sha='pinned-revision'))
-    save(tmp_path/'benchmarks/text-motion-evaluator-v1.json',dict(directory='models/critic',
-        revision='pinned-revision',required_files_sha256={'placeholder':subject.sha256(weights)}))
+    checkpoint_fixture(tmp_path,monkeypatch)
     catalog=tmp_path/'catalog.json';save(catalog,dict(cases=[dict(id='unknown-new-action',family='new-family')]))
     for name in ['prepare_text_motion_study.py','score_text_motion.py','text_motion_retrieval.py',
-                 'strep.py','action_worker_lock.py']:
+                 'strep.py','action_worker_lock.py','text_motion_checkpoint.py']:
         path=tmp_path/'scripts'/name;path.parent.mkdir(exist_ok=True);path.write_text('fixture method')
     batches=[];records=[]
     for i,seed in enumerate([11,22]):

@@ -8,6 +8,7 @@ import shutil
 from strep import ROOT, read, save, sha256
 from action_worker_lock import worker_lock
 from text_motion_retrieval import evaluate
+from text_motion_checkpoint import verify_checkpoint
 
 
 def run(protocol_path, output):
@@ -31,16 +32,15 @@ def run(protocol_path, output):
                 raise ValueError('Input/method checksum mismatch: ' + name)
     verify()
     required = [t['feature_path'] for t in plan['texts']] + [m['path'] for m in plan['motions']]
+    verify_checkpoint(ROOT, model_directory=plan['model_directory'],
+                      revision=plan['checkpoint_revision'], bindings=bindings)
     model_dir = ROOT/plan['model_directory']
     required += [(p.relative_to(ROOT)).as_posix() for p in model_dir.rglob('*') if p.is_file()]
     required += ['scripts/'+name for name in ['score_text_motion.py', 'text_motion_retrieval.py',
-                                             'strep.py', 'action_worker_lock.py']]
+                                             'strep.py', 'action_worker_lock.py',
+                                             'text_motion_checkpoint.py']]
     if any(p not in bindings for p in required):
         raise ValueError('Every consumed input must be bound')
-    if (sha256(model_dir/'config.yaml') != 'e3fb393c1ac2f83f11c86a8dd6dffe2b709756e011ad1709338f07cdca8c03d8'
-            or plan['checkpoint_revision'] != 'e427752ae3446dedba49e928c93ddc9f0e413401'
-            or read(model_dir/'hub-metadata.json')['sha'] != plan['checkpoint_revision']):
-        raise ValueError('Only the verified TMR-SOMA-RP-v1 config/revision is supported')
     os.environ.update(HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1', OMP_NUM_THREADS='1',
                       MKL_NUM_THREADS='1', OPENBLAS_NUM_THREADS='1')
     output.mkdir(parents=True)

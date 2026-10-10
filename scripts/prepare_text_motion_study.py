@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 from strep import ROOT, read, sha256
+from text_motion_checkpoint import verify_checkpoint
 
 
 def prepare(catalog, batches, output):
@@ -13,7 +14,7 @@ def prepare(catalog, batches, output):
             or output.exists() or not 1 <= len(batches) <= 32 or len(set(batches)) != len(batches)):
         raise ValueError('Distinct bounded in-project development batches and fresh output required')
     ledger_path = ROOT/'benchmarks/text-motion-evaluator-v1.json'
-    ledger = read(ledger_path); model = ROOT/ledger['directory']
+    ledger = verify_checkpoint(ROOT); model = ROOT/ledger['directory']
     bindings = {}
     def bind(path):
         path = path.resolve()
@@ -29,12 +30,6 @@ def prepare(catalog, batches, output):
     family = {c['id']:c['family'] for c in cases}
     if len(family) != len(cases):
         raise ValueError('Distinct catalog cases required')
-    for name, checksum in ledger['required_files_sha256'].items():
-        if sha256(model/name) != checksum:
-            raise ValueError('Pinned critic checksum mismatch: '+name)
-    metadata = read(model/'hub-metadata.json')
-    if metadata['sha'] != ledger['revision']:
-        raise ValueError('Pinned critic metadata revision mismatch')
     for path in sorted(model.rglob('*')):
         if path.is_file(): bind(path)
     descriptions = {}; motions = []; original_records = []
@@ -89,7 +84,7 @@ def prepare(catalog, batches, output):
         raise ValueError('Distinct complete bounded population required')
     for path in sorted((ROOT/'vendor/kimodo/kimodo').rglob('*.py')): bind(path)
     for name in ['prepare_text_motion_study.py','score_text_motion.py','text_motion_retrieval.py',
-                 'strep.py','action_worker_lock.py']:
+                 'strep.py','action_worker_lock.py','text_motion_checkpoint.py']:
         bind(ROOT/'scripts'/name)
     plan = dict(schema='strep-tmr-development-study-v1', split='development', fps=30,
                 checkpoint_revision=ledger['revision'], model_directory=ledger['directory'],
@@ -101,6 +96,7 @@ def prepare(catalog, batches, output):
     # Revalidate all original bytes before creating the immutable protocol.
     if any(sha256(ROOT/name) != value for name,value in bindings.items()):
         raise ValueError('Input changed during protocol assembly')
+    verify_checkpoint(ROOT, bindings=bindings)
     output.parent.mkdir(parents=True,exist_ok=True)
     with output.open('x',encoding='utf-8') as stream:
         json.dump(plan,stream,indent=2,allow_nan=False)
