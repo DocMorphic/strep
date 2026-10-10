@@ -220,6 +220,69 @@ def verify(output, *, expected_result_sha256=None, _depth=0):
     return result
 
 
+def inspect_points(character, points, output):
+    """Portable source-bound weight attribution; no pose/surface computation."""
+    from rig_asset import RigAsset
+    from rig_material_patch import point_attribution
+    character, points, output = map(lambda p: Path(p).resolve(), (character, points, output))
+    require(character.is_file() and 0 < character.stat().st_size <= MAXIMUM_ASSET_BYTES,
+            'Bounded regular character file required')
+    require(points.is_file() and 0 < points.stat().st_size <= 128*1024, 'Point references JSON up to 128 KiB required')
+    value = read(points); fields(value, ('vertices',), 'explicit point references')
+    require(not output.exists(), 'Fresh point attribution folder required')
+    inputs = {'character.glb':sha256(character), 'points.json':sha256(points)}
+    methods = {name:sha256(ROOT/'scripts'/name) for name in METHODS}
+    output.mkdir(parents=True); (output/'input').mkdir(); (output/'implementation').mkdir()
+    try:
+        save(output/'pipeline.json',dict(status='processing'))
+        save(output/'request.json',dict(schema='strep-material-point-attribution-v1', input_sha256=inputs, implementation_sha256=methods))
+        shutil.copyfile(character,output/'input/character.glb'); shutil.copyfile(points,output/'input/points.json')
+        for name in METHODS: shutil.copyfile(ROOT/'scripts'/name,output/'implementation'/name)
+        attribution=point_attribution(RigAsset.load(output/'input/character.glb'), value['vertices'])
+        require(all(sha256(output/'input'/n)==h for n,h in inputs.items())
+                and sha256(character)==inputs['character.glb'] and sha256(points)==inputs['points.json']
+                and all(sha256(ROOT/'scripts'/n)==sha256(output/'implementation'/n)==h for n,h in methods.items()),
+                'Point attribution source or method changed')
+        result=dict(schema='strep-material-point-attribution-v1', status='complete', request_sha256=sha256(output/'request.json'),
+                    attribution=attribution, vertex_count=len(attribution['vertices']),
+                    anatomical_review_pending=True, animation_sampled=False, contact_conditions_measured=False,
+                    quality_approved=False, training_admitted=False, release_approved=False)
+        save(output/'result.json',result); save(output/'pipeline.json',dict(status='complete'))
+        return result
+    except Exception as exc:
+        save(output/'pipeline.json',dict(status='failed',error=str(exc),quality_approved=False,release_approved=False));raise
+
+
+def verify_points(output):
+    from rig_asset import RigAsset
+    from rig_material_patch import point_attribution
+    output=Path(output).resolve();request=read(output/'request.json');result=read(output/'result.json')
+    fields(request,('schema','input_sha256','implementation_sha256'),'point attribution request')
+    fields(result,('schema','status','request_sha256','attribution','vertex_count','anatomical_review_pending',
+                  'animation_sampled','contact_conditions_measured','quality_approved','training_admitted',
+                  'release_approved'),'point attribution result')
+    require(request['schema']==result['schema']=='strep-material-point-attribution-v1' and result['status']=='complete'
+            and read(output/'pipeline.json')=={'status':'complete'} and result['request_sha256']==sha256(output/'request.json'),
+            'Complete source-bound point attribution required')
+    require(result['anatomical_review_pending'] is True and all(result[k] is False for k in
+            ('animation_sampled','contact_conditions_measured','quality_approved','training_admitted','release_approved')),
+            'Point attribution cannot grant contact or quality approval')
+    require(set(request['input_sha256'])=={'character.glb','points.json'}
+            and set(request['implementation_sha256'])==set(METHODS),'Complete point input and method bindings required')
+    expected={'request.json','result.json','pipeline.json','input/character.glb','input/points.json'}|{'implementation/'+n for n in METHODS}
+    require(set(files(output))==expected, 'Exact portable point attribution population required')
+    for name,digest in request['input_sha256'].items():
+        limit=MAXIMUM_ASSET_BYTES if name=='character.glb' else 128*1024
+        require(0<(output/'input'/name).stat().st_size<=limit and sha256(output/'input'/name)==digest,'Bounded point attribution input changed')
+    require(all(sha256(ROOT/'scripts'/n)==sha256(output/'implementation'/n)==h for n,h in request['implementation_sha256'].items()),
+            'Point attribution method changed')
+    value=read(output/'input/points.json');fields(value,('vertices',),'explicit point references')
+    expected=point_attribution(RigAsset.load(output/'input/character.glb'),value['vertices'])
+    require(result['attribution']==expected and type(result['vertex_count']) is int
+            and result['vertex_count']==len(expected['vertices']),'Complete point influence replay differs')
+    return result
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__); sub = parser.add_subparsers(dest='command',required=True)
     inspect = sub.add_parser('inventory'); inspect.add_argument('character',type=Path); inspect.add_argument('profile',type=Path)
@@ -230,9 +293,13 @@ if __name__ == '__main__':
     reuse.add_argument('profile',type=Path); reuse.add_argument('output',type=Path)
     reuse.add_argument('--character-sha256',required=True); reuse.add_argument('--profile-sha256',required=True)
     check = sub.add_parser('verify'); check.add_argument('output',type=Path); check.add_argument('--expected-result-sha256')
+    weights = sub.add_parser('points'); weights.add_argument('character',type=Path); weights.add_argument('points',type=Path); weights.add_argument('output',type=Path)
+    weight_check = sub.add_parser('verify-points'); weight_check.add_argument('output',type=Path)
     args = parser.parse_args()
     if args.command == 'inventory': inventory(args.character,args.profile,args.output,args.roles)
     elif args.command == 'create': create(args.character,args.profile,args.selection,args.output)
     elif args.command == 'transfer': transfer(args.parent,args.character,args.profile,args.output,
         character_sha256=args.character_sha256,profile_sha256=args.profile_sha256)
+    elif args.command == 'points': inspect_points(args.character,args.points,args.output)
+    elif args.command == 'verify-points': verify_points(args.output)
     else: verify(args.output,expected_result_sha256=args.expected_result_sha256)

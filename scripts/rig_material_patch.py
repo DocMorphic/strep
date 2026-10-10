@@ -32,6 +32,34 @@ def settings(children, weight, area, budget, *, upper):
     require(type(budget) is int and 1 <= budget <= upper, 'Bounded complete face budget required')
 
 
+def point_attribution(rig, vertex_references):
+    """Describe actual positive deformation weights; labels do not identify anatomy."""
+    from native_scene_contacts import references
+    skin = NativeSupportSkin(rig)
+    ids = references(vertex_references, skin)
+    rows = []
+    for ref, vertex in zip(vertex_references, ids):
+        weights = skin.weights[vertex]
+        require(np.isfinite(weights).all() and np.all(weights >= 0), 'Finite nonnegative skin weights required')
+        total = float(np.sum(weights, dtype=np.float64))
+        require(total > 0 and abs(total-1) <= 1e-6, 'Normalized complete skin influence population required')
+        combined = {}
+        for node, weight in zip(skin.nodes[vertex], weights):
+            node = int(node)
+            require(0 <= node < len(rig.document['nodes']), 'Existing skin node required')
+            if weight > 0:
+                combined[node] = combined.get(node, 0.) + float(weight)/total
+        influences = [dict(node=node, name=rig.document['nodes'][node].get('name'), normalized_weight=weight)
+                      for node, weight in sorted(combined.items(), key=lambda item: (-item[1], item[0]))]
+        rows.append(dict(vertex_reference=list(ref), influences=influences,
+                         dominant_node=influences[0]['node'], dominant_weight=influences[0]['normalized_weight']))
+    return dict(schema='strep-rig-contact-attribution-v1', vertices=rows,
+                all_positive_influences_retained=True, repeated_slots_combined=True,
+                anatomy_verified=False, contact_target_approved=False, quality_approved=False,
+                release_approved=False, scope='Normalized skin deformation ownership of explicit original vertices. '
+                'Joint names and dominant weights do not identify anatomical contact intent, normals, timing or motion feasibility.')
+
+
 class MaterialSurface:
     def __init__(self, character, profile_path, *, character_sha256, profile_sha256):
         self.character, self.profile_path = Path(character).resolve(), Path(profile_path).resolve()

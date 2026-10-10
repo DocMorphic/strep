@@ -29,6 +29,42 @@ def author(tmp_path, *, two=True):
     return a,b,selection,out,result
 
 
+def test_portable_point_attribution_replays_without_original_files_or_mesh_deformation(tmp_path, monkeypatch):
+    character, _ = fixture(tmp_path/'source'); points=tmp_path/'points.json'
+    save(points, dict(vertices=[[6, 0, 0], [7, 0, 0]])); output=tmp_path/'attribution'
+    monkeypatch.setattr(RigAsset, 'vertices', lambda *args: pytest.fail('Point attribution must not deform a mesh'))
+    result=bundles.inspect_points(character,points,output)
+    assert result['vertex_count']==2 and result['attribution']['vertices'][0]['dominant_node']==5
+    assert result['animation_sampled'] is False and result['contact_conditions_measured'] is False
+    character.unlink(); points.unlink()
+    assert bundles.verify_points(output)==result
+    with pytest.raises(ValueError): bundles.inspect_points(output/'input/character.glb',output/'input/points.json',output)
+
+
+@pytest.mark.parametrize('mutation', ['weight','label','count','approval','extra','method','points'])
+def test_point_attribution_rejects_forged_results_and_rebound_inputs(tmp_path, mutation):
+    character, _=fixture(tmp_path/'source'); points=tmp_path/'points.json';save(points,dict(vertices=[[6,0,0]]));out=tmp_path/'out'
+    bundles.inspect_points(character,points,out);r=read(out/'result.json');p=read(out/'request.json')
+    if mutation=='weight':r['attribution']['vertices'][0]['influences'][0]['normalized_weight']=.9
+    elif mutation=='label':r['attribution']['vertices'][0]['influences'][0]['name']='palm'
+    elif mutation=='count':r['vertex_count']=True
+    elif mutation=='approval':r['quality_approved']=True
+    elif mutation=='extra':save(out/'extra.json',{})
+    elif mutation=='method':(out/'implementation/rig_material_patch.py').write_text('# changed')
+    elif mutation=='points':
+        save(out/'input/points.json',dict(vertices=[[7,0,0]]));p['input_sha256']['points.json']=sha256(out/'input/points.json');save(out/'request.json',p);r['request_sha256']=sha256(out/'request.json')
+    save(out/'result.json',r)
+    with pytest.raises(ValueError):bundles.verify_points(out)
+
+
+def test_failed_point_attribution_preserves_bound_inputs_and_failure(tmp_path):
+    character, _=fixture(tmp_path/'source');points=tmp_path/'points.json';save(points,dict(vertices=[[6,0,999]]));out=tmp_path/'failed'
+    with pytest.raises(ValueError):bundles.inspect_points(character,points,out)
+    assert read(out/'pipeline.json')['status']=='failed' and sha256(out/'input/points.json')==sha256(points)
+    assert read(out/'request.json')['input_sha256']['character.glb']==sha256(character)
+    assert not (out/'result.json').exists()
+
+
 def target_from(source, profile, folder, mutation=None):
     folder.mkdir(); rig = RigAsset.load(source); doc = copy.deepcopy(rig.document); binary = bytearray(rig.binary)
     times = append_accessor(doc,binary,[0,.25,.5,.75,1], 'SCALAR')

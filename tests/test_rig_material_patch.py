@@ -91,6 +91,38 @@ def test_complete_indexed_nonindexed_multimesh_eight_slot_ownership(tmp_path):
     assert surface.candidates('LeftHand', include_children=False, minimum_weight=1.)['face_references'] == [[7, 0, 0]]
 
 
+def test_point_attribution_combines_all_slots_preserves_order_and_does_not_sample(tmp_path, monkeypatch):
+    character, _ = fixture(tmp_path)
+    rig = RigAsset.load(character)
+    monkeypatch.setattr(rig, 'vertices', lambda *args: pytest.fail('Attribution must not deform a mesh'))
+    refs = [[7, 0, 2], [6, 0, 0], [6, 1, 1]]; before = copy.deepcopy(refs)
+    value = material.point_attribution(rig, refs)
+    assert refs == before and [r['vertex_reference'] for r in value['vertices']] == refs
+    pure, mixed, right = value['vertices']
+    assert pure['influences'] == [dict(node=1, name='unrelated label', normalized_weight=1.)]
+    assert mixed['influences'] == [dict(node=5, name='digit', normalized_weight=.625),
+                                  dict(node=1, name='unrelated label', normalized_weight=.375)]
+    assert mixed['dominant_node'] == 5 and mixed['dominant_weight'] == .625
+    assert right['influences'] == [dict(node=4, name='right', normalized_weight=1.)]
+    assert all(sum(r['normalized_weight'] for r in row['influences']) == 1 for row in value['vertices'])
+    assert all(value[k] is False for k in ('anatomy_verified', 'contact_target_approved', 'quality_approved', 'release_approved'))
+
+
+@pytest.mark.parametrize('refs', [[], [[6, 0, 0]]*2, [[True, 0, 0]], [[6, -1, 0]],
+    [[6, 0, 999]], [[6, 0]], [[6, 0, 0.]], [[6, 0, 0]]*257, [(6, 0, 0)]])
+def test_point_attribution_rejects_invalid_or_incomplete_references(tmp_path, refs):
+    character, _ = fixture(tmp_path)
+    with pytest.raises(ValueError): material.point_attribution(RigAsset.load(character), refs)
+
+
+def test_point_attribution_normalizes_float32_nonbinary_weight_sum(tmp_path):
+    character, _ = fixture(tmp_path); rig = RigAsset.load(character)
+    rig.primitives[0]['weights'][0] = np.array([.1, .2, .3, .4, 0, 0, 0, 0], dtype=np.float32)
+    row = material.point_attribution(rig, [[6, 0, 0]])['vertices'][0]
+    assert sum(v['normalized_weight'] for v in row['influences']) == pytest.approx(1., abs=1e-15)
+    assert [v['node'] for v in row['influences']] == [1, 3, 5]
+
+
 def test_authored_mixed_ownership_is_explicit_and_not_anatomical(tmp_path):
     surface = load(tmp_path)
     value = select(surface, [[6, 0, 0], [6, 0, 1]], minimum_weight=.75)
