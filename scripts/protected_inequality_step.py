@@ -189,7 +189,10 @@ def margin_start_attempts(record):
             or type(record['margin_fallback_max_seconds']) not in [int,float]
             or not np.isfinite(record['margin_fallback_max_seconds']) or not 0<record['margin_fallback_max_seconds']<=20):
         raise ValueError('Ordered unretained margin attempts inside one shared budget required')
-    result=[dict(record,**attempt,**{key:record[key] for key in shared}) for attempt in previous]+[record]
+    # Earlier reports omit exactly these four unchanged populations. Never
+    # inherit optional phase/point/status fields from the final attempt: it
+    # may have invoked a secondary solve after an earlier primary was rejected.
+    result=[dict(attempt,**{key:record[key] for key in shared}) for attempt in previous]+[record]
     if any(not 0<attempt['time_limit_seconds']<=record['margin_fallback_max_seconds'] for attempt in result):
         raise ValueError('Margin attempts exceeded their shared declared budget')
     return result

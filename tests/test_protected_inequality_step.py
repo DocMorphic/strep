@@ -542,3 +542,30 @@ def test_invalid_candidate_derivative_never_reaches_correction_lp():
 def test_invalid_trial_correction_rejected_before_measurement(kwargs):
     def forbidden(x):raise AssertionError('Invalid correction reached measurement')
     with pytest.raises(ValueError):fit(forbidden,forbidden,[0.],[-1.],[1.],**kwargs)
+
+
+@pytest.mark.parametrize('secondary', ['Solved', 'AlmostSolved', 'budget_exhausted'])
+def test_margin_hydration_does_not_invent_secondary_phases_or_selected_points(secondary):
+    from protected_inequality_step import margin_start_attempts
+    # A compressed earlier report records its primary-only rejection. The
+    # final attempt subsequently reaches a secondary solve (or its time gate).
+    first=dict(margin_factor=1.,success=False,time_limit_seconds=2.,status='primary_replay_failed',
+        primary_status='AlmostSolved',solver_points=[dict(phase=1,solver_status='AlmostSolved',point=[.1,.2])],caps=[0.])
+    final=dict(margin_factor=.25,success=True,time_limit_seconds=1.,status='usable',primary_status='Solved',
+        secondary_status=secondary,selected_phase='secondary',secondary_replay={'check_status':'complete_affine_replay_passed'},
+        delta=[.3],epigraph=.2,solver_points=[dict(phase=1),dict(phase=2)],vectors={'offsets':[[0.,0.,0.]]},
+        gradient=[-1.],lower_delta=[-1.],upper_delta=[1.],margin_fallback_attempts=[first],margin_fallback_max_seconds=2.)
+    if secondary=='budget_exhausted':
+        final['selected_phase']='primary'
+        final['solver_points']=final['solver_points'][:1]
+        del final['secondary_replay']
+    untouched=__import__('copy').deepcopy(final)
+    attempts=margin_start_attempts(final)
+    assert len(attempts)==2 and attempts[-1] is final and final==untouched
+    assert attempts[0]['solver_points']==first['solver_points'] and attempts[0]['status']=='primary_replay_failed'
+    assert not attempts[0]['success']
+    for key in ['secondary_status','selected_phase','secondary_replay','delta','epigraph']:
+        assert key not in attempts[0]
+    for key in ['vectors','gradient','lower_delta','upper_delta']:
+        assert attempts[0][key]==final[key]
+    assert set(attempts[0])==set(first)|{'vectors','gradient','lower_delta','upper_delta'}

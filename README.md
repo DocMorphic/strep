@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Saved proposal history](docs/conic-margin-hydration-v1.md): primary-only rejected attempts retain their own solver phases when a later fallback solves twice. All 261 focused numerical/native fixture checks pass; original full affine replay and fresh contact continuation are separate.
+
 - [Supplied-GLB body demands](docs/rig-articulated-dynamics-v1.md): explicit COM/body-axis tracks and immutable articulated diagnostics now sample original rig clips. All 64 focused checks pass; actual humanoid body profiles, reaction allocation and calibrated capacities remain unverified.
 
 - [Scene mechanics study](docs/scene-mechanics-study-v1.md): full supplied-humanoid/sphere geometry independently replays, while original forces/grips fail all 59 assessed samples. Separately rotated equatorial targets admit 59/59 conditional force witnesses under identical budgets; actual new hand contact and animation remain unverified.
