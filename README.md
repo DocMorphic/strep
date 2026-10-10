@@ -9,7 +9,7 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 ## Current work
 
 - [Conditional object-contact forces](docs/contact-force-balance-v1.md): friction, total-force budgets and complete force/torque replay on immutable object tracks. A matched finite-span grip study verifies 157 conditional force witnesses; actual skinned grasp, human strength and whole-body dynamics remain unverified. All 82 focused checks pass.
-- [Contact correction](docs/contact-search-comparison-v2.md): keep the independently verified 0.03 continuation with 14/21 attempted windows and contact passes still 0/62. The new frames 87–89 candidate has completed production checks; independent geometric replay is pending, so it has not replaced that state.
+- [Contact correction](docs/contact-window-87-89-v1.md): independently verified frames 87–89 now join the 0.03 continuation. Coverage advances to 15/21 attempted windows with six remaining; existing passing checks and all poses outside the edited window are preserved. Contact passes remain 0/62.
 - [Solver conditioning](docs/contact-conic-conditioning-v1.md): removing 727 exact duplicate cones still fails the original checks. Failed/deferred results remain recorded, and acceptance tolerances stay unchanged.
 - [Regression integrity](docs/conic-fixture-integrity-v1.md): corrected a synthetic fixture that altered solver coordinates after solving. All 135 focused checks pass; hosted CI for the fix remains separate and pending.
 
