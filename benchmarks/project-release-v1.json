@@ -373,6 +373,7 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/contact-conic-conditioning-v1.md",
         "docs/contact-search-comparison-v2.md",
         "docs/contact-search-comparison-v1.md",
         "docs/studio-precision-export-v1.md",
@@ -854,6 +855,7 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/contact-conic-conditioning-v1.md",
         "docs/contact-search-comparison-v2.md",
         "docs/contact-search-comparison-v1.md",
         "docs/studio-precision-export-v1.md",
@@ -2331,6 +2333,7 @@
       "status": "incomplete",
       "release_evidence": [],
       "development_evidence": [
+        "docs/contact-conic-conditioning-v1.md",
         "docs/contact-search-comparison-v2.md",
         "docs/contact-search-comparison-v1.md",
         "docs/studio-precision-export-v1.md",
@@ -3048,6 +3051,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-10T03:04:08.533265+00:00",
-  "last_progress": "Latest progress: the fresh 0.10 contact branch completes and four independently frozen replay phases verify matching saved origins, original limits/rows, selected 102–104 window, V11 schedule and per-fit budgets against the completed 0.03 branch. All 74 local records/222 native poses, two retained steps and 22,720 interval rows reconstruct without original passing loss/protected regression; all 1068 native and 430 audit resource samples replay. Both remain 0/62 physical/keyed contact passes. Larger trust reduces selected maximum penetration slightly more (21.276 vs21.509 mm), but has a worse aggregate violation score (3088.391594 vs3086.784413) and loses one passing row with 64 protected regressions relative to the current smaller-step continuation. Neither dominates; keep the verified 0.03 state and its 14-window schedule, seven remaining, without merging the branches or changing global defaults. The original RAM-stopped comparison remains interrupted; the separate fresh-worker comparison is complete. Current 0.03 editable body GLBs retain all 180 keys and source skin, with checked reconstruction/serialization. Both alternatives have checked 180-key editable body GLBs; larger export preserves its 595-sample no-child deferral and 39-sample successful resource replay. Source remains validated by 102 focused checks and successful Linux/Windows native CPU CI jobs; all 12 hosted CI jobs succeed on source head 7bb7086, with later documentation CI separate. Model-free inventory remains 423 Python modules/41 Node suites, all fourteen release capabilities stay unapproved, the inventory retains 19 evidence gaps, and genuine human ratings/cleanup remain absent. Continue coverage and constraint/pose-conditioning diagnosis plus broader actions, scenes/partners, rigs, editing/style, transitions, engines, dynamics and real review under the same active full-project goal."
+  "last_progress_at": "2026-10-10T03:49:25.783433+00:00",
+  "last_progress": "Latest progress: conic solver reporting now preserves finite complete primary/secondary coordinates, including rejected points and unavailable statuses, without changing proposal or motion acceptance. Replay binds observed phases, shapes, accepted clipped points and epigraphs; malformed/nonfinite points use no numeric payload and legacy reports remain compatible. All 220 focused source checks pass in 8.15 seconds, and all 14 test resource samples replay. The predeclared original-versus-exact-duplicate affine comparison first defers after 600.766 seconds without a child; all 595 resource observations replay. The separate retry also defers after 600.859 seconds without a child; all 595 observations independently replay. Both keep the full 2 GiB plus 600 MiB reserve. No completed comparison or native improvement follows. Keep the verified 0.03 contact continuation and 14/21 attempted windows with seven remaining. Physical/keyed contact passes remain 0/62; all fourteen release capabilities and 19 inventory gaps stay open, with no genuine review/cleanup result. Continue contact reliability and broader action/scene/partner/rig/edit/style/transition/engine/dynamics work under the same active full-project goal."
 }

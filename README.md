@@ -6,6 +6,8 @@ Strep combines an unchanged motion-generation checkpoint with tools for characte
 
 **Status: active development, not release-ready.** Successful generation or engine import does not establish realistic motion. Contact reliability, calibrated character controls, broad held-out evaluation, and human review remain open work.
 
+[Contact solver diagnostics](docs/contact-conic-conditioning-v1.md) now preserve rejected solver coordinates for replay without changing motion acceptance; 220 focused checks pass. The full conditioning experiment remains pending after two independently audited RAM deferrals, neither of which starts a worker. No animation-quality pass follows.
+
 Latest: [completed contact search comparison](docs/contact-search-comparison-v2.md) independently verifies both search-step alternatives from identical starting poses and original constraints. The larger step reduces selected maximum penetration slightly more but has a worse total violation score and loses a newly passing row relative to the smaller step. Keep the verified smaller-step continuation: 14 unique windows attempted, seven remaining. Contact passes stay 0/62; neither alternative solves lifting or approves a release capability. Checked editable body GLBs remain available locally. Earlier development checkpoints follow.
 
 [Contact-window continuation](docs/contact-interval-batch-v3.md) completes two more native windows while keeping failed checks visible; independent geometry replay is pending. [Proposal callbacks](docs/proposal-callback-derivatives-v1.md) now defer full Jacobians until requested, with exact paired numerical results and unchanged retention gates. Neither result approves contact quality.
