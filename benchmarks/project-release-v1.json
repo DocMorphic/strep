@@ -373,6 +373,7 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/contact-force-balance-v1.md",
         "docs/contact-conic-conditioning-v1.md",
         "docs/contact-search-comparison-v2.md",
         "docs/contact-search-comparison-v1.md",
@@ -855,6 +856,7 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/contact-force-balance-v1.md",
         "docs/contact-conic-conditioning-v1.md",
         "docs/contact-search-comparison-v2.md",
         "docs/contact-search-comparison-v1.md",
@@ -2333,6 +2335,7 @@
       "status": "incomplete",
       "release_evidence": [],
       "development_evidence": [
+        "docs/contact-force-balance-v1.md",
         "docs/contact-conic-conditioning-v1.md",
         "docs/contact-search-comparison-v2.md",
         "docs/contact-search-comparison-v1.md",
@@ -3051,6 +3054,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-10T03:49:25.783433+00:00",
-  "last_progress": "Latest progress: conic solver reporting now preserves finite complete primary/secondary coordinates, including rejected points and unavailable statuses, without changing proposal or motion acceptance. Replay binds observed phases, shapes, accepted clipped points and epigraphs; malformed/nonfinite points use no numeric payload and legacy reports remain compatible. All 220 focused source checks pass in 8.15 seconds, and all 14 test resource samples replay. The predeclared original-versus-exact-duplicate affine comparison first defers after 600.766 seconds without a child; all 595 resource observations replay. The separate retry also defers after 600.859 seconds without a child; all 595 observations independently replay. Both keep the full 2 GiB plus 600 MiB reserve. No completed comparison or native improvement follows. Keep the verified 0.03 contact continuation and 14/21 attempted windows with seven remaining. Physical/keyed contact passes remain 0/62; all fourteen release capabilities and 19 inventory gaps stay open, with no genuine review/cleanup result. Continue contact reliability and broader action/scene/partner/rig/edit/style/transition/engine/dynamics work under the same active full-project goal."
+  "last_progress_at": "2026-10-10T04:41:47.210060+00:00",
+  "last_progress": "Latest progress: added immutable conditional rigid-object contact-force assessment with circular friction, unilateral normals, total-force caps and full original-unit force/torque replay. Matched exposed box tracks compare point and finite-span contact models with unchanged trajectories and per-hand budgets: 354 assessments per model, 157 independently verified conditional witnesses in the finite-span model versus none in the point model. Three fresh independent audit phases bind 67 files and verify complete demands, populations, witnesses, exclusions and matched budgets. These hypothetical contacts/capacities do not establish actual skinned contact, human strength, whole-body dynamics or animation quality. All 82 focused tests pass; source coverage declares 427 Python modules and 41 Node suites. The full native conic conditioning experiment completes after two audited RAM deferrals; removing 727 exact duplicate cones still fails unchanged original checks. No deduplication fallback or new motion is adopted. Keep the verified 0.03 continuation and 14/21 attempted windows with seven remaining. Physical/keyed contact passes remain 0/62; all fourteen release capabilities and 19 inventory gaps stay open, with no genuine review/cleanup result. Continue contact reliability and broader action/scene/partner/rig/edit/style/transition/engine/dynamics work under the same active full-project goal."
 }
