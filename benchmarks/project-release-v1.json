@@ -841,7 +841,17 @@
         "reports/box-lift-candidate-recovery-v1/native-independent-parity-v1.json",
         "reports/box-lift-candidate-recovery-v1/schedule-replay-v1.json",
         "reports/box-lift-candidate-preview-v1/verification.json",
-        "reports/box-lift-candidate-recovery-v1/export-resource-audit-v1.json"
+        "reports/box-lift-candidate-recovery-v1/export-resource-audit-v1.json",
+        "docs/protected-hold-transitions-v1.md",
+        "reports/central-hand-physical-v1/independent-full-body-departure-geometry-v2.json",
+        "reports/central-hand-physical-v1/full-body-departure-geometry-resource-v3.json",
+        "reports/central-hand-physical-v1/full-body-departure-independent-resource-v1.json",
+        "docs/reusing-complete-geometry.md",
+        "reports/central-hand-physical-v1/independent-cached-departure-forces-v1.json",
+        "reports/central-hand-physical-v1/independent-cached-departure-mechanics-v1.json",
+        "reports/central-hand-physical-v1/independent-cached-departure-contacts-v1.json",
+        "reports/central-hand-physical-v1/cached-departure-forces-resource-v1.json",
+        "reports/central-hand-physical-v1/cached-departure-forces-independent-resource-v1.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1198,7 +1208,17 @@
         "reports/box-lift-candidate-recovery-v1/native-independent-parity-v1.json",
         "reports/box-lift-candidate-recovery-v1/schedule-replay-v1.json",
         "reports/box-lift-candidate-preview-v1/verification.json",
-        "reports/box-lift-candidate-recovery-v1/export-resource-audit-v1.json"
+        "reports/box-lift-candidate-recovery-v1/export-resource-audit-v1.json",
+        "docs/protected-hold-transitions-v1.md",
+        "reports/central-hand-physical-v1/independent-full-body-departure-geometry-v2.json",
+        "reports/central-hand-physical-v1/full-body-departure-geometry-resource-v3.json",
+        "reports/central-hand-physical-v1/full-body-departure-independent-resource-v1.json",
+        "docs/reusing-complete-geometry.md",
+        "reports/central-hand-physical-v1/independent-cached-departure-forces-v1.json",
+        "reports/central-hand-physical-v1/independent-cached-departure-mechanics-v1.json",
+        "reports/central-hand-physical-v1/independent-cached-departure-contacts-v1.json",
+        "reports/central-hand-physical-v1/cached-departure-forces-resource-v1.json",
+        "reports/central-hand-physical-v1/cached-departure-forces-independent-resource-v1.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1804,7 +1824,9 @@
         "reports/knee-contact-temporal-audit-v1/decision.json",
         "docs/scene-timing-support-v1.md",
         "reports/scene-timing-support-v1/verification.json",
-        "reports/studio-timing-support-v1/completion.json"
+        "reports/studio-timing-support-v1/completion.json",
+        "docs/protected-hold-transitions-v1.md",
+        "reports/central-hand-physical-v1/departure-timing-decision-v2.json"
       ],
       "remaining": [
         "Periodic bounded correction and Godot playback are implemented; turning blend contact intent and imported locomotion floor failures remain. Broader support-aware selection/regeneration and runtime integration need validation.",
@@ -2861,7 +2883,17 @@
         "docs/landing-root-scale-v1.md",
         "docs/contact-constraint-restoration-v1.md",
         "docs/contact-restoration-policy-v2.md",
-        "docs/scene-placement-authoring-v1.md"
+        "docs/scene-placement-authoring-v1.md",
+        "docs/protected-hold-transitions-v1.md",
+        "reports/central-hand-physical-v1/independent-full-body-departure-geometry-v2.json",
+        "reports/central-hand-physical-v1/full-body-departure-geometry-resource-v3.json",
+        "reports/central-hand-physical-v1/full-body-departure-independent-resource-v1.json",
+        "docs/reusing-complete-geometry.md",
+        "reports/central-hand-physical-v1/independent-cached-departure-forces-v1.json",
+        "reports/central-hand-physical-v1/independent-cached-departure-mechanics-v1.json",
+        "reports/central-hand-physical-v1/independent-cached-departure-contacts-v1.json",
+        "reports/central-hand-physical-v1/cached-departure-forces-resource-v1.json",
+        "reports/central-hand-physical-v1/cached-departure-forces-independent-resource-v1.json"
       ]
     }
   ],
