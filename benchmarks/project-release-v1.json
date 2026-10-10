@@ -859,6 +859,8 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "docs/articulated-motion-dynamics-v1.md",
+        "docs/scene-model-next-steps-v1.md",
         "docs/scene-contact-forces-v1.md",
         "docs/contact-windows-111-116-v1.md",
         "docs/contact-window-87-89-v1.md",
@@ -2341,6 +2343,8 @@
       "status": "incomplete",
       "release_evidence": [],
       "development_evidence": [
+        "docs/articulated-motion-dynamics-v1.md",
+        "docs/scene-model-next-steps-v1.md",
         "docs/scene-contact-forces-v1.md",
         "docs/contact-windows-111-116-v1.md",
         "docs/contact-window-87-89-v1.md",
@@ -3063,6 +3067,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-10T05:35:20.521284+00:00",
-  "last_progress": "Latest progress: supplied-rig scene contact forces now bind original GLBs, primitive targets, full sampled surface/geometry populations, explicit object COM/inertia and hypothetical friction/capacity assumptions. All 95 focused tests pass (13 new scene fixtures plus 82 existing force/dynamics/geometry checks); all 27 test resource observations independently replay. The actual exposed humanoid/sphere development assessment is separately pending and has no new quality/strength claim. Independent seven-process V15 replay binds 4764 artifacts, reconstructs 17 local records/51 native poses, 13 margin attempts, 3 corrections, 33 proposal archive files and both complete 22720-row populations per stage. Frames 114–116 retain no update; frames 111–113 retain two checked backoffs. The latter becomes current verified motion after preservation of every source passing/protected row and all outside selected keys. Coverage is 17/21 attempted windows, four remaining; physical/keyed contact passes remain 0/62. Native/audit supervisors complete with 989/133 independently replayed observations and unchanged full 2 GiB plus 600 MiB reserve. Public coverage declares 428 Python modules and 41 Node suites; hosted validation is separate and pending. All fourteen release capabilities, 19 gaps, four unfrozen gates and genuine review/cleanup evidence remain open. Continue the same full-project goal across broad actions, scenes/partners, rigs, edits/style, transitions, engines and dynamics."
+  "last_progress_at": "2026-10-10T06:22:44.552372+00:00",
+  "last_progress": "Latest progress: explicit body-tree inverse Newton–Euler diagnostics now preserve complete COM/rotation/external-wrench populations and physical assumptions, validate rigid joint anchors and recursively measure internal loads plus necessary floating-root balance. All 38 focused analytical/tree/rigid-body checks pass; eight test resource records replay. No inferred human profile, contact allocation, calibrated joint capacity, glTF conversion, human or release approval is added. Source coverage is 429 Python modules and 41 Node suites. The exposed humanoid/sphere scene-force producer completes all 2379 original/added geometry clocks with 2534 independently replayed resource observations: it reports 0/59 feasible force samples and failed actual grip orientation under explicit hypothetical mechanics, while sampled geometry passes. Its independent four-phase numeric replay is still pending and the raw conclusion is not promoted. Latest verified diagnostic motion remains V15 stage two: 17/21 attempted windows, four remaining, physical/keyed contact passes 0/62. Primary-source research retains unchanged Kimodo kinematic controls as the next scene-proposal comparison; any learned editor needs measured failures and admitted licensed clean demonstrations. All fourteen release capabilities, 19 gaps, four unfrozen gates and genuine developer/animator review/cleanup remain open. Continue the same full-project goal."
 }
