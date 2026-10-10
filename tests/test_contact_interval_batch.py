@@ -96,6 +96,23 @@ def test_complete_pass_holds_one_lock_and_carries_only_retained_states(tmp_path,
     assert not active and module.read(tmp_path/'batch/stage-1/result.json')['decision']['update_retained'] is False
 
 
+def test_private_matched_branches_can_share_an_owned_starting_history_session(tmp_path,monkeypatch):
+    source,_,_=fixture(tmp_path,monkeypatch);session=module.repair.IntervalReplaySession()
+    # The caller owns one lock and explicitly supplies the same session. Each
+    # branch still starts from the same source/schedule, never the previous fit.
+    with module.worker_lock():
+        for index in range(2):
+            result=module._run(source,tmp_path/('branch-'+str(index)),list(range(4)),2,None,1,300,8,.03,10,1800,replay_session=session)
+            assert result['attempted_windows']==[[0,1]]
+
+
+def test_private_batch_rejects_a_saved_or_unowned_session_before_writing(tmp_path,monkeypatch):
+    source,_,_=fixture(tmp_path,monkeypatch)
+    with pytest.raises(ValueError,match='Owned in-memory'):
+        module._run(source,tmp_path/'branch',list(range(4)),2,None,1,300,8,.03,10,1800,replay_session={})
+    assert not (tmp_path/'branch').exists()
+
+
 def test_admission_budget_keeps_complete_stage_and_remaining_failures_visible(tmp_path,monkeypatch):
     source,calls,_=fixture(tmp_path,monkeypatch,elapsed_per_stage=1300)
     result=module.run(source,tmp_path/'batch',list(range(6)),width=2,stages=3)

@@ -163,7 +163,9 @@ def batch_attempted_history(directory,study,frames,width,resume):
     return attempted,bindings
 
 
-def _run(study,output,frames,width,resume,stages,seconds,iterations,trust,solve_iterations,max_seconds,*,proposal_geometry_solver='supporting-planes',resume_batch=None):
+def _run(study,output,frames,width,resume,stages,seconds,iterations,trust,solve_iterations,max_seconds,*,proposal_geometry_solver='supporting-planes',resume_batch=None,replay_session=None):
+    if replay_session is not None and type(replay_session) is not repair.IntervalReplaySession:
+        raise ValueError('Owned in-memory interval replay session required')
     if resume_batch is not None:exclusions,bindings=batch_attempted_history(resume_batch,study,frames,width,resume)
     else:exclusions,bindings=attempted_history(resume,study,frames,width) if resume is not None else ([],{})
     windows=partition_frames(frames,width);canonical=dict(ranked_windows=[dict(frames=w) for w in windows])
@@ -181,7 +183,7 @@ def _run(study,output,frames,width,resume,stages,seconds,iterations,trust,solve_
     if proposal_geometry_solver!='supporting-planes':protocol['proposal_geometry_solver']=proposal_geometry_solver
     if resume_batch is not None:protocol['schedule_resume']=dict(directory=resume_batch.relative_to(ROOT).as_posix(),result_sha256=bindings[str(resume_batch/'result.json')])
     save(output/'protocol.json',protocol);save(output/'pipeline.json',dict(status='processing',quality_approved=False,release_approved=False))
-    started=time.monotonic();records=[];latest=resume;stop='stage_limit';replay_session=repair.IntervalReplaySession()
+    started=time.monotonic();records=[];latest=resume;stop='stage_limit';replay_session=repair.IntervalReplaySession() if replay_session is None else replay_session
     for index in range(stages):
         if select_window(frames,canonical,width,exclusions) is None:stop='coverage_schedule_exhausted';break
         if max_seconds-(time.monotonic()-started)<seconds+300:stop='admission_budget';break
