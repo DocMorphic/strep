@@ -292,13 +292,23 @@ def conic_archive(directory,args,*,geometry_backoff=False):
     vectors=dict(offsets=np.array([[.5,0.,0.],[.5,0.,0.]]),jacobian=derivative,
         limits=np.full(2,.1),scales=np.ones(2),rows=np.arange(2),distance=np.ones(2,dtype=bool))
     lower=np.tile(np.r_[np.full(3,-.1),0.],2);upper=np.full(8,.1)
-    _,start=_geometry_margin_start(values,jac,floor,caps,lower,upper,5.,vectors,'worst-first','conic')
+    if geometry_backoff:
+        # A deterministic synthetic solver point matches this fixture's kept
+        # native pose. Original problem bounds and captured observations stay
+        # intact, and the production helper checks every affine constraint.
+        from unittest.mock import patch
+        import geometry_conic_start as conic
+        backend=conic.solver_module()
+        point=np.r_[.1,np.zeros(3),.1,np.zeros(3),.3].tolist()
+        controlled=SimpleNamespace(__version__=backend.__version__,DefaultSettings=backend.DefaultSettings,
+            NonnegativeConeT=backend.NonnegativeConeT,SecondOrderConeT=backend.SecondOrderConeT,
+            DefaultSolver=lambda *args:SimpleNamespace(solve=lambda:SimpleNamespace(x=point.copy(),status='Solved',iterations=1)))
+        with patch.object(conic,'solver_module',return_value=controlled):
+            _,start=_geometry_margin_start(values,jac,floor,caps,lower,upper,5.,vectors,'worst-first','conic')
+    else:
+        _,start=_geometry_margin_start(values,jac,floor,caps,lower,upper,5.,vectors,'worst-first','conic')
     assert start['success']
     if geometry_backoff:
-        # The fixture's unused coordinates have identically zero scalar and
-        # vector derivatives. Zero them to match its original kept test pose.
-        start['delta']=np.asarray(start['delta']);start['delta'][[1,2,3,5,6,7]]=0.
-        start['delta']=start['delta'].tolist()
         result['fit']['trials'][0].update(stage='geometry-start',fraction=.5)
     # Reuse the fixture archive writer; it may add bound records after its creation.
     store=object.__new__(ProposalArchive);store.directory=directory
