@@ -21,7 +21,7 @@ from pose_restoration_policy import proposal_headroom,row_diagnostics
 from pose_proposal_archive import ProposalArchive
 from contact_interval_resume import resume_interval,seed_window,IntervalReplaySession
 
-METHODS=AUDIT_METHODS+['repair_contact_interval.py','contact_interval_resume.py','geometry_conic_start.py']
+METHODS=AUDIT_METHODS+['repair_contact_interval.py','contact_interval_resume.py','geometry_conic_start.py','contact_candidate_recovery.py']
 
 
 class ExactSavedOrigin:

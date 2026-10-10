@@ -39,7 +39,7 @@ jobs:
           python -m pip install --only-binary=:all: -r requirements-ci.txt safetensors==0.8.0
           python -m pip install --only-binary=:all: torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
       - name: Verify direct native pose inequalities
-        run: python -m pytest -q tests/test_scene_pose_restoration.py tests/test_guarded_pose_restoration.py tests/test_sparse_pose_jacobian.py tests/test_pose_row_jacobian.py tests/test_grasp_pose_witness.py tests/test_contact_finger_budgets.py tests/test_coupled_pose_window.py tests/test_guarded_window_restoration.py tests/test_window_restoration_resume.py tests/test_contact_interval_audit.py tests/test_contact_interval_repair.py tests/test_contact_interval_resume.py tests/test_contact_interval_batch.py
+        run: python -m pytest -q tests/test_scene_pose_restoration.py tests/test_guarded_pose_restoration.py tests/test_sparse_pose_jacobian.py tests/test_pose_row_jacobian.py tests/test_grasp_pose_witness.py tests/test_contact_finger_budgets.py tests/test_coupled_pose_window.py tests/test_guarded_window_restoration.py tests/test_window_restoration_resume.py tests/test_contact_interval_audit.py tests/test_contact_interval_repair.py tests/test_contact_interval_resume.py tests/test_contact_candidate_recovery.py tests/test_contact_interval_batch.py
       - name: Verify bounded exact motion checkpoint transport
         run: python -m pytest -q tests/test_motion_checkpoint_transport.py
       - name: Verify adapter lifecycle and reviewed native correction pipeline

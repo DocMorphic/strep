@@ -11,6 +11,36 @@ from contact_interval_coverage import partition_frames,select_window
 import repair_contact_interval as repair
 
 
+def recovered_schedule_parent(directory,study,frames,width,bindings):
+    """Bind a pose-only recovery; it contributes no completed window attempt."""
+    from contact_candidate_recovery import SCHEMA,FILES
+    root=ROOT.resolve();directory=Path(directory).resolve()
+    def bind(path,expected=None):
+        path=Path(path).resolve()
+        if not path.is_relative_to(root):raise ValueError('In-project recovery schedule required')
+        digest=sha256(path)
+        if expected is not None and digest!=expected:raise ValueError('Recovery scheduling binding changed')
+        if str(path) in bindings and bindings[str(path)]!=digest:raise ValueError('Recovery scheduling input changed')
+        bindings[str(path)]=digest
+        return digest
+    protocol=read(directory/'protocol.json');result=read(directory/'result.json');pipeline=read(directory/'pipeline.json')
+    if (protocol.get('schema')!=SCHEMA or protocol.get('source_study')!=study.relative_to(root).as_posix()
+            or protocol.get('frames')!=frames or protocol.get('width')!=width or protocol.get('fps')!=30
+            or protocol.get('metadata_approved') is not False or result.get('interrupted_stage_complete') is not False
+            or result.get('status')!='complete' or pipeline.get('status')!='complete'
+            or result.get('decision',{}).get('update_retained') is not True or result['decision'].get('source_rows_preserved') is not True
+            or any(d.get(k) is not False for d in [protocol,result,pipeline] for k in ['quality_approved','release_approved'])
+            or set(result.get('files_sha256',{}))!=FILES):
+        raise ValueError('Complete unapproved pose-only recovery required for scheduling')
+    bind(directory/'protocol.json',result['protocol_sha256'])
+    for name in ['result.json','pipeline.json']:bind(directory/name)
+    for name,digest in result['files_sha256'].items():bind(directory/name,digest)
+    prior=protocol.get('interval_resume')
+    if not isinstance(prior,dict) or not isinstance(prior.get('directory'),str):raise ValueError('Original recovery ancestor required')
+    parent=(root/prior['directory']).resolve();bind(parent/'result.json',prior['result_sha256'])
+    return parent
+
+
 def attempted_history(directory,study,frames,width):
     """Bind schedule provenance; native state is fully replayed by each stage."""
     attempted=[];bindings={};seen=set();expected=None
@@ -26,6 +56,10 @@ def attempted_history(directory,study,frames,width):
                 or result['decision'].get('source_rows_preserved') is not True
                 or any(d.get(k) is not False for d in [protocol,result,pipeline] for k in ['quality_approved','release_approved'])):
             raise ValueError('Retained original-source interval schedule with identical scope required')
+        if protocol.get('schema')=='strep-saved-contact-candidate-recovery-v1':
+            directory=recovered_schedule_parent(directory,study,frames,width,bindings)
+            expected=protocol['interval_resume']['result_sha256']
+            continue
         candidates=protocol.get('selection_exclusions',[])+[protocol['selected_frames']]
         for block in candidates:
             select_window(frames,canonical,width,[block])
@@ -63,6 +97,15 @@ def batch_attempted_history(directory,study,frames,width,resume):
             raise ValueError('Complete unapproved original-scope schedule required')
         for name in ['result.json','pipeline.json']:bind(p/name)
         return protocol,result
+    def bridge(current,target):
+        walked=set()
+        while current!=target:
+            if current is None or current in walked or len(walked)>=32:
+                raise ValueError('Explicit native resume must match completed batch through bound pose-only recovery')
+            walked.add(current)
+            if read(current/'protocol.json').get('schema')!='strep-saved-contact-candidate-recovery-v1':
+                raise ValueError('Explicit native resume must match completed batch through bound pose-only recovery')
+            current=recovered_schedule_parent(current,study,frames,width,bindings)
     def visit(p,expected=None):
         if p in seen or len(seen)>=32:raise ValueError('Bound acyclic batch scheduling history required')
         seen.add(p);protocol,result=completed(p)
@@ -71,7 +114,7 @@ def batch_attempted_history(directory,study,frames,width,resume):
         prior=protocol.get('schedule_resume')
         if prior is not None:
             attempted,prior_latest=visit(path(prior['directory']),prior['result_sha256'])
-            if prior_latest!=latest:raise ValueError('Schedule and native resume disagree')
+            bridge(latest,prior_latest)
         else:
             attempted,native_bindings=attempted_history(latest,study,frames,width) if latest is not None else ([],{})
             for name,digest in native_bindings.items():
@@ -115,7 +158,7 @@ def batch_attempted_history(directory,study,frames,width,resume):
             raise ValueError('Final attempted coverage and retained state must reconstruct exactly')
         return attempted,latest
     attempted,latest=visit(path(directory))
-    if latest!=resume:raise ValueError('Explicit native resume must match completed batch')
+    bridge(resume,latest)
     if any(sha256(Path(name))!=digest for name,digest in bindings.items()):raise ValueError('Scheduling history changed')
     return attempted,bindings
 

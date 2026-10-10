@@ -297,6 +297,10 @@ def resume_interval(directory,study,factory,source,frames,width,original_binding
         if reused is not None:return reused
     print(dict(stage='interval_resume_reading',directory=directory.relative_to(ROOT).as_posix()),flush=True)
     protocol=read(directory/'protocol.json');result=read(directory/'result.json');pipeline=read(directory/'pipeline.json')
+    if protocol.get('schema')=='strep-saved-contact-candidate-recovery-v1':
+        from contact_candidate_recovery import replay_recovery
+        return replay_recovery(directory,study,factory,source,frames,width,original_bindings,methods,definitions,origin_type,
+            ancestors=ancestors,replay_session=replay_session)
     partition_frames(protocol.get('frames'),protocol.get('width'))
     if (result.get('status')!='complete' or pipeline.get('status')!='complete' or protocol.get('source_study')!=study.relative_to(ROOT).as_posix()
             or protocol.get('frames')!=frames or protocol.get('width')!=width or protocol.get('fps')!=30
@@ -316,7 +320,9 @@ def resume_interval(directory,study,factory,source,frames,width,original_binding
     if protocol.get('proposal_geometry_solver','supporting-planes')=='conic' and 'geometry_conic_start.py' not in archived:
         raise ValueError('Conic-start implementation must be archived')
     optional={'geometry_conic_start.py'} if protocol.get('proposal_geometry_solver','supporting-planes')=='supporting-planes' else set()
-    if set(archived) not in [expected,expected-{'contact_interval_resume.py'},expected-optional,expected-optional-{'contact_interval_resume.py'}]:
+    legacy_optional={'contact_candidate_recovery.py'}
+    allowed=[expected-extra for extra in [set(),{'contact_interval_resume.py'},optional,optional|{'contact_interval_resume.py'}]]
+    if set(archived) not in allowed+[names-legacy_optional for names in allowed]:
         raise ValueError('Complete archived interval implementation required')
     for name,digest in archived.items():bind(directory/'implementation'/name,digest)
     if protocol.get('native_metadata_sha256')!=sha256(definitions):raise ValueError('Original native metadata differs')

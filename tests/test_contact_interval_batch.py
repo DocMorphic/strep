@@ -7,6 +7,52 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 import batch_contact_interval as module
 
 
+def pose_recovery(tmp_path,source,frames,width,parent,name='recovered'):
+    from contact_candidate_recovery import SCHEMA,FILES
+    directory=tmp_path/name;directory.mkdir()
+    protocol=dict(schema=SCHEMA,source_study=source.relative_to(tmp_path).as_posix(),frames=frames,width=width,fps=30,
+        interval_resume=dict(directory=parent.relative_to(tmp_path).as_posix(),result_sha256=module.sha256(parent/'result.json')),
+        metadata_approved=False,quality_approved=False,release_approved=False)
+    module.save(directory/'protocol.json',protocol)
+    for filename in FILES:(directory/filename).write_text('bound toy geometry output')
+    result=dict(status='complete',protocol_sha256=module.sha256(directory/'protocol.json'),interrupted_stage_complete=False,
+        decision=dict(update_retained=True,source_rows_preserved=True),files_sha256={n:module.sha256(directory/n) for n in FILES},
+        quality_approved=False,release_approved=False)
+    module.save(directory/'result.json',result);module.save(directory/'pipeline.json',dict(status='complete',quality_approved=False,release_approved=False))
+    return directory
+
+
+def test_pose_only_recovery_does_not_count_an_unfinished_window(tmp_path,monkeypatch):
+    source,calls,_=fixture(tmp_path,monkeypatch,first_rejected=True);frames=list(range(8))
+    first=tmp_path/'first';module.run(source,first,frames,width=2,stages=2)
+    recovered=pose_recovery(tmp_path,source,frames,2,first/'stage-2')
+    attempted,bindings=module.batch_attempted_history(first,source,frames,2,recovered)
+    assert attempted==[[0,1],[2,3]] and str(recovered/'retained-motion.npz') in bindings
+    inferred,_=module.attempted_history(recovered,source,frames,2)
+    assert inferred==attempted
+    second=tmp_path/'second';result=module.run(source,second,frames,width=2,stages=1,resume=recovered,resume_batch=first)
+    assert calls[-1][0]==recovered and calls[-1][2]==[4,5]
+    assert result['attempted_windows']==[[0,1],[2,3],[4,5]]
+    replayed,_=module.batch_attempted_history(second,source,frames,2,second/'stage-1')
+    assert replayed==result['attempted_windows']
+
+
+@pytest.mark.parametrize('change',['pose','completion','approval','clock','ancestor','cycle'])
+def test_changed_recovery_cannot_bridge_completed_schedule(tmp_path,monkeypatch,change):
+    source,_,_=fixture(tmp_path,monkeypatch);frames=list(range(8));first=tmp_path/'first'
+    module.run(source,first,frames,width=2,stages=1)
+    recovered=pose_recovery(tmp_path,source,frames,2,first/'stage-1')
+    protocol=module.read(recovered/'protocol.json');result=module.read(recovered/'result.json')
+    if change=='pose':(recovered/'retained-motion.npz').write_text('changed geometry')
+    elif change=='completion':result['interrupted_stage_complete']=True
+    elif change=='approval':result['quality_approved']=True
+    elif change=='clock':protocol['fps']=60
+    elif change=='ancestor':protocol['interval_resume']['result_sha256']='0'*64
+    elif change=='cycle':protocol['interval_resume']['directory']='recovered'
+    module.save(recovered/'protocol.json',protocol);result['protocol_sha256']=module.sha256(recovered/'protocol.json');module.save(recovered/'result.json',result)
+    with pytest.raises(ValueError):module.batch_attempted_history(first,source,frames,2,recovered)
+
+
 def fixture(tmp_path,monkeypatch,*,first_rejected=False,all_rejected=False,elapsed_per_stage=0):
     monkeypatch.setattr(module,'ROOT',tmp_path);monkeypatch.setattr(module.repair,'METHODS',['toy.py'])
     source=tmp_path/'source';source.mkdir();scripts=tmp_path/'scripts';scripts.mkdir()
