@@ -211,3 +211,8 @@ The [subsequent complete-hand replay](thumb-clearance-curves-v1.md#complete-hand
 ## Subsequent complete-hand hold repair (2026-10-10)
 
 The [middle/ring correction](middle-ring-clearance-curves-v1.md) adds six explicit distal finger permissions after the thumb-only rejection. Complete hands now pass all 1,995 hold times, with zero grip regressions and all raw-reference caps passing. Independent full-clock replay retains twelve approach/departure failures. This successor does not alter the earlier observations or approve full-body physics, engine behavior or human quality.
+
+
+## Subsequent protected-hold transitions (2026-10-10)
+
+The [forearm/wrist transition study](protected-hold-transitions-v1.md) clears the remaining twelve approach/departure failures while protecting the hold. The actual export passes all 2,426 original forearm/hand surface times, all source caps and all grip conditions; independent arithmetic replays every query. Full-body/dynamics/engine/human approval remains outstanding. Earlier observations and rejected candidates are unchanged.

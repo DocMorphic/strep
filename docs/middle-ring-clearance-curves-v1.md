@@ -53,3 +53,8 @@ A fresh local before/after package is `reports/middle-ring-review-v1/offline.htm
 The next bounded wrist trial preserves the entire hold while targeting the remaining approach/departure failures. The earlier failed setups and runtime stop remain preserved; an isolated pose pass cannot approve an exported wrist curve. Any new curve needs true-raw source caps, exact protected-hold/export checks, full contact clocks and complete-hand replay before further use.
 
 Full-body surfaces, sphere-center containment, self-collision, continuous motion, support/balance, forces for this new curve, game-engine round trips and genuine human ratings/cleanup times remain outstanding. The original baseline full-body independent replay is still deferred under its unchanged larger RAM admission policy. Conditional object-force success on the earlier clip does not transfer approval to this candidate. The fixture contains a sphere named `box`; it is not a rectangular-box pickup benchmark. No new generation, training or release approval follows. The same full-project goal remains active.
+
+
+## Subsequent protected-hold transitions (2026-10-10)
+
+The [forearm/wrist transition study](protected-hold-transitions-v1.md) clears the remaining twelve approach/departure failures while protecting the hold. The actual export passes all 2,426 original forearm/hand surface times, all source caps and all grip conditions; independent arithmetic replays every query. Full-body/dynamics/engine/human approval remains outstanding. Earlier observations and rejected candidates are unchanged.
