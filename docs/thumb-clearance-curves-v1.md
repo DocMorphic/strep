@@ -69,3 +69,11 @@ Local immutable receipts:
 - Source caps: `reports/central-hand-physical-v1/thumb-curve-clock-cap-audit-v2.json`.
 
 Next: independently finish the original full-body geometry audit, inventory the second curve's remaining entry/exit failures and test bounded corrections that preserve the verified hold. No force, engine, genuine human, guidance or release approval is inferred. The full-project goal remains active.
+
+## Local comparison package
+
+`reports/thumb-curve-review-v1/offline.html` packages the exact contact-passing arm correction and six-pose thumb curve, original sphere tracks, fifteen bound inputs and saved contact/cap/geometry receipts. The grey SOMA character retains all eight skin weights. Both source licenses remain embedded. No character/model payload is published to GitHub.
+
+The self-contained file is 10,570,060 bytes, SHA-256 `e2bf0fa8f19b51e3819839f62f9dc612865b8f8e8b8ffbdfbb278292eddcbe62`. All saved/embedded payload bindings and JavaScript syntax checks pass; seven local modules and nine saved payloads require no network fetch. The interface explicitly distinguishes the passing thumb-region hold from the remaining ten entry/exit failures. Developer observations require a real user entry and remain separate from animator ratings or cleanup tests.
+
+Browser rendering and interactions remain unverified. The prior browser security rejection of local file URLs is respected; no new browser/server workaround is attempted. Packaging is not human review or physical approval.
