@@ -112,3 +112,8 @@ Local immutable evidence:
 - Preserved discrepancy: `reports/central-hand-physical-v1/nearest-distance-disagreement-v1.json`; high-precision comparison: `reports/central-hand-physical-v1/svd-distance-probe-v1.json`.
 
 Next: inventory all remaining violating hand faces and declare the smallest useful additional finger permissions, then repeat grip preservation, complete-hand clocks and source-cap checks. Do not retry thumb-only correction as a whole-hand solution. Preserve the passing thumb-region result and every rejected broader result. Full-body/containment, continuous-time, dynamics, engine, human, guidance and release approval remain outstanding under the same full-project goal.
+
+
+## Subsequent complete-hand hold repair (2026-10-10)
+
+The [middle/ring correction](middle-ring-clearance-curves-v1.md) adds six explicit distal finger permissions after the thumb-only rejection. Complete hands now pass all 1,995 hold times, with zero grip regressions and all raw-reference caps passing. Independent full-clock replay retains twelve approach/departure failures. This successor does not alter the earlier observations or approve full-body physics, engine behavior or human quality.

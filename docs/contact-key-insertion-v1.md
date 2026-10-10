@@ -206,3 +206,8 @@ The [six-pose refinement](thumb-clearance-curves-v1.md#six-pose-refinement) subs
 
 
 The [subsequent complete-hand replay](thumb-clearance-curves-v1.md#complete-hands-remain-rejected) clarifies that the passing thumb region is insufficient: all 1,995 hold times still fail broader hand geometry at worst 7.796010 mm. All 114,351,936 triangle/object queries strictly replay after a preserved library-distance discrepancy is independently resolved. A fixed LeftHandMiddle4 face fails throughout the hold and cannot move under thumb-only permissions. Complete-hand sampled times repaired remain zero; useful additional finger permissions and broader verification are next.
+
+
+## Subsequent complete-hand hold repair (2026-10-10)
+
+The [middle/ring correction](middle-ring-clearance-curves-v1.md) adds six explicit distal finger permissions after the thumb-only rejection. Complete hands now pass all 1,995 hold times, with zero grip regressions and all raw-reference caps passing. Independent full-clock replay retains twelve approach/departure failures. This successor does not alter the earlier observations or approve full-body physics, engine behavior or human quality.

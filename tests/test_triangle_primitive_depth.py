@@ -71,6 +71,33 @@ def test_cylinder_cap_and_radial_limits_both_apply():
     for i, expected in enumerate([.2, .05]): assert out['lower_m'][i] <= expected <= out['upper_m'][i]
 
 
+@pytest.mark.parametrize('edge_scale', [2e-3, 8e-5])
+@pytest.mark.parametrize('order', [(0, 1, 2), (0, 2, 1), (1, 0, 2),
+                                 (1, 2, 0), (2, 0, 1), (2, 1, 0)])
+def test_small_face_near_edge_interior_projection_keeps_sphere_depth(edge_scale, order):
+    # Synthetic geometry: the closest point and barycentric coordinates are
+    # known analytically. Small faces far from the origin can expose inaccurate
+    # plane/edge classification even when every returned distance is finite.
+    basis = Rotation.from_rotvec([.37, -.81, .22]).as_matrix()
+    e = edge_scale * basis[:, 0]
+    f = edge_scale * (.31 * basis[:, 0] + .89 * basis[:, 1])
+    plane_distance = .278
+    closest = plane_distance * basis[:, 2]
+    a = closest - e / 128 - f * 65 / 128
+    triangle = np.array([a, a + e, a + f])[list(order)]
+    center = np.array([.7, -.2, 1.3])
+    rotation = Rotation.from_rotvec([-.4, .19, .73]).as_matrix()
+    radius = .3
+    out = query((triangle @ rotation.T + center)[None], Geometry('sphere', (radius,)),
+                center, rotation, resolution_m=1e-9)
+    expected = radius - plane_distance
+    assert out['degenerate_faces'].size == 0
+    assert out['lower_m'][0] <= expected <= out['upper_m'][0]
+    assert out['upper_m'][0] - out['lower_m'][0] <= 2e-12
+    np.testing.assert_allclose(out['witnesses_world_m'][0], closest @ rotation.T + center,
+                               rtol=0, atol=2e-12)
+
+
 @pytest.mark.parametrize('fault', ['nan', 'empty', 'resolution-bool', 'resolution-small', 'rotation', 'scale'])
 def test_invalid_queries_fail(fault):
     tri = np.array([[[0., 0, 0], [1, 0, 0], [0, 1, 0]]]); r = np.eye(3); resolution = 1e-6
