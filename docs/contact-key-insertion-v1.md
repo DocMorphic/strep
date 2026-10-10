@@ -49,7 +49,7 @@ Expansion preflight verifies 135 distinct float32 interior times, all 45 selecte
 
 ## Verified staged expansion
 
-The first four stages complete with **72 passing inserted poses** in the frozen population. Each stage independently replays every accumulated candidate against the original source, actual partial skin, complete incident normals, contact decisions and source caps. The fourth stage includes all nine verified pilot candidates; the other 63 poses are new fits.
+All eight stages complete with **135 passing inserted poses** in the frozen population. Each stage independently replays every accumulated candidate against the original source, actual partial skin, complete incident normals, contact decisions and source caps. All nine verified pilot candidates remain exact; the other 126 poses are new fits. The final stage exports all 315 rotation keys while preserving every original native quaternion.
 
 | Stage | Accumulated passing poses | Replayed source caps | Replayed contact correspondences | Producer execution | Resource observations |
 | --- | --- | --- | --- | --- | --- |
@@ -57,6 +57,10 @@ The first four stages complete with **72 passing inserted poses** in the frozen 
 | 2 | 36 | 396 | 360 | 241.578 seconds | 231 |
 | 3 | 54 | 594 | 540 | 225.687 seconds | 216 |
 | 4 | 72 | 792 | 720 | 356.797 seconds | 337 |
+| 5 | 90 | 990 | 900 | 380.421 seconds | 360 |
+| 6 | 108 | 1,188 | 1,080 | 367.266 seconds | 348 |
+| 7 | 126 | 1,386 | 1,260 | 437.140 seconds | 412 |
+| 8 | 135 | 1,485 | 1,350 | 323.297 seconds | 367 |
 
 All producer and pose-audit resource traces replay. The source foot-matrix difference remains below 6.67e-16. Separate continuation replay checks every carried array, report and numerical-policy field: stage 2 preserves 594 arrays / 124,182 scalar values from its eighteen-key predecessor exactly; stage 3 preserves 1,188 arrays / 248,364 scalar values from its thirty-six-key predecessor exactly. A separate stage-3 pilot comparison verifies all 99 arrays / 20,697 values for the three pilot keys included at that stage. Source/previous transforms, targets, all weights, caps, margins, iterations, clocks and original input hashes remain unchanged.
 
@@ -87,7 +91,7 @@ Completed skin-chord retry receipts:
 
 All 453 retry resource observations replay. Pose replay takes 2.219 seconds/eight observations; complete clock producer/replay take 8.641 / 4.359 seconds with fourteen / ten observations; scalar comparison producer/replay take 0.078 / 0.063 seconds with six / six observations; complete cap/protected replay takes 13.016 seconds/eighteen observations. All resource traces replay; their successful supervisor exits do not approve motion, the engine or human quality.
 
-Staged outputs remain under ignored `reports/central-hand-skin-chord-hold-v1` through `central-hand-skin-chord-hold-v3`. Stage-3 receipt identifiers:
+Staged outputs remain under ignored `reports/central-hand-skin-chord-hold-v1` through `central-hand-skin-chord-hold-v8`. Stage-3 receipt identifiers:
 
 - Complete accumulated pose replay: `8547130873cd1283d145fae90f642f9caaaee9682be3a492c7ece680969f1ebd`.
 - Exact continuation and ancestor bindings: `7e0cab78e2cbed41978fe2845ad42f4fa3551736446d441671b260e0c0391393`.
@@ -100,3 +104,40 @@ Stage-4 receipt identifiers:
 - All nine pilot candidates: `a42f2fb9816078d2f96b5136e65ac920e7755ab4e6c8579703a3e5427ce8bbf1`.
 
 The single full-project goal remains active. This contact fixture is one release dependency; action families remain evaluation categories rather than a prompt whitelist.
+
+
+## Complete 135-key exported contact result
+
+The full frozen expansion passes all original contact limits at **1,159 finite times per contact**, comprising 11,590 complete incident-normal correspondences and all 16,960 original fixed rate/phase velocity pairs. Independent scalar comparison repairs **all 972 original sampled failures with zero previously passing conditions lost**. All 30,990 original scalar contact conditions replay. Added candidate contact-error departures from the original endpoint chord stay below 0.5891 micrometers; this is a measured diagnostic, not a continuous-time guarantee.
+
+| Contact | Worst position error | Worst relative speed | Worst opposition error | Minimum signed side |
+| --- | --- | --- | --- | --- |
+| Left center | 2.173 mm | 4.289 mm/s | 8.252 degrees | +0.2970 mm |
+| Right center | 2.835 mm | 4.385 mm/s | 8.848 degrees | +0.2037 mm |
+| Left neighbors | 3.405 mm | 4.459 mm/s | 14.994 degrees | -0.49612 mm |
+| Right neighbors | 3.565 mm | 4.438 mm/s | 14.995 degrees | -0.49946 mm |
+
+Acceptance remains 5 mm position, 5 mm/s speed, 15 degrees opposition and -0.5 mm signed side. The right-neighbor side margin is narrow; finite sampled success does not establish behavior between samples or after engine import.
+
+Independent pose/export replay checks all 135 candidates, 1,485 source caps and 1,350 correspondences. All 180 original quaternions in all eleven edited channels remain exact, the original binary prefix/asset topology/skin remain intact, and unedited channels are preserved. Original source foot-matrix differences remain below 6.67e-16. Full-clock replay checks 12,749 source-cap conditions with zero failures, preserved local translations and protected-local differences below 1.12e-15. The explicitly declared serialized allowance remains 1e-5 degrees; native candidates retain the 1e-8-radian allowance.
+
+Across the 135 saved optimizations, 122 report convergence, eleven reach their 200-iteration limit and two report a line-search directional-derivative exit. All actual poses pass the separate checks. These statuses remain preserved; neither feasibility nor a successful export establishes optimizer optimality.
+
+Exact stage continuation separately preserves every predecessor array, row and numerical-policy field. Stages 5 / 6 / 7 / 8 retain 2,376 / 2,970 / 3,564 / 4,158 arrays and 496,728 / 620,910 / 745,092 / 869,274 scalar values. Final pilot retention again checks all nine candidates, 297 arrays and 62,091 values. All successful producer/pose/carry/pilot/clock/comparison/cap resource traces replay. Final producer execution is 323.297 seconds with 367 resource observations; pose replay takes 6.563 seconds/twelve observations, full contact production 17.313 seconds/twenty-two observations, independent clock replay 5.437 seconds/eleven observations and cap replay 15.093 seconds/twenty observations.
+
+Preserve two intervening orchestration failures. The first stage-6 carry replay is interrupted by the available-RAM guard after 6.563 execution seconds/twelve observations without a receipt. A prematurely launched stage-7 worker then fails before creating a plan or fitting a pose because that prerequisite receipt is absent; its 45 resource observations replay. The unchanged carry auditor succeeds on a fresh guarded retry, and only then does the stage-7 retry proceed. Neither failure changes candidate data, numerical limits or the resource policy.
+
+The geometry/force experiment is now prepared under ignored `reports/central-hand-physical-v1`. It binds this exact contact-passing GLB, preserves all 2,201 original geometry times and adds every complete contact/force clock. It retains the hypothetical 1 kg uniform sphere, explicit COM/inertia, coefficient 0.5, 20 N per correspondence, support phases, force tolerances and original 5-mm penetration threshold. The complete body surface and both declared objects must be measured; selected contact-neighborhood success cannot substitute for that assessment. The original object is a sphere named `box`, not a rectangular-box pickup benchmark. Full geometry retains the 2,048 MiB plus 600 MiB reserve and 3,600-second maximum runtime. Preparation and contact success do not admit generation guides, physical consistency, engine playback, training or release.
+
+Final ignored GLB SHA-256: `bfea01909c92f6f655b24e45f8fc833b2b3d8febfe44448ffe9f89da7589c6ea`.
+
+Final receipt identifiers:
+
+- Complete pose/export: `23c879fe6ef2016999d43ee12b66405eefd8dcedaca6fcdca801966c5c4ad22a`.
+- Complete contact clock: `2ba89180d5f50bb9386b4c27b074abb062d045c821a1722a3b5060d40559ff51`.
+- Scalar preservation comparison: `7bedde4832c0eda29cfbfc3bbafa65ccb7c90a122e8ff0e98edc0d570493b5d4`.
+- Complete clock source caps: `e9741b5ce7152375ce0d6d1984e5f32830064410eada3c644bfad09897d86c3a`.
+- Exact predecessor transport: `c8d24ad3053bfe9b9a6f565c342dae79b2439727be9de3a716d024aa64f17370`.
+- All nine original pilot candidates: `b5e7de4006a30d7c185717ed8edeed73683a9c55fbf25d396c53c0f0008e019f`.
+
+The single full-project goal remains active. This is one contact fixture on one rig. All fourteen release capabilities remain unapproved; nineteen gaps, four unfrozen gates and genuine developer/animator ratings and cleanup evidence remain outstanding.
