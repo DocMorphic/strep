@@ -820,7 +820,10 @@
         "docs/landing-root-scale-v1.md",
         "docs/contact-constraint-restoration-v1.md",
         "docs/contact-restoration-policy-v2.md",
-        "docs/scene-placement-authoring-v1.md"
+        "docs/scene-placement-authoring-v1.md",
+        "docs/contact-interval-batch-v7.md",
+        "reports/box-lift-interval-batch-v12/resource-audit-v1.json",
+        "reports/box-lift-interval-batch-v12/interrupted-attempt-inventory-v1.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1151,7 +1154,10 @@
         "docs/contact-breadth-kick-v1.md",
         "docs/contact-breadth-jump-v1.md",
         "docs/preserved-export-repair-v1.md",
-        "docs/scene-placement-authoring-v1.md"
+        "docs/scene-placement-authoring-v1.md",
+        "docs/contact-interval-batch-v7.md",
+        "reports/box-lift-interval-batch-v12/resource-audit-v1.json",
+        "reports/box-lift-interval-batch-v12/interrupted-attempt-inventory-v1.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -3014,6 +3020,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-10T00:08:06.967043+00:00",
-  "last_progress": "V11 independently verifies a rejected two-key attempt at 120\u2013121. Thirteen of 21 windows attempted; eight remain. V10 stage 2 remains the verified motion and complete physical/keyed contact passes stay 0/62. The generalized private two/three-key auditor reproduces all 42 prior V10 stage-2 poses exactly, then four fresh/reaped frozen phases reconstruct both new records/four poses, four margin attempts, six archive files, the complete 22,720-row interval and fixed V10 ancestry/schedule. All retained arrays remain exact. Native/audit/regression resource traces independently replay 599/42/20 observations under unchanged full admission and preservation limits. All 32 earlier projected native candidates remain independently verified rejections. A new model-free release-status inventory passes eighteen focused checks and reports nineteen configuration/evidence gaps; file presence or claimed completion never grants approval. Inventory is 423 Python modules / 41 Node suites. All fourteen release capabilities remain unapproved; no inference/training, Studio restart, motion realism or human ratings/cleanup approval. Continue remaining contact coverage using V11 scheduling with V10 motion, plus broad action/scene/partner/rig/edit/style/transition/engine, load-aware performance and actual developer/animator review under the single full-project goal."
+  "last_progress_at": "2026-10-10T00:30:21.982493+00:00",
+  "last_progress": "V12 remaining-window continuation stops and reaps its native worker after 1,007.047 execution seconds when available RAM falls below the unchanged 600 MiB floor. Independent resource replay verifies all 958 samples and terminal decision. Frames 111\u2013113 have 38 partial local observations and three locally retained backoffs, but no final stage/batch result or complete geometry replay; they cannot replace V10 motion or advance V11 scheduling. Thirteen completed attempts and eight remaining windows stay unchanged; physical/keyed passes remain 0/62. Studio now preserves startup on the old running server and explains busy generation while restoring all 23 captured controls exactly; seven Node and four build checks pass. Current primary-source research screens interaction and rig-aware alternatives without acquiring weights/data or inferring product rights from code licenses. Inventory remains 423 Python modules / 41 Node suites. All fourteen release capabilities remain unapproved; no new model training, completed motion, engine or human-rating/cleanup result. Continue guarded contact coverage when admitted and broad action/scene/partner/rig/edit/style/transition/engine plus actual developer/animator review under the same goal."
 }
