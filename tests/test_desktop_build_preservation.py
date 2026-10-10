@@ -14,7 +14,12 @@ def test_checked_in_studio_matches_its_editable_sources():
 def test_rebuild_retains_resource_deferral_and_saved_request_retry():
     page=render()
     assert page.count("renderJobList($('jobList'),studies,busy")==1
-    assert "from '/generation-job-status.mjs'" in page
+    assert "from '/generation-job-status.mjs'" not in page
+    assert '// strep job status begin:' in page
+    helper=(ROOT/'scripts/generation-job-status.mjs').read_text(encoding='utf8').replace('export ','')
+    assert helper in page
+    assert "generationAvailabilityMessage(busy)" in page
+    assert 'aria-describedby="generationAvailability"' in page
     assert 'activityMessage(studies,busy)' in page
     assert "json('/api/jobs/retry'" in page and 'JSON.stringify({job:id})' in page
     assert 'const active=data.studies.find(s=>activeGenerationStatus(s.status))' in page

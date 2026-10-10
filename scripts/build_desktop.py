@@ -34,6 +34,15 @@ def render():
     for tag,name in [('__CSS__','desktop-shell.css'),('__DESKTOP_JS__','desktop-shell.js'),('__ENGINE__','action-studio-engine.js')]:
         source=(scripts/name).read_text(encoding='utf8')
         if name=='action-studio-engine.js':
+            # Older running Studio servers may not expose the status-module route.
+            # Bundle this small dependency into the served document on every build.
+            names='activeGenerationStatus,generationAvailabilityMessage,generationJobMessage,activityMessage,renderJobList'
+            helper=(scripts/'generation-job-status.mjs').read_text(encoding='utf8').replace('export ','')
+            status_import="import {"+names+"} from '/generation-job-status.mjs';"
+            if source.count(status_import)!=1:
+                raise ValueError('Exactly one generation status import is required')
+            bundled='// strep job status begin: generated from generation-job-status.mjs\nconst {'+names+'}=(()=>{\n'+helper+'\nreturn {'+names+'};\n})();\n// strep job status end'
+            source=source.replace(status_import,bundled)
             source='import {createMotionProfileEditor} from "/motion-profile-editor.js";\n'+(scripts/'contact-editor.js').read_text(encoding='utf8')+'\n'+"import {createPoseGuideEditor} from '/pose-guide-editor.js';\nimport {createRigJointEditor} from '/rig-joint-editor.js';\nimport {createRigPostureEditor} from '/rig-posture-editor.js';\n"+source+'\n'+(scripts/'scene-viewer.js').read_text(encoding='utf8')+'\n'+(scripts/'character-contacts.js').read_text(encoding='utf8')+'\n'+(scripts/'character-clip-edit.js').read_text(encoding='utf8')+'\n'+(scripts/'character-transition.js').read_text(encoding='utf8')+'\n'+(scripts/'character-loop.js').read_text(encoding='utf8')+'\n'+(scripts/'character-events.js').read_text(encoding='utf8')+'\n'+(scripts/'generation-history.js').read_text(encoding='utf8')+'\n'+(scripts/'rig-result-selection.js').read_text(encoding='utf8')+'\n'+(scripts/'character-studio.js').read_text(encoding='utf8')
         if name=='action-studio-engine.js':
             source+='\n'+(scripts/'scene-feedback.js').read_text(encoding='utf8')+'\n'+(scripts/'developer-feedback.js').read_text(encoding='utf8')+'\n'+(scripts/'correction-review.js').read_text(encoding='utf8')

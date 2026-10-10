@@ -1,5 +1,9 @@
 const active=new Set(['waiting_resources','ready','starting','processing','encoding','generation','export']);
 export const activeGenerationStatus=status=>active.has(status);
+export function generationAvailabilityMessage(busy){
+  return busy?'Another local job is running. Generation will be available when it finishes; you can keep editing this draft.':
+    'Runs locally. New descriptions take a few minutes.';
+}
 export function generationJobMessage(job){
   if(job.status==='waiting_resources'||job.status==='ready')return 'Waiting for free memory. Your request is saved.';
   if(job.status==='deferred')return 'Not started: more free memory is needed. Your request is saved; retry when ready.';
