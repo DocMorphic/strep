@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Complete-body geometry replay](docs/protected-hold-transitions-v1.md): the departure candidate passes all 2,426 declared times against both original spheres. Independent primitive-skin/SVD replay checks all 175,196,016 triangle/object queries and every saved array under the unchanged limits. Fresh force, engine, broader-action and human-quality evidence remain required.
+
 - [Reuse complete geometry for fresh contact forces](docs/reusing-complete-geometry.md): exact full-population, source, clock and loaded-topology checks reject incomplete or changed evidence. Actual skin/contact forces are measured again, retaining geometry failures. Forty-six distinct focused checks pass across the recorded runs; production-character complete-body evidence remains required.
 
 - [Contact and protected-hold transitions](docs/protected-hold-transitions-v1.md): the verified departure trial lowers full-clock left forearm/hand relative rate peaks from 881/1141 to 584/1094 degrees/s. All 48,520 original artist cap conditions pass; the hand hold matches exactly at all 1,159 contact times. Independent complete-forearm checks cover 54 changed times plus exact unchanged-time identity to earlier evidence for 2,372 times. A follow-up verified fit adds approximately 5 micrometres of departure clearance reserve under the same acceptance limit; this does not establish engine robustness. Full-body, continuous dynamics, engine and human quality are unapproved; the full-project goal stays active. [Earlier finger/hand failures](docs/middle-ring-clearance-curves-v1.md) remain preserved.
