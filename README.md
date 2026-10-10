@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Complete scene engine replay](docs/native-scene-engine-replay-v1.md): 26 focused checks pass for both playback modes across actor, object and partner populations. The full departure import fails skin/contact/geometry checks; its maximum vertex discrepancy is 2.07 mm against the unchanged 0.1 mm tolerance. Independent import geometry and native-authoring measurements remain pending.
+
 - [Complete-body geometry replay](docs/protected-hold-transitions-v1.md): the departure candidate passes all 2,426 declared times against both original spheres. Independent primitive-skin/SVD replay checks all 175,196,016 triangle/object queries and every saved array under the unchanged limits. Fresh contact-force arithmetic is also independently replayed; engine, broader-action and human-quality evidence remain required.
 
 - [Reuse complete geometry for fresh contact forces](docs/reusing-complete-geometry.md): exact full-population, source, clock and loaded-topology checks reject incomplete or changed evidence. Actual skin/contact forces are measured again, retaining geometry failures. Forty-six distinct focused checks pass across the recorded runs. Broader rig/scene evidence remains required; see the complete-body development replay above.
@@ -61,7 +63,7 @@ These development workflows retain failures and their stated limits. Scene conta
 
 ## Source checks
 
-The [public source-check workflow](docs/model-free-source-checks.md) declares 431 Python test modules and 41 Node suites on Linux and Windows, plus separate native CPU fixture jobs. It does not need motion checkpoints or local study outputs. Inference, engine, full-system and human-quality evaluation are separate. Some additional tests need acquired model/rig fixtures or Godot; a full fresh-clone suite pass is not established.
+The [public source-check workflow](docs/model-free-source-checks.md) declares 439 Python test modules and 41 Node suites on Linux and Windows, plus separate native CPU fixture jobs. It does not need motion checkpoints or local study outputs. Inference, engine, full-system and human-quality evaluation are separate. Some additional tests need acquired model/rig fixtures or Godot; a full fresh-clone suite pass is not established.
 
 | Path | Contents |
 |---|---|
