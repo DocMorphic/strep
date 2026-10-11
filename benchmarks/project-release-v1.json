@@ -2507,7 +2507,9 @@
         "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v8.json",
         "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v9.json",
         "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v10.json",
-        "reports/central-hand-physical-v1/engine-hold-export-check-resource-v10.json"
+        "reports/central-hand-physical-v1/engine-hold-export-check-resource-v10.json",
+        "reports/engine-hold-clearance-v10/engine-native-authoring-v1/result.json",
+        "reports/central-hand-physical-v1/engine-hold-engine-native-authoring-resource-v10.json"
       ],
       "remaining": [
         "Extend GPU/rendered world-placement validation beyond144sampled silhouettes: materials, hidden surfaces, intermediate times, more rigs/backends and gameplay physics.",
@@ -3334,6 +3336,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-10T07:08:27.269820+00:00",
-  "last_progress": "Latest progress: saved margin-attempt hydration now shares only four declared unchanged arrays, preventing later secondary solver metadata from contaminating earlier primary-only failures. All 261 focused checks pass (158 numerical plus 103 native CPU fixtures); nine and seventy resource records independently replay. Every original solver phase/count, affine population, tolerance, motion and retention rule stays unchanged. Complete V15 affine-start replay defers without a child; all 597 resource records verify under the full 2 GiB plus 600 MiB policy. A fresh replay/retry remains pending resource availability. Failed V16 contributes no new attempt and all 729 resource observations verify; current trusted motion remains V15 stage two, 17/21 windows attempted, four remaining, 0/62 contact passes. Supplied-GLB body workflow separately passes all 64 focused checks with explicit physical inputs and no inferred anatomy/strength. Complete exposed scene mechanics remain 0/59 actual consistency despite full geometry passing; equatorial authored targets admit 59/59 conditional witnesses but no actual new hand-contact/generation approval. Source inventory declares 431 Python modules and 41 Node suites. All fourteen release capabilities, nineteen gaps, four unfrozen gates and actual human review/cleanup remain open. Continue the same full-project goal."
+  "last_progress_at": "2026-10-11T05:07:31.066713+00:00",
+  "last_progress": "Corrected development clip V10 passes complete-body geometry at all 2,426 fixed sample times and its independent reconstruction, and all 59 assessed force/contact samples pass the conditional coupled screen with independent replay. Real Godot native-authoring playback passes pose, object pose, skin, contact and geometry screens at those 2,426 times; maximum penetration is 0.004950068645528098 m against the original 0.005 m limit, and maximum native skin error is 0.00009501026181033346 m against 0.0001 m. Native resource supervision is complete. Separate glTF import is still running; independent engine replays and editing diagnostics are queued, not approved. This is one development clip with spherical props, hypothetical mechanical parameters and finite sampling, not a box-pickup benchmark, calibrated body dynamics, runtime/GPU validation, human naturalness or release evidence. All 14 capability release-evidence lists, held-out fixture bindings and four unset acceptance gates remain unchanged."
 }
