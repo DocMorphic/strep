@@ -34,6 +34,12 @@ No new model, dependency, raw motion data or asset is acquired. The [verified fa
 - RiggedFigure: KhronosGroup/glTF-Sample-Assets revision c6a6bd13ab2b3c685c7903d03561b8a9392f38b8, Models/RiggedFigure; pinned README credits Cesium under CC BY4.0. Shares existing rig family.
 - RobotExpressive: mrdoob/three.js revision1af6de5bd8cd481993483dc6127eba668e818dfd, examples/models/gltf/RobotExpressive; pinned README credits Tomas Laulhe/Quaternius under CC0 with Don McCurdy modifications. Original preserved and unsupported; compatibility/format failures documented.
 
+## 2026-10-11: additional independently authored rig candidate
+
+The official [Kenney Animated Characters Protagonists page](https://kenney.nl/assets/animated-characters-protagonists) lists CC0. Its small official archive was acquired and inspected without executing third-party code or animation trials. The included `License.txt` confirms CC0-1.0 and identifies Kenney as creator/distributor; its pack version is 1.1, while the page's update list says 1.0. The retained original archive is 581,441 bytes, SHA-256 `ec3787de70fa2200256848d74201b10f6b6c3126594e9857bf989753312c2b84`; it contains `Model/characterMedium.fbx` and three separate animation FBX files (idle, jump, run), with no GLB or glTF file. Original page, archive, included license and bounded ZIP inventory are retained locally under `reports/kenney-protagonists-acquisition-v1`.
+
+This provides a candidate outside the existing Quaternius family, not evidence of transfer generalization. Format conversion, bone/skin/topology inspection, mapping and engine compatibility remain untested. Do not replace or expose the existing frozen reservations, count this archive as a held-out rig, or infer motion quality from its acquisition. No model training, motion generation or release approval follows.
+
 
 ## 2026-09-26: prompt editing research
 
