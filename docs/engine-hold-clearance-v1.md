@@ -319,7 +319,7 @@ receipts remain immutable; this is a new method version. The planned actual
 60/120/240 FPS comparisons run serially under a fresh v11 plan. The 60 FPS
 production and independent replays have completed; its combined fidelity
 decision still fails. The 120 FPS comparison now passes production and complete
-independent replay; the 240 FPS worker is running. Each
+independent replay; 240 FPS also passes. All six planned stages are complete. Each
 gets a fresh guarded engine
 run, recorded-observation replay and independent complete-geometry replay;
 retain failed flags and all attempts. No default setting or release gate is
@@ -350,6 +350,7 @@ replays 2,075 observations; the combined replay resource record replays 770.
 | glTF import, 30 FPS | 2.073451 | 5.001477 | 12 | Fail |
 | glTF import, 60 FPS | 1.682823 | 4.956791 | 0 | Fail |
 | glTF import, 120 FPS | 0.095012 | 4.950018 | 0 | Pass |
+| glTF import, 240 FPS | 0.095012 | 4.949956 | 0 | Pass |
 
 The original skin-position limit is 0.10 mm and geometry limit is 5 mm.
 At 60 FPS, geometry and object poses pass; actor poses, skin positions and
@@ -363,7 +364,7 @@ is 2.220446049250313e-16 m and closest-witness error is
 This rate change improves these observed metrics on one retained clip.
 It does not resolve overall import fidelity, prove all drift mechanisms,
 or justify changing defaults or release limits. The completed 120 FPS result
-below passes this sampled fixture; the 240 FPS comparison remains pending.
+below passes this sampled fixture; the 240 FPS comparison now also passes.
 Broad actions, independent rigs, objects and
 partners, dynamics, human ratings and timed cleanup remain required.
 
@@ -398,5 +399,26 @@ clip and its two spherical props. The vertex-error margin is only about
 0.005 mm. It does not establish continuous-time fidelity, genuine box
 manipulation, partner contact, dynamics, semantic quality or generalization
 to other actions and rigs. Defaults, thresholds and release approvals
-remain unchanged. The 240 FPS trial is running before the queued Kenney
-conversion and seven-motion transfer/replay studies.
+remain unchanged. The rate sequence is complete; the queued Kenney conversion
+and seven-motion transfer/replay studies follow it.
+
+## Completed 240 FPS comparison
+
+All five production screens and exact observation replay pass at the
+same 2,426 query times. Peak vertex error equals the 120 FPS result:
+0.09501152436577727 mm. Maximum penetration bound is
+4.949955753488995 mm, with zero failed geometry samples. The original
+0.10-mm skin and 5-mm geometry limits remain unchanged.
+
+Independent complete geometry replay passes all 175,196,016 queries,
+14,557 arrays and 7,007,860,048 logical bytes. Maximum depth-bracket
+and closest-witness reconstruction errors are 1.942890293094024e-16 m
+and 3.4611202792689255e-14 m; 59 edge ties use 80-digit refinement.
+Production and replay resource traces reproduce 2,071 and 841 observations.
+
+All six v11 production/replay stages complete. At these finite sample
+times, 120 and 240 FPS pass while 30 and 60 FPS fail combined accuracy.
+Doubling 120 to 240 FPS gives no measured peak vertex improvement here.
+This comparison does not establish a universal minimum bake rate or
+continuous-time fidelity. Preserve earlier failures and broaden actions
+and rigs before considering defaults. No release capability is approved.

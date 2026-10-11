@@ -11,7 +11,9 @@ replay independently confirms the import failure. The completed 60 FPS compariso
 passes independently replayed geometry but still fails pose, skin and contact
 fidelity; peak vertex error is 1.683 mm against 0.10 mm. The 120 FPS comparison
 now passes all sampled conditions and complete independent replay, with 0.095012 mm
-peak vertex error; 240 FPS is running. This is one development fixture, not a
+peak vertex error. The 240 FPS comparison also passes complete independent replay
+with the same peak vertex error. All six rate stages are complete. This is one
+development fixture, not a
 general importer or release approval. The [editing floor diagnostic](prompt-edit-floor-regions-v2.md)
 passes 15 focused tests; all five retained takes still fail, with protected source
 violations distinguished from newly failed editable frames. Held-out generalization and animator quality are still
