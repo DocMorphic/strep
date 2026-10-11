@@ -41,6 +41,65 @@ def test_planner_uses_all_interpolation_support_and_permitted_ancestors(monkeypa
     assert all(r['node']==0 for r in options)
 
 
+@pytest.mark.parametrize('metric,width,expected_nodes',[
+    (0,2,{0}), (1,3,{0}), (2,2,{0,1}), (3,3,{0,1})])
+def test_all_source_rate_failures_plan_their_actual_rotation_support(monkeypatch,metric,width,expected_nodes):
+    # A parent rotation moves a child's origin. The child's own rotation does
+    # not move that origin, but both rotations affect its world orientation.
+    clock=np.array([0.,.1,.3,.6,.9,1.])
+    tracks=[dict(node=node,path='rotation',clock=clock,ids=np.array([1,2,3,4])) for node in (0,1)]
+    caps=[np.zeros((4,1)),np.zeros((3,1)),np.zeros((4,1)),np.zeros((3,1))]
+    rate=SimpleNamespace(dt=.25,tolerance=1e-5,caps=caps)
+    rig=SimpleNamespace(joints=np.array([1]),parents=np.array([-1,0]))
+    problem=SimpleNamespace(scene=SimpleNamespace(actors={'A':dict(rig=rig)}),caps={'A':rate},
+        edits=SimpleNamespace(actors={'A':dict(tracks=tracks)}),rate_ids=np.arange(5),uniform=np.arange(5)*.25)
+    values=[a.copy() for a in caps];values[metric][1,0]=.1
+    monkeypatch.setattr(searcher,'features',lambda *args:None)
+    monkeypatch.setattr(searcher,'measures',lambda *args:values)
+    options,failures=searcher.plan(problem,{'A':np.zeros((5,2,4,4))},[])
+    assert len(failures)==1 and failures[0]['metric']==metric and failures[0]['node']==1
+    assert {r['node'] for r in options}==expected_nodes
+    assert {r['key_index'] for r in options}==({1,2,3} if width==2 else {1,2,3,4})
+    assert {r['component'] for r in options}=={0,1,2,3}
+    assert {r['step'] for r in options}=={-1,1}
+    assert len(options)==len(expected_nodes)*(3 if width==2 else 4)*8
+
+
+@pytest.mark.parametrize('metric',[0,1])
+def test_joint_own_rotation_is_not_a_position_repair_option(monkeypatch,metric):
+    clock=np.array([0.,.25,.5,.75,1.])
+    caps=[np.zeros((4,1)),np.zeros((3,1)),np.zeros((4,1)),np.zeros((3,1))]
+    rate=SimpleNamespace(dt=.25,tolerance=1e-5,caps=caps)
+    rig=SimpleNamespace(joints=np.array([0]),parents=np.array([-1]))
+    problem=SimpleNamespace(scene=SimpleNamespace(actors={'A':dict(rig=rig)}),caps={'A':rate},
+        edits=SimpleNamespace(actors={'A':dict(tracks=[dict(node=0,path='rotation',clock=clock,ids=np.array([1,2,3]))])}),
+        rate_ids=np.arange(5),uniform=clock)
+    values=[a.copy() for a in caps];values[metric][1,0]=.1
+    monkeypatch.setattr(searcher,'features',lambda *args:None)
+    monkeypatch.setattr(searcher,'measures',lambda *args:values)
+    options,failures=searcher.plan(problem,{'A':np.zeros((5,1,4,4))},[])
+    assert options==[] and len(failures)==1 and failures[0]['metric']==metric
+
+
+def test_mixed_speed_and_acceleration_keep_longer_support_without_duplicate_choices(monkeypatch):
+    clock=np.array([0.,.1,.3,.6,.9,1.])
+    caps=[np.zeros((4,1)),np.zeros((3,1)),np.zeros((4,1)),np.zeros((3,1))]
+    rate=SimpleNamespace(dt=.25,tolerance=1e-5,caps=caps)
+    rig=SimpleNamespace(joints=np.array([1]),parents=np.array([-1,0]))
+    tracks=[dict(node=node,path='rotation',clock=clock,ids=np.array([2,3,4])) for node in (0,1)]
+    problem=SimpleNamespace(scene=SimpleNamespace(actors={'A':dict(rig=rig)}),caps={'A':rate},
+        edits=SimpleNamespace(actors={'A':dict(tracks=tracks)}),rate_ids=np.arange(5),uniform=np.arange(5)*.25)
+    values=[a.copy() for a in caps];values[0][1,0]=.2;values[3][1,0]=.1
+    monkeypatch.setattr(searcher,'features',lambda *args:None)
+    monkeypatch.setattr(searcher,'measures',lambda *args:values)
+    options,failures=searcher.plan(problem,{'A':np.zeros((5,2,4,4))},[])
+    assert {r['metric'] for r in failures}=={0,3}
+    assert {r['node'] for r in options}=={0,1}
+    assert {r['key_index'] for r in options}=={2,3,4}  # key 1 is frozen
+    identities=[tuple(r[k] for k in ('actor','node','key_index','component','step')) for r in options]
+    assert len(identities)==len(set(identities))==48
+
+
 def test_real_passing_export_is_checked_completely_without_unnecessary_search(tmp_path,monkeypatch):
     base,policy,_=fixture(tmp_path)
     path=tmp_path/'contacts.json';spec=read(path);row=spec['contacts'][0]

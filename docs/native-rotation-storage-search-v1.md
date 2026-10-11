@@ -1,16 +1,20 @@
 # Bounded stored quaternion repair search
 
-All three smaller surface proposals now pass every original native and contact condition after bounded one-neighbour Float32 repairs. Their complete geometry assessments still fail, so none is selected or approved. The repair fixes stored precision without changing the intended continuous motions or acceptance limits.
+An earlier generated two-person study found three smaller surface proposals that pass every original native and contact condition after bounded one-neighbour Float32 repairs. Their complete geometry assessments still fail, so none is selected or approved. Those retained results use the earlier angular-only planner; the extension below also targets the other measured source rates without changing acceptance limits.
 
 ## Search contract
 
-`scripts/native_rotation_storage_search.py` searches existing permitted rotation keys on the interpolation support of measured angular-acceleration failures. It classifies all original rate failures, follows the failing joints' permitted ancestors and plans all four components and both neighbouring values. Non-angular failures remain visible and receive no hidden correction mechanism.
+`scripts/native_rotation_storage_search.py` now searches existing permitted rotation keys on the interpolation support of all four measured source-rate failures: positional speed/acceleration and angular speed/acceleration. It follows strict ancestors for joint-position failures; the joint's own rotation can also be considered for orientation failures. Speed uses two uniform pose samples and acceleration uses three. It plans all four quaternion components and both neighbouring values, restricted to the existing editable key population. Contact and displacement failures remain visible but do not create additional freedoms.
 
 Every component choice is absolute relative to the nearest stored value of the fixed intended curve. A later choice may restore that value or replace the previous neighbour with the opposite neighbour; it cannot accumulate additional steps. The existing source-bound storage policy, maximum correction count, permitted/frozen keys, clocks, unit requirements, control boxes and strict track bounds remain.
 
 The search has explicit stage and probe budgets. It retains the first full-native merit improvement as the next numerical anchor and stops when every condition passes or the finite search makes no improvement. This greedy search is not an exhaustive feasibility method.
 
 The caller retains fresh exports and independently decodes every actor. The helper checks complete finite worlds, the exact original residual vector, native norm population, caps and scales for every observed probe. A passing contact/native result does not confer geometry, transition, engine or quality approval. Existing editors, exporters and Studio jobs remain unchanged.
+
+This extension addresses the [development kick diagnosis](kenney-kick-temporal-layout-v1.md), where stored positional acceleration was a demonstrated failure as well as angular acceleration. Seven additional regression cases cover all four rates, strict position ancestors, distinct two/three-sample support, frozen keys and duplicate choices. The existing angular-acceleration ordering is preserved. Numerical checks for this extension are pending; the historical results below are from the earlier angular-only implementation and do not validate the new paths.
+
+The ancestor rule follows the `T * R * S` local-transform order and parent/local world-transform composition in the [official glTF specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#transformations). This explains which rotations can affect a joint origin; it does not prove that any neighboring stored value will satisfy motion, contact or geometry limits.
 
 ## Three complete retained proposals
 

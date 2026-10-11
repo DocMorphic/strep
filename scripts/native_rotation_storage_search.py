@@ -1,4 +1,4 @@
-"""Finite native-checked one-neighbor search on angular-acceleration support.
+"""Finite native-checked one-neighbor search on source-rate interpolation support.
 
 Continuous controls, original caps and contacts are fixed. The callback must
 retain fresh exports and independently decode every actor; returned worlds
@@ -24,7 +24,7 @@ def apply_choice(corrections, choice):
 
 
 def plan(problem, worlds, corrections):
-    """All four components and both neighbors on permitted LINEAR support."""
+    """All four rate metrics, quaternion components and permitted LINEAR support."""
     groups, failures = {}, []
     for name, actor in problem.scene.actors.items():
         if name not in problem.caps:
@@ -35,25 +35,30 @@ def plan(problem, worlds, corrections):
                 node = int(actor['rig'].joints[int(joint)])
                 failures.append(dict(actor=name, metric=metric, frame=int(frame), node=node,
                     excess=float(values[frame, joint]-cap[frame, joint]-rate.tolerance)))
-                if metric != 3 or name not in problem.edits.actors:
+                if name not in problem.edits.actors:
                     continue
+                # A joint rotation affects its world orientation, but only
+                # strict ancestor rotations can move the joint origin.
+                if metric < 2:node = actor['rig'].parents[node]
                 parents = []
                 while node >= 0:
                     parents.append(node); node = actor['rig'].parents[node]
                 for entry in problem.edits.actors[name]['tracks']:
                     if entry['path'] == 'rotation' and entry['node'] in parents:
-                        key = name, entry['node'], int(frame)
+                        width = 2 if metric in (0,2) else 3
+                        key = name, entry['node'], int(frame), width
                         severity = float((values[frame, joint]-cap[frame, joint]-rate.tolerance)/max(cap[frame, joint], .001))
                         groups[key] = max(groups.get(key, -np.inf), severity)
     options, seen = [], set()
     used = {tuple(r[k] for k in ('actor', 'node', 'key_index', 'component')):r['step'] for r in corrections}
-    for (name, node, frame), severity in sorted(groups.items(), key=lambda item:(item[1], item[0]), reverse=True):
+    for (name, node, frame, width), severity in sorted(groups.items(), key=lambda item:(item[1], item[0]), reverse=True):
         entry = next(e for e in problem.edits.actors[name]['tracks'] if e['node'] == node and e['path'] == 'rotation')
         clock, keys = entry['clock'], set()
-        for time in problem.uniform[frame:frame+3]:
+        support = problem.uniform[frame:frame+width]
+        for time in support:
             i = int(np.searchsorted(clock, time))
             keys.update([i] if i < len(clock) and clock[i] == time else [max(0, i-1), min(len(clock)-1, i)])
-        center = problem.uniform[frame+1]
+        center = problem.uniform[frame+1] if width==3 else float((support[0]+support[-1])*.5)
         for key in sorted(keys, key=lambda k:(abs(float(clock[k])-center), k)):
             if key not in entry['ids']:
                 continue
@@ -129,6 +134,6 @@ def search(problem, value, policy, corrections, decode, *, stages=8, probes_per_
         final_label=label, native_conditions_pass=bool(np.all(current <= 0)), failed_native_rows=int((current > 0).sum()),
         original_native_caps_scales_unchanged=True, continuous_controls_unchanged=True,
         geometry_assessed=False, quality_approved=False, release_approved=False,
-        scope='Finite greedy native-merit search on angular-acceleration interpolation support. '
+        scope='Finite greedy native-merit search on all four source-rate interpolation supports. '
             'Absolute one-neighbor choices may add, restore or replace components without accumulating steps. '
             'All original conditions checked on every complete decoded probe; no exhaustive feasibility or geometry/quality claim.')
