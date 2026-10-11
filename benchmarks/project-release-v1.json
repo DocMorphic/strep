@@ -2032,7 +2032,17 @@
         "reports/central-hand-physical-v1/engine-skin-view-tests-v2/result.json",
         "reports/central-hand-physical-v1/engine-skin-view-tests-resource-v2.json",
         "reports/central-hand-physical-v1/actual-engine-skin-view-v1.json",
-        "reports/central-hand-physical-v1/actual-engine-skin-view-resource-v1.json"
+        "reports/central-hand-physical-v1/actual-engine-skin-view-resource-v1.json",
+        "docs/engine-hold-clearance-v1.md",
+        "reports/central-hand-physical-v1/engine-clearance-support-v1.json",
+        "reports/central-hand-physical-v1/engine-clearance-support-resource-v1.json",
+        "reports/engine-hold-clearance-v2/plan.json",
+        "reports/engine-hold-clearance-v2/result.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v2.json",
+        "reports/engine-hold-clearance-v2/serialized-check-v1.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-export-check-resource-v2.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-fit-guard-v1/pipeline.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v1.json"
       ],
       "remaining": [
         "Extend GPU/rendered world-placement validation beyond144sampled silhouettes: materials, hidden surfaces, intermediate times, more rigs/backends and gameplay physics.",
@@ -2373,7 +2383,17 @@
         "reports/central-hand-physical-v1/engine-skin-view-tests-v2/result.json",
         "reports/central-hand-physical-v1/engine-skin-view-tests-resource-v2.json",
         "reports/central-hand-physical-v1/actual-engine-skin-view-v1.json",
-        "reports/central-hand-physical-v1/actual-engine-skin-view-resource-v1.json"
+        "reports/central-hand-physical-v1/actual-engine-skin-view-resource-v1.json",
+        "docs/engine-hold-clearance-v1.md",
+        "reports/central-hand-physical-v1/engine-clearance-support-v1.json",
+        "reports/central-hand-physical-v1/engine-clearance-support-resource-v1.json",
+        "reports/engine-hold-clearance-v2/plan.json",
+        "reports/engine-hold-clearance-v2/result.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v2.json",
+        "reports/engine-hold-clearance-v2/serialized-check-v1.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-export-check-resource-v2.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-fit-guard-v1/pipeline.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v1.json"
       ],
       "remaining": [
         "Extend GPU/rendered world-placement validation beyond144sampled silhouettes: materials, hidden surfaces, intermediate times, more rigs/backends and gameplay physics.",

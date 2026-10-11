@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Engine-aware held-contact correction](docs/engine-hold-clearance-v1.md): a 0.058-degree wrist proposal keeps the static rig, other 153 channels, original contacts and all 48,520 raw rotation-cap conditions intact. Its eight guide triangles clear the original penetration limit in native and engine skin models. Complete body geometry is running; no corrected export is accepted yet.
+
 - [Complete scene engine replay and engine-aware correction inputs](docs/native-scene-engine-replay-v1.md): independent full-mesh arithmetic confirms the geometry failures in both import and native-resource modes. The full-vertex diagnostic identifies unsigned-16 weight storage as the largest displacement contributor. A new observed-engine skin view carries raw weights into solver contact and complete geometry calculations without rewriting the rig; nine focused checks pass. Actual-study validation matches every vertex at all 2,426 times against sum/matmul reconstruction. No corrected export is accepted yet.
 
 - [Complete-body geometry replay](docs/protected-hold-transitions-v1.md): the departure candidate passes all 2,426 declared times against both original spheres. Independent primitive-skin/SVD replay checks all 175,196,016 triangle/object queries and every saved array under the unchanged limits. Fresh contact-force arithmetic is also independently replayed; engine, broader-action and human-quality evidence remain required.
