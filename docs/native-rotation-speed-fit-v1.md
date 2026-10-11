@@ -23,10 +23,27 @@ dynamics, whole-surface collision freedom, engine fidelity or animation quality.
 Scene fitting remains bounded and may fail even after preflight does not exclude
 the request. Studio route/UI integration is pending.
 
-The 15 new regression cases include identity, tiny angles, half-turns and
+The 17 new regression cases include identity, tiny angles, half-turns and
 quaternion sign/length changes; invalid clocks and values; fresh serialized
 output that disagrees with submitted controls; hard edit-audit rejection; and
 a complete fixture fit with unchanged contact conditions, native clocks and
 source bytes. The fixture deliberately isolates a rotation track from mesh
 deformation, so its fit does not prove simultaneous full-body contact correction.
-Both CPU workflows include these tests; execution results remain pending.
+Both CPU workflows include these tests. All 59 local speed-related checks pass,
+including the 17 fitting/output cases and the earlier 42 preflight cases. The
+serialized fit meets the unchanged 1-degree/second request and every original
+scene row. Local execution takes 7.172 seconds at 134,590,464-byte sampled
+process-tree peak RSS under the unchanged resource policy. All 25 observations
+independently replay. Expanded Windows/Linux execution results remain pending.
+
+The first run at `bbd71a6` passes 318 cases per platform but fails the complete
+fit: the existing forward-difference optimizer leaves the selected track near
+8 degrees/second against its unchanged 1-degree/second request. That failed run
+is retained. `optimize_speed_limited` now first constructs a bounded control
+proposal following shortest rotation arcs between frozen keys. It fits the
+existing control weights, rescales any oversized radial edit, and checks the
+fresh serialized proposal against **all** original scene constraints and speed
+limits. Only a complete passing improvement is adopted; otherwise fitting starts
+from the retained original controls. This changes initialization, not acceptance
+thresholds, permissions or clocks. Two additional cases check untouched controls
+and rejection of a failed complete-scene proposal.

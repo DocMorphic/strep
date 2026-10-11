@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from scipy.spatial.transform import Rotation
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-from native_rotation_speed_fit import serialized_rates, SpeedLimitedSceneProblem
+from native_rotation_speed_fit import serialized_rates, SpeedLimitedSceneProblem,optimize_speed_limited,speed_seed
 from native_scene_fit import SceneProblem,optimize
 from native_scene_edit import SceneEdits
 from native_scene_contacts import SceneContacts
@@ -87,11 +87,11 @@ def test_real_fit_reduces_authored_speeds_and_rechecks_exported_clock_and_contac
     def evaluate(value,label):
         edits.export('A',value,output)
         return problem.decoded({'A':output},value)[0]
-    value,fit=optimize(problem,evaluate,iterations=8,trust=.5)
+    value,fit=optimize_speed_limited(problem,evaluate,iterations=8,trust=.5)
     # Re-export the selected controls, not the last rejected optimizer probe.
     edits.export('A',value,output);residual,_=problem.decoded({'A':output},value)
     assert np.max(residual)<=0 and problem.last_speed_output_audit['passed']
-    assert fit['final_merit'][0]==0 and source.read_bytes()==raw
+    assert fit['final_merit'][0]==0 and fit['seed_accepted'] and source.read_bytes()==raw
     reader=NativeSupportSampler(RigAsset.load(output).document,RigAsset.load(output).binary,0)
     np.testing.assert_array_equal(next(c[2] for c in reader.channels if c[:2]==(5,'rotation')),clock)
     assert not problem.last_speed_output_audit['quality_approved']
@@ -101,3 +101,25 @@ def test_all_edited_actor_exports_are_required(tmp_path):
     _,_,_,_,_,scene,edits=prepare(tmp_path,rotation=True)
     problem=SpeedLimitedSceneProblem(scene,edits,rotation_speed_limits={('A',3):1})
     with pytest.raises(ValueError):problem.audit_outputs({})
+
+
+def test_speed_seed_does_not_move_unselected_controls_or_grant_feasibility(tmp_path):
+    _,_,_,_,_,scene,edits=prepare(tmp_path,rotation=True)
+    problem=SpeedLimitedSceneProblem(scene,edits,rotation_speed_limits={('A',0):100})
+    value,report=speed_seed(problem)
+    np.testing.assert_array_equal(value,problem.initial)
+    assert report['tracks']==[] and not report['feasibility_claimed']
+
+
+def test_failed_full_scene_seed_is_not_adopted(tmp_path,monkeypatch):
+    _,_,_,_,_,scene,edits=prepare(tmp_path,rotation=True)
+    problem=SpeedLimitedSceneProblem(scene,edits,rotation_speed_limits={('A',3):100})
+    seed=np.full(edits.size,.1);calls=[]
+    import native_rotation_speed_fit as module
+    monkeypatch.setattr(module,'speed_seed',lambda p:(seed,{}))
+    def evaluate(value,label):
+        calls.append(label)
+        return np.array([1. if np.array_equal(value,seed) else -1.])
+    value,fit=optimize_speed_limited(problem,evaluate,iterations=1)
+    assert not fit['seed_accepted'] and calls[:2]==['speed-original','speed-seed']
+    np.testing.assert_array_equal(value,problem.initial)

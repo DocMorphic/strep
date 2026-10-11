@@ -1,8 +1,11 @@
 """Authored native-key speed constraints and fresh serialized-output checks."""
+import copy
 import numpy as np
-from scipy.spatial.transform import Rotation
+from scipy.optimize import lsq_linear
+from scipy.spatial.transform import Rotation,Slerp
 from native_rotation_speed_preflight import SpeedPreflightSceneProblem
-from native_scene_fit import SceneProblem
+from native_scene_fit import SceneProblem,optimize
+from native_support_feasibility import merit
 from native_support_clock import NativeSupportSampler
 from rig_asset import RigAsset
 from temporal_rotation_bounds import numeric
@@ -83,3 +86,49 @@ class SpeedLimitedSceneProblem(SpeedPreflightSceneProblem):
             raise ValueError('Serialized output exceeds original native edit permissions')
         self.last_speed_output_audit=report
         return np.r_[original,speed],worlds
+
+
+def speed_seed(problem):
+    """Bounded control proposal following shortest arcs between frozen keys.
+
+    This is guidance, not a contact-feasible or speed-feasible certificate. The
+    serialized complete scene residual must accept it before it becomes a start.
+    """
+    if not isinstance(problem,SpeedLimitedSceneProblem):raise ValueError('Speed-limited scene problem required')
+    value=problem.initial.copy();reports=[]
+    for track in problem.speed_tracks:
+        actor=problem.edits.actors.get(track['actor'])
+        entry=None if actor is None else next((e for e in actor['tracks'] if (e['node'],e['path'])==(track['node'],'rotation')),None)
+        if entry is None:continue
+        clock=track['clock'].astype(float);source=Rotation.from_quat(track['source'])
+        frozen=np.ones(len(clock),bool);frozen[entry['ids']]=False;anchors=np.flatnonzero(frozen)
+        if len(anchors)<2:
+            anchor=int(anchors[0]) if len(anchors) else 0
+            target=Rotation.from_quat(np.tile(source[anchor].as_quat(),(len(entry['ids']),1)))
+        else:
+            times=np.clip(clock[entry['ids']],clock[anchors[0]],clock[anchors[-1]])
+            target=Slerp(clock[anchors],source[anchors])(times)
+        wanted=(source[entry['ids']].inv()*target).as_rotvec()/entry['unit']
+        controls=np.column_stack([lsq_linear(entry['weights'],wanted[:,axis],bounds=(-1.,1.),
+            tol=1e-10,max_iter=100).x for axis in range(3)])
+        peak=float(np.linalg.norm(entry['weights']@controls,axis=1).max(initial=0))
+        if peak>1:controls/=peak
+        value[entry['controls']]=controls
+        reports.append(dict(actor=track['actor'],node=track['node'],frozen_anchors=anchors.tolist(),
+            radial_rescaling=peak if peak>1 else 1.,guidance='Shortest rotation arcs between frozen keys; nearest anchor outside them; constant source anchor if fewer than two'))
+    return value,dict(tracks=reports,quality_approved=False,feasibility_claimed=False)
+
+
+def optimize_speed_limited(problem,evaluate,*,iterations=8,trust=.02):
+    """Try a fully decoded smoothing seed, then the existing bounded optimizer."""
+    if type(iterations) is not int or not 1<=iterations<=16 or type(trust) not in (int,float) or not np.isfinite(trust) or not 0<trust<=1:
+        raise ValueError('Choose 1-16 iterations and finite normalized trust in (0,1]')
+    original=problem.initial.copy();before=evaluate(original,'speed-original');seed,proposal=speed_seed(problem)
+    candidate=evaluate(seed,'speed-seed');a,b=merit(before),merit(candidate)
+    improved=b[0]<a[0]-1e-12 or abs(b[0]-a[0])<=1e-12 and b[1]<a[1]-1e-15
+    accepted=bool(np.max(candidate)<=0 and improved)
+    local=copy.copy(problem);local.initial=seed.copy() if accepted else original
+    value,fit=optimize(local,evaluate,iterations,trust)
+    fit.update(seed_accepted=bool(accepted),seed_before_merit=list(a),seed_after_merit=list(b),seed_proposal=proposal,
+        complete_decoded_scene_acceptance=True,speed_seed_is_guidance_only=True)
+    return value,fit
