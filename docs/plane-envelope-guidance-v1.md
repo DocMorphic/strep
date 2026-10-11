@@ -21,8 +21,11 @@ geometry population and original native conditions. Nonsmooth minimum-distance
 finite differences are a local proposal model, not a collision certificate or
 an animator-quality decision. The original remains selected.
 
-Plane guides now include unreferenced vertices, matching the existing geometry
-audit's all-vertex plane decision. Object and partner guides retain their
+Plane guides now include unreferenced vertices. The existing decoded geometry
+audit tests triangle-referenced vertices against planes, so the guide is more
+conservative for meshes with unused points. All 1,029 vertices in the crawl
+asset are triangle-referenced; the two populations coincide for this trial.
+Object and partner guides retain their
 existing complete queries; they are not collapsed by this mode. Geometry row
 limits still reject overflow without returning a truncated population.
 
