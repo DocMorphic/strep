@@ -136,8 +136,43 @@ full-body resource profile remains intact. Proofs remain local under
 and `departure-engine-import-independent-geometry-resource-v2.json`. The two
 failed earlier reference attempts remain immutable.
 
-Full native-resource authoring is now submitted at the same complete clock and
-geometry population under the same source/binary/prerequisite bindings. It must
-finish and be replayed before comparison; complete imported evidence does not
-certify that separate mode. No rendering, real-time events, physics, continuous
-collision, broader rig/action/interaction quality or release approval is inferred.
+## Native-resource authoring retains a smaller geometry failure
+
+The full native-resource run finishes at the same complete clock, geometry
+population, source/binary/prerequisite bindings and original tolerances. Its
+exported and reloaded Animation resource preserves the original LINEAR keys.
+Joint poses, object poses and raw loaded vertex positions at all **2,426 times**
+pass their respective tolerances, as do the declared contact samples. Maximum joint-matrix element
+discrepancy is **6.813015989148852e-7**; maximum vertex discrepancy is
+**9.501026181033346e-5 m**, below the unchanged **1e-4 m** vertex limit.
+
+Full-mesh geometry remains **failed at 1,280 times**. Worst sampled penetration
+upper bound is **0.005009943215486333 m**, above the unchanged **0.005 m** limit.
+The import-only mode has 1,145 failed times and a larger worst bound of
+0.005062852406036762 m. Different failure counts and smaller pose errors do not
+establish acceptable geometry. The original native geometry's minimum reserve
+is only about 1.96 micrometres. These are one actor and two spheres; the fixture's
+object named `box` is a sphere, not the box-lifting benchmark.
+
+The public generalized verifier replays every observation, source/skin/contact
+binding and saved reduction exactly, retaining `recorded_sampled_conditions_pass`
+as **false**. This is a complete observation/reduction replay, not independent
+triangle-distance arithmetic. That separate full-mesh calculation is now running
+with the validated independent SVD/edge/Decimal method and original tolerances.
+
+The producer guard completes in **2,378.5 seconds**, with **2,356** resource
+observations independently replayed and **932,675,584 bytes** peak process-tree
+RSS. The generalized replay completes in **214.422 seconds**; its **229** resource
+observations also replay, with **564,178,944 bytes** peak RSS. Both keep the full
+2048+600-MiB admission profile. Results remain local in
+`reports/departure-rate-curve-v2/engine-native-authoring-v1` and
+`reports/central-hand-physical-v1/general-departure-engine-native-authoring-replay-v1`.
+
+A full-clock, full-vertex ordered counterfactual diagnostic is prepared and
+syntax-checked to separate Float32 weight normalization, unsigned-16 weight
+storage, imported bind/mesh storage and engine pose precision. It requires the
+completed independent geometry receipt before execution. No measured attribution
+or correction is claimed yet. Native-resource authoring here remains manual
+authoring seeks, not real-time AnimationPlayer, GPU skinning or event playback.
+No rendering, physics, continuous collision, broader rig/action/interaction
+quality or release approval is inferred.

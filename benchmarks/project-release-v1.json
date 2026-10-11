@@ -2014,7 +2014,13 @@
         "docs/carrier-edit-chain-v1.md",
         "reports/carrier-edit-chain-v1/completion.json",
         "reports/scene-timing-limits-v1/source-bounds-verification.json",
-        "reports/scene-timing-limits-engine-v2/completion.json"
+        "reports/scene-timing-limits-engine-v2/completion.json",
+        "reports/departure-rate-curve-v2/engine-native-authoring-v1/result.json",
+        "reports/departure-rate-curve-v2/engine-native-authoring-v1/geometry.json",
+        "reports/departure-rate-curve-v2/engine-native-authoring-v1/stage-prerequisite-receipt.json",
+        "reports/central-hand-physical-v1/departure-engine-native-authoring-resource-v1.json",
+        "reports/central-hand-physical-v1/general-departure-engine-native-authoring-replay-v1/result.json",
+        "reports/central-hand-physical-v1/general-departure-engine-native-authoring-replay-resource-v1.json"
       ],
       "remaining": [
         "Extend GPU/rendered world-placement validation beyond144sampled silhouettes: materials, hidden surfaces, intermediate times, more rigs/backends and gameplay physics.",
@@ -2337,7 +2343,13 @@
         "reports/scene-timing-limits-v1/source-bounds-verification.json",
         "reports/scene-timing-limits-engine-v2/completion.json",
         "docs/native-support-breadth-v1.md",
-        "docs/landing-root-scale-v1.md"
+        "docs/landing-root-scale-v1.md",
+        "reports/departure-rate-curve-v2/engine-native-authoring-v1/result.json",
+        "reports/departure-rate-curve-v2/engine-native-authoring-v1/geometry.json",
+        "reports/departure-rate-curve-v2/engine-native-authoring-v1/stage-prerequisite-receipt.json",
+        "reports/central-hand-physical-v1/departure-engine-native-authoring-resource-v1.json",
+        "reports/central-hand-physical-v1/general-departure-engine-native-authoring-replay-v1/result.json",
+        "reports/central-hand-physical-v1/general-departure-engine-native-authoring-replay-resource-v1.json"
       ],
       "remaining": [
         "Extend GPU/rendered world-placement validation beyond144sampled silhouettes: materials, hidden surfaces, intermediate times, more rigs/backends and gameplay physics.",

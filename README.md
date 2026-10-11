@@ -8,7 +8,7 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
-- [Complete scene engine replay](docs/native-scene-engine-replay-v1.md): 26 focused checks pass for both playback modes across actor, object and partner populations. The actual full departure import replays exactly and retains its failed skin/contact/geometry decisions; maximum vertex discrepancy is 2.07 mm against the unchanged 0.1 mm tolerance. Independent complete-mesh arithmetic confirms the failed geometry across all 175,196,016 triangle/object queries. Native-resource measurements are running separately.
+- [Complete scene engine replay](docs/native-scene-engine-replay-v1.md): 26 focused checks pass for both playback modes across actor, object and partner populations. The actual full departure import replays exactly and retains its failed skin/contact/geometry decisions; maximum vertex discrepancy is 2.07 mm against the unchanged 0.1 mm tolerance. Independent complete-mesh arithmetic confirms its failed geometry across all 175,196,016 triangle/object queries. Native-resource authoring also replays exactly: pose, contact and vertex tolerances pass, but full-mesh penetration still fails at 1,280 times. Its separate independent geometry calculation is running.
 
 - [Complete-body geometry replay](docs/protected-hold-transitions-v1.md): the departure candidate passes all 2,426 declared times against both original spheres. Independent primitive-skin/SVD replay checks all 175,196,016 triangle/object queries and every saved array under the unchanged limits. Fresh contact-force arithmetic is also independently replayed; engine, broader-action and human-quality evidence remain required.
 
