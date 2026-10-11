@@ -45,6 +45,8 @@ observations independently replay under the unchanged admission policy. The
 earlier 19-case integration run and editor source checks also pass. The first
 187-case run retained one failure because its positive fixture declared no
 geometry conditions; that fixture now explicitly declares its floor plane.
-The geometry gate and tolerances are unchanged. Expanded Windows/Linux CI is
-pending. Rebound file receipts cannot conceal changed exported rotations: review
+The geometry gate and tolerances are unchanged. The [expanded Windows/Linux run](https://github.com/DocMorphic/strep/actions/runs/38156291788)
+at `2f07363` passes all 451 Python checks on each platform, plus the editor
+checks. Linux takes 93.05 seconds and Windows 216.94 seconds, without skips
+or failures. Exact committed source bytes and hosted logs are retained. Rebound file receipts cannot conceal changed exported rotations: review
 recomputes the complete selected native-key speeds before serving the proposal.

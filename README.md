@@ -8,7 +8,7 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
-- [Rotation-speed fitting](docs/native-rotation-speed-fit-v1.md): authored joint-speed limits now constrain native scene fitting and fresh serialized-output checks. A bounded smoothing proposal must pass every original scene row before adoption. Optional limits now integrate with the [Studio correction editor](docs/studio-rotation-speed-v1.md), with 37 targeted cases and editor source checks passing. Expanded Windows/Linux CI, live UI and continuous-time/engine verification remain pending.
+- [Rotation-speed fitting](docs/native-rotation-speed-fit-v1.md): authored joint-speed limits now constrain native scene fitting and fresh serialized-output checks. A bounded smoothing proposal must pass every original scene row before adoption. Optional limits now integrate with the [Studio correction editor](docs/studio-rotation-speed-v1.md), with 37 targeted cases and editor source checks passing. All 451 focused Python checks and editor checks pass on Windows/Linux. Live UI and continuous-time/engine verification remain pending.
 - [Static prop and grip API](docs/static-prop-api-v1.md): original GLB geometry and immutable triangle-based selections now import, preview, save and download through Studio routes. All 262 focused CPU checks pass on both OS platforms. Mesh-prop solver/UI integration remains pending.
 
 - [Contact audit compatibility](docs/contact-audit-compatibility-v1.md): the broad source workflow passes all 12 Windows/Linux jobs at its tested commit. Captured proposal production and independent geometry/rate replay are complete; their failures remain visible.

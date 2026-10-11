@@ -50,3 +50,8 @@ limits. Only a complete passing improvement is adopted; otherwise fitting starts
 from the retained original controls. This changes initialization, not acceptance
 thresholds, permissions or clocks. Two additional cases check untouched controls
 and rejection of a failed complete-scene proposal.
+
+Studio integration now passes [451 focused checks per platform](https://github.com/DocMorphic/strep/actions/runs/38156291788)
+at `2f07363`, plus editor source checks. The [integration record](studio-rotation-speed-v1.md)
+keeps the fixture failure, corrected geometry declaration, fresh exported-speed
+replay, unchanged acceptance and remaining live/physical/engine limitations explicit.
