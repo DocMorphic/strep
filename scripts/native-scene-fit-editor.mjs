@@ -17,6 +17,7 @@ export function stagedScene(review){
  if(request.schema==='strep-studio-native-scene-fit-v2'){
   if(!Array.isArray(request.rotation_speed_limits)||!request.rotation_speed_limits.length||request.rotation_speed_limits.length>64)throw Error('Complete export turning-speed limits are required.');
   const merged=new Map((draft.rotation_speed_limits??[]).map(t=>[`${t.actor}:${t.node}`,clone(t)]));
+  if(merged.size!==(draft.rotation_speed_limits??[]).length||new Set(request.rotation_speed_limits.map(t=>`${t.actor}:${t.node}`)).size!==request.rotation_speed_limits.length)throw Error('Choose each export joint speed limit once.');
   for(const t of request.rotation_speed_limits){if(!draft.scene.actors[t.actor]||!Number.isInteger(t.node)||t.node<0||typeof t.maximum_degrees_per_second!=='number'||!Number.isFinite(t.maximum_degrees_per_second)||t.maximum_degrees_per_second<0)throw Error('Explicit character joint and finite nonnegative export speed required.');merged.set(`${t.actor}:${t.node}`,clone(t));}
   draft.schema='strep-studio-native-scene-v2';draft.rotation_speed_limits=[...merged.values()];
   if(draft.rotation_speed_limits.length>64)throw Error('At most 64 current export turning-speed limits are supported.');

@@ -394,7 +394,8 @@ def manifest(job):
     require(all(r[k] is False for k in ('studio_selection_changed','quality_approved','training_admitted','release_approved',
         'gpu_render_checked','physics_verified','real_time_playback_verified','human_review_submitted')),'Scene authoring approval changed')
     scene=SceneContacts(read(folder/'contacts.json'),folder)
-    require(r['implementation_sha256']=={n:prepared['implementation_sha256'][n] for n in author_methods(scene)},'Scene authoring methods changed')
+    require(r['implementation_sha256']=={n:prepared['implementation_sha256'][n] for n in author_methods(scene,
+        speed_policy=prepared.get('rotation_speed_requested',False))},'Scene authoring methods changed')
     require(r['recipe_sha256']==sha256(folder/'recipe.json') and r['object_edit_requested']==(read(folder/'draft.json')['object_edit'] is not None),'Scene authoring input selection changed')
     for path,digest in {**r['inputs_sha256'],**r['derived_inputs_sha256']}.items():
         require(sha256(path)==digest,'Scene authoring input changed')
@@ -402,9 +403,12 @@ def manifest(job):
         require(sha256(folder/'authoring/implementation'/name)==digest,'Scene authoring method archive changed')
     expected_stages=['source-contacts']+(['object-edit'] if r['object_edit_requested'] else [])+(
         ['objects-source','objects-common','objects-engine','actors-engine','combined-engine','replay'] if scene.objects else ['actors-engine','replay'])
+    if prepared.get('rotation_speed_requested',False):
+        index=expected_stages.index('actors-engine')+1
+        expected_stages[index:index]=['rotation-speed-engine','rotation-speed-replay']
     require([s['id'] for s in r['stages']]==expected_stages,'Complete ordered scene stages required')
     for stage in r['stages']:
-        require(stage['id'] in ('source-contacts','object-edit','objects-source','objects-common','objects-engine','actors-engine','combined-engine','replay')
+        require(stage['id'] in expected_stages
             and sha256(folder/'authoring'/stage['id']/'result.json')==stage['result_sha256'],'Scene stage result changed')
         stage_folder=folder/'authoring'/stage['id'];record=read(stage_folder/'result.json')
         for relative,digest in record.get('files_sha256',{}).items():

@@ -14,6 +14,8 @@ def policy(draft,digest):
 
 
 def promote(draft,tracks):
+    limits_for(dict(schema='strep-native-rotation-speed-policy-v1',contacts_sha256='draft',tracks=tracks),'draft')
+    if requested(draft):policy(draft,'draft')
     result=copy.deepcopy(draft)
     merged={(t['actor'],t['node']):copy.deepcopy(t) for t in result.get('rotation_speed_limits',[])}
     for t in tracks:merged[t['actor'],t['node']]=copy.deepcopy(t)
