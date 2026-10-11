@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Native rate receipt inspection](docs/native-rate-receipts-v1.md): a standard-library tool locates recorded failed joints and time stencils without loading a model. Six focused tests pass; all 22 retained timing receipts are inspected with complete counts. This is archive inspection, not new motion or geometry validation.
+
 - [Bounded stored rotation repair](docs/native-rotation-storage-search-v1.md): the planner now covers all four source-rate failures and uses the permitted rotation ancestors and two/three-sample interpolation support. Windows/Linux pass 683 focused Python checks per OS plus the offline editor. The actual positional-failure kick study is prepared; its repair outcome is still unmeasured.
 
 - [Timing capacity in Studio](docs/studio-timing-capacity-v1.md): selected tracks and interior times now preview the whole scene's control count. Oversized saves preserve prior character bounds and speed limits. The offline editor checks pass and the desktop bundle matches source; this does not approve motion quality. The [controlled timing-layout study](docs/kenney-kick-temporal-layout-v1.md) improves floor correction with additional times but accepts no changed export.

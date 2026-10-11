@@ -12,6 +12,43 @@ The last independently verified box-lift state still has zero full physical/keye
 
 These are primary-source observations checked on this date, not performance measurements on Strep. The sources' code, model weights, body models and training data must be considered separately. Existing Kimodo remains the unchanged generation baseline. This screen changes no model, training corpus, rig, numerical gate, release capability or held-out reservation.
 
+## 2026-10-12: supplied-rig editing contract inspection
+
+The availability/license screen above remains unchanged. A source-only review
+of UniMate at revision `b78c7807df7cf4231d4e67f8d0ece29c5e11025b` adds two
+integration requirements. No external model code was executed or weights acquired.
+
+The [joint-mask builder](https://github.com/Friedrich-M/UniMate/blob/b78c7807df7cf4231d4e67f8d0ece29c5e11025b/unimate/inference/motion_editing.py)
+warns about unmatched requested names. If the whole batch has no matches, it
+returns an all-false mask and sampling proceeds without those constraints.
+That behavior accommodates heterogeneous upstream batches. A Strep adapter
+must resolve every explicitly requested kept joint per actor before execution,
+reject missing/ambiguous matches and archive the complete index mapping.
+This is an integration requirement, not a reported failure of a generated clip.
+
+The [mesh-driving entry point](https://github.com/Friedrich-M/UniMate/blob/b78c7807df7cf4231d4e67f8d0ece29c5e11025b/data_process/mesh_animation/animate_motion.py)
+defaults to FK recovery. Its
+[rotation recovery function](https://github.com/Friedrich-M/UniMate/blob/b78c7807df7cf4231d4e67f8d0ece29c5e11025b/unimate/utils/motion_utils.py)
+reconstructs local rotations and the integrated root trajectory, while keeping
+non-root positions at rest offsets. Inference for Strep: preserving a generated
+joint feature row does not itself prove preservation of the driven joint's
+world position or of a skinned hand/foot patch. A qualified editor must compare
+the requested preserved quantities in the decoded export, including root,
+parent transforms and contact geometry. That comparison has not been run here.
+
+The [rig-preprocessing guide](https://github.com/Friedrich-M/UniMate/blob/b78c7807df7cf4231d4e67f8d0ece29c5e11025b/data_process/rig_preprocess/README.md)
+also describes pruning bones and baking a canonical asset. Strep must retain the
+supplied original and an explicit mapping/inverse transform; an altered
+canonical rig cannot inherit original-asset fidelity approval.
+
+Seventeen small pinned source/terms snapshots across UniMate, HY-Motion, MotionFix
+and Uni-Inter are retained in `reports/model-alternatives-source-v1`, totaling
+247,397 bytes. The sampled edit call and replacement sampler also confirm that
+the joint mask is passed through to feature clamping. The MotionFix and HY-Motion terms checks agree with the existing
+documented decisions; their repeated availability checks add no performance
+evidence. This review does not authorize acquisition, product integration,
+training, held-out tuning or release approval.
+
 ## Next decision and experiment
 
 Finish and independently replay the remaining bounded contact windows before selecting another correction method. Record the full attempted population, retained steps, protected-row losses, contact/normal/penetration errors and time; schedule exhaustion is not a proof of mathematical infeasibility. A preserved but inadequate result must stay visibly inadequate.

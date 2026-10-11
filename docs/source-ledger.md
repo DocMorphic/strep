@@ -10,6 +10,19 @@ Checked 2026-09-24 unless marked otherwise. Preserve license files with assets a
 
 No new model, dependency, raw motion data or asset is acquired. The [verified failed contact continuation](contact-interval-batch-v4.md) remains a development study, not evidence that prompting has solved object interactions.
 
+## 2026-10-12: supplied-rig editing preservation follow-up
+
+Source inspection of UniMate revision `b78c7807df7cf4231d4e67f8d0ece29c5e11025b`
+adds per-actor name-resolution and decoded-export preservation requirements to
+the [existing model screen](interaction-model-screen-2026-10.md). Unmatched kept
+joint names can yield an all-false feature mask; the default export recovery
+uses rotations, root trajectory and rest offsets. Feature clamping is therefore
+not treated as proof of preserved world/skin contacts. Seventeen small source
+and terms snapshots are retained in `reports/model-alternatives-source-v1`.
+No external code is executed, no weights/data are acquired and no alternative
+is selected. MotionFix/HY-Motion availability and permission findings remain
+those already recorded; this follow-up adds no motion-performance evidence.
+
 | Source | Finding / project decision |
 |---|---|
 | [Kimodo-SOMA-RP-v1.1 card](https://huggingface.co/nvidia/Kimodo-SOMA-RP-v1.1) | Human skeletal motion checkpoint; game/media use listed. Single-character output, object-unaware, possible skating and prompt failures. Card describes 30 internal joints; current code exposes SOMA77. Inspect actual output metadata instead of assuming identical skeletons. |

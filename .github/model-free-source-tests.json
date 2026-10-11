@@ -466,7 +466,8 @@
     "tests/test_bounded_pose_ball_ik.py",
     "tests/test_selected_joint_guides.py",
     "tests/test_native_skin_encoding.py",
-    "tests/test_native_surface_recentered.py"
+    "tests/test_native_surface_recentered.py",
+    "tests/test_native_rate_receipts.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",
