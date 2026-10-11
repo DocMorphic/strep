@@ -1,0 +1,74 @@
+name: Imported native-key speed audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/native_engine_rotation_speed.py'
+      - 'scripts/godot_native_rotation_speed.gd'
+      - 'scripts/native_rotation_speed_policy.py'
+      - 'scripts/native_engine_clock.*'
+      - 'scripts/native_godot_*'
+      - 'tests/test_native_engine_rotation_speed*'
+      - '.github/workflows/imported-speed-audit.yml'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: imported-speed-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  actual-engine:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      HF_HUB_OFFLINE: '1'
+      TRANSFORMERS_OFFLINE: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.10'
+          cache: pip
+          cache-dependency-path: requirements-ci.txt
+      - name: Install model-free test dependencies
+        run: >-
+          python -m pip install --only-binary=:all: -r requirements-ci.txt
+      - name: Acquire checksum-pinned official Godot 4.7.2
+        shell: python
+        run: |
+          import hashlib, os, pathlib, urllib.request, zipfile
+          linux=os.name!='nt'
+          name='Godot_v4.7.2-stable_linux.x86_64.zip' if linux else 'Godot_v4.7.2-stable_win64.exe.zip'
+          digest='cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4' if linux else '731980f9608d61333e5baf54a2ef17210acc7a538446c0cb9969f002aca1e953'
+          folder=pathlib.Path(os.environ['RUNNER_TEMP'])/'strep-speed-godot'
+          folder.mkdir()
+          archive=folder/name
+          urllib.request.urlretrieve('https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/'+name,archive)
+          assert hashlib.sha256(archive.read_bytes()).hexdigest()==digest
+          with zipfile.ZipFile(archive) as z:
+              assert all((folder/n).resolve().is_relative_to(folder.resolve()) for n in z.namelist())
+              z.extractall(folder)
+          engine=folder/('Godot_v4.7.2-stable_linux.x86_64' if linux else 'Godot_v4.7.2-stable_win64_console.exe')
+          assert engine.is_file()
+          if linux:engine.chmod(0o755)
+          with open(os.environ['GITHUB_ENV'],'a') as f:f.write('STREP_TEST_GODOT='+str(engine)+'\n')
+      - name: Check source rejection and actual imported matrices
+        run: >-
+          python -m pytest -q --durations=10
+          tests/test_native_engine_rotation_speed.py
+          tests/test_native_engine_rotation_speed_runtime.py

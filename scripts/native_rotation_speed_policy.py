@@ -1,12 +1,12 @@
 """Explicit source-bound author limits, separate from anatomical calibration."""
 import numpy as np
 from native_scene_contacts import fields
-from native_rotation_speed_preflight import assess_scene
 
 METHODS=('native_rotation_speed_policy.py','native_rotation_speed_preflight.py','native_rotation_speed_fit.py','temporal_rotation_bounds.py')
 
 
-def policy_for(request,edits,contacts_digest):
+def limits_for(request,contacts_digest):
+    """Parse source-bound author intent without requiring edit permissions."""
     fields(request,('schema','contacts_sha256','tracks'),'rotation speed policy')
     if request['schema']!='strep-native-rotation-speed-policy-v1' or request['contacts_sha256']!=contacts_digest:
         raise ValueError('Rotation speed policy must bind the exact contact request')
@@ -23,5 +23,11 @@ def policy_for(request,edits,contacts_digest):
         key=name,node
         if key in limits:raise ValueError('Duplicate actor/joint speed limit')
         limits[key]=maximum
+    return limits
+
+
+def policy_for(request,edits,contacts_digest):
+    from native_rotation_speed_preflight import assess_scene
+    limits=limits_for(request,contacts_digest)
     lower,report=assess_scene(edits,limits)
     return limits,lower,report
