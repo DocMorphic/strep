@@ -133,8 +133,31 @@ other reference rotations stay unchanged. All **19** alignment-resource
 observations replay; the failed setup and its **40** observations remain saved.
 The fitting reference's float32 resampling does not grant extra edit budget:
 all **48,520** true-raw full-clock cap conditions remain required after export.
-The new two-wrist fit is running. The earlier engine pose error does not bound
-a future export.
+The first aligned two-wrist trial finishes after **8** full evaluations and
+exhausts its declared **600-second fitting budget** before producing a candidate.
+Its initial complete evaluation takes approximately **71 seconds**; total guarded
+execution is **679.172 seconds**, because time is checked between evaluations.
+All **682** resource observations replay. No candidate is exported or accepted.
+
+A new trial uses active triangle witnesses to guide the solve, then evaluates
+every **11,784** affected triangle at all **2,426** original times against both
+props and both skin models before candidate admission. A newly failing complete
+check adds witnesses for another solve; at most three proposed-candidate rounds
+run under the original global evaluation/time bounds. Every contact normal,
+side and reliability clock is still evaluated. Taking the minimum over each
+clock's inequality rows expresses their exact conjunction; it does not omit
+samples or replace the original limits.
+
+Five checks execute the actual admission statements with controlled synthetic
+solver/oracle failures. They verify rejection of guided-only success, discovery
+and addition of a new witness, rejection after either guided-solve or complete-
+check budget interruption, and rejection after three failed complete rounds.
+All **18** recorded resource observations replay. These test acceptance logic;
+they do not establish triangle correctness or actual solver/rig performance.
+The real trial is now running with the tested source hash bound before and after
+execution. Partial caches cannot authorize an export. Fresh serialized,
+complete-body, force and actual engine evidence remain required. The earlier
+engine pose error does not bound a future export.
 
 No continuous collision, self-collision, dynamics/balance, GPU/runtime/event
 playback, animator quality, training admission or release approval follows from
