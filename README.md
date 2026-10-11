@@ -11,7 +11,7 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 - [Rotation-speed feasibility](docs/temporal-rotation-bounds-v1.md): native scene fitting can reject authored speed limits that conflict with permitted edits, retaining complete neighboring-key bounds and protected-key rules. All 304 focused checks pass on Windows/Linux. Solver-output enforcement, Studio integration and captured replay remain pending.
 - [Static prop and grip API](docs/static-prop-api-v1.md): original GLB geometry and immutable triangle-based selections now import, preview, save and download through Studio routes. All 262 focused CPU checks pass on both OS platforms. Mesh-prop solver/UI integration remains pending.
 
-- [Contact audit compatibility](docs/contact-audit-compatibility-v1.md): all 172 focused CPU regressions pass on both Windows and Linux, including the 17 rig-proportion cases. Complete captured-motion validation still awaits local RAM admission.
+- [Contact audit compatibility](docs/contact-audit-compatibility-v1.md): the broad source workflow passes all 12 Windows/Linux jobs at its tested commit. Captured proposal production is complete; independent geometry/rate replay still awaits local RAM admission.
 
 - [Rig-proportion pose scaffold](docs/rig-pose-scaffold-v1.md): all 2,422 captured keys now produce bounded direction proposals and complete native-key mesh/roundtrip checks. Mean direction errors improve slightly, but both complete clips still fail floor checks; crawl peak depth worsens to 0.673 m. Large neighboring rotation jumps remain. Separate geometry/rate replay is pending; originals remain selected, without quality or training approval.
 
