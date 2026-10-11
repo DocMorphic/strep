@@ -1,6 +1,7 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_rig_floor_comparison.py",
     "tests/test_rig_scale_adaptation.py",
     "tests/test_static_prop_asset.py",
     "tests/test_studio_props.py",

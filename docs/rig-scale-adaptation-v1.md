@@ -70,3 +70,5 @@ The next step is to compare source and target ground behavior, identify the
 transfer contribution, and correct contact using actual mesh geometry and
 explicit support constraints. Preserve the baseline; a blanket vertical lift
 would not prove a usable motion. All release capabilities remain unapproved.
+
+The completed [matched source/target floor comparison](kenney-source-target-floor-v1.md) now shows pre-existing source crossings and amplified target peaks, with hand/head witnesses. It narrows the next diagnosis without establishing causality or correcting any clip.
