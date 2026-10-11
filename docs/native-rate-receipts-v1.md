@@ -52,13 +52,17 @@ skin-joint slot 40, rate frame 183. Its stencil is 1.525000, 1.533333 and
 absolute excess reconstructed from its residual/scale is 0.000332572 m/s².
 Among the four permitted tracks, its strict rotation ancestors are nodes
 50, 51 and 52. Its own rotation cannot move its origin. These facts explain
-the prepared direct-storage study's target; no repair result exists yet.
+the direct-storage study's target; its completed outcome is recorded below.
 
 Six standard-library tests pass, including altered provenance, complete known
 row/joint mapping, unrounded-only failures, paging without changing totals,
 nonfinite/invalid populations and unsupported or duplicate NPY members. The
 complete source inventory adds this module: 467 Python modules and 42 Node
-suites. That inventory declaration is not a full-suite pass claim.
+suites. That inventory declaration is not a full-suite pass claim. The focused
+[Windows/Linux workflow at `14c8ace`](https://github.com/DocMorphic/strep/actions/runs/38180150599)
+passes 689 Python checks per OS, 23 subtests and the offline editor. The
+[subsequent stored-component study](kenney-kick-position-storage-v1.md) clears
+the recorded positional-rate failure and replays the still-failed floor.
 
 Local reports are retained under `reports/native-rate-receipt-study-v1`.
 Actual pose/geometry/engine checks and human review remain separate. Source

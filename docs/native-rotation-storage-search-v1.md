@@ -16,7 +16,7 @@ This extension addresses the [development kick diagnosis](kenney-kick-temporal-l
 
 The ancestor rule follows the `T * R * S` local-transform order and parent/local world-transform composition in the [official glTF specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#transformations). This explains which rotations can affect a joint origin; it does not prove that any neighboring stored value will satisfy motion, contact or geometry limits.
 
-## Extension checks and next actual-motion study
+## Extension checks and completed actual-motion study
 
 At commit `d728d91`, the complete focused
 [Windows/Linux workflow](https://github.com/DocMorphic/strep/actions/runs/38177394381)
@@ -32,7 +32,7 @@ resource policy. All 594 admission observations replay with matching archived
 bindings; no motion exports or ray-search outcome exist for that attempt.
 Its local protocol remains in `reports/kenney-kick-rotation-ray-v1`.
 
-The prepared next study instead targets the finer-layout `1-4` proposal, whose
+The follow-up study targets the finer-layout `1-4` proposal, whose
 single stored failure is positional acceleration while its unrounded motion
 passes. It preserves the same 72 controls, four tracks, source cap arrays,
 rate clock, root, endpoints and full 2,017-time floor population. The explicit
@@ -44,10 +44,12 @@ complete fresh native decoding and the full declared floor audit. A passing
 native candidate can be archived as an unapproved appended variant preserving
 the original animation library; it still needs geometry and engine review.
 
-The driver is prepared locally in `reports/kenney-kick-position-storage-v1`.
-It has not executed. This extension is verified software behavior, with actual
-kick repair evidence still missing. Neither a deferred job nor a prepared
-driver changes any release gate or capability approval.
+The driver subsequently executes in `reports/kenney-kick-position-storage-v1`.
+Its [completed study and seeded continuation](kenney-kick-position-storage-v1.md)
+produce a stored-native pass with eight corrected components. Fresh replay
+reproduces all conditions and the still-failed complete floor audit. This is
+now actual development repair evidence, while geometry, engine and human
+approval remain absent. No release gate or capability approval changes.
 
 ## Three complete retained proposals
 
