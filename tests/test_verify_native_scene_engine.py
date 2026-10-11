@@ -21,7 +21,7 @@ from test_native_scene_engine import mock_actor, serialized
 from test_native_scene_geometry import closed_fixture, policy
 
 
-def bundle(tmp_path, monkeypatch, mode='import', population='objects', bad_floor=False):
+def bundle(tmp_path, monkeypatch, mode='import', population='objects', bad_floor=False, bake_fps=30., echo_bake_fps=None):
     monkeypatch.setattr(action_worker_lock, 'ROOT', tmp_path / 'fixture-lock')
     source, path, spec = closed_fixture(tmp_path)
     rig = RigAsset.load(source)
@@ -72,12 +72,12 @@ def bundle(tmp_path, monkeypatch, mode='import', population='objects', bad_floor
                 frames.append(dict(requested_time_s=time, matrix=serialized(matrix),
                                    rotation_xyzw=Rotation.from_matrix(rotation).as_quat().tolist()))
             objects.append(dict(id=name, frames=frames))
-        save(command[-1], dict(engine=dict(string='fixture only'), cases=cases, objects=objects))
+        save(command[-1], dict(engine=dict(string='fixture only'), cases=cases, objects=objects, import_bake_fps=request['import_bake_fps'] if echo_bake_fps is None else echo_bake_fps))
         return SimpleNamespace(returncode=0)
 
     monkeypatch.setattr(producer.subprocess, 'run', execute)
     output = tmp_path / 'producer'
-    producer.run(path, output, geometry_policy=pp, engine=executable, playback_mode=mode)
+    producer.run(path, output, geometry_policy=pp, engine=executable, playback_mode=mode, import_bake_fps=bake_fps)
     return path, pp, output
 
 

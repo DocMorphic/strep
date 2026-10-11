@@ -244,8 +244,13 @@ difference **3.34e-14 m**, and center diagnostic difference **8.88e-16 m**.
 Fifty ambiguous edge ties use the unchanged exact-input, 80-digit refinement;
 acceptance tolerances are unchanged. The native replay guard completed in
 **769.703 seconds**, exit zero, and its complete resource trace replays.
-Separate import observation and independent geometry replay are now running.
-The native verification does not approve the failed import or broader motion quality.
+Separate import observation replay also completes: all **2,426 recorded samples
+reproduce exactly**, retaining the failed condition flags. Independent import
+geometry replay checks every original query and saved array and confirms the
+recorded failure. Maximum depth-bracket reconstruction difference is
+**1.94e-16 m**, and closest-witness difference **3.79e-14 m**. Its complete resource
+trace replays. The native verification does not approve the failed import or
+broader motion quality.
 
 No continuous collision, self-collision, dynamics/balance, GPU/runtime/event
 playback, animator quality, training admission or release approval follows from
@@ -291,3 +296,27 @@ all original contact/geometry clocks and acceptance limits. Higher bake rates
 are an experimental setting, not a fidelity guarantee; complete observed poses,
 skin, contacts and geometry must decide the outcome. No new engine setting or
 repair is admitted by this inspection.
+
+## Explicit bake-rate transport (v11)
+
+The scene engine audit now accepts `import_bake_fps` in its Python API and
+`--import-bake-fps` in its CLI. The development settings are **30, 60, 120 and
+240 FPS**; the default stays **30 FPS**, and native authoring retains that
+original import setting. The request, executed Godot report, result and replay
+record all carry the selected rate. A different executed or recorded rate is
+rejected. Invalid rates fail before output creation or asset processing.
+
+The actual Godot 4.7.2 syntax check passes, and **69 focused tests pass**, including
+15 new transport/validation cases and the existing selected-scene import and
+replay fixtures. The completed guard resource trace independently replays.
+Those fixtures mock engine motion observations; the syntax check and passing
+tests do not establish actual high-rate animation fidelity.
+
+The new method changes only bake-rate transport and its evidence bindings.
+Original clips, meshes, skins, actor/object placements, contact/geometry clocks
+and acceptance limits remain unchanged. Earlier v10 source snapshots and proof
+receipts remain immutable; this is a new method version. The planned actual
+60/120/240 FPS comparisons have not run yet. Each needs a fresh guarded engine
+run, recorded-observation replay and independent complete-geometry replay;
+retain failed flags and all attempts. No default setting or release gate is
+promoted by these source checks.

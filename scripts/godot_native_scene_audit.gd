@@ -38,11 +38,15 @@ func audit() -> void:
 		quit(2)
 		return
 	var request = JSON.parse_string(FileAccess.get_file_as_string(args[0]))
+	var bake_fps := float(request.get("import_bake_fps", 30.0))
+	if bake_fps not in [30.0, 60.0, 120.0, 240.0] or (request.playback_mode == "native-authoring" and bake_fps != 30.0):
+		quit(16)
+		return
 	var times := NativeClock.decode(request.sample_clock, request.sample_times_s.size())
 	if times.size() != request.sample_times_s.size():
 		quit(15)
 		return
-	var report: Dictionary = {"engine": Engine.get_version_info(), "cases": [], "objects": []}
+	var report: Dictionary = {"engine": Engine.get_version_info(), "cases": [], "objects": [], "import_bake_fps": bake_fps}
 	for item in request.cases:
 		var document := GLTFDocument.new()
 		var state := GLTFState.new()
@@ -59,7 +63,7 @@ func audit() -> void:
 		var original_name := animations[index].original_name
 		var selected_animations: Array[GLTFAnimation] = [animations[index]]
 		state.set_animations(selected_animations)
-		var model := document.generate_scene(state, 30.0, false, false)
+		var model := document.generate_scene(state, bake_fps, false, false)
 		root.add_child(model)
 		await process_frame
 		var players: Array = []

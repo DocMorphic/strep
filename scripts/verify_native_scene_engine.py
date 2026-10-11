@@ -14,7 +14,7 @@ from action_worker_lock import worker_lock
 from strep import ROOT, read, save, sha256, now
 from native_scene_contacts import SceneContacts
 from native_scene_geometry import policy_for, faces_for
-from native_scene_engine import EngineObservations, sample_times, METHODS, SKIN_POSITION_TOLERANCE
+from native_scene_engine import EngineObservations, sample_times, METHODS, SKIN_POSITION_TOLERANCE, bake_rate
 from native_engine_clock import check_clock_wire
 from native_godot_payload import payload
 from native_object_scene_engine import method_bindings, require
@@ -45,6 +45,8 @@ def load(contacts, policy_path, actor_dir):
     require(result['inputs_sha256'].get(str(contacts)) == sha256(contacts)
             and result['inputs_sha256'].get(str(policy_path)) == sha256(policy_path), 'Exact contacts and policy required')
     mode = result['playback_mode']
+    rate = bake_rate(request.get('import_bake_fps',30.),mode)
+    require(bake_rate(result.get('import_bake_fps',30.),mode)==rate, 'Recorded import bake rate differs')
     require(mode in ('import', 'native-authoring') and request['playback_mode'] == mode
             and request['objects'] == spec['objects'], 'Complete scene and explicit playback mode required')
     require(sha256(actor_dir/'request.json') == receipt['request_sha256']
@@ -94,6 +96,7 @@ def load(contacts, policy_path, actor_dir):
                     'Complete source-derived native payload required')
         else: require('animation_output' not in case and 'native_payload' not in case, 'Import-only case cannot claim native authoring')
     actual = read(actor_dir/'engine-output.json'); require(actual['engine'] == result['engine'], 'Engine version differs')
+    require(bake_rate(actual.get('import_bake_fps',30.),mode)==rate, 'Executed import bake rate differs')
     actor = EngineObservations(scene, actual, request['cases'], times)
     bindings = {str(contacts): sha256(contacts), str(policy_path): sha256(policy_path)}
     bindings.update({str(actor_dir/n): sha256(actor_dir/n) for n in FILES})
@@ -172,7 +175,7 @@ def run(contacts, policy_path, actor_dir, output):
             require(all(sha256(p) == h for p,h in bindings.items()) and sha256(__file__) == sha256(output/'verifier.py'), 'Actor replay input/method changed')
             require(all(sha256(ROOT/'scripts'/name) == sha256(implementation/name) == digest
                         for name, digest in verifier_methods.items()), 'Verifier dependency changed during replay')
-            verified = dict(schema='strep-native-scene-replay-v1', playback_mode=result['playback_mode'], at=now(), status='complete', samples=len(times),
+            verified = dict(schema='strep-native-scene-replay-v1', playback_mode=result['playback_mode'], import_bake_fps=bake_rate(result.get('import_bake_fps',30.),result['playback_mode']), at=now(), status='complete', samples=len(times),
                 all_replayed_observations_exact=True, recorded_sampled_conditions_pass=passed,
                 geometry_reductions=geometry, geometry_transport=transport, source_bindings_sha256=bindings,
                 world_plane_observations_replayed=plane_observations, posed_triangle_degeneracy_replayed=True,

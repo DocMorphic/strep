@@ -101,8 +101,20 @@ class EngineObservations:
         p,r = self.objects[name]; index = self.indices(times); return p[index],r[index]
 
 
-def run(contacts_path,output,*,geometry_policy=None,engine=None,playback_mode='import'):
+def bake_rate(value, playback_mode):
+    """Declared development rates; native authoring retains its 30 FPS import."""
+    if type(value) not in (int, float) or value not in (30., 60., 120., 240.):
+        raise ValueError('Import bake rate must be 30, 60, 120 or 240 FPS')
+    if playback_mode not in ('import', 'native-authoring'):
+        raise ValueError('Explicit import or native-authoring mode required')
+    if playback_mode == 'native-authoring' and value != 30.:
+        raise ValueError('Native authoring retains the original 30 FPS import')
+    return float(value)
+
+
+def run(contacts_path,output,*,geometry_policy=None,engine=None,playback_mode='import',import_bake_fps=30.):
     if playback_mode not in ('import','native-authoring'): raise ValueError('Explicit import or native-authoring mode required')
+    import_bake_fps = bake_rate(import_bake_fps,playback_mode)
     contacts_path,output = Path(contacts_path).resolve(),Path(output).resolve()
     if output.exists(): raise ValueError('Fresh native scene engine output required')
     engine = Path(engine).resolve() if engine is not None else ROOT/'.cache/godot/4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe'
@@ -135,7 +147,7 @@ def run(contacts_path,output,*,geometry_policy=None,engine=None,playback_mode='i
                 case.update(native_payload=payload(actor['rig'],actor['sampler'],sha256(original)),
                     animation_output=str(output/(name+'-animation.res')))
             cases.append(case)
-        request = dict(cases=cases,sample_times_s=times.tolist(),sample_clock=clock_wire(times),objects=spec['objects'],playback_mode=playback_mode,
+        request = dict(cases=cases,sample_times_s=times.tolist(),sample_clock=clock_wire(times),objects=spec['objects'],playback_mode=playback_mode,import_bake_fps=import_bake_fps,
             engine_sha256=bindings[str(engine)],inputs_sha256=bindings,implementation_sha256=methods,
             pose_tolerance=POSE_TOLERANCE,object_pose_tolerance=OBJECT_TOLERANCE,
             skin_position_tolerance_m=SKIN_POSITION_TOLERANCE,
@@ -156,6 +168,8 @@ def run(contacts_path,output,*,geometry_policy=None,engine=None,playback_mode='i
                 engine_log_sha256=sha256(output/'engine.log'),executed_scripts_sha256=executed_scripts,
                 animation_resources_sha256={} if playback_mode=='import' else {c['id']:sha256(c['animation_output']) for c in cases}))
             actual = read(output/'engine-output.json')
+            if bake_rate(actual.get('import_bake_fps',30.),playback_mode)!=import_bake_fps:
+                raise ValueError('Executed import bake rate differs from request')
             save(output/'pipeline.json',dict(status='processing',stage='imported-bindings'))
             observed = EngineObservations(scene,actual,cases,times)
             skin_errors = {}
@@ -192,7 +206,7 @@ def run(contacts_path,output,*,geometry_policy=None,engine=None,playback_mode='i
                 if sha256(target)!=methods[n]: raise ValueError('Executed engine script changed')
             np.savez_compressed(output/'native-observations.npz',**native_arrays)
             np.savez_compressed(output/'imported-contact-observations.npz',**imported_arrays)
-            result = dict(schema='strep-native-scene-engine-v1',status='complete',engine=actual['engine'],
+            result = dict(schema='strep-native-scene-engine-v1',status='complete',engine=actual['engine'],import_bake_fps=import_bake_fps,
                 engine_executable_sha256=bindings[str(engine)],playback_mode=playback_mode,samples=len(times),
                 actors=observed.reports,objects=observed.object_report,skin_errors=skin_errors,
                 native_contacts=native_contacts,imported_contacts=imported_contacts,
@@ -232,4 +246,5 @@ if __name__=='__main__':
     p.add_argument('contacts',type=Path); p.add_argument('output',type=Path)
     p.add_argument('--geometry-policy',type=Path); p.add_argument('--engine',type=Path)
     p.add_argument('--playback-mode',choices=['import','native-authoring'],default='import')
-    a=p.parse_args();run(a.contacts,a.output,geometry_policy=a.geometry_policy,engine=a.engine,playback_mode=a.playback_mode)
+    p.add_argument('--import-bake-fps',type=int,choices=[30,60,120,240],default=30)
+    a=p.parse_args();run(a.contacts,a.output,geometry_policy=a.geometry_policy,engine=a.engine,playback_mode=a.playback_mode,import_bake_fps=a.import_bake_fps)
