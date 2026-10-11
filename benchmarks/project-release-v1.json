@@ -878,7 +878,17 @@
         "reports/engine-hold-clearance-v7/candidate-full-oracle-1.json",
         "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v7.json",
         "reports/central-hand-physical-v1/engine-hold-oracle-admission-tests-v8/result.json",
-        "reports/central-hand-physical-v1/engine-hold-oracle-admission-tests-resource-v8.json"
+        "reports/central-hand-physical-v1/engine-hold-oracle-admission-tests-resource-v8.json",
+        "reports/engine-hold-clearance-v8/result.json",
+        "reports/engine-hold-clearance-v9/result.json",
+        "reports/engine-hold-clearance-v9/candidate-full-oracle-1.json",
+        "reports/engine-hold-clearance-v10/result.json",
+        "reports/engine-hold-clearance-v10/serialized-check-v1.json",
+        "reports/central-hand-physical-v1/engine-hold-oracle-admission-tests-v10b/result.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v8.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v9.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v10.json",
+        "reports/central-hand-physical-v1/engine-hold-export-check-resource-v10.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -1272,7 +1282,17 @@
         "reports/engine-hold-clearance-v7/candidate-full-oracle-1.json",
         "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v7.json",
         "reports/central-hand-physical-v1/engine-hold-oracle-admission-tests-v8/result.json",
-        "reports/central-hand-physical-v1/engine-hold-oracle-admission-tests-resource-v8.json"
+        "reports/central-hand-physical-v1/engine-hold-oracle-admission-tests-resource-v8.json",
+        "reports/engine-hold-clearance-v8/result.json",
+        "reports/engine-hold-clearance-v9/result.json",
+        "reports/engine-hold-clearance-v9/candidate-full-oracle-1.json",
+        "reports/engine-hold-clearance-v10/result.json",
+        "reports/engine-hold-clearance-v10/serialized-check-v1.json",
+        "reports/central-hand-physical-v1/engine-hold-oracle-admission-tests-v10b/result.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v8.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v9.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v10.json",
+        "reports/central-hand-physical-v1/engine-hold-export-check-resource-v10.json"
       ],
       "remaining": [
         "Jointly oriented hand/object fitting without penetration or support regressions",
@@ -2477,7 +2497,17 @@
         "reports/engine-hold-clearance-v7/candidate-full-oracle-1.json",
         "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v7.json",
         "reports/central-hand-physical-v1/engine-hold-oracle-admission-tests-v8/result.json",
-        "reports/central-hand-physical-v1/engine-hold-oracle-admission-tests-resource-v8.json"
+        "reports/central-hand-physical-v1/engine-hold-oracle-admission-tests-resource-v8.json",
+        "reports/engine-hold-clearance-v8/result.json",
+        "reports/engine-hold-clearance-v9/result.json",
+        "reports/engine-hold-clearance-v9/candidate-full-oracle-1.json",
+        "reports/engine-hold-clearance-v10/result.json",
+        "reports/engine-hold-clearance-v10/serialized-check-v1.json",
+        "reports/central-hand-physical-v1/engine-hold-oracle-admission-tests-v10b/result.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v8.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v9.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v10.json",
+        "reports/central-hand-physical-v1/engine-hold-export-check-resource-v10.json"
       ],
       "remaining": [
         "Extend GPU/rendered world-placement validation beyond144sampled silhouettes: materials, hidden surfaces, intermediate times, more rigs/backends and gameplay physics.",
@@ -3082,7 +3112,17 @@
         "reports/engine-hold-clearance-v7/candidate-full-oracle-1.json",
         "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v7.json",
         "reports/central-hand-physical-v1/engine-hold-oracle-admission-tests-v8/result.json",
-        "reports/central-hand-physical-v1/engine-hold-oracle-admission-tests-resource-v8.json"
+        "reports/central-hand-physical-v1/engine-hold-oracle-admission-tests-resource-v8.json",
+        "reports/engine-hold-clearance-v8/result.json",
+        "reports/engine-hold-clearance-v9/result.json",
+        "reports/engine-hold-clearance-v9/candidate-full-oracle-1.json",
+        "reports/engine-hold-clearance-v10/result.json",
+        "reports/engine-hold-clearance-v10/serialized-check-v1.json",
+        "reports/central-hand-physical-v1/engine-hold-oracle-admission-tests-v10b/result.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v8.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v9.json",
+        "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v10.json",
+        "reports/central-hand-physical-v1/engine-hold-export-check-resource-v10.json"
       ]
     }
   ],

@@ -168,8 +168,38 @@ not a change to the original **45-degree** cumulative motion cap, **15-degree**
 normal limit, **0.5-mm** side allowance or **5-mm** penetration limit. All original
 times, contacts, props and affected triangles remain in the complete admission
 check. Five actual-source admission checks pass again and all **18** resource
-observations replay before the new real fit starts. No new candidate is approved
-yet. Partial caches cannot authorize an export. Fresh serialized,
+observations replay before the new real fit starts. That trial exhausts its
+300-evaluation cap before returning a candidate; no partial cache authorizes
+export, and all **240** resource observations replay.
+
+A fresh scheduling trial permits **600 evaluations**, with **18 iterations per
+round**, under the same 600-second fitting time bound and unchanged memory profile.
+It finishes after **475 evaluations** and returns a completely checked proposal.
+Both skins meet the original contact/surface limits and every affected triangle
+meets the 50-micrometre geometry fitting reserve. The extra surface-side fitting
+reserve misses its 1-micrometre target by approximately **6.94 nanometres**:
+actual clearance within the original allowance is approximately **0.993 micrometres**.
+Strict reserve-based admission exports nothing. All **392** resource observations
+replay; the failed reserve result remains immutable.
+
+A separate acceptance recheck uses the same retained controls and evaluates the
+complete population from scratch. It uses the original surface limits for
+candidate acceptance while retaining extra surface reserves as optimization
+targets; the original physical criteria never change. The geometry fitting
+reserve remains required. Six actual-source admission checks pass, including an
+already completely checked initial proposal. An earlier test-harness attempt
+misses a newly required input and is preserved as failed; it runs no real fit.
+The complete recheck passes and exports a candidate, with all **147** resource
+observations replayed.
+
+Fresh serialized verification confirms the exact two-wrist controls, unchanged
+other **152 channels**, static rig/skin and source binary prefix, protected key
+support, all **48,520 true-raw cap conditions**, all original position/speed and
+**11,590 surface samples per skin**, and every affected triangle against both
+props in both skins. The serialized verification's complete resource trace
+replays. Full-body geometry is now running on this new clip; no prior body,
+force, held-pose or engine approval is inherited. Partial caches cannot authorize
+an export. Fresh serialized,
 complete-body, force and actual engine evidence remain required. The earlier
 engine pose error does not bound a future export.
 
@@ -178,7 +208,8 @@ playback, animator quality, training admission or release approval follows from
 the proposal. All broader action, object, partner, rig, editing/style, held-out
 and cleanup-review requirements remain under the same full-project goal.
 
-Local plans/results are under `reports/engine-hold-clearance-v2`; dependency,
+The latest candidate/checks are under `reports/engine-hold-clearance-v10`; earlier
+trials remain under their original version folders. Dependency,
 failed-attempt and resource evidence is under `reports/central-hand-physical-v1`.
 The full-body resource profile is unchanged. Downloaded assets and bulky study
 outputs remain excluded from the public source snapshot.
