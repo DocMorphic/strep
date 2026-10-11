@@ -1,6 +1,7 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_native_engine_skin_view.py",
     "tests/test_verify_native_scene_engine.py",
     "tests/test_pose_proposal_archive.py",
     "tests/test_pose_restoration_policy.py",

@@ -157,8 +157,15 @@ object named `box` is a sphere, not the box-lifting benchmark.
 The public generalized verifier replays every observation, source/skin/contact
 binding and saved reduction exactly, retaining `recorded_sampled_conditions_pass`
 as **false**. This is a complete observation/reduction replay, not independent
-triangle-distance arithmetic. That separate full-mesh calculation is now running
+triangle-distance arithmetic. The separate full-mesh calculation now completes
 with the validated independent SVD/edge/Decimal method and original tolerances.
+It reconstructs all **175,196,016 queries** and **14,557 numerical arrays**,
+confirming the failed sampled geometry decision. Maximum depth-bracket difference
+is **1.942890293094024e-16 m** and maximum witness difference is
+**3.913536161803677e-14 m**, below the original **2e-12 m** limit. Sixty-two
+rounded edge ties receive exact-input, 80-digit refinement. Its guard completes
+in **562.75 seconds**, with **572** resource observations independently replayed
+and **477,757,440 bytes** peak process-tree RSS. All populations remain complete.
 
 The producer guard completes in **2,378.5 seconds**, with **2,356** resource
 observations independently replayed and **932,675,584 bytes** peak process-tree
@@ -168,11 +175,83 @@ observations also replay, with **564,178,944 bytes** peak RSS. Both keep the ful
 `reports/departure-rate-curve-v2/engine-native-authoring-v1` and
 `reports/central-hand-physical-v1/general-departure-engine-native-authoring-replay-v1`.
 
-A full-clock, full-vertex ordered counterfactual diagnostic is prepared and
-syntax-checked to separate Float32 weight normalization, unsigned-16 weight
-storage, imported bind/mesh storage and engine pose precision. It requires the
-completed independent geometry receipt before execution. No measured attribution
-or correction is claimed yet. Native-resource authoring here remains manual
-authoring seeks, not real-time AnimationPlayer, GPU skinning or event playback.
-No rendering, physics, continuous collision, broader rig/action/interaction
-quality or release approval is inferred.
+The full-clock, full-vertex ordered counterfactual diagnostic also completes,
+bound to the independent geometry receipt. It separates weight normalization,
+weight storage, bind/mesh storage and pose arithmetic for all **2,426 times and
+18,056 vertices**, retaining eight influence slots:
+
+| Ordered change | Maximum vertex displacement |
+| --- | ---: |
+| Float32 weight normalization | 0.000236 mm |
+| Unsigned-16 weight storage | 0.095105 mm |
+| Imported bind/mesh storage | below 1e-12 mm |
+| Engine pose precision | 0.000508 mm |
+
+These maxima can occur at different vertices/times and are not additive or
+unique causal allocations. The total error replay differs from the original
+per-time vertex-error record by at most **6.833726293176134e-16 m**. The diagnostic
+uses shared native FK, imported correspondence and raw pose decoding; it is not
+an independent triangle calculation or a corrected export. Its guard completes
+in **134.906 seconds** with **151** resource observations independently replayed
+and **466,108,416 bytes** peak RSS. Local reports are
+`independent-departure-engine-native-authoring-geometry-v2.json` and
+`native-engine-skin-stage-diagnostic-v1.json` under
+`reports/central-hand-physical-v1`.
+
+Of the 1,280 failed geometry times, **1,278 occur during the protected hold and
+two after it**; none precede it. Another departure-only adjustment would leave
+most failures unresolved. The next correction must account for the engine skin
+while retaining authored contacts and limits, and must be checked against both
+native and actual exported geometry. No corrected clip is accepted yet.
+
+## Engine skin in correction calculations
+
+`scripts/native_engine_skin_view.py` provides `EngineSkinView` and
+`EngineSkinScene`. They map the observed raw imported skin back to complete native
+node worlds and original vertex references, preserving every material and up to
+eight influences. Weights are copied without renormalization; source documents,
+clips and rig weights are not rewritten. The scene view exposes the same skin to
+`SceneProblem` contact calculations and complete geometry queries, so a proposal
+can use the target engine's skin instead of silently fitting only the native one.
+
+Callers supply validated `EngineObservations` for that exact source scene and
+nonempty file hash bindings for raw engine evidence and supporting receipts.
+Those hashes detect changed files; they do not authenticate arbitrary in-memory
+observations or replace the completed producer/replay prerequisite. A typical
+integration constructs `EngineSkinScene(scene, observations, engine_bindings)`,
+then creates `SceneEdits` and `SceneProblem` using that view and the original
+permissions and contact-request digest. Source-relative motion caps, contacts,
+object targets, geometry clocks and acceptance limits remain intact. A source
+scene check must still accompany the modeled engine-skin check.
+
+Nine focused checks pass: raw weight deficits reach solver contacts and decoded
+export constraints; all materials and eight nonzero influences survive; complete
+geometry and derivatives use the same model; source bytes stay intact; missing,
+wrong-scene or changed evidence rejects. The fixture-only run is not Godot quality
+evidence. Its final 21-observation resource record independently replays. An
+earlier test revision incorrectly assumed a touch fixture; its failed result is
+preserved, and the final test checks the actual hold and its position rows.
+The source test inventory now includes this module (440 Python modules, 41 Node
+suites).
+
+The actual-study skin-view check also completes. Every **18,056-vertex model at
+all 2,426 original times** agrees with separate sum/matmul reconstruction of the
+raw observed skin under native FK; maximum component difference is
+**8.881784197001252e-16 m**, below the declared **2e-12 m** comparison limit.
+Source skin arrays, document and binary remain unchanged. Declared contact
+samples pass with the original targets and limits. The model-to-observed-engine
+vertex displacement peaks at **5.07596719272607e-7 m**, exactly reproducing the
+earlier pose-precision stage diagnostic. The guard completes in **158.578
+seconds**, with all **174** resource observations independently replayed and
+**460,468,224 bytes** peak RSS. Local evidence is
+`actual-engine-skin-view-v1.json` and `actual-engine-skin-view-resource-v1.json`
+under `reports/central-hand-physical-v1`. This validates the bridge's vertex
+arithmetic and contact integration; it performs no new triangle queries and
+does not turn the original engine geometry failure into a pass.
+
+The view evaluates hypothetical **native FK** with observed engine weights and
+binds. It does not predict future engine pose arithmetic, imported animation
+baking or GPU skinning, and a passing model cannot approve a future export.
+Native-resource authoring here remains manual authoring seeks, not real-time
+AnimationPlayer or event playback. No rendering, physics, continuous collision,
+broader rig/action/interaction quality or release approval is inferred.

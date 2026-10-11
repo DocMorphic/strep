@@ -2020,7 +2020,19 @@
         "reports/departure-rate-curve-v2/engine-native-authoring-v1/stage-prerequisite-receipt.json",
         "reports/central-hand-physical-v1/departure-engine-native-authoring-resource-v1.json",
         "reports/central-hand-physical-v1/general-departure-engine-native-authoring-replay-v1/result.json",
-        "reports/central-hand-physical-v1/general-departure-engine-native-authoring-replay-resource-v1.json"
+        "reports/central-hand-physical-v1/general-departure-engine-native-authoring-replay-resource-v1.json",
+        "reports/central-hand-physical-v1/independent-departure-engine-native-authoring-geometry-v2.json",
+        "reports/central-hand-physical-v1/departure-engine-native-authoring-independent-geometry-resource-v2.json",
+        "reports/central-hand-physical-v1/native-engine-skin-stage-diagnostic-v1.json",
+        "reports/central-hand-physical-v1/native-engine-skin-stage-diagnostic-resource-v1.json",
+        "scripts/native_engine_skin_view.py",
+        "tests/test_native_engine_skin_view.py",
+        "reports/central-hand-physical-v1/engine-skin-view-tests-v3/result.json",
+        "reports/central-hand-physical-v1/engine-skin-view-tests-resource-v3.json",
+        "reports/central-hand-physical-v1/engine-skin-view-tests-v2/result.json",
+        "reports/central-hand-physical-v1/engine-skin-view-tests-resource-v2.json",
+        "reports/central-hand-physical-v1/actual-engine-skin-view-v1.json",
+        "reports/central-hand-physical-v1/actual-engine-skin-view-resource-v1.json"
       ],
       "remaining": [
         "Extend GPU/rendered world-placement validation beyond144sampled silhouettes: materials, hidden surfaces, intermediate times, more rigs/backends and gameplay physics.",
@@ -2349,7 +2361,19 @@
         "reports/departure-rate-curve-v2/engine-native-authoring-v1/stage-prerequisite-receipt.json",
         "reports/central-hand-physical-v1/departure-engine-native-authoring-resource-v1.json",
         "reports/central-hand-physical-v1/general-departure-engine-native-authoring-replay-v1/result.json",
-        "reports/central-hand-physical-v1/general-departure-engine-native-authoring-replay-resource-v1.json"
+        "reports/central-hand-physical-v1/general-departure-engine-native-authoring-replay-resource-v1.json",
+        "reports/central-hand-physical-v1/independent-departure-engine-native-authoring-geometry-v2.json",
+        "reports/central-hand-physical-v1/departure-engine-native-authoring-independent-geometry-resource-v2.json",
+        "reports/central-hand-physical-v1/native-engine-skin-stage-diagnostic-v1.json",
+        "reports/central-hand-physical-v1/native-engine-skin-stage-diagnostic-resource-v1.json",
+        "scripts/native_engine_skin_view.py",
+        "tests/test_native_engine_skin_view.py",
+        "reports/central-hand-physical-v1/engine-skin-view-tests-v3/result.json",
+        "reports/central-hand-physical-v1/engine-skin-view-tests-resource-v3.json",
+        "reports/central-hand-physical-v1/engine-skin-view-tests-v2/result.json",
+        "reports/central-hand-physical-v1/engine-skin-view-tests-resource-v2.json",
+        "reports/central-hand-physical-v1/actual-engine-skin-view-v1.json",
+        "reports/central-hand-physical-v1/actual-engine-skin-view-resource-v1.json"
       ],
       "remaining": [
         "Extend GPU/rendered world-placement validation beyond144sampled silhouettes: materials, hidden surfaces, intermediate times, more rigs/backends and gameplay physics.",
