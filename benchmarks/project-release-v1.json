@@ -359,7 +359,10 @@
         "docs/preserved-export-repair-v1.md",
         "docs/local-edit-preservation-v1.md",
         "docs/export-feedback-v1.md",
-        "docs/contact-joint-restart-v1.md"
+        "docs/contact-joint-restart-v1.md",
+        "docs/prompt-edit-floor-regions-v2.md",
+        "reports/prompt-edit-floor-regions-v2/result.json",
+        "reports/central-hand-physical-v1/prompt-edit-floor-diagnosis-resource-v2.json"
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
@@ -2509,7 +2512,9 @@
         "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v10.json",
         "reports/central-hand-physical-v1/engine-hold-export-check-resource-v10.json",
         "reports/engine-hold-clearance-v10/engine-native-authoring-v1/result.json",
-        "reports/central-hand-physical-v1/engine-hold-engine-native-authoring-resource-v10.json"
+        "reports/central-hand-physical-v1/engine-hold-engine-native-authoring-resource-v10.json",
+        "reports/engine-hold-clearance-v10/engine-import-v1/result.json",
+        "reports/central-hand-physical-v1/engine-hold-engine-import-resource-v10.json"
       ],
       "remaining": [
         "Extend GPU/rendered world-placement validation beyond144sampled silhouettes: materials, hidden surfaces, intermediate times, more rigs/backends and gameplay physics.",
@@ -3336,6 +3341,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-11T05:07:31.066713+00:00",
-  "last_progress": "Corrected development clip V10 passes complete-body geometry at all 2,426 fixed sample times and its independent reconstruction, and all 59 assessed force/contact samples pass the conditional coupled screen with independent replay. Real Godot native-authoring playback passes pose, object pose, skin, contact and geometry screens at those 2,426 times; maximum penetration is 0.004950068645528098 m against the original 0.005 m limit, and maximum native skin error is 0.00009501026181033346 m against 0.0001 m. Native resource supervision is complete. Separate glTF import is still running; independent engine replays and editing diagnostics are queued, not approved. This is one development clip with spherical props, hypothetical mechanical parameters and finite sampling, not a box-pickup benchmark, calibrated body dynamics, runtime/GPU validation, human naturalness or release evidence. All 14 capability release-evidence lists, held-out fixture bindings and four unset acceptance gates remain unchanged."
+  "last_progress_at": "2026-10-11T05:31:53.639245+00:00",
+  "last_progress": "Corrected development clip V10 passes native-authoring engine production at all 2,426 fixed times but separate glTF import fails pose, full-skin, contact and geometry screens; 12 geometry times fail, maximum penetration upper diagnostic is 0.005001476920655774 m against 0.005 m, and vertex discrepancy reaches 0.0020734508883721043 m against 0.0001 m. Both production resource traces replay; independent engine observation/geometry replays are running sequentially. Source-versus-edit floor diagnostics pass all 15 focused checks and measure all five retained failed editing takes without regeneration: dance edits add 67/19 failures; jump inputs already have 13 protected source failures and add 30/27/28 editable failures. The UI distinguishes these counts in new reports; its live rendering remains unverified. Complete-body and conditional 59-sample force/contact replay already pass on the V10 clip. All 14 release capabilities, 19 inventory gaps, four unset gates, held-out fixture bindings, human review and cleanup requirements remain open. No training, broad action/rig generalization or release approval follows."
 }

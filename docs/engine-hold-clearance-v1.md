@@ -226,10 +226,19 @@ geometry conditions at **2,426 times**, with zero failed geometry times.
 Maximum penetration upper diagnostic is **4.950069 mm** against **5 mm**;
 maximum full-skin position error is **0.0950103 mm** against **0.1 mm**.
 Maximum pose-element disagreement is **7.33e-7**, with zero duration error.
-The completed engine resource trace replays. The separate glTF-import job is
-running. Fresh observation/independent-geometry replay sources are prepared
-for both modes with the prior independent geometry functions and tolerances
-unchanged. Preparation alone establishes no engine result.
+The completed engine resource trace replays. The separate glTF-import job has
+completed and **fails pose, full-skin, contact and geometry conditions**. Object
+poses pass. Of the same **2,426 geometry times, 12 fail**, with maximum penetration
+upper diagnostic **5.001477 mm** against **5 mm**. Maximum full-skin discrepancy
+is **2.073451 mm** against **0.1 mm**, peaking at **2.6583333015441895 s**.
+Maximum pose-element disagreement is **0.009649050242221235**, with zero duration
+error. Pose-element error mixes transform components and is not a distance unit.
+The import guard completed in **2,123.782 seconds**, exit zero, and its resource
+trace replays; execution success does not turn failed animation conditions into
+passes. Fresh observation and independent-geometry replays are queued for both
+modes, with native-authoring replay now running and the prior independent
+geometry functions and tolerances unchanged. No independent engine verdict is
+claimed until those replays finish.
 Native-authoring production does not substitute for either independent engine
 replay or the separate import verdict.
 
@@ -270,8 +279,8 @@ arithmetic; it does not prove the cause of the earlier failed import.
 
 The source file, upstream license and hashes are retained locally under
 `reports/godot-import-source-review-v10`. Captured C++ was inspected, not compiled
-or incorporated into Strep. The running native-authoring/import baseline retains
-its original methods. If fresh import evidence still fails, compare explicit
+or incorporated into Strep. The completed native-authoring/import baseline retains
+its original methods. Fresh import evidence fails; after independent replay, compare explicit
 bake rates on the unchanged clip in a separate development study, preserving
 all original contact/geometry clocks and acceptance limits. Higher bake rates
 are an experimental setting, not a fidelity guarantee; complete observed poses,
