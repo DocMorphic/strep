@@ -9,8 +9,10 @@ skin, contact and geometry screens, including 12 of 2,426 geometry times. Native
 observation and independent complete-geometry replay also pass; independent import
 replay independently confirms the import failure. The completed 60 FPS comparison
 passes independently replayed geometry but still fails pose, skin and contact
-fidelity; peak vertex error is 1.683 mm against 0.10 mm. The 120 FPS comparison is
-running, with 240 FPS queued. The [editing floor diagnostic](prompt-edit-floor-regions-v2.md)
+fidelity; peak vertex error is 1.683 mm against 0.10 mm. The 120 FPS comparison
+now passes all sampled conditions and complete independent replay, with 0.095012 mm
+peak vertex error; 240 FPS is running. This is one development fixture, not a
+general importer or release approval. The [editing floor diagnostic](prompt-edit-floor-regions-v2.md)
 passes 15 focused tests; all five retained takes still fail, with protected source
 violations distinguished from newly failed editable frames. Held-out generalization and animator quality are still
 unproven. A fresh release inventory retains 14 capabilities without release
