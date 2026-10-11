@@ -7,9 +7,21 @@ on:
       - 'scripts/native_engine_rotation_speed.py'
       - 'scripts/godot_native_rotation_speed.gd'
       - 'scripts/native_rotation_speed_policy.py'
+      - 'scripts/native_scene_export_speed.py'
+      - 'scripts/native_scene_authoring_job.py'
+      - 'scripts/studio_native_scene*.py'
+      - 'scripts/native_contact_revision.py'
+      - 'scripts/native_correction_lineage.py'
+      - 'scripts/native-scene*.mjs'
+      - 'scripts/native-scene-editor.html'
+      - 'scripts/action_worker_lock.py'
+      - 'scripts/native_godot_speed_resource.gd'
       - 'scripts/native_engine_clock.*'
       - 'scripts/native_godot_*'
       - 'tests/test_native_engine_rotation_speed*'
+      - 'tests/test_studio_scene_export_speed*'
+      - 'tests/test_action_worker_lock.py'
+      - 'tests/test_native_scene*editor.mjs'
       - '.github/workflows/imported-speed-audit.yml'
   pull_request:
   workflow_dispatch:
@@ -48,6 +60,14 @@ jobs:
       - name: Install model-free test dependencies
         run: >-
           python -m pip install --only-binary=:all: -r requirements-ci.txt
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+      - name: Verify correction staging and current export intent offline
+        run: >-
+          node tests/test_native_scene_fit_editor.mjs
+      - name: Verify scene editor intent and revision preservation offline
+        run: node tests/test_native_scene_editor.mjs
       - name: Acquire checksum-pinned official Godot 4.7.2
         shell: python
         run: |
@@ -73,6 +93,12 @@ jobs:
           python -m pytest -q -s --durations=10 --basetemp=reports/engine-speed-ci
           tests/test_native_engine_rotation_speed.py
           tests/test_native_engine_rotation_speed_runtime.py
+          tests/test_studio_scene_export_speed.py
+          tests/test_studio_scene_export_speed_runtime.py
+          tests/test_native_scene_authoring_job.py
+          tests/test_studio_native_scene.py
+          tests/test_native_contact_revision.py
+          tests/test_action_worker_lock.py
       - name: Retain generated-fixture inputs and actual engine observations
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6

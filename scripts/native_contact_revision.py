@@ -6,6 +6,10 @@ SCHEMA='strep-native-contact-revision-v1'
 DRAFT_FIELDS=('schema','scene','geometry','object_edit')
 
 
+def draft_fields(value):
+    return DRAFT_FIELDS+('rotation_speed_limits',) if isinstance(value,dict) and value.get('schema')=='strep-studio-native-scene-v2' else DRAFT_FIELDS
+
+
 def patch(value,actor):
     fields(value,('glb_sha256','vertices','reduction'),'explicit revised patch')
     if value['glb_sha256']!=actor['sha256']:raise ValueError('Revised patch belongs to another character clip')
@@ -19,8 +23,8 @@ def patch(value,actor):
 
 
 def apply(baseline,edits):
-    fields(baseline,DRAFT_FIELDS,'original Studio draft')
-    if baseline['schema']!='strep-studio-native-scene-v1':raise ValueError('Original Studio scene draft required')
+    fields(baseline,draft_fields(baseline),'original Studio draft')
+    if baseline['schema'] not in ('strep-studio-native-scene-v1','strep-studio-native-scene-v2'):raise ValueError('Original Studio scene draft required')
     if not isinstance(edits,list) or not 1<=len(edits)<=64:raise ValueError('Choose 1-64 explicit contact revisions')
     result=copy.deepcopy(baseline);seen=set();contacts={c['id']:c for c in result['scene']['contacts']}
     for edit in edits:
@@ -44,12 +48,12 @@ def apply(baseline,edits):
 
 def validate(payload):
     if 'contact_revision' not in payload:
-        fields(payload,DRAFT_FIELDS,'Studio native scene draft');return payload,None
-    fields(payload,DRAFT_FIELDS+('contact_revision',),'revised Studio native scene draft')
+        fields(payload,draft_fields(payload),'Studio native scene draft');return payload,None
+    fields(payload,draft_fields(payload)+('contact_revision',),'revised Studio native scene draft')
     revision=payload['contact_revision'];fields(revision,('schema','baseline','edits'),'contact revision provenance')
     if revision['schema']!=SCHEMA:raise ValueError('Contact revision schema required')
     expected=apply(revision['baseline'],revision['edits'])
-    actual={k:payload[k] for k in DRAFT_FIELDS}
+    actual={k:payload[k] for k in draft_fields(payload)}
     if actual!=expected:raise ValueError('Contact revision changes protected draft fields or differs from explicit patches')
     return actual,revision
 

@@ -97,6 +97,9 @@ def plan(draft):
         expected=copy.deepcopy(request['draft']);expected.pop('contact_revision',None)
         for name,row in m['actors'].items():
             expected['scene']['actors'][name]['glb']=row['candidate_url'];expected['scene']['actors'][name]['sha256']=row['candidate_sha256']
+        if draft['schema']=='strep-studio-native-scene-v2' and request['schema']=='strep-studio-native-scene-fit-v2':
+            from native_scene_export_speed import promote
+            expected=promote(expected,request['rotation_speed_limits'])
         final=next(v for v in r['probes'] if v['label']=='final')
         jobs[job]=dict(prepared_sha256=sha256(folder/'prepared.json'),completion_sha256=sha256(folder/'completion.json'),
             **speed,

@@ -44,7 +44,7 @@ def validate_request(payload,resolver,*,require_objects=False):
     ordinary,revision=validate(payload)
     if revision is not None:validate_request(revision['baseline'],resolver,require_objects=require_objects)
     payload=ordinary
-    require(payload['schema']=='strep-studio-native-scene-v1','Studio native scene schema required')
+    require(payload['schema'] in ('strep-studio-native-scene-v1','strep-studio-native-scene-v2'),'Studio native scene schema required')
     spec=copy.deepcopy(payload['scene'])
     fields(spec,('schema','duration_s','actors','objects','contacts'),'native scene')
     require(isinstance(spec['actors'],dict) and 1<=len(spec['actors'])<=8,'Choose 1-8 actors')
@@ -64,6 +64,10 @@ def validate_request(payload,resolver,*,require_objects=False):
         sources[name]=dict(url=url,path=str(path),sha256=entry['sha256'])
         entry['glb']=str(path)
     scene=SceneContacts(spec,ROOT)
+    if payload['schema']=='strep-studio-native-scene-v2':
+        from native_scene_export_speed import policy as export_policy
+        from native_engine_rotation_speed import plan as speed_plan
+        speed_plan(scene,export_policy(payload,'draft'),'draft')
     if require_objects:require(bool(scene.objects),'This asset builder requires at least one scene object; character-only contact previews are supported separately')
     fields(payload['geometry'],('clock','limits','planes'),'declared scene geometry')
     geometry=dict(schema='strep-native-scene-geometry-v1',contacts_sha256='draft',**copy.deepcopy(payload['geometry']))
@@ -79,6 +83,9 @@ def validate_request(payload,resolver,*,require_objects=False):
 
 def method_names(payload,*,corrections=None):
     result=METHODS if payload['scene']['objects'] else METHODS+('verify_native_actor_scene_engine.py',)
+    if payload['schema']=='strep-studio-native-scene-v2':
+        from native_scene_export_speed import methods as speed_export_methods
+        result=tuple(dict.fromkeys(result+speed_export_methods()))
     if corrections is None:
         from native_correction_lineage import has_origins
         corrections=has_origins(payload)
@@ -160,14 +167,21 @@ def prepare(payload,folder,resolver):
         edit_path=None
         if edit is not None:
             edit['contacts_sha256']=digest;edit_path=folder/'object-edit.json';save(edit_path,edit)
-        plan(folder/'contacts.json',folder/'geometry-policy.json',engine,folder/'recipe.json',edit_path)
+        speed_path=None
+        if payload['schema']=='strep-studio-native-scene-v2':
+            from native_scene_export_speed import policy as export_policy
+            speed_path=folder/'rotation-speed-policy.json';save(speed_path,export_policy(payload,digest))
+        plan(folder/'contacts.json',folder/'geometry-policy.json',engine,folder/'recipe.json',edit_path,
+            **({'rotation_speed_policy':speed_path} if speed_path is not None else {}))
         names=['draft.json','contacts.json','geometry-policy.json','recipe.json']+(['object-edit.json'] if edit is not None else [])
+        if speed_path is not None:names.append('rotation-speed-policy.json')
         prepared=dict(schema='strep-studio-native-scene-prepared-v1',sources=sources,
             correction_lineage=correction_lineage,transition_lineage=transition_lineage,transition_correction_lineage=transition_correction_lineage,
             contact_revision_requested='contact_revision' in payload,
             files_sha256={n:sha256(folder/n) for n in names},implementation_sha256=methods,
             engine_path=str(engine),engine_sha256=sha256(engine),original_selected=True,quality_approved=False,
             training_admitted=False,release_approved=False,at=now())
+        if speed_path is not None:prepared['rotation_speed_requested']=True
         save(folder/'prepared.json',prepared);frozen(folder)
         save(folder/'pipeline.json',dict(status='starting',original_selected=True,quality_approved=False));return prepared
     except Exception as exc:
@@ -203,6 +217,9 @@ def frozen(folder,*,current_methods=True):
         require(sha256(folder/'implementation'/n)==h,'Scene method archive changed')
         if current_methods:require(sha256(SCRIPT_ROOT/n)==h,'Scene implementation changed')
     expected={'draft.json','contacts.json','geometry-policy.json','recipe.json'}
+    speed_requested=draft['schema']=='strep-studio-native-scene-v2'
+    require(p.get('rotation_speed_requested',False)==speed_requested,'Scene export-speed selection changed')
+    if speed_requested:expected.add('rotation-speed-policy.json')
     edit=draft['object_edit']
     from native_contact_revision import validate
     validate(draft)
@@ -218,6 +235,9 @@ def frozen(folder,*,current_methods=True):
         require(sha256(s['path'])==sha256(saved)==s['sha256'],'Original or saved scene actor changed')
         spec['actors'][name]['glb']=str(saved)
     require(read(folder/'contacts.json')==spec,'Scene snapshot changes authoring inputs')
+    if speed_requested:
+        from native_scene_export_speed import policy as export_policy
+        require(read(folder/'rotation-speed-policy.json')==export_policy(draft,sha256(folder/'contacts.json')),'Scene export speed limits changed')
     expected_geometry=dict(schema='strep-native-scene-geometry-v1',contacts_sha256=sha256(folder/'contacts.json'),**draft['geometry'])
     require(read(folder/'geometry-policy.json')==expected_geometry,'Scene geometry changes authoring limits')
     if edit is not None:require(read(folder/'object-edit.json')==dict(contacts_sha256=sha256(folder/'contacts.json'),**edit),'Scene object edit changes authoring bounds')
@@ -225,12 +245,14 @@ def frozen(folder,*,current_methods=True):
     require(paths['contacts']==folder/'contacts.json' and paths['geometry_policy']==folder/'geometry-policy.json'
         and paths['engine']==Path(p['engine_path']) and sha256(paths['engine'])==p['engine_sha256'],'Scene recipe selects different inputs')
     require(paths.get('object_edit')==(folder/'object-edit.json' if edit is not None else None),'Scene edit selection changed')
+    require(paths.get('rotation_speed_policy')==(folder/'rotation-speed-policy.json' if speed_requested else None),'Scene export-speed recipe selection changed')
     return p
 
 
 def download_names(prepared):
     actors_only='verify_native_actor_scene_engine.py' in prepared['implementation_sha256']
-    return ({'transition-correction-lineage/record.json'} if prepared.get('transition_correction_lineage') is not None else set()) | ({'transition-lineage/record.json'} if prepared.get('transition_lineage') is not None else set()) | ({'correction-lineage/record.json'} if prepared.get('correction_lineage') is not None else set()) | ({'exports/contact-revision.json'} if prepared.get('contact_revision_requested',False) else set()) | {f'input/actor-{i}.glb' for i in range(len(prepared['sources']))} | {
+    speed={'exports/rotation-speed-policy.json','authoring/rotation-speed-engine/result.json','authoring/rotation-speed-replay/result.json'} if prepared.get('rotation_speed_requested',False) else set()
+    return speed | ({'transition-correction-lineage/record.json'} if prepared.get('transition_correction_lineage') is not None else set()) | ({'transition-lineage/record.json'} if prepared.get('transition_lineage') is not None else set()) | ({'correction-lineage/record.json'} if prepared.get('correction_lineage') is not None else set()) | ({'exports/contact-revision.json'} if prepared.get('contact_revision_requested',False) else set()) | {f'input/actor-{i}.glb' for i in range(len(prepared['sources']))} | {
         'authoring/result.json','authoring/replay/result.json','assets.zip'} | ({'authoring/actors-engine/geometry.json'} if actors_only else {
         'authoring/objects-common/objects.glb','authoring/objects-engine/native-animation.res','authoring/combined-engine/geometry.json'}) | {
         f'authoring/actors-engine/{name}-animation.res' for name in prepared['sources']}
@@ -249,6 +271,21 @@ def package(folder,prepared,result):
     policy=read(folder/'authoring/objects-common/common-policy.json' if scene['objects'] else folder/'geometry-policy.json');policy['contacts_sha256']=sha256(exports/'scene.json')
     save(exports/'geometry-policy.json',policy)
     files={'scene.json':exports/'scene.json','geometry-policy.json':exports/'geometry-policy.json'}
+    if prepared.get('rotation_speed_requested',False):
+        from native_engine_rotation_speed import verify as verify_speed
+        raw=Path(result['artifacts']['active_contacts']);speed_policy=Path(result['artifacts']['rotation_speed_policy'])
+        measured=verify_speed(raw,speed_policy,folder/'authoring/rotation-speed-engine')
+        speed_request=read(folder/'authoring/rotation-speed-engine/request.json')
+        expected_resources={name:str(folder/'authoring/actors-engine'/(name+'-animation.res')) for name in measured['capture_mapping']}
+        require(speed_request['animation_resource_sources']==expected_resources,'Speed audit must use the exact exported actor resources')
+        require(measured['saved_animation_resources_used'] is True
+            and measured['all_sampled_conditions_pass'] is result['rotation_speed_sampled_conditions_pass'],'Scene export speed decision changed')
+        portable=read(speed_policy);portable['contacts_sha256']=sha256(exports/'scene.json')
+        save(exports/'rotation-speed-policy.json',portable)
+        files.update({'rotation-speed-policy.json':exports/'rotation-speed-policy.json',
+            'rotation-speed/result.json':folder/'authoring/rotation-speed-engine/result.json',
+            'rotation-speed/replay.json':folder/'authoring/rotation-speed-replay/result.json',
+            'rotation-speed/observations.npz':folder/'authoring/rotation-speed-engine/observations.npz'})
     if scene['objects']:
         files.update({'objects.glb':folder/'authoring/objects-common/objects.glb',
             'animations/objects.res':folder/'authoring/objects-engine/native-animation.res'})
@@ -315,6 +352,11 @@ def run(folder):
         for name in prepared['sources']:
             relative=f'authoring/actors-engine/{name}-animation.res';outputs[relative]=dict(label=f'Godot character animation: {name}',sha256=sha256(folder/relative))
         outputs['assets.zip']=dict(label='Scene asset package',sha256=package(folder,prepared,result))
+        if prepared.get('rotation_speed_requested',False):
+            for relative,label in [('exports/rotation-speed-policy.json','Export turning-speed limits'),
+                ('authoring/rotation-speed-engine/result.json','Imported export-speed measurements'),
+                ('authoring/rotation-speed-replay/result.json','Export-speed replay')]:
+                outputs[relative]=dict(label=label,sha256=sha256(folder/relative))
         if prepared.get('contact_revision_requested',False):
             outputs['exports/contact-revision.json']=dict(label='Original and revised contact intent',sha256=sha256(folder/'exports/contact-revision.json'))
         if prepared.get('correction_lineage') is not None:
@@ -395,7 +437,33 @@ def manifest(job):
         for path,digest in replay['producer_files_sha256'].items():require(sha256(path)==digest,'Actor-only replay source changed')
     require(r['samples']==combined['samples']==replay['samples'] and r['source_contact_conditions_pass'] is read(folder/'authoring/source-contacts/result.json')['passed'],'Scene source report differs')
     if r['object_edit_requested']:require(r['object_edit_conditions_pass'] is read(folder/'authoring/object-edit/result.json')['sampled_constraints_pass'],'Scene object edit decision differs')
-    passed=bool(combined['all_sampled_conditions_pass'] and (r['object_edit_conditions_pass'] is None or r['object_edit_conditions_pass']))
+    speed_requested=prepared.get('rotation_speed_requested',False)
+    if speed_requested:
+        from native_engine_rotation_speed import verify as verify_speed
+        speed_policy=folder/'authoring/active-rotation-speed-policy.json'
+        require(r['rotation_speed_requested'] is True and Path(r['artifacts']['rotation_speed_policy'])==speed_policy
+            and r['artifacts']['rotation_speed_engine']=='rotation-speed-engine'
+            and r['artifacts']['rotation_speed_replay']=='rotation-speed-replay','Scene export-speed artifacts changed')
+        expected=read(folder/'rotation-speed-policy.json');expected['contacts_sha256']=sha256(r['artifacts']['active_contacts'])
+        require(read(speed_policy)==expected,'Active scene speed limits changed')
+        measured=verify_speed(r['artifacts']['active_contacts'],speed_policy,folder/'authoring/rotation-speed-engine')
+        speed_request=read(folder/'authoring/rotation-speed-engine/request.json')
+        expected_resources={name:str(folder/'authoring/actors-engine'/(name+'-animation.res')) for name in measured['capture_mapping']}
+        require(speed_request['animation_resource_sources']==expected_resources,'Speed audit must use the exact exported actor resources')
+        proof=read(folder/'authoring/rotation-speed-replay/result.json')
+        require(sha256(folder/'authoring/rotation-speed-engine/result.json')==r['rotation_speed_result_sha256']==proof['source_result_sha256']
+            and sha256(folder/'authoring/rotation-speed-replay/result.json')==r['rotation_speed_replay_sha256']
+            and proof['status']=='complete' and proof['all_replayed_observations_exact'] is True
+            and proof['saved_animation_resources_used'] is measured['saved_animation_resources_used'] is True
+            and proof['recorded_sampled_conditions_pass'] is measured['all_sampled_conditions_pass']
+            and r['rotation_speed_sampled_conditions_pass'] is measured['all_sampled_conditions_pass']
+            and r['rotation_speed_conditions_pass'] is measured['rotation_speed_conditions_pass']
+            and r['rotation_speed_pose_conditions_pass'] is measured['source_pose_conditions_pass'],'Scene speed replay or decision changed')
+        data.update(rotation_speed_requested=True,rotation_speed_conditions_pass=measured['rotation_speed_conditions_pass'],
+            rotation_speed_sampled_conditions_pass=measured['all_sampled_conditions_pass'])
+    else:require('rotation_speed_requested' not in r,'Unexpected export-speed conditions')
+    passed=bool(combined['all_sampled_conditions_pass'] and (r['object_edit_conditions_pass'] is None or r['object_edit_conditions_pass'])
+        and (not speed_requested or r['rotation_speed_sampled_conditions_pass']))
     require(r['sampled_conditions_pass'] is passed,'Scene sampled decision differs')
     require(set(c['downloads'])==download_names(prepared),'Complete fixed scene download population required')
     for relative,entry in c['downloads'].items():

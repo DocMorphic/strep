@@ -2,11 +2,14 @@
 from contextlib import contextmanager
 import errno
 import os
+import threading
 if os.name == 'nt':
     import msvcrt
 else:
     import fcntl
 from strep import ROOT
+
+_owner = threading.local()
 
 
 def _lock(stream, acquire):
@@ -26,8 +29,20 @@ def worker_lock():
         except OSError as exc:
             if exc.errno not in (errno.EACCES, errno.EAGAIN, errno.EDEADLK):raise
             raise RuntimeError('Another local action job is running') from exc
+        _owner.path = path.resolve()
         try:yield
-        finally:_lock(stream, False)
+        finally:
+            _owner.path = None
+            _lock(stream, False)
+
+
+@contextmanager
+def worker_verification_lock():
+    """Reuse only this thread's live lock for nested read-only verification."""
+    if getattr(_owner, 'path', None) == (ROOT/'.cache/action-worker.lock').resolve():
+        yield
+    else:
+        with worker_lock():yield
 
 
 def worker_busy():

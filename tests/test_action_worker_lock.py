@@ -95,3 +95,21 @@ def test_filesystem_open_failure_is_not_busy(root):
     (root / '.cache').write_text('not a directory')
     with pytest.raises(OSError):
         locks.worker_busy()
+
+
+def test_nested_verification_reuses_only_owning_thread(root):
+    from concurrent.futures import ThreadPoolExecutor
+    with locks.worker_lock():
+        with locks.worker_verification_lock():
+            assert locks.worker_busy()
+            with pytest.raises(RuntimeError, match='Another local action job'):
+                with locks.worker_lock():pass
+            def other_thread():
+                with pytest.raises(RuntimeError, match='Another local action job'):
+                    with locks.worker_verification_lock():pass
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                executor.submit(other_thread).result(timeout=10)
+    assert not locks.worker_busy()
+    with locks.worker_verification_lock():
+        assert locks.worker_busy()
+    assert not locks.worker_busy()

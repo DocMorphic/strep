@@ -14,6 +14,13 @@ export function stagedScene(review){
      !review.downloads?.some(d=>d.url===actor.candidate_url&&d.sha256===actor.candidate_sha256))throw Error('Character proposal receipt is missing or changed.');
   draft.scene.actors[name].glb=actor.candidate_url;draft.scene.actors[name].sha256=actor.candidate_sha256;
  }
+ if(request.schema==='strep-studio-native-scene-fit-v2'){
+  if(!Array.isArray(request.rotation_speed_limits)||!request.rotation_speed_limits.length||request.rotation_speed_limits.length>64)throw Error('Complete export turning-speed limits are required.');
+  const merged=new Map((draft.rotation_speed_limits??[]).map(t=>[`${t.actor}:${t.node}`,clone(t)]));
+  for(const t of request.rotation_speed_limits){if(!draft.scene.actors[t.actor]||!Number.isInteger(t.node)||t.node<0||typeof t.maximum_degrees_per_second!=='number'||!Number.isFinite(t.maximum_degrees_per_second)||t.maximum_degrees_per_second<0)throw Error('Explicit character joint and finite nonnegative export speed required.');merged.set(`${t.actor}:${t.node}`,clone(t));}
+  draft.schema='strep-studio-native-scene-v2';draft.rotation_speed_limits=[...merged.values()];
+  if(draft.rotation_speed_limits.length>64)throw Error('At most 64 current export turning-speed limits are supported.');
+ }
  return draft;
 }
 export function createNativeSceneFitEditor({document=globalThis.document,api,post,getDraft,setDraft,download=saveJSON}={}){
@@ -44,7 +51,7 @@ export function createNativeSceneFitEditor({document=globalThis.document,api,pos
   if(response?.schema!=='strep-studio-native-scene-fit-catalog-v1'||!Number.isFinite(response.duration_s)||response.duration_s!==draft.scene.duration_s||key(Object.keys(response.actors??{}).sort())!==key(Object.keys(draft.scene.actors).sort()))throw Error('Invalid scene joint catalog.');
   for(const [name,a] of Object.entries(response.actors)){
    if(a.sha256!==draft.scene.actors[name].sha256||!Array.isArray(a.channels)||new Set(a.channels.map(c=>`${c.node}:${c.path}`)).size!==a.channels.length||a.channels.some(c=>!Number.isInteger(c.node)||c.node<0||!['rotation','translation'].includes(c.path)||typeof c.eligible!=='boolean'||typeof c.name!=='string'))throw Error('Scene joint catalog changed.');
-   if(catalog?.actors[name]?.sha256!==a.sha256){delete selections[name];delete speedLimits[name];}
+   if(catalog?.actors[name]?.sha256!==a.sha256){delete selections[name];delete speedLimits[name];for(const t of draft.rotation_speed_limits??[]){if(t.actor===name){speedLimits[name]??={};speedLimits[name][t.node]=t.maximum_degrees_per_second;}}}
   }
   for(const name of Object.keys(selections))if(!response.actors[name]){delete selections[name];delete speedLimits[name];}
   catalog=response;stamp=before;options('Actor',Object.keys(catalog.actors));drawActor();drawSelections();status('Select native joint channels and save explicit bounds for each character to edit.');

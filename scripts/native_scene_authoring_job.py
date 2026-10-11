@@ -22,8 +22,12 @@ METHODS=tuple(dict.fromkeys(FIT_METHODS+COMBINED_METHODS+('verify_native_object_
 DIGEST=re.compile(r'[0-9a-f]{64}')
 
 
-def method_names(scene):
-    return METHODS if scene.objects else METHODS+('verify_native_actor_scene_engine.py',)
+def method_names(scene,*,speed_policy=False):
+    result=METHODS if scene.objects else METHODS+('verify_native_actor_scene_engine.py',)
+    if speed_policy:
+        from native_scene_export_speed import methods
+        result=tuple(dict.fromkeys(result+methods()))
+    return result
 
 
 def require(condition, message):
@@ -36,10 +40,12 @@ def binding(path):
 
 def validated(recipe_path):
     recipe_path=Path(recipe_path).resolve(); value=read(recipe_path)
-    fields(value,('schema','contacts','geometry_policy','engine','object_edit'),'native scene job')
-    require(value['schema']=='strep-native-scene-authoring-job-v1','Unknown native scene job schema')
+    speed=value.get('schema')=='strep-native-scene-authoring-job-v2'
+    names=('contacts','geometry_policy','engine','object_edit')+(('rotation_speed_policy',) if speed else ())
+    fields(value,('schema',)+names,'native scene job')
+    require(value['schema'] in ('strep-native-scene-authoring-job-v1','strep-native-scene-authoring-job-v2'),'Unknown native scene job schema')
     paths={}; receipts={str(recipe_path):sha256(recipe_path)}
-    for name in ('contacts','geometry_policy','engine','object_edit'):
+    for name in names:
         entry=value[name]
         if name=='object_edit' and entry is None: continue
         fields(entry,('path','sha256'),'job input binding')
@@ -52,19 +58,27 @@ def validated(recipe_path):
     require(bool(scene.objects) or 'object_edit' not in paths,'Object edits require a declared object')
     policy_for(read(paths['geometry_policy']),scene,sha256(paths['contacts']))
     if 'object_edit' in paths:request_for(scene,read(paths['object_edit']),sha256(paths['contacts']))
+    if speed:
+        from native_engine_rotation_speed import plan as speed_plan
+        speed_plan(scene,read(paths['rotation_speed_policy']),sha256(paths['contacts']))
     receipts.update(scene.inputs)
     return value,paths,scene,receipts
 
 
-def plan(contacts,policy,engine,output,object_edit=None):
+def plan(contacts,policy,engine,output,object_edit=None,*,rotation_speed_policy=None):
     output=Path(output).resolve(); require(not output.exists(),'Fresh recipe path required')
     value=dict(schema='strep-native-scene-authoring-job-v1', contacts=binding(contacts),
         geometry_policy=binding(policy),engine=binding(engine),object_edit=None if object_edit is None else binding(object_edit))
+    if rotation_speed_policy is not None:
+        value.update(schema='strep-native-scene-authoring-job-v2',rotation_speed_policy=binding(rotation_speed_policy))
     # Validate in memory through the same checks before publishing a recipe.
     scene=SceneContacts(read(contacts),Path(contacts).resolve().parent)
     require(bool(scene.objects) or object_edit is None,'Object edits require a declared object')
     policy_for(read(policy),scene,sha256(contacts))
     if object_edit is not None:request_for(scene,read(object_edit),sha256(contacts))
+    if rotation_speed_policy is not None:
+        from native_engine_rotation_speed import plan as speed_plan
+        speed_plan(scene,read(rotation_speed_policy),sha256(contacts))
     scene.check_inputs(); output.parent.mkdir(parents=True,exist_ok=True); save(output,value)
     validated(output); return value
 
@@ -74,7 +88,8 @@ def run(recipe_path,output):
     require(not worker_busy(),'Another local study worker is active')
     recipe,paths,scene,receipts=validated(recipe_path)
     require(not any(Path(p).is_relative_to(output) for p in receipts),'Job output contains its own input')
-    methods={n:sha256(ROOT/'scripts'/n) for n in method_names(scene)}
+    speed_requested='rotation_speed_policy' in paths
+    methods={n:sha256(ROOT/'scripts'/n) for n in method_names(scene,speed_policy=speed_requested)}
     output.mkdir(parents=True); archive=output/'implementation'; snapshots=output/'input'; stages=[]; copies={}; derived={}
     save(output/'pipeline.json',dict(at=now(),status='processing',stage='input-snapshots',original_selected=True))
     try:
@@ -131,6 +146,21 @@ def run(recipe_path,output):
             common=policy
         execute('actors-engine',actor_run,contacts,output/'actors-engine',geometry_policy=common,
                 playback_mode='native-authoring',engine=paths['engine'])
+        speed=None;speed_policy_path=None
+        if speed_requested:
+            from native_engine_rotation_speed import run as speed_run,plan as speed_plan
+            from native_scene_export_speed import replay_export
+            value=read(paths['rotation_speed_policy']);value['contacts_sha256']=sha256(contacts)
+            speed_policy_path=output/'active-rotation-speed-policy.json';save(speed_policy_path,value)
+            derived[str(speed_policy_path)]=sha256(speed_policy_path)
+            active=SceneContacts(read(contacts),contacts.parent)
+            _,selected,_=speed_plan(active,value,sha256(contacts))
+            resources={name:output/'actors-engine'/(name+'-animation.res') for name in selected}
+            produced=read(output/'actors-engine/result.json')['animation_resources_sha256']
+            require(all(sha256(p)==produced[name] for name,p in resources.items()),'Selected export resource differs from actor producer')
+            speed=execute('rotation-speed-engine',speed_run,contacts,speed_policy_path,output/'rotation-speed-engine',
+                engine=paths['engine'],playback_mode='native-authoring',animation_resources=resources)
+            execute('rotation-speed-replay',replay_export,contacts,speed_policy_path,output/'rotation-speed-engine',output/'rotation-speed-replay')
         if scene.objects:
             combined=execute('combined-engine',combined_run,contacts,common,output/'actors-engine',output/'objects-engine',output/'combined-engine')
             replay=execute('replay',replay_run,contacts,common,output/'actors-engine',output/'objects-engine',output/'combined-engine',output/'replay')
@@ -143,7 +173,8 @@ def run(recipe_path,output):
         require(replay['recorded_sampled_conditions_pass'] is combined['all_sampled_conditions_pass'],'Replay decision differs')
         unchanged()
         # Completed jobs may contain failed numerical conditions. No automatic selection.
-        passed=bool(combined['all_sampled_conditions_pass'] and (fit is None or fit['sampled_constraints_pass']))
+        passed=bool(combined['all_sampled_conditions_pass'] and (fit is None or fit['sampled_constraints_pass'])
+            and (speed is None or speed['all_sampled_conditions_pass']))
         result=dict(at=now(),status='complete',schema='strep-native-scene-authoring-job-result-v1',
             recipe_sha256=sha256(recipe_path),inputs_sha256=receipts,derived_inputs_sha256=derived,source_snapshots=copies,implementation_sha256=methods,
             stages=stages,object_edit_requested=fit is not None,source_contact_conditions_pass=read(output/'source-contacts/result.json')['passed'],
@@ -155,6 +186,13 @@ def run(recipe_path,output):
             original_selected=True,studio_selection_changed=False,quality_approved=False,training_admitted=False,release_approved=False,
             gpu_render_checked=False,physics_verified=False,real_time_playback_verified=False,human_review_submitted=False,
             scope='Supplied native rigs and declared objects/partners, optional explicit two-grip bounded object edit, actual headless sampled import and saved replay. No prompt generation, automatic rig transfer, physical attachment, real-time playback or human-quality approval.')
+        if speed_requested:
+            result.update(rotation_speed_requested=True,rotation_speed_conditions_pass=speed['rotation_speed_conditions_pass'],
+                rotation_speed_pose_conditions_pass=speed['source_pose_conditions_pass'],
+                rotation_speed_sampled_conditions_pass=speed['all_sampled_conditions_pass'],
+                rotation_speed_result_sha256=sha256(output/'rotation-speed-engine/result.json'),
+                rotation_speed_replay_sha256=sha256(output/'rotation-speed-replay/result.json'))
+            result['artifacts'].update(rotation_speed_policy=str(speed_policy_path),rotation_speed_engine='rotation-speed-engine',rotation_speed_replay='rotation-speed-replay')
         save(output/'result.json',result);save(output/'pipeline.json',dict(at=now(),status='complete',completed_stages=stages,original_selected=True));return result
     except Exception as exc:
         save(output/'pipeline.json',dict(at=now(),status='failed',error=str(exc),completed_stages=stages,original_selected=True,
@@ -166,7 +204,8 @@ if __name__=='__main__':
     q=sub.add_parser('plan')
     for n in ('contacts','policy','engine','output'):q.add_argument(n,type=Path)
     q.add_argument('--object-edit',type=Path)
+    q.add_argument('--rotation-speed-policy',type=Path)
     q=sub.add_parser('run');q.add_argument('recipe',type=Path);q.add_argument('output',type=Path)
     a=p.parse_args()
-    if a.command=='plan':plan(a.contacts,a.policy,a.engine,a.output,a.object_edit)
+    if a.command=='plan':plan(a.contacts,a.policy,a.engine,a.output,a.object_edit,rotation_speed_policy=a.rotation_speed_policy)
     else:run(a.recipe,a.output)

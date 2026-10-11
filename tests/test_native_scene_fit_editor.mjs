@@ -73,6 +73,11 @@ speedInput.value='';await el('SaveActor').onclick();assert.equal(editor.request(
 speedInput.value='0';await el('SaveActor').onclick();assert.equal(editor.request().rotation_speed_limits[0].maximum_degrees_per_second,0);
 speedInput.value='120';await el('SaveActor').onclick();posted=editor.request();review=makeReview();review.rotation_speed_conditions_pass=true;
 assert.deepEqual(stagedScene(review).scene.actors.A.sha256,'b'.repeat(64));
+assert.equal(stagedScene(review).schema,'strep-studio-native-scene-v2');
+assert.deepEqual(stagedScene(review).rotation_speed_limits,posted.rotation_speed_limits);
+const inherited=structuredClone(review);inherited.authoring_request.draft.schema='strep-studio-native-scene-v2';
+inherited.authoring_request.draft.rotation_speed_limits=[{actor:'A',node:0,maximum_degrees_per_second:5},{actor:'B',node:0,maximum_degrees_per_second:0}];
+assert.deepEqual(stagedScene(inherited).rotation_speed_limits,[{actor:'A',node:0,maximum_degrees_per_second:120},{actor:'B',node:0,maximum_degrees_per_second:0}]);
 for(const pass of [false,undefined,'true']){const failed=structuredClone(review);failed.rotation_speed_conditions_pass=pass;assert.throws(()=>stagedScene(failed),/turning-speed/);}
 el('Resume').value='job1';await el('LoadResume').onclick();assert.deepEqual(editor.request().rotation_speed_limits,posted.rotation_speed_limits);
 assert.equal(el('Tracks').children[0].children[4].value,120);

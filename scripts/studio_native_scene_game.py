@@ -51,9 +51,12 @@ def source(job):
     return folder,manifest,spec,scene,contacts,policy,times
 
 
-def method_names(scene,*,corrections=False,transitions=False,transition_corrections=False,speed_corrections=False):
+def method_names(scene,*,corrections=False,transitions=False,transition_corrections=False,speed_corrections=False,speed_export=False):
     require(not speed_corrections or corrections,'Speed history requires correction lineage')
     result=METHODS if scene.objects else METHODS+('verify_native_actor_scene_engine.py',)
+    if speed_export:
+        from native_scene_export_speed import methods
+        result=tuple(dict.fromkeys(result+methods()))
     if corrections:
         from studio_native_scene_fit import METHODS as CORRECTION_METHODS
         result=tuple(dict.fromkeys(result+CORRECTION_METHODS+('native_correction_lineage.py',)))
@@ -71,10 +74,14 @@ def method_names(scene,*,corrections=False,transitions=False,transition_correcti
 
 def source_method_names(scene,folder):
     prepared=read(Path(folder)/'prepared.json')
+    history=False
+    if prepared.get('correction_lineage') is not None:
+        record=read(Path(folder)/'correction-lineage/record.json')
+        history=any('rotation_speed_policy' in job for job in record['jobs'].values())
     return method_names(scene,corrections=prepared.get('correction_lineage') is not None,
         transitions=prepared.get('transition_lineage') is not None,
         transition_corrections=prepared.get('transition_correction_lineage') is not None,
-        speed_corrections='native_rotation_speed_policy.py' in prepared['implementation_sha256'])
+        speed_corrections=history,speed_export=prepared.get('rotation_speed_requested',False))
 
 
 def measured_contacts(folder, scene):

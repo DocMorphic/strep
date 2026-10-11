@@ -2,6 +2,7 @@ extends SceneTree
 const NativeClock = preload("res://native_engine_clock.gd")
 const NativeTracks = preload("res://native_godot_tracks.gd")
 const NativePreview = preload("res://native_godot_preview.gd")
+const SavedResource = preload("res://native_godot_speed_resource.gd")
 
 func matrix(value: Transform3D) -> Array:
 	return [[value.basis.x.x, value.basis.x.y, value.basis.x.z],
@@ -63,7 +64,11 @@ func audit() -> void:
 		var player: AnimationPlayer = players[0]
 		var skeleton: Skeleton3D = skeletons[0]
 		if request.playback_mode == "native-authoring":
-			if NativeTracks.install(player, skeleton, item.native_payload, item.animation_output) != OK:
+			var code: Error
+			if item.has("animation_input"):
+				code = SavedResource.install(player, skeleton, item.native_payload, item.animation_input)
+			else: code = NativeTracks.install(player, skeleton, item.native_payload, item.animation_output)
+			if code != OK:
 				fail("Native speed resource failed")
 				return
 		var selected := ""

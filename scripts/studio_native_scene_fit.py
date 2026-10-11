@@ -34,6 +34,9 @@ def method_population(payload,*,fitter=False):
     if payload.get('schema')=='strep-studio-native-scene-fit-v2':
         from native_rotation_speed_policy import METHODS as SPEED_METHODS
         names.update(SPEED_METHODS)
+    if not fitter and payload.get('draft',{}).get('schema')=='strep-studio-native-scene-v2':
+        from native_scene_export_speed import methods
+        names.update(methods())
     return names
 
 

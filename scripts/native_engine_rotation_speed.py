@@ -10,7 +10,7 @@ import subprocess
 import numpy as np
 from scipy.spatial.transform import Rotation
 from threadpoolctl import threadpool_limits
-from action_worker_lock import worker_lock
+from action_worker_lock import worker_lock, worker_verification_lock
 from strep import ROOT, read, save, sha256
 from native_scene_contacts import SceneContacts, METHODS as CONTACT_METHODS
 from native_rotation_speed_policy import limits_for, METHODS as SPEED_METHODS
@@ -18,7 +18,7 @@ from native_engine_clock import clock_wire, check_clock_wire, clock_echo_matches
 from native_godot_payload import payload
 
 SCRIPTS=('godot_native_rotation_speed.gd','native_engine_clock.gd',
-         'native_godot_tracks.gd','native_godot_preview.gd')
+         'native_godot_tracks.gd','native_godot_preview.gd','native_godot_speed_resource.gd')
 METHODS=tuple(dict.fromkeys(CONTACT_METHODS+SPEED_METHODS+SCRIPTS+(
     'native_engine_rotation_speed.py','native_engine_clock.py','native_godot_payload.py',
     'action_worker_lock.py')))
@@ -155,7 +155,7 @@ def audit(scene,policy,digest,request,actual):
     return result,arrays
 
 
-def run(contacts,policy_path,output,*,engine,playback_mode='import',import_bake_fps=30):
+def run(contacts,policy_path,output,*,engine,playback_mode='import',import_bake_fps=30,animation_resources=None):
     fps=bake_rate(import_bake_fps,playback_mode)
     contacts,policy_path,output,engine=[Path(p).resolve() for p in (contacts,policy_path,output,engine)]
     if output.exists():raise FileExistsError(output)
@@ -163,6 +163,12 @@ def run(contacts,policy_path,output,*,engine,playback_mode='import',import_bake_
         scene=SceneContacts(read(contacts),contacts.parent);digest=sha256(contacts);policy=read(policy_path)
         tracks,captures,times=plan(scene,policy,digest)
         bindings={str(contacts):digest,str(policy_path):sha256(policy_path),**scene.inputs}
+        resource_sources={}
+        if animation_resources is not None:
+            if playback_mode!='native-authoring' or not isinstance(animation_resources,dict) or set(animation_resources)!=set(captures):
+                raise ValueError('One exact saved resource per selected speed actor in native-authoring mode required')
+            resource_sources={name:str(Path(path).resolve()) for name,path in animation_resources.items()}
+            bindings.update({path:sha256(path) for path in resource_sources.values()})
         methods={n:sha256(ROOT/'scripts'/n) for n in METHODS}
         output.mkdir(parents=True);project=output/'project';project.mkdir();archive=output/'implementation';archive.mkdir()
         for n in METHODS:shutil.copyfile(ROOT/'scripts'/n,archive/n)
@@ -177,12 +183,14 @@ def run(contacts,policy_path,output,*,engine,playback_mode='import',import_bake_
             case=dict(id=name,path=str(output/snapshots[str(source)]['path']),animation_index=actor['animation_index'],
                 capture_nodes=nodes,source_node_count=len(actor['rig'].document['nodes']))
             if playback_mode=='native-authoring':
-                case.update(native_payload=payload(actor['rig'],actor['sampler'],sha256(source)),
-                    animation_output=str(output/(name+'-animation.res')))
+                case['native_payload']=payload(actor['rig'],actor['sampler'],sha256(source))
+                if name in resource_sources:case['animation_input']=str(output/snapshots[resource_sources[name]]['path'])
+                else:case['animation_output']=str(output/(name+'-animation.res'))
             cases.append(case)
         request=dict(cases=cases,tracks=tracks,sample_times_s=times.tolist(),sample_clock=clock_wire(times),
             playback_mode=playback_mode,import_bake_fps=fps,inputs_sha256=bindings,
-            engine_path=str(engine),engine_sha256=sha256(engine),implementation_sha256=methods,source_snapshots=snapshots)
+            engine_path=str(engine),engine_sha256=sha256(engine),implementation_sha256=methods,source_snapshots=snapshots,
+            animation_resource_sources=resource_sources)
         save(output/'request.json',request)
         (project/'project.godot').write_text('config_version=5\n[application]\nconfig/name="Strep imported speed audit"\n[rendering]\nrenderer/rendering_method="gl_compatibility"\n')
         save(output/'pipeline.json',dict(status='processing',**FLAGS))
@@ -194,7 +202,7 @@ def run(contacts,policy_path,output,*,engine,playback_mode='import',import_bake_
             if finished.returncode:raise ValueError('Imported speed capture failed; inspect engine.log')
             actual=read(output/'engine-output.json');result,arrays=audit(scene,policy,digest,request,actual)
             np.savez_compressed(output/'observations.npz',**arrays)
-            resources={} if playback_mode=='import' else {c['id']:sha256(c['animation_output']) for c in cases}
+            resources=resource_digests(request)
             receipt=dict(returncode=finished.returncode,request_sha256=sha256(output/'request.json'),
                 engine_output_sha256=sha256(output/'engine-output.json'),engine_log_sha256=sha256(output/'engine.log'),
                 engine_executable_sha256=request['engine_sha256'],animation_resources_sha256=resources,
@@ -202,12 +210,16 @@ def run(contacts,policy_path,output,*,engine,playback_mode='import',import_bake_
             save(output/'raw-engine-receipt.json',receipt)
             result.update(status='complete',engine=actual['engine'],playback_mode=playback_mode,import_bake_fps=fps,
                 request_sha256=receipt['request_sha256'],raw_engine_receipt_sha256=sha256(output/'raw-engine-receipt.json'),
-                observations_sha256=sha256(output/'observations.npz'))
+                observations_sha256=sha256(output/'observations.npz'),saved_animation_resources_used=bool(resource_sources))
             # Recheck every original, copied input and executed/archived method.
             check_bindings(output,request,receipt)
             save(output/'result.json',result);save(output/'pipeline.json',dict(status='complete',**FLAGS));return result
         except Exception as exc:
             save(output/'pipeline.json',dict(status='failed',error=str(exc),**FLAGS));raise
+
+
+def resource_digests(request):
+    return {} if request['playback_mode']=='import' else {c['id']:sha256(c.get('animation_input',c.get('animation_output'))) for c in request['cases']}
 
 
 def check_bindings(folder,request,receipt):
@@ -227,13 +239,23 @@ def check_bindings(folder,request,receipt):
     for case in request['cases']:
         if case['path'] not in [str(folder/row['path']) for row in request['source_snapshots'].values()]:
             raise ValueError('Imported source is outside bound snapshots')
-    resources={} if request['playback_mode']=='import' else {c['id']:sha256(c['animation_output']) for c in request['cases']}
+    sources=request['animation_resource_sources']
+    if sources and (request['playback_mode']!='native-authoring' or set(sources)!={c['id'] for c in request['cases']}):
+        raise ValueError('Complete selected saved-resource population required')
+    for case in request['cases']:
+        if case['id'] in sources:
+            original=sources[case['id']]
+            if (original not in request['source_snapshots'] or 'animation_output' in case
+                    or case.get('animation_input')!=str(folder/request['source_snapshots'][original]['path'])):
+                raise ValueError('Saved speed resource differs from bound source snapshot')
+        elif 'animation_input' in case:raise ValueError('Unbound saved speed resource')
+    resources=resource_digests(request)
     if resources!=receipt['animation_resources_sha256']:raise ValueError('Imported animation resource changed')
 
 
 def verify(contacts,policy_path,folder):
     """Recompute from saved actual engine matrices, ignoring summary booleans."""
-    with worker_lock(),threadpool_limits(limits=1):
+    with worker_verification_lock(),threadpool_limits(limits=1):
         return replay(contacts,policy_path,folder)
 
 
@@ -256,13 +278,13 @@ def replay(contacts,policy_path,folder):
             raise ValueError('Selected imported actor differs from its bound source snapshot')
         if request['playback_mode']=='native-authoring':
             actor=scene.actors[case['id']]
-            if (case['animation_output']!=str(folder/(case['id']+'-animation.res'))
+            if (('animation_input' not in case and case['animation_output']!=str(folder/(case['id']+'-animation.res')))
                     or case['native_payload']!=payload(actor['rig'],actor['sampler'],sha256(source))):
                 raise ValueError('Native resource destination or complete source key payload changed')
     actual=read(folder/'engine-output.json');replayed,arrays=audit(scene,read(policy_path),sha256(contacts),request,actual)
     replayed.update(status='complete',engine=actual['engine'],playback_mode=request['playback_mode'],import_bake_fps=request['import_bake_fps'],
         request_sha256=sha256(folder/'request.json'),raw_engine_receipt_sha256=sha256(folder/'raw-engine-receipt.json'),
-        observations_sha256=sha256(folder/'observations.npz'))
+        observations_sha256=sha256(folder/'observations.npz'),saved_animation_resources_used=bool(request['animation_resource_sources']))
     if replayed!=result:raise ValueError('Imported speed result differs from fresh matrix replay')
     with np.load(folder/'observations.npz',allow_pickle=False) as stored:
         if set(stored.files)!=set(arrays):raise ValueError('Complete imported speed arrays required')
