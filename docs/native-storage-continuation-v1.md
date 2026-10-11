@@ -29,10 +29,18 @@ bounds and files changing during payload audit. All 47 and 28 recorded resource
 observations replay. The full source inventory adds this module: 468 Python
 modules and 42 Node suites, without a new full-inventory pass claim.
 
-A development surface trial is prepared under
-`reports/kenney-kick-stored-surface-v1`. It starts from the separately
-[replayed positional-storage repair](kenney-kick-position-storage-v1.md), keeps
-the original 72-control/cap epoch, and allows one surface-vector iteration with
-the same complete 2,017-time floor population. Its outcome must be recorded
-after terminal execution; the software checks do not establish floor repair,
-engine import, realism, human cleanup or any release capability.
+The [completed development surface trial](kenney-kick-stored-surface-v1.md)
+starts from the separately replayed native correction, preserving the original
+72-control/cap epoch and complete 2,017-time floor population. It accepts an
+export at fraction 1/256, but improves the peak by only 0.014255 mm and still
+fails floor geometry. Fresh stored/unrounded screening distinguishes seven
+storage-only rejections from the full fraction's two continuous failures.
+The largest continuous-feasible proposal now also has a separately repaired
+and freshly replayed native export, but its 47.600935-mm floor peak still fails.
+No floor, engine, realism or release approval follows.
+
+The [focused Windows/Linux workflow at `8d07889`](https://github.com/DocMorphic/strep/actions/runs/38183110085)
+passes all six jobs: **712 Python checks per OS** (645 contact/rig, 35 lineage,
+32 game packages), 23 subtests and the offline editor. The full source workflow
+at that revision remains in progress; the latest complete full-inventory result
+remains the earlier 466-module/42-Node run.
