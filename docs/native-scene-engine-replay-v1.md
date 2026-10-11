@@ -51,14 +51,15 @@ object pose passes. Maximum engine/native vertex error is
 element error is **0.009649050242221235**, above its **0.0001** limit.
 The imported geometry fails at **1,145 of 2,426 times**, with a worst upper
 penetration depth of **0.005062852406036762 m** against the original **0.005 m**
-limit. No threshold is relaxed to accept this import.
+limit. No threshold is relaxed to accept this import. Complete independent
+geometry arithmetic now confirms this failed decision, as detailed below.
 
 The completed native geometry and fresh force witnesses do not transfer these
 approvals to the engine import. The import output is retained at
 `reports/departure-rate-curve-v2/engine-import-v1`; its independently replayed
 resource trace contains 3,387 observations and a 722,001,920-byte peak process-tree
-RSS under the original 2,048 MiB plus 600 MiB reserve profile. Independent geometry
-arithmetic and native-authoring measurements remain separate pending work.
+RSS under the original 2,048 MiB plus 600 MiB reserve profile. Native-authoring
+measurements are running separately; no result is yet claimed for that mode.
 This one development fixture does not establish broader action, rig or object
 quality. All fourteen release capabilities remain unapproved.
 
@@ -87,8 +88,9 @@ its SVD/edge calculation and uses exact-input, 80-digit refinement where rounded
 edge distances are indistinguishable and the witnesses differ by more than the
 original comparison tolerance. This changes the calculation; it does not relax
 the witness, penetration or contact limits. All **33 focused numeric cases**
-pass, covering the recorded disagreement plus 32 synthetic triangles. Complete
-full-population replay of this revision is running and remains unproven.
+pass, covering the recorded disagreement plus 32 synthetic triangles. The complete
+full-population replay of this revision subsequently finishes, confirming the
+original failed geometry decision rather than accepting the animation.
 
 The failed runs, exact diagnostic inputs, high-precision calculation and numeric
 checks remain under `reports/central-hand-physical-v1`, respectively
@@ -104,3 +106,38 @@ binding defaults to 30 fps. The existing Strep import audit uses that default.
 Fixed-rate interpolation is a hypothesis for the larger measured pose drift,
 not an established causal attribution. Native-resource authoring preserves
 original LINEAR source keys and must still be measured on this complete fixture.
+
+## Complete independent import geometry replay
+
+`independent-departure-engine-import-geometry-v2.json` completes and binds the
+original engine/source/method files, stage prerequisites and entire geometry
+archive. It independently compares raw eight-influence sum/matmul skin arithmetic,
+reconstructs every triangle/object depth bracket and witness with SVD/edge queries,
+replays directed closed topology, positive volume and finite-ray object-center
+parity, verifies every numerical archive-array hash, and retains all sampled
+pass/fail decisions. Engine pose decoding and imported-skin correspondence are
+shared; triangle depth producer queries are not reused.
+
+The population is unchanged: **2,426 times, 18,056 vertices, 36,108 faces, two
+spheres, 175,196,016 triangle/object queries, 14,557 arrays and 7,007,860,048
+logical bytes**. Seventy-six ambiguous edge comparisons receive exact-input
+80-digit refinement. Maximum depth-bracket difference is
+**1.6653345369377348e-16 m** and maximum witness difference is
+**2.942091015256665e-14 m**, both below the unchanged **2e-12 m** comparison limit.
+The separately scoped signed-center diagnostic differs by at most
+**8.881784197001252e-16 m** under its existing 1e-9 m diagnostic limit.
+`sampled_geometry_pass` remains **false**. All 1,145 failed geometry times stay
+failed; the original engine drift, contact and pose failures remain unresolved.
+
+The replay guard completes in 743.484 seconds, with all 751 resource observations
+independently replayed and a 469,831,680-byte peak process-tree RSS. The original
+full-body resource profile remains intact. Proofs remain local under
+`reports/central-hand-physical-v1/independent-departure-engine-import-geometry-v2.json`
+and `departure-engine-import-independent-geometry-resource-v2.json`. The two
+failed earlier reference attempts remain immutable.
+
+Full native-resource authoring is now submitted at the same complete clock and
+geometry population under the same source/binary/prerequisite bindings. It must
+finish and be replayed before comparison; complete imported evidence does not
+certify that separate mode. No rendering, real-time events, physics, continuous
+collision, broader rig/action/interaction quality or release approval is inferred.

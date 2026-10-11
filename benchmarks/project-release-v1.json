@@ -2030,6 +2030,8 @@
       "status": "in_progress",
       "release_evidence": [],
       "development_evidence": [
+        "reports/central-hand-physical-v1/independent-departure-engine-import-geometry-v2.json",
+        "reports/central-hand-physical-v1/departure-engine-import-independent-geometry-resource-v2.json",
         "docs/native-scene-engine-replay-v1.md",
         "reports/departure-rate-curve-v2/engine-import-v1/result.json",
         "reports/departure-rate-curve-v2/engine-import-v1/geometry.json",
@@ -2376,6 +2378,8 @@
       "status": "incomplete",
       "release_evidence": [],
       "development_evidence": [
+        "reports/central-hand-physical-v1/independent-departure-engine-import-geometry-v2.json",
+        "reports/central-hand-physical-v1/departure-engine-import-independent-geometry-resource-v2.json",
         "docs/native-scene-engine-replay-v1.md",
         "reports/departure-rate-curve-v2/engine-import-v1/result.json",
         "reports/central-hand-physical-v1/general-departure-engine-import-replay-v1/result.json",
