@@ -53,6 +53,19 @@ def test_failed_geometry_and_changed_context_do_not_inherit_parent_approval(tmp_
     assert not row['quality_approved'] and not r['release_approved']
 
 
+def test_promoted_current_limits_preserve_context_but_do_not_rewrite_history(tmp_path,monkeypatch):
+    from native_scene_export_speed import promote
+    payload,_,_,draft=completed(tmp_path,monkeypatch)
+    staged=promote(draft,payload['rotation_speed_limits'])
+    record,_,_=lineage.plan(staged)
+    assert record['jobs']['speed']['correction_scene_context_preserved']
+    changed=copy.deepcopy(staged);changed['rotation_speed_limits'][0]['maximum_degrees_per_second']=11
+    record,_,_=lineage.plan(changed)
+    assert not record['jobs']['speed']['correction_scene_context_preserved']
+    assert record['jobs']['speed']['authored_rotation_speed_policy_sha256']==sha256(corrections.folder_for('speed')/'rotation-speed-policy.json')
+    assert not record['quality_approved']
+
+
 @pytest.mark.parametrize('fault',['policy','audit','preflight','lower-bounds','drop','extra','rebound-policy'])
 def test_speed_lineage_artifacts_cannot_be_changed_dropped_or_rebound(tmp_path,monkeypatch,fault):
     _,_,_,draft=completed(tmp_path,monkeypatch);folder=tmp_path/'portable';receipt=lineage.snapshot(draft,folder)

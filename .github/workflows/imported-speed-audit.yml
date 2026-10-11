@@ -21,6 +21,7 @@ on:
       - 'scripts/native_godot_*'
       - 'tests/test_native_engine_rotation_speed*'
       - 'tests/test_studio_scene_export_speed*'
+      - 'tests/test_native_rotation_speed_lineage.py'
       - 'tests/test_action_worker_lock.py'
       - 'tests/test_native_scene*editor.mjs'
       - '.github/workflows/imported-speed-audit.yml'
@@ -100,6 +101,7 @@ jobs:
           tests/test_studio_native_scene.py
           tests/test_native_contact_revision.py
           tests/test_action_worker_lock.py
+          tests/test_native_rotation_speed_lineage.py::test_promoted_current_limits_preserve_context_but_do_not_rewrite_history
       - name: Retain generated-fixture inputs and actual engine observations
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
