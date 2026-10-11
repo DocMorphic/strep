@@ -7,8 +7,10 @@ fresh independent contact/force checks at all 59 assessed samples. Native-author
 engine production passes all sampled conditions; separate glTF import fails pose,
 skin, contact and geometry screens, including 12 of 2,426 geometry times. Native
 observation and independent complete-geometry replay also pass; independent import
-replay independently confirms the import failure. Actual 60/120/240 FPS comparisons
-are queued serially, with 60 FPS now running. The [editing floor diagnostic](prompt-edit-floor-regions-v2.md)
+replay independently confirms the import failure. The completed 60 FPS comparison
+passes independently replayed geometry but still fails pose, skin and contact
+fidelity; peak vertex error is 1.683 mm against 0.10 mm. The 120 FPS comparison is
+running, with 240 FPS queued. The [editing floor diagnostic](prompt-edit-floor-regions-v2.md)
 passes 15 focused tests; all five retained takes still fail, with protected source
 violations distinguished from newly failed editable frames. Held-out generalization and animator quality are still
 unproven. A fresh release inventory retains 14 capabilities without release

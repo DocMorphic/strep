@@ -316,8 +316,9 @@ The new method changes only bake-rate transport and its evidence bindings.
 Original clips, meshes, skins, actor/object placements, contact/geometry clocks
 and acceptance limits remain unchanged. Earlier v10 source snapshots and proof
 receipts remain immutable; this is a new method version. The planned actual
-60/120/240 FPS comparisons are now queued serially under a fresh v11 plan.
-The 60 FPS worker has started; no new fidelity result is available yet. Each
+60/120/240 FPS comparisons run serially under a fresh v11 plan. The 60 FPS
+production and independent replays have completed; its combined fidelity
+decision still fails. The 120 FPS worker is running, with 240 FPS queued. Each
 gets a fresh guarded engine
 run, recorded-observation replay and independent complete-geometry replay;
 retain failed flags and all attempts. No default setting or release gate is
@@ -334,3 +335,40 @@ conversion after all rate trials and replays complete. It extracts only the
 character FBX, four PNG skins and license, excluding the bundled animations.
 Strict rig intake keeps scale/skin rejection visible; conversion alone does
 not demonstrate retargeting, geometry equivalence or held-out generalization.
+
+## Completed 60 FPS comparison
+
+The unchanged development clip and all 2,426 original query times now have
+completed 60 FPS import production, exact recorded-observation replay and
+independent complete geometry replay. The production resource record
+replays 2,075 observations; the combined replay resource record replays 770.
+
+| Path | Peak vertex error (mm) | Maximum penetration bound (mm) | Failed geometry times | Combined sampled decision |
+| --- | ---: | ---: | ---: | --- |
+| Native authoring | 0.095010 | 4.950069 | 0 | Pass |
+| glTF import, 30 FPS | 2.073451 | 5.001477 | 12 | Fail |
+| glTF import, 60 FPS | 1.682823 | 4.956791 | 0 | Fail |
+
+The original skin-position limit is 0.10 mm and geometry limit is 5 mm.
+At 60 FPS, geometry and object poses pass; actor poses, skin positions and
+contact screens fail. Independent replay retains every decision. Its
+175,196,016 triangle/object queries, 14,557 arrays and 7,007,860,048 logical
+bytes reproduce completely. Maximum depth-bracket reconstruction error
+is 2.220446049250313e-16 m and closest-witness error is
+3.8191672047105385e-14 m, below the original 2e-12 m comparison tolerance;
+58 edge-distance ties receive the existing 80-digit refinement.
+
+This rate change improves these observed metrics on one retained clip.
+It does not resolve overall import fidelity, prove all drift mechanisms,
+or justify changing defaults or release limits. Complete 120/240 FPS
+comparisons remain pending. Broad actions, independent rigs, objects and
+partners, dynamics, human ratings and timed cleanup remain required.
+
+After the rate sequence, the Kenney candidate is queued for conversion,
+strict intake and a seven-motion transfer comparison using preserved
+seed-77 jump/land, crawl, dance, wave, kick, get-up and run/roll/stand clips.
+One unchanged profile applies across cases. A separately queued replay
+checks all transferred keys, alternate CPU skin arithmetic, original
+target payload preservation, root sidecars and floor diagnostics. These
+studies have not executed; no new generation, held-out or quality claim
+follows from their preparation.
