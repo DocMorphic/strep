@@ -1,6 +1,8 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_static_prop_asset.py",
+    "tests/test_studio_props.py",
     "tests/test_native_scene_bake_rate.py",
     "tests/test_edit_floor_regions.py",
     "tests/test_native_engine_skin_view.py",
