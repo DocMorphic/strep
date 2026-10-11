@@ -20,9 +20,16 @@ def test_actual_studio_build_gates_and_packages_exact_export_resource(tmp_path,m
     source=source_folder/'source.glb';url='/files/rig-jobs/input/source.glb';spec['actors']['A']['glb']=url
     engine=tmp_path/'.cache/godot/4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe';engine.parent.mkdir(parents=True)
     shutil.copyfile(executable,engine)
+    if os.name=='nt':
+        # The console launcher delegates to the adjacent official executable.
+        companion=Path(executable).with_name('Godot_v4.7.2-stable_win64.exe')
+        assert companion.is_file()
+        copied=engine.with_name(companion.name);shutil.copyfile(companion,copied)
+        assert sha256(copied)==sha256(companion)
     if os.name!='nt':engine.chmod(0o755)
     draft=dict(schema='strep-studio-native-scene-v2',scene=spec,geometry=dict(clock=dict(mode='explicit',times_s=[0.,1.,2.]),
-        limits=dict(penetration_m=.005,depth_resolution_m=1e-6,surface_tolerance_m=1e-8),planes={}),object_edit=None,
+        limits=dict(penetration_m=.005,depth_resolution_m=1e-6,surface_tolerance_m=1e-8),
+        planes=dict(floor=dict(normal_world=[0,1,0],offset_m=0))),object_edit=None,
         rotation_speed_limits=[dict(actor='A',node=0,maximum_degrees_per_second=maximum)])
     folder=studio.folder_for('scene');studio.prepare(draft,folder,lambda candidate:source if candidate==url else None)
     try:studio.run(folder)
@@ -51,4 +58,10 @@ def test_actual_studio_build_gates_and_packages_exact_export_resource(tmp_path,m
         assert json.loads(package.read('rotation-speed-policy.json'))==exported
         assert hashlib.sha256(package.read('animations/A.res')).hexdigest()==raw['animation_resources_sha256']['A']
         assert json.loads(package.read('package.json'))['sampled_scene_conditions_pass'] is (maximum==200)
+    original_resource=final_resource.read_bytes()
+    try:
+        final_resource.write_bytes(original_resource+b'changed exported resource')
+        with pytest.raises(ValueError):studio.manifest('scene')
+        with pytest.raises(ValueError):game.manifest('game')
+    finally:final_resource.write_bytes(original_resource)
     print('ACTUAL_STUDIO_EXPORT_SPEED',maximum,speed['tracks'][0]['maximum_observed_degrees_per_second'],review['sampled_conditions_pass'],game_review['scene_sampled_conditions_pass'])

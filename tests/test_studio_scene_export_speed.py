@@ -100,6 +100,7 @@ def test_object_edit_rebinds_limits_and_preserves_speed_failures(tmp_path,monkey
     out=tmp_path/'job';calls=mocked(monkeypatch,out);fit=job.fit_run;actors=job.actor_run
     def changed_fit(*args):
         result=fit(*args);folder=args[-1];spec=read(folder/'proposal-contacts.json')
+        for actor in spec['actors'].values():actor['glb']=str((contacts.parent/actor['glb']).resolve())
         first=next(iter(spec['objects'].values()))['keyframes'][0]
         first['translation_m'][0]+=.01;save(folder/'proposal-contacts.json',spec)
         value=read(folder/'geometry-policy.json');value['contacts_sha256']=sha256(folder/'proposal-contacts.json');save(folder/'geometry-policy.json',value)

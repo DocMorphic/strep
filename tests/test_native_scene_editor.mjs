@@ -62,4 +62,12 @@ await el('Review').onclick();assert.match(el('Results').children[0].textContent,
 assert.equal(context.variant,'transfer');assert.equal(context.job.id,'parent');
 review={status:'failed',error:'Retained fixture failure',downloads:[]};await el('Review').onclick();assert.match(el('Results').children[0].textContent,/Retained fixture failure/);
 const wrong=emptyDraft();wrong.scene.actors.A={sha256:'different'};assert.throws(()=>contactFromPatch(wrong,'A',patch,{}));
+const speedDraft=structuredClone(imported);speedDraft.schema='strep-studio-native-scene-v2';speedDraft.scene.contacts=[];speedDraft.object_edit=null;
+speedDraft.rotation_speed_limits=[{actor:'A',node:0,maximum_degrees_per_second:0}];editor.bind(speedDraft);
+await el('Save').onclick();assert.deepEqual(saved.rotation_speed_limits,speedDraft.rotation_speed_limits);
+el('Actors').children[0].children[0].onclick();assert(editor.snapshot().scene.actors.A);assert.match(el('Status').textContent,/export speed limits/);
+review={status:'complete',sampled_conditions_pass:false,rotation_speed_requested:true,rotation_speed_sampled_conditions_pass:false,samples:3,downloads:[]};
+await el('Review').onclick();assert.match(el('Results').children[0].textContent,/turning-speed checks: fail/);
+el('SpeedLimits').children[0].children[0].onclick();assert.equal(editor.snapshot().schema,'strep-studio-native-scene-v1');assert(!('rotation_speed_limits' in editor.snapshot()));
+el('Actors').children[0].children[0].onclick();assert(!editor.snapshot().scene.actors.A);
 console.log('Native scene draft, patch, source selection, bounds and saved-result workflows passed offline.');
