@@ -212,3 +212,15 @@ trials remain under their original version folders. Dependency,
 failed-attempt and resource evidence is under `reports/central-hand-physical-v1`.
 The full-body resource profile is unchanged. Downloaded assets and bulky study
 outputs remain excluded from the public source snapshot.
+
+The current validation sequence attaches to the verified live body worker by
+PID, creation time and protocol/source hashes. It waits for that owned job;
+expired observation never restarts it. Subsequent stages run sequentially under
+the same full-body resource profile: independent complete-body replay, fresh
+contact forces, independent force/contact replay, then native-resource and glTF
+import studies. Original 59 supported force samples must pass the combined
+sampled conditions before engine preparation. Unknown-support samples and
+uncalibrated body parameters remain explicit. A failed or deferred prerequisite
+stops the sequence and preserves its evidence. Execution completion never
+approves engine result flags or replaces independent engine replay, human
+review, broader held-out evaluation or the full-project release criteria.
