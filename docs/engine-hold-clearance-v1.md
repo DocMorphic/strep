@@ -79,10 +79,62 @@ archive arrays** (7,007,860,048 logical bytes). Execution finishes in
 under the unchanged 2048+600-MiB admission profile. Source/body prerequisite
 hashes match the serialized-stage record.
 
-The independent complete geometry replay is now running. Fresh contact-force
-analysis and actual new Godot observations remain required. The producer result
-is a sampled native-skin development result, not independent geometry or engine
-approval. The earlier engine pose error does not bound a future export.
+Independent replay subsequently confirms every sampled decision and archive
+array, with maximum depth-bracket/witness differences of
+**1.94e-16/2.22e-16 m** and **78** exact-input edge-tie refinements. All **547**
+resource observations replay. This establishes sampled native geometry for this
+development fixture; actual new engine observations remain pending.
+
+Fresh contact-force testing **rejects the combined result**. All **59** supported
+object-force samples satisfy the declared hypothetical rigid-body equations,
+but **0/59** pass the combined contact/force conditions. Every point-position
+and speed row still passes. One left-hand neighbouring point exceeds the original
+**15-degree** normal-opposition limit at all **1,159** contact times, peaking at
+**15.037935491376311 degrees**. Surface-side and reliability limits remain
+unchanged. The **119** unknown-support samples and two unestimated endpoints are
+still explicit; the object assumptions do not establish measured strength or
+whole-body dynamics.
+
+Separate replay confirms all **11,590** original-clock and **1,800** force-clock
+normal observations, contact stencils and failed combined decisions. The fresh
+force and independent replay guards finish in **207.890/67.313 seconds**, with
+all **221/84** resource observations replayed. A force-only success is therefore
+not accepted as a usable grasp.
+
+The next wrist proposal adds all original normal, side and reliability constraints
+in native and observed-engine skin models. An initial setup applies extra inner
+reserves to the untouched right hand; its owned worker is explicitly stopped
+after source/PID/creation-time verification, and its failed guard, source, plan
+and stop reason remain preserved. A fresh version applies optional reserves only
+to edit-dependent rows while checking uneditable rows against every original
+limit. Fitting, exported verification, full-body checks, fresh forces and actual
+new engine observations remain required for a later candidate. That restricted
+trial then stops before optimization on an original uneditable condition:
+modeled engine skin at native FK puts a right-hand contact **0.5162859599086694 mm**
+behind its target, beyond the original **0.5-mm** allowance. Native skin passes
+that condition. Its failed result, initial measurements and all **63** resource
+observations are preserved; no future engine arithmetic is inferred.
+
+The next declared trial edits both **LeftHand/RightHand (nodes 15/43)** within
+their existing **45-degree original-reference budgets** and the same local
+increment bounds. It includes every triangle affected by either wrist or its
+descendants in either skin, both props and all original clocks. Geometry uses
+32-frame chunks to control memory; this changes neither times nor population.
+All original position, speed, normal, side and reliability conditions still
+apply. Both wrists changing means new exported, complete-body, force and engine
+evidence is required; earlier exact held-pose or right-hand results are not
+inherited.
+
+The first two-wrist setup stops before fitting because the right-hand working
+track has **315** native keys and its original reference has **180**. A fresh
+reference samples the true raw right-hand motion at the unchanged working key
+times and verifies the serialized values. The candidate, left reference and all
+other reference rotations stay unchanged. All **19** alignment-resource
+observations replay; the failed setup and its **40** observations remain saved.
+The fitting reference's float32 resampling does not grant extra edit budget:
+all **48,520** true-raw full-clock cap conditions remain required after export.
+The new two-wrist fit is running. The earlier engine pose error does not bound
+a future export.
 
 No continuous collision, self-collision, dynamics/balance, GPU/runtime/event
 playback, animator quality, training admission or release approval follows from
