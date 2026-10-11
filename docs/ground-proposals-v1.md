@@ -49,5 +49,19 @@ completes in 181.625 seconds, peak process-tree RSS 2,908,667,904 bytes, and all
 provenance rather than resident-8B equivalence or motion quality.
 Raw study records remain local under
 `reports/ground-proposals-v1` and guard/resource records under
-`reports/central-hand-physical-v1`. There are no measured motion outcomes yet,
-no selected replacement and no approved release capability.
+`reports/central-hand-physical-v1`. There is no selected replacement or approved
+release capability.
+
+All 30 raw proposals now generate successfully: 15 four-second crawl clips and
+15 six-second get-up clips, totaling 4,500 native poses. The worker completes in
+250.969 seconds, peak process-tree RSS 1,590,583,296 bytes, and all 264 sampled
+resource observations replay. Every raw NPZ and generation record is retained;
+the 20 guided proposals also retain their constraint audit. Generation success
+does not establish correct anatomy, contact, collision or action semantics.
+
+Two sequential target-screen batches account for 15 proposals each. Each uses
+the unchanged target, full target native/frame clock and experimental floor
+limit. Source-versus-target floor diagnostics additionally compare every native
+key using the full SOMA and target meshes; these source diagnostics do not cover
+the source mesh between keys. No output is dropped after observing failure.
+Complete target-screen results and independent motion verification remain pending.
