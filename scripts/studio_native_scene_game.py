@@ -51,11 +51,15 @@ def source(job):
     return folder,manifest,spec,scene,contacts,policy,times
 
 
-def method_names(scene,*,corrections=False,transitions=False,transition_corrections=False):
+def method_names(scene,*,corrections=False,transitions=False,transition_corrections=False,speed_corrections=False):
+    require(not speed_corrections or corrections,'Speed history requires correction lineage')
     result=METHODS if scene.objects else METHODS+('verify_native_actor_scene_engine.py',)
     if corrections:
         from studio_native_scene_fit import METHODS as CORRECTION_METHODS
         result=tuple(dict.fromkeys(result+CORRECTION_METHODS+('native_correction_lineage.py',)))
+        if speed_corrections:
+            from native_rotation_speed_policy import METHODS as SPEED_METHODS
+            result=tuple(dict.fromkeys(result+SPEED_METHODS))
     if transitions:
         from studio_native_scene_transition import METHODS as TRANSITION_METHODS
         result=tuple(dict.fromkeys(result+TRANSITION_METHODS+('native_transition_lineage.py',)))
@@ -63,6 +67,14 @@ def method_names(scene,*,corrections=False,transitions=False,transition_correcti
         from studio_native_transition_scene_fit import METHODS as BRIDGE_METHODS
         result=tuple(dict.fromkeys(result+BRIDGE_METHODS+('native_transition_scene_fit_lineage.py','native_transition_lineage.py')))
     return result
+
+
+def source_method_names(scene,folder):
+    prepared=read(Path(folder)/'prepared.json')
+    return method_names(scene,corrections=prepared.get('correction_lineage') is not None,
+        transitions=prepared.get('transition_lineage') is not None,
+        transition_corrections=prepared.get('transition_correction_lineage') is not None,
+        speed_corrections='native_rotation_speed_policy.py' in prepared['implementation_sha256'])
 
 
 def measured_contacts(folder, scene):
@@ -90,7 +102,7 @@ def prepare(payload,folder):
     folder=Path(folder).resolve();require(folder==folder_for(folder.name) and not folder.exists(),'Fresh native game package job required')
     values=validate_request(payload);source_folder,manifest,spec,scene,contacts,policy,times=values
     engine=Path(read(source_folder/'prepared.json')['engine_path']).resolve()
-    methods={n:sha256(SCRIPT_ROOT/n) for n in method_names(scene,corrections=read(source_folder/'prepared.json').get('correction_lineage') is not None,transitions=read(source_folder/'prepared.json').get('transition_lineage') is not None,transition_corrections=read(source_folder/'prepared.json').get('transition_correction_lineage') is not None)}
+    methods={n:sha256(SCRIPT_ROOT/n) for n in source_method_names(scene,source_folder)}
     folder.mkdir(parents=True);save(folder/'pipeline.json',dict(status='preparing',original_selected=True,quality_approved=False))
     try:
         save(folder/'request.json',payload);archive=folder/'implementation';archive.mkdir()
@@ -117,7 +129,7 @@ def frozen(folder,*,current_methods=True):
     values=validate_request(payload);source_folder=values[0]
     require(sha256(source_folder/'completion.json')==p['source_completion_sha256'] and
         sha256(source_folder/'assets.zip')==sha256(folder/'source-assets.zip')==p['source_assets_sha256'],'Game package source changed')
-    expected_methods=set(method_names(values[3],corrections=read(source_folder/'prepared.json').get('correction_lineage') is not None,transitions=read(source_folder/'prepared.json').get('transition_lineage') is not None,transition_corrections=read(source_folder/'prepared.json').get('transition_correction_lineage') is not None))
+    expected_methods=set(source_method_names(values[3],source_folder))
     require(p.get('correction_lineage_included',False) is (read(source_folder/'prepared.json').get('correction_lineage') is not None),
         'Game correction lineage selection changed')
     require(p.get('transition_correction_lineage_included',False) is (read(source_folder/'prepared.json').get('transition_correction_lineage') is not None),'Game bridge correction history changed')

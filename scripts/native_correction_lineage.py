@@ -74,6 +74,18 @@ def plan(draft):
         # bounds, timing, geometry and permissions remain exactly authored.
         json_file(base+'/permissions.json',permissions);json_file(base+'/geometry-policy.json',geometry)
         material(base+'/source-rate-caps.npz',folder/'fit/source-rate-caps.npz',r['source_rate_caps_sha256'])
+        speed={}
+        if request['schema']=='strep-studio-native-scene-fit-v2':
+            policy=read(bound(folder/'rotation-speed-policy.json'))
+            json_file(base+'/rotation-speed-policy.json',policy)
+            for name in ('rotation-speed-preflight.json','rotation-speed-lower-bounds.npz','rotation-speed-audit.json'):
+                path=folder/'fit'/name;material(base+'/'+name,path,sha256(path))
+            speed=dict(rotation_speed_policy='rotation-speed-policy.json',
+                authored_rotation_speed_policy_sha256=sha256(folder/'rotation-speed-policy.json'),
+                rotation_speed_preflight='rotation-speed-preflight.json',
+                rotation_speed_lower_bounds='rotation-speed-lower-bounds.npz',
+                rotation_speed_audit='rotation-speed-audit.json',
+                rotation_speed_conditions_pass=m['rotation_speed_conditions_pass'])
         prior_intents=[]
         for spec_name,audit_name in (('original-intent-proposal.json','original-intent-audit/result.json'),
             ('fit/original-contact-intent.json','fit/original-contact-audit/result.json')):
@@ -87,6 +99,7 @@ def plan(draft):
             expected['scene']['actors'][name]['glb']=row['candidate_url'];expected['scene']['actors'][name]['sha256']=row['candidate_sha256']
         final=next(v for v in r['probes'] if v['label']=='final')
         jobs[job]=dict(prepared_sha256=sha256(folder/'prepared.json'),completion_sha256=sha256(folder/'completion.json'),
+            **speed,
             fit_result_sha256=sha256(folder/'fit/result.json'),authoring_request_sha256=sha256(folder/'draft.json'),
             resume_from=p['resume_from'],options=p['options'],controls=final['controls'],
             native_conditions_pass=m['native_conditions_pass'],sampled_geometry_conditions_pass=m['geometry_conditions_pass'],
@@ -107,6 +120,15 @@ def plan(draft):
     return record,artifacts,bindings
 
 
+def speed_methods(draft):
+    """Include the complete implementation for any speed-enabled ancestor."""
+    record,_,_=plan(draft)
+    if any('rotation_speed_policy' in job for job in record['jobs'].values()):
+        from native_rotation_speed_policy import METHODS
+        return METHODS
+    return ()
+
+
 def snapshot(draft,folder):
     folder=Path(folder).resolve();require(not folder.exists(),'Fresh correction lineage snapshot required')
     record,artifacts,bindings=plan(draft);folder.mkdir(parents=True)
@@ -116,7 +138,9 @@ def snapshot(draft,folder):
         else:save(target,value)
     for job in record['jobs']:
         base=folder/'jobs'/job;digest=sha256(base/'original-scene.json')
-        for name in ('permissions.json','geometry-policy.json'):
+        names=('permissions.json','geometry-policy.json')
+        if 'rotation_speed_policy' in record['jobs'][job]:names+=('rotation-speed-policy.json',)
+        for name in names:
             value=read(base/name);value['contacts_sha256']=digest;save(base/name,value)
     record['files_sha256']={n:sha256(folder/n) for n in sorted(artifacts)};save(folder/'record.json',record)
     receipt=dict(schema='strep-native-correction-lineage-snapshot-v1',record_sha256=sha256(folder/'record.json'),
@@ -140,7 +164,7 @@ def verify(draft,folder,receipt):
         if kind=='file':require(sha256(target)==digest,'Correction lineage original bytes differ')
         else:
             expected_value=copy.deepcopy(value)
-            if PurePosixPath(name).name in ('permissions.json','geometry-policy.json'):
+            if PurePosixPath(name).name in ('permissions.json','geometry-policy.json','rotation-speed-policy.json'):
                 expected_value['contacts_sha256']=sha256(target.parent/'original-scene.json')
             require(read(target)==expected_value,'Correction lineage authored fields changed')
     return actual

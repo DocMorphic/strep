@@ -84,7 +84,8 @@ def method_names(payload,*,corrections=None):
         corrections=has_origins(payload)
     if corrections:
         from studio_native_scene_fit import METHODS as CORRECTION_METHODS
-        result=tuple(dict.fromkeys(result+CORRECTION_METHODS+('native_correction_lineage.py',)))
+        from native_correction_lineage import speed_methods
+        result=tuple(dict.fromkeys(result+CORRECTION_METHODS+speed_methods(payload)+('native_correction_lineage.py',)))
     from native_transition_lineage import has_origins
     if has_origins(payload):
         from studio_native_scene_transition import METHODS as TRANSITION_METHODS

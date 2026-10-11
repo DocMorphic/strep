@@ -50,3 +50,21 @@ at `2f07363` passes all 451 Python checks on each platform, plus the editor
 checks. Linux takes 93.05 seconds and Windows 216.94 seconds, without skips
 or failures. Exact committed source bytes and hosted logs are retained. Rebound file receipts cannot conceal changed exported rotations: review
 recomputes the complete selected native-key speeds before serving the proposal.
+
+Portable scene and game packages now retain each speed-enabled correction
+ancestor's authored policy, preflight, full lower-bound arrays and actual output
+audit. The portable policy binds the relocated original-scene JSON; track
+identities and limits remain unchanged, and the original policy digest is
+retained separately. Original and candidate GLBs remain available for replay.
+Scene and game implementation snapshots include the additional speed methods
+when any retained correction ancestor uses them, including when the latest
+correction uses the older no-limit request. Package copying retains exact audit
+bytes and failed parent decisions. Parent checks do not approve a new scene
+placement, retimed motion, engine interpolation or animation quality.
+
+The local run terminates under the RAM guard after 11 completed case markers,
+without a complete suite result. Available RAM falls to 408,920,064 bytes; the
+sampled worker-tree peak is 204,910,592 bytes. All 330 recorded observations
+independently reproduce the stop decision. The partial run is retained, and
+hosted Windows/Linux verification is pending. Package tests use explicit mocked
+engine resources; actual engine playback is not claimed.
