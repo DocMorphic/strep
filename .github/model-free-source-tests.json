@@ -1,6 +1,7 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_native_plane_envelope.py",
     "tests/test_native_scene_boundaries.py",
     "tests/test_native_geometry_only_scene.py",
     "tests/test_rig_reference_diagnostics.py",

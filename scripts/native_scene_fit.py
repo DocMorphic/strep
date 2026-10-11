@@ -147,7 +147,19 @@ def optimize(problem,evaluate,iterations,trust):
 
 def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_model='scalar',vector_difference_step=None,storage_cells=None,restoration_steps=0,
         geometry_policy=None,resume_from=None,surface_contact_policy=None,contact_revision=None,vector_difference_scheme='forward',serialized_ray_probes=0,
-        rotation_storage_policy=None,restoration_model='measured-cap'):
+        rotation_storage_policy=None,restoration_model='measured-cap',plane_guidance=None):
+    if plane_guidance is None:
+        plane_guidance='all-vertices'
+        if resume_from is not None:
+            previous_request=Path(resume_from)/'request.json'
+            if not previous_request.is_file():raise ValueError('Completed native fit request required to infer plane guidance')
+            previous=read(previous_request)
+            if not isinstance(previous,dict):raise ValueError('Native fit request object required')
+            plane_guidance=previous.get('plane_guidance','all-vertices')
+    if type(plane_guidance) is not str or plane_guidance not in ('all-vertices','minimum-envelope'):
+        raise ValueError('Explicit all-vertices or minimum-envelope plane guidance required')
+    if plane_guidance!='all-vertices' and proposal_model!='surface-vector':
+        raise ValueError('Minimum-envelope guidance requires surface-vector proposals')
     if restoration_model not in ('measured-cap','recentered'):raise ValueError('Choose measured-cap or recentered restoration')
     if restoration_model=='recentered' and (proposal_model!='storage-vector' or not restoration_steps):
         raise ValueError('Recentered restoration requires storage-vector proposals and positive restoration steps')
@@ -244,7 +256,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             contact_revision_sha256=None if revision_request is None else bindings[str(contact_revision)],
             actor_snapshots={n:dict(path=p.relative_to(output).as_posix(),sha256=spec['actors'][n]['sha256']) for n,p in originals.items()},
             controls=edits.size,iterations=iterations,trust_control_fraction=trust,
-            proposal_model=proposal_model,conic_solver=conic_identity,
+            proposal_model=proposal_model,conic_solver=conic_identity,plane_guidance=plane_guidance,
             native_contact_rows_individually_protected=proposal_model=='storage-vector',
             decoded_vector_base_anchor=proposal_model=='storage-vector',
             vector_difference_step=vector_difference_step,
@@ -311,7 +323,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             if proposal_model=='surface-vector':
                 from native_surface_model import optimize as optimize_surfaces
                 value,optimization=optimize_surfaces(problem,evaluate_surface,iterations,trust,
-                    step=vector_difference_step,restoration_steps=restoration_steps,contact_model=contact_model)
+                    step=vector_difference_step,restoration_steps=restoration_steps,contact_model=contact_model,plane_guidance=plane_guidance)
             elif proposal_model in ('vector','storage-vector'):
                 from native_scene_conic import optimize as optimize_vectors
                 def anchor_worlds(value,label):
@@ -389,7 +401,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                 surface_contact_conditions_pass=None if surface_report is None else surface_report['surface_contacts_pass'],
                 surface_contact_result_sha256=None if surface_report is None else sha256(output/'surface-contact-audit/result.json'),
                 source_rate_tolerance=1e-5,source_rate_bins=4,source_rate_caps_sha256=sha256(output/'source-rate-caps.npz'),
-                proposal_model=proposal_model,conic_solver=conic_identity,
+                proposal_model=proposal_model,conic_solver=conic_identity,plane_guidance=plane_guidance,
                 vector_difference_step=vector_difference_step,
                 vector_difference_scheme=vector_difference_scheme,
                 serialized_ray_probes=serialized_ray_probes,
@@ -417,6 +429,7 @@ if __name__=='__main__':
     p.add_argument('contacts',type=Path); p.add_argument('permissions',type=Path); p.add_argument('output',type=Path)
     p.add_argument('--iterations',type=int,default=4); p.add_argument('--trust',type=float,default=.02)
     p.add_argument('--proposal-model',choices=['scalar','vector','storage-vector','surface-vector'],default='scalar')
+    p.add_argument('--plane-guidance',choices=['all-vertices','minimum-envelope'],help='Surface-vector only: all vertices or rebuilt plane minimum guidance; full decoded geometry always retained')
     p.add_argument('--vector-difference-step',type=float)
     p.add_argument('--vector-difference-scheme',choices=['forward','central'],default='forward',
         help='Central uses two proxy samples inside the control box, one-sided estimates near its boundary')
@@ -433,4 +446,4 @@ if __name__=='__main__':
     p.add_argument('--contact-revision',type=Path,help='Explicit patch-only revision receipt; requires --resume-from and unchanged source edit permissions')
     p.add_argument('--surface-contact-policy',type=Path,help='Surface-facing acceptance audit and surface-vector proposal guidance')
     a=p.parse_args(); run(a.contacts,a.permissions,a.output,iterations=a.iterations,trust=a.trust,
-        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,restoration_steps=a.restoration_steps,geometry_policy=a.geometry_policy,resume_from=a.resume_from,surface_contact_policy=a.surface_contact_policy,contact_revision=a.contact_revision,vector_difference_scheme=a.vector_difference_scheme,serialized_ray_probes=a.serialized_ray_probes,rotation_storage_policy=a.rotation_storage_policy,restoration_model=a.restoration_model)
+        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,restoration_steps=a.restoration_steps,geometry_policy=a.geometry_policy,resume_from=a.resume_from,surface_contact_policy=a.surface_contact_policy,contact_revision=a.contact_revision,vector_difference_scheme=a.vector_difference_scheme,serialized_ray_probes=a.serialized_ray_probes,rotation_storage_policy=a.rotation_storage_policy,restoration_model=a.restoration_model,plane_guidance=a.plane_guidance)

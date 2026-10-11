@@ -50,6 +50,12 @@ class SurfaceRows:
             return cache[key]
         values=[]
         for row in self.rows:
+            if row['kind']=='world-plane' and row.get('plane_guidance')=='minimum-envelope':
+                # The stored vertex is a witness, not a frozen subset. Reevaluate
+                # every vertex when a proposed pose changes the minimum.
+                vertices_all=query(row['left']['actor'],row['time_s'])
+                values.append(float((vertices_all@np.asarray(row['normal_world'])).min()-row['constant_m']))
+                continue
             def point(entry):return np.asarray(entry['weights'])@query(entry['actor'],row['time_s'])[entry['vertices']]
             value=float(point(row['left'])@np.asarray(row['normal_world']))
             value-=float(point(row['right'])@np.asarray(row['normal_world'])) if row['right'] is not None else row['constant_m']
@@ -57,24 +63,37 @@ class SurfaceRows:
         self.scene.check_inputs();return np.asarray(values)
 
 
-def build(scene,policy,digest,*,clearance=.0005,maximum_rows=20000):
+def build(scene,policy,digest,*,clearance=.0005,maximum_rows=20000,plane_guidance='all-vertices'):
     if type(clearance) not in (int,float) or not np.isfinite(clearance) or not 0<=clearance<=.005:
         raise ValueError('Choose 0-5 mm explicit proposal clearance')
     if type(maximum_rows) is not int or not 1<=maximum_rows<=100000:raise ValueError('Finite explicit surface-row budget required')
+    if type(plane_guidance) is not str or plane_guidance not in ('all-vertices','minimum-envelope'):
+        raise ValueError('Explicit all-vertices or minimum-envelope plane guidance required')
     times,_,_=policy_for(policy,scene,digest);faces={n:faces_for(a['rig'])[0] for n,a in scene.actors.items()}
     used={n:np.unique(f) for n,f in faces.items()};rows=[];samples=[]
+    plane_evaluations=plane_candidates=plane_rows=0
     def entry(actor,ids,weights):return dict(actor=actor,vertices=np.asarray(ids,int).tolist(),weights=np.asarray(weights,float).tolist())
     def add(kind,time,normal,left,right=None,constant=0.,**identity):
         if len(rows)>=maximum_rows:raise ValueError('Complete surface rows exceed explicit resource budget; no subset returned')
         rows.append(dict(kind=kind,time_s=float(time),normal_world=np.asarray(normal).tolist(),left=left,right=right,constant_m=float(constant),clearance_m=float(clearance),**identity))
     for time in times:
-        vertices={};meshes={}
+        vertices={};meshes={};plane_population=[]
         for n,a in scene.actors.items():
             p,r=a['placement'];vertices[n]=a['rig'].vertices(a['sampler'].sample(float(time)))@r.T+p
-            meshes[n]=trimesh.Trimesh(vertices[n][used[n]],np.searchsorted(used[n],faces[n]),process=False)
+            if len(scene.actors)>1 or scene.objects:
+                meshes[n]=trimesh.Trimesh(vertices[n][used[n]],np.searchsorted(used[n],faces[n]),process=False)
             for name,plane in policy['planes'].items():
-                normal=np.array(plane['normal_world']);gap=vertices[n][used[n]]@normal-plane['offset_m']
-                for v in used[n][gap<clearance]:add('world-plane',time,normal,entry(n,[v],[1.]),constant=plane['offset_m'],plane=name)
+                normal=np.array(plane['normal_world']);gap=vertices[n]@normal-plane['offset_m']
+                plane_vertex_candidates=np.flatnonzero(gap<clearance);minimum=int(np.argmin(gap))
+                plane_evaluations+=len(gap);plane_candidates+=len(plane_vertex_candidates)
+                # Keep an envelope for clear planes too: proposals may create a
+                # new crossing at a formerly clear time or vertex.
+                selected=plane_vertex_candidates if plane_guidance=='all-vertices' else np.array([minimum])
+                plane_rows+=len(selected)
+                for v in selected:add('world-plane',time,normal,entry(n,[v],[1.]),constant=plane['offset_m'],plane=name,
+                    plane_guidance=plane_guidance,envelope_population_vertices=len(gap))
+                plane_population.append(dict(actor=n,plane=name,vertices=len(gap),minimum_gap_m=float(gap[minimum]),
+                    minimum_vertex=minimum,candidate_vertices=len(plane_vertex_candidates),guidance_rows=len(selected)))
         pairs=[]
         for left,right in combinations(scene.actors,2):
             crossings=audit(vertices[left],faces[left],vertices[right],faces[right],tolerance_m=policy['limits']['surface_tolerance_m'])
@@ -108,14 +127,17 @@ def build(scene,policy,digest,*,clearance=.0005,maximum_rows=20000):
                 inside.append(dict(source=source,target=target,containment_available=bool(mesh.is_volume),referenced_source_vertices=len(used[source]),queried_vertices=queried,witnesses=count))
             pairs.append(dict(actors=[left,right],complete_surface_records=len(crossings['records']),crossing_counts=crossings['counts'],containment=inside))
         objects=append_rows(scene,time,vertices,meshes,faces,policy,clearance,entry,add) if scene.objects else []
-        samples.append(dict(time_s=float(time),pairs=pairs,actor_objects=objects))
+        samples.append(dict(time_s=float(time),pairs=pairs,actor_objects=objects,world_planes=plane_population))
     scene.check_inputs()
     report=dict(samples=samples,rows=len(rows),clearance_m=float(clearance),maximum_rows=maximum_rows,
+        plane_guidance=plane_guidance,world_plane_vertex_evaluations=plane_evaluations,
+        world_plane_candidate_vertices=plane_candidates,world_plane_guidance_rows=plane_rows,
         source_vertices={n:len(a['skin'].nodes) for n,a in scene.actors.items()},referenced_vertices={n:len(u) for n,u in used.items()},
         complete_triangle_populations={n:len(f) for n,f in faces.items()},objects_included=bool(scene.objects),
         scope='Complete partner surface broadphase/crossing and referenced-vertex containment queries at declared times. '
             'Local fixed-axis/barycentric scalar proposal rows only; recompute after motion changes and retain full decoded geometry checks. '
             'Declared primitive whole-triangle and center-enclosure support-plane guides included. '
+            'Minimum-envelope planes reevaluate every vertex, including changed minima; full decoded acceptance remains required. '
             'No editable object trajectories, self-collision, continuous collision, solver feasibility, quality or release approval.',
         quality_approved=False,release_approved=False)
     return SurfaceRows(scene,rows,report)

@@ -88,16 +88,16 @@ def improved(before, after):
     return False
 
 
-def model(problem, value, decoded_scene, policy, digest, trust, *, step=.001, maximum_rows=20000, decoded_worlds=None, contact_model=None):
+def model(problem, value, decoded_scene, policy, digest, trust, *, step=.001, maximum_rows=20000, decoded_worlds=None, contact_model=None,plane_guidance='all-vertices'):
     """Rebuild all witnesses, then combine them with unchanged original norms."""
     value = problem.edits.controls(value)
+    witnesses = build(decoded_scene, policy, digest, maximum_rows=maximum_rows,plane_guidance=plane_guidance)
     original, jac, identity = linearize(problem, value, step=step, difference_source='continuous')
     if decoded_worlds is not None:
         anchored=native_rows(problem,value,decoded_worlds)
         if not np.array_equal(original.caps,anchored.caps) or not np.array_equal(original.scales,anchored.scales):
             raise ValueError('Decoded anchoring changed original norm caps or ordering')
         original=anchored
-    witnesses = build(decoded_scene, policy, digest, maximum_rows=maximum_rows)
     if not witnesses.rows:
         report=dict(differences=identity,surface_rows=0)
         if contact_model is None:return original,jac,None,report
@@ -118,8 +118,11 @@ def model(problem, value, decoded_scene, policy, digest, trust, *, step=.001, ma
         h = np.copysign(min(step, abs(room)), room)
         if h == 0: raise ValueError('No finite-difference room for surface controls')
         other = value.copy(); other[i] += h
-        columns.append((witnesses.gaps(surface_points(problem, problem.worlds(other, quantized=False)))-smooth)/h)
-    scalar_jac = sparse.csr_matrix(np.stack(columns, axis=1))
+        derivative=(witnesses.gaps(surface_points(problem, problem.worlds(other, quantized=False)))-smooth)/h
+        if not np.isfinite(derivative).all():raise ValueError('Nonfinite surface guide derivative')
+        # Retain every row and every exact nonzero; avoid a dense stacked copy.
+        columns.append(sparse.csc_matrix(derivative[:,None]))
+    scalar_jac = sparse.hstack(columns,format='csr')
     extra, vector_jac, conversion = lift(stored, scalar_jac, value, problem.lower, problem.upper, trust)
     combined = NormRows(np.r_[original.vectors,extra.vectors],np.r_[original.caps,extra.caps],np.r_[original.scales,extra.scales])
     matrix=sparse.vstack([jac,vector_jac],format='csc')
@@ -134,7 +137,7 @@ def model(problem, value, decoded_scene, policy, digest, trust, *, step=.001, ma
     return combined,matrix,witnesses,report
 
 
-def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restoration_steps=3, contact_model=None):
+def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restoration_steps=3, contact_model=None,plane_guidance='all-vertices'):
     """evaluate returns native residuals, worlds, decoded scene/policy and geometry.
 
     Every candidate must be independently exported/decoded by the caller. Full
@@ -152,7 +155,7 @@ def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restorati
         raise ValueError('Surface correction requires an originally feasible native/contact start')
     for iteration in range(1, iterations+1):
         if current['geometry']['sampled_conditions_pass'] and (contact_model is None or current['surface_contact']['surface_contacts_pass']): break
-        system,jac,witnesses,identity=model(problem,value,current['scene'],current['policy'],current['digest'],radius,step=step,decoded_worlds=current['worlds'],contact_model=contact_model)
+        system,jac,witnesses,identity=model(problem,value,current['scene'],current['policy'],current['digest'],radius,step=step,decoded_worlds=current['worlds'],contact_model=contact_model,plane_guidance=plane_guidance)
         hard = len(current['native'])
         if hard > len(system.caps): raise ValueError('Original norm population changed')
         np.testing.assert_allclose(system.residual()[:hard],current['native'],atol=1e-9,rtol=1e-12)
