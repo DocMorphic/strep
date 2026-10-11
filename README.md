@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Rig-proportion pose scaffold](docs/rig-pose-scaffold-v1.md): direction-based proposals and the complete captured comparison are prepared. Regression and motion validation deferred for RAM; no result or quality approval is claimed.
+
 - [Pose-target reach preflight](docs/pose-length-preflight-v1.md): box/norm/continuation fitters now reject incompatible fixed-distance targets without changing source poses or tolerances. All 48 focused checks pass. The actual fitter excludes all 2,422 uniformly scaled captured poses; separate replay checks 58,128 invariant-pair rows and every retained local pose. Rig proportions must be accounted for before support/contact fitting; no corrected animation or training target is promoted.
 
 - [Captured reference transfer](docs/acclaim-rig-transfer-v1.md): an explicit ASF/AMC-to-rig path retains every capture frame and existing target animations/payloads. All 65 focused checks pass. Both full captured clips transfer and independently replay, but fail native-key floor checks (1,480/1,524 crawl keys; 446/898 get-up keys), with large mapped head/hand errors. Positional fitting and support correction remain necessary; no clean-target or training admission.

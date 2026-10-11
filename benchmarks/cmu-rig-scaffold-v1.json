@@ -1,0 +1,18 @@
+{
+  "schema": "strep-cmu-rig-scaffold-v1",
+  "status": "frozen-before-captured-study",
+  "source_protocol": "benchmarks/cmu-ground-transfer-v1.json",
+  "cases": ["crawl-111-03", "get-up-140-08"],
+  "population": "Every original 120 Hz key: 1,524 crawl and 898 get-up frames. No selection, downsampling or filtering.",
+  "reference": "Captured mapped joint edge directions; lengths are reconstructed with the supplied rig's unchanged local translations. Shared rigid branches fit unit directions jointly. Rank-one branches use minimum swing; leaves favor original world orientation.",
+  "permissions": "19 mapped local joint rotations, each at most 25 degrees from the original transferred pose. All translations and unmapped helper local transforms fixed. No root relocation, floor lift or gate relaxation.",
+  "screen": "At every native key evaluate every target vertex, compare original/proposed direction residuals, verify rotation caps/root/length/local preservation, and roundtrip the appended glTF animation. Preserve every proposed pose even when worse.",
+  "native_key_floor_tolerance_m": 0.005,
+  "roundtrip_vertex_tolerance_m": 0.00001,
+  "temporal_diagnostic": "Compare every neighboring native-key local rotation speed with the original. Report maximum, p95, node and time; no new acceptance threshold or smoothing.",
+  "contact_policy": "No captured support annotations exist; contacts remain unknown. This direction proposal is not contact correction.",
+  "scope": "Feasible rig geometry does not establish temporal quality, source semantics, anatomical plausibility, between-key safety, dynamics, engine success or human approval.",
+  "training_admitted": false,
+  "quality_approved": false,
+  "release_approved": false
+}

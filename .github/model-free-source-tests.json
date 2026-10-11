@@ -1,6 +1,7 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_rig_pose_scaffold.py",
     "tests/test_pose_length_preflight.py",
     "tests/test_acclaim_rig_transfer.py",
     "tests/test_acclaim_motion.py",
