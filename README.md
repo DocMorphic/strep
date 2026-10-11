@@ -8,7 +8,7 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
-- [Stored-key surface continuation](docs/native-storage-continuation-v1.md): corrected starts retain the original source, motion limits and explicit Float32 adjustments. The [development trial](docs/kenney-kick-stored-surface-v1.md) accepts a tiny step but still fails floor contact. Fresh screening separates storage errors from intended-motion failures. All 712 focused Python checks per OS pass; no animation approval.
+- [Stored-key surface continuation](docs/native-storage-continuation-v1.md): corrected starts retain the original source, motion limits and explicit Float32 adjustments. The [completed development trials and replays](docs/kenney-kick-stored-surface-v1.md) retain a motion-compliant export but still fail floor contact at 47.35 mm peak. Fresh screening separates storage errors from intended-motion failures. All 712 focused Python checks per OS pass; no animation approval.
 
 - [Native rate receipt inspection](docs/native-rate-receipts-v1.md): a standard-library tool locates recorded failed joints and time stencils without loading a model. Six focused tests pass; all 22 retained timing receipts are inspected with complete counts. This is archive inspection, not new motion or geometry validation.
 

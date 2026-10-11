@@ -44,3 +44,13 @@ passes all six jobs: **712 Python checks per OS** (645 contact/rig, 35 lineage,
 32 game packages), 23 subtests and the offline editor. The full source workflow
 at that revision remains in progress; the latest complete full-inventory result
 remains the earlier 466-module/42-Node run.
+
+The subsequent two-iteration trial and separate complete replay retain a final
+47.353661-mm floor peak at 232 failed times, despite passing all original native
+motion conditions. Eleven rejected proposals pass before storage; three also
+fail in their intended curves. The current entry point is a Python API, with
+no Studio or native fitter CLI integration. Next: expose the corrected start
+and explicit bounded export repair through the fitting workflow, record each
+proposal's corrections and original reference, and keep intended-motion
+failures separate from precision repair. Full decoded geometry/contact checks
+still determine retention; no correction changes selection or release status.

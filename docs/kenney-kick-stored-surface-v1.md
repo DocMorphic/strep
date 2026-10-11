@@ -90,9 +90,35 @@ This uses the shared sampler/cap/geometry methods; it is not independent engine
 or human quality validation. The continuation and reconstruction finish at
 95.437 s and 37.719 s execution; all **112 and 55** resource observations replay.
 
-Two further surface iterations from this independently replayed larger state
-are running under `reports/kenney-kick-stored-surface-v2`, retaining the same
-original reference and fixed 18 corrections. Record their terminal outcome
-before drawing a conclusion. No checkpoint, training data, generation, engine
-import, human rating, cleanup-time result or release gate is changed by these
-development studies.
+## Further iterations and acceptance limit
+
+The two-iteration continuation under `reports/kenney-kick-stored-surface-v2`
+completes with 17 export records: start, five first-iteration proposals, ten
+second-iteration proposals and final. Its first iteration accepts fraction 1/16,
+reducing the peak from 47.600935 mm to **47.353661 mm**. This 0.247274-mm
+improvement passes all original native conditions but still fails floor geometry
+at 232 times. Its second iteration accepts none of ten exported fractions; the
+first retained correction remains the final result. Both affine solves report
+`Solved`; their saved proposals still require decoded validation.
+
+Every export retains the original complete floor/native population, caps, root,
+endpoints and explicit fixed 18 corrections. The job finishes with 538.672 s
+execution and all **549** resource observations independently replayed. The
+separate replay under `reports/kenney-kick-stored-surface-replay-v2` finishes:
+scalar `nextafter` construction reproduces all 18 component changes in every
+one of the 17 exports, with exact channel clocks, stored values, complete worlds,
+residuals, controls, caps and scales. Root remains unchanged at all 2,017 times.
+The fresh final complete floor query reproduces every saved geometry sample
+and the 47.353661-mm peak/232 failed-time result. All **138** resource observations
+replay, with final execution at 121.922 s.
+
+Of fourteen rejected proposals, **eleven pass all original conditions before
+storage and fail afterward**. Three also fail in the intended unrounded curve:
+`1-0` has two continuous failures, `2-0` has three and `2-1` has one. The final
+result passes both native and unrounded motion checks. Precision repair is
+therefore appropriate only for the former group; it cannot be treated as a
+solution for the latter intended-motion failures. This is shared-method native
+and geometry replay, not engine playback, independent physics or human review.
+
+No checkpoint, training data, generation, engine import, human rating,
+cleanup-time result or release gate is changed by these development studies.
