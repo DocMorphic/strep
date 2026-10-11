@@ -46,6 +46,10 @@ class ResumeState:
             if sha256(policy)!=request['geometry_policy_sha256']:raise ValueError('Resume geometry snapshot changed')
             self.geometry_policy=read(policy)
         self.surface_contact_policy_sha256=request.get('surface_contact_policy_sha256')
+        self.rotation_speed_policy_sha256=request.get('rotation_speed_policy_sha256')
+        if self.rotation_speed_policy_sha256 is not None:
+            if sha256(file('rotation-speed-policy.json'))!=self.rotation_speed_policy_sha256:
+                raise ValueError('Resume rotation speed policy snapshot changed')
         if self.surface_contact_policy_sha256 is not None:
             if sha256(file('surface-contact-policy.json'))!=self.surface_contact_policy_sha256:
                 raise ValueError('Resume surface contact policy snapshot changed')

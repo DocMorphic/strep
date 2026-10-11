@@ -20,6 +20,23 @@ SCRIPT_ROOT=Path(__file__).resolve().parent
 METHODS=tuple(sorted(set(FIT_METHODS)|{'studio_native_scene_fit.py','studio_native_scene.py'}))
 
 
+def request_fields(payload):
+    ordinary=('schema','draft','actors','options','resume_from')
+    return ordinary+('rotation_speed_limits',) if isinstance(payload,dict) and payload.get('schema')=='strep-studio-native-scene-fit-v2' else ordinary
+
+
+def speed_policy(payload,digest):
+    return dict(schema='strep-native-rotation-speed-policy-v1',contacts_sha256=digest,tracks=copy.deepcopy(payload['rotation_speed_limits']))
+
+
+def method_population(payload,*,fitter=False):
+    names=set(FIT_METHODS if fitter else METHODS)
+    if payload.get('schema')=='strep-studio-native-scene-fit-v2':
+        from native_rotation_speed_policy import METHODS as SPEED_METHODS
+        names.update(SPEED_METHODS)
+    return names
+
+
 def folder_for(job):
     require(isinstance(job,str) and NAME.fullmatch(job),'Invalid character correction job')
     base=(ROOT/'reports'/NAMESPACE).resolve();folder=(base/job).resolve()
@@ -53,8 +70,8 @@ def options(value):
 
 
 def validate_request(payload,resolver):
-    fields(payload,('schema','draft','actors','options','resume_from'),'Studio character correction')
-    require(payload['schema']=='strep-studio-native-scene-fit-v1','Studio character correction schema required')
+    fields(payload,request_fields(payload),'Studio character correction')
+    require(payload['schema'] in ('strep-studio-native-scene-fit-v1','strep-studio-native-scene-fit-v2'),'Studio character correction schema required')
     spec,geometry,object_edit,sources=scene_request(payload['draft'],resolver,require_objects=False)
     require(object_edit is None,'Character correction uses the declared object paths. Turn off the separate object-edit proposal first.')
     config=options(payload['options']);scene=SceneContacts(spec,ROOT)
@@ -97,13 +114,21 @@ def validate_request(payload,resolver):
         state=ResumeState(prior/'fit',canonical_digest,sha256(prior/'fit/permissions.json'),edits,
             contact_revision=receipt,current_contacts=spec,current_permissions=permissions)
         state.check_geometry(geometry,canonical_digest);state.check_inputs()
+    if payload['schema']=='strep-studio-native-scene-fit-v2':
+        from native_rotation_speed_policy import policy_for as speed_policy_for
+        from native_rotation_speed_preflight import IncompatibleRotationSpeed
+        _,_,report=speed_policy_for(speed_policy(payload,permissions['contacts_sha256']),edits,permissions['contacts_sha256'])
+        if report['speed_limits_proven_incompatible']:raise IncompatibleRotationSpeed(report)
+    if prior is not None:
+        previous=read(prior/'draft.json')
+        require(payload.get('rotation_speed_limits')==previous.get('rotation_speed_limits'),'Resume must retain the exact authored speed limits; create a fresh correction to change them')
     return spec,geometry,permissions,sources,config,prior,receipt
 
 
 def prepare(payload,folder,resolver):
     spec,geometry,permissions,sources,config,prior,receipt=validate_request(payload,resolver)
     folder=Path(folder).resolve();require(folder==folder_for(folder.name) and not folder.exists(),'Fresh character correction job required')
-    methods={n:sha256(SCRIPT_ROOT/n) for n in METHODS};folder.mkdir(parents=True)
+    methods={n:sha256(SCRIPT_ROOT/n) for n in sorted(method_population(payload))};folder.mkdir(parents=True)
     try:
         save(folder/'draft.json',payload);snapshots={}
         for index,(name,source) in enumerate(sources.items()):
@@ -130,6 +155,9 @@ def prepare(payload,folder,resolver):
                 contact_revision=receipt,current_contacts=spec,current_permissions=permissions)
             state.check_geometry(geometry,sha256(folder/'contacts.json'));state.check_inputs()
         files={'draft.json','contacts.json','permissions.json','geometry-policy.json'}|extra
+        if payload['schema']=='strep-studio-native-scene-fit-v2':
+            save(folder/'rotation-speed-policy.json',speed_policy(payload,sha256(folder/'contacts.json')))
+            files.add('rotation-speed-policy.json')
         for n in methods:
             target=folder/'implementation'/n;target.parent.mkdir(exist_ok=True);shutil.copyfile(SCRIPT_ROOT/n,target)
             require(sha256(target)==methods[n]==sha256(SCRIPT_ROOT/n),'Correction implementation changed during snapshot')
@@ -147,14 +175,15 @@ def prepare(payload,folder,resolver):
 def frozen(folder,*,current_methods=True):
     folder=Path(folder).resolve();require(folder==folder_for(folder.name),'Contained correction folder required')
     p=read(folder/'prepared.json');draft=read(folder/'draft.json')
-    fields(draft,('schema','draft','actors','options','resume_from'),'retained correction request')
+    fields(draft,request_fields(draft),'retained correction request')
     require(p['schema']=='strep-studio-native-scene-fit-prepared-v1' and p['original_selected'] is True
         and p['quality_approved'] is False and p['release_approved'] is False,'Unapproved original-retaining correction required')
-    require(set(p['implementation_sha256'])==set(METHODS),'Complete correction method population required')
+    require(set(p['implementation_sha256'])==method_population(draft),'Complete correction method population required')
     for n,h in p['implementation_sha256'].items():
         require(sha256(folder/'implementation'/n)==h,'Correction method archive changed')
         if current_methods:require(sha256(SCRIPT_ROOT/n)==h,'Correction implementation changed')
     expected={'draft.json','contacts.json','permissions.json','geometry-policy.json'}
+    if draft['schema']=='strep-studio-native-scene-fit-v2':expected.add('rotation-speed-policy.json')
     _,revision=revision_for(draft['draft'])
     prior=folder_for(p['resume_from']) if p['resume_from'] is not None else None
     if prior is not None:
@@ -188,6 +217,11 @@ def frozen(folder,*,current_methods=True):
     require(read(folder/'geometry-policy.json')==dict(schema='strep-native-scene-geometry-v1',contacts_sha256=sha256(folder/'contacts.json'),**draft['draft']['geometry']),'Correction geometry changed')
     scene=SceneContacts(spec,folder);edits=SceneEdits(permissions,scene,sha256(folder/'contacts.json'),rotation_storage_policy=p['options']['rotation_storage_policy'])
     require(edits.size==p['controls']<=96,'Correction control population changed')
+    if draft['schema']=='strep-studio-native-scene-fit-v2':
+        from native_rotation_speed_policy import policy_for as speed_policy_for
+        policy=read(folder/'rotation-speed-policy.json')
+        require(policy==speed_policy(draft,sha256(folder/'contacts.json')),'Retained authored speed limits changed')
+        speed_policy_for(policy,edits,sha256(folder/'contacts.json'))
     if prior is not None:
         state=ResumeState(prior/'fit',sha256(folder/'contacts.json'),sha256(folder/'permissions.json'),edits,
             contact_revision=read(folder/'contact-revision.json') if 'contact-revision.json' in expected else None,
@@ -238,6 +272,7 @@ def execute(folder):
     save(folder/'pipeline.json',dict(status='processing',stage='character-fit',original_selected=True,quality_approved=False))
     try:
         kwargs=dict(p['options'],geometry_policy=folder/'geometry-policy.json')
+        if (folder/'rotation-speed-policy.json').is_file():kwargs['rotation_speed_policy']=folder/'rotation-speed-policy.json'
         if p['resume_from'] is not None:kwargs['resume_from']=folder_for(p['resume_from'])/'fit'
         if (folder/'contact-revision.json').is_file():kwargs['contact_revision']=folder/'contact-revision.json'
         result=fit(folder/'contacts.json',folder/'permissions.json',folder/'fit',**kwargs)
@@ -251,6 +286,8 @@ def execute(folder):
             with worker_lock():original_intent=contact_audit(folder/'original-intent-proposal.json',folder/'original-intent-audit')
         frozen(folder)
         files={'fit/result.json','fit/contact-audit/result.json','fit/geometry-audit/result.json','fit/contacts.json','fit/permissions.json','fit/source-rate-caps.npz'}
+        if 'rotation_speed_conditions_pass' in result:
+            files|={'rotation-speed-policy.json','fit/rotation-speed-policy.json','fit/rotation-speed-preflight.json','fit/rotation-speed-lower-bounds.npz','fit/rotation-speed-audit.json'}
         files|={s['snapshot'] for s in p['sources'].values()}
         files|={f'fit/probes/final/{name}.glb' for name in p['sources'] if name in read(folder/'permissions.json')['actors']}
         if original_intent is not None:files|={'original-intent-audit/result.json','original-intent-proposal.json'}
@@ -278,7 +315,8 @@ def manifest(job):
         and all(c[k] is False for k in ('studio_selection_changed','quality_approved','training_admitted','release_approved'))
         and all(r[k] is False for k in ('quality_approved','training_admitted','release_approved')),'Correction approval or source selection changed')
     require(c['native_conditions_pass'] is r['native_constraints_pass'] and c['geometry_conditions_pass'] is r['sampled_geometry_conditions_pass'],'Correction measured decisions changed')
-    request=read(folder/'fit/request.json');require(request['implementation_sha256']=={n:p['implementation_sha256'][n] for n in FIT_METHODS},'Correction fitter methods changed')
+    draft=read(folder/'draft.json')
+    request=read(folder/'fit/request.json');require(request['implementation_sha256']=={n:p['implementation_sha256'][n] for n in method_population(draft,fitter=True)},'Correction fitter methods changed')
     for n,h in request['implementation_sha256'].items():require(sha256(folder/'fit/implementation'/n)==h,'Correction fitter method archive changed')
     for path,h in request['inputs_sha256'].items():require(sha256(path)==h,'Correction fitter input changed')
     scene=SceneContacts(read(folder/'contacts.json'),folder)
@@ -295,6 +333,19 @@ def manifest(job):
     final=next(probe for probe in r['probes'] if probe['label']=='final')
     require(c['native_conditions_pass'] is (final['merit'][0]==0 and audit['passed'] and all(a['passed'] for a in r['edits'].values())),
         'Correction native decision differs from final measured conditions')
+    speed_report=None
+    if draft['schema']=='strep-studio-native-scene-fit-v2':
+        checked_file(folder/'fit','rotation-speed-audit.json',r['rotation_speed_result_sha256'])
+        speed_report=read(folder/'fit/rotation-speed-audit.json')
+        require(speed_report['passed'] is r['rotation_speed_conditions_pass'],'Correction speed decision changed')
+        require(request['rotation_speed_policy_sha256']==sha256(folder/'rotation-speed-policy.json')==sha256(folder/'fit/rotation-speed-policy.json'),'Correction speed policy changed')
+        from native_rotation_speed_policy import policy_for as speed_policy_for
+        from native_rotation_speed_fit import audit_scene_speed_outputs
+        limits,_,_=speed_policy_for(read(folder/'rotation-speed-policy.json'),edits,sha256(folder/'contacts.json'))
+        files={name:folder/'fit/probes/final'/(name+'.glb') for name in edits.actors}
+        _,fresh=audit_scene_speed_outputs(edits,limits,files)
+        require(fresh==speed_report,'Correction speed evidence differs from fresh exported rotations')
+        require(not c['native_conditions_pass'] or speed_report['passed'],'Correction cannot pass with failed authored speed limits')
     geometry=read(folder/'fit/geometry-audit/result.json')
     for n,k in (('policy.json','derived_policy_sha256'),('observations.npz','observations_sha256'),('observations.npz.receipt.json','observation_receipt_sha256')):
         checked_file(folder/'fit/geometry-audit',n,geometry[k])
@@ -308,6 +359,8 @@ def manifest(job):
         require(sha256(folder/'fit/original-contact-audit/result.json')==r['original_contact_intent_result_sha256'],'Resumed original contact intent audit changed')
         checked_contact_audit(folder/'fit/original-contact-audit',p['implementation_sha256'])
     expected={'fit/result.json','fit/contact-audit/result.json','fit/geometry-audit/result.json','fit/contacts.json','fit/permissions.json','fit/source-rate-caps.npz'}|{s['snapshot'] for s in p['sources'].values()}
+    if speed_report is not None:
+        expected|={'rotation-speed-policy.json','fit/rotation-speed-policy.json','fit/rotation-speed-preflight.json','fit/rotation-speed-lower-bounds.npz','fit/rotation-speed-audit.json'}
     expected|={f'fit/probes/final/{name}.glb' for name in read(folder/'permissions.json')['actors']}
     if (folder/'original-contact-intent.json').is_file():expected|={'original-intent-audit/result.json','original-intent-proposal.json'}
     if r['original_contact_intent_result_sha256'] is not None:expected.add('fit/original-contact-audit/result.json')
@@ -318,6 +371,7 @@ def manifest(job):
     data.update(native_conditions_pass=c['native_conditions_pass'],geometry_conditions_pass=c['geometry_conditions_pass'],
         original_intent_pass=c['original_intent_pass'] if c['original_intent_pass'] is not None else r['original_contact_intent_pass'],controls=p['controls'],resume_from=p['resume_from'],
         authoring_request=read(folder/'draft.json'),actors={})
+    if speed_report is not None:data.update(rotation_speed_conditions_pass=speed_report['passed'],rotation_speed_audit=speed_report)
     for name,s in p['sources'].items():
         candidate=f'fit/probes/final/{name}.glb' if name in read(folder/'permissions.json')['actors'] else s['snapshot']
         data['actors'][name]=dict(original_url=f'/files/{NAMESPACE}/{job}/{s["snapshot"]}',original_sha256=s['sha256'],

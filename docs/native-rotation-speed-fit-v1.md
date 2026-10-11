@@ -21,7 +21,7 @@ acceptance allowance or invented anatomical limit. They do not establish
 instantaneous speed throughout glTF interpolation, physically plausible joint
 dynamics, whole-surface collision freedom, engine fidelity or animation quality.
 Scene fitting remains bounded and may fail even after preflight does not exclude
-the request. Studio route/UI integration is pending.
+the request. Optional limits now integrate with the [Studio correction editor](studio-rotation-speed-v1.md); live browser verification remains pending.
 
 The 17 new regression cases include identity, tiny angles, half-turns and
 quaternion sign/length changes; invalid clocks and values; fresh serialized

@@ -64,4 +64,16 @@ waiting=new Promise(r=>resolve=r);const loading=el('Load').onclick();draft.scene
 draft=structuredClone(original);el('Resume').value='job1';review=makeReview();await el('LoadResume').onclick();assert.equal(editor.request().resume_from,'job1');assert.deepEqual(editor.request().actors,posted.actors);assert.deepEqual(draft,posted.draft);
 waiting=new Promise(r=>resolve=r);const oldResume=el('LoadResume').onclick();el('Resume').value='other';resolve(review);await oldResume;waiting=null;assert.match(el('Status').textContent,/selection or scene changed/);
 await editor.refresh();assert.deepEqual(el('Resume').children.map(n=>n.value),['','job1']);
-console.log('Native character bounds, failed review, atomic staging, stale-response and continuation workflows passed offline.');
+draft=structuredClone(original);el('Resume').value='';await editor.load();el('Actor').value='A';el('Actor').onchange();select(0,20);
+const speedInput=el('Tracks').children[0].children[4];assert.equal(speedInput.value,'');assert.match(speedInput.ariaLabel,/degrees per second/);
+speedInput.value='120';await el('SaveActor').onclick();let speedRequest=editor.request();
+assert.equal(speedRequest.schema,'strep-studio-native-scene-fit-v2');assert.deepEqual(speedRequest.rotation_speed_limits,[{actor:'A',node:0,maximum_degrees_per_second:120}]);
+speedInput.value='-1';await el('SaveActor').onclick();assert.match(el('Status').textContent,/finite and nonnegative/);assert.equal(editor.request().rotation_speed_limits[0].maximum_degrees_per_second,120);
+speedInput.value='';await el('SaveActor').onclick();assert.equal(editor.request().schema,'strep-studio-native-scene-fit-v1');assert(!('rotation_speed_limits' in editor.request()));
+speedInput.value='0';await el('SaveActor').onclick();assert.equal(editor.request().rotation_speed_limits[0].maximum_degrees_per_second,0);
+speedInput.value='120';await el('SaveActor').onclick();posted=editor.request();review=makeReview();review.rotation_speed_conditions_pass=true;
+assert.deepEqual(stagedScene(review).scene.actors.A.sha256,'b'.repeat(64));
+for(const pass of [false,undefined,'true']){const failed=structuredClone(review);failed.rotation_speed_conditions_pass=pass;assert.throws(()=>stagedScene(failed),/turning-speed/);}
+el('Resume').value='job1';await el('LoadResume').onclick();assert.deepEqual(editor.request().rotation_speed_limits,posted.rotation_speed_limits);
+assert.equal(el('Tracks').children[0].children[4].value,120);
+console.log('Native bounds, speed requests and continuation, failed review, atomic staging and stale-response workflows passed offline.');

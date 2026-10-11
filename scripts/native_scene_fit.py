@@ -147,7 +147,7 @@ def optimize(problem,evaluate,iterations,trust):
 
 def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_model='scalar',vector_difference_step=None,storage_cells=None,restoration_steps=0,
         geometry_policy=None,resume_from=None,surface_contact_policy=None,contact_revision=None,vector_difference_scheme='forward',serialized_ray_probes=0,
-        rotation_storage_policy=None,restoration_model='measured-cap',plane_guidance=None):
+        rotation_storage_policy=None,restoration_model='measured-cap',plane_guidance=None,rotation_speed_policy=None):
     if plane_guidance is None:
         plane_guidance='all-vertices'
         if resume_from is not None:
@@ -228,7 +228,20 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
         geometry_policy = Path(geometry_policy).resolve(); bindings[str(geometry_policy)] = sha256(geometry_policy)
         geometry_request = read(geometry_policy); policy_for(geometry_request,scene,bindings[str(contacts_path)])
     if resume is not None:resume.check_geometry(geometry_request,bindings[str(contacts_path)])
-    methods = {n:sha256(ROOT/'scripts'/n) for n in METHODS}
+    speed_request=None;speed_limits=None
+    if rotation_speed_policy is not None:
+        from native_rotation_speed_policy import policy_for as speed_policy_for
+        rotation_speed_policy=Path(rotation_speed_policy).resolve();bindings[str(rotation_speed_policy)]=sha256(rotation_speed_policy)
+        source_bindings[str(rotation_speed_policy)]=bindings[str(rotation_speed_policy)]
+        speed_request=read(rotation_speed_policy)
+        speed_limits,_,_=speed_policy_for(speed_request,edits,bindings[str(contacts_path)])
+    if resume is not None and getattr(resume,'rotation_speed_policy_sha256',None)!=(None if speed_request is None else bindings[str(rotation_speed_policy)]):
+        raise ValueError('Resume must retain its exact authored rotation speed policy')
+    method_names=set(METHODS)
+    if speed_request is not None:
+        from native_rotation_speed_policy import METHODS as SPEED_METHODS
+        method_names.update(SPEED_METHODS)
+    methods = {n:sha256(ROOT/'scripts'/n) for n in sorted(method_names)}
     with worker_lock(),threadpool_limits(limits=1):
         output.mkdir(parents=True); archive = output/'implementation'; archive.mkdir()
         for n in methods: shutil.copyfile(ROOT/'scripts'/n,archive/n)
@@ -244,6 +257,9 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
         if surface_request is not None:
             shutil.copyfile(surface_contact_policy,output/'surface-contact-policy.json')
             snapshots[output/'surface-contact-policy.json']=bindings[str(surface_contact_policy)]
+        if speed_request is not None:
+            shutil.copyfile(rotation_speed_policy,output/'rotation-speed-policy.json')
+            snapshots[output/'rotation-speed-policy.json']=bindings[str(rotation_speed_policy)]
         if any(sha256(p)!=h for p,h in snapshots.items()): raise ValueError('Authored request snapshot differs')
         originals = {}
         for i,(name,a) in enumerate(spec['actors'].items()):
@@ -252,6 +268,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             if sha256(dest)!=a['sha256']: raise ValueError('Native scene input snapshot differs')
             originals[name] = dest
         save(output/'request.json',dict(at=now(),inputs_sha256=bindings,source_inputs_sha256=source_bindings,resume=resume_receipt,implementation_sha256=methods,
+            **({} if speed_request is None else dict(rotation_speed_policy_sha256=bindings[str(rotation_speed_policy)])),
             contacts_source_path=str(contacts_path),permissions_source_path=str(permissions_path),
             contact_revision_sha256=None if revision_request is None else bindings[str(contact_revision)],
             actor_snapshots={n:dict(path=p.relative_to(output).as_posix(),sha256=spec['actors'][n]['sha256']) for n,p in originals.items()},
@@ -272,7 +289,15 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             quality_approved=False,scope='Proposal only; originals selected pending scene geometry and actual imported-skin checks.'))
         save(output/'pipeline.json',dict(status='processing')); probes = []
         try:
-            problem = SceneProblem(scene,edits)
+            if speed_limits is None:problem = SceneProblem(scene,edits)
+            else:
+                from native_rotation_speed_fit import SpeedLimitedSceneProblem
+                from native_rotation_speed_preflight import IncompatibleRotationSpeed
+                try:problem=SpeedLimitedSceneProblem(scene,edits,rotation_speed_limits=speed_limits)
+                except IncompatibleRotationSpeed as error:
+                    save(output/'rotation-speed-preflight.json',error.report);raise
+                save(output/'rotation-speed-preflight.json',problem.speed_preflight)
+                np.savez(output/'rotation-speed-lower-bounds.npz',**{'track_'+str(i):v for i,v in enumerate(problem.speed_lower_bounds.values())})
             if proposal_model=='surface-vector':
                 from native_surface_model import include_times
                 include_times(problem,policy_for(geometry_request,scene,bindings[str(contacts_path)])[0])
@@ -289,6 +314,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                     audit = edits.audit(name,path,scene.actors[name]['animation_index'])
                     if not audit['passed']: raise ValueError('Probe exceeds explicit native edit bounds')
                 residual,_ = problem.decoded(files,value)
+                if speed_limits is not None:save(folder/'rotation-speed.json',problem.last_speed_output_audit)
                 if label=='start' and resume is not None:resume.check_start(files,residual,problem.protected_rows)
                 record = dict(label=label,controls=value.tolist(),merit=list(merit(residual)),
                     files_sha256={p.relative_to(output).as_posix():sha256(p) for p in files.values()})
@@ -342,6 +368,10 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                     anchor_worlds=anchor_worlds if proposal_model=='storage-vector' else None)
             else:value,optimization = optimize(problem,evaluate,iterations,trust)
             final_constraints = evaluate(value,'final'); proposal_spec = copy.deepcopy(spec); proposal = output/'proposal'; proposal.mkdir()
+            speed_report=None
+            if speed_limits is not None:
+                speed_report=copy.deepcopy(problem.last_speed_output_audit)
+                save(output/'rotation-speed-audit.json',speed_report)
             for i,name in enumerate(spec['actors']):
                 src = output/'probes/final'/(name+'.glb') if name in edits.actors else originals[name]
                 dest = proposal/f'actor-{i}.glb'; shutil.copyfile(src,dest)
@@ -397,6 +427,9 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             if any(sha256(p)!=h for p,h in snapshots.items()): raise ValueError('Authored request snapshot changed')
             if conic_identity is not None and solver_identity()!=conic_identity:raise ValueError('Installed vector proposal solver changed')
             result = dict(status='complete',optimization=optimization,probes=probes,edits=audits,
+                **({} if speed_report is None else dict(rotation_speed_conditions_pass=speed_report['passed'],
+                    rotation_speed_result_sha256=sha256(output/'rotation-speed-audit.json'),
+                    rotation_speed_policy_sha256=bindings[str(rotation_speed_policy)])),
                 surface_iteration_receipts=None if surface_trace is None else [dict(path='optimization-iterations/'+item['path'],sha256=item['sha256']) for item in surface_trace.files],
                 resume=resume_receipt,completed_primary_iterations=len(optimization['history'])+(0 if resume is None else resume.prior_iterations),
                 point_and_motion_constraints_pass=bool(merit(final_constraints)[0]==0 and report['passed'] and all(a['passed'] for a in audits.values())),
@@ -449,5 +482,6 @@ if __name__=='__main__':
     p.add_argument('--resume-from',type=Path,help='Completed fit to replay against the exact original source and limits')
     p.add_argument('--contact-revision',type=Path,help='Explicit patch-only revision receipt; requires --resume-from and unchanged source edit permissions')
     p.add_argument('--surface-contact-policy',type=Path,help='Surface-facing acceptance audit and surface-vector proposal guidance')
+    p.add_argument('--rotation-speed-policy',type=Path,help='Source-bound authored local joint speed limits; complete native-key output checks')
     a=p.parse_args(); run(a.contacts,a.permissions,a.output,iterations=a.iterations,trust=a.trust,
-        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,restoration_steps=a.restoration_steps,geometry_policy=a.geometry_policy,resume_from=a.resume_from,surface_contact_policy=a.surface_contact_policy,contact_revision=a.contact_revision,vector_difference_scheme=a.vector_difference_scheme,serialized_ray_probes=a.serialized_ray_probes,rotation_storage_policy=a.rotation_storage_policy,restoration_model=a.restoration_model,plane_guidance=a.plane_guidance)
+        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,restoration_steps=a.restoration_steps,geometry_policy=a.geometry_policy,resume_from=a.resume_from,surface_contact_policy=a.surface_contact_policy,contact_revision=a.contact_revision,vector_difference_scheme=a.vector_difference_scheme,serialized_ray_probes=a.serialized_ray_probes,rotation_storage_policy=a.rotation_storage_policy,restoration_model=a.restoration_model,plane_guidance=a.plane_guidance,rotation_speed_policy=a.rotation_speed_policy)

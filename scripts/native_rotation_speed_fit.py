@@ -39,43 +39,36 @@ class SpeedLimitedSceneProblem(SpeedPreflightSceneProblem):
                 limit=float(rotation_speed_limits[name,node])))
 
     def speed_rows(self,value):
+        vectors,caps,scales=self.rotation_speed_norms(value)
+        return (np.linalg.norm(vectors,axis=1)-caps)/scales
+
+    def rotation_speed_norms(self,value,worlds=None):
         values={name:self.edits.values(name,value) for name in self.edits.actors};rows=[]
-        for track in self.speed_tracks:
-            q=values.get(track['actor'],{}).get((track['node'],'rotation'),track['source'])
-            r=Rotation.from_quat(q)
-            rates=np.rad2deg((r[:-1].inv()*r[1:]).magnitude())/np.diff(track['clock'].astype(float))
-            rows.append((rates-track['limit'])/max(track['limit'],1.))
-        return np.concatenate(rows)
-
-    def model(self,value):
-        return np.r_[SceneProblem.model(self,value),self.speed_rows(value)]
-
-    def audit_outputs(self,files):
-        if not isinstance(files,dict) or set(files)!=set(self.edits.actors):
-            raise ValueError('One fresh exported file for every edited actor required')
-        readers={};edit_audits={}
-        for name,path in files.items():
-            index=self.scene.actors[name]['animation_index']
-            edit_audits[name]=self.edits.audit(name,path,index)
-            rig=RigAsset.load(path);readers[name]=NativeSupportSampler(rig.document,rig.binary,index)
-        reports=[];rows=[]
+        caps=[];scales=[]
         for track in self.speed_tracks:
             name,node=track['actor'],track['node']
-            reader=readers.get(name,self.scene.actors[name]['sampler'])
-            channels=[c for c in reader.channels if c[:2]==(node,'rotation')]
-            if len(channels)!=1 or channels[0][4]!='LINEAR' or not np.array_equal(channels[0][2],track['clock']):
-                raise ValueError('Serialized native channel/clock changed')
-            rates=serialized_rates(channels[0][3],channels[0][2]);failed=rates>track['limit']
-            peak=int(np.argmax(rates));rows.append((rates-track['limit'])/max(track['limit'],1.))
-            reports.append(dict(actor=name,node=node,limit_degrees_per_second=track['limit'],
-                rates_degrees_per_second=rates.tolist(),native_times_s=track['clock'].astype(float).tolist(),
-                neighbor_comparisons=len(rates),failed_neighbors=int(failed.sum()),maximum_speed_degrees_per_second=float(rates[peak]),
-                maximum_interval=peak,passed=not bool(failed.any())))
-        return np.concatenate(rows),dict(schema='strep-native-rotation-speed-output-v1',tracks=reports,edit_audits=edit_audits,
-            passed=all(t['passed'] for t in reports) and all(a['passed'] for a in edit_audits.values()),
-            all_selected_native_neighbors_checked=True,speed_acceptance_allowance_degrees_per_second=0.,
-            continuous_time_verified=False,quality_approved=False,release_approved=False,
-            scope='Fresh serialized local rotation keys, independently normalized quaternion relative-angle arithmetic, every selected native neighbor and unchanged clock, plus original edit/static/frozen-key audit. Limits are authored; these sampled checks do not establish instantaneous interpolation speeds, anatomy, full geometry, forces, engine fidelity or quality.')
+            if worlds is None:
+                q=values.get(name,{}).get((node,'rotation'),track['source']);r=Rotation.from_quat(q)
+            else:
+                ids=np.searchsorted(self.times,track['clock'])
+                if np.any(ids>=len(self.times)) or not np.array_equal(self.times[ids],track['clock']):raise ValueError('Every native speed key must be retained in scene times')
+                world=worlds[name][ids];parent=self.scene.actors[name]['rig'].parents[node]
+                local=world[:,node] if parent<0 else np.linalg.solve(world[:,parent],world[:,node])
+                block=local[:,:3,:3];scale=np.linalg.norm(block,axis=1)
+                if np.any(scale<=0):raise ValueError('Nonzero native joint scales required')
+                matrix=block/scale[:,None,:]
+                if not np.allclose(matrix.swapaxes(1,2)@matrix,np.eye(3),atol=1e-8,rtol=0) or np.any(abs(np.linalg.det(matrix)-1)>1e-8):raise ValueError('Proper local rotations required for speed vector guidance')
+                r=Rotation.from_matrix(matrix)
+            vector=np.rad2deg((r[:-1].inv()*r[1:]).as_rotvec())/np.diff(track['clock'].astype(float))[:,None]
+            rows.append(vector);caps.append(np.full(len(vector),track['limit']));scales.append(np.full(len(vector),max(track['limit'],1.)))
+        return np.concatenate(rows),np.concatenate(caps),np.concatenate(scales)
+
+    def constraints(self,value,worlds=None):
+        vectors,caps,scales=self.rotation_speed_norms(value,worlds)
+        return np.r_[SceneProblem.constraints(self,value,worlds),(np.linalg.norm(vectors,axis=1)-caps)/scales]
+
+    def audit_outputs(self,files):
+        return audit_speed_tracks(self.scene,self.edits,self.speed_tracks,files)
 
     def decoded(self,files,value):
         original,worlds=SceneProblem.decoded(self,files,value)
@@ -85,7 +78,45 @@ class SpeedLimitedSceneProblem(SpeedPreflightSceneProblem):
         if not all(a['passed'] for a in report['edit_audits'].values()):
             raise ValueError('Serialized output exceeds original native edit permissions')
         self.last_speed_output_audit=report
-        return np.r_[original,speed],worlds
+        return np.r_[original[:-len(speed)],speed],worlds
+
+
+def audit_speed_tracks(scene,edits,tracks,files):
+    if not isinstance(files,dict) or set(files)!=set(edits.actors):
+        raise ValueError('One fresh exported file for every edited actor required')
+    readers={};edit_audits={}
+    for name,path in files.items():
+        index=scene.actors[name]['animation_index']
+        edit_audits[name]=edits.audit(name,path,index)
+        rig=RigAsset.load(path);readers[name]=NativeSupportSampler(rig.document,rig.binary,index)
+    reports=[];rows=[]
+    for track in tracks:
+        name,node=track['actor'],track['node']
+        reader=readers.get(name,scene.actors[name]['sampler'])
+        channels=[c for c in reader.channels if c[:2]==(node,'rotation')]
+        if len(channels)!=1 or channels[0][4]!='LINEAR' or not np.array_equal(channels[0][2],track['clock']):
+            raise ValueError('Serialized native channel/clock changed')
+        rates=serialized_rates(channels[0][3],channels[0][2]);failed=rates>track['limit']
+        peak=int(np.argmax(rates));rows.append((rates-track['limit'])/max(track['limit'],1.))
+        reports.append(dict(actor=name,node=node,limit_degrees_per_second=track['limit'],
+            rates_degrees_per_second=rates.tolist(),native_times_s=track['clock'].astype(float).tolist(),
+            neighbor_comparisons=len(rates),failed_neighbors=int(failed.sum()),maximum_speed_degrees_per_second=float(rates[peak]),
+            maximum_interval=peak,passed=not bool(failed.any())))
+    return np.concatenate(rows),dict(schema='strep-native-rotation-speed-output-v1',tracks=reports,edit_audits=edit_audits,
+        passed=all(t['passed'] for t in reports) and all(a['passed'] for a in edit_audits.values()),
+        all_selected_native_neighbors_checked=True,speed_acceptance_allowance_degrees_per_second=0.,
+        continuous_time_verified=False,quality_approved=False,release_approved=False,
+        scope='Fresh serialized local rotation keys, independently normalized quaternion relative-angle arithmetic, every selected native neighbor and unchanged clock, plus original edit/static/frozen-key audit. Limits are authored; these sampled checks do not establish instantaneous interpolation speeds, anatomy, full geometry, forces, engine fidelity or quality.')
+
+
+def audit_scene_speed_outputs(edits,limits,files):
+    from native_rotation_speed_preflight import assess_scene
+    assess_scene(edits,limits)
+    tracks=[]
+    for (name,node),limit in limits.items():
+        channel=next(c for c in edits.scene.actors[name]['sampler'].channels if c[:2]==(node,'rotation'))
+        tracks.append(dict(actor=name,node=node,clock=channel[2],limit=float(limit)))
+    return audit_speed_tracks(edits.scene,edits,tracks,files)
 
 
 def speed_seed(problem):

@@ -96,6 +96,9 @@ def rows(problem, value, worlds=None):
             sample_ids = np.searchsorted(data['times'],clock)
             limit = row['limits']['relative_speed_m_s']
             add(np.diff(error[sample_ids],axis=0)*pop['rate_hz'],limit,max(limit,.001))
+    if hasattr(problem,'rotation_speed_norms'):
+        vector,cap,scale=problem.rotation_speed_norms(value,worlds)
+        add(vector,cap,scale)
     return NormRows(np.concatenate(vectors),np.concatenate(caps),np.concatenate(scales))
 
 

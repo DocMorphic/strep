@@ -4,7 +4,8 @@ const hash=x=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x);
 function numbers(raw){const text=String(raw).trim(),parts=text.split(/[\s,]+/),values=parts.map(Number);if(!text||!values.every(Number.isFinite))throw Error('Enter finite motion times.');return values;}
 export function stagedScene(review){
  if(review?.status!=='complete'||review.native_conditions_pass!==true||review.geometry_conditions_pass!==true||review.quality_approved!==false||review.original_selected!==true||typeof review.id!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(review.id))throw Error('The proposal must pass its recorded native and geometry checks before staging.');
- const request=review.authoring_request;if(request?.schema!=='strep-studio-native-scene-fit-v1')throw Error('Source-bound correction request is missing.');
+ const request=review.authoring_request;if(!['strep-studio-native-scene-fit-v1','strep-studio-native-scene-fit-v2'].includes(request?.schema))throw Error('Source-bound correction request is missing.');
+ if(request.schema==='strep-studio-native-scene-fit-v2'&&review.rotation_speed_conditions_pass!==true)throw Error('The proposal must pass its authored turning-speed limits before staging.');
  const draft=clone(request.draft);delete draft.contact_revision;
  if(key(Object.keys(review.actors??{}).sort())!==key(Object.keys(draft.scene.actors).sort()))throw Error('Complete character proposals are required.');
  for(const [name,actor] of Object.entries(review.actors)){
@@ -16,7 +17,7 @@ export function stagedScene(review){
  return draft;
 }
 export function createNativeSceneFitEditor({document=globalThis.document,api,post,getDraft,setDraft,download=saveJSON}={}){
- const el=n=>document.getElementById('nativeSceneFit'+n);let catalog=null,stamp=null,selections={},tracks=[],busy=false,serial=0,review=null;
+ const el=n=>document.getElementById('nativeSceneFit'+n);let catalog=null,stamp=null,selections={},speedLimits={},tracks=[],busy=false,serial=0,review=null;
  const status=text=>{el('Status').textContent=text;};
  const guard=fn=>async()=>{try{await fn();}catch(error){status(error.message);}};
  function options(name,values,empty=false){const chosen=el(name).value;el(name).replaceChildren(...values.map(v=>{const option=document.createElement('option');option.value=v;option.textContent=v||'Fresh correction from submitted clips';return option;}));if(values.includes(chosen))el(name).value=chosen;else if(empty)el(name).value='';}
@@ -29,7 +30,12 @@ export function createNativeSceneFitEditor({document=globalThis.document,api,pos
   for(const channel of a.channels){const row=document.createElement('label');row.className='small';row.style.display='block';const box=document.createElement('input');box.type='checkbox';box.disabled=!channel.eligible;
    const previous=saved?.tracks.find(t=>t.node===channel.node&&t.path===channel.path);box.checked=!!previous;
    const bound=document.createElement('input');bound.type='number';bound.min=channel.path==='rotation'?'0.000001':'0.001';bound.max=channel.path==='rotation'?'45':'220';bound.step='any';bound.value=previous?(channel.path==='rotation'?previous.maximum_change:previous.maximum_change*1000):(channel.path==='rotation'?20:50);bound.disabled=!box.checked||!channel.eligible;
-   box.onchange=()=>{bound.disabled=!box.checked;};row.append(box,document.createTextNode(` ${channel.name} [${channel.node}] · ${channel.path} ${channel.eligible?'':channel.reason} `),bound);el('Tracks').append(row);tracks.push({channel,box,bound});
+   box.onchange=()=>{bound.disabled=!box.checked;};row.append(box,document.createTextNode(` ${channel.name} [${channel.node}] · ${channel.path} ${channel.eligible?'':channel.reason} `),bound);
+   let speed=null;if(channel.path==='rotation'){
+    speed=document.createElement('input');speed.type='number';speed.min='0';speed.step='any';speed.placeholder='No turning-speed limit';speed.value=speedLimits[name]?.[channel.node]??'';speed.disabled=!channel.eligible;speed.ariaLabel=`${channel.name} maximum turning speed in degrees per second`;
+    row.append(document.createTextNode(' Maximum turning speed (°/s), optional '),speed);
+   }
+   el('Tracks').append(row);tracks.push({channel,box,bound,speed});
   }
  }
  async function load(){
@@ -38,9 +44,9 @@ export function createNativeSceneFitEditor({document=globalThis.document,api,pos
   if(response?.schema!=='strep-studio-native-scene-fit-catalog-v1'||!Number.isFinite(response.duration_s)||response.duration_s!==draft.scene.duration_s||key(Object.keys(response.actors??{}).sort())!==key(Object.keys(draft.scene.actors).sort()))throw Error('Invalid scene joint catalog.');
   for(const [name,a] of Object.entries(response.actors)){
    if(a.sha256!==draft.scene.actors[name].sha256||!Array.isArray(a.channels)||new Set(a.channels.map(c=>`${c.node}:${c.path}`)).size!==a.channels.length||a.channels.some(c=>!Number.isInteger(c.node)||c.node<0||!['rotation','translation'].includes(c.path)||typeof c.eligible!=='boolean'||typeof c.name!=='string'))throw Error('Scene joint catalog changed.');
-   if(catalog?.actors[name]?.sha256!==a.sha256)delete selections[name];
+   if(catalog?.actors[name]?.sha256!==a.sha256){delete selections[name];delete speedLimits[name];}
   }
-  for(const name of Object.keys(selections))if(!response.actors[name])delete selections[name];
+  for(const name of Object.keys(selections))if(!response.actors[name]){delete selections[name];delete speedLimits[name];}
   catalog=response;stamp=before;options('Actor',Object.keys(catalog.actors));drawActor();drawSelections();status('Select native joint channels and save explicit bounds for each character to edit.');
  }
  function saveActor(){
@@ -49,7 +55,8 @@ export function createNativeSceneFitEditor({document=globalThis.document,api,pos
   const selected=tracks.filter(t=>t.box.checked).map(t=>({node:t.channel.node,path:t.channel.path,maximum_change:Number(t.bound.value)/(t.channel.path==='rotation'?1:1000)}));
   if(window.length!==2||!Array.isArray(protectedTimes)||knots.length<3||knots.length>12||!selected.length||selected.length>16||!Number.isFinite(displacement)||displacement<=0||displacement>.22||selected.some(t=>!Number.isFinite(t.maximum_change)||t.maximum_change<=0||t.maximum_change>(t.path==='rotation'?45:.22)))throw Error('Choose 1–16 tracks, 3–12 control times and positive bounds within the displayed limits.');
   if(!(0<=window[0]&&window[0]<window[1]&&window[1]<=catalog.duration_s)||knots[0]!==window[0]||knots.at(-1)!==window[1]||knots.some((v,i)=>i>0&&v<=knots[i-1])||protectedTimes.some(s=>!Array.isArray(s)||s.length!==2||s.some(v=>typeof v!=='number'||!Number.isFinite(v))||!(0<=s[0]&&s[0]<=s[1]&&s[1]<=catalog.duration_s)))throw Error('Use ordered control times with exact edit endpoints and protected ranges inside the clip.');
-  selections[el('Actor').value]={window_s:window,protected_s:protectedTimes,knots_s:knots,tracks:selected,maximum_joint_displacement_m:displacement};drawSelections();status('Explicit character bounds saved.');
+  const speeds={};for(const t of tracks){if(!t.speed||t.speed.disabled||String(t.speed.value).trim()==='')continue;const maximum=Number(t.speed.value);if(!Number.isFinite(maximum)||maximum<0)throw Error('Turning-speed limits must be finite and nonnegative; leave blank to omit one.');speeds[t.channel.node]=maximum;}
+  selections[el('Actor').value]={window_s:window,protected_s:protectedTimes,knots_s:knots,tracks:selected,maximum_joint_displacement_m:displacement};speedLimits[el('Actor').value]=speeds;drawSelections();status('Explicit character bounds and turning-speed choices saved.');
  }
  function request(){
   const draft=clone(getDraft());if(!catalog||stamp!==key(draft))throw Error('Scene changed; reload its joints before proposing a correction.');
@@ -57,17 +64,19 @@ export function createNativeSceneFitEditor({document=globalThis.document,api,pos
   const controls=Object.values(selections).reduce((n,a)=>n+3*(a.knots_s.length-2)*a.tracks.length,0);
   if(controls>96)throw Error('At most 96 controls are supported; reduce tracks or interior control times.');
   const iterations=Number(el('Iterations').value);if(!Number.isInteger(iterations)||iterations<1||iterations>16)throw Error('Choose 1–16 correction iterations.');
-  return {schema:'strep-studio-native-scene-fit-v1',draft,actors:clone(selections),options:{iterations},resume_from:el('Resume').value||null};
+  const limits=Object.entries(speedLimits).flatMap(([actor,nodes])=>Object.entries(nodes).map(([node,maximum_degrees_per_second])=>({actor,node:Number(node),maximum_degrees_per_second})));
+  if(limits.length>64)throw Error('Choose at most 64 explicit joint turning-speed limits.');
+  return {schema:limits.length?'strep-studio-native-scene-fit-v2':'strep-studio-native-scene-fit-v1',draft,actors:clone(selections),options:{iterations},resume_from:el('Resume').value||null,...(limits.length?{rotation_speed_limits:limits}:{})};
  }
  async function refresh(){const data=await api('/api/native-scene-fit-jobs');options('Jobs',data.jobs.map(j=>j.id));options('Resume',['',...data.jobs.filter(j=>j.status==='complete').map(j=>j.id)],true);return data;}
  el('Load').onclick=guard(load);el('Actor').onchange=drawActor;el('SaveActor').onclick=guard(saveActor);
- el('RemoveActor').onclick=guard(()=>{delete selections[el('Actor').value];drawActor();drawSelections();});
+ el('RemoveActor').onclick=guard(()=>{delete selections[el('Actor').value];delete speedLimits[el('Actor').value];drawActor();drawSelections();});
  el('Save').onclick=guard(()=>download(request()));el('Refresh').onclick=guard(refresh);
  el('LoadResume').onclick=guard(async()=>{const id=el('Resume').value;if(!id)throw Error('Select a completed correction to continue.');
   const before=key(getDraft()),value=await api(`/api/native-scene-fit-review?id=${encodeURIComponent(id)}`);if(value.id!==id||el('Resume').value!==id||before!==key(getDraft()))throw Error('Continuation selection or scene changed.');
-  if(value.status!=='complete'||value.authoring_request?.schema!=='strep-studio-native-scene-fit-v1'||value.quality_approved!==false)throw Error('Completed source-bound correction required.');
+  if(value.status!=='complete'||!['strep-studio-native-scene-fit-v1','strep-studio-native-scene-fit-v2'].includes(value.authoring_request?.schema)||value.quality_approved!==false)throw Error('Completed source-bound correction required.');
   setDraft(clone(value.authoring_request.draft));selections=clone(value.authoring_request.actors);catalog=null;
-  await load();selections=clone(value.authoring_request.actors);drawActor();drawSelections();el('Resume').value=id;el('Iterations').value=value.authoring_request.options.iterations;status('Continuation loaded. Original clip epochs and edit permissions stay bound; explicit patch revisions are checked separately.');
+  await load();selections=clone(value.authoring_request.actors);speedLimits={};for(const t of value.authoring_request.rotation_speed_limits??[]){speedLimits[t.actor]??={};speedLimits[t.actor][t.node]=t.maximum_degrees_per_second;}drawActor();drawSelections();el('Resume').value=id;el('Iterations').value=value.authoring_request.options.iterations;status('Continuation loaded. Original clip epochs, edit permissions and turning-speed limits stay bound; explicit patch revisions are checked separately.');
  });
  el('Build').onclick=guard(async()=>{if(busy)throw Error('Wait for this request.');const value=request();busy=true;el('Build').disabled=true;
   try{const job=await post('/api/native-scene-fits',value);await refresh();el('Jobs').value=job.id;status('Character correction started. Refresh results to inspect original clips, proposals and failures.');}finally{busy=false;el('Build').disabled=false;}
@@ -76,13 +85,14 @@ export function createNativeSceneFitEditor({document=globalThis.document,api,pos
   const value=await api(`/api/native-scene-fit-review?id=${encodeURIComponent(id)}`);if(value.id!==id||el('Jobs').value!==id)throw Error('Correction selection changed.');
   const p=document.createElement('p');p.textContent=value.status==='complete'?`Native conditions: ${value.native_conditions_pass?'pass':'fail'}. Sampled geometry: ${value.geometry_conditions_pass?'pass':'fail'}. Original clips remain selected. Import and motion-quality review are required.`:`${value.status}: ${value.stage||value.error||'waiting'}`;el('Results').append(p);
   for(const d of value.downloads??[]){const a=document.createElement('a');a.className='btn';a.href=d.url;a.download='';a.textContent=d.label;el('Results').append(a);}
+  if(value.rotation_speed_conditions_pass!==undefined)p.textContent+=` Turning-speed limits: ${value.rotation_speed_conditions_pass?'pass':'fail'}.`;
   review=value;try{stagedScene(value);el('Stage').disabled=false;}catch{}status(p.textContent);
  });
  el('Stage').onclick=guard(async()=>{const before=review;if(!before||el('Jobs').value!==before.id)throw Error('Review the selected correction first.');
   const sceneBefore=key(getDraft());
   const updated=await api(`/api/native-scene-fit-review?id=${encodeURIComponent(before.id)}`);
   if(review!==before||key(updated)!==key(before)||el('Jobs').value!==before.id||sceneBefore!==key(getDraft()))throw Error('Correction or scene changed; review its results again.');
-  setDraft(stagedScene(updated));catalog=null;stamp=null;selections={};el('Stage').disabled=true;status('All proposals staged in a new scene draft. Build and review its scene assets before game use; the original job is retained.');
+  setDraft(stagedScene(updated));catalog=null;stamp=null;selections={};speedLimits={};el('Stage').disabled=true;status('All proposals staged in a new scene draft. Build and review its scene assets before game use; the original job is retained.');
  });
  return {load,refresh,request};
 }

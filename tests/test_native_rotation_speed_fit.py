@@ -38,7 +38,7 @@ def test_model_and_fresh_decoded_rows_agree_and_detect_new_speed_violation(tmp_p
     _,_,_,_,_,scene,edits=prepare(tmp_path,rotation=True)
     problem=SpeedLimitedSceneProblem(scene,edits,rotation_speed_limits={('A',3):1})
     zero=edits.initial.copy();changed=zero.copy();changed.reshape(-1,3)[:,1]=.5
-    original_rows=SceneProblem.model(problem,changed)
+    original_rows=SceneProblem.constraints(problem,changed)
     np.testing.assert_array_equal(problem.model(changed)[:len(original_rows)],original_rows)
     assert np.max(problem.speed_rows(zero))<=0 and np.max(problem.speed_rows(changed))>0
     output=tmp_path/'changed.glb';edits.export('A',changed,output)
