@@ -154,8 +154,22 @@ and addition of a new witness, rejection after either guided-solve or complete-
 check budget interruption, and rejection after three failed complete rounds.
 All **18** recorded resource observations replay. These test acceptance logic;
 they do not establish triangle correctness or actual solver/rig performance.
-The real trial is now running with the tested source hash bound before and after
-execution. Partial caches cannot authorize an export. Fresh serialized,
+The real trial completes **259** evaluations and a full candidate check, then
+rejects export. The solver reports incompatible inequalities; this is a local
+solver outcome, not a proof that the action is infeasible. The native candidate
+normal reaches **15.000902714671598 degrees**, and modeled engine skin puts a
+contact **0.5107946698700836 mm** behind its target. Both exceed original limits;
+geometry also misses the additional fitting reserve. All **267** resource
+observations replay. Its controls, full checks and failure remain preserved.
+
+A separate trial expands only the per-component correction search from **0.001**
+to **0.004 radians** for the same two wrists. This is an optimizer search setting,
+not a change to the original **45-degree** cumulative motion cap, **15-degree**
+normal limit, **0.5-mm** side allowance or **5-mm** penetration limit. All original
+times, contacts, props and affected triangles remain in the complete admission
+check. Five actual-source admission checks pass again and all **18** resource
+observations replay before the new real fit starts. No new candidate is approved
+yet. Partial caches cannot authorize an export. Fresh serialized,
 complete-body, force and actual engine evidence remain required. The earlier
 engine pose error does not bound a future export.
 
