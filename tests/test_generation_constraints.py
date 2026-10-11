@@ -103,3 +103,66 @@ def test_invalid_pose_source_fails_before_text_encoding(tmp_path, monkeypatch):
     monkeypatch.setattr(run_actions.subprocess,'Popen',forbidden)
     with pytest.raises(ValueError,match='checksum'):run_actions.run(path,tmp_path/'output')
     assert read(tmp_path/'output/pipeline.json')['failed_stage']=='pose_source_validation'
+
+
+@pytest.mark.parametrize('selected', [['Head'],['LeftShin','RightShin'],
+                                     ['Hips','Chest','LeftForeArm'],['LeftHand']])
+def test_selected_body_channels_reach_real_condition_masks_without_chain_expansion(selected):
+    from kimodo.motion_rep.reps.kimodo_motionrep import KimodoMotionRep
+    value=request();value['generation_constraints'][0].update(type='joint-set',joint_names=selected)
+    compiled,provenance=compile_guides(value);skeleton=SOMASkeleton30()
+    guide=load_guides(compiled,skeleton)[0]
+    indices=[skeleton.bone_index[j] for j in selected]
+    assert guide.joint_names==selected and guide.pos_indices.tolist()==guide.rot_indices.tolist()==indices
+    representation=KimodoMotionRep(skeleton,30)
+    observed,mask=representation.create_conditions_from_constraints([guide],120,False,'cpu')
+    for name,width in [('global_rot_data',6),('local_joints_positions',3)]:
+        actual=mask[:,representation.slice_dict[name]].reshape(120,30,width)
+        expected=torch.zeros_like(actual);expected[torch.tensor([59,60])[:,None],torch.tensor(indices)[None,:]]=True
+        torch.testing.assert_close(actual,expected,rtol=0,atol=0)
+    assert torch.isfinite(observed).all() and 'No automatic hand/foot chain expansion' in provenance[0]['scope']
+
+
+def test_selected_joint_crop_and_saved_constraint_retain_the_exact_selection():
+    value=request();value['generation_constraints'][0].update(type='joint-set',joint_names=['LeftShin','Head'])
+    compiled,_=compile_guides(value);skeleton=SOMASkeleton30();guide=load_guides(compiled,skeleton)[0]
+    cropped=guide.crop_move(60,120)
+    assert cropped.name=='joint-set' and cropped.frame_indices.tolist()==[0] and cropped.joint_names==['LeftShin','Head']
+    assert cropped.pos_indices.tolist()==guide.pos_indices.tolist()
+    empty=guide.crop_move(80,90);assert empty.frame_indices.numel()==0 and empty.joint_names==guide.joint_names
+    info=guide.get_save_info()
+    def plain(v):
+        if isinstance(v,torch.Tensor):return v.tolist()
+        if isinstance(v,dict):return {k:plain(x) for k,x in v.items()}
+        return v
+    restored=load_guides([plain(info)],skeleton)[0]
+    assert restored.joint_names==guide.joint_names and restored.name==guide.name
+    torch.testing.assert_close(restored.global_joints_positions,guide.global_joints_positions,rtol=0,atol=1e-5)
+
+
+def test_selected_joint_audit_catches_orientation_error_when_position_is_unchanged():
+    from audit_generation_guides import audit
+    from scipy.spatial.transform import Rotation
+    from kimodo.skeleton import SOMASkeleton77
+    value=request();value['generation_constraints'][0].update(type='joint-set',joint_names=['Head'])
+    value['generation_constraints'][0].update(frame_indices=[40],source_frames=[40])
+    compiled,_=compile_guides(value)
+    with np.load(ROOT/value['generation_constraints'][0]['motion']) as archive:motion=dict(archive)
+    assert audit(motion,compiled)['numerical_screen_passed']
+    head=SOMASkeleton77().bone_index['Head'];motion['local_rot_mats']=motion['local_rot_mats'].copy()
+    motion['local_rot_mats'][40,head]=motion['local_rot_mats'][40,head]@Rotation.from_rotvec([0,.5,0]).as_matrix()
+    result=audit(motion,compiled)
+    assert not result['numerical_screen_passed']
+    row=result['guides'][0];assert row['position_joint_names']==row['rotation_joint_names']==['Head']
+    assert row['maximum']['joint_position_error_m']<1e-4 and row['maximum']['effector_rotation_error_degrees']>28
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(),reason='Requires CUDA')
+def test_selected_joint_cuda_crop_reaches_real_condition_assembly():
+    from kimodo.motion_rep.reps.kimodo_motionrep import KimodoMotionRep
+    value=request();value['generation_constraints'][0].update(type='joint-set',joint_names=['Head','LeftShin'])
+    compiled,_=compile_guides(value);skeleton=SOMASkeleton30().to('cuda')
+    guide=load_guides(compiled,skeleton,device='cuda')[0].crop_move(60,120)
+    assert guide.frame_indices.device.type==guide.pos_indices.device.type==guide.rot_indices.device.type=='cpu'
+    observed,mask=KimodoMotionRep(skeleton,30).create_conditions_from_constraints([guide],60,False,'cuda')
+    assert observed.device.type==mask.device.type=='cuda' and torch.isfinite(observed).all()

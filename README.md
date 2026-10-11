@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Selected body-pose guides](docs/selected-joint-guides-v1.md): the composer/request adapter can guide knees, head, pelvis and other SOMA30 joints individually. Real CPU/CUDA mask assembly and four unchanged-checkpoint clips verify condition delivery, but 0/4 clips passes the provisional guide-error screen. Body controls remain experimental; exact targets, collision and plausible motion require further work.
+
 - [Paired ground-motion proposals](docs/ground-proposals-v1.md): all 30 crawl/get-up clips generate and transfer, but none passes the full floor condition. Separate skinning arithmetic reproduces all 75,750 target sample depths and classifications across 77.9 million vertex positions. Sparse root guides and clearance wording yield mixed results; no replacement is promoted. Next work requires explicit whole-body/contact targets or scene-conditioned editing, with genuine review.
 
 - [Rig-transfer and ground-motion failures](docs/kenney-ground-scenes-v2.md): seven development motions transfer to a licensed Kenney test rig and independently replay, but four fail the declared floor screen. Expanded clocks retain 10,608 times and 10.9 million vertex evaluations. A [complete plane-envelope correction trial](docs/kenney-crawl-plane-envelope-v2.md) clears the earlier capacity failure, then stops at the execution limit without accepting a changed export. All 28 changed proposals violate original motion caps; the original remains selected. Three-step decoded restoration also stops without an accepted correction; 36 completed geometry probes fail. [Atomic iteration receipts](docs/native-surface-iteration-trace-v1.md) now retain solver diagnostics on future interruptions, with 224 affected checks passing. These cases measure a general authoring path; they do not restrict supported prompt vocabulary.
@@ -71,7 +73,7 @@ These development workflows retain failures and their stated limits. Scene conta
 
 ## Source checks
 
-The [public source-check workflow](docs/model-free-source-checks.md) declares 451 Python test modules and 41 Node suites on Linux and Windows, plus separate native CPU fixture jobs. It does not need motion checkpoints or local study outputs. Inference, engine, full-system and human-quality evaluation are separate. Some additional tests need acquired model/rig fixtures or Godot; a full fresh-clone suite pass is not established.
+The [public source-check workflow](docs/model-free-source-checks.md) declares 452 Python test modules and 42 Node suites on Linux and Windows, plus separate native CPU fixture jobs. It does not need motion checkpoints or local study outputs. Inference, engine, full-system and human-quality evaluation are separate. Some additional tests need acquired model/rig fixtures or Godot; a full fresh-clone suite pass is not established.
 
 | Path | Contents |
 |---|---|

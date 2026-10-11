@@ -109,7 +109,7 @@ def prepare(scene_path, plan_path, output, reuse_baseline=False,diagnostic_targe
         **profile_binding,
         scope='Fitted native actor poses used as generation conditions with a separately recorded temporal guide policy. Independent actor sampling with fixed authored placement/clock; no object/partner awareness, anatomy approval or collision solve. All source and output defects remain reportable.'))
     snapshot=out/'source-snapshot';snapshot.mkdir()
-    for name in ['scene_generation.py','scene_generation_guides.py','scene_contact_consistency.py','scene_target_preflight.py','generation_constraints.py','generate_actions.py','run_actions.py','audit_generation_guides.py']:
+    for name in ['scene_generation.py','scene_generation_guides.py','scene_contact_consistency.py','scene_target_preflight.py','generation_constraints.py','selected_joint_constraints.py','generate_actions.py','run_actions.py','audit_generation_guides.py']:
         shutil.copyfile(ROOT/'scripts'/name,snapshot/name)
     if profile_binding:shutil.copyfile(ROOT/'scripts/motion_profile.py',snapshot/'motion_profile.py')
     if not preflight['reference_screens_passed'] and not diagnostic_targets:

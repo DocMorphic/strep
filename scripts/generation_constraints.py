@@ -7,8 +7,24 @@ import re
 from pathlib import Path
 from strep import ROOT, sha256
 
-KINDS = {'root2d', 'fullbody', 'left-hand', 'right-hand', 'left-foot', 'right-foot', 'end-effector'}
+KINDS = {'root2d', 'fullbody', 'left-hand', 'right-hand', 'left-foot', 'right-foot', 'end-effector', 'joint-set'}
 EFFECTORS = {'LeftHand', 'RightHand', 'LeftFoot', 'RightFoot'}
+SELECTABLE_JOINTS = (
+    'Hips', 'Spine1', 'Spine2', 'Chest', 'Neck1', 'Neck2', 'Head', 'Jaw',
+    'LeftEye', 'RightEye', 'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftHand',
+    'LeftHandThumbEnd', 'LeftHandMiddleEnd', 'RightShoulder', 'RightArm',
+    'RightForeArm', 'RightHand', 'RightHandThumbEnd', 'RightHandMiddleEnd',
+    'LeftLeg', 'LeftShin', 'LeftFoot', 'LeftToeBase',
+    'RightLeg', 'RightShin', 'RightFoot', 'RightToeBase',
+)
+
+
+def validate_selected_joints(joints):
+    if (not isinstance(joints, list) or not 1 <= len(joints) <= len(SELECTABLE_JOINTS)
+            or any(not isinstance(j, str) or j not in SELECTABLE_JOINTS for j in joints)
+            or len(set(joints)) != len(joints)):
+        raise ValueError('joint-set requires 1-30 distinct SOMA30 joint names')
+    return joints
 
 
 def validate_guide_origin(request, guides):
@@ -50,8 +66,10 @@ def validate_guides(guides, frame_count):
         if guide['type'] == 'end-effector':
             if not isinstance(joints, list) or not joints or any(not isinstance(j, str) or j not in EFFECTORS for j in joints) or len(set(joints)) != len(joints):
                 raise ValueError('End-effector guide requires distinct hand/foot joint_names')
+        elif guide['type'] == 'joint-set':
+            validate_selected_joints(joints)
         elif joints is not None or 'joint_names' in guide:
-            raise ValueError('joint_names only applies to end-effector guides')
+            raise ValueError('joint_names only applies to end-effector or joint-set guides')
     return guides
 
 
@@ -96,6 +114,9 @@ def compile_guides(request):
         provenance.append({**guide, 'source_fps_assumption': 30,
             'smooth_root_source': 'smooth_root_pos' if 'smooth_root_pos' in data else 'root_positions fallback',
             'scope': 'Root path and heading' if guide['type'] == 'root2d' else 'Pose-derived root path, hip height and heading plus selected body/effector channels; SOMA77 reduced to SOMA30; fingers and mesh contacts are not constrained'})
+        if guide['type'] == 'joint-set':
+            provenance[-1]['scope'] = ('Exact selected SOMA30 global joint position/rotation channels plus implicit root path, hip height and heading. '
+                'No automatic hand/foot chain expansion, finger articulation, mesh contact, collision or hard enforcement.')
     if origin_anchor is not None:
         anchor_index, anchor_sample = origin_anchor
         offset = np.asarray(compiled[anchor_index]['smooth_root_2d'][anchor_sample], dtype=float)
@@ -114,7 +135,16 @@ def compile_guides(request):
 
 def load_guides(compiled, skeleton, device=None):
     from kimodo.constraints import load_constraints_lst
-    result = load_constraints_lst(compiled, skeleton, device=device)
+    result = []
+    for item in compiled:
+        if item['type'] == 'joint-set':
+            from selected_joint_constraints import SelectedJointConstraintSet
+            guide = SelectedJointConstraintSet.from_dict(skeleton, item)
+            if device is not None:
+                guide.to(device=device)
+            result.append(guide)
+        else:
+            result.extend(load_constraints_lst([item], skeleton, device=device))
     # Pinned upstream crop_move rebuilds joint indices on CPU. Keep all sparse
     # indices on CPU, as its own multiprompt transition guides do. Pose values
     # stay on the model device; create_conditions moves assembled indices there.

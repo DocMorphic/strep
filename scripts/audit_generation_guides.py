@@ -29,6 +29,10 @@ def audit(motion, compiled):
                 values['effector_rotation_error_degrees'] = np.degrees(np.arccos(np.clip((np.trace(delta, axis1=-2, axis2=-1) - 1) / 2, -1, 1)))
         rows.append(dict(type=guide.name, frame_indices=frames.tolist(),
             maximum={k:float(v.max()) for k,v in values.items()}, samples={k:v.tolist() for k,v in values.items()}))
+        if guide.name == 'joint-set':
+            rows[-1]['joint_names'] = list(guide.joint_names)
+            rows[-1]['position_joint_names'] = [skeleton.bone_order_names[int(i)] for i in guide.pos_indices]
+            rows[-1]['rotation_joint_names'] = [skeleton.bone_order_names[int(i)] for i in guide.rot_indices]
     failures = [dict(guide=i, metric=k, maximum=value) for i,row in enumerate(rows) for k,value in row['maximum'].items()
         if value > (15 if k.endswith('_degrees') else .03)]
     return dict(guides=rows, numerical_flags=failures, numerical_screen_passed=not failures,

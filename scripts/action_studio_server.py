@@ -32,6 +32,7 @@ def allowed_file(url_path):
     if path in ['/','/studio']:return ROOT/'scripts/action-studio.html'
     if path=='/motion-profile-editor.js':return ROOT/'scripts/motion-profile-editor.js'
     if path=='/generation-job-status.mjs':return ROOT/'scripts/generation-job-status.mjs'
+    if path=='/selected-joint-guides.mjs':return ROOT/'scripts/selected-joint-guides.mjs'
     if path=='/scene-pair-editor.js':return ROOT/'scripts/scene-pair-editor.js'
     if path=='/scene-generation-plan.js':return ROOT/'scripts/scene-generation-plan.js'
     if path in ['/pose-guide-editor.js','/soma-preview-skin.js','/rig-joint-editor.js','/rig-posture-editor.js','/scene-release-editor.js','/scene-region-editor.js','/scene-grip-picker.js','/scene-object-geometry.js','/scene-hand-patch.js','/scene-trim-editor.js','/scene-placement-editor.mjs','/scene-placement-controls.mjs']:return ROOT/'scripts'/path[1:]

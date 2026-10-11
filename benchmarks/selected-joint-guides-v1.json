@@ -1,0 +1,17 @@
+{
+  "schema": "strep-selected-joint-guide-probe-v1",
+  "status": "frozen-before-inference",
+  "checkpoint": "nvidia/Kimodo-SOMA-RP-v1.1",
+  "checkpoint_transport": "cuda-streamed",
+  "seeds": [77, 79],
+  "planned_clips": 4,
+  "generation": {"steps": 100, "cfg_type": "separated", "cfg_weight": [2, 2], "num_samples": 1, "transition_frames": 5, "post_processing": false, "fps": 30},
+  "cases": [
+    {"id": "crawl-selected-body", "prompt": "A person crawls forward slowly on their hands and knees.", "duration_s": 4, "frames": 120, "joint_names": ["Head", "LeftShin", "RightShin"], "guide_frames": [0, 60, 119], "reference_motion_sha256": "fae96b000fd11a9870720314c34fa77f8e61c8ad9e37f4933d3aba15abaebba9"},
+    {"id": "get-up-selected-body", "prompt": "A person lies on their back on the floor, rolls onto their side and pushes up to stand.", "duration_s": 6, "frames": 180, "joint_names": ["Hips", "Chest", "Head"], "guide_frames": [0, 90, 179], "reference_motion_sha256": "b654b7be95e77b38326c80769733fa50f960667e56cae3c764890e2709d81735"}
+  ],
+  "scope": "Functional integration probe for newly selectable position/rotation conditioning channels. Original reference poses are measured development failures, not clean corrective targets. These four clips do not replace the five-seed geometry benchmark, validate contact correction, define an action whitelist or approve motion quality. No changed reference pose, model weights, postprocessing, training, held-out data or release criteria.",
+  "original_selected": true,
+  "quality_approved": false,
+  "release_approved": false
+}

@@ -451,7 +451,8 @@
     "tests/test_text_motion_checkpoint.py",
     "tests/test_rigid_chain_reach.py",
     "tests/test_bounded_pose_ik.py",
-    "tests/test_bounded_pose_ball_ik.py"
+    "tests/test_bounded_pose_ball_ik.py",
+    "tests/test_selected_joint_guides.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",
@@ -494,6 +495,7 @@
     "tests/test_precision_export_editor.mjs",
     "tests/test_scene_placement_editor.mjs",
     "tests/test_generation_job_status.mjs",
-    "tests/test_cleanup_timer.mjs"
+    "tests/test_cleanup_timer.mjs",
+    "tests/test_selected_joint_guides.mjs"
   ]
 }

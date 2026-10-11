@@ -100,6 +100,16 @@ now pass 224 affected tests (13 new), preserving completed solver/restoration
 diagnostics on interruption without changing any acceptance limit. The source
 inventory reaches 451 Python modules / 41 Node suites; no release approval.
 
+The [selected body-guide adapter](selected-joint-guides-v1.md) adds exact
+selected SOMA30 joint channels to requests and the pose composer. Core CPU/CUDA
+conditioning checks pass 143 Python tests and three Node checks; current isolated
+route/admission checks pass 20 tests. Four unchanged-checkpoint integration clips
+generate but all miss the provisional guide screen (95-171 mm worst selected
+joint error). These source poses are measured failures, not clean targets. No
+geometry/contact, live UI, training or quality approval follows. All three
+resource traces replay. The source inventory is 452 Python modules / 42 Node
+suites; explicit feasible support targets and bounded enforcement remain next.
+
 The [paired ground-proposal study](ground-proposals-v1.md) now completes all
 30 raw generations, fixed-rig transfers and full target screens across crawl,
 get-up, three conditions and five matched seeds. None passes the complete floor

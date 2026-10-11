@@ -58,6 +58,7 @@ def main(request_path,folder,*,checkpoint_transport='upstream'):
                 'encoder':encoder.metadata,'fps':30,'diffusion_steps':100,'cfg_type':'separated','cfg_weight':[2,2],
                 'postprocessing':False,'constraints':compiled,'constraint_sources':provenance,
                 'constraint_adapter_sha256':sha256(ROOT/'scripts/generation_constraints.py'),
+                'selected_joint_adapter_sha256':sha256(ROOT/'scripts/selected_joint_constraints.py') if any(c['type']=='joint-set' for c in compiled) else None,
                 'num_transition_frames':5,'timeline':timeline(request),
                 'scene_status':'Single humanoid only; no objects, partner tracks or scene-aware contact solving.',
                 'generation_script_sha256':sha256(Path(__file__))}

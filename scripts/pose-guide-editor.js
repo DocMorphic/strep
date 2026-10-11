@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {enableEightWeights} from './soma-preview-skin.js';
+import {JOINT_CHOICES,validateJointSelection} from './selected-joint-guides.mjs';
 
 function targetPreview(host,result){
  const canvas=document.createElement('canvas');canvas.style.cssText='width:100%;height:240px;display:block';canvas.setAttribute('aria-label','Authored pose target preview');host.append(canvas);
@@ -21,7 +22,7 @@ function targetPreview(host,result){
 export function createPoseGuideEditor(){
  const list=document.getElementById('poseGuideList');
  let guides=[],previews=[];
- const kinds=[['right-hand','Right hand'],['left-hand','Left hand'],['right-foot','Right foot'],['left-foot','Left foot'],['fullbody','Whole body'],['root2d','Root path and heading']];
+ const kinds=[['right-hand','Right hand'],['left-hand','Left hand'],['right-foot','Right foot'],['left-foot','Left foot'],['fullbody','Whole body'],['joint-set','Selected body parts'],['root2d','Root path and heading']];
  function changed(){document.getElementById('requestForm').dispatchEvent(new Event('input',{bubbles:true}));}
  function render(){
   previews.forEach(dispose=>dispose());previews=[];
@@ -34,12 +35,18 @@ export function createPoseGuideEditor(){
    for(const [value,label] of kinds)kind.add(new Option(label,value));
    const customJoints=guide.joint_names?.slice();
    if(guide.type==='end-effector')kind.add(new Option(guide.joint_names.join(' + '),'end-effector'));
-   kind.value=guide.type;kind.onchange=()=>{guide.type=kind.value;if(kind.value!=='end-effector')delete guide.joint_names;else guide.joint_names=customJoints.slice();changed();};kindLabel.append(kind);
+   kind.value=guide.type;kind.onchange=()=>{guide.type=kind.value;if(kind.value==='joint-set')guide.joint_names=customJoints?.slice()||['Hips'];else if(kind.value==='end-effector')guide.joint_names=customJoints.slice();else delete guide.joint_names;render();changed();};kindLabel.append(kind);
+   const jointLabel=document.createElement('label');jointLabel.textContent='Body parts to guide';jointLabel.hidden=guide.type!=='joint-set';
+   const jointSelect=document.createElement('select');jointSelect.multiple=true;jointSelect.size=6;jointSelect.setAttribute('aria-label',`Pose guide ${index+1} body parts`);
+   for(const [name,label] of JOINT_CHOICES){const option=new Option(label,name);option.selected=guide.joint_names?.includes(name)||false;jointSelect.add(option);}
+   jointSelect.onchange=()=>{guide.joint_names=Array.from(jointSelect.selectedOptions,option=>option.value);changed();};jointLabel.append(jointSelect);
+   const jointHelp=document.createElement('p');jointHelp.className='small';jointHelp.hidden=guide.type!=='joint-set';jointHelp.textContent='Guide the selected positions and orientations from the captured pose. Pelvis height, root path and heading are also guided. Generation can miss these targets; mesh contacts need separate checks.';
    const label=document.createElement('label');label.textContent='Target frame (30 frames per second)';
    const target=document.createElement('input');target.value=guide.frame_indices.join(', ');target.required=true;target.setAttribute('aria-label',`Pose guide ${index+1} target frame`);
    target.oninput=()=>{guide.frame_indices=target.value.split(',').map(v=>/^\d+$/.test(v.trim())?Number(v.trim()):NaN);changed();};label.append(target);
    const remove=document.createElement('button');remove.type='button';remove.className='btn';remove.textContent='Remove pose guide';remove.onclick=()=>{guides.splice(index,1);render();changed();};
    const editor=document.createElement('details'),title=document.createElement('summary');title.textContent='Move this hand or foot target';editor.append(title);
+   editor.hidden=guide.type==='joint-set';
    const help=document.createElement('p');help.className='small';help.textContent='For a single captured hand or foot. Offset is world XYZ in metres (Y up). Root, other limbs and hand/foot orientation stay fixed. This is a pose target, not an animation or collision correction.';editor.append(help);
    const offsets=['X','Y','Z'].map(axis=>{const l=document.createElement('label');l.textContent=axis+' offset (m)';const input=document.createElement('input');input.type='number';input.min=-.5;input.max=.5;input.step=.01;input.value=0;input.setAttribute('aria-label',`Pose guide ${index+1} ${axis} offset`);l.append(input);editor.append(l);return input;});
    const budgetLabel=document.createElement('label');budgetLabel.textContent='Maximum joint edit (degrees)';const budget=document.createElement('input');budget.type='number';budget.min=1;budget.max=90;budget.value=45;budget.setAttribute('aria-label',`Pose guide ${index+1} rotation budget`);budgetLabel.append(budget);editor.append(budgetLabel);
@@ -56,7 +63,7 @@ export function createPoseGuideEditor(){
      if(result.reached){const apply=document.createElement('button');apply.type='button';apply.className='btn';apply.textContent='Use this target';apply.onclick=()=>{if(!guides.includes(guide)||guide.sha256!==sourceHash)return;const frames=guide.frame_indices.slice();Object.keys(guide).forEach(k=>delete guide[k]);Object.assign(guide,result.guide,{frame_indices:frames});render();changed();};output.append(apply);}
     }catch(error){output.textContent=error.message;}finally{solve.disabled=false;}
    };
-   row.append(source,kindLabel,label,editor,remove);list.append(row);
+   row.append(source,kindLabel,jointLabel,jointHelp,label,editor,remove);list.append(row);
   });
  }
  return {
@@ -72,6 +79,7 @@ export function createPoseGuideEditor(){
   request(frameCount){
    const occupied=new Set();
    for(const guide of guides){
+    if(guide.type==='joint-set')validateJointSelection(guide.joint_names);
     if(guide.frame_indices.length!==guide.source_frames.length)throw Error('Each pose guide needs one target frame per source frame.');
     let previous=-1;
     for(const frame of guide.frame_indices){
