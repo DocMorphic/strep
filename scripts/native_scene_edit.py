@@ -11,20 +11,39 @@ from rig_asset import RigAsset
 from native_foot_plant import mesh_accessor_payload
 
 
+def clip_boundary_keys(clock, window, protected, chosen, duration):
+    """Opt in only at actual clip edges, respecting each key's full support."""
+    if (not isinstance(chosen, list) or any(type(v) is not str or v not in ('start', 'end') for v in chosen)
+            or len(set(chosen)) != len(chosen)):
+        raise ValueError('Distinct explicit start/end clip boundaries required')
+    result=[]
+    for edge in chosen:
+        if edge=='start':
+            if window[0]!=0 or clock[0]!=0:raise ValueError('Editable start requires an actual zero-time clip key and window')
+            index=0;blocked=any(b>=clock[0] and a<clock[1] for a,b in protected)
+        else:
+            if window[1]!=duration or clock[-1]!=duration:raise ValueError('Editable end requires an actual final clip key and window')
+            index=len(clock)-1;blocked=any(b>clock[-2] and a<=clock[-1] for a,b in protected)
+        if blocked:raise ValueError('Requested boundary key affects a protected time interval')
+        result.append(index)
+    return result
+
+
 class SceneEdits:
     def __init__(self, permissions, scene, spec_digest, *, rotation_storage_policy='unit'):
         if rotation_storage_policy not in ('unit','source-scale'):
             raise ValueError('Choose unit or source-scale rotation storage')
         self.rotation_storage_policy=rotation_storage_policy
         fields(permissions, ('schema', 'contacts_sha256', 'actors'), 'scene edit permissions')
-        if permissions['schema'] != 'strep-native-scene-edit-v1' or permissions['contacts_sha256'] != spec_digest:
+        if permissions['schema'] not in ('strep-native-scene-edit-v1','strep-native-scene-edit-v2') or permissions['contacts_sha256'] != spec_digest:
             raise ValueError('Permissions must bind the exact native scene contact request')
         entries = permissions['actors']
         if not isinstance(entries, dict) or not entries or set(entries) - set(scene.actors):
             raise ValueError('Explicit edit permissions for existing actors required')
         self.scene = scene; self.actors = {}; self.size = 0
         for name, declaration in entries.items():
-            fields(declaration, ('window_s', 'protected_s', 'knots_s', 'tracks', 'maximum_joint_displacement_m'), 'actor edit')
+            fields(declaration, ('window_s', 'protected_s', 'knots_s', 'tracks', 'maximum_joint_displacement_m')
+                   + (('editable_clip_boundaries',) if permissions['schema']=='strep-native-scene-edit-v2' else ()), 'actor edit')
             actor = scene.actors[name]; rig = actor['rig']; reader = actor['sampler']
             window = vector(declaration['window_s'], 2, 'edit window')
             if not 0 <= window[0] < window[1] <= scene.duration:
@@ -42,6 +61,7 @@ class SceneEdits:
                 raise ValueError('Distinct knots must include the exact edit endpoints')
             displacement = scalar(declaration['maximum_joint_displacement_m'], .000001, .22, 'joint displacement bound')
             tracks = declaration['tracks']; seen = set(); edits = []
+            boundaries=declaration.get('editable_clip_boundaries',[])
             if not isinstance(tracks, list) or not 1 <= len(tracks) <= 16:
                 raise ValueError('Choose 1-16 explicit native tracks per actor')
             for track in tracks:
@@ -60,13 +80,18 @@ class SceneEdits:
                 maximum = scalar(track['maximum_change'], .000001, 45 if path == 'rotation' else .22, 'track change bound')
                 unit = np.deg2rad(maximum) if path == 'rotation' else maximum
                 ids = editable_keys(clock, window, protected)
+                allowed_boundaries=clip_boundary_keys(clock,window,protected,boundaries,scene.duration)
+                ids=np.unique(np.r_[ids,np.array(allowed_boundaries,dtype=int)])
                 if not len(ids): raise ValueError('Edit window/protected times leave no editable key')
-                weights = np.stack([np.interp(clock[ids], knots, np.eye(len(knots))[i]) for i in range(1,len(knots)-1)], axis=1)
-                width = 3*(len(knots)-2); controls = np.arange(self.size,self.size+width).reshape(-1,3); self.size += width
+                knot_ids=list(range(1,len(knots)-1))
+                if 'start' in boundaries:knot_ids.insert(0,0)
+                if 'end' in boundaries:knot_ids.append(len(knots)-1)
+                weights = np.stack([np.interp(clock[ids], knots, np.eye(len(knots))[i]) for i in knot_ids], axis=1)
+                width = 3*len(knot_ids); controls = np.arange(self.size,self.size+width).reshape(-1,3); self.size += width
                 edits.append(dict(node=node,path=path,clock=clock,source=values,ids=ids,weights=weights,unit=unit,
                     maximum=maximum,controls=controls)); seen.add((node,path))
             self.actors[name] = dict(source=actor, window=window, protected=protected, knots=knots,
-                displacement=displacement, tracks=edits, world_cache={})
+                displacement=displacement, tracks=edits, world_cache={},editable_clip_boundaries=list(boundaries))
         self.initial = np.zeros(self.size); self.lower = -np.ones(self.size); self.upper = np.ones(self.size)
 
     def controls(self, value):
@@ -161,7 +186,7 @@ class SceneEdits:
                 a,b = old.get('byteOffset',0),new.get('byteOffset',0)
                 if rig.binary[a:a+old['byteLength']] != changed.binary[b:b+new['byteLength']]: raise ValueError('Native image payload changed')
         if len(rig.document['animations']) != len(changed.document['animations']): raise ValueError('Animation population changed')
-        edits = {(e['node'],e['path']):e for e in self.actors[name]['tracks']}; results = []
+        edits = {(e['node'],e['path']):e for e in self.actors[name]['tracks']}; results = []; boundary_changes=[]
         for index in range(len(rig.document['animations'])):
             old_meta = {k:v for k,v in rig.document['animations'][index].items() if k not in ('channels','samplers')}
             new_meta = {k:v for k,v in changed.document['animations'][index].items() if k not in ('channels','samplers')}
@@ -180,6 +205,11 @@ class SceneEdits:
                         maximum = float(np.rad2deg((Rotation.from_quat(a[3]).inv()*Rotation.from_quat(b[3])).magnitude()).max())
                         tolerance = .0001
                     else: maximum = float(np.linalg.norm(b[3]-a[3],axis=1).max()); tolerance = 1e-7
+                    for key in (0,len(a[2])-1):
+                        if not np.array_equal(a[3][key],b[3][key]):
+                            boundary_changes.append(dict(node=a[0],path=a[1],key=key,time_s=float(a[2][key])))
                     results.append(dict(node=entry['node'],path=entry['path'],maximum_change=maximum,
                         limit=entry['maximum'],serialization_tolerance=tolerance,passed=bool(maximum<=entry['maximum']+tolerance)))
-        return dict(tracks=results,passed=all(r['passed'] for r in results),native_clocks_frozen_keys_and_static_payloads_preserved=True)
+        return dict(tracks=results,passed=all(r['passed'] for r in results),native_clocks_frozen_keys_and_static_payloads_preserved=True,
+            editable_clip_boundaries=self.actors[name]['editable_clip_boundaries'],clip_boundary_changes=boundary_changes,
+            boundary_transition_compatibility_verified=False)
