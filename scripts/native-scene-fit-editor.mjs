@@ -29,22 +29,34 @@ export function createNativeSceneFitEditor({document=globalThis.document,api,pos
  const status=text=>{el('Status').textContent=text;};
  const guard=fn=>async()=>{try{await fn();}catch(error){status(error.message);}};
  function options(name,values,empty=false){const chosen=el(name).value;el(name).replaceChildren(...values.map(v=>{const option=document.createElement('option');option.value=v;option.textContent=v||'Fresh correction from submitted clips';return option;}));if(values.includes(chosen))el(name).value=chosen;else if(empty)el(name).value='';}
- function drawSelections(){el('Selections').replaceChildren(...Object.entries(selections).map(([name,a])=>{const p=document.createElement('p');p.textContent=`${name}: ${a.tracks.length} tracks · ${3*(a.knots_s.length-2)*a.tracks.length} controls`;return p;}));}
+ const controlCount=a=>3*(a.knots_s.length-2)*a.tracks.length;
+ const sceneControlCount=values=>Object.values(values).reduce((n,a)=>n+controlCount(a),0);
+ function drawBudget(){
+  const name=el('Actor').value;if(!catalog?.actors[name]){el('Budget').textContent='Load scene joints to preview timing capacity.';return;}
+  try{
+   const knots=numbers(el('Knots').value),selected=tracks.filter(t=>t.box.checked);
+   if(knots.length<3||knots.length>12||knots.some((v,i)=>i>0&&v<=knots[i-1]))throw Error('Enter 3–12 ordered motion control times to preview capacity.');
+   const current=controlCount({knots_s:knots,tracks:selected}),other=sceneControlCount(Object.fromEntries(Object.entries(selections).filter(([actor])=>actor!==name))),total=current+other;
+   el('Budget').textContent=`${name}: ${selected.length} tracks × ${knots.length-2} interior times × 3 = ${current} controls. Scene after saving: ${total} / 96. Saved scene: ${sceneControlCount(selections)} / 96. ${total>96?'Reduce selected tracks or interior times before saving.':'Save character bounds to apply timing changes.'}`;
+  }catch(error){el('Budget').textContent=error.message;}
+ }
+ function drawSelections(){el('Selections').replaceChildren(...Object.entries(selections).map(([name,a])=>{const p=document.createElement('p');p.textContent=`${name}: ${a.tracks.length} tracks · ${controlCount(a)} controls`;return p;}));drawBudget();}
  function drawActor(){
-  const name=el('Actor').value,a=catalog?.actors[name];tracks=[];el('Tracks').replaceChildren();if(!a)return;
+  const name=el('Actor').value,a=catalog?.actors[name];tracks=[];el('Tracks').replaceChildren();if(!a){drawBudget();return;}
   const saved=selections[name];el('Window').value=(saved?.window_s??[0,catalog.duration_s]).join(', ');
   el('Knots').value=(saved?.knots_s??[0,catalog.duration_s/3,catalog.duration_s*2/3,catalog.duration_s]).join(', ');
   el('Protected').value=JSON.stringify(saved?.protected_s??[]);el('Displacement').value=(saved?.maximum_joint_displacement_m??.15)*1000;
   for(const channel of a.channels){const row=document.createElement('label');row.className='small';row.style.display='block';const box=document.createElement('input');box.type='checkbox';box.disabled=!channel.eligible;
    const previous=saved?.tracks.find(t=>t.node===channel.node&&t.path===channel.path);box.checked=!!previous;
    const bound=document.createElement('input');bound.type='number';bound.min=channel.path==='rotation'?'0.000001':'0.001';bound.max=channel.path==='rotation'?'45':'220';bound.step='any';bound.value=previous?(channel.path==='rotation'?previous.maximum_change:previous.maximum_change*1000):(channel.path==='rotation'?20:50);bound.disabled=!box.checked||!channel.eligible;
-   box.onchange=()=>{bound.disabled=!box.checked;};row.append(box,document.createTextNode(` ${channel.name} [${channel.node}] · ${channel.path} ${channel.eligible?'':channel.reason} `),bound);
+   box.onchange=()=>{bound.disabled=!box.checked;drawBudget();};row.append(box,document.createTextNode(` ${channel.name} [${channel.node}] · ${channel.path} ${channel.eligible?'':channel.reason} `),bound);
    let speed=null;if(channel.path==='rotation'){
     speed=document.createElement('input');speed.type='number';speed.min='0';speed.step='any';speed.placeholder='No turning-speed limit';speed.value=speedLimits[name]?.[channel.node]??'';speed.disabled=!channel.eligible;speed.ariaLabel=`${channel.name} maximum turning speed in degrees per second`;
     row.append(document.createTextNode(' Maximum turning speed (°/s), optional '),speed);
    }
    el('Tracks').append(row);tracks.push({channel,box,bound,speed});
   }
+  drawBudget();
  }
  async function load(){
   const draft=clone(getDraft()),before=key(draft),token=++serial;const response=await post('/api/native-scene-fit-catalog',draft);
@@ -64,12 +76,15 @@ export function createNativeSceneFitEditor({document=globalThis.document,api,pos
   if(window.length!==2||!Array.isArray(protectedTimes)||knots.length<3||knots.length>12||!selected.length||selected.length>16||!Number.isFinite(displacement)||displacement<=0||displacement>.22||selected.some(t=>!Number.isFinite(t.maximum_change)||t.maximum_change<=0||t.maximum_change>(t.path==='rotation'?45:.22)))throw Error('Choose 1–16 tracks, 3–12 control times and positive bounds within the displayed limits.');
   if(!(0<=window[0]&&window[0]<window[1]&&window[1]<=catalog.duration_s)||knots[0]!==window[0]||knots.at(-1)!==window[1]||knots.some((v,i)=>i>0&&v<=knots[i-1])||protectedTimes.some(s=>!Array.isArray(s)||s.length!==2||s.some(v=>typeof v!=='number'||!Number.isFinite(v))||!(0<=s[0]&&s[0]<=s[1]&&s[1]<=catalog.duration_s)))throw Error('Use ordered control times with exact edit endpoints and protected ranges inside the clip.');
   const speeds={};for(const t of tracks){if(!t.speed||t.speed.disabled||String(t.speed.value).trim()==='')continue;const maximum=Number(t.speed.value);if(!Number.isFinite(maximum)||maximum<0)throw Error('Turning-speed limits must be finite and nonnegative; leave blank to omit one.');speeds[t.channel.node]=maximum;}
-  selections[el('Actor').value]={window_s:window,protected_s:protectedTimes,knots_s:knots,tracks:selected,maximum_joint_displacement_m:displacement};speedLimits[el('Actor').value]=speeds;drawSelections();status('Explicit character bounds and turning-speed choices saved.');
+  const name=el('Actor').value,proposed={window_s:window,protected_s:protectedTimes,knots_s:knots,tracks:selected,maximum_joint_displacement_m:displacement};
+  const controls=sceneControlCount({...selections,[name]:proposed});
+  if(controls>96)throw Error(`This scene needs ${controls} controls; at most 96 are supported. Reduce selected tracks or interior times. Saved bounds stay unchanged.`);
+  selections[name]=proposed;speedLimits[name]=speeds;drawSelections();status('Explicit character bounds and turning-speed choices saved.');
  }
  function request(){
   const draft=clone(getDraft());if(!catalog||stamp!==key(draft))throw Error('Scene changed; reload its joints before proposing a correction.');
   if(!Object.keys(selections).length)throw Error('Save bounds for at least one character.');
-  const controls=Object.values(selections).reduce((n,a)=>n+3*(a.knots_s.length-2)*a.tracks.length,0);
+  const controls=sceneControlCount(selections);
   if(controls>96)throw Error('At most 96 controls are supported; reduce tracks or interior control times.');
   const iterations=Number(el('Iterations').value);if(!Number.isInteger(iterations)||iterations<1||iterations>16)throw Error('Choose 1–16 correction iterations.');
   const limits=Object.entries(speedLimits).flatMap(([actor,nodes])=>Object.entries(nodes).map(([node,maximum_degrees_per_second])=>({actor,node:Number(node),maximum_degrees_per_second})));
@@ -78,6 +93,7 @@ export function createNativeSceneFitEditor({document=globalThis.document,api,pos
  }
  async function refresh(){const data=await api('/api/native-scene-fit-jobs');options('Jobs',data.jobs.map(j=>j.id));options('Resume',['',...data.jobs.filter(j=>j.status==='complete').map(j=>j.id)],true);return data;}
  el('Load').onclick=guard(load);el('Actor').onchange=drawActor;el('SaveActor').onclick=guard(saveActor);
+ el('Knots').oninput=drawBudget;
  el('RemoveActor').onclick=guard(()=>{delete selections[el('Actor').value];delete speedLimits[el('Actor').value];drawActor();drawSelections();});
  el('Save').onclick=guard(()=>download(request()));el('Refresh').onclick=guard(refresh);
  el('LoadResume').onclick=guard(async()=>{const id=el('Resume').value;if(!id)throw Error('Select a completed correction to continue.');

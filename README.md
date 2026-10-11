@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Timing capacity in Studio](docs/studio-timing-capacity-v1.md): selected tracks and interior times now preview the whole scene's control count. Oversized saves preserve prior character bounds and speed limits. The offline editor checks pass and the desktop bundle matches source; this does not approve motion quality.
+
 - [Candidate-centered surface repair](docs/native-surface-recentered-v1.md): an optional repair rebuilds around rejected exports while retaining original motion limits and accepted contact/geometry bounds. All 208 distinct affected checks pass locally, and 635 focused checks per OS pass on Windows/Linux. The complete-clock development trial finishes without a repair direction or accepted correction. The [feasible-origin kick and paired storage screen](docs/kenney-kick-cold-fit-v1.md) retain failures in both existing storage modes.
 
 - [Native endpoint sampling](docs/native-endpoint-sampling-v1.md): rotation and translation previews now match scalar decoder behavior near Float32 clip edges. All 127 affected checks pass locally; the retained kick's complete-clock matrix discrepancy drops below 4.45e-15. Restoration and motion approval remain separate.

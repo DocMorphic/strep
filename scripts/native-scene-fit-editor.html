@@ -10,6 +10,7 @@
   <label>Maximum joint movement (mm)<input id="nativeSceneFitDisplacement" type="number" min="0.001" max="220" step="any" value="150"></label>
  </div>
  <p class="small">Rotation bounds are degrees; translation bounds are millimetres. Optional turning-speed limits are degrees per second for local joint rotations. Leave a speed blank to omit it. Source motion-rate limits remain fixed.</p>
+ <p class="small" id="nativeSceneFitBudget" aria-live="polite">Load scene joints to preview timing capacity.</p>
  <div id="nativeSceneFitTracks"></div>
  <div class="toolbar"><button class="btn" id="nativeSceneFitSaveActor">Save character bounds</button><button class="btn" id="nativeSceneFitRemoveActor">Remove character bounds</button></div>
  <div id="nativeSceneFitSelections"></div>

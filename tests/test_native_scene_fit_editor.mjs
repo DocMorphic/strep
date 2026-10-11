@@ -82,4 +82,37 @@ for(const where of ['draft','request']){const invalid=structuredClone(inherited)
 for(const pass of [false,undefined,'true']){const failed=structuredClone(review);failed.rotation_speed_conditions_pass=pass;assert.throws(()=>stagedScene(failed),/turning-speed/);}
 el('Resume').value='job1';await el('LoadResume').onclick();assert.deepEqual(editor.request().rotation_speed_limits,posted.rotation_speed_limits);
 assert.equal(el('Tracks').children[0].children[4].value,120);
-console.log('Native bounds, speed requests and continuation, failed review, atomic staging and stale-response workflows passed offline.');
+// Live timing changes count the current actor once; oversized saves remain atomic.
+{
+ const capacityNodes=new Map();for(const m of html.matchAll(/<[^>]*id="(nativeSceneFit[^"]+)"[^>]*>/g)){
+  const n=new Element();n.value=m[0].match(/value="([^"]*)"/)?.[1]??'';capacityNodes.set(m[1],n);
+ }
+ const c=n=>capacityNodes.get('nativeSceneFit'+n),d={getElementById:id=>capacityNodes.get(id),createElement:()=>new Element(),createTextNode:text=>({textContent:text})};
+ const many=Array.from({length:9},(_,node)=>({node,name:`joint ${node}`,path:'rotation',eligible:true,keys:11,reason:null}));
+ const capacityCatalog={...catalog,actors:{A:{sha256:'a'.repeat(64),channels:many},B:{sha256:'a'.repeat(64),channels:many}}};
+ const current=createNativeSceneFitEditor({document:d,api,post:async()=>structuredClone(capacityCatalog),getDraft:()=>structuredClone(original),setDraft:()=>assert.fail('No draft adoption'),download:()=>{}});
+ const check=(index,on=true)=>{const box=c('Tracks').children[index].children[0];box.checked=on;box.onchange();};
+ await current.load();assert.match(c('Budget').textContent,/0 controls/);
+ for(let i=0;i<4;i++)check(i);
+ c('Knots').value='0, .2, .4, .6, .8, 1, 1.5, 2';c('Knots').oninput();
+ assert.match(c('Budget').textContent,/72 controls/);assert.match(c('Budget').textContent,/Scene after saving: 72 \/ 96/);
+ await c('SaveActor').onclick();assert.equal(current.request().actors.A.knots_s.length,8);
+ c('Actor').value='B';c('Actor').onchange();for(let i=0;i<4;i++)check(i);
+ assert.match(c('Budget').textContent,/Scene after saving: 96 \/ 96/);
+ await c('SaveActor').onclick();assert.equal(current.request().actors.B.tracks.length,4);
+ const validRequest=current.request();
+ check(4);assert.match(c('Budget').textContent,/Scene after saving: 102 \/ 96/);
+ assert.match(c('Budget').textContent,/Saved scene: 96 \/ 96/);
+ c('Tracks').children[4].children[4].value='250';
+ await c('SaveActor').onclick();assert.match(c('Status').textContent,/102 controls/);
+ assert.deepEqual(current.request(),validRequest);  // Failed save cannot change speed intent either.
+ c('Actor').value='A';c('Actor').onchange();c('Knots').value='0, .2, .4, .6, .8, 1, 1.2, 1.5, 2';c('Knots').oninput();
+ assert.match(c('Budget').textContent,/Scene after saving: 108 \/ 96/);
+ await c('SaveActor').onclick();assert.match(c('Status').textContent,/Saved bounds stay unchanged/);
+ assert.equal(current.request().actors.A.knots_s.length,8);
+ c('Knots').value='0, 1, 1, 2';c('Knots').oninput();assert.match(c('Budget').textContent,/ordered/);
+ c('Actor').value='B';c('Actor').onchange();await c('RemoveActor').onclick();
+ assert.match(c('Budget').textContent,/Scene after saving: 72 \/ 96/);
+ assert.deepEqual(Object.keys(current.request().actors),['A']);
+}
+console.log('Native bounds, timing capacity, speed requests and continuation, failed review, atomic staging and stale-response workflows passed offline.');
