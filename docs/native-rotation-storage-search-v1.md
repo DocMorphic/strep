@@ -12,9 +12,42 @@ The search has explicit stage and probe budgets. It retains the first full-nativ
 
 The caller retains fresh exports and independently decodes every actor. The helper checks complete finite worlds, the exact original residual vector, native norm population, caps and scales for every observed probe. A passing contact/native result does not confer geometry, transition, engine or quality approval. Existing editors, exporters and Studio jobs remain unchanged.
 
-This extension addresses the [development kick diagnosis](kenney-kick-temporal-layout-v1.md), where stored positional acceleration was a demonstrated failure as well as angular acceleration. Seven additional regression cases cover all four rates, strict position ancestors, distinct two/three-sample support, frozen keys and duplicate choices. The existing angular-acceleration ordering is preserved. Numerical checks for this extension are pending; the historical results below are from the earlier angular-only implementation and do not validate the new paths.
+This extension addresses the [development kick diagnosis](kenney-kick-temporal-layout-v1.md), where stored positional acceleration was a demonstrated failure as well as angular acceleration. Seven additional regression cases cover all four rates, strict position ancestors, distinct two/three-sample support, frozen keys and duplicate choices. When only angular acceleration fails, its existing ordering is preserved. The historical motion results below are from the earlier angular-only implementation and do not establish the new paths on a generated kick.
 
 The ancestor rule follows the `T * R * S` local-transform order and parent/local world-transform composition in the [official glTF specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#transformations). This explains which rotations can affect a joint origin; it does not prove that any neighboring stored value will satisfy motion, contact or geometry limits.
+
+## Extension checks and next actual-motion study
+
+At commit `d728d91`, the complete focused
+[Windows/Linux workflow](https://github.com/DocMorphic/strep/actions/runs/38177394381)
+passes **683 Python checks per OS**: 616 contact/rig, including storage search
+and repair suites, 35 lineage and 32 game packages, plus the offline editor.
+The complete decoder acceptance path, original cap/scales checks, stage/probe
+budgets and storage envelope are unchanged; only failure-support planning and
+the result's scope text change. The broader source inventory remains pending,
+with no full-inventory pass claim.
+
+A twelve-candidate kick ray study deferred before starting under the unchanged
+resource policy. All 594 admission observations replay with matching archived
+bindings; no motion exports or ray-search outcome exist for that attempt.
+Its local protocol remains in `reports/kenney-kick-rotation-ray-v1`.
+
+The prepared next study instead targets the finer-layout `1-4` proposal, whose
+single stored failure is positional acceleration while its unrounded motion
+passes. It preserves the same 72 controls, four tracks, source cap arrays,
+rate clock, root, endpoints and full 2,017-time floor population. The explicit
+boundary contract preserves both endpoints and must reproduce the prior stored
+keys exactly. A source-bound one-neighbor policy permits up to 64 absolute
+component corrections; search allows four stages and eight probes per stage.
+Every exported candidate must receive static/frozen-key and strict track audits,
+complete fresh native decoding and the full declared floor audit. A passing
+native candidate can be archived as an unapproved appended variant preserving
+the original animation library; it still needs geometry and engine review.
+
+The driver is prepared locally in `reports/kenney-kick-position-storage-v1`.
+It has not executed. This extension is verified software behavior, with actual
+kick repair evidence still missing. Neither a deferred job nor a prepared
+driver changes any release gate or capability approval.
 
 ## Three complete retained proposals
 
