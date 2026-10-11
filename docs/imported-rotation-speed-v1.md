@@ -89,6 +89,9 @@ mapping now uses the actual imported skeleton resource for that case; tests
 retain the import discrepancy as a measured rejection. A following clean-clone
 run reports 23 setup errors because the ignored `reports` parent is absent;
 creating that parent repairs CI setup. Both failed runs and their logs are retained.
-Limits, pose tolerances and release criteria are unchanged. A local retry is
-waiting under the unchanged 2,776,629,248-byte / 15-stable-second admission guard;
-no local numerical completion is claimed until it finishes.
+Limits, pose tolerances and release criteria are unchanged. The local retry
+defers without starting a worker after 600.672 seconds under the unchanged
+2,776,629,248-byte / 15-stable-second admission guard. Available RAM peaks at
+2,706,571,264 bytes. All 595 resource observations independently replay the
+deferral; no local numerical completion is claimed. The complete hosted execution
+and fresh replay above remain distinct, with the original failed attempts saved.
