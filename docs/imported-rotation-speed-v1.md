@@ -92,6 +92,7 @@ creating that parent repairs CI setup. Both failed runs and their logs are retai
 Limits, pose tolerances and release criteria are unchanged. The local retry
 defers without starting a worker after 600.672 seconds under the unchanged
 2,776,629,248-byte / 15-stable-second admission guard. Available RAM peaks at
-2,706,571,264 bytes. All 595 resource observations independently replay the
+2,797,137,920 bytes, with nine samples above the admission threshold but no
+15-second stable interval. All 595 resource observations independently replay the
 deferral; no local numerical completion is claimed. The complete hosted execution
 and fresh replay above remain distinct, with the original failed attempts saved.
