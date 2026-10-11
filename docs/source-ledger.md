@@ -140,3 +140,8 @@ The [dated model screen](interaction-model-screen-2026-10.md) records current au
 ## 2026-10-11: actual Kenney conversion and rejected rig intake
 
 Pinned Godot 4.7.2 conversion completes without bundled animation FBXs. The generated GLB has 61 nodes, one skin and no animations; engine metadata reports 1,029 mesh vertices and 1,604 triangles. Strep rigid-transform intake rejects its non-unit root and limb transforms. No transfer cases run. A failed replay helper import is preserved; its corrected version confirms the rejection and zero clips, without numerical motion replay. See [actual rig-intake evidence and next work](rig-intake-kenney-v1.md). Original acquisition/license records remain unchanged. Conversion does not prove FBX/GLB geometry equivalence, retargeting, held-out generalization or release quality.
+
+
+## 2026-10-11: explicit Kenney derivative and seven development transfers
+
+A separate static-rig derivative preserves the converted GLB default shape with about 0.205 micrometres peak reference error, confirmed with separate quaternion/hierarchy and blended skin calculations. It passes unchanged rigid-transform intake. Seven existing seed-77 development motions transfer and independently replay with one fixed profile, while crawl, kick, get-up and run/roll/stand retain substantial ground penetration. The original rejection and asset stay saved; no raw asset payload is published. See [adaptation methodology, complete transfer comparison and failures](rig-scale-adaptation-v1.md). This is reused development data, not a held-out reservation, FBX conversion equivalence, new model generation/training, engine playback or human/release approval.

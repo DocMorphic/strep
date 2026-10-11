@@ -28,10 +28,10 @@ Retained local evidence lives in `reports/kenney-protagonists-conversion-v1`,
 payloads remain excluded from public Git. The public
 [source ledger](source-ledger.md) records acquisition and license provenance.
 
-Next, build an explicit derivative for supported static rigs and verify its
-default world-space skin geometry against the original before transfer. Preserve
-the original asset, hierarchy, materials and meshes; do not hide scale errors by
-relaxing rigid-transform checks. Animated, reflected or unsupported scale cases
-need their own measured support rather than guessed normalization. Then retry
-the unchanged seven development clips and separately replay each result. These
-clips are reused development data, not a new held-out release population.
+An [explicit static-rig derivative](rig-scale-adaptation-v1.md) now passes strict
+intake and independent default-shape replay while preserving the original asset.
+All seven unchanged development clips transfer and independently replay. Large
+floor penetrations remain in crawl, kick, get-up and run/roll/stand. This resolves
+the intake limitation for this derivative, not animation quality or held-out
+generalization. Animated, reflected and unsupported representations still need
+their own measured support. The original rejection and failed replay remain saved.
