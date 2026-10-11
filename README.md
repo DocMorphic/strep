@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Root-fixed kick correction](docs/kenney-kick-root-fixed-v1.md): the full 2,017-time trial finishes without an accepted correction. Added knee/foot/toe permissions produce a passing static pose, but both actual clip mappings fail unchanged motion/floor checks. All 552 affected checks per OS pass at e7aced8; no motion approval.
+
 - [Seven-action native export and skin-encoding audit](docs/kenney-native-export-v1.md): all 1,020 original keys on the independent Kenney rig reach scene and game packages, with failed floor and current-speed decisions preserved. The new read-only audit separates pose and packed-weight effects; 34 affected checks pass locally. No motion or release approval.
 
 - [Rotation-speed fitting](docs/native-rotation-speed-fit-v1.md): authored joint-speed limits now constrain native scene fitting and fresh serialized-output checks. A bounded smoothing proposal must pass every original scene row before adoption. Optional limits now integrate with the [Studio correction editor](docs/studio-rotation-speed-v1.md), with 37 targeted cases and editor source checks passing. Scene and game packages now retain policies, audits and ancestor decisions. All 517 focused Python checks per OS and editor checks pass on Windows/Linux. Live UI and continuous-time/engine verification remain pending.

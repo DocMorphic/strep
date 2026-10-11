@@ -115,3 +115,5 @@ transition, rig, runtime and developer-review evidence. All release capabilities
 remain unapproved and the single whole-project goal remains active. See the
 [matched source/target floor comparison](kenney-source-target-floor-v1.md) and
 [current export-policy integration](studio-export-speed-v1.md).
+
+The [root-fixed kick correction and paired storage comparison](kenney-kick-root-fixed-v1.md) now complete. No proposal is accepted; the root stays exact and all compared outputs retain floor failures. The follow-up uses the measured left-foot skin witness rather than guessing a leg.

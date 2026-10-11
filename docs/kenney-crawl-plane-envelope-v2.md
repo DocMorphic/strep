@@ -21,10 +21,13 @@ still failed all 2,017 ground times. The strongest changed probe reduced peak
 penetration from **263.015 mm to 242.172 mm**, but failed the original motion caps
 and was rejected. Improvement alone did not authorize selection.
 
-A separate diagnostic reconstructed all 5,138,655 native conditions and
-2,482,110 source-rate conditions across the 29 exports. It matched the recorded
-merit values without changing the original cap population or tolerance. The
-original start alone passed native constraints. All 28 changed proposals failed
+A separate diagnostic assessed 5,138,655 combined rows and
+2,482,110 source-rate conditions across the 29 exports. Its combined rows
+include edit bounds, expanded geometry-clock joint displacements and original
+source-rate conditions; they are not the exact producer acceptance population.
+It matched recorded merit values without changing the original rate caps or
+tolerance. Additional displacement rows are diagnostic, not producer approval.
+The original start alone passed native constraints. All 28 changed proposals failed
 rate conditions: 942 position-acceleration, 213 angular-acceleration, six
 position-speed and three angular-speed failures across the exports. These are
 repeated per-probe observations, not unique joints or causes. The maximum
