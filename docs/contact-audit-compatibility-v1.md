@@ -20,7 +20,15 @@ comparison, pose-proportion proposal and bounded-pose regressions on Windows and
 Linux. It uses synthetic source fixtures, without model weights or downloaded
 character/capture payloads. It supplements the existing broad workflows.
 
-Validation of these changes is pending. Local execution remains below the
-unchanged RAM admission requirement. A green source workflow would not validate
-the complete captured study, actual animation realism, contacts, engine import,
-forces, cleanup time or release readiness. All release criteria remain unchanged.
+The [focused run](https://github.com/DocMorphic/strep/actions/runs/38145921671)
+at commit `3ed4a1d` passes all **172 checks on each operating system**: Linux in
+8.98 seconds and Windows in 30.67 seconds. All nine selected test modules run;
+no skips or failures are reported. These include all 17 scaffold cases and the
+48 earlier pose-fitting regressions. Logs and exact commit/source bindings are
+retained locally. The initial workflow attempt at `694369c` failed YAML parsing
+before creating any test job; it is retained as a failed setup attempt.
+
+The broader source workflow is still unapproved. The complete captured study
+remains deferred locally for RAM. These source checks do not validate actual
+animation realism, captured contacts, engine import, forces, cleanup time or
+release readiness. All release criteria remain unchanged.

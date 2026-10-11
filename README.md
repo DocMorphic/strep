@@ -8,7 +8,9 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
-- [Rig-proportion pose scaffold](docs/rig-pose-scaffold-v1.md): direction-based proposals and the complete captured comparison are prepared. Regression and motion validation deferred for RAM; no result or quality approval is claimed.
+- [Contact audit compatibility](docs/contact-audit-compatibility-v1.md): all 172 focused CPU regressions pass on both Windows and Linux, including the 17 rig-proportion cases. Complete captured-motion validation still awaits local RAM admission.
+
+- [Rig-proportion pose scaffold](docs/rig-pose-scaffold-v1.md): direction-based proposals pass all 17 synthetic regression cases on Windows and Linux. The complete captured comparison remains prepared and deferred locally for RAM; no captured proposal or quality approval is claimed.
 
 - [Pose-target reach preflight](docs/pose-length-preflight-v1.md): box/norm/continuation fitters now reject incompatible fixed-distance targets without changing source poses or tolerances. All 48 focused checks pass. The actual fitter excludes all 2,422 uniformly scaled captured poses; separate replay checks 58,128 invariant-pair rows and every retained local pose. Rig proportions must be accounted for before support/contact fitting; no corrected animation or training target is promoted.
 

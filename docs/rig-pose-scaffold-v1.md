@@ -40,8 +40,15 @@ replay with matching archived bindings; admission still requires 2,776,629,248
 bytes of available RAM for 15 stable seconds. Syntax parsing succeeds for the
 module, its 17 planned regression cases, and both private study runners. The
 source-test inventory now contains 456 Python modules and 42 Node suites; this
-count does not imply execution. Regression results and the complete captured
-study remain pending. No proposed animation has yet been produced or approved.
+count does not imply execution.
+
+Subsequent [source-only GitHub CPU validation](contact-audit-compatibility-v1.md)
+passes all 172 focused checks on both Windows and Linux, including the 17 scaffold
+cases and 48 earlier bounded-fitting regressions. This verifies the synthetic
+proposal behavior and permits the prepared captured study to proceed after local
+resource admission. It does not change the earlier local deferral or establish
+its resource safety. The complete captured comparison remains pending; no
+captured proposal has yet been produced or approved.
 
 Captured references retain their [existing evaluation
 rights and training exclusion](cmu-ground-reference-v1.md). Native-key screens

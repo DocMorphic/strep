@@ -3341,6 +3341,6 @@
     "missing_evidence_is_failure": true,
     "universal_motion_coverage_claim": false
   },
-  "last_progress_at": "2026-10-11T14:00:01.699846+00:00",
-  "last_progress": "Rig-proportion pose proposals and the complete 2,422-key CMU comparison are prepared, with explicit 25-degree local caps, fixed translations/helpers, whole-mesh native-key screening, glTF/root-track export and neighbor-rotation diagnostics. Syntax checks pass; 17 new regression cases are indexed (456 Python / 42 Node suites total), but neither regression nor captured-study execution is claimed. The unchanged 600-second RAM guard deferred without starting a worker; all 594 observations replay. Waiting for 2,776,629,248 bytes of available RAM for 15 stable seconds. No clean target, training admission or release approval; all criteria remain unchanged."
+  "last_progress_at": "2026-10-11T14:11:31.015116+00:00",
+  "last_progress": "Contact/rig CPU regressions pass all 172 cases on both Windows and Linux at 3ed4a1d, including 17 rig-proportion and 48 pose-fitting checks. Boundary endpoint audit metadata now reflects exactly authored choices; compact plane guidance includes all vertices and preserves expanded diagnostics. Hosted logs and source bindings are retained; previous YAML setup failure retained. The full 2,422-key captured proposal comparison remains pending local RAM admission (2,776,629,248 bytes for 15 stable seconds). Broad CI and every release capability remain unapproved. No captured proposal, clean training target or release approval; all gates and criteria unchanged."
 }
