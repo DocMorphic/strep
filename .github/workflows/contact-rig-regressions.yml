@@ -1,0 +1,60 @@
+name: Contact and rig regressions
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - 'tests/**'
+      - 'requirements-ci.txt'
+      - '.github/workflows/contact-rig-regressions.yml'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contact-rig-regressions-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-regressions:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      HF_HUB_OFFLINE: '1'
+      TRANSFORMERS_OFFLINE: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - name: Check out public source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.10'
+          cache: pip
+          cache-dependency-path: requirements-ci.txt
+      - name: Install CPU test dependencies
+        run: python -m pip install --only-binary=:all: -r requirements-ci.txt
+      - name: Verify pose, boundary audit and complete surface populations
+        run: >-
+          python -m pytest -q
+          tests/test_rig_pose_scaffold.py
+          tests/test_pose_length_preflight.py
+          tests/test_bounded_pose_ik.py
+          tests/test_bounded_pose_ball_ik.py
+          tests/test_native_scene_boundary_edit.py
+          tests/test_native_scene_boundaries.py
+          tests/test_native_compact_surface_rows.py
+          tests/test_native_plane_envelope.py
+          tests/test_native_stored_pair_job.py

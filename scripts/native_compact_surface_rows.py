@@ -63,20 +63,26 @@ def build(scene, policy, digest, *, clearance=.0005, maximum_rows=100000):
     times,_,_ = policy_for(policy,scene,digest)
     faces = {name:faces_for(a['rig'])[0] for name,a in scene.actors.items()}
     used = {name:np.unique(f) for name,f in faces.items()}; rows = []; samples = []; triangle_records = 0
+    plane_evaluations=plane_candidates=plane_rows=0
     def entry(actor,ids,weights): return dict(actor=actor,vertices=np.asarray(ids,int).tolist(),weights=np.asarray(weights,float).tolist())
     def add(kind,time,normal,left,right=None,constant=0.,**identity):
         if len(rows) >= maximum_rows: raise ValueError('Complete compact surface rows exceed explicit resource budget; no subset returned')
         rows.append(dict(kind=kind,time_s=float(time),normal_world=np.asarray(normal).tolist(),left=left,right=right,
             constant_m=float(constant),clearance_m=float(clearance),**identity))
     for time in times:
-        vertices = {}; meshes = {}
+        vertices = {}; meshes = {}; plane_population=[]
         for name,actor in scene.actors.items():
             p,r = actor['placement']; vertices[name] = actor['rig'].vertices(actor['sampler'].sample(float(time))) @ r.T+p
             meshes[name] = trimesh.Trimesh(vertices[name][used[name]],np.searchsorted(used[name],faces[name]),process=False)
             for plane_name,plane in policy['planes'].items():
-                normal = np.array(plane['normal_world']); gaps = vertices[name][used[name]] @ normal-plane['offset_m']
-                for v in used[name][gaps < clearance]:
-                    add('world-plane',time,normal,entry(name,[v],[1.]),constant=plane['offset_m'],plane=plane_name)
+                normal = np.array(plane['normal_world']); gaps = vertices[name] @ normal-plane['offset_m']
+                selected=np.flatnonzero(gaps < clearance);minimum=int(np.argmin(gaps))
+                plane_evaluations+=len(gaps);plane_candidates+=len(selected);plane_rows+=len(selected)
+                for v in selected:
+                    add('world-plane',time,normal,entry(name,[v],[1.]),constant=plane['offset_m'],plane=plane_name,
+                        plane_guidance='all-vertices',envelope_population_vertices=len(gaps))
+                plane_population.append(dict(actor=name,plane=plane_name,vertices=len(gaps),minimum_gap_m=float(gaps[minimum]),
+                    minimum_vertex=minimum,candidate_vertices=len(selected),guidance_rows=len(selected)))
         pairs = []
         for left,right in combinations(scene.actors,2):
             crossings = audit(vertices[left],faces[left],vertices[right],faces[right],tolerance_m=policy['limits']['surface_tolerance_m'])
@@ -114,11 +120,13 @@ def build(scene, policy, digest, *, clearance=.0005, maximum_rows=100000):
                     referenced_source_vertices=len(used[source]),queried_vertices=queried,witnesses=count))
             pairs.append(dict(actors=[left,right],complete_surface_records=len(crossings['records']),crossing_counts=crossings['counts'],containment=inside))
         objects = append_rows(scene,time,vertices,meshes,faces,policy,clearance,entry,add) if scene.objects else []
-        samples.append(dict(time_s=float(time),pairs=pairs,actor_objects=objects))
+        samples.append(dict(time_s=float(time),pairs=pairs,actor_objects=objects,world_planes=plane_population))
     scene.check_inputs()
     report = dict(schema=SCHEMA,samples=samples,rows=len(rows),triangle_support_blocks=triangle_records,
         expanded_triangle_rows=9*triangle_records,expanded_total_rows=len(rows)+8*triangle_records,
         clearance_m=float(clearance),maximum_rows=maximum_rows,
+        plane_guidance='all-vertices',world_plane_vertex_evaluations=plane_evaluations,
+        world_plane_candidate_vertices=plane_candidates,world_plane_guidance_rows=plane_rows,
         source_vertices={name:len(a['skin'].nodes) for name,a in scene.actors.items()},
         referenced_vertices={name:len(ids) for name,ids in used.items()},complete_triangle_populations={name:len(f) for name,f in faces.items()},
         objects_included=bool(scene.objects),all_triangle_vertices_reduced=True,

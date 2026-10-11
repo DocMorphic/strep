@@ -24,6 +24,8 @@ def test_preserved_boundary_contract_is_byte_identical_to_legacy_export(tmp_path
     assert new.size==legacy.size
     a,b=tmp_path/'old.glb',tmp_path/'new.glb';legacy.export('A',x,a);new.export('A',x,b)
     assert a.read_bytes()==b.read_bytes() and p==request(p)['permissions']
+    report=new.audit('A',b,0)
+    assert report['passed'] and report['editable_clip_boundaries']==[] and report['clip_boundary_changes']==[]
 
 
 @pytest.mark.parametrize('start,end',[('edit','preserve'),('preserve','edit'),('edit','edit')])
@@ -34,6 +36,8 @@ def test_opted_boundaries_export_decode_and_append_preserve_originals(tmp_path,s
     value=edits.initial.copy();value.reshape(-1,3)[:,0 if rotation else 1]=.05
     output=tmp_path/'probe.glb';edits.export('A',value,output);report=edits.audit('A',output,0)
     assert report['passed'] and not report['previous_start_end_transition_approval_inherited']
+    assert report['editable_clip_boundaries']==[key for key,choice in [('start',start),('end',end)] if choice=='edit']
+    assert {row['time_s'] for row in report['clip_boundary_changes']}=={t for key,t in [('start',0.),('end',scene.duration)] if dict(start=start,end=end)[key]=='edit'}
     rig=RigAsset.load(output);reader=NativeSupportSampler(rig.document,rig.binary,0);old=scene.actors['A']['sampler']
     for key,t in [('start',0.),('end',scene.duration)]:
         assert (not np.array_equal(reader.sample(t),old.sample(t))) == (dict(start=start,end=end)[key]=='edit')

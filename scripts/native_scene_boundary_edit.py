@@ -89,7 +89,8 @@ class BoundarySceneEdits(SceneEdits):
                 entries.append(dict(node=node,path=path,clock=clock,source=values,unit=np.deg2rad(maximum) if path == 'rotation' else maximum,maximum=maximum))
                 seen.add((node,path))
             self.actors[name] = dict(source=actor,window=window,protected=copy.deepcopy(declaration['protected_s']),
-                knots=knots,displacement=displacement,tracks=entries,world_cache={})
+                knots=knots,displacement=displacement,tracks=entries,world_cache={},
+                editable_clip_boundaries=[key for key in ('start','end') if policies[name][key]=='edit'])
         self.request = copy.deepcopy(request); self.boundary_keys = copy.deepcopy(policies)
         for name, actor in self.actors.items():
             declaration, policy = actors[name], policies[name]

@@ -86,6 +86,11 @@ def test_plane_envelope_and_legacy_guides_include_unreferenced_vertices(tmp_path
     assert guides.report['world_plane_vertex_evaluations']==27
     assert all(row['left']['vertices']==[8] for row in guides.rows)
     legacy=build(scene,request,sha256(path));assert sum(row['left']['vertices']==[8] for row in legacy.rows)==3
+    from native_compact_surface_rows import build as compact_build
+    compact=compact_build(scene,request,sha256(path))
+    assert compact.rows==legacy.rows and compact.report['samples']==legacy.report['samples']
+    assert compact.report['world_plane_vertex_evaluations']==27
+    np.testing.assert_array_equal(compact.gaps(),legacy.gaps())
 
 
 def test_partner_surface_rows_are_unchanged_by_plane_guidance(tmp_path):
