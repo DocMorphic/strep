@@ -248,3 +248,25 @@ uncalibrated body parameters remain explicit. A failed or deferred prerequisite
 stops the sequence and preserves its evidence. Execution completion never
 approves engine result flags or replaces independent engine replay, human
 review, broader held-out evaluation or the full-project release criteria.
+
+## Import sampling investigation
+
+The unchanged scene audit calls `GLTFDocument.generate_scene` with a **30 FPS**
+bake setting. [Godot's API documentation](https://docs.godotengine.org/en/stable/classes/class_gltfdocument.html#class-gltfdocument-method-generate-scene)
+exposes that parameter. The earlier actual engine reports revision
+`ed1daf0bf001b61586d9930840f2f1394092c079`; its
+[pinned importer source](https://github.com/godotengine/godot/blob/ed1daf0bf001b61586d9930840f2f1394092c079/modules/gltf/gltf_document.cpp#L5760)
+inserts position, rotation and scale keys on a uniform bake clock, interpolating
+the input tracks at each bake time. Original transform-key times need not survive
+as engine keys. This is distinct from imported weight storage and float pose
+arithmetic; it does not prove the cause of the earlier failed import.
+
+The source file, upstream license and hashes are retained locally under
+`reports/godot-import-source-review-v10`. Captured C++ was inspected, not compiled
+or incorporated into Strep. The running native-authoring/import baseline retains
+its original methods. If fresh import evidence still fails, compare explicit
+bake rates on the unchanged clip in a separate development study, preserving
+all original contact/geometry clocks and acceptance limits. Higher bake rates
+are an experimental setting, not a fidelity guarantee; complete observed poses,
+skin, contacts and geometry must decide the outcome. No new engine setting or
+repair is admitted by this inspection.
