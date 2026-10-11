@@ -199,8 +199,7 @@ support, all **48,520 true-raw cap conditions**, all original position/speed and
 props in both skins. The serialized verification's complete resource trace
 replays. Full-body geometry is now running on this new clip; no prior body,
 force, held-pose or engine approval is inherited. Partial caches cannot authorize
-an export. Fresh serialized,
-complete-body, force and actual engine evidence remain required. The earlier
+an export. Fresh complete-body, force and actual engine evidence remain required. The earlier
 engine pose error does not bound a future export.
 
 No continuous collision, self-collision, dynamics/balance, GPU/runtime/event
