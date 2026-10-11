@@ -47,11 +47,48 @@ matrices and checks original/snapshotted inputs, executed/archived methods, engi
 native resources, raw receipts and every stored numerical array. The separate
 v1 contact/skin producer and its historical receipt contract remain distinct.
 
-Validation is in progress. The first hosted run at `fbff40f` completes 19 checks
+The [completed hosted run](https://github.com/DocMorphic/strep/actions/runs/38161024358)
+at `a239afb` passes **23 checks on each OS**, comprising eighteen source/receipt
+cases and five actual Godot 4.7.2 generated-rig cases. Windows takes 6.31 seconds
+and Linux 3.53 seconds. Both platforms agree exactly on all five result summaries;
+each runner recomputes the result and arrays from its actual imported matrices.
+The archived methods match the committed public code. Original inputs, policies,
+engine observations, receipts and native resources are retained in the hosted
+artifacts and downloaded locally; a separate passive certificate checks 27 source
+files and 812 expanded artifact files without claiming a new numerical replay.
+
+The [compatibility run](https://github.com/DocMorphic/strep/actions/runs/38160923780)
+at `609d39a` additionally passes all six focused regression jobs: 451 contact/rig,
+34 lineage and 32 game-package checks per OS, with editor checks in every job.
+All 517 Python checks per platform pass without skips or failures. A separate
+certificate verifies 2,391 committed source bindings. This protects the existing
+source policy/correction/package behavior; the new acquired-engine checks above
+remain distinct from that regression population and from whole-project approval.
+
+| Mode / fixture | Authored maximum (degrees/s) | Observed maximum (degrees/s) | Maximum source-world element error | Combined sampled decision |
+| --- | ---: | ---: | ---: | --- |
+| 30 FPS import, helper parent | 200 | 79.073821 | 0.0161602341 | Reject: source pose |
+| Native authoring, helper parent | 200 | 147.286246 | 5.93068e-8 | Pass selected conditions |
+| 30 FPS import, scene-root bone | 200 | 79.073821 | 0.0161602341 | Reject: source pose |
+| Native authoring, helper parent | 100 | 147.286246 | 5.93068e-8 | Reject: authored speed |
+| 30 FPS import, helper parent | 100 | 79.073821 | 0.0161602341 | Reject: source pose |
+
+The imported speed falling below 100 does not approve the clip: the original pose
+comparison still fails. Native authoring passing the pose comparison does not
+approve its 100-degree/s limit. World-matrix element error is not a position-only
+distance or a rotation-angle measurement. These deliberately small fixtures
+establish transport and rejection behavior, not anatomical calibration or motion
+quality. Studio does not yet invoke this separate audit during export; connecting
+retained author intent to the final selected motion remains next.
+
+The first hosted run at `fbff40f` completes 19 checks
 and fails two on each OS: native authoring passes, while 30 FPS import reports a
 0.0161602341 maximum source-world element error and fails the original pose
 comparison. A scene-root bone also exposes a path-resolution failure. The
 mapping now uses the actual imported skeleton resource for that case; tests
-retain the import discrepancy as a measured rejection. Limits and pose
-tolerances are unchanged. Subsequent actual-engine results will be recorded
-after completion; this preparation is not release approval.
+retain the import discrepancy as a measured rejection. A following clean-clone
+run reports 23 setup errors because the ignored `reports` parent is absent;
+creating that parent repairs CI setup. Both failed runs and their logs are retained.
+Limits, pose tolerances and release criteria are unchanged. A local retry is
+waiting under the unchanged 2,776,629,248-byte / 15-stable-second admission guard;
+no local numerical completion is claimed until it finishes.
