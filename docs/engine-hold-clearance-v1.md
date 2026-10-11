@@ -66,12 +66,23 @@ raw-quaternion interpolation is shared. This is not independent complete geometr
 
 ## Remaining acceptance work
 
-Fresh complete native-body geometry is running for all **18,056 vertices,
-36,108 triangles, 2,426 times and both props**, with original containment and
-policy limits. Eight guide triangles cannot certify the remaining body. No full
-body pass is claimed yet. An independent complete replay, fresh contact-force
-analysis and actual new Godot observations remain required after that result.
-The earlier engine pose error does not bound a future export.
+Fresh complete native-body geometry finishes for all **18,056 vertices,
+36,108 triangles, 2,426 times and both props**, retaining the original containment
+and policy limits. All sampled conditions pass with **zero failed times**. The
+complete mesh peaks at **4.978540079358131 mm**, leaving approximately
+**21.46 micrometres** inside the original 5-mm limit. This maximum comes from
+the complete body; eight guide triangles did not establish it.
+
+The producer records **175,196,016 triangle/object queries** and **14,557 numeric
+archive arrays** (7,007,860,048 logical bytes). Execution finishes in
+**2,076.297 seconds**; all **2,057** resource observations independently replay
+under the unchanged 2048+600-MiB admission profile. Source/body prerequisite
+hashes match the serialized-stage record.
+
+The independent complete geometry replay is now running. Fresh contact-force
+analysis and actual new Godot observations remain required. The producer result
+is a sampled native-skin development result, not independent geometry or engine
+approval. The earlier engine pose error does not bound a future export.
 
 No continuous collision, self-collision, dynamics/balance, GPU/runtime/event
 playback, animator quality, training admission or release approval follows from
