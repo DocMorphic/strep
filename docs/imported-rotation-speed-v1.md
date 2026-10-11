@@ -78,8 +78,10 @@ comparison still fails. Native authoring passing the pose comparison does not
 approve its 100-degree/s limit. World-matrix element error is not a position-only
 distance or a rotation-angle measurement. These deliberately small fixtures
 establish transport and rejection behavior, not anatomical calibration or motion
-quality. Studio does not yet invoke this separate audit during export; connecting
-retained author intent to the final selected motion remains next.
+quality. [Studio's current export-speed integration](studio-export-speed-v1.md)
+now connects explicit current author intent to the exact saved native resources,
+with scene and game package checks. Its end-to-end evidence is separate from the
+standalone audit results above.
 
 The first hosted run at `fbff40f` completes 19 checks
 and fails two on each OS: native authoring passes, while 30 FPS import reports a
