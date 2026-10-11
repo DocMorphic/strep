@@ -52,6 +52,7 @@ jobs:
         shell: python
         run: |
           import hashlib, os, pathlib, urllib.request, zipfile
+          pathlib.Path('reports').mkdir(exist_ok=True)
           linux=os.name!='nt'
           name='Godot_v4.7.2-stable_linux.x86_64.zip' if linux else 'Godot_v4.7.2-stable_win64.exe.zip'
           digest='cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4' if linux else '731980f9608d61333e5baf54a2ef17210acc7a538446c0cb9969f002aca1e953'
