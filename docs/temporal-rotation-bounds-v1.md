@@ -46,7 +46,7 @@ from the validated editor.
 The opt-in `SpeedPreflightSceneProblem` rejects incompatible requests before
 the existing scene fitting population is initialized. Its exception retains
 the complete diagnostic. A nonexcluded request initializes the existing scene
-problem; the current solver does **not** enforce the new absolute speed limit
+problem; this preflight-only class does **not** enforce the new absolute speed limit
 on its output. Callers still need output verification and speed-constrained
 fitting. Studio UI/route integration is pending. The additional 16 regression
 cases use actual scene fixtures, including unchanged source bytes, protected
@@ -64,3 +64,7 @@ adapter cases, without skips or failures. Linux takes 9.34 seconds and Windows
 34.50 seconds. Exact committed source bytes and hosted logs are bound in the
 local evidence record. No captured-motion, solver-output speed, live UI or
 release approval follows from these fixture checks.
+
+The separate [speed-constrained fitting implementation](native-rotation-speed-fit-v1.md)
+now appends authored speed rows and verifies actual serialized output. The
+preflight-only class described above retains its original diagnostic scope.

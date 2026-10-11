@@ -8,12 +8,12 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
-- [Rotation-speed feasibility](docs/temporal-rotation-bounds-v1.md): native scene fitting can reject authored speed limits that conflict with permitted edits, retaining complete neighboring-key bounds and protected-key rules. All 304 focused checks pass on Windows/Linux. Solver-output enforcement, Studio integration and captured replay remain pending.
+- [Rotation-speed fitting](docs/native-rotation-speed-fit-v1.md): authored joint-speed limits now constrain native scene fitting and fresh serialized-output checks. A bounded smoothing proposal must pass every original scene row before adoption. All 321 focused checks pass on Windows/Linux; Studio and continuous-time/engine integration remain pending.
 - [Static prop and grip API](docs/static-prop-api-v1.md): original GLB geometry and immutable triangle-based selections now import, preview, save and download through Studio routes. All 262 focused CPU checks pass on both OS platforms. Mesh-prop solver/UI integration remains pending.
 
-- [Contact audit compatibility](docs/contact-audit-compatibility-v1.md): the broad source workflow passes all 12 Windows/Linux jobs at its tested commit. Captured proposal production is complete; independent geometry/rate replay still awaits local RAM admission.
+- [Contact audit compatibility](docs/contact-audit-compatibility-v1.md): the broad source workflow passes all 12 Windows/Linux jobs at its tested commit. Captured proposal production and independent geometry/rate replay are complete; their failures remain visible.
 
-- [Rig-proportion pose scaffold](docs/rig-pose-scaffold-v1.md): all 2,422 captured keys now produce bounded direction proposals and complete native-key mesh/roundtrip checks. Mean direction errors improve slightly, but both complete clips still fail floor checks; crawl peak depth worsens to 0.673 m. Large neighboring rotation jumps remain. Separate geometry/rate replay is pending; originals remain selected, without quality or training approval.
+- [Rig-proportion pose scaffold](docs/rig-pose-scaffold-v1.md): production and separate replay cover all 2,422 captured keys. Both complete clips still fail floor checks; crawl peak depth worsens to 0.673 m. The large crawl rotation jump already exists in captured-relative motion and cannot be removed within the unchanged edit caps. Originals remain selected, without quality or training approval.
 
 - [Pose-target reach preflight](docs/pose-length-preflight-v1.md): box/norm/continuation fitters now reject incompatible fixed-distance targets without changing source poses or tolerances. All 48 focused checks pass. The actual fitter excludes all 2,422 uniformly scaled captured poses; separate replay checks 58,128 invariant-pair rows and every retained local pose. Rig proportions must be accounted for before support/contact fitting; no corrected animation or training target is promoted.
 

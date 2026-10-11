@@ -32,9 +32,12 @@ deformation, so its fit does not prove simultaneous full-body contact correction
 Both CPU workflows include these tests. All 59 local speed-related checks pass,
 including the 17 fitting/output cases and the earlier 42 preflight cases. The
 serialized fit meets the unchanged 1-degree/second request and every original
-scene row. Local execution takes 7.172 seconds at 134,590,464-byte sampled
+scene row. The guard's last execution sample is at 7.172 seconds, with 134,590,464-byte sampled
 process-tree peak RSS under the unchanged resource policy. All 25 observations
-independently replay. Expanded Windows/Linux execution results remain pending.
+independently replay. The [expanded focused run](https://github.com/DocMorphic/strep/actions/runs/38152277829)
+at `f597448` passes all 321 checks on each operating system, including all 17
+fitting/output cases, without skips or failures. Linux takes 23.40 seconds and
+Windows 36.41 seconds. Logs and exact committed source bindings are retained.
 
 The first run at `bbd71a6` passes 318 cases per platform but fails the complete
 fit: the existing forward-difference optimizer leaves the selected track near

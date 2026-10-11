@@ -74,12 +74,35 @@ Recorded local rotation speeds also expose unresolved discontinuities. Crawl
 original/proposed maxima are approximately 21,596 / 21,592 degrees per second;
 get-up maxima are 4,978 / 3,686 degrees per second. No speed gate is calibrated
 or claimed passed. A separate full-mesh/rate replay and raw captured-relative
-rotation comparison are prepared to investigate these observations. Their
-results are pending; no particular capture failure mechanism is inferred.
+rotation comparison were prepared to investigate these observations. Their
+results were initially pending; no particular capture failure mechanism is inferred.
 Its first guard defers after the unchanged 600-second admission window without
 starting a replay worker. All 594 observations of that deferral independently
 replay with matching archived bindings. No separate skin/rate/source-relative
 verification is claimed from the stopped admission attempt.
+
+A subsequent fresh guard admits the separate replay after stable RAM becomes
+available. It completes all 2,422 original keys with separate parent-product
+forward kinematics, independent full-mesh skin arithmetic and an `atan2`
+rotation-angle calculation. World matrices and floor depths match exactly;
+every original/proposed floor classification agrees. Local rotation speeds
+match within `3.638e-12 degrees/second`. Captured-relative source speeds match
+the original retargeted local speeds within `1.220e-11 degrees/second`, consistent
+with static calibration preserving geodesic angles. Thus the observed large
+crawl jump already exists in the parsed captured-relative motion; it is not
+introduced by this transfer. No particular recording/processing failure or
+anatomical binding correctness is established.
+
+At crawl's worst left-leg interval, 12.300000 to 12.308333 seconds, the original
+speed is 21,595.951 degrees/second. Even optimally placing both endpoint rotations
+inside their unchanged 25-degree edit balls leaves a necessary speed of at least
+15,595.951 degrees/second. The proposal still measures 21,572.381 degrees/second
+at that witness. Get-up's neighboring-key lower bounds are zero under these caps;
+that does not establish one globally feasible trajectory or plausible motion.
+Complete rates, bounds and witnesses are archived. The guard's last execution
+sample is at 8.188 seconds, with a sampled process-tree peak of 138,383,360 bytes.
+All 26 resource observations independently replay under the unchanged policy. Both failed clips
+remain unapproved and originals stay selected.
 
 Execution completes in 41.078 seconds with 169,725,952-byte sampled process-tree
 peak RSS. All 551 resource observations replay under the unchanged policy.

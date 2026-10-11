@@ -38,7 +38,7 @@ the prop API and rotation-speed preflight additions, which have separate
 focused validation.
 
 The complete [captured proposal study](rig-pose-scaffold-v1.md) subsequently
-runs and retains failed clips; independent geometry/rate replay still awaits
-local RAM admission. Source checks do not validate actual animation realism,
+runs and retains failed clips; independent geometry/rate replay now confirms
+all floor classifications and source-relative rotation jumps. Source checks do not validate actual animation realism,
 captured contacts, engine import, forces, cleanup time or release readiness.
 All release criteria remain unchanged.
