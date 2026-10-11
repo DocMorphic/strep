@@ -114,7 +114,7 @@ def test_invalid_optimizer_configuration_fails_before_evaluation(steps,anchor,pr
 
 
 @pytest.mark.parametrize('mode,steps,model',[('scalar',1,'recentered'),('vector',1,'recentered'),
-    ('surface-vector',1,'recentered'),('storage-vector',0,'recentered'),('storage-vector',1,'unknown')])
+    ('surface-vector',0,'recentered'),('storage-vector',0,'recentered'),('storage-vector',1,'unknown')])
 def test_invalid_fit_configuration_fails_before_output(tmp_path,mode,steps,model):
     from native_scene_fit import run
     output=tmp_path/'invalid'

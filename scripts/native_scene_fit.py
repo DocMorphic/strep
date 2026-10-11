@@ -161,8 +161,8 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
     if plane_guidance!='all-vertices' and proposal_model!='surface-vector':
         raise ValueError('Minimum-envelope guidance requires surface-vector proposals')
     if restoration_model not in ('measured-cap','recentered'):raise ValueError('Choose measured-cap or recentered restoration')
-    if restoration_model=='recentered' and (proposal_model!='storage-vector' or not restoration_steps):
-        raise ValueError('Recentered restoration requires storage-vector proposals and positive restoration steps')
+    if restoration_model=='recentered' and (proposal_model not in ('storage-vector','surface-vector') or not restoration_steps):
+        raise ValueError('Recentered restoration requires storage/surface-vector proposals and positive restoration steps')
     if rotation_storage_policy is None:
         if resume_from is None:rotation_storage_policy='unit'
         else:
@@ -352,7 +352,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                 from native_surface_trace import SurfaceTrace
                 surface_trace=SurfaceTrace(output/'optimization-iterations',output/'request.json')
                 value,optimization=optimize_surfaces(problem,evaluate_surface,iterations,trust,
-                    step=vector_difference_step,restoration_steps=restoration_steps,contact_model=contact_model,plane_guidance=plane_guidance,on_iteration=surface_trace)
+                    step=vector_difference_step,restoration_steps=restoration_steps,contact_model=contact_model,plane_guidance=plane_guidance,on_iteration=surface_trace,restoration_model=restoration_model)
             elif proposal_model in ('vector','storage-vector'):
                 from native_scene_conic import optimize as optimize_vectors
                 def anchor_worlds(value,label):
@@ -477,7 +477,7 @@ if __name__=='__main__':
     p.add_argument('--storage-cells',type=int,help='Finite translation cell probes per iteration, storage-vector only')
     p.add_argument('--restoration-steps',type=int,default=0,help='0-4 decoded constraint restoration solves, storage/surface-vector only')
     p.add_argument('--restoration-model',choices=['measured-cap','recentered'],default='measured-cap',
-        help='Recenter a local model on rejected decoded exports; storage-vector with positive restoration steps only')
+        help='Recenter a local model on rejected decoded exports; storage/surface-vector with positive restoration steps only')
     p.add_argument('--geometry-policy',type=Path,help='Source-bound sampled scene policy; originals remain selected')
     p.add_argument('--resume-from',type=Path,help='Completed fit to replay against the exact original source and limits')
     p.add_argument('--contact-revision',type=Path,help='Explicit patch-only revision receipt; requires --resume-from and unchanged source edit permissions')

@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Candidate-centered surface repair](docs/native-surface-recentered-v1.md): an optional repair rebuilds around rejected exports while retaining original motion limits and accepted contact/geometry bounds. All 208 distinct affected checks pass locally; fresh character validation remains pending. The [feasible-origin kick and paired storage screen](docs/kenney-kick-cold-fit-v1.md) retain failures in both existing storage modes, with no accepted correction.
+
 - [Native endpoint sampling](docs/native-endpoint-sampling-v1.md): rotation and translation previews now match scalar decoder behavior near Float32 clip edges. All 127 affected checks pass locally; the retained kick's complete-clock matrix discrepancy drops below 4.45e-15. Restoration and motion approval remain separate.
 
 - [Root-fixed kick correction](docs/kenney-kick-root-fixed-v1.md): the full 2,017-time trial finishes without an accepted correction. Added knee/foot/toe permissions produce a passing static pose, but both actual clip mappings fail unchanged motion/floor checks. All 552 affected checks per OS pass at e7aced8; no motion approval.

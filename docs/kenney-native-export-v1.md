@@ -60,6 +60,12 @@ each component's per-key maximum, the largest total-error vertex with all terms
 at that same vertex/time, and the unchanged original skin and combined decisions.
 Component maxima can occur at different vertices or times and must not be added.
 Reconstruction uses raw imported weights; renormalizing them would hide drift.
+The [version-pinned Godot 4.7.2 compatibility skeleton shader](https://github.com/godotengine/godot/blob/4.7.2-stable/drivers/gles3/shaders/skeleton.glsl#L216)
+was rechecked on 2026-10-11: its 3D path accumulates four or eight weighted bone
+matrices and takes the transformed XYZ without dividing by the weight sum.
+That supports retaining raw weights in the mathematical reconstruction. It does
+not prove GPU floating-point or pixel agreement for these seven clips; the
+earlier [sampled GPU comparisons](native-skin-gpu-v1.md) cover a different pair.
 
 In this seven-clip capture, packing dominates the discrepancy. Pose contributions
 are at most 4.471 micrometres; Float32 normalization contributes zero here, and

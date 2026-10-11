@@ -8,12 +8,15 @@ from scipy import sparse
 from native_scene_norms import NormRows
 
 
-def protect_worst(system,jacobian,hard_rows,geometry_rows):
+def protect_worst(system,jacobian,hard_rows,geometry_rows,*,reference_bound=None):
     """Duplicate the geometry block into the protected proposal prefix.
 
     Geometry follows the existing hard prefix. Its separate guard caps preserve
     the baseline worst positive witness residual, rather than allowing a larger
     contact objective to absorb worsening geometry.
+
+    An explicit reference bound retains the accepted baseline after witness
+    rebuilding; a rejected anchor cannot enlarge it to its current norm.
     """
     jacobian=sparse.csc_matrix(jacobian)
     if (type(hard_rows) is not int or type(geometry_rows) is not int
@@ -23,16 +26,21 @@ def protect_worst(system,jacobian,hard_rows,geometry_rows):
     ids=np.arange(hard_rows,hard_rows+geometry_rows)
     before=system.residual()[ids]
     if not np.isfinite(before).all():raise ValueError('Finite complete geometry residual population required')
-    bound=float(max(0.,before.max()))
+    if reference_bound is not None and (type(reference_bound) not in (float,int)
+            or not np.isfinite(reference_bound) or reference_bound<0):
+        raise ValueError('Finite nonnegative original geometry bound required')
+    bound=float(max(0.,before.max())) if reference_bound is None else float(reference_bound)
     order=np.r_[np.arange(hard_rows),ids,np.arange(hard_rows,len(system.caps))]
     caps=system.caps[order].copy()
     caps[hard_rows:hard_rows+geometry_rows]=system.caps[ids]+bound*system.scales[ids]
     # At an active baseline row, avoid subtraction-roundoff fixed-cone conflicts.
-    caps[hard_rows:hard_rows+geometry_rows]=np.maximum(caps[hard_rows:hard_rows+geometry_rows],np.linalg.norm(system.vectors[ids],axis=1))
+    if reference_bound is None:
+        caps[hard_rows:hard_rows+geometry_rows]=np.maximum(caps[hard_rows:hard_rows+geometry_rows],np.linalg.norm(system.vectors[ids],axis=1))
     guarded=NormRows(system.vectors[order],caps,system.scales[order])
     derivative=jacobian[(3*order[:,None]+np.arange(3)).ravel()]
     return guarded,derivative,dict(existing_hard_rows=hard_rows,protected_geometry_rows=geometry_rows,
         hard_rows=hard_rows+geometry_rows,baseline_worst_positive_residual=bound,
+        original_reference_bound_used=reference_bound is not None,
         authored_norm_rows_unchanged=True,
         scope='Separate baseline worst-witness bound in the affine proposal. Actual fixed witnesses can restore proposal defects; complete decoded geometry still decides acceptance. No collision certificate or relaxed authored geometry limit.')
 

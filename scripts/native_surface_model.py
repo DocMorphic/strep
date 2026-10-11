@@ -138,7 +138,7 @@ def model(problem, value, decoded_scene, policy, digest, trust, *, step=.001, ma
     return combined,matrix,witnesses,report
 
 
-def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restoration_steps=3, contact_model=None,plane_guidance='all-vertices',on_iteration=None):
+def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restoration_steps=3, contact_model=None,plane_guidance='all-vertices',on_iteration=None,restoration_model='measured-cap'):
     """evaluate returns native residuals, worlds, decoded scene/policy and geometry.
 
     Every candidate must be independently exported/decoded by the caller. Full
@@ -152,6 +152,10 @@ def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restorati
         raise ValueError('Bounded surface proposal settings required')
     if on_iteration is not None and not callable(on_iteration):
         raise ValueError('Surface iteration callback must be callable')
+    if restoration_model not in ('measured-cap','recentered'):
+        raise ValueError('Choose measured-cap or recentered surface restoration')
+    if restoration_model=='recentered' and not restoration_steps:
+        raise ValueError('Recentered surface restoration requires positive restoration steps')
     value = problem.initial.copy(); current = evaluate(value,'start'); history=[]; radius=trust;geometry_guard_used=False
     initial=np.asarray(current['native'],float)
     if initial.ndim!=1 or not len(initial) or not np.isfinite(initial).all() or np.any(initial > 0):
@@ -161,19 +165,24 @@ def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restorati
         system,jac,witnesses,identity=model(problem,value,current['scene'],current['policy'],current['digest'],radius,step=step,decoded_worlds=current['worlds'],contact_model=contact_model,plane_guidance=plane_guidance)
         hard = len(current['native'])
         if hard > len(system.caps): raise ValueError('Original norm population changed')
+        native_caps=system.caps[:hard].copy();native_scales=system.scales[:hard].copy()
         np.testing.assert_allclose(system.residual()[:hard],current['native'],atol=1e-9,rtol=1e-12)
         probes=[]; repairs=[]; accepted=None; before=geometry_score(current['geometry']); reserve=None
         contact_before=None if contact_model is None else contact_model.residual(current['worlds'])
+        contact_reference=None
         protected=hard
         if contact_model is not None:
             from native_contact_norms import protect_rows
+            count=len(contact_before)
+            contact_reference=NormRows(system.vectors[-count:],system.caps[-count:],system.scales[-count:])
             system,jac,guard_identity=protect_rows(system,jac,hard,contact_before)
             protected=guard_identity['hard_rows'];identity['contact_protection']=guard_identity
-        contact_end=protected;geometry_rows=0 if witnesses is None else len(witnesses.rows)
+        contact_end=protected;geometry_rows=0 if witnesses is None else len(witnesses.rows);geometry_bound=0.
         if geometry_rows:
             from native_geometry_norms import protect_worst
             system,jac,geometry_identity=protect_worst(system,jac,protected,geometry_rows)
             protected=geometry_identity['hard_rows'];identity['geometry_protection']=geometry_identity
+            geometry_bound=geometry_identity['baseline_worst_positive_residual']
             geometry_guard_used=True
         delta,info=direction(system,jac,value,problem.lower,problem.upper,radius,hard_rows=protected)
         def observe(other,label):
@@ -213,7 +222,68 @@ def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restorati
                 fraction=.5**backoff; other=np.clip(value+fraction*delta,problem.lower,problem.upper)
                 candidate,good=observe(other,f'{iteration}-{backoff}')
                 if good: value=other;current=candidate;accepted=fraction;break
-                if backoff==0 and np.any(actual_rows(candidate)[:protected]>0):
+                if backoff==0 and restoration_model=='recentered' and np.any(actual_rows(candidate)[:protected]>0):
+                    repair_value=other.copy();repair_candidate=candidate;repair_label=f'{iteration}-{backoff}'
+                    for repair in range(restoration_steps):
+                        repaired_system,repaired_jac,repair_witnesses,repair_identity=model(problem,repair_value,
+                            repair_candidate['scene'],repair_candidate['policy'],repair_candidate['digest'],radius*.5**repair,
+                            step=step,decoded_worlds=repair_candidate['worlds'],contact_model=contact_model,plane_guidance=plane_guidance)
+                        if (not np.array_equal(repaired_system.caps[:hard],native_caps)
+                                or not np.array_equal(repaired_system.scales[:hard],native_scales)):
+                            raise ValueError('Recentered surface model changed original native caps/scales')
+                        np.testing.assert_allclose(repaired_system.residual()[:hard],repair_candidate['native'],atol=1e-9,rtol=1e-12)
+                        repair_hard=hard
+                        if contact_model is not None:
+                            repaired_system,repaired_jac,guard=protect_rows(repaired_system,repaired_jac,hard,
+                                contact_before,reference=contact_reference)
+                            repair_hard=guard['hard_rows'];repair_identity['contact_protection']=guard
+                        repair_contact_end=repair_hard;repair_geometry_rows=0 if repair_witnesses is None else len(repair_witnesses.rows)
+                        if repair_geometry_rows:
+                            from native_geometry_norms import protect_worst
+                            repaired_system,repaired_jac,guard=protect_worst(repaired_system,repaired_jac,repair_hard,
+                                repair_geometry_rows,reference_bound=geometry_bound)
+                            repair_hard=guard['hard_rows'];repair_identity['geometry_protection']=guard
+                        def repair_residual(result):
+                            parts=[np.asarray(result['native'],float)]
+                            if contact_model is not None:
+                                from native_contact_norms import row_regression
+                                parts.append(row_regression(contact_before,contact_model.residual(result['worlds'])))
+                            if repair_geometry_rows:
+                                gaps=repair_witnesses.gaps(surface_points(problem,result['worlds']))
+                                offsets=np.asarray(repair_identity['conversion']['offset_m'])
+                                parts.append(NormRows(np.c_[offsets-gaps,np.zeros((len(gaps),2))],
+                                    repaired_system.caps[repair_contact_end:repair_hard],
+                                    repaired_system.scales[repair_contact_end:repair_hard]).residual())
+                            residual=np.concatenate(parts)
+                            if residual.shape!=(repair_hard,) or not np.isfinite(residual).all():
+                                raise ValueError('Complete finite recentered protected population required')
+                            positive=np.maximum(residual,0.)
+                            return [float(positive.max()),float(positive@positive)]
+                        repaired,repair_info=direction(repaired_system,repaired_jac,repair_value,problem.lower,problem.upper,
+                            radius*.5**repair,hard_rows=repair_hard)
+                        record=dict(index=repair,model='recentered',anchor_label=repair_label,
+                            anchor_controls=repair_value.tolist(),model_identity=repair_identity,
+                            conic_step=repair_info,available=repaired is not None,probes=[])
+                        repairs.append(record)
+                        if repaired is None:break
+                        repair_before=repair_residual(repair_candidate);next_anchor=None
+                        for trial in range(10):
+                            repair_fraction=.5**trial;trial_value=np.clip(repair_value+repair_fraction*repaired,problem.lower,problem.upper)
+                            label=f'{iteration}-recenter-{repair}-{trial}';trial_candidate,good=observe(trial_value,label)
+                            defect=repair_residual(trial_candidate)
+                            probes[-1].update(kind='recentered-restoration',repair_fraction=repair_fraction,
+                                protected_merit=defect,restoration_step=repair_info)
+                            record['probes'].append(copy.deepcopy(probes[-1]))
+                            if good:
+                                value=trial_value;current=trial_candidate;accepted=repair_fraction;break
+                            if (defect[0]<repair_before[0]-1e-12 or
+                                    abs(defect[0]-repair_before[0])<=1e-12 and defect[1]<repair_before[1]-1e-15):
+                                if next_anchor is None or tuple(defect)<tuple(next_anchor[3]):
+                                    next_anchor=(trial_value,trial_candidate,label,defect)
+                        if accepted is not None or next_anchor is None:break
+                        repair_value,repair_candidate,repair_label,_=next_anchor
+                    if accepted is not None:break
+                if backoff==0 and restoration_model=='measured-cap' and np.any(actual_rows(candidate)[:protected]>0):
                     repair_delta=delta
                     for repair in range(restoration_steps):
                         actual=actual_rows(candidate)
@@ -244,4 +314,5 @@ def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restorati
         maximum_iterations=iterations,trust=trust,all_original_norms_protected=True,
         individual_contact_rows_protected=contact_model is not None,
         worst_geometry_proxy_bounded_in_proposal=geometry_guard_used,
+        restoration_model=restoration_model,
         quality_approved=False,release_approved=False)

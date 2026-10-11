@@ -134,7 +134,8 @@ def test_surface_fit_requires_policy_and_rejects_infeasible_original_start(tmp_p
     assert (tmp_path/'failed/probes/start/geometry.json').exists()
 
 
-def test_surface_fit_retains_exact_original_epoch_and_full_probe_geometry(tmp_path):
+@pytest.mark.parametrize('restoration_model',['measured-cap','recentered'])
+def test_surface_fit_retains_exact_original_epoch_and_full_probe_geometry(tmp_path,restoration_model):
     from native_scene_fit import run
     scene,p,digest=scene_fixture(tmp_path);spec=read(tmp_path/'contacts.json')
     row=spec['contacts'][0];row.update(mode='touch',interval_s=[1.,1.],limits=dict(position_m=.03))
@@ -144,9 +145,10 @@ def test_surface_fit_retains_exact_original_epoch_and_full_probe_geometry(tmp_pa
     permission=dict(schema='strep-native-scene-edit-v1',contacts_sha256=digest,actors=dict(A=dict(
         window_s=[0.,2.],protected_s=[],knots_s=[0.,1.,2.],tracks=[dict(node=0,path='translation',maximum_change=.02)],maximum_joint_displacement_m=.02)))
     permissions=tmp_path/'permissions.json';save(permissions,permission)
-    out=tmp_path/'job';result=run(contacts,permissions,out,proposal_model='surface-vector',geometry_policy=policy,iterations=1,restoration_steps=1)
+    out=tmp_path/'job';result=run(contacts,permissions,out,proposal_model='surface-vector',geometry_policy=policy,iterations=1,restoration_steps=1,restoration_model=restoration_model)
     assert result['native_constraints_pass'] and result['original_selected'] and not result['release_approved']
     assert result['optimization']['all_original_norms_protected']
+    assert result['restoration_model']==result['optimization']['restoration_model']==restoration_model
     for probe in result['probes']:
         if probe['label']!='final':
             assert (out/'probes'/probe['label']/'geometry.json').exists()

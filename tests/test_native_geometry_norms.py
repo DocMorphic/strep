@@ -47,6 +47,20 @@ def test_passing_geometry_keeps_its_original_cap():
     np.testing.assert_array_equal(guarded.caps,[1.,1.,1.])
 
 
+def test_recentered_geometry_cannot_raise_the_original_worst_bound():
+    original=NormRows([[0.,0,0],[4.,0,0]],np.ones(2),np.ones(2))
+    guarded,_,identity=protect_worst(original,sparse.csc_matrix((6,1)),1,1,reference_bound=2.)
+    assert identity['original_reference_bound_used']
+    assert guarded.caps[1]==3. and guarded.residual()[1]==1.
+    np.testing.assert_array_equal(guarded.caps[2:],original.caps[1:])
+
+
+@pytest.mark.parametrize('bound',[True,-.1,float('nan'),float('inf')])
+def test_invalid_original_geometry_bound_is_rejected(bound):
+    original=NormRows([[0.,0,0],[1.,0,0]],np.ones(2),np.ones(2))
+    with pytest.raises(ValueError):protect_worst(original,sparse.csc_matrix((6,1)),1,1,reference_bound=bound)
+
+
 @pytest.mark.parametrize('hard,count',[(True,1),(0,1),(1,0),(1,2)])
 def test_missing_or_invalid_geometry_blocks_are_rejected(hard,count):
     original=NormRows([[0.,0,0],[1.,0,0]],np.ones(2),np.ones(2))
