@@ -1,6 +1,7 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_native_engine_rotation_speed.py",
     "tests/test_native_rotation_speed_lineage.py",
     "tests/test_native_rotation_speed_integration.py",
     "tests/test_native_rotation_speed_fit.py",

@@ -254,6 +254,11 @@ def replay(contacts,policy_path,folder):
         source=(contacts.parent/spec['actors'][case['id']]['glb']).resolve()
         if case['path']!=str(folder/request['source_snapshots'][str(source)]['path']):
             raise ValueError('Selected imported actor differs from its bound source snapshot')
+        if request['playback_mode']=='native-authoring':
+            actor=scene.actors[case['id']]
+            if (case['animation_output']!=str(folder/(case['id']+'-animation.res'))
+                    or case['native_payload']!=payload(actor['rig'],actor['sampler'],sha256(source))):
+                raise ValueError('Native resource destination or complete source key payload changed')
     actual=read(folder/'engine-output.json');replayed,arrays=audit(scene,read(policy_path),sha256(contacts),request,actual)
     replayed.update(status='complete',engine=actual['engine'],playback_mode=request['playback_mode'],import_bake_fps=request['import_bake_fps'],
         request_sha256=sha256(folder/'request.json'),raw_engine_receipt_sha256=sha256(folder/'raw-engine-receipt.json'),

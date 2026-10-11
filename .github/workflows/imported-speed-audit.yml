@@ -69,6 +69,14 @@ jobs:
           with open(os.environ['GITHUB_ENV'],'a') as f:f.write('STREP_TEST_GODOT='+str(engine)+'\n')
       - name: Check source rejection and actual imported matrices
         run: >-
-          python -m pytest -q --durations=10
+          python -m pytest -q -s --durations=10 --basetemp=reports/engine-speed-ci
           tests/test_native_engine_rotation_speed.py
           tests/test_native_engine_rotation_speed_runtime.py
+      - name: Retain generated-fixture inputs and actual engine observations
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: imported-speed-${{ matrix.os }}
+          path: reports/engine-speed-ci
+          if-no-files-found: warn
+          retention-days: 14

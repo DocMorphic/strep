@@ -85,19 +85,30 @@ func audit() -> void:
 				fail("Original capture node missing")
 				return
 			var imported: GLTFNode = nodes[id]
-			var path := imported.get_scene_node_path(state, true)
-			var target := model.get_node_or_null(NodePath(path.get_concatenated_names()))
-			if target == null or not target is Node3D or path.get_subname_count() > 1:
-				fail("Imported node path does not resolve to a transform")
-				return
+			var target: Node3D
+			var path: NodePath
 			var bone := -1
-			if path.get_subname_count() == 1:
-				if not target is Skeleton3D:
-					fail("Imported bone path does not resolve to a skeleton")
+			if imported.skeleton >= 0:
+				var gltf_skeletons := state.get_skeletons()
+				if imported.skeleton >= gltf_skeletons.size():
+					fail("Imported source skeleton missing")
 					return
-				bone = (target as Skeleton3D).find_bone(path.get_subname(0))
-				if bone < 0:
+				# The importer's skeleton resource and generated bone name retain
+				# source identity, including a glTF bone at the scene root.
+				target = gltf_skeletons[imported.skeleton].get_godot_skeleton()
+				if target == null or target != skeleton:
+					fail("Imported source skeleton does not resolve")
+					return
+				bone = skeleton.find_bone(imported.get_name())
+				if bone < 0 or id not in gltf_skeletons[imported.skeleton].joints:
 					fail("Imported capture bone missing")
+					return
+				path = NodePath(str(model.get_path_to(target)) + ":" + str(skeleton.get_bone_name(bone)))
+			else:
+				path = imported.get_scene_node_path(state, true)
+				target = model.get_node_or_null(NodePath(path.get_concatenated_names())) as Node3D
+				if target == null or path.get_subname_count() != 0:
+					fail("Imported helper path does not resolve to a transform")
 					return
 			targets.append({"node": target, "bone": bone})
 			mapping.append({"node": id, "parent": capture.parent,
