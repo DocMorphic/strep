@@ -64,4 +64,73 @@ the unchanged target, full target native/frame clock and experimental floor
 limit. Source-versus-target floor diagnostics additionally compare every native
 key using the full SOMA and target meshes; these source diagnostics do not cover
 the source mesh between keys. No output is dropped after observing failure.
-Complete target-screen results and independent motion verification remain pending.
+Both target-screen batches complete: all 30 transfers and screens finish without
+exceptions, but **0/30 clips pass** the complete experimental floor condition.
+Across 75,750 declared target times, **58,293 fail**. Each time checks all 1,029
+triangle-referenced target vertices; no failed seed or frame is removed.
+
+| Action | Condition | Mean peak penetration (mm) | Failed target times / total |
+|---|---|---:|---:|
+| Crawl | Baseline | 268.51 | 10,085 / 10,085 |
+| Crawl | Root path | 262.87 | 10,085 / 10,085 |
+| Crawl | Clearance and root path | 262.16 | 10,085 / 10,085 |
+| Get-up | Baseline | 817.22 | 9,823 / 15,165 |
+| Get-up | Root path | 741.08 | 10,243 / 15,165 |
+| Get-up | Clearance and root path | 936.50 | 7,972 / 15,165 |
+
+These are means of each clip's worst sampled depth, not mean penetration over
+time. On paired seeds, adding root guides reduces mean peak depth by 5.64 mm for
+crawl and 76.14 mm for get-up. Added clearance wording reduces crawl's mean peak
+by only 0.72 mm and **increases get-up's by 195.42 mm**, despite fewer failing
+get-up times. These mixed diagnostics do not establish an animation improvement.
+No condition supplies an acceptable replacement.
+
+Native-key source/target comparisons retain all 4,500 paired samples:
+
+| Action | Both fail | Source only fails | Target only fails | Neither fails |
+|---|---:|---:|---:|---:|
+| Crawl | 1,800 | 0 | 0 | 0 |
+| Get-up | 1,664 | 868 | 0 | 168 |
+
+Source failure means the complete SOMA mesh crosses the declared floor at a
+native key; it does not identify anatomical supports or establish the cause of
+target failure. Source geometry between keys remains unmeasured in this study.
+
+Only **1/20 guided clips** passes the existing provisional guide screen, whose
+limits are 30 mm root-path error and 15 degrees heading error at three authored
+frames. Maximum observed errors are:
+
+| Action | Guided condition | Root error (mm) | Heading error (degrees) | Passing clips / 5 |
+|---|---|---:|---:|---:|
+| Crawl | Root path | 77.34 | 4.02 | 1 |
+| Crawl | Clearance and root path | 72.10 | 3.59 | 0 |
+| Get-up | Root path | 155.80 | 54.52 | 0 |
+| Get-up | Clearance and root path | 92.33 | 38.59 | 0 |
+
+The guide limits are development screening values, not calibrated release gates.
+Guides are learned conditioning, not hard enforcement of the authored path.
+
+The crawl screen completes in 301.203 seconds at 760,041,472-byte peak process-tree
+RSS; all 313 resource observations replay. Get-up completes in 413.25 seconds at
+766,418,944 bytes; all 423 observations replay. The local aggregate verifies the
+frozen protocol, raw/transfer/report/geometry hashes, complete seed populations,
+paired counts and original resource evidence. It does not independently recompute
+motion or approve semantics, support, dynamics, engine import or human quality.
+All release criteria remain unchanged.
+
+A separate floor replay now checks **77,946,750 target vertex positions** at all
+75,750 declared times with row-wise matrix products instead of the producer's
+skin einsum. It reproduces every sampled depth and pass/fail classification,
+and every target native-key minimum. All original target binary payloads remain
+preserved. Shared GLB decoding and animation interpolation remain explicit;
+this is separate skin/floor arithmetic, not independent source FK, clock
+construction or complete motion-quality validation. The worker completes in
+194.453 seconds at 175,366,144-byte peak RSS, and all 209 resource observations
+replay. The original clips stay selected and all failed proposals stay retained.
+
+The result closes this prompt/root-guide comparison with no promoted output.
+Further work must test explicit whole-body/contact targets or a scene-conditioned
+editor against these retained baselines. Repeating clearance wording or selecting
+the least bad penetration peak is insufficient. Clean demonstrations and genuine
+developer/animator review remain required before learned targets or release
+approval; this study supplies neither.
