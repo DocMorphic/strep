@@ -15,6 +15,7 @@ on:
       - 'scripts/native-scene*.mjs'
       - 'scripts/native-scene-editor.html'
       - 'scripts/action_worker_lock.py'
+      - 'scripts/godot_scene_game_event_audit.gd'
       - 'scripts/native_godot_speed_resource.gd'
       - 'scripts/native_engine_clock.*'
       - 'scripts/native_godot_*'

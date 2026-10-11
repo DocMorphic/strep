@@ -32,26 +32,36 @@ func _initialize() -> void:
 		var rejected: Dictionary = dispatcher.advance(invalid_time)
 		invalid_rejected = invalid_rejected and not rejected.valid and dispatcher.cursor == before
 	var malformed: Array = []
-	var bad: Dictionary = document.duplicate(true)
+	# Empty event tracks are valid. Isolate rejection fixtures from dispatch
+	# observations, without adding events to the exported character document.
+	var basis: Dictionary = document.duplicate(true)
+	if basis.events.is_empty():
+		basis.events.append({"id":"audit-fixture", "name":"audit-fixture", "actor":"audit", "sample_index":0, "kind":"gameplay_intent", "timing_confirmed":true, "runtime_dispatch_allowed":true})
+	var checked_basis := Events.new()
+	if not checked_basis.configure(basis):
+		quit(5)
+		return
+	var bad: Dictionary = basis.duplicate(true)
 	bad.events.append(bad.events[0].duplicate(true))
 	malformed.append(bad)
-	bad = document.duplicate(true)
+	bad = basis.duplicate(true)
 	bad.events[0].sample_index = clock.size()
 	malformed.append(bad)
-	bad = document.duplicate(true)
+	bad = basis.duplicate(true)
 	bad.events[0].sample_index = true
 	malformed.append(bad)
-	bad = document.duplicate(true)
+	bad = basis.duplicate(true)
 	bad.clock.bytes_hex = bad.clock.bytes_hex.substr(2)
 	malformed.append(bad)
-	bad = document.duplicate(true)
+	bad = basis.duplicate(true)
 	bad.events[0].timing_confirmed = "yes"
 	malformed.append(bad)
-	bad = document.duplicate(true)
-	for entry in bad.events:
-		if entry.kind == "contact_intent":
-			entry.runtime_dispatch_allowed = true
-			break
+	bad = basis.duplicate(true)
+	var contact_id := "audit-invalid-contact"
+	var ids := {}
+	for entry in bad.events:ids[entry.id] = true
+	while ids.has(contact_id):contact_id += "_"
+	bad.events.append({"id":contact_id, "name":"audit-contact", "actor":"audit", "sample_index":basis.events[-1].sample_index, "kind":"contact_intent", "timing_confirmed":true, "runtime_dispatch_allowed":true})
 	malformed.append(bad)
 	var malformed_rejected := true
 	for forged in malformed:
