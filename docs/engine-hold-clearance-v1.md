@@ -197,8 +197,13 @@ other **152 channels**, static rig/skin and source binary prefix, protected key
 support, all **48,520 true-raw cap conditions**, all original position/speed and
 **11,590 surface samples per skin**, and every affected triangle against both
 props in both skins. The serialized verification's complete resource trace
-replays. Full-body geometry is now running on this new clip; no prior body,
-force, held-pose or engine approval is inherited. Partial caches cannot authorize
+replays. Fresh complete-body production now passes all **2,426 sampled times**
+with zero failed times on this new clip. The largest depth upper diagnostic is
+**4.940173 mm** against the unchanged **5-mm** limit, using all **36,108 faces**
+and both original sphere props. The full-body resource trace also replays.
+Independent geometry replay is running; fresh force and actual engine checks
+remain pending. No prior body, force, held-pose or engine approval is inherited.
+Partial caches cannot authorize
 an export. Fresh complete-body, force and actual engine evidence remain required. The earlier
 engine pose error does not bound a future export.
 
@@ -213,8 +218,8 @@ failed-attempt and resource evidence is under `reports/central-hand-physical-v1`
 The full-body resource profile is unchanged. Downloaded assets and bulky study
 outputs remain excluded from the public source snapshot.
 
-The current validation sequence attaches to the verified live body worker by
-PID, creation time and protocol/source hashes. It waits for that owned job;
+The current validation sequence attached to the verified body worker by
+PID, creation time and protocol/source hashes. It completed that owned job;
 expired observation never restarts it. Subsequent stages run sequentially under
 the same full-body resource profile: independent complete-body replay, fresh
 contact forces, independent force/contact replay, then native-resource and glTF
