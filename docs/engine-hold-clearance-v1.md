@@ -201,11 +201,17 @@ replays. Fresh complete-body production now passes all **2,426 sampled times**
 with zero failed times on this new clip. The largest depth upper diagnostic is
 **4.940173 mm** against the unchanged **5-mm** limit, using all **36,108 faces**
 and both original sphere props. The full-body resource trace also replays.
-Independent geometry replay is running; fresh force and actual engine checks
-remain pending. No prior body, force, held-pose or engine approval is inherited.
-Partial caches cannot authorize
-an export. Fresh complete-body, force and actual engine evidence remain required. The earlier
-engine pose error does not bound a future export.
+Independent geometry replay also passes all **175,196,016 triangle/object
+comparisons**, including all **14,557 saved arrays** (7,007,860,048 logical bytes).
+Maximum depth-bracket reconstruction difference is **1.67e-16 m**, closest-witness
+difference **2.22e-16 m**, and signed-center diagnostic difference **8.88e-16 m**.
+The same independent method uses 83 decimal refinements for ambiguous edge ties.
+Its complete resource trace replays. Fresh force production is running; actual
+engine checks remain pending. No prior body, force, held-pose or engine approval
+is inherited.
+Partial caches cannot authorize an export. This replay does not replace fresh
+force or actual engine evidence. The earlier engine pose error does not bound a
+future export.
 
 No continuous collision, self-collision, dynamics/balance, GPU/runtime/event
 playback, animator quality, training admission or release approval follows from
