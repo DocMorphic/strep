@@ -132,6 +132,12 @@ added-knot proposal's native constraints while retaining its complete geometry
 checks. Any intermediate model improvement still requires actual decoded
 acceptance and later engine, support, semantic and review evidence.
 
+The first restoration pilot stops before solving because of a strict
+preview/decoder surface disagreement near the final Float32 key. That failed
+run is retained. The [endpoint sampling correction](native-endpoint-sampling-v1.md)
+fixes the batch preview without changing the asset or tolerance; its corrected
+restoration rerun is a separate record, with no inherited motion approval.
+
 Local records are under `reports/kenney-kick-root-fixed-fit-v1`,
 `reports/kenney-kick-proposal-diagnostics-v1` through `v4`,
 `reports/kenney-kick-storage-comparison-v1`, and

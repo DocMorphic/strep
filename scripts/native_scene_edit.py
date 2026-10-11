@@ -3,7 +3,7 @@ import copy
 import numpy as np
 from scipy.spatial.transform import Rotation
 from native_scene_contacts import fields, scalar, vector
-from timed_rotation_edit import editable_keys, sampled_rotations
+from timed_rotation_edit import editable_keys, sampled_rotations, native_endpoint_masks
 from paired_guarded_temporal import world_from_local
 from gltf_tools import append_accessor, write_glb
 from native_support_clock import NativeSupportSampler
@@ -149,7 +149,8 @@ class SceneEdits:
             else:
                 left = np.clip(np.searchsorted(clock,times,side='right')-1,0,len(clock)-2)
                 u = (times-clock[left].astype(float))/(clock[left+1]-clock[left]).astype(float)
-                u = np.where(times<=clock[0],0,np.where(times>=clock[-1],1,u))
+                before,after = native_endpoint_masks(clock,times)
+                u = np.where(before,0,np.where(after,1,u))
                 p = (1-u[:,None])*v[left]+u[:,None]*v[left+1]
                 ids = np.searchsorted(clock,times); safe = np.minimum(ids,len(clock)-1); exact = (ids<len(clock)) & (clock[safe]==times)
                 p[exact] = v[safe[exact]]; local[:,node,:3,3] = p

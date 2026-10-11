@@ -97,5 +97,18 @@ def test_batched_rotation_sampling_matches_native_clock_and_antipodal_decoder():
     q = Rotation.from_rotvec(np.array([[0, 0, 0], [1e-8, 0, 0], [.2, -.3, .1], [.3, .5, -.1], [.2, .4, 0]])).as_quat()
     q[2] *= -1
     times = np.unique(np.r_[np.linspace(0, 1.2, 103), clock])
-    expected = Rotation.from_quat([AnimationSampler.value('rotation', clock, q, 'LINEAR', t) for t in times]).as_matrix()
+    expected = Rotation.from_quat([AnimationSampler.value('rotation', clock, q, 'LINEAR', float(t)) for t in times]).as_matrix()
+    np.testing.assert_allclose(sampled_rotations(clock, q, times), expected, atol=1e-12, rtol=0)
+
+
+@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+def test_batch_rotation_matches_scalar_decoder_within_endpoint_rounding_cells(dtype):
+    clock = np.array([.7, 1.1, 3.9666667], dtype=dtype)
+    q = Rotation.from_rotvec([[.2, -.3, .1], [.7, .1, -.2], [-.3, .5, .9]]).as_quat()
+    q[1] *= -1
+    # Probe both sides of each edge, including the rounding cell inside the clip.
+    times = np.unique(np.r_[clock.astype(float),
+        [float(edge)+fraction*float(np.spacing(edge)) for edge in clock[[0,-1]]
+         for fraction in (-1.1, -.49, -.01, .01, .49, 1.1)]])
+    expected = Rotation.from_quat([AnimationSampler.value('rotation', clock, q, 'LINEAR', float(t)) for t in times]).as_matrix()
     np.testing.assert_allclose(sampled_rotations(clock, q, times), expected, atol=1e-12, rtol=0)

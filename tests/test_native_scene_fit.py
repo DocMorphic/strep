@@ -84,6 +84,21 @@ def test_rotation_export_and_protected_interpolation_support(tmp_path):
     bad=tmp_path/'too-large.glb'; edits.export('A',x,bad); assert not edits.audit('A',bad,0)['passed']
 
 
+@pytest.mark.parametrize('rotation', [False, True])
+def test_native_scene_preview_matches_export_at_float32_endpoint_rounding_cells(tmp_path, rotation):
+    _,_,_,_,_,scene,edits=prepare(tmp_path,rotation=rotation)
+    controls=edits.initial.copy();controls.reshape(-1,3)[:,1]=.1
+    output=tmp_path/'endpoint.glb';edits.export('A',controls,output)
+    rig=RigAsset.load(output);reader=NativeSupportSampler(rig.document,rig.binary,0)
+    clock=edits.actors['A']['tracks'][0]['clock']
+    times=np.unique(np.r_[clock.astype(float),
+        [float(edge)+fraction*float(np.spacing(edge)) for edge in clock[[0,-1]]
+         for fraction in (-1.1,-.49,-.01,.01,.49,1.1)]])
+    expected=np.array([reader.sample(float(t)) for t in times])
+    np.testing.assert_allclose(edits.worlds('A',controls,times),expected,atol=2e-12,rtol=0)
+    assert edits.audit('A',output,0)['passed']
+
+
 def test_source_rates_and_contact_constraints_match_actual_decoded_exports(tmp_path):
     _,_,_,_,_,scene,edits=prepare(tmp_path); problem=SceneProblem(scene,edits)
     assert max(problem.model(problem.initial))>0
