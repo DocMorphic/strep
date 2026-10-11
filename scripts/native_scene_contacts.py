@@ -106,8 +106,8 @@ class SceneContacts:
             self.objects[name] = dict(geometry=geometry, times=times,
                 positions=np.array([p for p, _ in poses]), rotations=np.array([r for _, r in poses]))
         contacts = spec['contacts']; seen = set()
-        if not isinstance(contacts, list) or not 1 <= len(contacts) <= 64:
-            raise ValueError('Choose 1-64 explicit point contact conditions')
+        if not isinstance(contacts, list) or not 0 <= len(contacts) <= 64:
+            raise ValueError('Declare a list of 0-64 explicit point contact conditions')
         for row in contacts:
             fields(row, ('id', 'actor', 'vertices', 'reduction', 'target', 'mode', 'interval_s', 'limits'), 'contact')
             self.name(row['id'])
@@ -224,6 +224,7 @@ class SceneContacts:
         return dict(schema='strep-native-scene-contact-audit-v1', inputs_sha256=self.inputs,
             frame_sampling_contract=contract(), frame_sampling_contract_sha256=contract_sha256(), contacts=results,
             passed=all(r['passed'] for r in results), loaded_skin_weights_normalized=True,
+            point_contact_conditions_declared=len(results), point_contact_intent_evaluated=bool(results),
             engine_playback_verified=False, collision_verified=False, continuous_contact_certified=False,
             quality_approved=False, training_admitted=False, release_approved=False), observations
 
