@@ -206,12 +206,25 @@ comparisons**, including all **14,557 saved arrays** (7,007,860,048 logical byte
 Maximum depth-bracket reconstruction difference is **1.67e-16 m**, closest-witness
 difference **2.22e-16 m**, and signed-center diagnostic difference **8.88e-16 m**.
 The same independent method uses 83 decimal refinements for ambiguous edge ties.
-Its complete resource trace replays. Fresh force production is running; actual
-engine checks remain pending. No prior body, force, held-pose or engine approval
-is inherited.
+Its complete resource trace replays. No prior body, force, held-pose or engine
+approval is inherited.
 Partial caches cannot authorize an export. This replay does not replace fresh
 force or actual engine evidence. The earlier engine pose error does not bound a
 future export.
+
+Fresh force production and its independent force/contact replay now pass all
+**59 assessed samples** under the original hypothetical object parameters and
+contact limits. The combined sampled scene/force result is **59/59**. Independent
+contact checks cover all **11,590 original-clock normal observations** and
+**1,800 force-clock observations**, with all original clocks retained. Separate
+rigid-wrench reconstruction differences are at most **1.78e-15 N** and
+**3.21e-15 Nm**. Both complete resource traces replay. The **119 unknown-support
+samples** and two endpoints remain unassessed; these results do not calibrate
+strength or certify character force balance. The fresh engine sequence has
+begun, with native-authoring followed by import; neither mode has a completed
+result yet. Fresh observation/independent-geometry replay sources are prepared
+for both modes with the prior independent geometry functions and tolerances
+unchanged. Preparation alone establishes no engine result.
 
 No continuous collision, self-collision, dynamics/balance, GPU/runtime/event
 playback, animator quality, training admission or release approval follows from
