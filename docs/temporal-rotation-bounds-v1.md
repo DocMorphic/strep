@@ -51,3 +51,16 @@ on its output. Callers still need output verification and speed-constrained
 fitting. Studio UI/route integration is pending. The additional 16 regression
 cases use actual scene fixtures, including unchanged source bytes, protected
 keys, boundary permissions and rejection before expensive initialization.
+
+The first adapter CI attempt at `1c18f3c` passes 303 cases per operating system
+and fails one test whose supposed missing-channel joint actually has a channel
+in the fixture. The corrected test selects an existing joint without a rotation
+channel and explicitly verifies that premise. The failed run and logs remain
+preserved; no production behavior was relaxed to accommodate the fixture.
+
+The [corrected focused run](https://github.com/DocMorphic/strep/actions/runs/38151278419)
+at `c281fc9` passes all **304 checks on each operating system**, including all 16
+adapter cases, without skips or failures. Linux takes 9.34 seconds and Windows
+34.50 seconds. Exact committed source bytes and hosted logs are bound in the
+local evidence record. No captured-motion, solver-output speed, live UI or
+release approval follows from these fixture checks.
