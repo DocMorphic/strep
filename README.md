@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Captured reference transfer](docs/acclaim-rig-transfer-v1.md): an explicit ASF/AMC-to-rig path retains every capture frame and existing target animations/payloads. All 65 focused checks pass. Both full captured clips transfer and independently replay, but fail native-key floor checks (1,480/1,524 crawl keys; 446/898 get-up keys), with large mapped head/hand errors. Positional fitting and support correction remain necessary; no clean-target or training admission.
+
 - [Captured ground-motion references](docs/cmu-ground-reference-v1.md): two CMU clips now preserve all 2,422 frames at 120 Hz, with 47 importer checks and complete separate transform reconstruction passing. They supply skeletal reference motion for support-pose planning; target fitting, contacts and training admission remain pending.
 
 - [Selected body-pose guides](docs/selected-joint-guides-v1.md): the composer/request adapter can guide knees, head, pelvis and other SOMA30 joints individually. Real CPU/CUDA mask assembly and four unchanged-checkpoint clips verify condition delivery, but 0/4 clips passes the provisional guide-error screen. Body controls remain experimental; exact targets, collision and plausible motion require further work.
@@ -75,7 +77,7 @@ These development workflows retain failures and their stated limits. Scene conta
 
 ## Source checks
 
-The [public source-check workflow](docs/model-free-source-checks.md) declares 453 Python test modules and 42 Node suites on Linux and Windows, plus separate native CPU fixture jobs. It does not need motion checkpoints or local study outputs. Inference, engine, full-system and human-quality evaluation are separate. Some additional tests need acquired model/rig fixtures or Godot; a full fresh-clone suite pass is not established.
+The [public source-check workflow](docs/model-free-source-checks.md) declares 454 Python test modules and 42 Node suites on Linux and Windows, plus separate native CPU fixture jobs. It does not need motion checkpoints or local study outputs. Inference, engine, full-system and human-quality evaluation are separate. Some additional tests need acquired model/rig fixtures or Godot; a full fresh-clone suite pass is not established.
 
 | Path | Contents |
 |---|---|

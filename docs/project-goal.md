@@ -100,6 +100,16 @@ now pass 224 affected tests (13 new), preserving completed solver/restoration
 diagnostics on interruption without changing any acceptance limit. The source
 inventory reaches 451 Python modules / 41 Node suites; no release approval.
 
+The [direct captured-reference transfer](acclaim-rig-transfer-v1.md) now maps
+explicit origin/orientation segments to a supplied rig without SOMA conversion.
+All 65 focused checks pass. Both full CMU clips retain all keys and existing
+target payloads/animations; separate calibration/root/skin arithmetic replays
+2,492,238 target vertex positions. Native-key floor failures remain 1,480/1,524
+for crawl and 446/898 for get-up, with large head/hand position errors. No clean
+pose or training target is promoted. Both resource traces replay; source coverage
+is 454 Python modules / 42 Node suites. Explicit positional fitting and authored
+support targets remain required before complete mesh/contact and human approval.
+
 The [captured ground-reference intake](cmu-ground-reference-v1.md) now retains
 2,422 original 120-Hz frames and 75,082 joint transforms from two explicitly
 chosen CMU clips. All 47 importer checks pass; separate row-matrix arithmetic

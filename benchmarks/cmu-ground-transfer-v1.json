@@ -1,0 +1,28 @@
+{
+  "schema": "strep-cmu-ground-transfer-v1",
+  "status": "frozen-before-transfer",
+  "purpose": "Direct captured-reference transfer and native-key diagnostics before pose/contact fitting; no selected replacement or training admission.",
+  "source_protocol": "benchmarks/cmu-ground-reference-v1.json",
+  "cases": ["crawl-111-03", "get-up-140-08"],
+  "clock": "Every original 120-Hz capture frame; no clipping/filtering/downsampling. Preserve exact source clock separately from glTF float32 encoded clock.",
+  "reference_pose": "Explicit ASF zero AMC rotations and root translation; not an observed support pose.",
+  "position_mapping": {
+    "Hips": "root", "Spine2": "upperback", "Chest": "thorax", "Neck1": "lowerneck", "Head": "head",
+    "LeftArm": "lhumerus", "LeftForeArm": "lradius", "LeftHand": "lwrist",
+    "RightArm": "rhumerus", "RightForeArm": "rradius", "RightHand": "rwrist",
+    "LeftLeg": "lfemur", "LeftShin": "ltibia", "LeftFoot": "lfoot", "LeftToeBase": "ltoes",
+    "RightLeg": "rfemur", "RightShin": "rtibia", "RightFoot": "rfoot", "RightToeBase": "rtoes"
+  },
+  "orientation_policy": "Same segment as joint origin except LeftHand=lhand and RightHand=rhand; compose wrist-twist and hand articulation while anchoring at wrist origin. No source finger/thumb channels selected. Explicit development mapping requires anatomical review.",
+  "target_character": "reports/kenney-static-rig-adaptation-v1/character.glb",
+  "target_character_sha256": "be4e3bc824bc02f647cee434bd5e1d84c18f3fa18c1639a56ef53110605bcc79",
+  "target_profile": "reports/kenney-development-transfer-v3/profile.json",
+  "target_policy": "Unchanged default-node target reference, existing orientation calibration, leg-length root scale, zero world offset and no floor lift. Retain source/target originals and target animation/payload metadata.",
+  "floor_y_m": 0,
+  "native_key_floor_tolerance_m": 0.005,
+  "roundtrip_limit": 0.00001,
+  "verification": "Full decoded target mesh at every native encoded key; separate CPU skinning and source-role position/root replay. Between-key geometry remains unverified unless separately evaluated.",
+  "training_admitted": false,
+  "quality_approved": false,
+  "release_approved": false
+}
