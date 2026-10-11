@@ -235,12 +235,17 @@ Maximum pose-element disagreement is **0.009649050242221235**, with zero duratio
 error. Pose-element error mixes transform components and is not a distance unit.
 The import guard completed in **2,123.782 seconds**, exit zero, and its resource
 trace replays; execution success does not turn failed animation conditions into
-passes. Fresh observation and independent-geometry replays are queued for both
-modes, with native-authoring replay now running and the prior independent
-geometry functions and tolerances unchanged. No independent engine verdict is
-claimed until those replays finish.
-Native-authoring production does not substitute for either independent engine
-replay or the separate import verdict.
+passes. Native-authoring observation replay is now complete: all **2,426 recorded
+observations reproduce exactly**. Its independent geometry replay checks all
+**175,196,016 triangle/object queries** and **14,557 saved arrays**, replaying
+**7,007,860,048 logical bytes**, and confirms the sampled geometry pass.
+Maximum depth-bracket reconstruction difference is **2.22e-16 m**, closest-witness
+difference **3.34e-14 m**, and center diagnostic difference **8.88e-16 m**.
+Fifty ambiguous edge ties use the unchanged exact-input, 80-digit refinement;
+acceptance tolerances are unchanged. The native replay guard completed in
+**769.703 seconds**, exit zero, and its complete resource trace replays.
+Separate import observation and independent geometry replay are now running.
+The native verification does not approve the failed import or broader motion quality.
 
 No continuous collision, self-collision, dynamics/balance, GPU/runtime/event
 playback, animator quality, training admission or release approval follows from

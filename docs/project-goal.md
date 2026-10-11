@@ -5,8 +5,9 @@ active. The [corrected two-wrist clip](engine-hold-clearance-v1.md) now passes
 fresh complete-body production and independent replay at all 2,426 times, plus
 fresh independent contact/force checks at all 59 assessed samples. Native-authoring
 engine production passes all sampled conditions; separate glTF import fails pose,
-skin, contact and geometry screens, including 12 of 2,426 geometry times. Independent
-engine replay is running. The [editing floor diagnostic](prompt-edit-floor-regions-v2.md)
+skin, contact and geometry screens, including 12 of 2,426 geometry times. Native
+observation and independent complete-geometry replay also pass; independent import
+replay is running. The [editing floor diagnostic](prompt-edit-floor-regions-v2.md)
 passes 15 focused tests; all five retained takes still fail, with protected source
 violations distinguished from newly failed editable frames. Held-out generalization and animator quality are still
 unproven. A fresh release inventory retains 14 capabilities without release
