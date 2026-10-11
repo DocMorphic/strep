@@ -72,3 +72,22 @@ comparisons demonstrate failures that deterministic correction cannot address.
 The current held-out prompts, seeds and rig reservations remain untouched;
 none of this source research is a release trial, model adaptation or quality
 approval.
+
+## Targeted body-motion data remains a separate decision
+
+CMU's [official homepage](https://mocap.cs.cmu.edu/) was rechecked through its
+indexed primary-page contents on 2026-10-11; a direct page fetch returned 502.
+It permits commercial inclusion and prohibits direct data resale, including
+converted data. Its requested publication acknowledgment identifies the database
+and NSF EIA-0196217. The exact proposed training and model-distribution workflow
+has not been admitted, and no motion files were acquired.
+
+The page warns that hand/toe joints can be noisy and finger/thumb motion was not
+captured. Its [FAQ](https://mocap.cs.cmu.edu/faqs.php) states that AMC stores joint
+angles rather than capture-marker observations and gives an ASF/AMC-to-metre
+conversion factor. Any future importer must preserve calibrated skeletons,
+units and original records. This inspection supplies neither scene geometry,
+verified contact targets nor source/edit pairs; Strep would need explicit
+annotations and measured quality checks for those tasks. A body-motion source
+does not solve the retained editing failures by itself. The existing queued
+diagnosis and held-out reservations remain unchanged.

@@ -21,7 +21,7 @@ No new model, dependency, raw motion data or asset is acquired. The [verified fa
 | [BONES-SEED terms](https://bones.studio/info/seed-license) | Eligibility and generative-model restrictions remain. Do not acquire or train this product on raw BONES-SEED without a separate license. |
 | [Meta Llama 3 8B Instruct](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct) | Separately licensed, manually gated encoder dependency. Account access must be established by the user; never put tokens in chat or repository files. |
 | [CesiumMan asset](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan) | Downloaded pinned GLB, CC BY 4.0, © 2017 Cesium; separate logo terms retained. Attribution and modification status in asset provenance. |
-| [CMU mocap](https://mocap.cs.cmu.edu/) | Handoff reports commercial inclusion with raw resale prohibition; website fetch failed during this session. Exact training use and attribution remain unverified; no CMU data acquired. |
+| [CMU mocap](https://mocap.cs.cmu.edu/) | Official indexed homepage rechecked 2026-10-11: broad free-use statement and commercial inclusion, with direct resale of raw or converted data prohibited. Requested publication attribution names the database and NSF EIA-0196217. Exact proposed training/distribution workflow remains unadmitted; no CMU data acquired. |
 | [Uni-Inter](https://arxiv.org/abs/2511.13032) | Research precedent carried forward from handoff; not re-reviewed or integrated here. |
 | [MotionFix](https://motionfix.is.tue.mpg.de/) | Source-motion/text editing precedent; latest code, metadata/motion terms and unresolved permission distinctions are recorded in [the editing recheck](source-aware-editing-research-v2.md). No weights or motion data acquired. |
 
