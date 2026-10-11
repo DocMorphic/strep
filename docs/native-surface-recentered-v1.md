@@ -62,4 +62,37 @@ The initial test harness accidentally held the same lock as integration jobs;
 harness holds the project lock while test jobs acquire their own local lock.
 All 269 corrected-suite and 27 additional-check resource observations replay.
 The focused Windows/Linux workflow now includes the surface and restoration
-suites. Fresh hosted results and the development clip experiment remain pending.
+suites. The complete focused workflow at
+[69b471b](https://github.com/DocMorphic/strep/actions/runs/38173884038)
+passes **635 Python checks per OS**: 568 contact/rig, 35 lineage and 32 game
+package checks, plus the offline editor. The broader model-free workflow remains
+pending. The source inventory now declares 466 Python modules and 42 Node suites;
+these counts are not a claim that the entire inventory has passed.
+
+## Complete-clock development result
+
+The existing seed-77 Kenney kick uses the same feasible original, 72 controls,
+root/endpoints, source-rate caps and geometry policy as the
+[cold correction study](kenney-kick-cold-fit-v1.md). One primary iteration allows
+one candidate-centered repair step, with unit storage and a 0.02 trust fraction.
+
+The actual first rejected proposal reproduces the prior export bytes and native
+failures. Rebuilding at that export retains 108,471 original norms and 2,017
+separate geometry guards in a 110,488-row protected prefix. Its 112,505-row local
+model reports **`PrimalInfeasible` after 26 iterations**, with no repair direction
+or repaired export. There are no fixed failed rows. This does not establish
+global infeasibility of the motion or correction problem.
+
+All ten original proposal fractions receive complete geometry evaluation and
+reproduce the earlier proposal bytes exactly. None is accepted. The final
+zero-control motion still passes native conditions, but fails the floor at
+234 / 2,017 times, with a 49.727615-mm peak. The final root is exact at all 120
+original keys; source-rate arrays and source assets stay unchanged.
+
+The job completes within the unchanged 900-second limit; the final execution
+observation is 554.813 seconds. All **575 resource observations replay**. Local
+outputs are retained in `reports/kenney-kick-recentered-surface-fit-v1`, with hosted
+logs in `reports/native-surface-recentered-hosted-69b471b`. The original remains
+selected, without motion or release approval. The next study must examine the
+temporal representation and source-rate compatibility rather than repeating
+this unchanged local model or loosening its acceptance limits.

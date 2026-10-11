@@ -71,3 +71,5 @@ Local records: `reports/kenney-kick-cold-peak-fit-v1` and
 `reports/kenney-kick-cold-storage-screen-v1`. The next engineering experiment
 rebuilds an optional local repair model at an actual rejected export while
 retaining the original acceptance limits and complete geometry authority.
+That [candidate-centered trial](native-surface-recentered-v1.md) also completes
+without an accepted correction; its rebuilt local model returns no direction.
