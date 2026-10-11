@@ -24,9 +24,19 @@ speed choices, continuation, stale responses and atomic staging still pass.
 The desktop bundle is rebuilt and exactly matches its sources. No live browser
 or animation-quality approval is inferred from these source checks.
 
+At commit `1178c2a`, the complete focused
+[Windows/Linux workflow](https://github.com/DocMorphic/strep/actions/runs/38175516303)
+passes 635 Python checks per OS (568 contact/rig, 35 lineage and 32 game
+packages), plus the updated offline editor. The separate
+[imported-key engine workflow](https://github.com/DocMorphic/strep/actions/runs/38175516354)
+passes 185 checks per OS. Those engine checks use their existing fixtures;
+they are not playback approval for the kick proposals below. The broader
+model-free inventory has not yet completed successfully at this commit.
+
 An independent development study uses the already measured Kenney leg/foot
 chain with four rotation tracks and either two or six interior times. Both
 cases start from the feasible original, keep source-cap arrays and declared
 full-mesh checks, and lock the root and clip endpoints. Its outcome must be
-recorded separately: a capacity preview does not establish that extra timing
-controls can resolve a particular motion failure.
+recorded separately in the [timing-layout study](kenney-kick-temporal-layout-v1.md):
+a capacity preview does not establish that extra timing controls can resolve a
+particular motion failure.
