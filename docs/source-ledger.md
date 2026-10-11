@@ -23,7 +23,7 @@ No new model, dependency, raw motion data or asset is acquired. The [verified fa
 | [CesiumMan asset](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan) | Downloaded pinned GLB, CC BY 4.0, © 2017 Cesium; separate logo terms retained. Attribution and modification status in asset provenance. |
 | [CMU mocap](https://mocap.cs.cmu.edu/) | Handoff reports commercial inclusion with raw resale prohibition; website fetch failed during this session. Exact training use and attribution remain unverified; no CMU data acquired. |
 | [Uni-Inter](https://arxiv.org/abs/2511.13032) | Research precedent carried forward from handoff; not re-reviewed or integrated here. |
-| [MotionFix](https://motionfix.is.tue.mpg.de/) | Clip-editing precedent carried forward from handoff; not re-reviewed or integrated here. |
+| [MotionFix](https://motionfix.is.tue.mpg.de/) | Source-motion/text editing precedent; latest code, metadata/motion terms and unresolved permission distinctions are recorded in [the editing recheck](source-aware-editing-research-v2.md). No weights or motion data acquired. |
 
 `benchmarks/sources.lock.json` records public revision identifiers, not downloaded weights. Before running, download those exact revisions, verify checksums, and freeze package versions. Code currently resolves Hugging Face names without a revision argument, so using a model display name alone is insufficient for an immutable run.
 
