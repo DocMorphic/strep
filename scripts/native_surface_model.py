@@ -3,6 +3,7 @@
 Fixed axes/barycentric witnesses guide a local solve. Full decoded geometry,
 never those witnesses alone, decides whether to retain a motion proposal.
 """
+import copy
 import numpy as np
 from scipy import sparse
 from native_scene_norms import NormRows, linearize, rows as native_rows
@@ -137,7 +138,7 @@ def model(problem, value, decoded_scene, policy, digest, trust, *, step=.001, ma
     return combined,matrix,witnesses,report
 
 
-def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restoration_steps=3, contact_model=None,plane_guidance='all-vertices'):
+def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restoration_steps=3, contact_model=None,plane_guidance='all-vertices',on_iteration=None):
     """evaluate returns native residuals, worlds, decoded scene/policy and geometry.
 
     Every candidate must be independently exported/decoded by the caller. Full
@@ -149,6 +150,8 @@ def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restorati
             or type(step) not in (int,float) or not np.isfinite(step) or not 1e-6 <= step <= .01
             or type(restoration_steps) is not int or not 0 <= restoration_steps <= 4):
         raise ValueError('Bounded surface proposal settings required')
+    if on_iteration is not None and not callable(on_iteration):
+        raise ValueError('Surface iteration callback must be callable')
     value = problem.initial.copy(); current = evaluate(value,'start'); history=[]; radius=trust;geometry_guard_used=False
     initial=np.asarray(current['native'],float)
     if initial.ndim!=1 or not len(initial) or not np.isfinite(initial).all() or np.any(initial > 0):
@@ -159,7 +162,7 @@ def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restorati
         hard = len(current['native'])
         if hard > len(system.caps): raise ValueError('Original norm population changed')
         np.testing.assert_allclose(system.residual()[:hard],current['native'],atol=1e-9,rtol=1e-12)
-        probes=[]; accepted=None; before=geometry_score(current['geometry']); reserve=None
+        probes=[]; repairs=[]; accepted=None; before=geometry_score(current['geometry']); reserve=None
         contact_before=None if contact_model is None else contact_model.residual(current['worlds'])
         protected=hard
         if contact_model is not None:
@@ -214,8 +217,9 @@ def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restorati
                     repair_delta=delta
                     for repair in range(restoration_steps):
                         actual=actual_rows(candidate)
-                        tightened,reserve,_=tighten(system,jac,repair_delta,actual,protected,reserve)
+                        tightened,reserve,margin= tighten(system,jac,repair_delta,actual,protected,reserve)
                         repaired,repair_info=direction(tightened,jac,value,problem.lower,problem.upper,radius,hard_rows=protected)
+                        repairs.append(dict(index=repair,available=repaired is not None,conic_step=repair_info,margin=margin))
                         if repaired is None: break
                         other=np.clip(value+repaired,problem.lower,problem.upper)
                         candidate,good=observe(other,f'{iteration}-restore-{repair}')
@@ -226,11 +230,12 @@ def optimize(problem, evaluate, iterations=4, trust=.02, *, step=.001, restorati
                     if accepted is not None: break
         history.append(dict(iteration=iteration,before_geometry_score=before.tolist(),
             after_geometry_score=geometry_score(current['geometry']).tolist(),selected_fraction=accepted,
-            probes=probes,conic_step=info,model=identity))
+            probes=probes,restoration_attempts=repairs,conic_step=info,model=identity))
         if contact_model is not None:
             from native_contact_norms import score as contact_merit
             history[-1].update(before_surface_contact_merit=contact_merit(contact_before).tolist(),
                 after_surface_contact_merit=contact_merit(contact_model.residual(current['worlds'])).tolist())
+        if on_iteration is not None:on_iteration(copy.deepcopy(history[-1]))
         print(iteration,history[-1]['after_geometry_score'],accepted,flush=True)
         if accepted is None:
             radius *= .25

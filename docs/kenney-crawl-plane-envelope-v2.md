@@ -47,3 +47,25 @@ Local evidence: `reports/kenney-crawl-floor-fit-v2`,
 `reports/kenney-crawl-proposal-diagnostics-v3` and associated guard/resource
 records under `reports/central-hand-physical-v1`. Failed and interrupted raw
 results remain local and immutable. No release capability is approved.
+
+## Measured restoration attempt V3
+
+The controlled three-restoration-step trial also stops at the unchanged
+execution limit: 900.766 seconds, peak RSS 1,876,201,472 bytes. All 902 resource
+observations and archived bindings replay. Three primary iterations finish with
+no accepted step. There are 37 exported native probe receipts; only the original
+start passes their recorded native constraints. Of these, 36 also have completed
+geometry receipts, each at all 2,017 times; all fail, and the strongest rejected
+peak remains 242.172 mm. The final export has no completed geometry receipt.
+
+No restoration-export directory exists. Detailed unavailable restoration solver
+steps were held in memory and not saved before interruption, so their reason
+cannot be established from the retained trace. This is not a convergence or
+infeasibility proof. The original stays selected; V3 producer summaries are not
+independent motion validation. Evidence remains in `reports/kenney-crawl-floor-fit-v3`.
+
+[Atomic completed-iteration receipts](native-surface-iteration-trace-v1.md) now
+address the lost diagnostic history for future trials, with 224 passing affected
+tests. Repeating the same bounded repair is not yet justified; inspect retained
+solver evidence and test the existing generation-control proposal path before
+considering a learned change. No rig, physical, human or release approval follows.

@@ -280,6 +280,7 @@
     "tests/test_native_geometry_archive.py",
     "tests/test_two_hand_rigidity.py",
     "tests/test_native_surface_model.py",
+    "tests/test_native_surface_trace.py",
     "tests/test_native_surface_contact.py",
     "tests/test_native_imported_surface_contact.py",
     "tests/test_native_contact_region_review.py",

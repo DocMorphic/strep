@@ -20,7 +20,7 @@ from strep import ROOT, read, save, sha256, now
 
 METHODS = sorted(set(CONTACT_METHODS) | {'native_scene_edit.py','native_scene_fit.py',
     'native_scene_norms.py','native_scene_conic.py','native_scene_storage.py','native_scene_serialized_ray.py','native_scene_restore.py','native_scene_resume.py','native_scene_revision.py','native_contact_revision.py','native_scene_geometry.py','native_observation_archive.py',
-    'native_surface_model.py','native_partner_surface_rows.py','native_object_surface_rows.py','native_surface_lift.py',
+    'native_surface_model.py','native_surface_trace.py','native_partner_surface_rows.py','native_object_surface_rows.py','native_surface_lift.py',
     'native_surface_contact.py','native_contact_norms.py','native_geometry_norms.py',
     'triangle_primitive_depth.py','triangle_crossing.py','convex_partner_surface.py',
     'timed_rotation_edit.py','sampled_motion_caps.py','native_support_feasibility.py','action_worker_lock.py',
@@ -320,10 +320,13 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                     save(folder/'surface-contact-policy.json',surface_policy);save(folder/'surface-contact.json',surface_observation)
                     np.savez_compressed(folder/'surface-contact-observations.npz',**surface_arrays)
                 return dict(native=residual,worlds=worlds,scene=decoded_scene,policy=derived_policy,digest=digest,geometry=geometry,surface_contact=surface_observation)
+            surface_trace=None
             if proposal_model=='surface-vector':
                 from native_surface_model import optimize as optimize_surfaces
+                from native_surface_trace import SurfaceTrace
+                surface_trace=SurfaceTrace(output/'optimization-iterations',output/'request.json')
                 value,optimization=optimize_surfaces(problem,evaluate_surface,iterations,trust,
-                    step=vector_difference_step,restoration_steps=restoration_steps,contact_model=contact_model,plane_guidance=plane_guidance)
+                    step=vector_difference_step,restoration_steps=restoration_steps,contact_model=contact_model,plane_guidance=plane_guidance,on_iteration=surface_trace)
             elif proposal_model in ('vector','storage-vector'):
                 from native_scene_conic import optimize as optimize_vectors
                 def anchor_worlds(value,label):
@@ -394,6 +397,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             if any(sha256(p)!=h for p,h in snapshots.items()): raise ValueError('Authored request snapshot changed')
             if conic_identity is not None and solver_identity()!=conic_identity:raise ValueError('Installed vector proposal solver changed')
             result = dict(status='complete',optimization=optimization,probes=probes,edits=audits,
+                surface_iteration_receipts=None if surface_trace is None else [dict(path='optimization-iterations/'+item['path'],sha256=item['sha256']) for item in surface_trace.files],
                 resume=resume_receipt,completed_primary_iterations=len(optimization['history'])+(0 if resume is None else resume.prior_iterations),
                 point_and_motion_constraints_pass=bool(merit(final_constraints)[0]==0 and report['passed'] and all(a['passed'] for a in audits.values())),
                 native_constraints_pass=bool(merit(final_constraints)[0]==0 and report['passed'] and all(a['passed'] for a in audits.values())
