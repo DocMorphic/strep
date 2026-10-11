@@ -75,7 +75,9 @@ def test_invalid_limits_reject(tmp_path,fault):
     elif fault=='actor':limits={('B',0):100}
     elif fault=='bool-node':limits={('A',False):100}
     elif fault=='missing-node':limits={('A',999):100}
-    elif fault=='missing-channel':limits={('A',1):100}
+    elif fault=='missing-channel':
+        limits={('A',5):100}
+        assert not any(c[:2]==(5,'rotation') for c in edits.scene.actors['A']['sampler'].channels)
     elif fault=='bool-limit':limits={('A',0):True}
     elif fault=='negative-limit':limits={('A',0):-1}
     elif fault=='nan-limit':limits={('A',0):float('nan')}
