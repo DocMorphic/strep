@@ -66,5 +66,12 @@ The local run terminates under the RAM guard after 11 completed case markers,
 without a complete suite result. Available RAM falls to 408,920,064 bytes; the
 sampled worker-tree peak is 204,910,592 bytes. All 330 recorded observations
 independently reproduce the stop decision. The partial run is retained, and
-hosted Windows/Linux verification is pending. Package tests use explicit mocked
-engine resources; actual engine playback is not claimed.
+The [first hosted run](https://github.com/DocMorphic/strep/actions/runs/38157617600)
+passes all 517 Python checks on Linux in 158.55 seconds. Windows reaches 176
+passes in 856.91 seconds before the unchanged 15-minute job limit cancels it;
+that platform is not yet fully validated. Editor checks pass on both platforms.
+The focused workflow now partitions the exact same 22 modules into contact/rig,
+lineage and game-package jobs on each OS, retaining every case and each
+15-minute limit, with per-test timing diagnostics. The fresh run is pending.
+Package tests use explicit mocked engine resources; actual engine playback is
+not claimed.

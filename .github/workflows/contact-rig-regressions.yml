@@ -24,6 +24,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
+        suite: [contact-rig, lineage, game-packages]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     env:
@@ -53,12 +54,21 @@ jobs:
           node-version: '24'
       - name: Verify correction editor requests and staging
         run: node tests/test_native_scene_fit_editor.mjs
-      - name: Verify pose, boundary audit and complete surface populations
+      - name: Verify portable correction and speed lineage
+        if: matrix.suite == 'lineage'
         run: >-
-          python -m pytest -q
+          python -m pytest -q --durations=10
           tests/test_native_rotation_speed_lineage.py
           tests/test_native_correction_lineage.py
+      - name: Verify scene game packages
+        if: matrix.suite == 'game-packages'
+        run: >-
+          python -m pytest -q --durations=10
           tests/test_studio_native_scene_game.py
+      - name: Verify pose, boundary audit and complete surface populations
+        if: matrix.suite == 'contact-rig'
+        run: >-
+          python -m pytest -q --durations=10
           tests/test_native_rotation_speed_integration.py
           tests/test_native_scene_norms.py
           tests/test_native_scene_fit.py
