@@ -19,7 +19,8 @@ def weights(count,blend_frames):
 
 def review_info(audit):
     guides=audit['raw_anchor_audit']
-    return dict(raw_guides_passed=guides['numerical_screen_passed'],raw_anchor_error_m=max(g['maximum'].get('joint_position_error_m',0.) for g in guides['guides']),floor_failed_frames=audit['export']['floor_failed_frames'],preserved_frames=audit['unchanged_frames'],scope='Raw model guides and sampled splice diagnostics; preservation is not semantic or physical approval')
+    regions=audit.get('floor_regions')
+    return dict(raw_guides_passed=guides['numerical_screen_passed'],raw_anchor_error_m=max(g['maximum'].get('joint_position_error_m',0.) for g in guides['guides']),floor_failed_frames=audit['export']['floor_failed_frames'],preserved_frames=audit['unchanged_frames'],preexisting_protected_floor_failures=None if regions is None else len(regions['preexisting_protected_failures']),newly_failed_edited_floor_frames=None if regions is None else len(regions['newly_failed_edited_frames']),scope='Raw model guides and sampled splice diagnostics; preservation is not semantic or physical approval')
 
 
 def validate(payload):
@@ -122,4 +123,10 @@ def run(folder):
     if (folder/'input/contact-spec.json').exists():shutil.copyfile(folder/'input/contact-spec.json',folder/'contact-spec.json')
     audit=dict(created_at=now(),bridge=bridge_audit,origin_offset_m=origin.tolist(),first_heading_angle=heading,range=[a,b],blend_frames=k,unchanged_frames=int((~changed).sum()),surrounding_matrix_error=float(np.abs(after[~changed]-before[~changed]).max()),raw_anchor_audit=read(raw.parent/'constraint-audit.json'),export=roundtrip,raw_motion_sha256=sha256(raw),human_approved=False,scope='Prompt-conditioned replacement plus explicit geodesic splice, not a trained source-text editor or semantic/physical approval. Outside-envelope poses and two samples at each boundary retained. Source anatomy conversion is approximate.')
     audit['transfer_context']=transfer_diagnostic
+    from edit_floor_regions import floor_depths,localize as localize_floor
+    from gltf_tools import sample_animation
+    decoded=RigAsset.load(out/'character.glb')
+    serialized=np.array([sample_animation(decoded.document,decoded.binary,0,f) for f in range(len(before))])
+    audit['floor_regions']=localize_floor(floor_depths(rig,before,floor_y_m=0.),floor_depths(decoded,serialized,floor_y_m=0.),full_weights,times,limit_m=.005)
+    audit['floor_regions']['floor_y_m']=0.
     save(out/'prompt-edit-audit.json',audit);return report,audit
