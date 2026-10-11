@@ -26,7 +26,10 @@ verification. Responses retain the store's negative solver/quality flags. Mesh
 props are not yet connected to the scene solver, runtime or graphical prop
 picker; current primitive object workflows remain separate.
 
-Validation is pending in the focused Windows/Linux CPU workflow. Its route tests
+The [focused Windows/Linux CPU run](https://github.com/DocMorphic/strep/actions/runs/38146696339)
+at commit `964f062` passes **262 checks on each platform**: Linux in 13.66 seconds,
+Windows in 36.14 seconds. This includes 28 new route cases and the 62 existing
+static-prop/store cases, plus the earlier 172 contact/rig regressions. Route tests
 use the real Studio handler in process with generated GLB fixtures, including
 binary/JSON serving, complete import-to-grip roundtrip and rejection paths.
 No socket, running Studio instance, browser, model or downloaded asset is used.

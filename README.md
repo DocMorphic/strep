@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Static prop and grip API](docs/static-prop-api-v1.md): original GLB geometry and immutable triangle-based selections now import, preview, save and download through Studio routes. All 262 focused CPU checks pass on both OS platforms. Mesh-prop solver/UI integration remains pending.
+
 - [Contact audit compatibility](docs/contact-audit-compatibility-v1.md): all 172 focused CPU regressions pass on both Windows and Linux, including the 17 rig-proportion cases. Complete captured-motion validation still awaits local RAM admission.
 
 - [Rig-proportion pose scaffold](docs/rig-pose-scaffold-v1.md): direction-based proposals pass all 17 synthetic regression cases on Windows and Linux. The complete captured comparison remains prepared and deferred locally for RAM; no captured proposal or quality approval is claimed.
