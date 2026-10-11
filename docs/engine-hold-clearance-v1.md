@@ -316,7 +316,21 @@ The new method changes only bake-rate transport and its evidence bindings.
 Original clips, meshes, skins, actor/object placements, contact/geometry clocks
 and acceptance limits remain unchanged. Earlier v10 source snapshots and proof
 receipts remain immutable; this is a new method version. The planned actual
-60/120/240 FPS comparisons have not run yet. Each needs a fresh guarded engine
+60/120/240 FPS comparisons are now queued serially under a fresh v11 plan.
+The 60 FPS worker has started; no new fidelity result is available yet. Each
+gets a fresh guarded engine
 run, recorded-observation replay and independent complete-geometry replay;
 retain failed flags and all attempts. No default setting or release gate is
 promoted by these source checks.
+
+The v11 plan binds both completed v10 engine replays, the source checks,
+current methods and archived pre-change methods. Independent geometry functions
+remain identical; only study paths change. Each rate receives its own terminal
+resource audit before observation and geometry replay. The serial controller
+stops on admission or execution failure and preserves numerical failures.
+
+A separate waiting follow-up prepares the licensed Kenney Protagonists rig for
+conversion after all rate trials and replays complete. It extracts only the
+character FBX, four PNG skins and license, excluding the bundled animations.
+Strict rig intake keeps scale/skin rejection visible; conversion alone does
+not demonstrate retargeting, geometry equivalence or held-out generalization.
