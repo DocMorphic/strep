@@ -100,6 +100,16 @@ now pass 224 affected tests (13 new), preserving completed solver/restoration
 diagnostics on interruption without changing any acceptance limit. The source
 inventory reaches 451 Python modules / 41 Node suites; no release approval.
 
+The [captured ground-reference intake](cmu-ground-reference-v1.md) now retains
+2,422 original 120-Hz frames and 75,082 joint transforms from two explicitly
+chosen CMU clips. All 47 importer checks pass; separate row-matrix arithmetic
+reconstructs every transform within 2e-15, with exact clock/channel preservation.
+The corrected archive-loading worker completes; both its 25 resource observations
+and the interrupted predecessor's 182 observations replay with their actual
+statuses. No contact, target-rig, physics, human or training admission follows.
+Source coverage reaches 453 Python modules / 42 Node suites. Next work remains
+explicit anatomical mapping, target pose fitting and complete body/contact checks.
+
 The [selected body-guide adapter](selected-joint-guides-v1.md) adds exact
 selected SOMA30 joint channels to requests and the pose composer. Core CPU/CUDA
 conditioning checks pass 143 Python tests and three Node checks; current isolated

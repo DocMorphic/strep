@@ -1,0 +1,19 @@
+{
+  "schema": "strep-cmu-ground-reference-v1",
+  "status": "frozen-before-acquisition",
+  "purpose": "Development reference intake and feasible support-pose planning; not training admission or a replacement for retained generation benchmarks.",
+  "cases": [
+    {"id": "crawl-111-03", "subject": 111, "trial": 3, "description": "Crawling", "fps": 120, "index_url": "https://mocap.cs.cmu.edu/search.php?subjectnumber=111", "asf_url": "https://mocap.cs.cmu.edu/subjects/111/111.asf", "amc_url": "https://mocap.cs.cmu.edu/subjects/111/111_03.amc"},
+    {"id": "get-up-140-08", "subject": 140, "trial": 8, "description": "Get Up From Ground Laying on Back", "fps": 120, "index_url": "https://mocap.cs.cmu.edu/search.php?subjectnumber=140", "asf_url": "https://mocap.cs.cmu.edu/subjects/140/140.asf", "amc_url": "https://mocap.cs.cmu.edu/subjects/140/140_08.amc"}
+  ],
+  "capture_clock": "Retain every original frame and channel; explicit index-declared 120 Hz. No clipping, filtering or downsampling at intake.",
+  "unit_reference": "https://mocap.cs.cmu.edu/info.php",
+  "unit_policy": "For the documented CMU convention, metres per stored length unit = 0.0254 / ASF units.length; retain and validate the actual header.",
+  "terms_url": "https://mocap.cs.cmu.edu/",
+  "source_use": "Local research/evaluation only; no public raw/converted payload distribution, no bulk crawling, no training admission. Retain source URLs, checksums and attribution.",
+  "attribution": "Motion data obtained from the Carnegie Mellon University Graphics Lab Motion Capture Database, mocap.cs.cmu.edu; funded by NSF EIA-0196217.",
+  "limitations": ["Captured skeleton motion is not target-rig or full-mesh contact approval.", "Hand/toe channels may be noisy; database finger/thumb motion is not captured evidence.", "No authored object geometry/tracks, partner contacts, cleanup timings or genuine reviewer ratings are supplied by this intake."],
+  "training_admitted": false,
+  "quality_approved": false,
+  "release_approved": false
+}
