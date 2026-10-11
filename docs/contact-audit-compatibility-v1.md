@@ -28,7 +28,17 @@ no skips or failures are reported. These include all 17 scaffold cases and the
 retained locally. The initial workflow attempt at `694369c` failed YAML parsing
 before creating any test job; it is retained as a failed setup attempt.
 
-The broader source workflow is still unapproved. The complete captured study
-remains deferred locally for RAM. These source checks do not validate actual
-animation realism, captured contacts, engine import, forces, cleanup time or
-release readiness. All release criteria remain unchanged.
+The subsequent [broad source run](https://github.com/DocMorphic/strep/actions/runs/38146223907)
+at commit `0c34a62` passes all 12 Windows/Linux jobs, including all four source
+shards per operating system, adapter checks and material packages. Pytest logs
+record 9,800 passes, eight skips and 27 passing subtests per operating system
+across these jobs; the aggregate includes overlapping regression selections.
+Conditional workflow steps also skip where specified. This commit predates
+the prop API and rotation-speed preflight additions, which have separate
+focused validation.
+
+The complete [captured proposal study](rig-pose-scaffold-v1.md) subsequently
+runs and retains failed clips; independent geometry/rate replay still awaits
+local RAM admission. Source checks do not validate actual animation realism,
+captured contacts, engine import, forces, cleanup time or release readiness.
+All release criteria remain unchanged.

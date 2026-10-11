@@ -18,8 +18,8 @@ still needs at least approximately 1,000 degrees per second. An author's
 900-degree-per-second limit cannot be met under those caps. The editor should
 report the conflicting interval rather than imply that fitting will solve it.
 
-This is a necessary-condition calculation, currently exposed as a reusable
-module. It is not yet connected to the Studio editing workflow. Non-exclusion
+This is a necessary-condition calculation, exposed as a reusable
+module. Non-exclusion
 does not prove that one trajectory can satisfy every key simultaneously, or
 that interpolation, contacts, anatomy, forces and engine behavior are valid.
 The captured crawl/get-up replay remains a separate pending experiment.
@@ -27,5 +27,27 @@ The captured crawl/get-up replay remains a separate pending experiment.
 The 26 synthetic regression cases cover achievable bounds, contradictory
 author limits, protected endpoints, complete populations, coordinate-basis
 invariance, half-turns, declared projection and invalid inputs. They are added
-to both the broad source inventory and focused Windows/Linux CPU workflow;
-execution results will be recorded after CI completes.
+to both the broad source inventory and focused Windows/Linux CPU workflow.
+The [focused run](https://github.com/DocMorphic/strep/actions/runs/38150882494)
+at commit `5073eda` passes all 288 selected checks on each operating system,
+including all 26 new cases, without skips or failures. Linux takes 14.29 seconds
+and Windows 32.85 seconds. These are synthetic source checks, not captured-motion
+or realism approval.
+
+`scripts/native_rotation_speed_preflight.py` also assesses validated native
+scene-edit permissions. Limits explicitly select actor/joint pairs, including
+tracks with no editing permission. Every original neighboring key is retained
+on that track's own clock. Frozen keys have zero allowance; editable keys use
+the existing exported-rotation audit's norm cap and its 0.0001-degree
+serialization allowance. Quaternion normalization follows the native decoder
+and is reported. Boundary and protected-interpolation permissions are reused
+from the validated editor.
+
+The opt-in `SpeedPreflightSceneProblem` rejects incompatible requests before
+the existing scene fitting population is initialized. Its exception retains
+the complete diagnostic. A nonexcluded request initializes the existing scene
+problem; the current solver does **not** enforce the new absolute speed limit
+on its output. Callers still need output verification and speed-constrained
+fitting. Studio UI/route integration is pending. The additional 16 regression
+cases use actual scene fixtures, including unchanged source bytes, protected
+keys, boundary permissions and rejection before expensive initialization.
