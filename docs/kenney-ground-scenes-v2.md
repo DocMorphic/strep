@@ -62,3 +62,32 @@ is retained in `reports/kenney-ground-scenes-v2` and guarded/resource records
 under `reports/central-hand-physical-v1`. Raw outputs, generated payloads and
 downloaded assets remain excluded from public Git. Human/cleanup, force/balance,
 engine playback, continuous-time and release approval remain incomplete.
+
+The first actual crawl correction trial uses V2 start/end permissions, root
+translation and six arm/forearm/hand rotation tracks, 63 controls, the unchanged
+22-cm / 30-degree limits and the complete 2,017-time geometry policy. It stops
+before producing a correction because the complete surface rows exceed the
+solver's default 20,000-row resource capacity. Peak process-tree RSS is
+2,344,058,880 bytes. The failed trial, source snapshots and decoded initial
+geometry remain retained in `reports/kenney-crawl-floor-fit-v1`; the original
+is selected. Recorded resource replay confirms the failed run, not a computation
+or quality pass. The next work is complete row sizing and memory-efficient
+linearization, preserving all original samples/vertices and movement limits.
+
+Complete row sizing now measures **216,306** plane proposal rows, with up to
+209 at one time, across all 2,017 times and all 1,029 triangle-referenced vertices.
+All vertices are triangle-referenced for this asset. The 63-control problem has
+107,895 original norm rows and a `323685 × 63` original vector Jacobian. A dense
+surface Jacobian alone would occupy 109,018,224 bytes. The sizing worker peaks
+at 143,904,768 bytes and its 31 recorded resource observations replay. This
+confirms that the existing default row capacity cannot represent this proposal
+population; it does not approve a larger allocation or a corrected clip.
+
+A full plane constraint can be expressed by the minimum signed distance over
+**all** vertices at each actor/plane/time. A moving minimum witness may guide a
+local solve, while complete decoded geometry remains the acceptance check at
+every requested time. Implementing that envelope guidance is the next capacity
+work; it must preserve full vertex/time verification, reject regressions and
+rebuild witnesses after motion changes. No sparse witness alone can approve a
+proposal. Row-sizing evidence remains in
+`reports/kenney-crawl-surface-population-v1`.
