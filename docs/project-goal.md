@@ -100,6 +100,18 @@ now pass 224 affected tests (13 new), preserving completed solver/restoration
 diagnostics on interruption without changing any acceptance limit. The source
 inventory reaches 451 Python modules / 41 Node suites; no release approval.
 
+The [pose-length preflight](pose-length-preflight-v1.md) now rejects
+conditional fixed-distance point demands in box/norm/continuation fitters,
+retaining source or projected-previous fallbacks. All 48 focused checks pass.
+The actual frozen fit study excludes all 2,422 original capture poses under
+unchanged helper/translation permissions and 3-cm point diagnostics; no nonlinear
+iterations run. Separate replay checks 58,128 invariant-pair rows and every
+retained local pose, confirming bounds against prior direct edge decomposition.
+No corrected motion or training target is promoted. Final checks/fitter/replay
+resource traces reproduce 21/28/19 observations; failed/intermediate versions
+remain archived. Inventory reaches 455 Python modules / 42 Node suites. Next:
+rig-aware target proportions and separate explicit support/contact geometry.
+
 The [direct captured-reference transfer](acclaim-rig-transfer-v1.md) now maps
 explicit origin/orientation segments to a supplied rig without SOMA conversion.
 All 65 focused checks pass. Both full CMU clips retain all keys and existing

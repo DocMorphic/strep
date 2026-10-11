@@ -8,6 +8,12 @@ from bounded_pose_ik import solve as box_solve,hierarchy_order,world_matrices
 
 def solve(local,parents,targets,edit_limits_degrees,max_evaluations=200):
     initial,baseline=box_solve(local,parents,targets,edit_limits_degrees,max_evaluations)
+    if baseline['preflight']['position_targets_excluded']:
+        report=copy.deepcopy(baseline);report['box_initializer']=copy.deepcopy(baseline)
+        report['norm_refinement']=dict(solver_success=False,status=0,message=baseline['message'],iterations=0,evaluations=0,
+            candidate_feasible=None,candidate_targets=baseline['targets'],initial_squared_residual=None,
+            candidate_squared_residual=None,accepted=False,skipped_by_position_preflight=True)
+        return initial,report
     local=np.asarray(local,dtype=float);parents=np.asarray(parents);order=hierarchy_order(parents)
     nodes=baseline['edited_nodes'];radii=np.radians([edit_limits_degrees[n] for n in nodes]);start=np.asarray(baseline['rotation_vectors_rad']).ravel()
     def evaluate(x):

@@ -25,6 +25,7 @@ def world_matrices(local,parents,order):
 
 
 def solve(local,parents,targets,edit_limits_degrees,max_evaluations=200):
+    if type(max_evaluations) is not int or not 1<=max_evaluations<=1000:raise ValueError('Explicit bounded solver evaluations required')
     local=np.asarray(local,dtype=float);parents=np.asarray(parents);order=hierarchy_order(parents)
     if local.shape!=(len(parents),4,4) or not np.isfinite(local).all() or not np.allclose(local[:,3],[0,0,0,1],atol=1e-8):raise ValueError('Finite affine local matrices required')
     rotations=local[:,:3,:3]
@@ -50,13 +51,25 @@ def solve(local,parents,targets,edit_limits_degrees,max_evaluations=200):
             values.extend((current[:3,3]-desired[:3,3])*100)
             values.extend(Rotation.from_matrix(desired[:3,:3].T@current[:3,:3]).as_rotvec()*2)
         return np.r_[values,x*.02]
-    result=least_squares(residual,np.zeros(len(bounds)),bounds=(-bounds,bounds),max_nfev=max_evaluations,ftol=1e-10,xtol=1e-10,gtol=1e-10)
+    from pose_length_preflight import preflight
+    reach=preflight(local,parents,targets,nodes)
+    if reach['position_targets_excluded']:
+        # Keep the complete source pose; an impossible pair is not a reason to
+        # stretch bones, change reporting tolerances or manufacture an edit.
+        from types import SimpleNamespace
+        result=SimpleNamespace(x=np.zeros(len(bounds)),success=False,status=0,nfev=0,
+            message='Position targets excluded by invariant-distance preflight; nonlinear solve skipped')
+    else:
+        result=least_squares(residual,np.zeros(len(bounds)),bounds=(-bounds,bounds),max_nfev=max_evaluations,ftol=1e-10,xtol=1e-10,gtol=1e-10)
     if not np.isfinite(result.x).all() or np.any(np.abs(result.x)>bounds+1e-10):raise ValueError('Solver exceeded hard parameter bounds')
-    changed,world=evaluate(result.x);checks=[]
+    if reach['position_targets_excluded']:
+        changed=local.copy();world=world_matrices(changed,parents,order)
+    else:changed,world=evaluate(result.x)
+    checks=[]
     for target in targets:
         current=world[target['node']];desired=np.asarray(target['world_matrix']);distance=float(np.linalg.norm(current[:3,3]-desired[:3,3]));angle=float(np.degrees(Rotation.from_matrix(desired[:3,:3].T@current[:3,:3]).magnitude()))
         checks.append(dict(node=target['node'],position_error_m=distance,rotation_error_degrees=angle,matched=distance<=target['position_tolerance_m'] and angle<=target['rotation_tolerance_degrees']))
-    report=dict(solver_success=bool(result.success),status=int(result.status),evaluations=int(result.nfev),targets_matched=all(t['matched'] for t in checks),targets=checks,
+    report=dict(solver_success=bool(result.success),status=int(result.status),message=str(result.message),evaluations=int(result.nfev),preflight=reach,targets_matched=all(t['matched'] for t in checks),targets=checks,
         edited_nodes=nodes,rotation_vectors_rad=result.x.reshape(-1,3).tolist(),max_edit_degrees=np.degrees(np.linalg.norm(result.x.reshape(-1,3),axis=1)).tolist(),
         quality_approved=False,scope='Rigid-joint pose only. Conservative component boxes guarantee total local edit caps. No anatomy, surface contact, whole-motion or continuous-time approval. Infeasible residuals retained.')
     return changed,report

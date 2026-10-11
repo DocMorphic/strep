@@ -76,10 +76,17 @@ def solve(local,parents,targets,edit_limits_degrees,previous,max_evaluations=200
         for i in range(len(nodes)):jac[i,3*i:3*i+3]=-2*x[3*i:3*i+3]/radii[i]**2
         return jac
     initial_cost=evaluate(start)[2]
-    result=minimize(lambda x:evaluate(x)[2],start,method='SLSQP',jac='3-point',bounds=list(zip(-np.repeat(radii,3),np.repeat(radii,3))),constraints=[dict(type='ineq',fun=slack,jac=jacobian)],options=dict(maxiter=max_evaluations,ftol=1e-12))
+    from pose_length_preflight import preflight
+    reach=preflight(local,parents,targets,nodes)
+    if reach['position_targets_excluded']:
+        from types import SimpleNamespace
+        result=SimpleNamespace(x=start.copy(),success=False,status=0,nit=0,nfev=0,
+            message='Position targets excluded by invariant-distance preflight; projected previous-pose fallback retained')
+    else:
+        result=minimize(lambda x:evaluate(x)[2],start,method='SLSQP',jac='3-point',bounds=list(zip(-np.repeat(radii,3),np.repeat(radii,3))),constraints=[dict(type='ineq',fun=slack,jac=jacobian)],options=dict(maxiter=max_evaluations,ftol=1e-12))
     finite=np.isfinite(result.x).all();feasible=finite and np.all(np.linalg.norm(result.x.reshape(-1,3),axis=1)<=radii+1e-8)
     candidate,checks,cost=evaluate(result.x) if finite else (None,[],float('inf'))
-    accepted=bool(feasible and cost<=initial_cost+1e-12)
+    accepted=bool(not reach['position_targets_excluded'] and feasible and cost<=initial_cost+1e-12)
     chosen=result.x if accepted else start;candidate,checks,cost=evaluate(chosen)
-    report=dict(solver_success=bool(result.success),status=int(result.status),message=str(result.message),iterations=int(result.nit),evaluations=int(result.nfev),edited_nodes=nodes,rotation_vectors_rad=chosen.reshape(-1,3).tolist(),initial_rotation_vectors_rad=seed.tolist(),max_edit_degrees=np.degrees(np.linalg.norm(chosen.reshape(-1,3),axis=1)).tolist(),targets=checks,targets_matched=all(c['matched'] for c in checks),initial_squared_residual=initial_cost,final_squared_residual=cost,optimized_candidate_accepted=accepted,source_regularization_weight=source_weight,previous_local_rotation_weight=continuation_weight,source_cap_allowance_rad=1e-8,quality_approved=False,release_approved=False,scope='Explicit source-relative norm caps and protected source locals/translations, previous-local-pose initialization/regularization. Soft rigid-node residuals; actual skin/contact/temporal acceptance belongs to separate replay. No anatomy, full-motion or global-optimality certificate.')
+    report=dict(solver_success=bool(result.success),status=int(result.status),message=str(result.message),iterations=int(result.nit),evaluations=int(result.nfev),preflight=reach,edited_nodes=nodes,rotation_vectors_rad=chosen.reshape(-1,3).tolist(),initial_rotation_vectors_rad=seed.tolist(),max_edit_degrees=np.degrees(np.linalg.norm(chosen.reshape(-1,3),axis=1)).tolist(),targets=checks,targets_matched=all(c['matched'] for c in checks),initial_squared_residual=initial_cost,final_squared_residual=cost,optimized_candidate_accepted=accepted,source_regularization_weight=source_weight,previous_local_rotation_weight=continuation_weight,source_cap_allowance_rad=1e-8,quality_approved=False,release_approved=False,scope='Explicit source-relative norm caps and protected source locals/translations, previous-local-pose initialization/regularization. Soft rigid-node residuals; actual skin/contact/temporal acceptance belongs to separate replay. No anatomy, full-motion or global-optimality certificate.')
     return candidate,report

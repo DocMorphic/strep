@@ -1,0 +1,19 @@
+{
+  "schema": "strep-cmu-pose-fit-preflight-v1",
+  "status": "frozen-before-fitter-run",
+  "source_transfer_protocol": "benchmarks/cmu-ground-transfer-v1.json",
+  "cases": ["crawl-111-03", "get-up-140-08"],
+  "clock": "All 2,422 original capture frames at 120 Hz; no selection, clipping or downsampling.",
+  "point_targets": "Every mapped role requests its captured world joint origin multiplied by the unchanged transfer leg scale, with zero world offset.",
+  "orientation_targets": "Keep the current transferred target joint orientations; this experiment isolates impossible positional demands.",
+  "position_tolerance_m": 0.03,
+  "rotation_tolerance_degrees": 5,
+  "editable_rotation_roles": "All 19 roles in the unchanged target profile; source-relative 25-degree local rotation caps.",
+  "maximum_solver_evaluations_per_pose": 200,
+  "fixed": "All local translations and all unmapped helper local transforms. No root translation, length change, floor lift or numerical gate relaxation.",
+  "preflight": "Conditional triangle-inequality exclusion for invariant endpoint distances. Record every tested invariant pair and all residuals; skip nonlinear optimization only on proven numerical exclusion. Non-exclusion is not feasibility.",
+  "purpose": "Determine whether uniformly scaled captured positions are admissible pose-fitting targets on the unchanged rig; not a contact fix or release threshold calibration.",
+  "training_admitted": false,
+  "quality_approved": false,
+  "release_approved": false
+}
