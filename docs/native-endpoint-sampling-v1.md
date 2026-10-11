@@ -27,12 +27,35 @@ both Float32 and Float64 clocks, inside/outside rounding cells, antipodal
 rotations, and actual exported scene rotation/translation tracks. Restoring the
 old mask behavior makes three new cases fail; the Float64 comparison case still
 passes. The existing timed-rotation suite now also runs in the focused Windows
-and Linux contact/rig workflow. Fresh hosted outcomes are pending.
+and Linux contact/rig workflow. The complete focused workflow at
+[cc756d6](https://github.com/DocMorphic/strep/actions/runs/38171024531)
+passes **569 Python checks per OS**: 502 contact/rig, 35 lineage and 32 game
+package checks, plus the offline editor suite. The full model-free source checks
+remain pending; this is not a claim that all 465 declared Python modules pass.
 
 Local records: `reports/kenney-kick-proxy-alignment-v1` / `v2`,
 `reports/native-endpoint-regression-v1`, and
 `reports/kenney-kick-temporal-restoration-v1` / `v2`. The corrected restoration
-rerun retains the original source caps and full geometry decisions. No motion
+rerun retains the original source caps and full geometry decisions. It completes
+after a last execution observation of 184.890 seconds, with all 198 resource
+observations replayed. Its 112,505-row affine model retains 108,471 native rows
+and 2,017 separate worst-floor guards as a 110,488-row hard prefix. The local
+solver reports `PrimalInfeasible` after 16 iterations at a 0.02 control trust
+fraction, returning no direction or decoded candidate. This concerns that local
+model and radius; it is not global infeasibility of the action. A separate frozen
+row-group diagnostic reproduces local infeasibility with only the 108,471 native
+rows hard and floor guards soft. Keeping only edit/displacement bounds hard
+yields an affine direction, but it predicts **149 failed native rows**. No clip
+is exported from that diagnostic direction. All 204 resource observations replay.
+Passive extraction of the original 68 failed rows finds 33 position-speed and
+four position-acceleration rows with zero source caps; the original 1e-5
+tolerance still applies. These source-preservation limits are not anatomical
+calibration. The next study must begin with a feasible original and examine its
+temporal representation and source-rate compatibility before adoption. No motion
 selection, training target, engine/support/semantic/human-quality or release
 approval follows from sampling agreement. See the preceding
 [kick permission and clip screens](kenney-kick-root-fixed-v1.md).
+
+Additional local records are `reports/kenney-kick-restoration-row-groups-v1`
+and `reports/kenney-kick-rate-failure-clock-v1`. The latter extracts retained
+arrays only; it does not rerun motion physics or establish global infeasibility.

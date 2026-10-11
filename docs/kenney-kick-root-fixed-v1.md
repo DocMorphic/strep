@@ -137,6 +137,13 @@ preview/decoder surface disagreement near the final Float32 key. That failed
 run is retained. The [endpoint sampling correction](native-endpoint-sampling-v1.md)
 fixes the batch preview without changing the asset or tolerance; its corrected
 restoration rerun is a separate record, with no inherited motion approval.
+That rerun completes but its local 0.02-trust affine model returns
+`PrimalInfeasible`, producing no direction or new clip. All 198 resource
+observations replay. The frozen-model row-group diagnostic remains locally
+infeasible when all native rows stay hard and only the floor guards become soft.
+Its counterfactual with soft rate rows produces a direction but predicts 149
+native failures, and is never exported. All 204 diagnostic resource observations
+replay. Actual clip acceptance and source caps remain unchanged.
 
 Local records are under `reports/kenney-kick-root-fixed-fit-v1`,
 `reports/kenney-kick-proposal-diagnostics-v1` through `v4`,
