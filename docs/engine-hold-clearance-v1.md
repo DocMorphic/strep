@@ -220,11 +220,18 @@ contact checks cover all **11,590 original-clock normal observations** and
 rigid-wrench reconstruction differences are at most **1.78e-15 N** and
 **3.21e-15 Nm**. Both complete resource traces replay. The **119 unknown-support
 samples** and two endpoints remain unassessed; these results do not calibrate
-strength or certify character force balance. The fresh engine sequence has
-begun, with native-authoring followed by import; neither mode has a completed
-result yet. Fresh observation/independent-geometry replay sources are prepared
+strength or certify character force balance. Fresh native-authoring engine
+production now passes all sampled pose, object-pose, full-skin, contact and
+geometry conditions at **2,426 times**, with zero failed geometry times.
+Maximum penetration upper diagnostic is **4.950069 mm** against **5 mm**;
+maximum full-skin position error is **0.0950103 mm** against **0.1 mm**.
+Maximum pose-element disagreement is **7.33e-7**, with zero duration error.
+The completed engine resource trace replays. The separate glTF-import job is
+running. Fresh observation/independent-geometry replay sources are prepared
 for both modes with the prior independent geometry functions and tolerances
 unchanged. Preparation alone establishes no engine result.
+Native-authoring production does not substitute for either independent engine
+replay or the separate import verdict.
 
 No continuous collision, self-collision, dynamics/balance, GPU/runtime/event
 playback, animator quality, training admission or release approval follows from

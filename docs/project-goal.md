@@ -3,8 +3,9 @@
 Latest verified development status (2026-10-11): the same full-project goal is
 active. The [corrected two-wrist clip](engine-hold-clearance-v1.md) now passes
 fresh complete-body production and independent replay at all 2,426 times, plus
-fresh independent contact/force checks at all 59 assessed samples. Actual engine
-validation is running; held-out generalization and animator quality are still
+fresh independent contact/force checks at all 59 assessed samples. Native-authoring
+engine production passes all sampled conditions; separate import and independent
+engine replay remain pending. Held-out generalization and animator quality are still
 unproven. A fresh release inventory retains 14 capabilities without release
 evidence, 19 configuration/evidence gaps and four unset calibration gates.
 These development passes do not complete any release capability or narrow the
