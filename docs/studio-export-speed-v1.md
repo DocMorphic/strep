@@ -90,3 +90,5 @@ anatomical or style-calibration acceptance. The broader project release goal,
 held-out evaluation and developer review remain open; the model is unchanged.
 Fresh numerical replay requires the producer's bound method version and engine;
 portable ZIP contents alone are not an independent full-system certificate.
+
+The [seven-action native export and encoding audit](kenney-native-export-v1.md) now carries these development clips through exact saved engine resources and game packaging, retaining floor, speed and skin-comparison failures. It also records the completed real correction/editor/export checks; successful checks do not approve these motions.

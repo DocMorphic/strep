@@ -65,3 +65,5 @@ The selected clips must use the supported rigid GLB representation; the tool
 rejects clocks beyond either clip rather than extrapolating. The CLI uses the
 shared local worker lock. Run through the guarded job workflow for resource
 admission and archived resource evidence.
+
+The [seven-action native export and encoding audit](kenney-native-export-v1.md) now carries these development clips through exact saved engine resources and game packaging, retaining floor, speed and skin-comparison failures. It also records the completed real correction/editor/export checks; successful checks do not approve these motions.

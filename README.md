@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Seven-action native export and skin-encoding audit](docs/kenney-native-export-v1.md): all 1,020 original keys on the independent Kenney rig reach scene and game packages, with failed floor and current-speed decisions preserved. The new read-only audit separates pose and packed-weight effects; 34 affected checks pass locally. No motion or release approval.
+
 - [Rotation-speed fitting](docs/native-rotation-speed-fit-v1.md): authored joint-speed limits now constrain native scene fitting and fresh serialized-output checks. A bounded smoothing proposal must pass every original scene row before adoption. Optional limits now integrate with the [Studio correction editor](docs/studio-rotation-speed-v1.md), with 37 targeted cases and editor source checks passing. Scene and game packages now retain policies, audits and ancestor decisions. All 517 focused Python checks per OS and editor checks pass on Windows/Linux. Live UI and continuous-time/engine verification remain pending.
 - [Static prop and grip API](docs/static-prop-api-v1.md): original GLB geometry and immutable triangle-based selections now import, preview, save and download through Studio routes. All 262 focused CPU checks pass on both OS platforms. Mesh-prop solver/UI integration remains pending.
 
@@ -86,7 +88,7 @@ These development workflows retain failures and their stated limits. Scene conta
 
 ## Source checks
 
-The [public source-check workflow](docs/model-free-source-checks.md) declares 464 Python test modules and 42 Node suites on Linux and Windows, plus separate native CPU fixture jobs. It does not need motion checkpoints or local study outputs. Inference, engine, full-system and human-quality evaluation are separate. Some additional tests need acquired model/rig fixtures or Godot; a full fresh-clone suite pass is not established.
+The [public source-check workflow](docs/model-free-source-checks.md) declares 465 Python test modules and 42 Node suites on Linux and Windows, plus separate native CPU fixture jobs. It does not need motion checkpoints or local study outputs. Inference, engine, full-system and human-quality evaluation are separate. Some additional tests need acquired model/rig fixtures or Godot; a full fresh-clone suite pass is not established.
 
 | Path | Contents |
 |---|---|
