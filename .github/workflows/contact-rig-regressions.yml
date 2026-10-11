@@ -50,6 +50,7 @@ jobs:
       - name: Verify pose, boundary audit and complete surface populations
         run: >-
           python -m pytest -q
+          tests/test_temporal_rotation_bounds.py
           tests/test_rig_pose_scaffold.py
           tests/test_pose_length_preflight.py
           tests/test_bounded_pose_ik.py
