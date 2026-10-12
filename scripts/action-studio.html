@@ -599,11 +599,15 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
  </div>
  <p class="small">Rotation bounds are degrees; translation bounds are millimetres. Optional turning-speed limits are degrees per second for local joint rotations. Leave a speed blank to omit it. Source motion-rate limits remain fixed.</p>
  <p class="small" id="nativeSceneFitBudget" aria-live="polite">Load scene joints to preview timing capacity.</p>
+ <div class="rig-field-grid" id="nativeSceneFitBoundaryOptions" hidden>
+  <label class="rig-check"><input id="nativeSceneFitBoundaryStart" type="checkbox">Allow start-pose edits on selected tracks</label>
+  <label class="rig-check"><input id="nativeSceneFitBoundaryEnd" type="checkbox">Allow end-pose edits on selected tracks</label>
+ </div>
  <div id="nativeSceneFitTracks"></div>
  <div class="toolbar"><button class="btn" id="nativeSceneFitSaveActor">Save character bounds</button><button class="btn" id="nativeSceneFitRemoveActor">Remove character bounds</button></div>
  <div id="nativeSceneFitSelections"></div>
  <div class="rig-field-grid">
-  <label>Correction objective<select id="nativeSceneFitMode"><option value="contacts">Adjust contacts</option><option value="clearance">Refine clearance</option></select></label>
+  <label>Correction objective<select id="nativeSceneFitMode"><option value="contacts">Adjust contacts</option><option value="clearance">Refine clearance</option><option value="clearance-components">Clearance with position repair</option></select></label>
   <label>Correction iterations<input id="nativeSceneFitIterations" type="number" min="1" max="16" step="1" value="2"></label>
   <label>Source epoch<select id="nativeSceneFitResume"><option value="">Fresh correction from submitted clips</option></select></label>
  </div>
@@ -611,6 +615,10 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
  <div class="rig-field-grid" id="nativeSceneFitRepairOptions" hidden>
   <label>Export repair stages<input id="nativeSceneFitRepairStages" type="number" min="1" max="8" step="1" value="8"></label>
   <label>Export probes per stage<input id="nativeSceneFitRepairProbes" type="number" min="1" max="64" step="1" value="16"></label>
+ </div>
+ <div id="nativeSceneFitBoundaryAcknowledgment" hidden>
+  <p class="small">Position repair applies only to selected tracks. Allowing clip-edge edits can change connection poses and requires new transition review.</p>
+  <label class="rig-check"><input id="nativeSceneFitBoundaryAck" type="checkbox">I will review changed starts, ends and transitions.</label>
  </div>
  <button class="btn" id="nativeSceneFitLoadResume">Load selected correction for continuation</button>
  <div class="toolbar"><button class="btn" id="nativeSceneFitSave">Save correction request</button><button class="btn primary" id="nativeSceneFitBuild">Propose character correction</button></div>

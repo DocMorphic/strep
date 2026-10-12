@@ -85,6 +85,7 @@ jobs:
           tests/test_native_fit_storage.py
           tests/test_native_component_storage.py
           tests/test_native_fit_component_storage.py
+          tests/test_studio_component_storage.py
           tests/test_studio_native_storage.py
           tests/test_timed_rotation_edit.py
           tests/test_studio_native_scene_fit.py

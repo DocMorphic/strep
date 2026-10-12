@@ -96,6 +96,24 @@ review=makeReview();review.rotation_speed_conditions_pass=true;el('Mode').value=
 el('Resume').value='job1';await el('LoadResume').onclick();assert.equal(el('Mode').value,'clearance');
 assert.equal(el('RepairStages').value,2);assert.equal(el('RepairProbes').value,8);assert.deepEqual(editor.request(),posted);
 el('Mode').value='contacts';el('Mode').onchange();assert.equal(el('RepairOptions').hidden,true);
+// Mixed clearance explicitly budgets clip edges and restores their acknowledgment.
+el('Mode').value='clearance-components';el('Mode').onchange();assert.equal(el('BoundaryOptions').hidden,false);
+el('BoundaryStart').checked=true;el('BoundaryStart').onchange();el('BoundaryEnd').checked=true;el('BoundaryEnd').onchange();
+await el('SaveActor').onclick();assert.throws(()=>editor.request(),/Acknowledge review/);
+el('BoundaryAck').checked=true;posted=editor.request();assert.equal(posted.schema,'strep-studio-native-scene-fit-v4');
+assert.deepEqual(posted.boundary_keys.A,{start:'edit',end:'edit'});assert.deepEqual(posted.boundary_keys.B,{start:'preserve',end:'preserve'});
+assert.equal(posted.acknowledge_changed_boundary_compatibility,true);assert.match(el('Budget').textContent,/2 clip edges/);
+review=makeReview();review.rotation_speed_conditions_pass=true;assert.equal(stagedScene(review).schema,'strep-studio-native-scene-v2');
+for(const fault of ['ack','actor','mode']){const bad=structuredClone(review);
+ if(fault==='ack')bad.authoring_request.acknowledge_changed_boundary_compatibility=false;
+ else if(fault==='actor')delete bad.authoring_request.boundary_keys.B;
+ else bad.authoring_request.boundary_keys.A.start='other';
+ assert.throws(()=>stagedScene(bad),/clip edges|clip-edge/);
+}
+el('Mode').value='contacts';el('Mode').onchange();assert.throws(()=>editor.request(),/Clip-edge edits require/);
+el('Resume').value='job1';await el('LoadResume').onclick();assert.equal(el('Mode').value,'clearance-components');
+assert.equal(el('BoundaryStart').checked,true);assert.equal(el('BoundaryEnd').checked,true);assert.equal(el('BoundaryAck').checked,true);
+assert.deepEqual(editor.request(),posted);review.geometry_conditions_pass=false;await el('Review').onclick();assert.equal(el('Stage').disabled,true);
 // Live timing changes count the current actor once; oversized saves remain atomic.
 {
  const capacityNodes=new Map();for(const m of html.matchAll(/<[^>]*id="(nativeSceneFit[^"]+)"[^>]*>/g)){
@@ -128,5 +146,25 @@ el('Mode').value='contacts';el('Mode').onchange();assert.equal(el('RepairOptions
  c('Actor').value='B';c('Actor').onchange();await c('RemoveActor').onclick();
  assert.match(c('Budget').textContent,/Scene after saving: 72 \/ 96/);
  assert.deepEqual(Object.keys(current.request().actors),['A']);
+ // Edge capacity participates in the same atomic save guard.
+ c('Actor').value='A';c('Actor').onchange();c('Mode').value='clearance-components';c('Mode').onchange();
+ c('BoundaryStart').checked=true;c('BoundaryStart').onchange();c('BoundaryEnd').checked=true;c('BoundaryEnd').onchange();
+ assert.match(c('Budget').textContent,/96 controls/);await c('SaveActor').onclick();c('BoundaryAck').checked=true;
+ const edgeRequest=current.request();assert.equal(edgeRequest.acknowledge_changed_boundary_compatibility,true);
+ check(4);assert.match(c('Budget').textContent,/120 controls/);await c('SaveActor').onclick();
+ assert.match(c('Status').textContent,/Saved bounds stay unchanged/);assert.deepEqual(current.request(),edgeRequest);
+}
+// Two-key native channels are selectable only with explicit edge authoring.
+{
+ const map=new Map();for(const m of html.matchAll(/<[^>]*id="(nativeSceneFit[^"]+)"[^>]*>/g)){const n=new Element();n.value=m[0].match(/value="([^"]*)"/)?.[1]??'';map.set(m[1],n);}
+ const c=n=>map.get('nativeSceneFit'+n),d={getElementById:id=>map.get(id),createElement:()=>new Element(),createTextNode:text=>({textContent:text})};
+ const two={...catalog,actors:{A:{sha256:'a'.repeat(64),channels:[{...channels[0],keys:2,eligible:false,clip_edge_eligible:true}]},B:{sha256:'a'.repeat(64),channels:[]}}};
+ const current=createNativeSceneFitEditor({document:d,api,post:async()=>structuredClone(two),getDraft:()=>structuredClone(original),setDraft:()=>assert.fail('No adoption'),download:()=>{}});
+ await current.load();const box=c('Tracks').children[0].children[0];assert.equal(box.disabled,true);
+ c('Mode').value='clearance-components';c('Mode').onchange();assert.equal(box.disabled,false);box.checked=true;box.onchange();
+ await c('SaveActor').onclick();assert.match(c('Status').textContent,/editable actual clip edge/);
+ c('BoundaryStart').checked=true;c('BoundaryStart').onchange();await c('SaveActor').onclick();c('BoundaryAck').checked=true;
+ assert.equal(current.request().boundary_keys.A.start,'edit');c('Mode').value='contacts';c('Mode').onchange();assert.equal(box.disabled,true);
+ assert.throws(()=>current.request(),/Clip-edge edits require/);
 }
 console.log('Native bounds, timing capacity, speed requests and continuation, failed review, atomic staging and stale-response workflows passed offline.');

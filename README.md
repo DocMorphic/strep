@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Mixed clearance and clip-edge authoring in Studio](docs/studio-component-storage-v1.md): the editor exposes position repair, explicit start/end choices, transition-review acknowledgment and accurate control budgeting. Related Python and offline editor checks pass. A continued crawl search preserves its root fix but still fails native and floor conditions; no animation approval.
+
 - [Bounded translation and rotation key repair](docs/native-component-storage-v1.md): the public fitter and saved continuations now support explicitly permitted translation components as well as rotations. All 213 related checks pass. The actual crawl search removes its root acceleration error, but remaining native and floor failures still prevent selection.
 
 - [Clearance continuation and crawl failure diagnosis](docs/studio-ground-continuation-v1.md): a second Studio kick pass retains all motion limits and reduces peak floor depth to 48.33 mm, still failing. The crawl trial preserves its failures; independent replay identifies a root export error that the permitted arm rotation repairs cannot change. Bounded translation-key repair is next.

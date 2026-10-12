@@ -10,16 +10,32 @@ METHODS={'studio_native_storage.py','native_scene_boundary_edit.py','native_rota
     'native_rotation_storage_search.py','native_storage_continuation.py','native_fit_storage.py'}
 FITTER_METHODS=METHODS-{'studio_native_storage.py'}
 SCHEMA='strep-studio-native-scene-fit-v3'
+COMPONENT_SCHEMA='strep-studio-native-scene-fit-v4'
 
 
-def boundary(permissions):
+def components(payload):return isinstance(payload,dict) and payload.get('schema')==COMPONENT_SCHEMA
+
+
+def method_names(payload,*,fitter=False):
+    names=set(FITTER_METHODS if fitter else METHODS)
+    if components(payload):
+        from native_fit_component_storage import METHODS as COMPONENT_METHODS
+        names.update(COMPONENT_METHODS)
+    return names
+
+
+def boundary(permissions,payload=None):
     return dict(schema=BOUNDARY,permissions=copy.deepcopy(permissions),
-        boundary_keys={n:dict(start='preserve',end='preserve') for n in permissions['actors']},
-        acknowledge_changed_boundary_compatibility=False)
+        boundary_keys=copy.deepcopy(payload['boundary_keys']) if components(payload) else {n:dict(start='preserve',end='preserve') for n in permissions['actors']},
+        acknowledge_changed_boundary_compatibility=payload['acknowledge_changed_boundary_compatibility'] if components(payload) else False)
 
 
-def policy(edits):
-    return dict(schema=REPAIR,authoring_sha256=authoring_digest(edits),maximum_component_steps=1,
+def policy(edits,payload=None):
+    extra={};schema=REPAIR
+    if components(payload):
+        from native_component_storage_repair import SCHEMA as COMPONENT_REPAIR
+        schema=COMPONENT_REPAIR;extra=dict(allowed_paths=['rotation','translation'])
+    return dict(schema=schema,authoring_sha256=authoring_digest(edits),**extra,maximum_component_steps=1,
         maximum_corrections=64,acknowledge_storage_adjustment=True)
 
 
@@ -31,12 +47,12 @@ def checked(root,relative,digest):
     return path
 
 
-def validate_fit(fit,scene,permissions):
+def validate_fit(fit,scene,permissions,*,payload=None):
     """Read-only archive checks; no inherited geometry or motion approval."""
     fit=Path(fit).resolve();request=read(fit/'request.json');result=read(fit/'result.json')
-    digest=sha256(fit/'contacts.json');body=BoundarySceneEdits(boundary(permissions),scene,digest,
+    digest=sha256(fit/'contacts.json');body=BoundarySceneEdits(boundary(permissions,payload),scene,digest,
         rotation_storage_policy=request['rotation_storage_policy'])
-    repair=policy(body)
+    repair=policy(body,payload)
     for filename,key,expected in [('boundary-edit.json','boundary_edit_sha256',body.request),
             ('storage-repair-policy.json','storage_repair_policy_sha256',repair)]:
         checked(fit,filename,request[key])
@@ -54,7 +70,11 @@ def validate_fit(fit,scene,permissions):
         expected=(fit/'proposal'/f'actor-{i}.glb').resolve()
         if actor is None or (fit/actor['path']).resolve()!=expected:
             raise ValueError('Canonical final stored actor required')
-    final=StorageContinuationEdits(body,repair,state,fit)
+    continuation_type=StorageContinuationEdits
+    if components(payload):
+        from native_component_storage_continuation import ComponentContinuationEdits
+        continuation_type=ComponentContinuationEdits
+    final=continuation_type(body,repair,state,fit)
     final_record=next(p for p in result['probes'] if p['label']=='final')
     if state['controls']!=final_record['controls']:raise ValueError('Final stored controls changed')
     for probe in result['probes']:

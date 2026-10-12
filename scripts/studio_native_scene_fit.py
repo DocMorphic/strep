@@ -22,12 +22,22 @@ METHODS=tuple(sorted(set(FIT_METHODS)|{'studio_native_scene_fit.py','studio_nati
 
 def request_fields(payload):
     ordinary=('schema','draft','actors','options','resume_from')
+    if isinstance(payload,dict) and payload.get('schema')=='strep-studio-native-scene-fit-v4':
+        return ordinary+('rotation_speed_limits','export_repair','boundary_keys','acknowledge_changed_boundary_compatibility')
     if isinstance(payload,dict) and payload.get('schema')=='strep-studio-native-scene-fit-v3':
         return ordinary+('rotation_speed_limits','export_repair')
     return ordinary+('rotation_speed_limits',) if isinstance(payload,dict) and payload.get('schema')=='strep-studio-native-scene-fit-v2' else ordinary
 
 
-def stored(payload):return payload.get('schema')=='strep-studio-native-scene-fit-v3'
+def stored(payload):return payload.get('schema') in ('strep-studio-native-scene-fit-v3','strep-studio-native-scene-fit-v4')
+
+
+def editor(payload,permissions,scene,digest,rotation_storage_policy='unit'):
+    if stored(payload):
+        from studio_native_storage import boundary
+        from native_scene_boundary_edit import BoundarySceneEdits
+        return BoundarySceneEdits(boundary(permissions,payload),scene,digest,rotation_storage_policy=rotation_storage_policy)
+    return SceneEdits(permissions,scene,digest,rotation_storage_policy=rotation_storage_policy)
 
 
 def has_speed(payload):return payload.get('schema')=='strep-studio-native-scene-fit-v2' or stored(payload) and bool(payload['rotation_speed_limits'])
@@ -43,8 +53,8 @@ def method_population(payload,*,fitter=False):
         from native_rotation_speed_policy import METHODS as SPEED_METHODS
         names.update(SPEED_METHODS)
     if stored(payload):
-        from studio_native_storage import METHODS as STORAGE_METHODS,FITTER_METHODS
-        names.update(FITTER_METHODS if fitter else STORAGE_METHODS)
+        from studio_native_storage import method_names
+        names.update(method_names(payload,fitter=fitter))
     if not fitter and payload.get('draft',{}).get('schema')=='strep-studio-native-scene-v2':
         from native_scene_export_speed import methods
         names.update(methods())
@@ -66,9 +76,11 @@ def catalog(draft,resolver):
             for path in ('rotation','translation'):
                 found=[c for c in a['sampler'].channels if c[:2]==(node,path)]
                 eligible=len(found)==1 and found[0][4]=='LINEAR' and len(found[0][2])>=3
+                edge_only=len(found)==1 and found[0][4]=='LINEAR' and len(found[0][2])==2
                 channels.append(dict(node=int(node),name=a['rig'].document['nodes'][int(node)].get('name',str(node)),
                     path=path,eligible=eligible,keys=len(found[0][2]) if len(found)==1 else None,
-                    reason=None if eligible else 'Needs one existing LINEAR channel with at least three keys'))
+                    reason=None if eligible else 'Needs explicit clip-edge editing' if edge_only else 'Needs one existing LINEAR channel with at least three keys',
+                    **(dict(clip_edge_eligible=True) if edge_only else {})))
         actors[name]=dict(sha256=spec['actors'][name]['sha256'],channels=channels)
     scene.check_inputs()
     return dict(schema='strep-studio-native-scene-fit-catalog-v1',duration_s=scene.duration,
@@ -93,7 +105,7 @@ def options(value,export_repair=None):
 
 def validate_request(payload,resolver):
     fields(payload,request_fields(payload),'Studio character correction')
-    require(payload['schema'] in ('strep-studio-native-scene-fit-v1','strep-studio-native-scene-fit-v2','strep-studio-native-scene-fit-v3'),'Studio character correction schema required')
+    require(payload['schema'] in ('strep-studio-native-scene-fit-v1','strep-studio-native-scene-fit-v2','strep-studio-native-scene-fit-v3','strep-studio-native-scene-fit-v4'),'Studio character correction schema required')
     if stored(payload):
         require(isinstance(payload['rotation_speed_limits'],list) and len(payload['rotation_speed_limits'])<=64,'Explicit optional speed-limit list required')
         inherited={(t['actor'],t['node']):t for t in payload['draft'].get('rotation_speed_limits',[])}
@@ -103,12 +115,15 @@ def validate_request(payload,resolver):
     require(object_edit is None,'Character correction uses the declared object paths. Turn off the separate object-edit proposal first.')
     config=options(payload['options'],payload['export_repair'] if stored(payload) else None);scene=SceneContacts(spec,ROOT)
     permissions=dict(schema='strep-native-scene-edit-v1',contacts_sha256='draft',actors=copy.deepcopy(payload['actors']))
-    edits=SceneEdits(permissions,scene,'draft',rotation_storage_policy=config['rotation_storage_policy'])
+    edits=editor(payload,permissions,scene,'draft',config['rotation_storage_policy'])
     require(edits.size<=96,'Character correction supports at most 96 controls; reduce selected tracks or interior knots')
     prior=None;receipt=None
     if payload['resume_from'] is not None:
         prior=folder_for(payload['resume_from']);manifest(prior.name)
-        require(stored(payload)==stored(read(prior/'draft.json')),'Continuation must retain its contact or clearance fitting mode')
+        previous_draft=read(prior/'draft.json')
+        require(stored(payload)==stored(previous_draft)
+            and (payload['schema']=='strep-studio-native-scene-fit-v4')==(previous_draft['schema']=='strep-studio-native-scene-fit-v4'),
+            'Continuation must retain its contact, rotation clearance or mixed clearance fitting mode')
         previous=read(prior/'fit/contacts.json');before=read(prior/'fit/permissions.json')
         # Retain the prior canonical actor paths. New snapshots do not reset the
         # source epoch or the exact contacts/permissions identity used by resume.
@@ -139,10 +154,10 @@ def validate_request(payload,resolver):
         permissions['contacts_sha256']=before['contacts_sha256']
         canonical_digest=sha256(prior/'fit/contacts.json') if receipt is None else 'draft'
         permissions['contacts_sha256']=canonical_digest;geometry['contacts_sha256']=canonical_digest
-        scene=SceneContacts(spec,ROOT);edits=SceneEdits(permissions,scene,canonical_digest)
+        scene=SceneContacts(spec,ROOT);edits=editor(payload,permissions,scene,canonical_digest)
         if stored(payload):
             from studio_native_storage import validate_fit
-            validate_fit(prior/'fit',scene,permissions)
+            validate_fit(prior/'fit',scene,permissions,payload=payload)
             require(read(prior/'geometry-policy.json')==geometry,'Clearance continuation geometry changed')
             require(read(prior/'fit/result.json')['native_constraints_pass'] is True,'Clearance continuation needs a native-feasible corrected start')
         else:
@@ -183,15 +198,14 @@ def prepare(payload,folder,resolver):
         elif prior is None and revision is not None:
             original=copy.deepcopy(spec);original['contacts']=copy.deepcopy(revision['baseline']['scene']['contacts'])
             save(folder/'original-contact-intent.json',original);extra.add('original-contact-intent.json')
-        scene=SceneContacts(spec,folder);edits=SceneEdits(permissions,scene,sha256(folder/'contacts.json'),rotation_storage_policy=config['rotation_storage_policy'])
+        scene=SceneContacts(spec,folder);edits=editor(payload,permissions,scene,sha256(folder/'contacts.json'),config['rotation_storage_policy'])
         policy_for(geometry,scene,sha256(folder/'contacts.json'))
         if stored(payload):
             from studio_native_storage import boundary,policy,validate_fit
-            from native_scene_boundary_edit import BoundarySceneEdits
-            request=boundary(permissions);edits=BoundarySceneEdits(request,scene,sha256(folder/'contacts.json'),rotation_storage_policy=config['rotation_storage_policy'])
-            save(folder/'boundary-edit.json',request);save(folder/'storage-repair-policy.json',policy(edits))
+            request=boundary(permissions,payload)
+            save(folder/'boundary-edit.json',request);save(folder/'storage-repair-policy.json',policy(edits,payload))
             if prior is not None:
-                validate_fit(prior/'fit',scene,permissions)
+                validate_fit(prior/'fit',scene,permissions,payload=payload)
                 shutil.copyfile(prior/'fit/final-storage-continuation.json',folder/'storage-continuation.json')
         elif prior is not None:
             state=ResumeState(prior/'fit',sha256(folder/'contacts.json'),sha256(folder/'permissions.json'),edits,
@@ -271,15 +285,13 @@ def frozen(folder,*,current_methods=True):
     permissions=dict(schema='strep-native-scene-edit-v1',contacts_sha256=sha256(folder/'contacts.json'),actors=draft['actors'])
     require(read(folder/'permissions.json')==permissions,'Correction permissions changed')
     require(read(folder/'geometry-policy.json')==dict(schema='strep-native-scene-geometry-v1',contacts_sha256=sha256(folder/'contacts.json'),**draft['draft']['geometry']),'Correction geometry changed')
-    scene=SceneContacts(spec,folder);edits=SceneEdits(permissions,scene,sha256(folder/'contacts.json'),rotation_storage_policy=p['options']['rotation_storage_policy'])
+    scene=SceneContacts(spec,folder);edits=editor(draft,permissions,scene,sha256(folder/'contacts.json'),p['options']['rotation_storage_policy'])
     if stored(draft):
         from studio_native_storage import boundary,policy,validate_fit
-        from native_scene_boundary_edit import BoundarySceneEdits
-        request=boundary(permissions);require(read(folder/'boundary-edit.json')==request,'Clearance boundary contract changed')
-        edits=BoundarySceneEdits(request,scene,sha256(folder/'contacts.json'),rotation_storage_policy=p['options']['rotation_storage_policy'])
-        require(read(folder/'storage-repair-policy.json')==policy(edits),'Clearance repair policy changed')
+        request=boundary(permissions,draft);require(read(folder/'boundary-edit.json')==request,'Clearance boundary contract changed')
+        require(read(folder/'storage-repair-policy.json')==policy(edits,draft),'Clearance repair policy changed')
         if prior is not None:
-            _,final=validate_fit(prior/'fit',scene,permissions)
+            _,final=validate_fit(prior/'fit',scene,permissions,payload=draft)
             require(read(folder/'storage-continuation.json')==final.state,'Corrected start state changed')
             for i,actor in enumerate(final.state['actors'].values()):
                 require(sha256(folder/'continuation-input'/f'actor-{i}.glb')==actor['sha256'],'Corrected start asset snapshot changed')
@@ -393,10 +405,10 @@ def manifest(job):
     for n,h in request['implementation_sha256'].items():require(sha256(folder/'fit/implementation'/n)==h,'Correction fitter method archive changed')
     for path,h in request['inputs_sha256'].items():require(sha256(path)==h,'Correction fitter input changed')
     scene=SceneContacts(read(folder/'contacts.json'),folder)
-    edits=SceneEdits(read(folder/'permissions.json'),scene,sha256(folder/'contacts.json'),rotation_storage_policy=p['options']['rotation_storage_policy'])
+    edits=editor(draft,read(folder/'permissions.json'),scene,sha256(folder/'contacts.json'),p['options']['rotation_storage_policy'])
     if stored(draft):
         from studio_native_storage import validate_fit
-        _,final_edits=validate_fit(folder/'fit',scene,read(folder/'permissions.json'))
+        _,final_edits=validate_fit(folder/'fit',scene,read(folder/'permissions.json'),payload=draft)
     else:
         retained=ResumeState(folder/'fit',sha256(folder/'contacts.json'),sha256(folder/'permissions.json'),edits)
         retained.check_geometry(read(folder/'geometry-policy.json'),sha256(folder/'contacts.json'));retained.check_inputs()
