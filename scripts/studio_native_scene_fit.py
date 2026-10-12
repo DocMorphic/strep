@@ -22,7 +22,15 @@ METHODS=tuple(sorted(set(FIT_METHODS)|{'studio_native_scene_fit.py','studio_nati
 
 def request_fields(payload):
     ordinary=('schema','draft','actors','options','resume_from')
+    if isinstance(payload,dict) and payload.get('schema')=='strep-studio-native-scene-fit-v3':
+        return ordinary+('rotation_speed_limits','export_repair')
     return ordinary+('rotation_speed_limits',) if isinstance(payload,dict) and payload.get('schema')=='strep-studio-native-scene-fit-v2' else ordinary
+
+
+def stored(payload):return payload.get('schema')=='strep-studio-native-scene-fit-v3'
+
+
+def has_speed(payload):return payload.get('schema')=='strep-studio-native-scene-fit-v2' or stored(payload) and bool(payload['rotation_speed_limits'])
 
 
 def speed_policy(payload,digest):
@@ -31,9 +39,12 @@ def speed_policy(payload,digest):
 
 def method_population(payload,*,fitter=False):
     names=set(FIT_METHODS if fitter else METHODS)
-    if payload.get('schema')=='strep-studio-native-scene-fit-v2':
+    if has_speed(payload):
         from native_rotation_speed_policy import METHODS as SPEED_METHODS
         names.update(SPEED_METHODS)
+    if stored(payload):
+        from studio_native_storage import METHODS as STORAGE_METHODS,FITTER_METHODS
+        names.update(FITTER_METHODS if fitter else STORAGE_METHODS)
     if not fitter and payload.get('draft',{}).get('schema')=='strep-studio-native-scene-v2':
         from native_scene_export_speed import methods
         names.update(methods())
@@ -64,9 +75,17 @@ def catalog(draft,resolver):
         actors=actors,maximum_controls=96,maximum_tracks_per_actor=16,maximum_knots_per_actor=12,quality_approved=False)
 
 
-def options(value):
+def options(value,export_repair=None):
     fields(value,('iterations',),'character correction effort')
     if type(value['iterations']) is not int or not 1<=value['iterations']<=16:raise ValueError('Choose 1-16 correction iterations')
+    if export_repair is not None:
+        fields(export_repair,('stages','probes'),'clearance export effort')
+        require(type(export_repair['stages']) is int and 1<=export_repair['stages']<=8
+            and type(export_repair['probes']) is int and 1<=export_repair['probes']<=64,'Choose 1-8 repair stages and 1-64 probes per stage')
+        return dict(iterations=value['iterations'],trust=.02,proposal_model='surface-vector',
+            vector_difference_scheme='forward',vector_difference_step=.001,rotation_storage_policy='unit',
+            restoration_steps=0,restoration_model='measured-cap',serialized_ray_probes=0,
+            plane_guidance='minimum-envelope',storage_repair_stages=export_repair['stages'],storage_repair_probes=export_repair['probes'])
     return dict(iterations=value['iterations'],trust=.02,proposal_model='storage-vector',
         vector_difference_scheme='central',vector_difference_step=.001,rotation_storage_policy='unit',
         restoration_steps=3,restoration_model='recentered',serialized_ray_probes=64)
@@ -74,16 +93,22 @@ def options(value):
 
 def validate_request(payload,resolver):
     fields(payload,request_fields(payload),'Studio character correction')
-    require(payload['schema'] in ('strep-studio-native-scene-fit-v1','strep-studio-native-scene-fit-v2'),'Studio character correction schema required')
+    require(payload['schema'] in ('strep-studio-native-scene-fit-v1','strep-studio-native-scene-fit-v2','strep-studio-native-scene-fit-v3'),'Studio character correction schema required')
+    if stored(payload):
+        require(isinstance(payload['rotation_speed_limits'],list) and len(payload['rotation_speed_limits'])<=64,'Explicit optional speed-limit list required')
+        inherited={(t['actor'],t['node']):t for t in payload['draft'].get('rotation_speed_limits',[])}
+        supplied={(t['actor'],t['node']):t for t in payload['rotation_speed_limits'] if isinstance(t,dict) and 'actor' in t and 'node' in t}
+        require(not set(inherited)-set(supplied),'Clearance fitting must retain every current authored joint-speed limit')
     spec,geometry,object_edit,sources=scene_request(payload['draft'],resolver,require_objects=False)
     require(object_edit is None,'Character correction uses the declared object paths. Turn off the separate object-edit proposal first.')
-    config=options(payload['options']);scene=SceneContacts(spec,ROOT)
+    config=options(payload['options'],payload['export_repair'] if stored(payload) else None);scene=SceneContacts(spec,ROOT)
     permissions=dict(schema='strep-native-scene-edit-v1',contacts_sha256='draft',actors=copy.deepcopy(payload['actors']))
     edits=SceneEdits(permissions,scene,'draft',rotation_storage_policy=config['rotation_storage_policy'])
     require(edits.size<=96,'Character correction supports at most 96 controls; reduce selected tracks or interior knots')
     prior=None;receipt=None
     if payload['resume_from'] is not None:
         prior=folder_for(payload['resume_from']);manifest(prior.name)
+        require(stored(payload)==stored(read(prior/'draft.json')),'Continuation must retain its contact or clearance fitting mode')
         previous=read(prior/'fit/contacts.json');before=read(prior/'fit/permissions.json')
         # Retain the prior canonical actor paths. New snapshots do not reset the
         # source epoch or the exact contacts/permissions identity used by resume.
@@ -94,6 +119,7 @@ def validate_request(payload,resolver):
         proposed=copy.deepcopy(permissions);proposed['contacts_sha256']=before['contacts_sha256']
         require(proposed==before,'Resume edit permissions changed; author a separate explicit experiment')
         if spec!=previous:
+            require(not stored(payload),'Clearance continuation must retain the exact original scene and contact targets')
             edits_patch=[]
             old={c['id']:c for c in previous['contacts']}
             for row in spec['contacts']:
@@ -114,10 +140,16 @@ def validate_request(payload,resolver):
         canonical_digest=sha256(prior/'fit/contacts.json') if receipt is None else 'draft'
         permissions['contacts_sha256']=canonical_digest;geometry['contacts_sha256']=canonical_digest
         scene=SceneContacts(spec,ROOT);edits=SceneEdits(permissions,scene,canonical_digest)
-        state=ResumeState(prior/'fit',canonical_digest,sha256(prior/'fit/permissions.json'),edits,
-            contact_revision=receipt,current_contacts=spec,current_permissions=permissions)
-        state.check_geometry(geometry,canonical_digest);state.check_inputs()
-    if payload['schema']=='strep-studio-native-scene-fit-v2':
+        if stored(payload):
+            from studio_native_storage import validate_fit
+            validate_fit(prior/'fit',scene,permissions)
+            require(read(prior/'geometry-policy.json')==geometry,'Clearance continuation geometry changed')
+            require(read(prior/'fit/result.json')['native_constraints_pass'] is True,'Clearance continuation needs a native-feasible corrected start')
+        else:
+            state=ResumeState(prior/'fit',canonical_digest,sha256(prior/'fit/permissions.json'),edits,
+                contact_revision=receipt,current_contacts=spec,current_permissions=permissions)
+            state.check_geometry(geometry,canonical_digest);state.check_inputs()
+    if has_speed(payload):
         from native_rotation_speed_policy import policy_for as speed_policy_for
         from native_rotation_speed_preflight import IncompatibleRotationSpeed
         _,_,report=speed_policy_for(speed_policy(payload,permissions['contacts_sha256']),edits,permissions['contacts_sha256'])
@@ -153,12 +185,28 @@ def prepare(payload,folder,resolver):
             save(folder/'original-contact-intent.json',original);extra.add('original-contact-intent.json')
         scene=SceneContacts(spec,folder);edits=SceneEdits(permissions,scene,sha256(folder/'contacts.json'),rotation_storage_policy=config['rotation_storage_policy'])
         policy_for(geometry,scene,sha256(folder/'contacts.json'))
-        if prior is not None:
+        if stored(payload):
+            from studio_native_storage import boundary,policy,validate_fit
+            from native_scene_boundary_edit import BoundarySceneEdits
+            request=boundary(permissions);edits=BoundarySceneEdits(request,scene,sha256(folder/'contacts.json'),rotation_storage_policy=config['rotation_storage_policy'])
+            save(folder/'boundary-edit.json',request);save(folder/'storage-repair-policy.json',policy(edits))
+            if prior is not None:
+                validate_fit(prior/'fit',scene,permissions)
+                shutil.copyfile(prior/'fit/final-storage-continuation.json',folder/'storage-continuation.json')
+        elif prior is not None:
             state=ResumeState(prior/'fit',sha256(folder/'contacts.json'),sha256(folder/'permissions.json'),edits,
                 contact_revision=receipt,current_contacts=spec,current_permissions=permissions)
             state.check_geometry(geometry,sha256(folder/'contacts.json'));state.check_inputs()
         files={'draft.json','contacts.json','permissions.json','geometry-policy.json'}|extra
-        if payload['schema']=='strep-studio-native-scene-fit-v2':
+        if stored(payload):
+            files|={'boundary-edit.json','storage-repair-policy.json'}
+            if prior is not None:
+                files.add('storage-continuation.json')
+                for i,actor in enumerate(read(folder/'storage-continuation.json')['actors'].values()):
+                    target=folder/'continuation-input'/f'actor-{i}.glb';target.parent.mkdir(exist_ok=True)
+                    shutil.copyfile(actor['path'],target);require(sha256(target)==actor['sha256'],'Corrected start snapshot changed')
+                    files.add(target.relative_to(folder).as_posix())
+        if has_speed(payload):
             save(folder/'rotation-speed-policy.json',speed_policy(payload,sha256(folder/'contacts.json')))
             files.add('rotation-speed-policy.json')
         for n in methods:
@@ -186,7 +234,12 @@ def frozen(folder,*,current_methods=True):
         require(sha256(folder/'implementation'/n)==h,'Correction method archive changed')
         if current_methods:require(sha256(SCRIPT_ROOT/n)==h,'Correction implementation changed')
     expected={'draft.json','contacts.json','permissions.json','geometry-policy.json'}
-    if draft['schema']=='strep-studio-native-scene-fit-v2':expected.add('rotation-speed-policy.json')
+    if has_speed(draft):expected.add('rotation-speed-policy.json')
+    if stored(draft):
+        expected|={'boundary-edit.json','storage-repair-policy.json'}
+        if p['resume_from'] is not None:
+            expected.add('storage-continuation.json')
+            expected|={f'continuation-input/actor-{i}.glb' for i in range(len(draft['actors']))}
     _,revision=revision_for(draft['draft'])
     prior=folder_for(p['resume_from']) if p['resume_from'] is not None else None
     if prior is not None:
@@ -197,7 +250,7 @@ def frozen(folder,*,current_methods=True):
     elif revision is not None:expected.add('original-contact-intent.json')
     require(set(p['files_sha256'])==expected,'Complete correction input population required')
     for n,h in p['files_sha256'].items():require(sha256(folder/n)==h,'Correction request snapshot changed')
-    require(p['options']==options(draft['options']) and p['resume_from']==draft['resume_from'],'Correction options or resume selection changed')
+    require(p['options']==options(draft['options'],draft['export_repair'] if stored(draft) else None) and p['resume_from']==draft['resume_from'],'Correction options or resume selection changed')
     spec=copy.deepcopy(draft['draft']['scene']);require(set(p['sources'])==set(spec['actors']),'Complete correction actor snapshots required')
     prior=None
     if p['resume_from'] is not None:
@@ -219,13 +272,24 @@ def frozen(folder,*,current_methods=True):
     require(read(folder/'permissions.json')==permissions,'Correction permissions changed')
     require(read(folder/'geometry-policy.json')==dict(schema='strep-native-scene-geometry-v1',contacts_sha256=sha256(folder/'contacts.json'),**draft['draft']['geometry']),'Correction geometry changed')
     scene=SceneContacts(spec,folder);edits=SceneEdits(permissions,scene,sha256(folder/'contacts.json'),rotation_storage_policy=p['options']['rotation_storage_policy'])
+    if stored(draft):
+        from studio_native_storage import boundary,policy,validate_fit
+        from native_scene_boundary_edit import BoundarySceneEdits
+        request=boundary(permissions);require(read(folder/'boundary-edit.json')==request,'Clearance boundary contract changed')
+        edits=BoundarySceneEdits(request,scene,sha256(folder/'contacts.json'),rotation_storage_policy=p['options']['rotation_storage_policy'])
+        require(read(folder/'storage-repair-policy.json')==policy(edits),'Clearance repair policy changed')
+        if prior is not None:
+            _,final=validate_fit(prior/'fit',scene,permissions)
+            require(read(folder/'storage-continuation.json')==final.state,'Corrected start state changed')
+            for i,actor in enumerate(final.state['actors'].values()):
+                require(sha256(folder/'continuation-input'/f'actor-{i}.glb')==actor['sha256'],'Corrected start asset snapshot changed')
     require(edits.size==p['controls']<=96,'Correction control population changed')
-    if draft['schema']=='strep-studio-native-scene-fit-v2':
+    if has_speed(draft):
         from native_rotation_speed_policy import policy_for as speed_policy_for
         policy=read(folder/'rotation-speed-policy.json')
         require(policy==speed_policy(draft,sha256(folder/'contacts.json')),'Retained authored speed limits changed')
         speed_policy_for(policy,edits,sha256(folder/'contacts.json'))
-    if prior is not None:
+    if prior is not None and not stored(draft):
         state=ResumeState(prior/'fit',sha256(folder/'contacts.json'),sha256(folder/'permissions.json'),edits,
             contact_revision=read(folder/'contact-revision.json') if 'contact-revision.json' in expected else None,
             current_contacts=spec,current_permissions=permissions)
@@ -275,8 +339,11 @@ def execute(folder):
     save(folder/'pipeline.json',dict(status='processing',stage='character-fit',original_selected=True,quality_approved=False))
     try:
         kwargs=dict(p['options'],geometry_policy=folder/'geometry-policy.json')
+        if stored(read(folder/'draft.json')):
+            kwargs.update(boundary_edit=folder/'boundary-edit.json',storage_repair_policy=folder/'storage-repair-policy.json')
+            if p['resume_from'] is not None:kwargs['storage_continuation']=folder/'storage-continuation.json'
         if (folder/'rotation-speed-policy.json').is_file():kwargs['rotation_speed_policy']=folder/'rotation-speed-policy.json'
-        if p['resume_from'] is not None:kwargs['resume_from']=folder_for(p['resume_from'])/'fit'
+        if p['resume_from'] is not None and not stored(read(folder/'draft.json')):kwargs['resume_from']=folder_for(p['resume_from'])/'fit'
         if (folder/'contact-revision.json').is_file():kwargs['contact_revision']=folder/'contact-revision.json'
         result=fit(folder/'contacts.json',folder/'permissions.json',folder/'fit',**kwargs)
         original_intent=None
@@ -293,6 +360,9 @@ def execute(folder):
             files|={'rotation-speed-policy.json','fit/rotation-speed-policy.json','fit/rotation-speed-preflight.json','fit/rotation-speed-lower-bounds.npz','fit/rotation-speed-audit.json'}
         files|={s['snapshot'] for s in p['sources'].values()}
         files|={f'fit/probes/final/{name}.glb' for name in p['sources'] if name in read(folder/'permissions.json')['actors']}
+        if stored(read(folder/'draft.json')):
+            files|={'fit/final-storage-continuation.json','fit/boundary-edit.json','fit/storage-repair-policy.json'}
+            files|={f'fit/proposal/actor-{i}.glb' for i,name in enumerate(p['sources']) if name in read(folder/'permissions.json')['actors']}
         if original_intent is not None:files|={'original-intent-audit/result.json','original-intent-proposal.json'}
         if result['original_contact_intent_result_sha256'] is not None:files.add('fit/original-contact-audit/result.json')
         c=dict(schema='strep-studio-native-scene-fit-completion-v1',prepared_sha256=sha256(folder/'prepared.json'),
@@ -324,8 +394,12 @@ def manifest(job):
     for path,h in request['inputs_sha256'].items():require(sha256(path)==h,'Correction fitter input changed')
     scene=SceneContacts(read(folder/'contacts.json'),folder)
     edits=SceneEdits(read(folder/'permissions.json'),scene,sha256(folder/'contacts.json'),rotation_storage_policy=p['options']['rotation_storage_policy'])
-    retained=ResumeState(folder/'fit',sha256(folder/'contacts.json'),sha256(folder/'permissions.json'),edits)
-    retained.check_geometry(read(folder/'geometry-policy.json'),sha256(folder/'contacts.json'));retained.check_inputs()
+    if stored(draft):
+        from studio_native_storage import validate_fit
+        _,final_edits=validate_fit(folder/'fit',scene,read(folder/'permissions.json'))
+    else:
+        retained=ResumeState(folder/'fit',sha256(folder/'contacts.json'),sha256(folder/'permissions.json'),edits)
+        retained.check_geometry(read(folder/'geometry-policy.json'),sha256(folder/'contacts.json'));retained.check_inputs()
     for probe in r['probes']:
         require(read(folder/'fit/probes'/probe['label']/'probe.json')==probe,'Correction probe receipt changed')
         for n,h in probe['files_sha256'].items():checked_file(folder/'fit',n,h)
@@ -337,7 +411,7 @@ def manifest(job):
     require(c['native_conditions_pass'] is (final['merit'][0]==0 and audit['passed'] and all(a['passed'] for a in r['edits'].values())),
         'Correction native decision differs from final measured conditions')
     speed_report=None
-    if draft['schema']=='strep-studio-native-scene-fit-v2':
+    if has_speed(draft):
         checked_file(folder/'fit','rotation-speed-audit.json',r['rotation_speed_result_sha256'])
         speed_report=read(folder/'fit/rotation-speed-audit.json')
         require(speed_report['passed'] is r['rotation_speed_conditions_pass'],'Correction speed decision changed')
@@ -346,7 +420,8 @@ def manifest(job):
         from native_rotation_speed_fit import audit_scene_speed_outputs
         limits,_,_=speed_policy_for(read(folder/'rotation-speed-policy.json'),edits,sha256(folder/'contacts.json'))
         files={name:folder/'fit/probes/final'/(name+'.glb') for name in edits.actors}
-        _,fresh=audit_scene_speed_outputs(edits,limits,files)
+        _,fresh=audit_scene_speed_outputs(final_edits if stored(draft) else edits,limits,files,
+            **({'value':final_edits.initial} if stored(draft) else {}))
         require(fresh==speed_report,'Correction speed evidence differs from fresh exported rotations')
         require(not c['native_conditions_pass'] or speed_report['passed'],'Correction cannot pass with failed authored speed limits')
     geometry=read(folder/'fit/geometry-audit/result.json')
@@ -365,6 +440,9 @@ def manifest(job):
     if speed_report is not None:
         expected|={'rotation-speed-policy.json','fit/rotation-speed-policy.json','fit/rotation-speed-preflight.json','fit/rotation-speed-lower-bounds.npz','fit/rotation-speed-audit.json'}
     expected|={f'fit/probes/final/{name}.glb' for name in read(folder/'permissions.json')['actors']}
+    if stored(draft):
+        expected|={'fit/final-storage-continuation.json','fit/boundary-edit.json','fit/storage-repair-policy.json'}
+        expected|={f'fit/proposal/actor-{i}.glb' for i,name in enumerate(p['sources']) if name in read(folder/'permissions.json')['actors']}
     if (folder/'original-contact-intent.json').is_file():expected|={'original-intent-audit/result.json','original-intent-proposal.json'}
     if r['original_contact_intent_result_sha256'] is not None:expected.add('fit/original-contact-audit/result.json')
     require(set(c['downloads'])==expected,'Complete fixed correction downloads required')

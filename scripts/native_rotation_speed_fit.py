@@ -115,14 +115,14 @@ def audit_speed_tracks(scene,edits,tracks,files,*,value=None):
         scope='Fresh serialized local rotation keys, independently normalized quaternion relative-angle arithmetic, every selected native neighbor and unchanged clock, plus original edit/static/frozen-key audit. Limits are authored; these sampled checks do not establish instantaneous interpolation speeds, anatomy, full geometry, forces, engine fidelity or quality.')
 
 
-def audit_scene_speed_outputs(edits,limits,files):
+def audit_scene_speed_outputs(edits,limits,files,*,value=None):
     from native_rotation_speed_preflight import assess_scene
     assess_scene(edits,limits)
     tracks=[]
     for (name,node),limit in limits.items():
         channel=next(c for c in edits.scene.actors[name]['sampler'].channels if c[:2]==(node,'rotation'))
         tracks.append(dict(actor=name,node=node,clock=channel[2],limit=float(limit)))
-    return audit_speed_tracks(edits.scene,edits,tracks,files)
+    return audit_speed_tracks(edits.scene,edits,tracks,files,value=value)
 
 
 def speed_seed(problem):

@@ -82,6 +82,20 @@ for(const where of ['draft','request']){const invalid=structuredClone(inherited)
 for(const pass of [false,undefined,'true']){const failed=structuredClone(review);failed.rotation_speed_conditions_pass=pass;assert.throws(()=>stagedScene(failed),/turning-speed/);}
 el('Resume').value='job1';await el('LoadResume').onclick();assert.deepEqual(editor.request().rotation_speed_limits,posted.rotation_speed_limits);
 assert.equal(el('Tracks').children[0].children[4].value,120);
+// Clearance mode keeps the full source request and restores its bound mode.
+el('Mode').value='clearance';el('Mode').onchange();assert.equal(el('RepairOptions').hidden,false);
+el('RepairStages').value='2';el('RepairProbes').value='8';posted=editor.request();
+assert.equal(posted.schema,'strep-studio-native-scene-fit-v3');assert.deepEqual(posted.export_repair,{stages:2,probes:8});
+assert.deepEqual(posted.rotation_speed_limits,[{actor:'A',node:0,maximum_degrees_per_second:120}]);
+for(const [name,value] of [['RepairStages','0'],['RepairStages','9'],['RepairProbes','0'],['RepairProbes','65'],['RepairProbes','1.5']]){
+ const previous=el(name).value;el(name).value=value;assert.throws(()=>editor.request(),/export stages/);el(name).value=previous;
+}
+review=makeReview();review.rotation_speed_conditions_pass=true;assert.equal(stagedScene(review).schema,'strep-studio-native-scene-v2');
+review.geometry_conditions_pass=false;await el('Review').onclick();assert.equal(el('Stage').disabled,true);assert.match(el('Status').textContent,/geometry: fail/);
+review=makeReview();review.rotation_speed_conditions_pass=true;el('Mode').value='contacts';el('RepairStages').value='8';
+el('Resume').value='job1';await el('LoadResume').onclick();assert.equal(el('Mode').value,'clearance');
+assert.equal(el('RepairStages').value,2);assert.equal(el('RepairProbes').value,8);assert.deepEqual(editor.request(),posted);
+el('Mode').value='contacts';el('Mode').onchange();assert.equal(el('RepairOptions').hidden,true);
 // Live timing changes count the current actor once; oversized saves remain atomic.
 {
  const capacityNodes=new Map();for(const m of html.matchAll(/<[^>]*id="(nativeSceneFit[^"]+)"[^>]*>/g)){

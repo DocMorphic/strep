@@ -4,8 +4,10 @@ const hash=x=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x);
 function numbers(raw){const text=String(raw).trim(),parts=text.split(/[\s,]+/),values=parts.map(Number);if(!text||!values.every(Number.isFinite))throw Error('Enter finite motion times.');return values;}
 export function stagedScene(review){
  if(review?.status!=='complete'||review.native_conditions_pass!==true||review.geometry_conditions_pass!==true||review.quality_approved!==false||review.original_selected!==true||typeof review.id!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(review.id))throw Error('The proposal must pass its recorded native and geometry checks before staging.');
- const request=review.authoring_request;if(!['strep-studio-native-scene-fit-v1','strep-studio-native-scene-fit-v2'].includes(request?.schema))throw Error('Source-bound correction request is missing.');
- if(request.schema==='strep-studio-native-scene-fit-v2'&&review.rotation_speed_conditions_pass!==true)throw Error('The proposal must pass its authored turning-speed limits before staging.');
+ const request=review.authoring_request;if(!['strep-studio-native-scene-fit-v1','strep-studio-native-scene-fit-v2','strep-studio-native-scene-fit-v3'].includes(request?.schema))throw Error('Source-bound correction request is missing.');
+ const speed=request.schema==='strep-studio-native-scene-fit-v2'||request.schema==='strep-studio-native-scene-fit-v3'&&request.rotation_speed_limits?.length>0;
+ if(speed&&review.rotation_speed_conditions_pass!==true)throw Error('The proposal must pass its authored turning-speed limits before staging.');
+ if(request.schema==='strep-studio-native-scene-fit-v3'&&(!Array.isArray(request.rotation_speed_limits)||!request.export_repair))throw Error('Clearance repair contract is missing.');
  const draft=clone(request.draft);delete draft.contact_revision;
  if(key(Object.keys(review.actors??{}).sort())!==key(Object.keys(draft.scene.actors).sort()))throw Error('Complete character proposals are required.');
  for(const [name,actor] of Object.entries(review.actors)){
@@ -14,7 +16,7 @@ export function stagedScene(review){
      !review.downloads?.some(d=>d.url===actor.candidate_url&&d.sha256===actor.candidate_sha256))throw Error('Character proposal receipt is missing or changed.');
   draft.scene.actors[name].glb=actor.candidate_url;draft.scene.actors[name].sha256=actor.candidate_sha256;
  }
- if(request.schema==='strep-studio-native-scene-fit-v2'){
+ if(speed){
   if(!Array.isArray(request.rotation_speed_limits)||!request.rotation_speed_limits.length||request.rotation_speed_limits.length>64)throw Error('Complete export turning-speed limits are required.');
   const merged=new Map((draft.rotation_speed_limits??[]).map(t=>[`${t.actor}:${t.node}`,clone(t)]));
   if(merged.size!==(draft.rotation_speed_limits??[]).length||new Set(request.rotation_speed_limits.map(t=>`${t.actor}:${t.node}`)).size!==request.rotation_speed_limits.length)throw Error('Choose each export joint speed limit once.');
@@ -27,6 +29,9 @@ export function stagedScene(review){
 export function createNativeSceneFitEditor({document=globalThis.document,api,post,getDraft,setDraft,download=saveJSON}={}){
  const el=n=>document.getElementById('nativeSceneFit'+n);let catalog=null,stamp=null,selections={},speedLimits={},tracks=[],busy=false,serial=0,review=null;
  const status=text=>{el('Status').textContent=text;};
+ if(!el('Mode').value)el('Mode').value='contacts';
+ const drawMode=()=>{el('RepairOptions').hidden=el('Mode').value!=='clearance';};
+ el('Mode').onchange=drawMode;drawMode();
  const guard=fn=>async()=>{try{await fn();}catch(error){status(error.message);}};
  function options(name,values,empty=false){const chosen=el(name).value;el(name).replaceChildren(...values.map(v=>{const option=document.createElement('option');option.value=v;option.textContent=v||'Fresh correction from submitted clips';return option;}));if(values.includes(chosen))el(name).value=chosen;else if(empty)el(name).value='';}
  const controlCount=a=>3*(a.knots_s.length-2)*a.tracks.length;
@@ -89,6 +94,16 @@ export function createNativeSceneFitEditor({document=globalThis.document,api,pos
   const iterations=Number(el('Iterations').value);if(!Number.isInteger(iterations)||iterations<1||iterations>16)throw Error('Choose 1–16 correction iterations.');
   const limits=Object.entries(speedLimits).flatMap(([actor,nodes])=>Object.entries(nodes).map(([node,maximum_degrees_per_second])=>({actor,node:Number(node),maximum_degrees_per_second})));
   if(limits.length>64)throw Error('Choose at most 64 explicit joint turning-speed limits.');
+  if(!['contacts','clearance'].includes(el('Mode').value))throw Error('Choose contact adjustment or clearance refinement.');
+  if(el('Mode').value==='clearance'){
+   const stages=Number(el('RepairStages').value),probes=Number(el('RepairProbes').value);
+   if(!Number.isInteger(stages)||stages<1||stages>8||!Number.isInteger(probes)||probes<1||probes>64)throw Error('Choose 1–8 export stages and 1–64 probes per stage.');
+   const merged=new Map((draft.rotation_speed_limits??[]).map(t=>[`${t.actor}:${t.node}`,clone(t)]));
+   for(const t of limits)merged.set(`${t.actor}:${t.node}`,t);
+   if(merged.size>64)throw Error('Choose at most 64 explicit joint turning-speed limits.');
+   return {schema:'strep-studio-native-scene-fit-v3',draft,actors:clone(selections),options:{iterations},resume_from:el('Resume').value||null,
+    rotation_speed_limits:[...merged.values()],export_repair:{stages,probes}};
+  }
   return {schema:limits.length?'strep-studio-native-scene-fit-v2':'strep-studio-native-scene-fit-v1',draft,actors:clone(selections),options:{iterations},resume_from:el('Resume').value||null,...(limits.length?{rotation_speed_limits:limits}:{})};
  }
  async function refresh(){const data=await api('/api/native-scene-fit-jobs');options('Jobs',data.jobs.map(j=>j.id));options('Resume',['',...data.jobs.filter(j=>j.status==='complete').map(j=>j.id)],true);return data;}
@@ -98,7 +113,10 @@ export function createNativeSceneFitEditor({document=globalThis.document,api,pos
  el('Save').onclick=guard(()=>download(request()));el('Refresh').onclick=guard(refresh);
  el('LoadResume').onclick=guard(async()=>{const id=el('Resume').value;if(!id)throw Error('Select a completed correction to continue.');
   const before=key(getDraft()),value=await api(`/api/native-scene-fit-review?id=${encodeURIComponent(id)}`);if(value.id!==id||el('Resume').value!==id||before!==key(getDraft()))throw Error('Continuation selection or scene changed.');
-  if(value.status!=='complete'||!['strep-studio-native-scene-fit-v1','strep-studio-native-scene-fit-v2'].includes(value.authoring_request?.schema)||value.quality_approved!==false)throw Error('Completed source-bound correction required.');
+  if(value.status!=='complete'||!['strep-studio-native-scene-fit-v1','strep-studio-native-scene-fit-v2','strep-studio-native-scene-fit-v3'].includes(value.authoring_request?.schema)||value.quality_approved!==false)throw Error('Completed source-bound correction required.');
+  const clearance=value.authoring_request.schema==='strep-studio-native-scene-fit-v3';
+  el('Mode').value=clearance?'clearance':'contacts';
+  if(clearance){el('RepairStages').value=value.authoring_request.export_repair.stages;el('RepairProbes').value=value.authoring_request.export_repair.probes;}drawMode();
   setDraft(clone(value.authoring_request.draft));selections=clone(value.authoring_request.actors);catalog=null;
   await load();selections=clone(value.authoring_request.actors);speedLimits={};for(const t of value.authoring_request.rotation_speed_limits??[]){speedLimits[t.actor]??={};speedLimits[t.actor][t.node]=t.maximum_degrees_per_second;}drawActor();drawSelections();el('Resume').value=id;el('Iterations').value=value.authoring_request.options.iterations;status('Continuation loaded. Original clip epochs, edit permissions and turning-speed limits stay bound; explicit patch revisions are checked separately.');
  });

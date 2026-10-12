@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Original-bound clearance refinement in Studio](docs/studio-native-storage-v1.md): the editor can request surface clearance, retain export-repair budgets and continue corrected native keys under the original motion bounds. All 169 related local checks and the offline editor pass. Failed geometry prevents staging; original clips remain selected.
+
 - [Fresh repair verification without duplicate search](docs/native-fit-repair-reuse-v1.md): an identical repaired curve now re-exports and checks every native condition without repeating the search. All 44 affected checks pass. One measured humanoid case reduces that repeated step from 176.13 s to 11.00 s with identical files and fresh full floor audits; floor contact still fails.
 
 - [Automatic export repair in fitting](docs/native-fit-storage-v1.md): the public surface fitter loads original-bound corrected starts, repairs export-only failures and keeps authored speed limits. All 218 distinct affected local checks pass across the recorded runs. Independent reconstruction replays all 62 exports; the final humanoid clip passes native motion checks but still fails floor contact at 45.56 mm peak.
