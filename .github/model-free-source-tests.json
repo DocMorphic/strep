@@ -470,7 +470,9 @@
     "tests/test_native_rate_receipts.py",
     "tests/test_native_storage_continuation.py",
     "tests/test_native_fit_storage.py",
-    "tests/test_studio_native_storage.py"
+    "tests/test_studio_native_storage.py",
+    "tests/test_native_component_storage.py",
+    "tests/test_native_fit_component_storage.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",

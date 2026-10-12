@@ -19,9 +19,9 @@ def fingerprint(value):
     return hashlib.sha256(json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False).encode()).hexdigest()
 
 
-def state_for(base,policy,value,corrections,files):
+def state_for(base,policy,value,corrections,files,*,_adjusted_type=StorageAdjustedEdits,_state_schema=SCHEMA):
     """Bind each edited actor's exact corrected export, not a new source epoch."""
-    adjusted=StorageAdjustedEdits(base,policy,corrections);value=base.controls(value)
+    adjusted=_adjusted_type(base,policy,corrections);value=base.controls(value)
     if not isinstance(files,dict) or set(files)!=set(base.actors):
         raise ValueError('One existing corrected asset for every edited actor required')
     base.scene.check_inputs();actors={}
@@ -33,16 +33,19 @@ def state_for(base,policy,value,corrections,files):
         if sha256(path)!=checksum:raise ValueError('Corrected continuation changed during binding')
         actors[name]=dict(path=str(path),sha256=checksum,animation_index=index)
     base.scene.check_inputs()
-    return dict(schema=SCHEMA,authoring_sha256=authoring_digest(base),
+    return dict(schema=_state_schema,authoring_sha256=authoring_digest(base),
         source_assets_sha256=copy.deepcopy(base.scene.inputs),storage_policy_sha256=fingerprint(policy),
         controls=value.tolist(),corrections=copy.deepcopy(corrections),actors=actors)
 
 
 class StorageContinuationEdits(StorageAdjustedEdits):
+    state_schema=SCHEMA
+    adjusted_type=StorageAdjustedEdits
+
     def __init__(self,base,policy,state,directory):
         fields(state,('schema','authoring_sha256','source_assets_sha256','storage_policy_sha256',
             'controls','corrections','actors'),'storage continuation')
-        if (state['schema']!=SCHEMA or state['authoring_sha256']!=authoring_digest(base)
+        if (state['schema']!=self.state_schema or state['authoring_sha256']!=authoring_digest(base)
                 or state['storage_policy_sha256']!=fingerprint(policy)
                 or state['source_assets_sha256']!=base.scene.inputs):
             raise ValueError('Continuation must retain the exact original authoring/scene/storage policy')
@@ -52,7 +55,7 @@ class StorageContinuationEdits(StorageAdjustedEdits):
         value=base.controls(controls)
         if np.any(value<base.lower) or np.any(value>base.upper):
             raise ValueError('Continuation is outside original control boxes')
-        super().__init__(base,policy,state['corrections'])
+        self.adjusted_type.__init__(self,base,policy,state['corrections'])
         if not isinstance(state['actors'],dict) or set(state['actors'])!=set(base.actors):
             raise ValueError('Complete edited-actor continuation population required')
         self.initial=value.copy();self.state=copy.deepcopy(state);self.state_sha256=fingerprint(state)

@@ -10,7 +10,7 @@ import numpy as np
 from native_scene_boundary_edit import BoundarySceneEdits
 from native_rotation_storage_repair import StorageAdjustedEdits,authoring_digest
 from native_rotation_storage_search import search
-from native_storage_continuation import StorageContinuationEdits,fingerprint
+from native_storage_continuation import StorageContinuationEdits,fingerprint,state_for
 from native_scene_norms import rows
 from native_support_feasibility import merit
 from strep import save,sha256
@@ -33,16 +33,23 @@ No caller-provided residual, replacement cap or alternate source is accepted.
 
 
 class FitStorage:
+    adjusted_type=StorageAdjustedEdits
+    continuation_type=StorageContinuationEdits
+    state_factory=staticmethod(state_for)
+
+    def search_method(self,*args,**kwargs):
+        return search(*args,**kwargs)
+
     def __init__(self,problem,policy,*,stages=8,probes=32):
         if type(stages) is not int or not 1<=stages<=8 or type(probes) is not int or not 1<=probes<=64:
             raise ValueError('Choose 1-8 storage stages and 1-64 probes per stage')
         self.problem=problem;editor=problem.edits
-        self.continuation=editor if isinstance(editor,StorageContinuationEdits) else None
+        self.continuation=editor if isinstance(editor,self.continuation_type) else None
         self.base=editor.base if self.continuation is not None else editor
         if not isinstance(self.base,BoundarySceneEdits) or self.base.scene is not problem.scene:
             raise ValueError('Original explicit boundary authoring contract required')
         self.seed=copy.deepcopy(editor.corrections if self.continuation is not None else [])
-        StorageAdjustedEdits(self.base,policy,self.seed)
+        self.adjusted_type(self.base,policy,self.seed)
         self.policy=copy.deepcopy(policy);self.policy_digest=fingerprint(policy)
         self.seed_digest=fingerprint(self.seed);self.authoring_digest=authoring_digest(self.base)
         self.stages,self.probes=stages,probes;self.last_decoded=None
@@ -99,7 +106,7 @@ class FitStorage:
                 if any(sha256(files[n])!=h for n,h in checksums.items()):raise ValueError('Stored search export changed')
                 fresh,worlds=self.decoded(files,value,editor);np.testing.assert_array_equal(fresh,residual)
                 self.last_decoded=(fresh,worlds,value.copy());return fresh,worlds
-            dest=archive/label;dest.mkdir();editor=StorageAdjustedEdits(self.base,self.policy,corrections)
+            dest=archive/label;dest.mkdir();editor=self.adjusted_type(self.base,self.policy,corrections)
             files={};audits={}
             for i,name in enumerate(editor.actors):
                 path=dest/f'actor-{i}.glb';editor.export(name,value,path);files[name]=path
@@ -135,7 +142,7 @@ class FitStorage:
         elif np.all(before<=0):status='already-native-feasible'
         elif np.any(continuous>0):status='intended-motion-failed'
         else:
-            corrected,search_result=search(_DecodedSearchProblem(self),value,self.policy,seed,decode,
+            corrected,search_result=self.search_method(_DecodedSearchProblem(self),value,self.policy,seed,decode,
                 stages=self.stages,probes_per_stage=self.probes)
             save(archive/'search-result.json',search_result)
             if search_result['native_conditions_pass']:

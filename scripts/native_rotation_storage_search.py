@@ -73,18 +73,20 @@ def plan(problem, worlds, corrections):
     return options, failures
 
 
-def search(problem, value, policy, corrections, decode, *, stages=8, probes_per_stage=32):
+def search(problem, value, policy, corrections, decode, *, stages=8, probes_per_stage=32,
+        _adjusted_type=StorageAdjustedEdits,_planner=plan,_chooser=apply_choice,
+        _result_schema='strep-native-rotation-storage-search-v1'):
     if (type(stages) is not int or not 1 <= stages <= 8
             or type(probes_per_stage) is not int or not 1 <= probes_per_stage <= 64 or not callable(decode)):
         raise ValueError('Explicit finite storage-search budgets and decoded callback required')
     value = problem.edits.controls(value).copy()
     if np.any(value < problem.lower) or np.any(value > problem.upper):
         raise ValueError('Original control boxes remain required')
-    StorageAdjustedEdits(problem.edits, policy, corrections)
+    _adjusted_type(problem.edits, policy, corrections)
     original = rows(problem, value); caps, scales = original.caps.copy(), original.scales.copy()
     records, history = [], []
     def observe(candidate, label):
-        adjusted = StorageAdjustedEdits(problem.edits, policy, candidate)
+        adjusted = _adjusted_type(problem.edits, policy, candidate)
         for name in adjusted.actors:
             adjusted.values(name, value)  # Original track/unit/storage envelope before exporting.
         reported, worlds = decode(copy.deepcopy(candidate), label)
@@ -108,14 +110,14 @@ def search(problem, value, policy, corrections, decode, *, stages=8, probes_per_
     for stage in range(stages):
         if np.all(current <= 0):
             break
-        options, failures = plan(problem, worlds, corrections)
+        options, failures = _planner(problem, worlds, corrections)
         before = merit(current); item = dict(stage=stage, original_rate_failures=failures,
             planned_options=len(options), maximum_probes=probes_per_stage, probes=[], selected_native_anchor=None)
         history.append(item); improved = None
         for i, choice in enumerate(options[:probes_per_stage]):
-            candidate = apply_choice(corrections, choice); candidate_label = f'storage-{stage}-{i}'
+            candidate = _chooser(corrections, choice); candidate_label = f'storage-{stage}-{i}'
             try:
-                adjusted = StorageAdjustedEdits(problem.edits, policy, candidate)
+                adjusted = _adjusted_type(problem.edits, policy, candidate)
                 for name in adjusted.actors:
                     adjusted.values(name, value)
             except ValueError as exc:
@@ -129,7 +131,7 @@ def search(problem, value, policy, corrections, decode, *, stages=8, probes_per_
         if improved is None:
             break
         corrections, current, worlds, label = improved; item['selected_native_anchor'] = label
-    return corrections, dict(schema='strep-native-rotation-storage-search-v1', records=records, history=history,
+    return corrections, dict(schema=_result_schema, records=records, history=history,
         maximum_stages=stages, maximum_probes_per_stage=probes_per_stage, tested_neighbors=queries,
         final_label=label, native_conditions_pass=bool(np.all(current <= 0)), failed_native_rows=int((current > 0).sum()),
         original_native_caps_scales_unchanged=True, continuous_controls_unchanged=True,

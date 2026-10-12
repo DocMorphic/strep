@@ -227,13 +227,21 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
         edits=BoundarySceneEdits(boundary_request,scene,sha256(contacts_path),rotation_storage_policy=rotation_storage_policy)
     if storage_repair_policy is not None:
         from native_rotation_storage_repair import StorageAdjustedEdits
+        from native_storage_continuation import StorageContinuationEdits
+        from native_fit_storage import FitStorage
         storage_repair_policy=Path(storage_repair_policy).resolve();bindings[str(storage_repair_policy)]=sha256(storage_repair_policy)
-        repair_request=read(storage_repair_policy);StorageAdjustedEdits(edits,repair_request,[])
+        repair_request=read(storage_repair_policy);storage_type=FitStorage;adjusted_type=StorageAdjustedEdits;continuation_type=StorageContinuationEdits
+        component_mode=isinstance(repair_request,dict) and repair_request.get('schema')=='strep-native-component-storage-repair-v1'
+        if component_mode:
+            from native_fit_component_storage import FitComponentStorage
+            from native_component_storage_repair import ComponentAdjustedEdits
+            from native_component_storage_continuation import ComponentContinuationEdits
+            storage_type=FitComponentStorage;adjusted_type=ComponentAdjustedEdits;continuation_type=ComponentContinuationEdits
+        adjusted_type(edits,repair_request,[])
         if storage_continuation is not None:
-            from native_storage_continuation import StorageContinuationEdits
             storage_continuation=Path(storage_continuation).resolve();bindings[str(storage_continuation)]=sha256(storage_continuation)
             continuation_request=read(storage_continuation)
-            edits=StorageContinuationEdits(edits,repair_request,continuation_request,storage_continuation.parent)
+            edits=continuation_type(edits,repair_request,continuation_request,storage_continuation.parent)
             bindings.update(edits.continuation_inputs)
     bindings.update(scene.inputs)
     source_bindings=dict(bindings);resume=None
@@ -274,6 +282,9 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
     if boundary_request is not None:method_names.add('native_scene_boundary_edit.py')
     if repair_request is not None:
         method_names.update(('native_fit_storage.py','native_rotation_storage_repair.py','native_rotation_storage_search.py','native_storage_continuation.py','native_scene_boundary_edit.py'))
+        if component_mode:
+            from native_fit_component_storage import METHODS as COMPONENT_METHODS
+            method_names.update(COMPONENT_METHODS)
     if speed_request is not None:
         from native_rotation_speed_policy import METHODS as SPEED_METHODS
         method_names.update(SPEED_METHODS)
@@ -355,8 +366,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             np.savez(output/'source-rate-caps.npz',times_s=problem.uniform,**caps)
             storage=None;probe_editors={}
             if repair_request is not None:
-                from native_fit_storage import FitStorage
-                storage=FitStorage(problem,repair_request,stages=storage_repair_stages,probes=storage_repair_probes)
+                storage=storage_type(problem,repair_request,stages=storage_repair_stages,probes=storage_repair_probes)
             def evaluate(value,label):
                 folder = output/'probes'/label; folder.mkdir(parents=True)
                 files = {}
@@ -448,8 +458,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                 else edits.audit(n,Path(proposal_spec['actors'][n]['glb']),scene.actors[n]['animation_index'])) for n in edits.actors}
             final_storage_state=None
             if storage is not None:
-                from native_storage_continuation import state_for
-                final_storage_state=state_for(storage.base,repair_request,value,final_edits.corrections,
+                final_storage_state=storage.state_factory(storage.base,repair_request,value,final_edits.corrections,
                     {n:Path(proposal_spec['actors'][n]['glb']) for n in edits.actors})
                 save(output/'final-storage-continuation.json',final_storage_state);storage.check()
             geometry_report = None
