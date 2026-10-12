@@ -1,6 +1,8 @@
 """Explicit Studio character corrections with preserved source epochs on resume."""
 import argparse
 import copy
+import math
+import os
 from pathlib import Path
 import re
 import shutil
@@ -338,10 +340,71 @@ def job_lock(folder):
         finally:_lock(stream,False)
 
 
+def record_worker(folder,process=None):
+    """Bind the launch handle or actual executing worker to this prepared job."""
+    import psutil
+    folder=Path(folder);pid=os.getpid() if process is None else process.pid
+    created=None;exit_code=None
+    try:created=psutil.Process(pid).create_time()
+    except psutil.NoSuchProcess:
+        if process is not None:exit_code=process.poll()
+    except psutil.AccessDenied:pass
+    record=dict(schema='strep-studio-native-fit-worker-v1',prepared_sha256=sha256(folder/'prepared.json'),
+        pid=pid,created_at=created,exit_code=exit_code)
+    # Distinct files avoid a launch/worker startup race on save's temporary file.
+    save(folder/('worker.json' if process is None else 'launched-worker.json'),record)
+    return record
+
+
+def observed_state(folder):
+    """Project interrupted jobs read-only, without rewriting raw receipts."""
+    import psutil
+    folder=Path(folder);state=read(folder/'pipeline.json')
+    if state.get('status') not in ('starting','processing'):return state
+    try:
+        records=[read(folder/n) for n in ('worker.json','launched-worker.json') if (folder/n).is_file()]
+        if not records:
+            if state['status']=='starting':return state
+            return dict(state,status='unknown',stage='worker-unverified',
+                error='No worker identity was recorded; interrupted state cannot be verified.')
+        prepared=sha256(folder/'prepared.json')
+        for r in records:
+            if (set(r)!={'schema','prepared_sha256','pid','created_at','exit_code'}
+                    or r['schema']!='strep-studio-native-fit-worker-v1' or r['prepared_sha256']!=prepared
+                    or type(r['pid']) is not int or not 0<r['pid']<=0xffffffff
+                    or r['created_at'] is not None and (type(r['created_at']) not in (int,float) or not math.isfinite(r['created_at']) or r['created_at']<=0)
+                    or r['exit_code'] is not None and type(r['exit_code']) is not int):
+                raise ValueError('Prepared worker identity changed or is invalid')
+        r=records[0]
+        if len(records)>1 and (records[1]['pid']!=r['pid'] or records[1]['created_at'] is not None and r['created_at'] is not None and records[1]['created_at']!=r['created_at']):
+            raise ValueError('Launch and executing worker identities differ')
+        if r['exit_code'] is not None:live=False
+        elif r['created_at'] is None:live=None
+        else:
+            try:
+                p=psutil.Process(r['pid'])
+                live=p.create_time()==r['created_at'] and p.is_running() and p.status()!=psutil.STATUS_ZOMBIE
+            except psutil.NoSuchProcess:live=False
+            except psutil.AccessDenied:live=None
+        # Completion/failure may have been recorded while querying the process.
+        latest=read(folder/'pipeline.json')
+        if latest.get('status') not in ('starting','processing'):return latest
+        if live is True:return latest
+        if live is None:return dict(latest,status='unknown',stage='worker-unverified',
+            error='Worker liveness cannot be verified; saved evidence is preserved.')
+        return dict(latest,status='failed',stage='worker-interrupted',
+            error='Correction worker exited without a terminal result; partial evidence is preserved.',
+            original_selected=True,quality_approved=False,release_approved=False)
+    except (ValueError,KeyError,TypeError,OverflowError,OSError) as exc:
+        return dict(state,status='unknown',stage='worker-unverified',error='Saved worker identity cannot be verified: '+str(exc))
+
+
 def run(folder):
     folder=Path(folder).resolve()
     require(folder==folder_for(folder.name),'Contained correction folder required')
-    with job_lock(folder):return execute(folder)
+    with job_lock(folder):
+        if read(folder/'pipeline.json')['status']=='starting':record_worker(folder)
+        return execute(folder)
 
 
 def execute(folder):
@@ -389,7 +452,7 @@ def execute(folder):
 
 
 def manifest(job):
-    folder=folder_for(job);state=read(folder/'pipeline.json')
+    folder=folder_for(job);state=observed_state(folder)
     data=dict(id=job,status=state['status'],stage=state.get('stage'),error=state.get('error'),downloads=[],
         original_selected=True,studio_selection_changed=False,quality_approved=False,release_approved=False)
     if state['status']!='complete':return data
@@ -477,7 +540,7 @@ def listing():
     jobs=[]
     for folder in sorted((ROOT/'reports'/NAMESPACE).glob('*'),reverse=True):
         if folder.is_dir() and NAME.fullmatch(folder.name) and (folder/'pipeline.json').is_file():
-            try:jobs.append(dict(id=folder.name,status=read(folder/'pipeline.json')['status'],quality_approved=False))
+            try:jobs.append(dict(id=folder.name,status=observed_state(folder)['status'],quality_approved=False))
             except (ValueError,OSError,KeyError,TypeError):jobs.append(dict(id=folder.name,status='invalid',quality_approved=False))
     return dict(jobs=jobs)
 

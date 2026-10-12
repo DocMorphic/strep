@@ -776,13 +776,14 @@ class Handler(BaseHTTPRequestHandler):
                     return self.respond(400,dict(error=str(exc)))
                 return self.respond(202,dict(id=job,status='starting'))
             if self.path=='/api/native-scene-fits':
-                from studio_native_scene_fit import folder_for,prepare
+                from studio_native_scene_fit import folder_for,prepare,record_worker
                 folder=folder_for(job)
                 try:
                     prepare(payload,folder,allowed_file)
                     with (folder/'supervisor.log').open('w',encoding='utf8') as log:
                         self.server.worker=subprocess.Popen([sys.executable,str(ROOT/'scripts/studio_native_scene_fit.py'),str(folder)],cwd=ROOT,
                             env=offline_environment(),stdout=log,stderr=subprocess.STDOUT,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+                    if hasattr(self.server.worker,'pid'):record_worker(folder,self.server.worker)
                 except (ValueError,OSError) as exc:
                     if folder.exists():save(folder/'pipeline.json',dict(status='failed',error=str(exc),original_selected=True,quality_approved=False))
                     return self.respond(400,dict(error=str(exc)))

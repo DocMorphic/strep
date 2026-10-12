@@ -82,6 +82,7 @@ jobs:
           tests/test_native_rotation_storage_repair.py
           tests/test_native_rate_receipts.py
           tests/test_native_component_receipts.py
+          tests/test_studio_native_fit_activity.py
           tests/test_native_storage_continuation.py
           tests/test_native_fit_storage.py
           tests/test_native_component_storage.py
