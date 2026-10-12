@@ -147,7 +147,21 @@ def optimize(problem,evaluate,iterations,trust):
 
 def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_model='scalar',vector_difference_step=None,storage_cells=None,restoration_steps=0,
         geometry_policy=None,resume_from=None,surface_contact_policy=None,contact_revision=None,vector_difference_scheme='forward',serialized_ray_probes=0,
-        rotation_storage_policy=None,restoration_model='measured-cap',plane_guidance=None,rotation_speed_policy=None):
+        rotation_storage_policy=None,restoration_model='measured-cap',plane_guidance=None,rotation_speed_policy=None,
+        boundary_edit=None,storage_repair_policy=None,storage_continuation=None,storage_repair_stages=8,storage_repair_probes=32):
+    if storage_repair_policy is not None and boundary_edit is None:
+        raise ValueError('Storage repair requires explicit original boundary authoring')
+    if storage_continuation is not None and storage_repair_policy is None:
+        raise ValueError('Corrected-key continuation requires its exact storage repair policy')
+    if (boundary_edit is not None or storage_repair_policy is not None) and resume_from is not None:
+        raise ValueError('Use an explicit original-bound corrected-key state, not legacy resume')
+    if storage_repair_policy is not None and proposal_model!='surface-vector':
+        raise ValueError('Automatic storage repair requires decoded surface-vector proposals')
+    if (type(storage_repair_stages) is not int or not 1<=storage_repair_stages<=8
+            or type(storage_repair_probes) is not int or not 1<=storage_repair_probes<=64):
+        raise ValueError('Choose 1-8 storage stages and 1-64 probes per stage')
+    if storage_repair_policy is None and (storage_repair_stages!=8 or storage_repair_probes!=32):
+        raise ValueError('Storage search budgets require an explicit repair policy')
     if plane_guidance is None:
         plane_guidance='all-vertices'
         if resume_from is not None:
@@ -202,7 +216,26 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
     if output.exists(): raise ValueError('Fresh native scene fitting directory required')
     bindings = {str(p):sha256(p) for p in (contacts_path,permissions_path)}
     spec = read(contacts_path); scene = SceneContacts(spec,contacts_path.parent)
-    edits = SceneEdits(read(permissions_path),scene,sha256(contacts_path),rotation_storage_policy=rotation_storage_policy); bindings.update(scene.inputs)
+    boundary_request=None;repair_request=None;continuation_request=None
+    if boundary_edit is None:
+        edits=SceneEdits(read(permissions_path),scene,sha256(contacts_path),rotation_storage_policy=rotation_storage_policy)
+    else:
+        from native_scene_boundary_edit import BoundarySceneEdits
+        boundary_edit=Path(boundary_edit).resolve();bindings[str(boundary_edit)]=sha256(boundary_edit)
+        boundary_request=read(boundary_edit)
+        if boundary_request.get('permissions')!=read(permissions_path):raise ValueError('Boundary authoring must retain the exact supplied permissions')
+        edits=BoundarySceneEdits(boundary_request,scene,sha256(contacts_path),rotation_storage_policy=rotation_storage_policy)
+    if storage_repair_policy is not None:
+        from native_rotation_storage_repair import StorageAdjustedEdits
+        storage_repair_policy=Path(storage_repair_policy).resolve();bindings[str(storage_repair_policy)]=sha256(storage_repair_policy)
+        repair_request=read(storage_repair_policy);StorageAdjustedEdits(edits,repair_request,[])
+        if storage_continuation is not None:
+            from native_storage_continuation import StorageContinuationEdits
+            storage_continuation=Path(storage_continuation).resolve();bindings[str(storage_continuation)]=sha256(storage_continuation)
+            continuation_request=read(storage_continuation)
+            edits=StorageContinuationEdits(edits,repair_request,continuation_request,storage_continuation.parent)
+            bindings.update(edits.continuation_inputs)
+    bindings.update(scene.inputs)
     source_bindings=dict(bindings);resume=None
     revision_request=None
     if contact_revision is not None:
@@ -238,6 +271,9 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
     if resume is not None and getattr(resume,'rotation_speed_policy_sha256',None)!=(None if speed_request is None else bindings[str(rotation_speed_policy)]):
         raise ValueError('Resume must retain its exact authored rotation speed policy')
     method_names=set(METHODS)
+    if boundary_request is not None:method_names.add('native_scene_boundary_edit.py')
+    if repair_request is not None:
+        method_names.update(('native_fit_storage.py','native_rotation_storage_repair.py','native_rotation_storage_search.py','native_storage_continuation.py','native_scene_boundary_edit.py'))
     if speed_request is not None:
         from native_rotation_speed_policy import METHODS as SPEED_METHODS
         method_names.update(SPEED_METHODS)
@@ -248,6 +284,13 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
         resume_receipt=None if resume is None else resume.snapshot(output/'resume')
         shutil.copyfile(contacts_path,output/'contacts.json'); shutil.copyfile(permissions_path,output/'permissions.json')
         snapshots = {output/'contacts.json':bindings[str(contacts_path)],output/'permissions.json':bindings[str(permissions_path)]}
+        for source_path,name in ((boundary_edit,'boundary-edit.json'),(storage_repair_policy,'storage-repair-policy.json'),(storage_continuation,'storage-continuation.json')):
+            if source_path is not None:
+                shutil.copyfile(source_path,output/name);snapshots[output/name]=bindings[str(source_path)]
+        if continuation_request is not None:
+            for i,(name,path) in enumerate(edits.candidate_paths.items()):
+                dest=output/'continuation-input'/f'actor-{i}.glb';dest.parent.mkdir(exist_ok=True);shutil.copyfile(path,dest)
+                snapshots[dest]=edits.continuation_inputs[str(path)]
         if revision_request is not None:
             shutil.copyfile(contact_revision,output/'contact-revision.json')
             snapshots[output/'contact-revision.json']=bindings[str(contact_revision)]
@@ -273,6 +316,10 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             contact_revision_sha256=None if revision_request is None else bindings[str(contact_revision)],
             actor_snapshots={n:dict(path=p.relative_to(output).as_posix(),sha256=spec['actors'][n]['sha256']) for n,p in originals.items()},
             controls=edits.size,iterations=iterations,trust_control_fraction=trust,
+            **({} if boundary_request is None else dict(boundary_edit_sha256=bindings[str(boundary_edit)])),
+            **({} if repair_request is None else dict(storage_repair_policy_sha256=bindings[str(storage_repair_policy)],
+                storage_continuation_sha256=None if continuation_request is None else bindings[str(storage_continuation)],
+                storage_repair_stages=storage_repair_stages,storage_repair_probes=storage_repair_probes)),
             proposal_model=proposal_model,conic_solver=conic_identity,plane_guidance=plane_guidance,
             native_contact_rows_individually_protected=proposal_model=='storage-vector',
             decoded_vector_base_anchor=proposal_model=='storage-vector',
@@ -306,18 +353,28 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             for name,c in problem.caps.items():
                 for i,v in enumerate(c.caps): caps[f'{name}_metric_{i}'] = v
             np.savez(output/'source-rate-caps.npz',times_s=problem.uniform,**caps)
+            storage=None;probe_editors={}
+            if repair_request is not None:
+                from native_fit_storage import FitStorage
+                storage=FitStorage(problem,repair_request,stages=storage_repair_stages,probes=storage_repair_probes)
             def evaluate(value,label):
                 folder = output/'probes'/label; folder.mkdir(parents=True)
                 files = {}
-                for name in edits.actors:
-                    path = folder/(name+'.glb'); edits.export(name,value,path); files[name]=path
-                    audit = edits.audit(name,path,scene.actors[name]['animation_index'])
-                    if not audit['passed']: raise ValueError('Probe exceeds explicit native edit bounds')
-                residual,_ = problem.decoded(files,value)
+                storage_report=None
+                if storage is not None:
+                    residual,_,actual_edits,storage_report=storage.evaluate(value,folder);probe_editors[label]=actual_edits
+                    files={name:folder/(name+'.glb') for name in edits.actors}
+                else:
+                    for name in edits.actors:
+                        path = folder/(name+'.glb'); edits.export(name,value,path); files[name]=path
+                        audit = edits.audit(name,path,scene.actors[name]['animation_index'])
+                        if not audit['passed']: raise ValueError('Probe exceeds explicit native edit bounds')
+                    residual,_ = problem.decoded(files,value)
                 if speed_limits is not None:save(folder/'rotation-speed.json',problem.last_speed_output_audit)
                 if label=='start' and resume is not None:resume.check_start(files,residual,problem.protected_rows)
                 record = dict(label=label,controls=value.tolist(),merit=list(merit(residual)),
                     files_sha256={p.relative_to(output).as_posix():sha256(p) for p in files.values()})
+                if storage_report is not None:record.update(storage_repair_sha256=sha256(folder/'storage-repair.json'),storage_repair_status=storage_report['status'])
                 save(folder/'probe.json',record); probes.append(record); return residual
             contact_model=None
             if proposal_model=='surface-vector' and surface_request is not None:
@@ -326,7 +383,8 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             def evaluate_surface(value,label):
                 residual=evaluate(value,label);folder=output/'probes'/label
                 files={name:folder/(name+'.glb') for name in edits.actors}
-                _,worlds=problem.decoded(files,value)
+                if storage is None:_,worlds=problem.decoded(files,value)
+                else:_,worlds=storage.decoded(files,value,probe_editors[label])
                 derived_spec=copy.deepcopy(spec)
                 for name in scene.actors:
                     path=files.get(name,originals[name]);derived_spec['actors'][name]['glb']=str(path)
@@ -385,7 +443,15 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
                 original_spec['actors']=copy.deepcopy(proposal_spec['actors'])
                 save(output/'original-contact-intent.json',original_spec)
                 original_contact_report=contact_audit(output/'original-contact-intent.json',output/'original-contact-audit')
-            audits = {n:edits.audit(n,Path(proposal_spec['actors'][n]['glb']),scene.actors[n]['animation_index']) for n in edits.actors}
+            final_edits=edits if storage is None else probe_editors['final']
+            audits = {n:(final_edits.audit(n,Path(proposal_spec['actors'][n]['glb']),scene.actors[n]['animation_index'],value=value) if storage is not None
+                else edits.audit(n,Path(proposal_spec['actors'][n]['glb']),scene.actors[n]['animation_index'])) for n in edits.actors}
+            final_storage_state=None
+            if storage is not None:
+                from native_storage_continuation import state_for
+                final_storage_state=state_for(storage.base,repair_request,value,final_edits.corrections,
+                    {n:Path(proposal_spec['actors'][n]['glb']) for n in edits.actors})
+                save(output/'final-storage-continuation.json',final_storage_state);storage.check()
             geometry_report = None
             if geometry_request is not None:
                 from native_scene_geometry import evaluate_to_archive as geometry_archive
@@ -427,6 +493,9 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             if any(sha256(p)!=h for p,h in snapshots.items()): raise ValueError('Authored request snapshot changed')
             if conic_identity is not None and solver_identity()!=conic_identity:raise ValueError('Installed vector proposal solver changed')
             result = dict(status='complete',optimization=optimization,probes=probes,edits=audits,
+                **({} if storage is None else dict(storage_repair_policy_sha256=bindings[str(storage_repair_policy)],
+                    final_storage_continuation_sha256=sha256(output/'final-storage-continuation.json'),
+                    original_storage_reference_retained=True)),
                 **({} if speed_report is None else dict(rotation_speed_conditions_pass=speed_report['passed'],
                     rotation_speed_result_sha256=sha256(output/'rotation-speed-audit.json'),
                     rotation_speed_policy_sha256=bindings[str(rotation_speed_policy)])),
@@ -483,5 +552,12 @@ if __name__=='__main__':
     p.add_argument('--contact-revision',type=Path,help='Explicit patch-only revision receipt; requires --resume-from and unchanged source edit permissions')
     p.add_argument('--surface-contact-policy',type=Path,help='Surface-facing acceptance audit and surface-vector proposal guidance')
     p.add_argument('--rotation-speed-policy',type=Path,help='Source-bound authored local joint speed limits; complete native-key output checks')
+    p.add_argument('--boundary-edit',type=Path,help='Explicit original boundary authoring; permissions must match the supplied file')
+    p.add_argument('--storage-repair-policy',type=Path,help='Source-bound one-neighbor repair of otherwise feasible surface exports')
+    p.add_argument('--storage-continuation',type=Path,help='Exact corrected-key state retaining original source caps; requires boundary and repair policy')
+    p.add_argument('--storage-repair-stages',type=int,default=8)
+    p.add_argument('--storage-repair-probes',type=int,default=32)
     a=p.parse_args(); run(a.contacts,a.permissions,a.output,iterations=a.iterations,trust=a.trust,
-        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,restoration_steps=a.restoration_steps,geometry_policy=a.geometry_policy,resume_from=a.resume_from,surface_contact_policy=a.surface_contact_policy,contact_revision=a.contact_revision,vector_difference_scheme=a.vector_difference_scheme,serialized_ray_probes=a.serialized_ray_probes,rotation_storage_policy=a.rotation_storage_policy,restoration_model=a.restoration_model,plane_guidance=a.plane_guidance,rotation_speed_policy=a.rotation_speed_policy)
+        proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,restoration_steps=a.restoration_steps,geometry_policy=a.geometry_policy,resume_from=a.resume_from,surface_contact_policy=a.surface_contact_policy,contact_revision=a.contact_revision,vector_difference_scheme=a.vector_difference_scheme,serialized_ray_probes=a.serialized_ray_probes,rotation_storage_policy=a.rotation_storage_policy,restoration_model=a.restoration_model,plane_guidance=a.plane_guidance,rotation_speed_policy=a.rotation_speed_policy,
+        boundary_edit=a.boundary_edit,storage_repair_policy=a.storage_repair_policy,storage_continuation=a.storage_continuation,
+        storage_repair_stages=a.storage_repair_stages,storage_repair_probes=a.storage_repair_probes)

@@ -67,12 +67,17 @@ class SpeedLimitedSceneProblem(SpeedPreflightSceneProblem):
         vectors,caps,scales=self.rotation_speed_norms(value,worlds)
         return np.r_[SceneProblem.constraints(self,value,worlds),(np.linalg.norm(vectors,axis=1)-caps)/scales]
 
-    def audit_outputs(self,files):
-        return audit_speed_tracks(self.scene,self.edits,self.speed_tracks,files)
+    def audit_outputs(self,files,*,value=None,output_edits=None):
+        if output_edits is not None:
+            from native_rotation_storage_repair import StorageAdjustedEdits
+            base=self.edits.base if isinstance(self.edits,StorageAdjustedEdits) else self.edits
+            if not isinstance(output_edits,StorageAdjustedEdits) or output_edits.base is not base:
+                raise ValueError('Actual storage export must retain the original authoring instance')
+        return audit_speed_tracks(self.scene,self.edits if output_edits is None else output_edits,self.speed_tracks,files,value=value)
 
-    def decoded(self,files,value):
+    def decoded(self,files,value,*,output_edits=None):
         original,worlds=SceneProblem.decoded(self,files,value)
-        speed,report=self.audit_outputs(files)
+        speed,report=self.audit_outputs(files,value=value,output_edits=output_edits)
         # A failed payload/edit audit is an export contract violation, not a
         # residual that optimization may trade against a contact improvement.
         if not all(a['passed'] for a in report['edit_audits'].values()):
@@ -81,13 +86,14 @@ class SpeedLimitedSceneProblem(SpeedPreflightSceneProblem):
         return np.r_[original[:-len(speed)],speed],worlds
 
 
-def audit_speed_tracks(scene,edits,tracks,files):
+def audit_speed_tracks(scene,edits,tracks,files,*,value=None):
     if not isinstance(files,dict) or set(files)!=set(edits.actors):
         raise ValueError('One fresh exported file for every edited actor required')
     readers={};edit_audits={}
     for name,path in files.items():
         index=scene.actors[name]['animation_index']
-        edit_audits[name]=edits.audit(name,path,index)
+        from native_rotation_storage_repair import StorageAdjustedEdits
+        edit_audits[name]=edits.audit(name,path,index,value=value) if isinstance(edits,StorageAdjustedEdits) else edits.audit(name,path,index)
         rig=RigAsset.load(path);readers[name]=NativeSupportSampler(rig.document,rig.binary,index)
     reports=[];rows=[]
     for track in tracks:

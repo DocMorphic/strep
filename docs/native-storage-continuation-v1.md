@@ -42,15 +42,15 @@ No floor, engine, realism or release approval follows.
 The [focused Windows/Linux workflow at `8d07889`](https://github.com/DocMorphic/strep/actions/runs/38183110085)
 passes all six jobs: **712 Python checks per OS** (645 contact/rig, 35 lineage,
 32 game packages), 23 subtests and the offline editor. The full source workflow
-at that revision remains in progress; the latest complete full-inventory result
-remains the earlier 466-module/42-Node run.
+at that revision also passes all twelve jobs with its 468-module/42-Node
+inventory; the core shards report 9,088 passing checks per OS and 50 subtests.
 
 The subsequent two-iteration trial and separate complete replay retain a final
 47.353661-mm floor peak at 232 failed times, despite passing all original native
 motion conditions. Eleven rejected proposals pass before storage; three also
-fail in their intended curves. The current entry point is a Python API, with
-no Studio or native fitter CLI integration. Next: expose the corrected start
-and explicit bounded export repair through the fitting workflow, record each
-proposal's corrections and original reference, and keep intended-motion
-failures separate from precision repair. Full decoded geometry/contact checks
+fail in their intended curves. The [public native fitter API/CLI](native-fit-storage-v1.md)
+now exposes corrected starts and bounded export repair. It records each proposal's
+corrections and original reference while keeping intended-motion failures
+separate from precision repair. Studio controls for this path remain pending.
+Full decoded geometry/contact checks
 still determine retention; no correction changes selection or release status.

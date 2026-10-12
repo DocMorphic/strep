@@ -17,6 +17,8 @@ class ResumeState:
             self.bindings[str(path)]=sha256(path);return path
         self.file=file
         request=read(file('request.json'));result=read(file('result.json'));pipeline=read(file('pipeline.json'))
+        if request.get('boundary_edit_sha256') is not None or request.get('storage_repair_policy_sha256') is not None:
+            raise ValueError('Explicit boundary/storage fits require their original-bound corrected-key continuation, not legacy resume')
         if result['status']!='complete' or pipeline['status']!='complete' or not result['original_selected']:
             raise ValueError('Completed original-retaining native fit required for resume')
         contacts=file('contacts.json');permissions=file('permissions.json')

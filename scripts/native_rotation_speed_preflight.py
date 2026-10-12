@@ -11,6 +11,10 @@ SERIALIZATION_ALLOWANCE_DEGREES = .0001
 
 def assess_scene(edits, limits):
     """Return complete per-track bounds and a JSON-compatible diagnostic."""
+    from native_rotation_storage_repair import StorageAdjustedEdits
+    if isinstance(edits,StorageAdjustedEdits):
+        if hasattr(edits,'check_continuation'):edits.check_continuation()
+        edits=edits.base  # Original permissions/source, never corrected keys as a new epoch.
     if not isinstance(edits, SceneEdits):
         raise ValueError('Validated native scene edits required')
     if not isinstance(limits, dict) or not limits or len(limits)>64:

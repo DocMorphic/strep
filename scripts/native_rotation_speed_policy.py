@@ -2,7 +2,8 @@
 import numpy as np
 from native_scene_contacts import fields
 
-METHODS=('native_rotation_speed_policy.py','native_rotation_speed_preflight.py','native_rotation_speed_fit.py','temporal_rotation_bounds.py')
+METHODS=('native_rotation_speed_policy.py','native_rotation_speed_preflight.py','native_rotation_speed_fit.py','temporal_rotation_bounds.py',
+    'native_rotation_storage_repair.py','native_scene_boundary_edit.py')
 
 
 def limits_for(request,contacts_digest):
