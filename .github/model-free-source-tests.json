@@ -473,7 +473,8 @@
     "tests/test_studio_native_storage.py",
     "tests/test_native_component_storage.py",
     "tests/test_native_fit_component_storage.py",
-    "tests/test_studio_component_storage.py"
+    "tests/test_studio_component_storage.py",
+    "tests/test_native_component_receipts.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",

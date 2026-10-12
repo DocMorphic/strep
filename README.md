@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Stored-key failure inspection and actual Studio crawl](docs/native-component-receipts-v1.md): a model-free report maps complete saved rate failures to joints and permitted key support. Twelve checks pass. The remaining 41 crawl failures have support and nonzero caps, with shared forearm/hand clusters; the actual Studio humanoid trial still stops at its time limit without a corrected animation.
+
 - [Mixed clearance and clip-edge authoring in Studio](docs/studio-component-storage-v1.md): the editor exposes position repair, explicit start/end choices, transition-review acknowledgment and accurate control budgeting. Related Python and offline editor checks pass. A continued crawl search preserves its root fix but still fails native and floor conditions; no animation approval.
 
 - [Bounded translation and rotation key repair](docs/native-component-storage-v1.md): the public fitter and saved continuations now support explicitly permitted translation components as well as rotations. All 213 related checks pass. The actual crawl search removes its root acceleration error, but remaining native and floor failures still prevent selection.
