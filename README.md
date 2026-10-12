@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Coordinated stored-key repair](docs/native-component-pair-search-v1.md): an experimental paired search passes 69 related checks and preserves original limits. A matched crawl comparison and fresh replay find a small reduction in stored error after fewer probes, but both alternatives retain all 41 failures and fail the complete floor screen.
+
 - [Interrupted correction status](docs/studio-native-fit-activity-v1.md): character jobs bind worker process identities to their prepared inputs. Read-only review distinguishes a verified exit from an unverified worker while preserving partial evidence and the original clips.
 
 - [Stored-key failure inspection and actual Studio crawl](docs/native-component-receipts-v1.md): a model-free report maps complete saved rate failures to joints and permitted key support. Twelve checks pass. The remaining 41 crawl failures have support and nonzero caps, with shared forearm/hand clusters; the actual Studio humanoid trial still stops at its time limit without a corrected animation.
