@@ -34,6 +34,9 @@ storage-failed proposal with a feasible intended curve enters the finite search.
 Each proposal starts from the explicit seed corrections, without mutating the
 original authoring object or granting new key/track freedom. If no fully passing
 repair is found, return the original proposal and retain every attempted repair.
+A later evaluation of the exact same controls in the same fitting context may
+[reuse a bound passing repair](native-fit-repair-reuse-v1.md), with fresh exports,
+complete native checks and unchanged full geometry requirements.
 A native-passing repair still goes through complete declared geometry and any
 additional surface-contact checks before optimizer retention.
 

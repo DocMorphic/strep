@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Fresh repair verification without duplicate search](docs/native-fit-repair-reuse-v1.md): an identical repaired curve now re-exports and checks every native condition without repeating the search. All 44 affected checks pass. One measured humanoid case reduces that repeated step from 176.13 s to 11.00 s with identical files and fresh full floor audits; floor contact still fails.
+
 - [Automatic export repair in fitting](docs/native-fit-storage-v1.md): the public surface fitter loads original-bound corrected starts, repairs export-only failures and keeps authored speed limits. All 218 distinct affected local checks pass across the recorded runs. Independent reconstruction replays all 62 exports; the final humanoid clip passes native motion checks but still fails floor contact at 45.56 mm peak.
 
 - [Stored-key surface continuation](docs/native-storage-continuation-v1.md): corrected starts retain the original source, motion limits and explicit Float32 adjustments. The [completed development trials and replays](docs/kenney-kick-stored-surface-v1.md) retain a motion-compliant export but still fail floor contact at 47.35 mm peak. Fresh screening separates storage errors from intended-motion failures. All 712 focused Python checks per OS pass; no animation approval.

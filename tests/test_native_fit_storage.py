@@ -85,6 +85,51 @@ def test_passing_native_export_never_runs_search(tmp_path,monkeypatch):
     assert np.all(native<=0) and report['status']=='already-native-feasible'
 
 
+@pytest.mark.parametrize('speed',[False,True])
+def test_same_curve_reexports_passing_repair_without_search_but_freshly_checks_every_row(tmp_path,monkeypatch,speed):
+    base,policy,correction,*_=fixture(tmp_path);editor,_=corrected(base,policy,correction,tmp_path)
+    problem=SpeedLimitedSceneProblem(base.scene,editor,rotation_speed_limits={('A',3):0.}) if speed else SceneProblem(base.scene,editor)
+    helper=storage.FitStorage(problem,policy,stages=2,probes=8);first=tmp_path/'first';first.mkdir()
+    native,worlds,_,before=helper.evaluate(problem.initial,first);assert before['status']=='native-repaired'
+    monkeypatch.setattr(storage,'search',lambda *a,**k:pytest.fail('Identical passing repair must not repeat search'))
+    calls=[];original=helper.decoded
+    def decode(*args):calls.append(args[0]);return original(*args)
+    monkeypatch.setattr(helper,'decoded',decode)
+    final=tmp_path/'final';final.mkdir();fresh,new_worlds,_,after=helper.evaluate(problem.initial,final)
+    assert after['status']=='native-repair-replayed' and len(calls)==2
+    assert after['reused_repair']==dict(path=str(first/'storage-repair.json'),sha256=sha256(first/'storage-repair.json'))
+    assert len(after['native_probe_receipts_sha256'])==1 and not (final/'storage-search/search-result.json').exists()
+    assert sha256(first/'A.glb')==sha256(final/'A.glb');np.testing.assert_array_equal(fresh,native)
+    np.testing.assert_array_equal(worlds['A'],new_worlds['A'])
+    assert not after['geometry_assessed'] and not after['quality_approved'] and not after['release_approved']
+    if speed:assert problem.last_speed_output_audit['passed']
+
+
+@pytest.mark.parametrize('evidence',['report','unrounded','search','failed-probe','raw-array','raw-asset','selected','memo'])
+def test_repair_replay_requires_all_bound_original_evidence(tmp_path,evidence):
+    base,policy,correction,*_=fixture(tmp_path);editor,_=corrected(base,policy,correction,tmp_path)
+    problem=SceneProblem(base.scene,editor);helper=storage.FitStorage(problem,policy,stages=2,probes=8)
+    first=tmp_path/'first';first.mkdir();helper.evaluate(problem.initial,first)
+    if evidence=='memo':next(iter(helper.passing_repairs.values()))['corrections']=[correction]
+    else:
+        names={'report':'storage-repair.json','unrounded':'unrounded-observations.npz','search':'storage-search/search-result.json',
+            'failed-probe':'storage-search/start/probe.json','raw-array':'storage-search/start/observations.npz',
+            'raw-asset':'storage-search/start/actor-0.glb','selected':'A.glb'}
+        (first/names[evidence]).write_bytes(b'changed evidence')
+    final=tmp_path/'final';final.mkdir()
+    with pytest.raises(ValueError,match='Previously passing repair evidence changed'):helper.evaluate(problem.initial,final)
+    assert not (final/'storage-search').exists()
+
+
+def test_changed_curve_does_not_reuse_a_passing_repair(tmp_path):
+    base,policy,correction,*_=fixture(tmp_path);editor,_=corrected(base,policy,correction,tmp_path)
+    problem=SceneProblem(base.scene,editor);helper=storage.FitStorage(problem,policy,stages=2,probes=8)
+    first=tmp_path/'first';first.mkdir();helper.evaluate(problem.initial,first)
+    changed=problem.initial.copy();changed[0]=1e-5;second=tmp_path/'second';second.mkdir()
+    _,_,_,report=helper.evaluate(changed,second)
+    assert report['reused_repair'] is None and report['status']!='native-repair-replayed'
+
+
 def test_intended_contact_failure_is_not_precision_repaired(tmp_path,monkeypatch):
     base,policy,_,contacts,_,_,_=fixture(tmp_path);spec=read(contacts)
     spec['contacts'][0]['target']['points_m'][0][0]+=.001;save(contacts,spec)

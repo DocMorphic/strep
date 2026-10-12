@@ -4,6 +4,7 @@ Search archives are motion-only probes. The fitting workflow must separately
 check complete contact/surface geometry on the returned export before retention.
 """
 import copy
+import hashlib
 from pathlib import Path
 import numpy as np
 from native_scene_boundary_edit import BoundarySceneEdits
@@ -45,6 +46,7 @@ class FitStorage:
         self.policy=copy.deepcopy(policy);self.policy_digest=fingerprint(policy)
         self.seed_digest=fingerprint(self.seed);self.authoring_digest=authoring_digest(self.base)
         self.stages,self.probes=stages,probes;self.last_decoded=None
+        self.passing_repairs={};self.passing_repair_digests={}
         self.reference=rows(problem,problem.initial)
         self.clocks={k:getattr(problem,k).copy() for k in ('times','uniform','lower','upper')}
         self.original_worlds={k:v.copy() for k,v in problem.source_world.items()}
@@ -66,9 +68,16 @@ class FitStorage:
         return self.problem.decoded(files,value)
 
     def evaluate(self,value,folder):
-        self.check();value=self.base.controls(value).copy();folder=Path(folder)
+        self.check();value=self.base.controls(value).copy();folder=Path(folder).resolve()
         if np.any(value<self.problem.lower) or np.any(value>self.problem.upper):
             raise ValueError('Original control boxes remain required')
+        value_key=hashlib.sha256(value.tobytes()).hexdigest()
+        replay=self.passing_repairs.get(value_key)
+        if replay is not None:
+            if (fingerprint(replay)!=self.passing_repair_digests[value_key]
+                    or any(sha256(path)!=checksum for path,checksum in replay['bindings'].items())):
+                raise ValueError('Previously passing repair evidence changed')
+        seed=copy.deepcopy(self.seed if replay is None else replay['corrections'])
         archive=folder/'storage-search'
         if archive.exists():raise ValueError('Fresh storage proposal archive required')
         archive.mkdir();observations={};receipts={}
@@ -86,7 +95,7 @@ class FitStorage:
             self.check()
             if label in observations:
                 residual,files,editor,checksums,observations_digest=observations[label]
-                if corrections!=self.seed:raise ValueError('Stored start corrections changed')
+                if corrections!=seed:raise ValueError('Stored start corrections changed')
                 if any(sha256(files[n])!=h for n,h in checksums.items()):raise ValueError('Stored search export changed')
                 fresh,worlds=self.decoded(files,value,editor);np.testing.assert_array_equal(fresh,residual)
                 self.last_decoded=(fresh,worlds,value.copy());return fresh,worlds
@@ -116,11 +125,17 @@ class FitStorage:
             receipts[label]=sha256(dest/'probe.json')
             self.last_decoded=(residual,worlds,value.copy());return residual,worlds
 
-        before,_=decode(self.seed,'start');selected='start';search_result=None
-        if np.all(before<=0):status='already-native-feasible'
+        before,_=decode(seed,'start');selected='start';search_result=None
+        if replay is not None:
+            if (np.any(before>0) or np.any(continuous>0)
+                    or hashlib.sha256(before.tobytes()).hexdigest()!=replay['native_sha256']
+                    or any(sha256(observations['start'][1][n])!=h for n,h in replay['files_sha256'].items())):
+                raise ValueError('Previously passing repair differs from fresh original checks')
+            status='native-repair-replayed'
+        elif np.all(before<=0):status='already-native-feasible'
         elif np.any(continuous>0):status='intended-motion-failed'
         else:
-            corrected,search_result=search(_DecodedSearchProblem(self),value,self.policy,self.seed,decode,
+            corrected,search_result=search(_DecodedSearchProblem(self),value,self.policy,seed,decode,
                 stages=self.stages,probes_per_stage=self.probes)
             save(archive/'search-result.json',search_result)
             if search_result['native_conditions_pass']:
@@ -153,7 +168,22 @@ class FitStorage:
             search_result_sha256=None if search_result is None else sha256(archive/'search-result.json'),
             unrounded_observations_sha256=unrounded_digest,
             native_probe_receipts_sha256=receipts,
+            reused_repair=None if replay is None else dict(path=replay['report_path'],sha256=replay['bindings'][replay['report_path']]),
             original_authoring_sha256=self.authoring_digest,storage_policy_sha256=self.policy_digest,
             geometry_assessed=False,original_selected=True,quality_approved=False,release_approved=False)
         save(folder/'storage-repair.json',report);self.check()
+        if status=='native-repaired':
+            bindings={str(folder/'storage-repair.json'):sha256(folder/'storage-repair.json'),
+                str(folder/'unrounded-observations.npz'):unrounded_digest}
+            bindings[str(archive/'search-result.json')]=report['search_result_sha256']
+            for label,checksum in receipts.items():
+                bindings[str(archive/label/'probe.json')]=checksum
+                _,raw_files,_,raw_checksums,raw_observations=observations[label]
+                bindings[str(archive/label/'observations.npz')]=raw_observations
+                bindings.update({str(path):raw_checksums[name] for name,path in raw_files.items()})
+            bindings.update({str(path):sha256(path) for path in copied.values()})
+            memo=dict(corrections=copy.deepcopy(editor.corrections),bindings=bindings,
+                report_path=str(folder/'storage-repair.json'),native_sha256=hashlib.sha256(fresh.tobytes()).hexdigest(),
+                files_sha256={name:sha256(path) for name,path in copied.items()})
+            self.passing_repairs[value_key]=memo;self.passing_repair_digests[value_key]=fingerprint(memo)
         return fresh,fresh_worlds,editor,report
