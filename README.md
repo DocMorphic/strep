@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Paired continuation and floor-witness diagnosis](docs/paired-continuation-floor-witness-v1.md): fresh replay verifies one repaired native row, leaving 40 failures and unchanged floor rejection. The deepest witness is an editable right-finger surface, and conservative bounds do not prove the authoring problem impossible. Focused CI now retains all tests in smaller shards after a Windows timeout.
+
 - [Coordinated stored-key repair](docs/native-component-pair-search-v1.md): an experimental paired search passes 69 related checks and preserves original limits. A matched crawl comparison and fresh replay find a small reduction in stored error after fewer probes, but both alternatives retain all 41 failures and fail the complete floor screen.
 
 - [Interrupted correction status](docs/studio-native-fit-activity-v1.md): character jobs bind worker process identities to their prepared inputs. Read-only review distinguishes a verified exit from an unverified worker while preserving partial evidence and the original clips.

@@ -476,7 +476,8 @@
     "tests/test_studio_component_storage.py",
     "tests/test_native_component_receipts.py",
     "tests/test_studio_native_fit_activity.py",
-    "tests/test_native_component_pair_search.py"
+    "tests/test_native_component_pair_search.py",
+    "tests/test_contact_regression_shards.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",

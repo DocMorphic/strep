@@ -35,8 +35,8 @@ def partition(names, index, count):
     return names[index::count]
 
 
-def run(mode, index, count, *, list_only=False):
-    data = inventory()
+def run(mode, index, count, *, list_only=False, manifest=None):
+    data = inventory() if manifest is None else inventory(manifest)
     if mode == 'python':
         names = partition(data['python_tests'], index, count)
         commands = [[sys.executable, '-m', 'pytest', '-q', *names]]
@@ -63,8 +63,9 @@ def main():
     parser.add_argument('--shard-index', type=int, default=0)
     parser.add_argument('--shard-count', type=int, default=1)
     parser.add_argument('--list', action='store_true', dest='list_only')
+    parser.add_argument('--manifest', type=Path, help='Explicit declared suite; default is the complete model-free inventory')
     args = parser.parse_args()
-    return run(args.mode, args.shard_index, args.shard_count, list_only=args.list_only)
+    return run(args.mode, args.shard_index, args.shard_count, list_only=args.list_only,manifest=args.manifest)
 
 
 if __name__ == '__main__':
