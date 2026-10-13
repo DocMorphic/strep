@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Articulated clearance and temporal tradeoffs](docs/articulated-crawl-clearance-v1.md): a bounded single pose passes its floor check. Its serialized constant-offset clip reduces peak penetration to 27.8 mm and failed floor times to 174/2,017, but retains 503 native failures. Wider storage search reaches 38 failures with seven new regressions. All eight focused CI jobs now pass; no motion approval.
+
 - [Paired continuation and floor-witness diagnosis](docs/paired-continuation-floor-witness-v1.md): fresh replay verifies one repaired native row, leaving 40 failures and unchanged floor rejection. The deepest witness is an editable right-finger surface, and conservative bounds do not prove the authoring problem impossible. Focused CI now retains all tests in smaller shards after a Windows timeout.
 
 - [Coordinated stored-key repair](docs/native-component-pair-search-v1.md): an experimental paired search passes 69 related checks and preserves original limits. A matched crawl comparison and fresh replay find a small reduction in stored error after fewer probes, but both alternatives retain all 41 failures and fail the complete floor screen.
