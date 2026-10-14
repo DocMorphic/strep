@@ -493,7 +493,8 @@
     "tests/test_native_root_plane_preflight.py",
     "tests/test_native_surface_pair_selection.py",
     "tests/test_native_key_contact_initializer.py",
-    "tests/test_native_key_initializer_audit.py"
+    "tests/test_native_key_initializer_audit.py",
+    "tests/test_native_key_interval_model.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",
