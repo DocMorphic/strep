@@ -50,7 +50,9 @@
     "tests/test_conditioned_skin_fidelity.py",
     "tests/test_native_conditioned_authoring.py",
     "tests/test_studio_weight_export.py",
-    "tests/test_native_key_floor_comparison.py"
+    "tests/test_native_key_floor_comparison.py",
+    "tests/test_root_plane_contact_bounds.py",
+    "tests/test_native_root_plane_preflight.py"
   ],
   "node_tests": [
     "tests/test_native_scene_fit_editor.mjs",

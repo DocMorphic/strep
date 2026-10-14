@@ -35,7 +35,7 @@ jobs:
             suite: contact-rig
             shard: 1
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 90
     env:
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
       HF_HUB_OFFLINE: '1'

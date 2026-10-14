@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Root floor/contact preflight](docs/root-plane-contact-preflight-v1.md): reject vertical lifts that exceed original bounds or break declared point contacts. Fifty-three checks pass; complete five-case replay matches 12,625 pose intervals. This does not establish feasible motion or realism.
+
 - [Generation versus rig-transfer floor diagnostics](docs/source-target-floor-v1.md): a reusable comparison reproduces seven complete native-key studies. Original motion has ground errors, and transferred get-up/roll clips have much larger head penetrations. A checked kick repair improves only 0.124 mm; motion quality remains unresolved.
 
 - [Studio and game export integration](docs/studio-weight-export-v1.md): explicit weight-only exports retain originals and fidelity receipts through scene/game downloads. Real Godot checks and complete replay pass at 2,017 times; targeted and compatibility batches pass. Raw floor failures and human/runtime validation remain open.
