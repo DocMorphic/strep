@@ -148,7 +148,11 @@ def optimize(problem,evaluate,iterations,trust):
 def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_model='scalar',vector_difference_step=None,storage_cells=None,restoration_steps=0,
         geometry_policy=None,resume_from=None,surface_contact_policy=None,contact_revision=None,vector_difference_scheme='forward',serialized_ray_probes=0,
         rotation_storage_policy=None,restoration_model='measured-cap',plane_guidance=None,rotation_speed_policy=None,
-        boundary_edit=None,storage_repair_policy=None,storage_continuation=None,storage_repair_stages=8,storage_repair_probes=32):
+        boundary_edit=None,storage_repair_policy=None,storage_continuation=None,storage_repair_stages=8,storage_repair_probes=32,storage_repair_search='single'):
+    if type(storage_repair_search) is not str or storage_repair_search not in ('single','paired'):
+        raise ValueError('Choose single or paired storage repair search')
+    if storage_repair_search!='single' and storage_repair_policy is None:
+        raise ValueError('Paired storage search requires an explicit repair policy')
     if storage_repair_policy is not None and boundary_edit is None:
         raise ValueError('Storage repair requires explicit original boundary authoring')
     if storage_continuation is not None and storage_repair_policy is None:
@@ -232,6 +236,8 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
         storage_repair_policy=Path(storage_repair_policy).resolve();bindings[str(storage_repair_policy)]=sha256(storage_repair_policy)
         repair_request=read(storage_repair_policy);storage_type=FitStorage;adjusted_type=StorageAdjustedEdits;continuation_type=StorageContinuationEdits
         component_mode=isinstance(repair_request,dict) and repair_request.get('schema')=='strep-native-component-storage-repair-v1'
+        if storage_repair_search=='paired' and not component_mode:
+            raise ValueError('Paired search requires the typed component repair policy')
         if component_mode:
             from native_fit_component_storage import FitComponentStorage
             from native_component_storage_repair import ComponentAdjustedEdits
@@ -285,6 +291,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
         if component_mode:
             from native_fit_component_storage import METHODS as COMPONENT_METHODS
             method_names.update(COMPONENT_METHODS)
+            if storage_repair_search=='paired':method_names.add('native_component_pair_search.py')
     if speed_request is not None:
         from native_rotation_speed_policy import METHODS as SPEED_METHODS
         method_names.update(SPEED_METHODS)
@@ -330,7 +337,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             **({} if boundary_request is None else dict(boundary_edit_sha256=bindings[str(boundary_edit)])),
             **({} if repair_request is None else dict(storage_repair_policy_sha256=bindings[str(storage_repair_policy)],
                 storage_continuation_sha256=None if continuation_request is None else bindings[str(storage_continuation)],
-                storage_repair_stages=storage_repair_stages,storage_repair_probes=storage_repair_probes)),
+                storage_repair_stages=storage_repair_stages,storage_repair_probes=storage_repair_probes,storage_repair_search=storage_repair_search)),
             proposal_model=proposal_model,conic_solver=conic_identity,plane_guidance=plane_guidance,
             native_contact_rows_individually_protected=proposal_model=='storage-vector',
             decoded_vector_base_anchor=proposal_model=='storage-vector',
@@ -367,6 +374,9 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             storage=None;probe_editors={}
             if repair_request is not None:
                 storage=storage_type(problem,repair_request,stages=storage_repair_stages,probes=storage_repair_probes)
+                if storage_repair_search=='paired':
+                    from native_component_pair_search import search as paired_search
+                    storage.search_method=paired_search
             def evaluate(value,label):
                 folder = output/'probes'/label; folder.mkdir(parents=True)
                 files = {}
@@ -504,7 +514,7 @@ def run(contacts_path,permissions_path,output,*,iterations=4,trust=.02,proposal_
             result = dict(status='complete',optimization=optimization,probes=probes,edits=audits,
                 **({} if storage is None else dict(storage_repair_policy_sha256=bindings[str(storage_repair_policy)],
                     final_storage_continuation_sha256=sha256(output/'final-storage-continuation.json'),
-                    original_storage_reference_retained=True)),
+                    original_storage_reference_retained=True,storage_repair_search=storage_repair_search)),
                 **({} if speed_report is None else dict(rotation_speed_conditions_pass=speed_report['passed'],
                     rotation_speed_result_sha256=sha256(output/'rotation-speed-audit.json'),
                     rotation_speed_policy_sha256=bindings[str(rotation_speed_policy)])),
@@ -566,7 +576,9 @@ if __name__=='__main__':
     p.add_argument('--storage-continuation',type=Path,help='Exact corrected-key state retaining original source caps; requires boundary and repair policy')
     p.add_argument('--storage-repair-stages',type=int,default=8)
     p.add_argument('--storage-repair-probes',type=int,default=32)
+    p.add_argument('--storage-repair-search',choices=['single','paired'],default='single',
+        help='Explicit paired component choices; requires typed component repair policy. Original limits and full decoded acceptance remain unchanged')
     a=p.parse_args(); run(a.contacts,a.permissions,a.output,iterations=a.iterations,trust=a.trust,
         proposal_model=a.proposal_model,vector_difference_step=a.vector_difference_step,storage_cells=a.storage_cells,restoration_steps=a.restoration_steps,geometry_policy=a.geometry_policy,resume_from=a.resume_from,surface_contact_policy=a.surface_contact_policy,contact_revision=a.contact_revision,vector_difference_scheme=a.vector_difference_scheme,serialized_ray_probes=a.serialized_ray_probes,rotation_storage_policy=a.rotation_storage_policy,restoration_model=a.restoration_model,plane_guidance=a.plane_guidance,rotation_speed_policy=a.rotation_speed_policy,
         boundary_edit=a.boundary_edit,storage_repair_policy=a.storage_repair_policy,storage_continuation=a.storage_continuation,
-        storage_repair_stages=a.storage_repair_stages,storage_repair_probes=a.storage_repair_probes)
+        storage_repair_stages=a.storage_repair_stages,storage_repair_probes=a.storage_repair_probes,storage_repair_search=a.storage_repair_search)

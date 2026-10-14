@@ -52,7 +52,8 @@
     "tests/test_studio_weight_export.py",
     "tests/test_native_key_floor_comparison.py",
     "tests/test_root_plane_contact_bounds.py",
-    "tests/test_native_root_plane_preflight.py"
+    "tests/test_native_root_plane_preflight.py",
+    "tests/test_native_surface_pair_selection.py"
   ],
   "node_tests": [
     "tests/test_native_scene_fit_editor.mjs",

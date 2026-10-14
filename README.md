@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Contact-preserving articulated trial and paired export repair](docs/pinned-surface-repair-v1.md): the public fitter exposes coordinated key search with original limits and method receipts. Complete replay verifies twelve kick exports; all changed candidates remain rejected and floor clearance is unresolved.
+
 - [Root floor/contact preflight](docs/root-plane-contact-preflight-v1.md): reject vertical lifts that exceed original bounds or break declared point contacts. Fifty-three checks pass; complete five-case replay matches 12,625 pose intervals. This does not establish feasible motion or realism.
 
 - [Generation versus rig-transfer floor diagnostics](docs/source-target-floor-v1.md): a reusable comparison reproduces seven complete native-key studies. Original motion has ground errors, and transferred get-up/roll clips have much larger head penetrations. A checked kick repair improves only 0.124 mm; motion quality remains unresolved.
