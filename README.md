@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Simultaneous motion restoration and triple storage search](docs/simultaneous-motion-norms-v1.md): fresh replay confirms all intended motion and sampled floor conditions passing. Export repair still retains 31 failures; original clips remain selected. An explicit triple search passes 143 related checks, and targeted full-CI regression fixes pass without relaxing release criteria.
+
 - [Batch transform lifetime and coupled motion failures](docs/batched-transform-lifetime-v1.md): remove matrix retention until cyclic collection; 140 related checks pass and actual humanoid matrices match bit-for-bit. Fresh gradients confirm that fixing one motion row can break another. All alternatives remain rejected; simultaneous constraint correction is next.
 
 - [Checked secondary motion proposals](docs/conic-secondary-selection-v1.md): the shared solver verifies complete affine bounds before choosing a smaller step and records one stricter retry. All 229 related checks pass. Actual humanoid probes retain motion/floor failures, so originals remain selected; no animation approval.

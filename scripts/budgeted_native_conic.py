@@ -1,7 +1,7 @@
-"""Explicit bounded CPU budgets for the unchanged native norm-cone formulation.
+"""Explicit two-phase CPU budgets for complete checked native norm proposals.
 
-The historical 30-second model stays immutable. Assembly and model construction
-are outside each solver phase budget; an affine direction is not clip approval.
+Secondary eligibility matches the shared solver, without an extra retry phase.
+Assembly is outside each phase budget; an affine direction is not clip approval.
 """
 import numpy as np
 from scipy import sparse
@@ -90,12 +90,27 @@ def _direction(system, jacobian, value, lower, upper, trust, *, hard_rows=0, pha
     if not np.isfinite(point).all():
         return (None, dict(info, invalid_solution=True))
     optimum = max(0.0, float(point[-1]))
+    primary_delta=np.clip(value+point[:n]*trust,lower,upper)-value
+    primary_residual=system.residual(jacobian,primary_delta)
+    primary_soft=float(max(0.,primary_residual[hard_rows:].max())) if hard_rows<len(primary_residual) else 0.
+    refinement_bound=max(optimum,primary_soft)+1e-9
     second_matrix = sparse.vstack([matrix, sparse.csc_matrix(np.r_[np.zeros(n), 1.0][None])], format='csc')
-    second_bound = np.r_[bound, optimum + 1e-09]
+    second_bound = np.r_[bound, refinement_bound]
     second = solver.DefaultSolver(sparse.diags(np.r_[np.ones(n), 0.0], format='csc'), np.zeros(n + 1), second_matrix, second_bound, cones + [solver.NonnegativeConeT(1)], settings).solve()
     info.update(minimum_norm_phase_status=str(second.status), affine_optimum=optimum)
+    info.update(primary_affine_soft_excess=primary_soft,minimum_norm_selected=False)
     if str(second.status) in ('Solved', 'AlmostSolved') and np.isfinite(second.x).all():
-        point = np.asarray(second.x)
+        secondary=np.asarray(second.x);candidate=secondary[:n]*trust
+        box=bool(np.all(candidate>=lo*trust-1e-9) and np.all(candidate<=hi*trust+1e-9))
+        clipped=np.clip(value+candidate,lower,upper)-value;residual=system.residual(jacobian,clipped)
+        finite=bool(np.isfinite(residual).all());hard=bool(finite and np.all(residual[:hard_rows]<=0))
+        soft=float(max(0.,residual[hard_rows:].max())) if finite and hard_rows<len(residual) else 0.
+        reserve=128*(n+4)*np.finfo(float).eps*max(1.,abs(refinement_bound),abs(soft))
+        selected=bool(finite and box and hard and soft<=refinement_bound+reserve)
+        info.update(minimum_norm_selected=selected,minimum_norm_affine_hard_rows_pass=hard,
+            minimum_norm_affine_soft_excess=soft,minimum_norm_affine_bound=refinement_bound,
+            minimum_norm_comparison_reserve=reserve,maximum_solver_phases=2)
+        if selected:point=secondary
     delta = point[:n] * trust
     if np.any(delta < lo * trust - 1e-09) or np.any(delta > hi * trust + 1e-09) or (not np.isfinite(delta).all()):
         return (None, dict(info, invalid_solution=True))

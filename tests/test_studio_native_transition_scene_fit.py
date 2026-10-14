@@ -22,6 +22,10 @@ def study(tmp_path_factory):
     for module in (studio,transitions,scenes,games,server,locks):patch.setattr(module,'ROOT',root)
     path,recipe,_=fixture(root/'reports/authored');payload={k:copy.deepcopy(v) for k,v in recipe.items() if k not in ('schema','source')}
     payload.update(schema=studio.SCHEMA,source=dict(folder='authored/assembly',result_sha256=recipe['source']['result_sha256']),resume_from=None);payload['iterations']=1
+    # Keep this failure-preservation fixture unreachable under its permissions.
+    # The ordinary fixture remains editable for actual solver/contact tests.
+    for actor in payload['actors'].values():
+        for track in actor['tracks']:track['maximum_change']=.000001
     folder=studio.folder_for('fit1');studio.prepare(payload,folder);studio.run(folder);review=studio.manifest('fit1')
     yield root,payload,folder,review
     patch.undo()

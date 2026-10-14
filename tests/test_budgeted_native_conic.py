@@ -79,3 +79,22 @@ def test_both_phases_receive_the_budget_and_secondary_timeout_keeps_primary_only
     if secondary_timeout:assert info['minimum_norm_phase_status']=='MaxTime'
     else:assert info['minimum_norm_phase_status'] in ('Solved','AlmostSolved')
     assert info['independently_decoded_candidate_required'] and not info['release_approved']
+
+
+@pytest.mark.parametrize('status',['Solved','AlmostSolved'])
+def test_invalid_secondary_cannot_override_primary_or_add_a_budget_phase(monkeypatch,status):
+    real=solver_module();answers=iter([
+        SimpleNamespace(status='Solved',iterations=1,x=np.array([.5,0.])),
+        SimpleNamespace(status=status,iterations=1,x=np.array([.5+5e-9,0.]))])
+    calls=[]
+    def factory(*args):
+        calls.append((args[-1].time_limit,args[-1].max_iter))
+        return SimpleNamespace(solve=lambda:next(answers))
+    proxy=SimpleNamespace(DefaultSettings=real.DefaultSettings,DefaultSolver=factory,SecondOrderConeT=real.SecondOrderConeT,
+        NonnegativeConeT=real.NonnegativeConeT,__version__=real.__version__)
+    monkeypatch.setattr(budgeted,'solver_module',lambda:proxy)
+    system=NormRows([[-.5,0,0]],[0.],[1.]);jac=np.array([[[1.],[0.],[0.]]])
+    delta,info=budgeted.direction(system,jac,np.zeros(1),-np.ones(1),np.ones(1),1.,phase_seconds=90.,maximum_iterations=150)
+    np.testing.assert_array_equal(delta,[.5]);assert not info['minimum_norm_selected']
+    assert info['minimum_norm_affine_soft_excess']>info['minimum_norm_affine_bound']
+    assert calls==[(90.,150),(90.,150)] and info['maximum_solver_phases']==2

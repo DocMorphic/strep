@@ -41,7 +41,8 @@
     "tests/test_studio_prop_routes.py",
     "tests/test_contact_regression_shards.py",
     "tests/test_native_scene_conic_secondary.py",
-    "tests/test_batched_fk_lifetime.py"
+    "tests/test_batched_fk_lifetime.py",
+    "tests/test_native_component_triple_search.py"
   ],
   "node_tests": [
     "tests/test_native_scene_fit_editor.mjs"
