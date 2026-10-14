@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Public continuation command and replay](docs/native-key-continuation-job-v1.md): resume verified edited controls without resetting original limits. Fourteen checks pass; all five real exports and retention decisions replay. The command improves 47/18 rate/floor failures to 41/17 while keeping the clip rejected. Earlier private 35/12 evidence stays unchanged.
+
 - [Verified correction continuation](docs/native-key-continuation-v1.md): resume exact edited keys while preserving the original motion reference. Further steps reduce 47/18 rate/floor failures to 35/12; all fourteen returned clips replay. Five continuation checks pass. The candidate remains rejected.
 
 - [Reusable repeated correction and replay](docs/native-key-restoration-workflow-v1.md): public recipe-driven commands repair eleven rate rows and fourteen floor samples over three steps. All fifteen clips and retention histories replay. Remaining 47 rate/18 floor failures keep the clip rejected; 59 selected checks are verified.

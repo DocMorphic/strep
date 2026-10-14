@@ -59,7 +59,8 @@
     "tests/test_native_key_interval_model.py",
     "tests/test_native_key_interval_restoration.py",
     "tests/test_audit_native_key_restoration.py",
-    "tests/test_native_key_restoration_continuation.py"
+    "tests/test_native_key_restoration_continuation.py",
+    "tests/test_native_key_continuation_job.py"
   ],
   "node_tests": [
     "tests/test_native_scene_fit_editor.mjs",
