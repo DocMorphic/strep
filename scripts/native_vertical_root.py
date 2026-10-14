@@ -21,9 +21,10 @@ from gltf_tools import append_accessor,write_glb
 from rig_floor_comparison import compare
 from strep import ROOT,read,save,sha256,now
 from native_vertical_storage import solve as solve_storage
+from native_motion_orientation import extract as orientation_features,MODES as ORIENTATION_MODES
 
 SCHEMA='strep-native-vertical-root-v1'
-METHODS=('native_vertical_root.py','native_vertical_storage.py','root_plane_contact_bounds.py','sampled_motion_caps.py','engine_contact_sampling.py',
+METHODS=('native_vertical_root.py','native_vertical_storage.py','native_motion_orientation.py','root_plane_contact_bounds.py','sampled_motion_caps.py','engine_contact_sampling.py',
     'rig_floor_comparison.py','rig_asset.py','gltf_tools.py','rig_clip_import.py','native_support_clock.py','action_worker_lock.py','strep.py')
 FLAGS=dict(original_selected=True,quality_approved=False,training_admitted=False,release_approved=False)
 
@@ -69,8 +70,9 @@ def vertical_intervals(vectors,caps,tolerance=1e-5,*,affected_joints=None):
 
 def prepare(recipe,base):
     fields={'schema','source','floor_reference','maximum_displacement_m','floor_reserve_m','frozen_keys'}
-    require(isinstance(recipe,dict) and set(recipe) in (fields,fields|{'storage_mode'}) and recipe['schema']==SCHEMA,'Explicit vertical-root recipe required')
+    require(isinstance(recipe,dict) and fields<=set(recipe)<=fields|{'storage_mode','orientation_mode'} and recipe['schema']==SCHEMA,'Explicit vertical-root recipe required')
     require(recipe.get('storage_mode','continuous') in ('continuous','float32-axis-grid'),'Explicit supported storage mode required')
+    require(recipe.get('orientation_mode','strict') in ORIENTATION_MODES,'Explicit supported orientation mode required')
     source=recipe['source'];reference=recipe['floor_reference']
     require(isinstance(source,dict) and set(source)=={'path','sha256','animation_index','root_node'}
         and isinstance(reference,dict) and set(reference)=={'path','sha256','side'},'Exact source and floor bindings required')
@@ -118,7 +120,9 @@ def run(recipe_path,output):
         for n in methods:shutil.copyfile(ROOT/'scripts'/n,archive/n)
         save(output/'request.json',dict(recipe=recipe,source_bindings_sha256=pins,implementation_sha256=methods,**FLAGS))
         clock=channel[2];uniform=np.arange(int(np.floor(reader.duration*120))+1)/120
-        world=np.array([reader.sample(float(t)) for t in uniform]);payload=features(world,rig.joints)
+        world=np.array([reader.sample(float(t)) for t in uniform])
+        orientation_mode=recipe.get('orientation_mode','strict')
+        payload,source_orientation,source_affine=orientation_features(world,rig.joints,orientation_mode)
         original=SampledMotionCaps(payload,uniform,np.linspace(0,reader.duration,5),tolerance=1e-5)
         _,descendants=translation_coefficients(rig,recipe['source']['root_node']);affected=np.isin(rig.joints,descendants)
         rows=[];rhs=[];intervals={};b=basis(clock,uniform)
@@ -139,12 +143,12 @@ def run(recipe_path,output):
             fit=linprog(np.ones(len(clock)),A_ub=matrix,b_ub=limits,bounds=bounds,method='highs',options=dict(primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9,threads=1))
         sparse.save_npz(output/'linear-system.npz',matrix)
         np.savez_compressed(output/'reference.npz',uniform_times_s=uniform,geometry_times_s=times,source_world=world,
-            rhs=limits,root_times_s=clock,root_axis_local=axis,affected_skin_joint_mask=affected,**{f'cap_{i}':c for i,c in enumerate(original.caps)},
+            rhs=limits,root_times_s=clock,root_axis_local=axis,affected_skin_joint_mask=affected,**source_affine,**{f'cap_{i}':c for i,c in enumerate(original.caps)},
             **{f'order_{k}_{n}':v for k,d in intervals.items() for n,v in d.items()})
         from importlib.metadata import version
         result=dict(dependencies={name:version(name) for name in ('numpy','scipy','threadpoolctl')},solver_method='scipy-highs-lp' if storage is None else storage['method'],storage_mode=recipe.get('storage_mode','continuous'),solver_threads=1,schema=SCHEMA,status='complete',at=now(),solver_success=bool(fit.success),solver_status=int(fit.status),solver_message=str(fit.message),
             scalar_controls=len(clock),linear_rows=matrix.shape[0],full_original_rate_rows=sum(c.size for c in original.caps),affected_skin_joints=int(affected.sum()),unaffected_skin_joints=int((~affected).sum()),source_sha256=sha256(path),
-            original_caps_preserved=True,contact_verified=False,engine_verified=False,sampled_conditions_pass=False,**FLAGS)
+            orientation_mode=orientation_mode,source_orientation=source_orientation,original_caps_preserved=True,contact_verified=False,engine_verified=False,sampled_conditions_pass=False,**FLAGS)
         if fit.success:
             value=fit.x;save(output/'controls.json',dict(world_y_offsets_m=value.tolist(),frozen_keys=recipe['frozen_keys']))
             result['linear_maximum_violation']=float(np.maximum(matrix@value-limits,0).max())
@@ -156,7 +160,9 @@ def run(recipe_path,output):
             decoded=RigAsset.load(candidate);after=NativeSupportSampler(decoded.document,decoded.binary,index)
             edit_times=np.unique(np.r_[uniform,times,clock]);rate_ids=np.searchsorted(edit_times,uniform)
             all_before=np.array([reader.sample(float(t)) for t in edit_times]);all_after=np.array([after.sample(float(t)) for t in edit_times])
-            actual=all_after[rate_ids];measured=measures(features(actual,rig.joints),original.dt)
+            actual=all_after[rate_ids]
+            candidate_payload,candidate_orientation,candidate_affine=orientation_features(actual,rig.joints,orientation_mode)
+            measured=measures(candidate_payload,original.dt)
             failures=[int(np.sum(v>c+original.tolerance)) for v,c in zip(measured,original.caps)]
             audit=compare(path,candidate,times,source_animation=recipe['source']['animation_index'],target_animation=index,floor_y_m=floor['floor_y_m'],tolerance_m=floor['tolerance_m'])
             require(np.array_equal(audit['source']['minimum_y_m'],heights),'Bound source floor observations did not reproduce');save(output/'floor-comparison.json',audit)
@@ -165,16 +171,17 @@ def run(recipe_path,output):
             for c in after.channels:
                 old=original_channels[(c[0],c[1])]
                 unchanged &= np.array_equal(c[2],old[2]) and (np.array_equal(c[3][recipe['frozen_keys']],old[3][recipe['frozen_keys']]) if c[:2]==channel[:2] else np.array_equal(c[3],old[3]))
-            np.savez_compressed(output/'decoded-observations.npz',edit_times_s=edit_times,source_world=all_before,candidate_world=all_after,**{f'metric_{i}':v for i,v in enumerate(measured)})
+            np.savez_compressed(output/'decoded-observations.npz',edit_times_s=edit_times,source_world=all_before,candidate_world=all_after,**candidate_affine,**{f'metric_{i}':v for i,v in enumerate(measured)})
             fixed_joints=np.asarray(rig.joints)[~affected]
             unaffected_preserved=np.array_equal(all_before[:,fixed_joints],all_after[:,fixed_joints])
-            result.update(output_animation_index=index,glb_sha256=sha256(candidate),rate_failures=failures,maximum_joint_displacement_m=displacement,unaffected_joint_world_transforms_preserved=unaffected_preserved,
+            linear_preserved=np.array_equal(all_before[:,:,:3,:3],all_after[:,:,:3,:3])
+            result.update(output_animation_index=index,glb_sha256=sha256(candidate),rate_failures=failures,maximum_joint_displacement_m=displacement,unaffected_joint_world_transforms_preserved=unaffected_preserved,all_linear_transforms_preserved=linear_preserved,candidate_orientation=candidate_orientation,
                 maximum_horizontal_joint_drift_m=horizontal,horizontal_preservation_tolerance_m=1e-7,minimum_vertical_joint_shift_m=float(differences[:,:,1].min()),
                 frozen_keys_and_other_tracks_preserved=bool(unchanged),floor_failed_samples=audit['target']['failed_samples'],peak_floor_depth_m=audit['target']['maximum_depth_m'],
-                sampled_conditions_pass=bool(unchanged and unaffected_preserved and displacement<=recipe['maximum_displacement_m'] and differences[:,:,1].min()>=0 and horizontal<=1e-7 and not any(failures) and audit['target']['sampled_floor_pass']))
+                sampled_conditions_pass=bool(unchanged and unaffected_preserved and linear_preserved and displacement<=recipe['maximum_displacement_m'] and differences[:,:,1].min()>=0 and horizontal<=1e-7 and not any(failures) and audit['target']['sampled_floor_pass']))
         else:result['scope_failure']='No proposal from this sampled vertical-root model; not a global motion infeasibility certificate.'
         require(all(sha256(p)==h for p,h in pins.items()) and all(sha256(ROOT/'scripts'/n)==h==sha256(archive/n) for n,h in methods.items()),'Original input or method changed')
-        result['scope']='Vertical root-only proposal, complete original four-bin rate and stored floor-clock readback. Geometry guidance uses a bound source floor receipt. No support, scene interaction, balance, continuous collision, engine, semantic or human approval.'
+        result['scope']='Vertical root-only proposal, complete original four-bin rates in the explicitly recorded orientation metric and stored floor-clock readback. Strict remains default; polar metrics do not waive old strict failures or normalize asset transforms. Geometry guidance uses a bound source floor receipt. No support, scene interaction, balance, continuous collision, engine, semantic or human approval.'
         result['artifacts']={str(p.relative_to(output)):sha256(p) for p in output.rglob('*') if p.is_file()};save(output/'result.json',result);return result
 
 

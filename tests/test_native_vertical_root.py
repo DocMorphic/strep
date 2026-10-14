@@ -145,7 +145,7 @@ def test_grid_coordinates_survive_exponent_crossings_and_keep_frozen_originals()
         assert np.array_equal(edited,edited.astype(np.float32).astype(float))
         assert np.all(offsets>=0) and np.all(offsets<=.22)
         assert np.array_equal(edited[2],values[2])
-    with pytest.raises(ValueError,match='unit root axis'):
+    with pytest.raises(ValueError,match='nonzero root axis'):
         coordinates(values,np.array([0.,.6,.8]),.22,[2])
 
 

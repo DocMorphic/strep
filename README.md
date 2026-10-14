@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Explicit affine-rig orientation metrics](docs/native-affine-angular-metrics-v1.md): preserve stored transforms while measuring orientation separately from stretch; strict remains the default. All 50 targeted checks pass. Complete replay verifies three floor-passing exports, but their motion-rate failures keep them rejected; corrected Float32 grid trials produce no candidate.
+
 - [Bounded native root correction](docs/native-vertical-root-v1.md): unaffected skin ancestors stay fixed while all original motion caps remain checked. All 34 correction and 40 launcher/read-import checks pass. The broader study retains root-budget, rig-transform and solver failures; no new animation is accepted. The get-up floor-only proposal remains rejected by 53 motion-rate conditions.
 
 - [Multi-action native transfer study](docs/native-transfer-generalization-v1.md): all 24 matched transfers pass fidelity; 17 pass sampled floor clearance. The corrected crawl clears all three target assets, while get-up and roll failures remain visible. No contact, engine or human-quality approval is inferred.
