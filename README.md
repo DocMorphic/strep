@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Studio metadata memory reduction](docs/studio-server-memory-v1.md): removes unnecessary Torch loading from saved-study polling, cutting the measured metadata process from 515 to 66 MiB. All 44 targeted checks pass with the Studio host kept open; full inference memory remains separately unverified.
+
 - [Verified correction continuation in Studio](docs/studio-key-continuation-v1.md): select registered saved controls, submit guarded further steps and download the starting clip, proposal and full replay. Six real exports replay; remaining 41 rate/17 floor failures keep the proposal rejected. UI/worker memory limits remain explicit.
 
 - [Frozen correction workers](docs/frozen-key-continuation-v1.md): preserve recorded methods across application updates while sharing the project worker lock. Seventeen checks pass; complete frozen replay reproduces all five character exports and their 41/17 rejection. The separate Studio panel now uses these frozen methods.

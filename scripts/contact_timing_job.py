@@ -1,11 +1,7 @@
 """Read-only stationary-pin timing checks for immutable Studio source snapshots."""
 import copy
 import shutil
-import numpy as np
 from strep import ROOT,read,save,sha256
-from contact_spec import validate
-from support_contact import regions
-from build_soma_preview import ASSET
 
 
 def validate_options(options,spec,frames):
@@ -26,6 +22,7 @@ def validate_options(options,spec,frames):
 
 
 def verify_source(path,motion,skin):
+    import numpy as np
     from rig_asset import RigAsset
     from rig_clip_import import AnimationSampler
     from gltf_tools import accessor
@@ -53,6 +50,10 @@ def verify_source(path,motion,skin):
 
 
 def prepare(source,spec,options,folder):
+    import numpy as np
+    from contact_spec import validate
+    from support_contact import regions
+    from build_soma_preview import ASSET
     source,folder=source.resolve(),folder.resolve()
     motion=dict(np.load(source/'motion.npz'));frames=len(motion['root_positions'])
     validate(spec,frames,regions(dict(np.load(ASSET))));validate_options(options,spec,frames)
@@ -78,7 +79,11 @@ def prepare(source,spec,options,folder):
 
 
 def run(folder):
+    import numpy as np
     import torch
+    from contact_spec import validate
+    from support_contact import regions
+    from build_soma_preview import ASSET
     from floor_contact import Surface
     from inspect_motion import skeleton_metadata
     from export_point_rate_objective import ExportPointRateObjective
