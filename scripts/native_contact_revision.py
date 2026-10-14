@@ -7,7 +7,11 @@ DRAFT_FIELDS=('schema','scene','geometry','object_edit')
 
 
 def draft_fields(value):
-    return DRAFT_FIELDS+('rotation_speed_limits',) if isinstance(value,dict) and value.get('schema')=='strep-studio-native-scene-v2' else DRAFT_FIELDS
+    result=DRAFT_FIELDS+('rotation_speed_limits',) if isinstance(value,dict) and value.get('schema')=='strep-studio-native-scene-v2' else DRAFT_FIELDS
+    if isinstance(value,dict) and 'skin_weight_export' in value:
+        from native_scene_weight_export import selection
+        selection(value);result+=('skin_weight_export',)
+    return result
 
 
 def patch(value,actor):

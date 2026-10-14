@@ -35,6 +35,12 @@ const api=async url=>{
 };
 const editor=createNativeSceneEditor({document:doc,api,post:async(url,payload)=>{assert.equal(url,'/api/native-scene-assets');posted=structuredClone(payload);jobs={jobs:[{id:'job1'}]};return {id:'job1'};},getContext:()=>context,getPatch:()=>structuredClone(patch),download:value=>saved=value});
 assert.equal(editor.snapshot().object_edit,null);assert.deepEqual(editor.snapshot().geometry.planes,{});
+assert(!('skin_weight_export' in editor.snapshot()));
+el('WeightExport').checked=true;await el('WeightExport').onchange();assert.equal(editor.snapshot().skin_weight_export,'godot-u16-original-fidelity-v1');
+const weightDraft=editor.snapshot();editor.bind(weightDraft);assert.equal(el('WeightExport').checked,true);
+await el('Save').onclick();assert.equal(saved.skin_weight_export,'godot-u16-original-fidelity-v1');
+const invalidWeight=structuredClone(weightDraft);invalidWeight.skin_weight_export=true;assert.throws(()=>editor.bind(invalidWeight));
+el('WeightExport').checked=false;await el('WeightExport').onchange();assert(!('skin_weight_export' in editor.snapshot()));
 await el('AddActor').onclick();assert.equal(editor.snapshot().scene.duration_s,2);
 assert.deepEqual(editor.snapshot().geometry.clock.times_s,[0,2]);
 el('ActorName').value='B';el('ActorPosition').value='2, 0, 0';metadata.duration_s=3;await el('AddActor').onclick();assert.match(el('Status').textContent,/different durations/);assert.equal(Object.keys(editor.snapshot().scene.actors).length,1);
@@ -70,4 +76,7 @@ review={status:'complete',sampled_conditions_pass:false,rotation_speed_requested
 await el('Review').onclick();assert.match(el('Results').children[0].textContent,/turning-speed checks: fail/);
 el('SpeedLimits').children[0].children[0].onclick();assert.equal(editor.snapshot().schema,'strep-studio-native-scene-v1');assert(!('rotation_speed_limits' in editor.snapshot()));
 el('Actors').children[0].children[0].onclick();assert(!editor.snapshot().scene.actors.A);
+el('WeightExport').checked=true;await el('WeightExport').onchange();await el('Build').onclick();assert.equal(posted.skin_weight_export,'godot-u16-original-fidelity-v1');
+review={status:'complete',sampled_conditions_pass:false,source_contacts_pass:true,samples:120,skin_weight_export:'godot-u16-original-fidelity-v1',original_reference_fidelity_pass:false,downloads:[]};
+await el('Review').onclick();assert.match(el('Results').children[0].textContent,/Original mesh fidelity: fail/);
 console.log('Native scene draft, patch, source selection, bounds and saved-result workflows passed offline.');

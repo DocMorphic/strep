@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Studio and game export integration](docs/studio-weight-export-v1.md): explicit weight-only exports retain originals and fidelity receipts through scene/game downloads. Real Godot checks and complete replay pass at 2,017 times; targeted and compatibility batches pass. Raw floor failures and human/runtime validation remain open.
+
 - [Explicit conditioned authoring](docs/conditioned-authoring-v1.md): 71 checks pass; the corrected crawl passes the new separate-export authoring path and complete saved-observation replay. Original assets and failed decisions are retained. Studio and game-package integration remain next.
 
 - [Original-reference engine fidelity](docs/conditioned-engine-fidelity-v1.md): separate weight-conditioned exports pass skin fidelity for seven development actions and sampled import for the corrected crawl. Fifty-five related checks pass; four raw floor failures remain.

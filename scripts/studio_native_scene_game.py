@@ -42,7 +42,7 @@ def source(job):
     contacts=Path(result['artifacts']['active_contacts']).resolve()
     require(contacts.is_relative_to(folder),'Source contacts escape scene job')
     spec=read(contacts)
-    policy=folder/'authoring/objects-common/common-policy.json' if spec['objects'] else folder/'geometry-policy.json'
+    policy=folder/'authoring/objects-common/common-policy.json' if spec['objects'] else Path(result['artifacts']['active_policy']).resolve()
     scene=SceneContacts(spec,contacts.parent);request=read(folder/'authoring/actors-engine/request.json')
     times=np.asarray(request['sample_times_s'],dtype='<f8');check_clock_wire(request['sample_clock'],times)
     receipt=read(folder/'authoring/actors-engine/raw-engine-receipt.json')
@@ -78,10 +78,14 @@ def source_method_names(scene,folder):
     if prepared.get('correction_lineage') is not None:
         record=read(Path(folder)/'correction-lineage/record.json')
         history=any('rotation_speed_policy' in job for job in record['jobs'].values())
-    return method_names(scene,corrections=prepared.get('correction_lineage') is not None,
+    result=method_names(scene,corrections=prepared.get('correction_lineage') is not None,
         transitions=prepared.get('transition_lineage') is not None,
         transition_corrections=prepared.get('transition_correction_lineage') is not None,
         speed_corrections=history,speed_export=prepared.get('rotation_speed_requested',False))
+    if prepared.get('skin_weight_export'):
+        from native_scene_weight_export import methods
+        result=tuple(dict.fromkeys(result+methods()))
+    return result
 
 
 def measured_contacts(folder, scene):
@@ -122,6 +126,8 @@ def prepare(payload,folder):
             source_completion_sha256=sha256(source_folder/'completion.json'),source_assets_sha256=sha256(folder/'source-assets.zip'),
             engine_path=str(engine),engine_sha256=sha256(engine),implementation_sha256=methods,
             original_selected=True,quality_approved=False,training_admitted=False,release_approved=False)
+        mode=read(source_folder/'prepared.json').get('skin_weight_export')
+        if mode is not None:prepared['skin_weight_export']=mode
         save(folder/'prepared.json',prepared);frozen(folder)
         save(folder/'pipeline.json',dict(status='starting',original_selected=True,quality_approved=False));return prepared
     except Exception as exc:
@@ -134,6 +140,7 @@ def frozen(folder,*,current_methods=True):
     require(p['schema']=='strep-native-scene-game-prepared-v1' and p['request_sha256']==sha256(folder/'request.json')
         and p['original_selected'] is True and all(p[k] is False for k in ('quality_approved','training_admitted','release_approved')),'Game package preparation changed')
     values=validate_request(payload);source_folder=values[0]
+    require(p.get('skin_weight_export')==read(source_folder/'prepared.json').get('skin_weight_export'),'Game package weight export selection changed')
     require(sha256(source_folder/'completion.json')==p['source_completion_sha256'] and
         sha256(source_folder/'assets.zip')==sha256(folder/'source-assets.zip')==p['source_assets_sha256'],'Game package source changed')
     expected_methods=set(source_method_names(values[3],source_folder))
@@ -212,6 +219,8 @@ def combine_package(folder,tracks,event_result,source_result):
             root_samples_pass=tracks['all_root_samples_pass'],event_helper_dispatch_verified=event_result['gameplay_event_dispatch_verified'],
             animation_runtime_playback_verified=False,original_selected=True,quality_approved=False,physics_verified=False,release_approved=False,
             scope='Original scene assets plus complete root references, declared contact intent, explicit gameplay timing and tested finite Godot dispatcher. Apply no second root track to clips with embedded motion; no automatic physical interaction or human-quality approval.')
+        if 'skin_weight_export' in original:
+            manifest.update(skin_weight_export=original['skin_weight_export'],original_reference_fidelity_pass=original['original_reference_fidelity_pass'])
         save(folder/'package.json',manifest);output.write(folder/'package.json','package.json')
     with zipfile.ZipFile(folder/'game-assets.zip') as stored:
         require(set(stored.namelist())==set(receipts)|{'package.json'},'Complete game ZIP population required')
@@ -255,6 +264,8 @@ def run(folder):
             event_helper_dispatch_verified=events['gameplay_event_dispatch_verified'],original_selected=True,studio_selection_changed=False,
             quality_approved=False,physics_verified=False,animation_runtime_playback_verified=False,training_admitted=False,release_approved=False,
             files_sha256={n:sha256(folder/n) for n in DOWNLOADS if n!='result.json'})
+        if p.get('skin_weight_export'):
+            result.update(skin_weight_export=p['skin_weight_export'],original_reference_fidelity_pass=manifest['original_reference_fidelity_pass'])
         save(folder/'result.json',result);save(folder/'completion.json',dict(result_sha256=sha256(folder/'result.json'),package_sha256=sha256(folder/'package.json')))
         save(folder/'pipeline.json',dict(status='complete',finished_at=now(),original_selected=True,quality_approved=False));return result
     except Exception as exc:
@@ -317,6 +328,12 @@ def manifest(job):
         and all(package[k] is False for k in ('animation_runtime_playback_verified','quality_approved','physics_verified','release_approved')),'Game package application/approval changed')
     require(package['sampled_scene_conditions_pass'] is r['scene_sampled_conditions_pass'] and package['root_samples_pass'] is r['root_samples_pass']
         and package['event_helper_dispatch_verified'] is r['event_helper_dispatch_verified'],'Game package measured decisions differ')
+    if p.get('skin_weight_export'):
+        require(package['skin_weight_export']==r['skin_weight_export']==p['skin_weight_export']
+            and package['original_reference_fidelity_pass'] is r['original_reference_fidelity_pass'] is values[1]['original_reference_fidelity_pass'],
+            'Game original-reference fidelity receipt differs')
+        data.update(skin_weight_export=r['skin_weight_export'],original_reference_fidelity_pass=r['original_reference_fidelity_pass'])
+    else:require('skin_weight_export' not in package and 'skin_weight_export' not in r,'Unexpected game weight export')
     with zipfile.ZipFile(folder/'game-assets.zip') as archive:
         require(archive.read('package.json')==(folder/'package.json').read_bytes(),'Game package manifest differs from ZIP')
     for name in DOWNLOADS:data['downloads'].append(dict(label=name,url=f'/files/{NAMESPACE}/{job}/{name}',sha256=sha256(folder/name)))

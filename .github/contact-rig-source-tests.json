@@ -48,9 +48,12 @@
     "tests/test_native_translation_interval_rank.py",
     "tests/test_native_asset_developer_review.py",
     "tests/test_conditioned_skin_fidelity.py",
-    "tests/test_native_conditioned_authoring.py"
+    "tests/test_native_conditioned_authoring.py",
+    "tests/test_studio_weight_export.py"
   ],
   "node_tests": [
-    "tests/test_native_scene_fit_editor.mjs"
+    "tests/test_native_scene_fit_editor.mjs",
+    "tests/test_native_scene_editor.mjs",
+    "tests/test_native_scene_game_editor.mjs"
   ]
 }

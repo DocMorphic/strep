@@ -86,6 +86,9 @@ def method_names(payload,*,corrections=None):
     if payload['schema']=='strep-studio-native-scene-v2':
         from native_scene_export_speed import methods as speed_export_methods
         result=tuple(dict.fromkeys(result+speed_export_methods()))
+    if 'skin_weight_export' in payload:
+        from native_scene_weight_export import selection,methods
+        selection(payload);result=tuple(dict.fromkeys(result+methods()))
     if corrections is None:
         from native_correction_lineage import has_origins
         corrections=has_origins(payload)
@@ -172,7 +175,8 @@ def prepare(payload,folder,resolver):
             from native_scene_export_speed import policy as export_policy
             speed_path=folder/'rotation-speed-policy.json';save(speed_path,export_policy(payload,digest))
         plan(folder/'contacts.json',folder/'geometry-policy.json',engine,folder/'recipe.json',edit_path,
-            **({'rotation_speed_policy':speed_path} if speed_path is not None else {}))
+            **({'rotation_speed_policy':speed_path} if speed_path is not None else {}),
+            **({'skin_weight_export':payload['skin_weight_export']} if 'skin_weight_export' in payload else {}))
         names=['draft.json','contacts.json','geometry-policy.json','recipe.json']+(['object-edit.json'] if edit is not None else [])
         if speed_path is not None:names.append('rotation-speed-policy.json')
         prepared=dict(schema='strep-studio-native-scene-prepared-v1',sources=sources,
@@ -182,6 +186,7 @@ def prepare(payload,folder,resolver):
             engine_path=str(engine),engine_sha256=sha256(engine),original_selected=True,quality_approved=False,
             training_admitted=False,release_approved=False,at=now())
         if speed_path is not None:prepared['rotation_speed_requested']=True
+        if 'skin_weight_export' in payload:prepared['skin_weight_export']=payload['skin_weight_export']
         save(folder/'prepared.json',prepared);frozen(folder)
         save(folder/'pipeline.json',dict(status='starting',original_selected=True,quality_approved=False));return prepared
     except Exception as exc:
@@ -194,6 +199,7 @@ def frozen(folder,*,current_methods=True):
     require(p['schema']=='strep-studio-native-scene-prepared-v1' and p['original_selected'] is True
         and all(p[k] is False for k in ('quality_approved','training_admitted','release_approved')),'Unapproved source scene required')
     draft=read(folder/'draft.json')
+    require(p.get('skin_weight_export')==draft.get('skin_weight_export'),'Scene weight export selection changed')
     lineage=p.get('correction_lineage')
     from native_correction_lineage import has_origins,verify
     if current_methods:require((lineage is not None)==has_origins(draft),'Scene correction lineage selection changed')
@@ -246,13 +252,16 @@ def frozen(folder,*,current_methods=True):
         and paths['engine']==Path(p['engine_path']) and sha256(paths['engine'])==p['engine_sha256'],'Scene recipe selects different inputs')
     require(paths.get('object_edit')==(folder/'object-edit.json' if edit is not None else None),'Scene edit selection changed')
     require(paths.get('rotation_speed_policy')==(folder/'rotation-speed-policy.json' if speed_requested else None),'Scene export-speed recipe selection changed')
+    require(value.get('skin_weight_export')==draft.get('skin_weight_export'),'Scene weight export recipe selection changed')
     return p
 
 
 def download_names(prepared):
     actors_only='verify_native_actor_scene_engine.py' in prepared['implementation_sha256']
     speed={'exports/rotation-speed-policy.json','authoring/rotation-speed-engine/result.json','authoring/rotation-speed-replay/result.json'} if prepared.get('rotation_speed_requested',False) else set()
-    return speed | ({'transition-correction-lineage/record.json'} if prepared.get('transition_correction_lineage') is not None else set()) | ({'transition-lineage/record.json'} if prepared.get('transition_lineage') is not None else set()) | ({'correction-lineage/record.json'} if prepared.get('correction_lineage') is not None else set()) | ({'exports/contact-revision.json'} if prepared.get('contact_revision_requested',False) else set()) | {f'input/actor-{i}.glb' for i in range(len(prepared['sources']))} | {
+    weights=({'authoring/original-fidelity/result.json','exports/skin-weight-export.json'} |
+        {f'authoring/skin-{name}/proposal.glb' for name in prepared['sources']}) if prepared.get('skin_weight_export') else set()
+    return weights | speed | ({'transition-correction-lineage/record.json'} if prepared.get('transition_correction_lineage') is not None else set()) | ({'transition-lineage/record.json'} if prepared.get('transition_lineage') is not None else set()) | ({'correction-lineage/record.json'} if prepared.get('correction_lineage') is not None else set()) | ({'exports/contact-revision.json'} if prepared.get('contact_revision_requested',False) else set()) | {f'input/actor-{i}.glb' for i in range(len(prepared['sources']))} | {
         'authoring/result.json','authoring/replay/result.json','assets.zip'} | ({'authoring/actors-engine/geometry.json'} if actors_only else {
         'authoring/objects-common/objects.glb','authoring/objects-engine/native-animation.res','authoring/combined-engine/geometry.json'}) | {
         f'authoring/actors-engine/{name}-animation.res' for name in prepared['sources']}
@@ -264,13 +273,22 @@ def package(folder,prepared,result):
     active=Path(result['artifacts']['active_contacts']).resolve()
     require(active.is_relative_to(folder/'authoring') or active==folder/'contacts.json','Scene packaging source escapes job')
     scene=read(active)
+    weight_requested=bool(prepared.get('skin_weight_export'));derivatives={}
     for i,(name,source) in enumerate(prepared['sources'].items()):
-        require(scene['actors'][name]['sha256']==source['sha256'],'Scene package changes actor bytes')
+        selected=folder/f'authoring/skin-{name}/proposal.glb' if weight_requested else folder/source['snapshot']
+        require(scene['actors'][name]['sha256']==sha256(selected),'Scene package changes selected actor bytes')
+        if weight_requested:require(Path(scene['actors'][name]['glb']).resolve()==selected.resolve(),'Scene package selects another weight derivative')
+        derivatives[name]=scene['actors'][name]['sha256']
         scene['actors'][name]['glb']=f'actors/{i}.glb'
     save(exports/'scene.json',scene)
-    policy=read(folder/'authoring/objects-common/common-policy.json' if scene['objects'] else folder/'geometry-policy.json');policy['contacts_sha256']=sha256(exports/'scene.json')
+    policy=read(folder/'authoring/objects-common/common-policy.json' if scene['objects'] else Path(result['artifacts']['active_policy']));policy['contacts_sha256']=sha256(exports/'scene.json')
     save(exports/'geometry-policy.json',policy)
     files={'scene.json':exports/'scene.json','geometry-policy.json':exports/'geometry-policy.json'}
+    if weight_requested:
+        from native_scene_weight_export import portable_receipt
+        proof=read(folder/'authoring/original-fidelity/result.json')
+        receipt=portable_receipt(proof,{n:s['sha256'] for n,s in prepared['sources'].items()},derivatives,sha256(exports/'scene.json'))
+        save(exports/'skin-weight-export.json',receipt);files['skin-weight-export.json']=exports/'skin-weight-export.json'
     if prepared.get('rotation_speed_requested',False):
         from native_engine_rotation_speed import verify as verify_speed
         raw=Path(result['artifacts']['active_contacts']);speed_policy=Path(result['artifacts']['rotation_speed_policy'])
@@ -290,7 +308,8 @@ def package(folder,prepared,result):
         files.update({'objects.glb':folder/'authoring/objects-common/objects.glb',
             'animations/objects.res':folder/'authoring/objects-engine/native-animation.res'})
     for i,(name,source) in enumerate(prepared['sources'].items()):
-        files[f'actors/{i}.glb']=folder/source['snapshot']
+        files[f'actors/{i}.glb']=folder/f'authoring/skin-{name}/proposal.glb' if weight_requested else folder/source['snapshot']
+        if weight_requested:files[f'originals/actors/{i}.glb']=folder/source['snapshot']
         files[f'animations/{name}.res']=folder/f'authoring/actors-engine/{name}-animation.res'
     if 'contact_revision' in read(folder/'draft.json'):
         from native_contact_revision import portable_record
@@ -315,7 +334,9 @@ def package(folder,prepared,result):
         selected_animations={name:a['animation_index'] for name,a in scene['actors'].items()},
         source_result_sha256=sha256(folder/'authoring/result.json'),sampled_conditions_pass=result['sampled_conditions_pass'],
         original_selected=True,quality_approved=False,release_approved=False,root_event_tracks_included=False,
-        scope='Unchanged supplied character clips, sampled native character/object resources and declared scene/contact geometry. Engine/runtime/human requirements remain separate; character licenses remain applicable.'))
+        **(dict(skin_weight_export=prepared['skin_weight_export'],original_reference_fidelity_pass=result['original_reference_fidelity_pass']) if weight_requested else {}),
+        scope=('Explicit weight-only actor derivatives plus immutable originals and original-reference fidelity receipt. ' if weight_requested else 'Unchanged supplied character clips. ')+
+            'Sampled native character/object resources and declared scene/contact geometry. Engine/runtime/human requirements remain separate; character licenses remain applicable.'))
     files['package.json']=exports/'package.json'
     with zipfile.ZipFile(folder/'assets.zip','x',compression=zipfile.ZIP_DEFLATED,allowZip64=True) as archive:
         for name,path in files.items():archive.write(path,name)
@@ -341,7 +362,7 @@ def run(folder):
         prepared=frozen(folder);save(folder/'pipeline.json',dict(status='processing',original_selected=True,quality_approved=False))
         result=author(folder/'recipe.json',folder/'authoring');frozen(folder)
         require(read(folder/'authoring/result.json')==result and result['status']=='complete','Terminal saved scene authoring required')
-        outputs={f'input/actor-{i}.glb':dict(label=f'Character clip: {name}',sha256=s['sha256'])
+        outputs={f'input/actor-{i}.glb':dict(label=(f'Original character: {name}' if prepared.get('skin_weight_export') else f'Character clip: {name}'),sha256=s['sha256'])
             for i,(name,s) in enumerate(prepared['sources'].items())}
         actor_only=not read(folder/'contacts.json')['objects']
         downloads=[('authoring/result.json','Measured result'),('authoring/replay/result.json','Replay verification')]
@@ -351,7 +372,13 @@ def run(folder):
             outputs[relative]=dict(label=label,sha256=sha256(folder/relative))
         for name in prepared['sources']:
             relative=f'authoring/actors-engine/{name}-animation.res';outputs[relative]=dict(label=f'Godot character animation: {name}',sha256=sha256(folder/relative))
+        if prepared.get('skin_weight_export'):
+            for name in prepared['sources']:
+                relative=f'authoring/skin-{name}/proposal.glb';outputs[relative]=dict(label=f'Weight-conditioned character: {name}',sha256=sha256(folder/relative))
+            relative='authoring/original-fidelity/result.json';outputs[relative]=dict(label='Original mesh fidelity measurements',sha256=sha256(folder/relative))
         outputs['assets.zip']=dict(label='Scene asset package',sha256=package(folder,prepared,result))
+        if prepared.get('skin_weight_export'):
+            relative='exports/skin-weight-export.json';outputs[relative]=dict(label='Original and conditioned export receipt',sha256=sha256(folder/relative))
         if prepared.get('rotation_speed_requested',False):
             for relative,label in [('exports/rotation-speed-policy.json','Export turning-speed limits'),
                 ('authoring/rotation-speed-engine/result.json','Imported export-speed measurements'),
@@ -395,7 +422,7 @@ def manifest(job):
         'gpu_render_checked','physics_verified','real_time_playback_verified','human_review_submitted')),'Scene authoring approval changed')
     scene=SceneContacts(read(folder/'contacts.json'),folder)
     require(r['implementation_sha256']=={n:prepared['implementation_sha256'][n] for n in author_methods(scene,
-        speed_policy=prepared.get('rotation_speed_requested',False))},'Scene authoring methods changed')
+        speed_policy=prepared.get('rotation_speed_requested',False),weight_export=bool(prepared.get('skin_weight_export')))},'Scene authoring methods changed')
     require(r['recipe_sha256']==sha256(folder/'recipe.json') and r['object_edit_requested']==(read(folder/'draft.json')['object_edit'] is not None),'Scene authoring input selection changed')
     for path,digest in {**r['inputs_sha256'],**r['derived_inputs_sha256']}.items():
         require(sha256(path)==digest,'Scene authoring input changed')
@@ -406,6 +433,11 @@ def manifest(job):
     if prepared.get('rotation_speed_requested',False):
         index=expected_stages.index('actors-engine')+1
         expected_stages[index:index]=['rotation-speed-engine','rotation-speed-replay']
+    weight_requested=bool(prepared.get('skin_weight_export'))
+    if weight_requested:
+        index=expected_stages.index('objects-source' if scene.objects else 'actors-engine')
+        expected_stages[index:index]=['skin-'+name for name in scene.actors]
+        expected_stages.insert(expected_stages.index('actors-engine')+1,'original-fidelity')
     require([s['id'] for s in r['stages']]==expected_stages,'Complete ordered scene stages required')
     for stage in r['stages']:
         require(stage['id'] in expected_stages
@@ -414,7 +446,7 @@ def manifest(job):
         for relative,digest in record.get('files_sha256',{}).items():
             path=(stage_folder/relative).resolve();require(path.is_relative_to(stage_folder)
                 and sha256(path)==digest,'Scene producer artifact changed')
-        for name,digest in record.get('implementation_sha256',{}).items():
+        for name,digest in ({} if stage['id']=='original-fidelity' else record.get('implementation_sha256',{})).items():
             method_folder=folder/'authoring/objects-common' if stage['id']=='objects-engine' else stage_folder
             require(name in prepared['implementation_sha256'] and digest==prepared['implementation_sha256'][name]
                 and sha256(method_folder/'implementation'/name)==digest,'Scene producer method changed')
@@ -466,8 +498,24 @@ def manifest(job):
         data.update(rotation_speed_requested=True,rotation_speed_conditions_pass=measured['rotation_speed_conditions_pass'],
             rotation_speed_sampled_conditions_pass=measured['all_sampled_conditions_pass'])
     else:require('rotation_speed_requested' not in r,'Unexpected export-speed conditions')
+    if weight_requested:
+        proof=read(folder/'authoring/original-fidelity/result.json')
+        require(r['skin_weight_export']==prepared['skin_weight_export'] and r['artifacts']['original_fidelity']=='original-fidelity'
+            and sha256(folder/'authoring/original-fidelity/result.json')==r['original_fidelity_sha256']
+            and r['original_reference_fidelity_pass'] is proof['all_original_reference_fidelity_pass'], 'Scene original-reference decision changed')
+        require(set(proof['actors'])==set(scene.actors) and proof['original_actor_bindings']==r['original_actor_bindings'],'Complete original fidelity actor bindings required')
+        for name,source in prepared['sources'].items():
+            require(r['original_actor_bindings'][name]==dict(path=str((folder/source['snapshot']).resolve()),sha256=source['sha256']),'Original fidelity reference changed')
+            require(proof['actors'][name]['samples']==r['samples'] and proof['actors'][name]['tolerance_m']==1e-4,'Unchanged fidelity clock/tolerance required')
+        require(sha256(folder/'authoring/original-fidelity/observations.npz')==proof['observations_sha256']
+            and sha256(folder/'authoring/original-fidelity/auditor.py')==prepared['implementation_sha256']['audit_conditioned_skin_fidelity.py'],'Original fidelity artifact changed')
+        for path,digest in proof['source_bindings_sha256'].items():require(sha256(path)==digest,'Original fidelity producer changed')
+        require(all(proof['implementation_sha256'].get(n)==h for n,h in r['implementation_sha256'].items() if n.endswith('.py')),'Original fidelity methods differ')
+        data.update(skin_weight_export=prepared['skin_weight_export'],original_reference_fidelity_pass=r['original_reference_fidelity_pass'])
+    else:require('skin_weight_export' not in r,'Unexpected weight export')
     passed=bool(combined['all_sampled_conditions_pass'] and (r['object_edit_conditions_pass'] is None or r['object_edit_conditions_pass'])
-        and (not speed_requested or r['rotation_speed_sampled_conditions_pass']))
+        and (not speed_requested or r['rotation_speed_sampled_conditions_pass'])
+        and (not weight_requested or r['original_reference_fidelity_pass']))
     require(r['sampled_conditions_pass'] is passed,'Scene sampled decision differs')
     require(set(c['downloads'])==download_names(prepared),'Complete fixed scene download population required')
     for relative,entry in c['downloads'].items():

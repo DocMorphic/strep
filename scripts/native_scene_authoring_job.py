@@ -5,6 +5,7 @@ whitelist. This is not prompt generation or automatic physical interaction.
 Optional object edits require the existing explicit two-grip bounded contract.
 """
 import argparse
+import copy
 import re
 import shutil
 from pathlib import Path
@@ -22,10 +23,13 @@ METHODS=tuple(dict.fromkeys(FIT_METHODS+COMBINED_METHODS+('verify_native_object_
 DIGEST=re.compile(r'[0-9a-f]{64}')
 
 
-def method_names(scene,*,speed_policy=False):
+def method_names(scene,*,speed_policy=False,weight_export=False):
     result=METHODS if scene.objects else METHODS+('verify_native_actor_scene_engine.py',)
     if speed_policy:
         from native_scene_export_speed import methods
+        result=tuple(dict.fromkeys(result+methods()))
+    if weight_export:
+        from native_scene_weight_export import methods
         result=tuple(dict.fromkeys(result+methods()))
     return result
 
@@ -40,14 +44,18 @@ def binding(path):
 
 def validated(recipe_path):
     recipe_path=Path(recipe_path).resolve(); value=read(recipe_path)
-    speed=value.get('schema')=='strep-native-scene-authoring-job-v2'
+    weight=value.get('schema')=='strep-native-scene-authoring-job-v3'
+    speed=value.get('schema')=='strep-native-scene-authoring-job-v2' or weight
     names=('contacts','geometry_policy','engine','object_edit')+(('rotation_speed_policy',) if speed else ())
-    fields(value,('schema',)+names,'native scene job')
-    require(value['schema'] in ('strep-native-scene-authoring-job-v1','strep-native-scene-authoring-job-v2'),'Unknown native scene job schema')
+    fields(value,('schema',)+names+(('skin_weight_export',) if weight else ()),'native scene job')
+    require(value['schema'] in ('strep-native-scene-authoring-job-v1','strep-native-scene-authoring-job-v2','strep-native-scene-authoring-job-v3'),'Unknown native scene job schema')
+    if weight:
+        from native_scene_weight_export import selection
+        selection(value)
     paths={}; receipts={str(recipe_path):sha256(recipe_path)}
     for name in names:
         entry=value[name]
-        if name=='object_edit' and entry is None: continue
+        if (name=='object_edit' or weight and name=='rotation_speed_policy') and entry is None: continue
         fields(entry,('path','sha256'),'job input binding')
         require(isinstance(entry['path'],str) and bool(entry['path'].strip()),'Input path required')
         require(isinstance(entry['sha256'],str) and DIGEST.fullmatch(entry['sha256']),'Input SHA256 required')
@@ -58,19 +66,23 @@ def validated(recipe_path):
     require(bool(scene.objects) or 'object_edit' not in paths,'Object edits require a declared object')
     policy_for(read(paths['geometry_policy']),scene,sha256(paths['contacts']))
     if 'object_edit' in paths:request_for(scene,read(paths['object_edit']),sha256(paths['contacts']))
-    if speed:
+    if 'rotation_speed_policy' in paths:
         from native_engine_rotation_speed import plan as speed_plan
         speed_plan(scene,read(paths['rotation_speed_policy']),sha256(paths['contacts']))
     receipts.update(scene.inputs)
     return value,paths,scene,receipts
 
 
-def plan(contacts,policy,engine,output,object_edit=None,*,rotation_speed_policy=None):
+def plan(contacts,policy,engine,output,object_edit=None,*,rotation_speed_policy=None,skin_weight_export=None):
     output=Path(output).resolve(); require(not output.exists(),'Fresh recipe path required')
     value=dict(schema='strep-native-scene-authoring-job-v1', contacts=binding(contacts),
         geometry_policy=binding(policy),engine=binding(engine),object_edit=None if object_edit is None else binding(object_edit))
     if rotation_speed_policy is not None:
         value.update(schema='strep-native-scene-authoring-job-v2',rotation_speed_policy=binding(rotation_speed_policy))
+    if skin_weight_export is not None:
+        from native_scene_weight_export import selection
+        value.update(schema='strep-native-scene-authoring-job-v3',skin_weight_export=skin_weight_export)
+        value.setdefault('rotation_speed_policy',None);selection(value)
     # Validate in memory through the same checks before publishing a recipe.
     scene=SceneContacts(read(contacts),Path(contacts).resolve().parent)
     require(bool(scene.objects) or object_edit is None,'Object edits require a declared object')
@@ -89,7 +101,8 @@ def run(recipe_path,output):
     recipe,paths,scene,receipts=validated(recipe_path)
     require(not any(Path(p).is_relative_to(output) for p in receipts),'Job output contains its own input')
     speed_requested='rotation_speed_policy' in paths
-    methods={n:sha256(ROOT/'scripts'/n) for n in method_names(scene,speed_policy=speed_requested)}
+    weight_requested='skin_weight_export' in recipe
+    methods={n:sha256(ROOT/'scripts'/n) for n in method_names(scene,speed_policy=speed_requested,weight_export=weight_requested)}
     output.mkdir(parents=True); archive=output/'implementation'; snapshots=output/'input'; stages=[]; copies={}; derived={}
     save(output/'pipeline.json',dict(at=now(),status='processing',stage='input-snapshots',original_selected=True))
     try:
@@ -136,6 +149,27 @@ def run(recipe_path,output):
             contacts,policy=output/'object-edit/proposal-contacts.json',output/'object-edit/geometry-policy.json'
             require(sha256(contacts)==fit['proposal_contacts_sha256'],'Object proposal differs from fit evidence')
             derived.update({str(p):sha256(p) for p in (contacts,policy)})
+        originals=None;weight_proof=None
+        if weight_requested:
+            from native_skin_export import run as skin_export
+            spec=copy.deepcopy(read(contacts));originals={};original_spec=read(paths['contacts'])
+            require(set(spec['actors'])==set(original_spec['actors']),'Weight export must preserve original actor population')
+            for name,entry in spec['actors'].items():
+                source=(contacts.parent/entry['glb']).resolve()
+                original=original_spec['actors'][name]
+                originals[name]=binding((paths['contacts'].parent/original['glb']).resolve())
+                require(sha256(source)==originals[name]['sha256'] and entry['animation_index']==original['animation_index']
+                    and entry['placement']==original['placement'],'Weight export must preserve original actor selection and placement')
+                exported=execute('skin-'+name,skin_export,source,output/('skin-'+name))
+                original=output/('skin-'+name)/'original.glb';proposal=output/('skin-'+name)/'proposal.glb'
+                require(sha256(original)==entry['sha256'] and sha256(proposal)==exported['proposal_sha256'],'Weight export actor binding changed')
+                derived.update({str(p):sha256(p) for p in (original,proposal)})
+                entry.update(glb=str(proposal),sha256=sha256(proposal))
+            active=output/'active-weight-contacts.json';save(active,spec)
+            geometry=read(policy);geometry['contacts_sha256']=sha256(active)
+            active_policy=output/'active-weight-geometry-policy.json';save(active_policy,geometry)
+            contacts,policy=active,active_policy
+            derived.update({str(p):sha256(p) for p in (contacts,policy)})
         if scene.objects:
             execute('objects-source',asset_run,contacts,output/'objects-source')
             execute('objects-common',clock_prepare,contacts,policy,output/'objects-source',output/'objects-common')
@@ -146,6 +180,9 @@ def run(recipe_path,output):
             common=policy
         execute('actors-engine',actor_run,contacts,output/'actors-engine',geometry_policy=common,
                 playback_mode='native-authoring',engine=paths['engine'])
+        if weight_requested:
+            from audit_conditioned_skin_fidelity import run as fidelity
+            weight_proof=execute('original-fidelity',fidelity,contacts,common,output/'actors-engine',originals,output/'original-fidelity')
         speed=None;speed_policy_path=None
         if speed_requested:
             from native_engine_rotation_speed import run as speed_run,plan as speed_plan
@@ -174,7 +211,8 @@ def run(recipe_path,output):
         unchanged()
         # Completed jobs may contain failed numerical conditions. No automatic selection.
         passed=bool(combined['all_sampled_conditions_pass'] and (fit is None or fit['sampled_constraints_pass'])
-            and (speed is None or speed['all_sampled_conditions_pass']))
+            and (speed is None or speed['all_sampled_conditions_pass'])
+            and (weight_proof is None or weight_proof['all_original_reference_fidelity_pass']))
         result=dict(at=now(),status='complete',schema='strep-native-scene-authoring-job-result-v1',
             recipe_sha256=sha256(recipe_path),inputs_sha256=receipts,derived_inputs_sha256=derived,source_snapshots=copies,implementation_sha256=methods,
             stages=stages,object_edit_requested=fit is not None,source_contact_conditions_pass=read(output/'source-contacts/result.json')['passed'],
@@ -193,6 +231,12 @@ def run(recipe_path,output):
                 rotation_speed_result_sha256=sha256(output/'rotation-speed-engine/result.json'),
                 rotation_speed_replay_sha256=sha256(output/'rotation-speed-replay/result.json'))
             result['artifacts'].update(rotation_speed_policy=str(speed_policy_path),rotation_speed_engine='rotation-speed-engine',rotation_speed_replay='rotation-speed-replay')
+        if weight_requested:
+            result.update(skin_weight_export=recipe['skin_weight_export'],original_actor_bindings=originals,
+                original_reference_fidelity_pass=weight_proof['all_original_reference_fidelity_pass'],
+                original_fidelity_sha256=sha256(output/'original-fidelity/result.json'))
+            result['artifacts']['original_fidelity']='original-fidelity'
+            result['scope']='Explicit separate weight-conditioned actor exports with immutable original-reference fidelity. '+result['scope']
         save(output/'result.json',result);save(output/'pipeline.json',dict(at=now(),status='complete',completed_stages=stages,original_selected=True));return result
     except Exception as exc:
         save(output/'pipeline.json',dict(at=now(),status='failed',error=str(exc),completed_stages=stages,original_selected=True,
@@ -205,7 +249,8 @@ if __name__=='__main__':
     for n in ('contacts','policy','engine','output'):q.add_argument(n,type=Path)
     q.add_argument('--object-edit',type=Path)
     q.add_argument('--rotation-speed-policy',type=Path)
+    q.add_argument('--skin-weight-export',choices=['godot-u16-original-fidelity-v1'])
     q=sub.add_parser('run');q.add_argument('recipe',type=Path);q.add_argument('output',type=Path)
     a=p.parse_args()
-    if a.command=='plan':plan(a.contacts,a.policy,a.engine,a.output,a.object_edit,rotation_speed_policy=a.rotation_speed_policy)
+    if a.command=='plan':plan(a.contacts,a.policy,a.engine,a.output,a.object_edit,rotation_speed_policy=a.rotation_speed_policy,skin_weight_export=a.skin_weight_export)
     else:run(a.recipe,a.output)

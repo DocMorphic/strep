@@ -103,6 +103,8 @@
   <label>Rotation bound (degrees)<input id="nativeSceneRotation" type="number" min="0" max="45" step="any" value="2"></label>
   <label>Maximum object keys<input id="nativeSceneKeys" type="number" min="2" max="3601" step="1" value="3601"></label>
  </div>
+ <label class="small"><input id="nativeSceneWeightExport" type="checkbox"> Condition skin weights for Godot export</label>
+ <p class="small">Keeps the original character and checks the exported mesh against it. Contact and collision checks still apply.</p>
  <div class="toolbar">
   <button class="btn" id="nativeSceneSave">Save scene draft</button>
   <label class="btn">Open scene draft<input id="nativeSceneImport" type="file" accept=".json,application/json" hidden></label>
