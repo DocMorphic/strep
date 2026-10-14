@@ -8,7 +8,7 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
-- [Bounded native root correction](docs/native-vertical-root-v1.md): the get-up proposal clears all 4,292 sampled floor checks but fails 53 exported motion-rate conditions and stays rejected. A representable-key solver finds no candidate in its restricted grid. All 32 targeted checks pass; broader floor-failure validation is queued.
+- [Bounded native root correction](docs/native-vertical-root-v1.md): unaffected skin ancestors stay fixed while all original motion caps remain checked. All 34 correction and 40 launcher/read-import checks pass. The broader study retains root-budget, rig-transform and solver failures; no new animation is accepted. The get-up floor-only proposal remains rejected by 53 motion-rate conditions.
 
 - [Multi-action native transfer study](docs/native-transfer-generalization-v1.md): all 24 matched transfers pass fidelity; 17 pass sampled floor clearance. The corrected crawl clears all three target assets, while get-up and roll failures remain visible. No contact, engine or human-quality approval is inferred.
 

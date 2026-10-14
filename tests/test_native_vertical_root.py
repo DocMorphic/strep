@@ -33,6 +33,16 @@ def test_all_joint_norm_constraints_reduce_to_exact_vertical_interval():
         changed=vectors.copy();changed[:,:,1]+=value;assert not np.all(np.linalg.norm(changed,axis=2)<=caps)
 
 
+def test_unchanged_joint_is_checked_without_limiting_an_unrelated_root_derivative():
+    vectors=np.array([[[0.,1.,0.],[0.,0.,0.]]]);caps=np.array([[1.,0.]])
+    lo,hi,a,b=root.vertical_intervals(vectors,caps,tolerance=0,affected_joints=np.array([True,False]))
+    assert lo[0]==-2 and hi[0]==0 and a[0]==b[0]==0
+    changed=vectors.copy();changed[:,0,1]-=1
+    assert np.all(np.linalg.norm(changed,axis=2)<=caps)
+    with pytest.raises(ValueError,match='Unaffected original'):
+        root.vertical_intervals(vectors+np.array([[[0,0,0],[0,1,0]]]),caps,tolerance=0,affected_joints=np.array([True,False]))
+
+
 @pytest.fixture
 def recipe(tmp_path):
     source,_=fixture(tmp_path/'input','root-source',animated=False,axes=13)
@@ -81,6 +91,24 @@ def test_nonunit_stored_inverse_bind_response_uses_full_positive_coefficient_bou
     assert coefficients.min()<1 and coefficients.max()>1
     result=root.run(path,tmp_path/'nonunit-proposal')
     assert result['sampled_conditions_pass'] and result['rate_failures']==[0,0,0,0] and result['floor_failed_samples']==0
+
+
+def test_unweighted_skin_ancestor_keeps_all_original_caps_and_world_transforms(recipe,tmp_path):
+    path,value,source,floor=recipe;rig=RigAsset.load(source)
+    document=copy.deepcopy(rig.document);binary=bytearray(rig.binary);ancestor=int(rig.parents[value['source']['root_node']])
+    document['skins'][0]['joints'].append(ancestor)
+    inverse=np.concatenate([rig.inverse,np.linalg.inv(rig.reference[ancestor])[None]])
+    document['skins'][0]['inverseBindMatrices']=append_accessor(document,binary,inverse.transpose(0,2,1).reshape(-1,16),'MAT4')
+    write_glb(source,document,binary);value['source']['sha256']=sha256(source)
+    prior=read(floor);save(floor,compare(source,source,prior['times_s'],floor_y_m=prior['floor_y_m'],tolerance_m=prior['tolerance_m']))
+    value['floor_reference']['sha256']=sha256(floor);save(path,value)
+    result=root.run(path,tmp_path/'ancestor-proposal')
+    assert result['sampled_conditions_pass'] and result['rate_failures']==[0,0,0,0]
+    assert result['unaffected_skin_joints']==1 and result['affected_skin_joints']==len(rig.joints)
+    assert result['unaffected_joint_world_transforms_preserved']
+    assert result['full_original_rate_rows']>0 and result['frozen_keys_and_other_tracks_preserved']
+    observations=np.load(tmp_path/'ancestor-proposal/reference.npz')
+    assert not observations['affected_skin_joint_mask'][-1]
 
 
 @pytest.fixture

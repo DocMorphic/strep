@@ -1,7 +1,7 @@
 """Registered Studio continuation orchestration; numerical replay is tested separately."""
 from pathlib import Path
 from types import SimpleNamespace
-import io,json,os,sys,threading
+import io,json,os,sys,threading,shutil
 import psutil,pytest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 import studio_key_continuation as jobs
@@ -133,18 +133,20 @@ def test_real_dispatch_registers_launch_separately_without_starting_a_server(set
     payload,parent,proof=setup;monkeypatch.setattr(server,'worker_busy',lambda:False);monkeypatch.setattr(server,'external_pair_fit_busy',lambda:False)
     calls=[]
     def launch(args,**kwargs):calls.append(args);return SimpleNamespace(pid=os.getpid(),poll=lambda:None)
+    monkeypatch.setattr(shutil,'which',lambda name:'fixture-uv' if name=='uv' else None)
     monkeypatch.setattr(routes.subprocess,'Popen',launch)
     h=handler(payload);h.do_POST();assert h.responses[0][0]==202
     folder=jobs.folder_for(h.responses[0][1]['id']);assert read(folder/'launch.json')['pid']==os.getpid()
     assert jobs.manifest(folder.name)['status']=='starting' and not (folder/'worker.json').exists()
-    assert '--offline' in calls[0] and calls[0][-1]==str(folder)
+    assert calls[0][0]=='fixture-uv' and '--offline' in calls[0] and calls[0][-1]==str(folder)
     get=handler({},'/api/key-continuation-sources');get.do_GET();assert get.responses[0][0]==200
 
 
-@pytest.mark.parametrize('fault',['host','origin','type','transfer','duplicate','oversize','busy'])
+@pytest.mark.parametrize('fault',['host','origin','type','transfer','duplicate','oversize','busy','runtime'])
 def test_transport_and_busy_gates_create_no_jobs(setup,monkeypatch,fault):
     payload,parent,proof=setup;h=handler(payload)
     monkeypatch.setattr(server,'worker_busy',lambda:fault=='busy');monkeypatch.setattr(server,'external_pair_fit_busy',lambda:False)
+    if fault=='runtime':monkeypatch.setattr(shutil,'which',lambda name:None)
     if fault=='host':h.headers['Host']='elsewhere'
     elif fault=='origin':h.headers['Origin']='http://elsewhere'
     elif fault=='type':h.headers['Content-Type']='text/plain'
@@ -153,6 +155,7 @@ def test_transport_and_busy_gates_create_no_jobs(setup,monkeypatch,fault):
     elif fault=='duplicate':
         body=b'{"schema":"one","schema":"two"}';h.rfile=io.BytesIO(body);h.headers['Content-Length']=str(len(body))
     h.do_POST();assert h.responses[0][0] in (400,403,409,415)
+    if fault=='runtime':assert h.responses[0]==(400,dict(error='Prepare the offline uv runtime before continuation'))
     assert not (jobs.ROOT/'reports'/jobs.NAMESPACE).exists()
 
 
@@ -181,6 +184,7 @@ def test_external_driver_busy_and_resource_wait_projection(setup,monkeypatch,ide
 def test_launcher_exiting_before_identity_is_recorded_retains_failed_job(setup,monkeypatch):
     payload,parent,proof=setup
     monkeypatch.setattr(server,'worker_busy',lambda:False);monkeypatch.setattr(server,'external_pair_fit_busy',lambda:False)
+    monkeypatch.setattr(shutil,'which',lambda name:'fixture-uv' if name=='uv' else None)
     monkeypatch.setattr(routes.subprocess,'Popen',lambda *a,**k:SimpleNamespace(pid=1234,poll=lambda:1))
     monkeypatch.setattr(psutil,'Process',lambda pid:(_ for _ in ()).throw(psutil.NoSuchProcess(pid)))
     h=handler(payload);h.do_POST();assert h.responses[0][0]==400

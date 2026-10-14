@@ -51,15 +51,18 @@ def basis(clock,queries):
     return sparse.csr_matrix((values,(rows,columns)),shape=(len(queries),len(clock)))
 
 
-def vertical_intervals(vectors,caps,tolerance=1e-5):
+def vertical_intervals(vectors,caps,tolerance=1e-5,*,affected_joints=None):
     """Intersect every joint norm ball with a shared world-Y derivative."""
     vectors=np.asarray(vectors,float);caps=np.asarray(caps,float)
     require(vectors.ndim==3 and vectors.shape[2]==3 and caps.shape==vectors.shape[:2]
         and np.isfinite(vectors).all() and np.isfinite(caps).all() and np.all(caps>=0)
         and type(tolerance) in (int,float) and 0<=tolerance<=1e-5,'Complete finite original vector/cap population required')
+    affected=np.ones(vectors.shape[1],bool) if affected_joints is None else np.asarray(affected_joints)
+    require(affected.shape==(vectors.shape[1],) and affected.dtype==np.dtype(bool) and affected.any(),'Explicit nonempty affected joint mask required')
+    require(np.all(np.linalg.norm(vectors[:,~affected],axis=2)<=caps[:,~affected]+tolerance),'Unaffected original joint already exceeds norm caps')
     remainder=(caps+tolerance)**2-vectors[:,:,0]**2-vectors[:,:,2]**2
     require(np.all(remainder>=0),'Original horizontal motion already exceeds norm caps')
-    span=np.sqrt(remainder);lower=-vectors[:,:,1]-span;upper=-vectors[:,:,1]+span
+    span=np.sqrt(remainder);lower=np.where(affected,-vectors[:,:,1]-span,-np.inf);upper=np.where(affected,-vectors[:,:,1]+span,np.inf)
     low_ids=lower.argmax(axis=1);high_ids=upper.argmin(axis=1);row=np.arange(len(vectors))
     return lower[row,low_ids],upper[row,high_ids],low_ids,high_ids
 
@@ -80,7 +83,7 @@ def prepare(recipe,base):
         and type(reserve) in (int,float) and np.isfinite(reserve) and reserve>=0,'Bounded original root movement and floor reserve required')
     path=(base/source['path']).resolve();rig=RigAsset.load(path);reader=NativeSupportSampler(rig.document,rig.binary,source['animation_index'])
     root=source['root_node'];coefficients,affected=translation_coefficients(rig,root)
-    require(np.all(np.isin(rig.joints,affected)) and np.isfinite(coefficients).all() and np.all(coefficients>0),'Complete positive skin/root-subtree translation response required')
+    require(np.isfinite(coefficients).all() and np.all(coefficients>0),'Complete positive skin/root-subtree translation response required')
     ancestors=set();node=rig.parents[root]
     while node>=0:ancestors.add(int(node));node=rig.parents[node]
     require(not any(c[0] in ancestors for c in reader.channels),'Animated root ancestors require a different correction representation')
@@ -117,10 +120,11 @@ def run(recipe_path,output):
         clock=channel[2];uniform=np.arange(int(np.floor(reader.duration*120))+1)/120
         world=np.array([reader.sample(float(t)) for t in uniform]);payload=features(world,rig.joints)
         original=SampledMotionCaps(payload,uniform,np.linspace(0,reader.duration,5),tolerance=1e-5)
+        _,descendants=translation_coefficients(rig,recipe['source']['root_node']);affected=np.isin(rig.joints,descendants)
         rows=[];rhs=[];intervals={};b=basis(clock,uniform)
         for order in (1,2):
             delta=np.diff(payload['positions'],n=order,axis=0)/original.dt**order
-            lo,hi,low_ids,high_ids=vertical_intervals(delta,original.caps[order-1])
+            lo,hi,low_ids,high_ids=vertical_intervals(delta,original.caps[order-1],affected_joints=affected)
             d=(b[1:]-b[:-1])/original.dt if order==1 else (b[2:]-2*b[1:-1]+b[:-2])/original.dt**2
             rows.extend([d,-d]);rhs.extend([hi,-lo]);intervals[str(order)]=dict(lower=lo,upper=hi,lower_joints=low_ids,upper_joints=high_ids)
         lower=(floor['floor_y_m']-floor['tolerance_m']+recipe['floor_reserve_m']-heights)/float(coefficients.min())
@@ -135,11 +139,11 @@ def run(recipe_path,output):
             fit=linprog(np.ones(len(clock)),A_ub=matrix,b_ub=limits,bounds=bounds,method='highs',options=dict(primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9,threads=1))
         sparse.save_npz(output/'linear-system.npz',matrix)
         np.savez_compressed(output/'reference.npz',uniform_times_s=uniform,geometry_times_s=times,source_world=world,
-            rhs=limits,root_times_s=clock,root_axis_local=axis,**{f'cap_{i}':c for i,c in enumerate(original.caps)},
+            rhs=limits,root_times_s=clock,root_axis_local=axis,affected_skin_joint_mask=affected,**{f'cap_{i}':c for i,c in enumerate(original.caps)},
             **{f'order_{k}_{n}':v for k,d in intervals.items() for n,v in d.items()})
         from importlib.metadata import version
         result=dict(dependencies={name:version(name) for name in ('numpy','scipy','threadpoolctl')},solver_method='scipy-highs-lp' if storage is None else storage['method'],storage_mode=recipe.get('storage_mode','continuous'),solver_threads=1,schema=SCHEMA,status='complete',at=now(),solver_success=bool(fit.success),solver_status=int(fit.status),solver_message=str(fit.message),
-            scalar_controls=len(clock),linear_rows=matrix.shape[0],full_original_rate_rows=sum(c.size for c in original.caps),source_sha256=sha256(path),
+            scalar_controls=len(clock),linear_rows=matrix.shape[0],full_original_rate_rows=sum(c.size for c in original.caps),affected_skin_joints=int(affected.sum()),unaffected_skin_joints=int((~affected).sum()),source_sha256=sha256(path),
             original_caps_preserved=True,contact_verified=False,engine_verified=False,sampled_conditions_pass=False,**FLAGS)
         if fit.success:
             value=fit.x;save(output/'controls.json',dict(world_y_offsets_m=value.tolist(),frozen_keys=recipe['frozen_keys']))
@@ -162,10 +166,12 @@ def run(recipe_path,output):
                 old=original_channels[(c[0],c[1])]
                 unchanged &= np.array_equal(c[2],old[2]) and (np.array_equal(c[3][recipe['frozen_keys']],old[3][recipe['frozen_keys']]) if c[:2]==channel[:2] else np.array_equal(c[3],old[3]))
             np.savez_compressed(output/'decoded-observations.npz',edit_times_s=edit_times,source_world=all_before,candidate_world=all_after,**{f'metric_{i}':v for i,v in enumerate(measured)})
-            result.update(output_animation_index=index,glb_sha256=sha256(candidate),rate_failures=failures,maximum_joint_displacement_m=displacement,
+            fixed_joints=np.asarray(rig.joints)[~affected]
+            unaffected_preserved=np.array_equal(all_before[:,fixed_joints],all_after[:,fixed_joints])
+            result.update(output_animation_index=index,glb_sha256=sha256(candidate),rate_failures=failures,maximum_joint_displacement_m=displacement,unaffected_joint_world_transforms_preserved=unaffected_preserved,
                 maximum_horizontal_joint_drift_m=horizontal,horizontal_preservation_tolerance_m=1e-7,minimum_vertical_joint_shift_m=float(differences[:,:,1].min()),
                 frozen_keys_and_other_tracks_preserved=bool(unchanged),floor_failed_samples=audit['target']['failed_samples'],peak_floor_depth_m=audit['target']['maximum_depth_m'],
-                sampled_conditions_pass=bool(unchanged and displacement<=recipe['maximum_displacement_m'] and differences[:,:,1].min()>=0 and horizontal<=1e-7 and not any(failures) and audit['target']['sampled_floor_pass']))
+                sampled_conditions_pass=bool(unchanged and unaffected_preserved and displacement<=recipe['maximum_displacement_m'] and differences[:,:,1].min()>=0 and horizontal<=1e-7 and not any(failures) and audit['target']['sampled_floor_pass']))
         else:result['scope_failure']='No proposal from this sampled vertical-root model; not a global motion infeasibility certificate.'
         require(all(sha256(p)==h for p,h in pins.items()) and all(sha256(ROOT/'scripts'/n)==h==sha256(archive/n) for n,h in methods.items()),'Original input or method changed')
         result['scope']='Vertical root-only proposal, complete original four-bin rate and stored floor-clock readback. Geometry guidance uses a bound source floor receipt. No support, scene interaction, balance, continuous collision, engine, semantic or human approval.'
