@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Optional checked translation-stencil search](docs/native-translation-stencil-search-v1.md): all 179 related tests pass. A matched humanoid trial lowers worst motion error about 21%, but repairs one row and introduces another. Both full floor audits replay; 30 motion failures keep the clip rejected. Ranking the complete affected interval is next.
+
 - [Complete translation-stencil proposals](docs/native-translation-stencil-v1.md): coordinate all axes across existing native keys. Fresh replay of four full exports reduces remaining motion failures from 31 to 30 without regressions, preserves all sampled floor checks and reproduces the complete 19,683-entry local proposal ranking. All 163 related tests pass; clips remain rejected.
 
 - [Simultaneous motion restoration and triple storage search](docs/simultaneous-motion-norms-v1.md): fresh replay confirms all intended motion and sampled floor conditions passing. Export repair still retains 31 failures; original clips remain selected. An explicit triple search passes 143 related checks, and targeted full-CI regression fixes pass without relaxing release criteria.

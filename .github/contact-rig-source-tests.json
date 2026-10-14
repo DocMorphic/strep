@@ -43,7 +43,8 @@
     "tests/test_native_scene_conic_secondary.py",
     "tests/test_batched_fk_lifetime.py",
     "tests/test_native_component_triple_search.py",
-    "tests/test_native_translation_stencil.py"
+    "tests/test_native_translation_stencil.py",
+    "tests/test_native_translation_stencil_search.py"
   ],
   "node_tests": [
     "tests/test_native_scene_fit_editor.mjs"
