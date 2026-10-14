@@ -29,6 +29,18 @@ from native_motion_orientation import extract as orientation_features,MODES as O
 SCHEMA='strep-native-key-contact-initializer-v1'
 
 
+def contact_reserve(scene,actor,value):
+    """Explicit solver margin inside every affected authored position tolerance."""
+    if type(value) not in (int,float) or not np.isfinite(value) or value<0:
+        raise ValueError('Contact reserve must be a finite nonnegative distance')
+    limits=[e['authored']['limits']['position_m'] for e in scene.rows
+        if e['authored']['actor']==actor or (e['authored']['target']['space']=='actor'
+        and e['authored']['target']['actor']==actor)]
+    if value and (not limits or any(value>=limit for limit in limits)):
+        raise ValueError('Contact reserve must fit every affected authored position tolerance')
+    return float(value)
+
+
 def right_jacobian(vector):
     x,y,z=vector;hat=np.array([[0.,-z,y],[z,0.,-x],[-y,x,0.]])
     angle=np.linalg.norm(vector)
@@ -38,9 +50,10 @@ def right_jacobian(vector):
 
 class KeyPose:
     """Exact complete skin derivatives, point targets and plane inequalities."""
-    def __init__(self,scene,actor,time_s,nodes,degrees,displacement,planes,penetration,reserve,*,pose_representation='rigid'):
+    def __init__(self,scene,actor,time_s,nodes,degrees,displacement,planes,penetration,reserve,*,pose_representation='rigid',contact_reserve_m=0.):
         if pose_representation not in ('rigid','native-trs-v1'):raise ValueError('Explicit supported pose representation required')
         self.scene=scene;self.actor=actor;self.time=float(time_s);self.nodes=list(nodes)
+        self.contact_reserve=contact_reserve(scene,actor,contact_reserve_m)
         a=scene.actors[actor];self.rig=a['rig'];self.skin=a['skin'];self.placement=a['placement']
         self.source=a['sampler'].sample(self.time);self.order=hierarchy_order(self.rig.parents)
         self.local=self.source.copy()
@@ -120,7 +133,7 @@ class KeyPose:
             point=vertices[ids];derivative=jac[ids]
             if reduction=='centroid':point=point.mean(0,keepdims=True);derivative=derivative.mean(0,keepdims=True)
             error=point-fixed;scale=max(limit,.0001)**2
-            rows.append((limit**2-np.sum(error*error,axis=1))/scale)
+            rows.append(((limit-self.contact_reserve)**2-np.sum(error*error,axis=1))/scale)
             derivatives.append(-2*np.einsum('vi,vik->vk',error,derivative)/scale)
         result=(np.concatenate(rows),np.vstack(derivatives),world,vertices)
         if not all(np.isfinite(a).all() for a in result):raise ValueError('Nonfinite complete pose observations')
@@ -145,13 +158,14 @@ class KeyPose:
 
 def prepare(scene,request,digest,policy):
     if not isinstance(request,dict):raise ValueError('Explicit key initializer object required')
-    optional={'pose_representation','orientation_mode','boundary_keys','acknowledge_changed_boundary_compatibility'}
+    optional={'pose_representation','orientation_mode','boundary_keys','acknowledge_changed_boundary_compatibility','contact_reserve_m'}
     fields({k:v for k,v in request.items() if k not in optional},('schema','contacts_sha256','actor','root_node','rotations','window_s','frozen_times_s',
         'maximum_joint_displacement_m','maximum_keys','iterations_per_key','maximum_seconds','floor_reserve_m'),'key initializer')
     if request.get('pose_representation','rigid') not in ('rigid','native-trs-v1') or request.get('orientation_mode','strict') not in ORIENTATION_MODES:raise ValueError('Explicit supported pose/orientation modes required')
     if request['schema']!=SCHEMA or request['contacts_sha256']!=digest:raise ValueError('Original-bound explicit key initializer required')
     name=request['actor']
     if name not in scene.actors:raise ValueError('Existing selected actor required')
+    contact_reserve(scene,name,request.get('contact_reserve_m',0.))
     actor=scene.actors[name];rig=actor['rig'];root=request['root_node'];rows=request['rotations']
     if type(root) is not int or root not in rig.joints or not isinstance(rows,list) or not 1<=len(rows)<=16:raise ValueError('Existing fixed root and 1-16 explicit rotation tracks required')
     nodes=[];caps=[];channels=[]
@@ -230,7 +244,7 @@ def run(contacts,geometry,request_path,output):
             source_animation_index=actor['animation_index'],temporal_representation='Independent existing native-key rotations, not the previous bounded-knot fit',quality_approved=False))
         values=np.zeros((len(clock),len(nodes),3));records=[];deadline=time.monotonic()+request['maximum_seconds']
         for index,stamp in enumerate(clock):
-            pose=KeyPose(scene,name,float(stamp),nodes,caps,request['maximum_joint_displacement_m'],policy['planes'],policy['limits']['penetration_m'],request['floor_reserve_m'],pose_representation=request.get('pose_representation','rigid'))
+            pose=KeyPose(scene,name,float(stamp),nodes,caps,request['maximum_joint_displacement_m'],policy['planes'],policy['limits']['penetration_m'],request['floor_reserve_m'],pose_representation=request.get('pose_representation','rigid'),contact_reserve_m=request.get('contact_reserve_m',0.))
             frozen=key_frozen(request,clock,stamp)
             if frozen:record=dict(solved=False,frozen=True,pose_conditions_pass=bool(np.all(pose.evaluate(values[index].ravel())[0]>=0)))
             else:
@@ -280,6 +294,7 @@ def run(contacts,geometry,request_path,output):
             sampled_conditions_pass=bool(edit_pass and contact_report['passed'] and surface['sampled_conditions_pass'] and np.all(residual<=0)),
             **(dict(pose_representation=request.get('pose_representation','rigid'),orientation_mode=orientation_mode) if any(k in request for k in ('pose_representation','orientation_mode')) else {}),
             **(dict(boundary_contract_changed=any(v=='edit' for v in boundary_policy(request,clock).values())) if 'boundary_keys' in request else {}),
+            **(dict(contact_reserve_m=float(request['contact_reserve_m'])) if 'contact_reserve_m' in request else {}),
             original_selected=True,quality_approved=False,training_admitted=False,release_approved=False,
             scope='Independent existing-key pose initializer with original per-pose bounds and point/floor intent, followed by complete decoded geometry/contact/edit and original 120-Hz four-bin rate audits. Different temporal representation; no prior fit-contract, continuous collision, balance, anatomy, engine or human approval.')
         scene.check_inputs()

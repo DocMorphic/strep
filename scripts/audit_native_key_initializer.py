@@ -35,13 +35,15 @@ def bound(producer,expected_result_sha256,expected_request_sha256):
     fields(result,('schema','status','at','keys','pose_failures','glb_sha256','output_animation_index','maximum_joint_displacement_m',
         'maximum_rotation_fraction','root_world_element_error','decoded_edit_samples_pass','contact_samples_pass','geometry_samples_pass',
         'original_rate_rows','failed_original_rate_rows','original_motion_caps_pass','sampled_conditions_pass',
-        'original_selected','quality_approved','training_admitted','release_approved','scope')+ (('pose_representation','orientation_mode') if any(k in request for k in ('pose_representation','orientation_mode')) else ())+ (('boundary_contract_changed',) if 'boundary_keys' in request else ()),'native key proposal result')
+        'original_selected','quality_approved','training_admitted','release_approved','scope')+ (('pose_representation','orientation_mode') if any(k in request for k in ('pose_representation','orientation_mode')) else ())+ (('boundary_contract_changed',) if 'boundary_keys' in request else ())+ (('contact_reserve_m',) if 'contact_reserve_m' in request else ()),'native key proposal result')
     fields(saved,('request','source_bindings_sha256','implementation_sha256','source_animation_index','temporal_representation','quality_approved'),'original key proposal request')
     require(saved['quality_approved'] is False,'Original request scope changed')
     if any(k in request for k in ('pose_representation','orientation_mode')):
         require(result['pose_representation']==request.get('pose_representation','rigid') and result['orientation_mode']==request.get('orientation_mode','strict'),'Declared pose/orientation metric changed')
     if 'boundary_keys' in request:
         require(result['boundary_contract_changed'] is any(v=='edit' for v in request['boundary_keys'].values()),'Boundary compatibility declaration changed')
+    if 'contact_reserve_m' in request:
+        require(type(result['contact_reserve_m']) in (int,float) and result['contact_reserve_m']==request['contact_reserve_m'],'Authored solver contact reserve changed')
     require(result['schema']==SCHEMA and result['status']=='complete' and result['original_selected'] is True
         and all(result[k] is False for k in ('quality_approved','training_admitted','release_approved')),'Proposal scope or selection changed')
     require(all(sha256(p)==h for p,h in pins.items()),'Original input binding changed')
@@ -75,7 +77,7 @@ def run(producer,output,expected_result_sha256,expected_request_sha256):
             require(records[index]['time_s']==float(stamp),'Original native key clock changed')
             frozen=key_frozen(request,clock,stamp)
             if frozen:require(not np.any(controls[index]),'Frozen native key changed')
-            pose=KeyPose(scene,name,float(stamp),nodes,caps,request['maximum_joint_displacement_m'],policy['planes'],policy['limits']['penetration_m'],request['floor_reserve_m'],pose_representation=request.get('pose_representation','rigid'))
+            pose=KeyPose(scene,name,float(stamp),nodes,caps,request['maximum_joint_displacement_m'],policy['planes'],policy['limits']['penetration_m'],request['floor_reserve_m'],pose_representation=request.get('pose_representation','rigid'),contact_reserve_m=request.get('contact_reserve_m',0.))
             passed=bool(np.all(pose.evaluate(controls[index].ravel())[0]>=(-1e-7 if records[index]['solved'] else 0)))
             require(records[index]['pose_conditions_pass'] is passed,'Stored key-pose decision changed');failed+=not passed
         output.mkdir(parents=True);index=encode(actor['rig'],actor['animation_index'],nodes,channels,controls,caps,output/'character.glb')

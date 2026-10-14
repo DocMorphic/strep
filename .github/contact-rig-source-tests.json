@@ -69,7 +69,9 @@
     "tests/test_native_vertical_root.py",
     "tests/test_native_motion_orientation.py",
     "tests/test_native_scaled_root_grid.py",
-    "tests/test_native_affine_key_pose.py"
+    "tests/test_native_affine_key_pose.py",
+    "tests/test_native_contact_reserve.py",
+    "tests/test_native_key_contact_reserve.py"
   ],
   "node_tests": [
     "tests/test_native_scene_fit_editor.mjs",
