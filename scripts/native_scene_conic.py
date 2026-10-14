@@ -90,13 +90,62 @@ def direction(system, jacobian, value, lower, upper, trust, *, hard_rows=0):
     point = np.asarray(first.x)
     if not np.isfinite(point).all():return None,dict(info,invalid_solution=True)
     optimum = max(0.,float(point[-1]))
-    # Remove gratuitous controls while retaining the first minimax optimum.
+    primary_delta=np.clip(value+point[:n]*trust,lower,upper)-value
+    primary_residual=system.residual(jacobian,primary_delta)
+    primary_soft=float(max(0.,primary_residual[hard_rows:].max())) if hard_rows<len(primary_residual) else 0.
+    # The reported objective can itself slightly understate the primary
+    # point's actual affine error. Preserve the measured candidate merit.
+    refinement_bound=max(optimum,primary_soft)+1e-9
+    # Remove gratuitous controls while retaining the measured primary merit.
     second_matrix = sparse.vstack([matrix,sparse.csc_matrix(np.r_[np.zeros(n),1.][None])],format='csc')
-    second_bound = np.r_[bound,optimum+1e-9]
+    second_bound = np.r_[bound,refinement_bound]
     second = solver.DefaultSolver(sparse.diags(np.r_[np.ones(n),0.],format='csc'),np.zeros(n+1),
         second_matrix,second_bound,cones+[solver.NonnegativeConeT(1)],settings).solve()
-    info.update(minimum_norm_phase_status=str(second.status),affine_optimum=optimum)
-    if str(second.status) in ('Solved','AlmostSolved') and np.isfinite(second.x).all():point = np.asarray(second.x)
+    info.update(minimum_norm_phase_status=str(second.status),affine_optimum=optimum,
+        primary_affine_soft_excess=primary_soft)
+    info['minimum_norm_selected']=False
+    attempts=[]
+    def refinement(solution,phase):
+        check=dict(phase=phase,status=str(solution.status),selected=False)
+        attempts.append(check)
+        if str(solution.status) not in ('Solved','AlmostSolved') or not np.isfinite(solution.x).all():return None
+        secondary=np.asarray(solution.x)
+        proposed=secondary[:n]*trust
+        box_valid=bool(np.all(proposed>=lo*trust-1e-9) and np.all(proposed<=hi*trust+1e-9))
+        # Solver status is approximate. Recompute every original affine norm
+        # after the same box clipping used for the returned step: a secondary
+        # solution must actually preserve the minimax bound and hard prefix.
+        clipped=np.clip(value+proposed,lower,upper)-value
+        residual=system.residual(jacobian,clipped)
+        check['finite_affine_rows']=bool(np.isfinite(residual).all())
+        if not check['finite_affine_rows']:return None
+        hard_valid=bool(np.all(residual[:hard_rows]<=0))
+        soft_excess=float(max(0.,residual[hard_rows:].max())) if hard_rows<len(residual) else 0.
+        # Comparing two rounded affine objective values needs an explicit
+        # floating-point reserve. This applies only to the proposal tie-break;
+        # it never changes hard rows or actual decoded acceptance caps.
+        comparison_reserve=128*(n+4)*np.finfo(float).eps*max(1.,abs(refinement_bound),abs(soft_excess))
+        selected=bool(box_valid and hard_valid and soft_excess<=refinement_bound+comparison_reserve)
+        check.update(selected=selected,affine_hard_rows_pass=hard_valid,
+            affine_soft_excess=soft_excess,affine_bound=refinement_bound,
+            comparison_reserve=comparison_reserve,control_box_pass=box_valid)
+        info.update(minimum_norm_selected=selected,minimum_norm_affine_hard_rows_pass=hard_valid,
+            minimum_norm_affine_soft_excess=soft_excess,minimum_norm_affine_bound=refinement_bound,
+            minimum_norm_comparison_reserve=comparison_reserve,
+            minimum_norm_control_box_pass=box_valid)
+        return secondary if selected else None
+    selected=refinement(second,'initial')
+    if selected is None:
+        # An approximate minimum-norm solve can stop outside its own affine
+        # bound. Retry once with stricter solver tolerances, under the same
+        # iteration/time budgets and unchanged caps, then check all rows again.
+        settings.tol_gap_abs=settings.tol_gap_rel=settings.tol_feas=1e-11
+        settings.reduced_tol_gap_abs=settings.reduced_tol_gap_rel=settings.reduced_tol_feas=1e-10
+        retry=solver.DefaultSolver(sparse.diags(np.r_[np.ones(n),0.],format='csc'),np.zeros(n+1),
+            second_matrix,second_bound,cones+[solver.NonnegativeConeT(1)],settings).solve()
+        selected=refinement(retry,'retry')
+    if selected is not None:point=selected
+    info['minimum_norm_attempts']=attempts
     delta = point[:n]*trust
     if (np.any(delta<lo*trust-1e-9) or np.any(delta>hi*trust+1e-9)
             or not np.isfinite(delta).all()):return None,dict(info,invalid_solution=True)

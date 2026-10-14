@@ -39,7 +39,8 @@
     "tests/test_static_prop_asset.py",
     "tests/test_studio_props.py",
     "tests/test_studio_prop_routes.py",
-    "tests/test_contact_regression_shards.py"
+    "tests/test_contact_regression_shards.py",
+    "tests/test_native_scene_conic_secondary.py"
   ],
   "node_tests": [
     "tests/test_native_scene_fit_editor.mjs"

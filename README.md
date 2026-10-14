@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Checked secondary motion proposals](docs/conic-secondary-selection-v1.md): the shared solver verifies complete affine bounds before choosing a smaller step and records one stricter retry. All 229 related checks pass. Actual humanoid probes retain motion/floor failures, so originals remain selected; no animation approval.
+
 - [Temporal restoration and sampled floor clearance](docs/temporal-clearance-restoration-v1.md): fresh full-mesh replay verifies all 2,017 floor times passing, while remaining motion/export failures keep the alternatives rejected. The full Windows/Linux source workflow now passes all 12 jobs; no animation or release approval.
 
 - [Articulated clearance and temporal tradeoffs](docs/articulated-crawl-clearance-v1.md): a bounded single pose passes its floor check. Its serialized constant-offset clip reduces peak penetration to 27.8 mm and failed floor times to 174/2,017, but retains 503 native failures. Wider storage search reaches 38 failures with seven new regressions. All eight focused CI jobs now pass; no motion approval.
