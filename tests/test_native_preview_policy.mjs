@@ -11,3 +11,9 @@ const legacy={preview_url:'/files/action-jobs/job/a.glb',preview_sha256:'b'.repe
 assert.equal(selectNativePreviewClip(legacy,[{duration:1}]).duration,1);assert.throws(()=>selectNativePreviewClip(legacy,clips));
 assert.throws(()=>validateNativePreview({...legacy,preview_url:candidate.preview_url}));
 console.log('Native preview appended-clip selection, exact populations, legacy single-clip behavior and malformed clock/path rejection passed.');
+
+const continued={...source,kind:'native_key_continuation',preview_url:'/files/key-continuation-jobs/keys-one/input/saved-start.glb'};
+assert.equal(selectNativePreviewClip(continued,clips),clips[1]);
+validateNativePreview({...continued,preview_url:'/files/key-continuation-jobs/keys-one/study/probes/final/character.glb'});
+for(const url of ['/files/key-continuation-jobs/keys-one/recipe.json','/files/key-continuation-jobs/../input/saved-start.glb',continued.preview_url+'?x=1',source.preview_url])assert.throws(()=>validateNativePreview({...continued,preview_url:url}));
+assert.throws(()=>selectNativePreviewClip({...continued,animation_index:0,animation_count:1},clips));

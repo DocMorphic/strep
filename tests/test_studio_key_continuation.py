@@ -186,3 +186,60 @@ def test_launcher_exiting_before_identity_is_recorded_retains_failed_job(setup,m
     h=handler(payload);h.do_POST();assert h.responses[0][0]==400
     folders=list((jobs.ROOT/'reports'/jobs.NAMESPACE).iterdir());assert len(folders)==1
     assert jobs.manifest(folders[0].name)['status']=='failed'
+
+
+def preview_glb():
+    import struct
+    document={'asset':{'version':'2.0'},'animations':[{'samplers':[{'input':0}]},{'samplers':[{'input':1}]}],
+        'accessors':[dict(type='SCALAR',componentType=5126,count=2,min=[0.],max=[.7]),dict(type='SCALAR',componentType=5126,count=120,min=[0.],max=[3.9666666984558105])],
+        'buffers':[{'byteLength':0}]}
+    payload=json.dumps(document).encode();payload+=b' '*((-len(payload))%4)
+    return struct.pack('<5I',0x46546c67,2,len(payload)+20,len(payload),0x4e4f534a)+payload
+
+
+def preview_completed(setup,monkeypatch):
+    folder=completed(setup,monkeypatch);raw=preview_glb()
+    for name in ('input/saved-start.glb','study/probes/final/character.glb'):(folder/name).write_bytes(raw)
+    result=read(folder/'study/result.json')
+    for probe in result['probes']:probe.update(glb_sha256=sha256(folder/'input/saved-start.glb'),output_animation_index=1)
+    save(folder/'study/result.json',result)
+    prepared=read(folder/'prepared.json');prepared['saved_start_sha256']=sha256(folder/'input/saved-start.glb');save(folder/'prepared.json',prepared)
+    c=read(folder/'completion.json');c['prepared_sha256']=sha256(folder/'prepared.json')
+    c['artifacts']={name:sha256(folder/name) for name in c['artifacts']};save(folder/'completion.json',c)
+    return folder
+
+
+def test_completed_preview_selects_recorded_appended_clip_and_original_clock(setup,monkeypatch):
+    import key_continuation_preview as preview
+    folder=preview_completed(setup,monkeypatch);digest=sha256(folder/'completion.json');value=preview.review(folder.name,digest)
+    assert value['completion_sha256']==digest and value['original_selected'] and not value['sampled_conditions_pass']
+    assert [(v['id'],v['animation_index'],v['animation_count']) for v in value['previews']]==[('source',1,2),('candidate',1,2)]
+    assert all(v['preview_start_s']==0 and v['preview_end_s']==3.9666666984558105 for v in value['previews'])
+    h=handler({},f'/api/key-continuation-preview?id={folder.name}&completion={digest}');h.do_GET();assert h.responses[0]==(200,value)
+    for suffix in ('&completion='+digest,'&extra=x'):
+        h=handler({},f'/api/key-continuation-preview?id={folder.name}&completion={digest}'+suffix);h.do_GET();assert h.responses[0][0]==400
+    with pytest.raises(ValueError,match='changed'):preview.review(folder.name,'0'*64)
+
+
+@pytest.mark.parametrize('fault',['index','clock','external','header','digest'])
+def test_preview_rejects_missing_or_changed_clock_selection_and_bytes(setup,monkeypatch,fault):
+    import key_continuation_preview as preview
+    folder=preview_completed(setup,monkeypatch);digest=sha256(folder/'completion.json')
+    if fault=='digest':
+        (folder/'study/probes/final/character.glb').write_bytes(b'changed')
+        with pytest.raises(ValueError):preview.review(folder.name,digest)
+        return
+    path=folder/'input/saved-start.glb'
+    if fault=='index':
+        with pytest.raises(ValueError,match='selection'):preview.clip_metadata(path,True)
+    elif fault=='header':
+        path.write_bytes(b'invalid glb bytes are invalid')
+        with pytest.raises(ValueError,match='metadata'):preview.clip_metadata(path,1)
+    else:
+        import struct
+        raw=preview_glb();document=json.loads(raw[20:])
+        if fault=='clock':document['accessors'][1]['max']=[float('inf')]
+        else:document['buffers'][0]['uri']='https://example.test/payload.bin'
+        raw=json.dumps(document).encode();raw+=b' '*((-len(raw))%4)
+        path.write_bytes(struct.pack('<5I',0x46546c67,2,len(raw)+20,len(raw),0x4e4f534a)+raw)
+        with pytest.raises(ValueError):preview.clip_metadata(path,1)

@@ -211,7 +211,7 @@ def manifest(job):
         and c['full_replay_pass'] is True and all(c[k] is v for k,v in FLAGS.items()) and set(c['artifacts'])==expected
         and all(sha256(folder/n)==h for n,h in c['artifacts'].items()) and sha256(folder/'input/saved-start.glb')==p['saved_start_sha256'],
         'Completed correction artifacts changed')
-    result.update(**{k:c[k] for k in ('rate_failures','floor_failures','sampled_conditions_pass','full_replay_pass')})
+    result.update(**{k:c[k] for k in ('rate_failures','floor_failures','sampled_conditions_pass','full_replay_pass')},completion_sha256=sha256(folder/'completion.json'))
     for n,label in [('input/saved-start.glb','Saved starting clip'),('study/probes/final/character.glb','Returned proposal'),('study/result.json','Correction results'),('replay/result.json','Full replay receipt')]:
         result['downloads'].append(dict(label=label,url=f'/files/{NAMESPACE}/{job}/{n}',sha256=sha256(folder/n)))
     return result

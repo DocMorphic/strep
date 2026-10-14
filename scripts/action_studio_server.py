@@ -90,6 +90,7 @@ def allowed_file(url_path):
         return served_file(path.removeprefix('/files/'))
     if path=='/native-scene-fit-editor.mjs':return ROOT/'scripts/native-scene-fit-editor.mjs'
     if path=='/key-continuation-editor.mjs':return ROOT/'scripts/key-continuation-editor.mjs'
+    if path in ('/key-continuation-viewer.mjs','/key-continuation-viewer.html'):return ROOT/'scripts'/path[1:]
     if path.startswith('/files/key-continuation-jobs/'):
         from studio_key_continuation import served_file
         return served_file(path.removeprefix('/files/'))

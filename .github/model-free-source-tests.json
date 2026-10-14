@@ -530,6 +530,7 @@
     "tests/test_native_contact_revision.mjs",
     "tests/test_native_scene_game_editor.mjs",
     "tests/test_key_continuation_editor.mjs",
+    "tests/test_key_continuation_viewer.mjs",
     "tests/test_native_scene_transition_editor.mjs",
     "tests/test_native_transition_fit_editor.mjs",
     "tests/test_native_transition_contact_editor.mjs",

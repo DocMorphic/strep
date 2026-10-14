@@ -69,6 +69,7 @@
     "tests/test_native_scene_fit_editor.mjs",
     "tests/test_native_scene_editor.mjs",
     "tests/test_native_scene_game_editor.mjs",
-    "tests/test_key_continuation_editor.mjs"
+    "tests/test_key_continuation_editor.mjs",
+    "tests/test_key_continuation_viewer.mjs"
   ]
 }

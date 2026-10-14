@@ -1,0 +1,15 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Strep · Correction comparison</title>
+<style>body{margin:0;background:#e9edf2;color:#253141;font:14px system-ui}main{padding:14px}.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}canvas{display:block;width:100%;height:330px;border-radius:12px;margin:12px 0}input[type=range]{flex:1;min-width:100px}button,select{font:inherit;padding:7px;border:1px solid #b7c3d0;border-radius:8px;background:white}p{line-height:1.4}</style>
+<main><p id="decision">Checking saved result…</p><div class="bar"><label>Version <select id="version" disabled></select></label><button id="fit" disabled>Fit view</button></div>
+<canvas id="preview" aria-label="Grey saved-start and correction proposal comparison"></canvas>
+<div class="bar"><button id="play" disabled>Play</button><input id="time" aria-label="Comparison time in seconds" type="range" min="0" step="any" disabled><output id="clock"></output></div>
+<p id="status" role="status">Loading bound comparison…</p><p>Switch versions at the same time and camera. Grey materials are a review override; source geometry and root motion are preserved. This is a visible developer comparison, not a blinded quality test.</p></main>
+<script type="importmap">{"imports":{"three":"/assets/build/three.module.js","three/addons/":"/assets/examples/jsm/"}}</script>
+<script type="module">
+import {createKeyContinuationComparison} from '/key-continuation-viewer.mjs';
+import {createNativeReferencePlayer} from '/native-reference-player.mjs';
+const query=new URLSearchParams(location.search),comparison=createKeyContinuationComparison({document,id:query.get('id'),completion:query.get('completion'),createPlayer:createNativeReferencePlayer,api:async url=>{const r=await fetch(url,{cache:'no-store'});const value=await r.json();if(!r.ok)throw Error(value.error||'Bound comparison unavailable');return value;}});
+window.addEventListener('message',e=>{if(e.origin===location.origin&&e.source===parent&&e.data==='strep-native-pause')comparison.pause();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)comparison.pause();});
+await comparison.init();
+</script></html>

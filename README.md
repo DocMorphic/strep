@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [In-Studio correction comparison](docs/key-continuation-preview-v1.md): inspect the saved start and returned proposal at the same native time and camera, with recorded appended-clip selection and file hashes. The real proposal remains rejected at 41 rate/17 floor failures.
+
 - [Studio metadata memory reduction](docs/studio-server-memory-v1.md): removes unnecessary Torch loading from saved-study polling, cutting the measured metadata process from 515 to 66 MiB. All 44 targeted checks pass with the Studio host kept open; full inference memory remains separately unverified.
 
 - [Verified correction continuation in Studio](docs/studio-key-continuation-v1.md): select registered saved controls, submit guarded further steps and download the starting clip, proposal and full replay. Six real exports replay; remaining 41 rate/17 floor failures keep the proposal rejected. UI/worker memory limits remain explicit.

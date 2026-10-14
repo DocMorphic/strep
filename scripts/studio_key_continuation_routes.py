@@ -9,13 +9,18 @@ from studio_prop_routes import _body,_object,_constant
 
 def dispatch_get(handler):
     parsed=urlsplit(handler.path)
-    if parsed.path not in ('/api/key-continuation-sources','/api/key-continuation-jobs','/api/key-continuation-review'):return False
+    if parsed.path not in ('/api/key-continuation-sources','/api/key-continuation-jobs','/api/key-continuation-review','/api/key-continuation-preview'):return False
     if handler.headers.get('Host') not in handler.server.allowed_hosts:
         handler.respond(403,dict(error='Loopback host required'));return True
     try:
         if parsed.fragment:raise ValueError('Exact continuation route required')
         import studio_key_continuation as jobs
-        if parsed.path=='/api/key-continuation-review':
+        if parsed.path=='/api/key-continuation-preview':
+            from key_continuation_preview import review
+            query=parse_qs(parsed.query,keep_blank_values=True)
+            if set(query)!={'id','completion'} or any(len(v)!=1 for v in query.values()):raise ValueError('Exact completed preview selection required')
+            value=review(query['id'][0],query['completion'][0])
+        elif parsed.path=='/api/key-continuation-review':
             query=parse_qs(parsed.query,keep_blank_values=True)
             if set(query)!={'id'} or len(query['id'])!=1:raise ValueError('Exact continuation job selection required')
             value=jobs.manifest(query['id'][0])
