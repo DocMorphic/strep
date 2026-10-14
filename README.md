@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Frozen correction workers](docs/frozen-key-continuation-v1.md): preserve recorded methods across application updates while sharing the project worker lock. Seventeen checks pass; complete frozen replay reproduces all five character exports and their 41/17 rejection. Studio integration remains next.
+
 - [Public continuation command and replay](docs/native-key-continuation-job-v1.md): resume verified edited controls without resetting original limits. Fourteen checks pass; all five real exports and retention decisions replay. The command improves 47/18 rate/floor failures to 41/17 while keeping the clip rejected. Earlier private 35/12 evidence stays unchanged.
 
 - [Verified correction continuation](docs/native-key-continuation-v1.md): resume exact edited keys while preserving the original motion reference. Further steps reduce 47/18 rate/floor failures to 35/12; all fourteen returned clips replay. Five continuation checks pass. The candidate remains rejected.
