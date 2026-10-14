@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Rig-aware initialization on native keys](docs/native-key-contact-initializer-v1.md): all 120 kick key poses pass spatial checks, and full-clock peak floor error falls from 49.73 to 6.51 mm. Thirty-two floor times and 58 original rate rows still fail, so the clip remains rejected. Sixty-three software checks and complete request-bound replay pass.
+
 - [Contact-preserving articulated trial and paired export repair](docs/pinned-surface-repair-v1.md): the public fitter exposes coordinated key search with original limits and method receipts. Complete replay verifies twelve kick exports; all changed candidates remain rejected and floor clearance is unresolved.
 
 - [Root floor/contact preflight](docs/root-plane-contact-preflight-v1.md): reject vertical lifts that exceed original bounds or break declared point contacts. Fifty-three checks pass; complete five-case replay matches 12,625 pose intervals. This does not establish feasible motion or realism.
