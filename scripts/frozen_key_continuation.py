@@ -88,8 +88,10 @@ def build(recipe_path,output,*,audit=None):
         raise
 
 
-def execute(runtime,output,*,audit=None):
+def execute(runtime,output,*,audit=None,expected_runtime_sha256=None):
     runtime=contained(runtime);output=contained(output);receipt=read(runtime/'runtime.json')
+    if expected_runtime_sha256 is not None:
+        require(digest(expected_runtime_sha256) and sha256(runtime/'runtime.json')==expected_runtime_sha256,'Trusted frozen runtime binding changed')
     require(set(receipt)=={'schema','project_root','recipe','recipe_sha256','inputs_sha256','implementation_sha256','origins',
         'bootstrap_sha256','audit_producer','shared_worker_lock_root','original_reference_unchanged','original_selected','quality_approved','release_approved'},'Explicit frozen runtime receipt required')
     require(receipt['schema']==SCHEMA and receipt['project_root']==str(ROOT.resolve())
@@ -129,6 +131,7 @@ def execute(runtime,output,*,audit=None):
         value=run(producer,output,rd,qd)
     require(all(sha256(p)==h for p,h in receipt['inputs_sha256'].items())
         and all(sha256(runtime/'scripts'/n)==h for n,h in receipt['implementation_sha256'].items()),'Frozen bindings changed during execution')
+    if expected_runtime_sha256 is not None:require(sha256(runtime/'runtime.json')==expected_runtime_sha256,'Trusted frozen runtime changed during execution')
     save(output/'frozen-runtime-execution.json',dict(schema='strep-frozen-key-continuation-execution-v1',runtime_sha256=sha256(runtime/'runtime.json'),
         bootstrap_sha256=receipt['bootstrap_sha256'],shared_worker_lock_root=str(ROOT.resolve()),auditor_executed=audit is not None,
         source_request_sha256=sha256(output/'request.json') if audit is None else value['producer_request_sha256'],
@@ -141,11 +144,13 @@ if __name__=='__main__':
     p=sub.add_parser('build');p.add_argument('recipe',type=Path);p.add_argument('runtime',type=Path)
     p.add_argument('--audit-producer',type=Path);p.add_argument('--expected-result-sha256');p.add_argument('--expected-request-sha256')
     p=sub.add_parser('run');p.add_argument('runtime',type=Path);p.add_argument('output',type=Path)
+    p.add_argument('--expected-runtime-sha256')
     p=sub.add_parser('audit');p.add_argument('runtime',type=Path);p.add_argument('producer',type=Path);p.add_argument('output',type=Path)
+    p.add_argument('--expected-runtime-sha256')
     p.add_argument('--expected-result-sha256',required=True);p.add_argument('--expected-request-sha256',required=True)
     a=parser.parse_args()
     if a.command=='build':
         require(bool(a.audit_producer)==bool(a.expected_result_sha256)==bool(a.expected_request_sha256),'Audited-job path and both digests must be supplied together')
         build(a.recipe,a.runtime,audit=None if a.audit_producer is None else (a.audit_producer,a.expected_result_sha256,a.expected_request_sha256))
-    elif a.command=='run':execute(a.runtime,a.output)
-    else:execute(a.runtime,a.output,audit=(a.producer,a.expected_result_sha256,a.expected_request_sha256))
+    elif a.command=='run':execute(a.runtime,a.output,expected_runtime_sha256=a.expected_runtime_sha256)
+    else:execute(a.runtime,a.output,audit=(a.producer,a.expected_result_sha256,a.expected_request_sha256),expected_runtime_sha256=a.expected_runtime_sha256)

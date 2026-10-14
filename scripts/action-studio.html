@@ -629,6 +629,22 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
  <p class="small">Staging requires the recorded native and sampled geometry checks to pass. Build and review new scene assets to verify import; numerical checks do not approve animation quality.</p>
 </details>
 
+<details id="keyContinuationPanel" class="rig-panel">
+ <summary>Continue verified correction</summary>
+ <p class="small">Continue a saved correction using its original character, contacts and movement limits. Every returned clip is checked again. Your current scene stays selected.</p>
+ <div class="rig-field-grid">
+  <label>Verified saved job<select id="keyContinuationSource"></select></label>
+  <label>Further correction steps<input id="keyContinuationIterations" type="number" min="1" max="4" step="1" value="2"></label>
+ </div>
+ <p class="small" id="keyContinuationSourceInfo">Load verified jobs to continue.</p>
+ <div class="toolbar"><button class="btn" id="keyContinuationSources">Refresh verified jobs</button><button class="btn primary" id="keyContinuationBuild" disabled>Continue correction</button></div>
+ <p class="small" id="keyContinuationStatus" role="status">No saved job selected.</p>
+ <div class="toolbar"><select id="keyContinuationJobs" aria-label="Continuation job"></select><button class="btn" id="keyContinuationRefresh">Refresh results</button><button class="btn" id="keyContinuationReview">Review returned clips</button></div>
+ <div id="keyContinuationResults" aria-live="polite"></div>
+ <p class="small">Finished jobs include the saved starting clip, returned proposal and complete replay results. Failed motion checks remain visible. No proposal is automatically selected or approved for game use.</p>
+</details>
+
+
    <details id="nativeSceneGamePanel" class="rig-panel">
  <summary>Root &amp; gameplay tracks</summary>
  <p class="small">Choose a completed scene above, then bind it here. Select each root joint explicitly. Root tracks are references: motion stays embedded in the character clips. Contact measurements never confirm gameplay intent.</p>
@@ -1902,6 +1918,7 @@ void (async function characterStudio(){
   nativeSceneEditor=createNativeSceneEditor({api,post,getContext:()=>({job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),getPatch:()=>contactEditor.nativePatch()});},C('nativeSceneStatus'),'Scene editor');
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneTransferEditor}=await import('/native-scene-transfer-editor.mjs');
   if(!nativeSceneEditor)throw Error('Scene editor is required');createNativeSceneTransferEditor({api,post,getDraft:()=>nativeSceneEditor.snapshot(),setDraft:value=>nativeSceneEditor.bind(value),getPatch:()=>contactEditor.nativePatch()});},C('nativeSceneTransferStatus'),'Scene transfer editor');
+ await initializeOptionalRigEditor(async()=>{const {createKeyContinuationEditor}=await import('/key-continuation-editor.mjs');createKeyContinuationEditor({api,post});},C('keyContinuationStatus'),'Saved correction continuation');
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneFitEditor}=await import('/native-scene-fit-editor.mjs');
   if(!nativeSceneEditor)throw Error('Scene editor is required');createNativeSceneFitEditor({api,post,getDraft:()=>nativeSceneEditor.snapshot(),setDraft:value=>nativeSceneEditor.bind(value)});},C('nativeSceneFitStatus'),'Character correction editor');
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneGameEditor}=await import('/native-scene-game-editor.mjs');

@@ -61,11 +61,13 @@
     "tests/test_audit_native_key_restoration.py",
     "tests/test_native_key_restoration_continuation.py",
     "tests/test_native_key_continuation_job.py",
-    "tests/test_frozen_key_continuation.py"
+    "tests/test_frozen_key_continuation.py",
+    "tests/test_studio_key_continuation.py"
   ],
   "node_tests": [
     "tests/test_native_scene_fit_editor.mjs",
     "tests/test_native_scene_editor.mjs",
-    "tests/test_native_scene_game_editor.mjs"
+    "tests/test_native_scene_game_editor.mjs",
+    "tests/test_key_continuation_editor.mjs"
   ]
 }

@@ -89,6 +89,10 @@ def allowed_file(url_path):
         from studio_native_scene_transfer import served_file
         return served_file(path.removeprefix('/files/'))
     if path=='/native-scene-fit-editor.mjs':return ROOT/'scripts/native-scene-fit-editor.mjs'
+    if path=='/key-continuation-editor.mjs':return ROOT/'scripts/key-continuation-editor.mjs'
+    if path.startswith('/files/key-continuation-jobs/'):
+        from studio_key_continuation import served_file
+        return served_file(path.removeprefix('/files/'))
     if path.startswith('/files/native-scene-fit-jobs/'):
         from studio_native_scene_fit import served_file
         return served_file(path.removeprefix('/files/'))
@@ -159,6 +163,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get('Host') not in self.server.allowed_hosts:return self.respond(403,{'error':'Loopback host required'})
         from studio_prop_routes import dispatch_get
         if dispatch_get(self):return
+        from studio_key_continuation_routes import dispatch_get as dispatch_key_get
+        if dispatch_key_get(self):return
         route=urlsplit(self.path).path
         if route=='/api/surface-export-jobs':
             from studio_surface_export import listing
@@ -470,6 +476,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         from studio_prop_routes import dispatch_post
         if dispatch_post(self):return
+        from studio_key_continuation_routes import dispatch_post as dispatch_key_post
+        if dispatch_key_post(self):return
         if self.path not in ['/api/scene-placement-check','/api/scene-placement-snapshots','/api/native-transition-contact-fit-catalog','/api/native-transition-contact-fits','/api/native-transition-fit-catalog','/api/native-transition-fits','/api/native-scene-transition-inspect','/api/native-scene-transition-stage','/api/precision-export-assets','/api/surface-export-assets','/api/native-scene-transfer-assets','/api/native-scene-transfer-catalog','/api/native-transfer-assets','/api/native-transfer-import','/api/native-scene-fits','/api/native-scene-fit-catalog','/api/native-scene-material-patch','/api/native-scene-material-region-preview','/api/native-scene-material-region-save','/api/native-scene-material-region-pose','/api/native-scene-contact-revision','/api/native-scene-game-assets','/api/scene-prop-runtime-assets','/api/scene-prop-runtime-align','/api/scene-prop-runtime-timing','/api/scene-prop-bake-assets','/api/baked-scene-assets','/api/native-scene-assets','/api/correction-review-edit','/api/correction-review-preview','/api/correction-review-pack','/api/correction-review-submission','/api/jobs','/api/jobs/retry','/api/scene-pair-fits','/api/scene-trims','/api/scene-releases','/api/scene-region-fits','/api/pose-target','/api/scene-generation-plan','/api/motion-brief','/api/contact-edits','/api/characters/import','/api/characters/sample','/api/characters/profile','/api/rig-jobs','/api/rig-contact-edits','/api/rig-contact-inspect','/api/rig-patch-selection','/api/native-support-edits','/api/rig-clip-edits','/api/rig-joint-edits','/api/rig-posture-edits','/api/rig-mirror-edits','/api/rig-transitions','/api/rig-loops','/api/rig-loop-search','/api/rig-events','/api/rig-prompt-edits','/api/rig-dynamics-edits']:return self.respond(404,{'error':'Unknown endpoint'})
         host=self.headers.get('Host');origin=self.headers.get('Origin')
         if host not in self.server.allowed_hosts or origin!=f'http://{host}':return self.respond(403,{'error':'Submit from the local studio page'})

@@ -131,3 +131,10 @@ def test_audited_job_additional_recorded_methods_are_reconciled(tmp_path,monkeyp
     assert receipt['audit_producer']==dict(path=str(target),result_sha256=rd,request_sha256=qd)
     result=child(live,'audit',frozen,parent,tmp_path/'reports/rejected','--expected-result-sha256',rd,'--expected-request-sha256',qd)
     assert result.returncode!=0 and not (tmp_path/'reports/rejected').exists()
+
+
+def test_external_runtime_digest_is_checked_before_execution(tmp_path,monkeypatch):
+    recipe,initial,parent,live=fixture(tmp_path,monkeypatch);frozen=tmp_path/'reports/runtime';runtime.build(recipe,frozen)
+    result=child(live,'run',frozen,tmp_path/'reports/rejected','--expected-runtime-sha256','0'*64)
+    assert result.returncode!=0 and 'Trusted frozen runtime binding changed' in result.stderr
+    assert not (tmp_path/'reports/rejected').exists()

@@ -1,0 +1,14 @@
+<details id="keyContinuationPanel" class="rig-panel">
+ <summary>Continue verified correction</summary>
+ <p class="small">Continue a saved correction using its original character, contacts and movement limits. Every returned clip is checked again. Your current scene stays selected.</p>
+ <div class="rig-field-grid">
+  <label>Verified saved job<select id="keyContinuationSource"></select></label>
+  <label>Further correction steps<input id="keyContinuationIterations" type="number" min="1" max="4" step="1" value="2"></label>
+ </div>
+ <p class="small" id="keyContinuationSourceInfo">Load verified jobs to continue.</p>
+ <div class="toolbar"><button class="btn" id="keyContinuationSources">Refresh verified jobs</button><button class="btn primary" id="keyContinuationBuild" disabled>Continue correction</button></div>
+ <p class="small" id="keyContinuationStatus" role="status">No saved job selected.</p>
+ <div class="toolbar"><select id="keyContinuationJobs" aria-label="Continuation job"></select><button class="btn" id="keyContinuationRefresh">Refresh results</button><button class="btn" id="keyContinuationReview">Review returned clips</button></div>
+ <div id="keyContinuationResults" aria-live="polite"></div>
+ <p class="small">Finished jobs include the saved starting clip, returned proposal and complete replay results. Failed motion checks remain visible. No proposal is automatically selected or approved for game use.</p>
+</details>

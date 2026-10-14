@@ -8,7 +8,9 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
-- [Frozen correction workers](docs/frozen-key-continuation-v1.md): preserve recorded methods across application updates while sharing the project worker lock. Seventeen checks pass; complete frozen replay reproduces all five character exports and their 41/17 rejection. Studio integration remains next.
+- [Verified correction continuation in Studio](docs/studio-key-continuation-v1.md): select registered saved controls, submit guarded further steps and download the starting clip, proposal and full replay. Six real exports replay; remaining 41 rate/17 floor failures keep the proposal rejected. UI/worker memory limits remain explicit.
+
+- [Frozen correction workers](docs/frozen-key-continuation-v1.md): preserve recorded methods across application updates while sharing the project worker lock. Seventeen checks pass; complete frozen replay reproduces all five character exports and their 41/17 rejection. The separate Studio panel now uses these frozen methods.
 
 - [Public continuation command and replay](docs/native-key-continuation-job-v1.md): resume verified edited controls without resetting original limits. Fourteen checks pass; all five real exports and retention decisions replay. The command improves 47/18 rate/floor failures to 41/17 while keeping the clip rejected. Earlier private 35/12 evidence stays unchanged.
 
