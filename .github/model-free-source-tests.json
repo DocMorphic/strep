@@ -478,7 +478,8 @@
     "tests/test_studio_native_fit_activity.py",
     "tests/test_native_component_pair_search.py",
     "tests/test_contact_regression_shards.py",
-    "tests/test_native_scene_conic_secondary.py"
+    "tests/test_native_scene_conic_secondary.py",
+    "tests/test_batched_fk_lifetime.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",

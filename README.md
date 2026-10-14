@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Batch transform lifetime and coupled motion failures](docs/batched-transform-lifetime-v1.md): remove matrix retention until cyclic collection; 140 related checks pass and actual humanoid matrices match bit-for-bit. Fresh gradients confirm that fixing one motion row can break another. All alternatives remain rejected; simultaneous constraint correction is next.
+
 - [Checked secondary motion proposals](docs/conic-secondary-selection-v1.md): the shared solver verifies complete affine bounds before choosing a smaller step and records one stricter retry. All 229 related checks pass. Actual humanoid probes retain motion/floor failures, so originals remain selected; no animation approval.
 
 - [Temporal restoration and sampled floor clearance](docs/temporal-clearance-restoration-v1.md): fresh full-mesh replay verifies all 2,017 floor times passing, while remaining motion/export failures keep the alternatives rejected. The full Windows/Linux source workflow now passes all 12 jobs; no animation or release approval.

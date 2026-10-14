@@ -10,15 +10,22 @@ from rig_clip_import import AnimationSampler
 
 
 def world_from_local(local,parents):
-    result=np.empty_like(local);done=set();visiting=set()
-    def visit(node):
-        if node in visiting:raise ValueError('Cyclic node hierarchy')
-        if node not in done:
-            visiting.add(node);parent=parents[node]
-            if parent<0:result[:,node]=local[:,node]
-            else:visit(parent);result[:,node]=result[:,parent]@local[:,node]
-            visiting.remove(node);done.add(node)
-    for node in range(len(parents)):visit(node)
+    # A self-recursive closure retains both matrix batches in a reference
+    # cycle until cyclic GC runs. Traverse parent chains without a closure,
+    # preserving the same parent-before-child matrix multiplication order.
+    result=np.empty_like(local);done=set()
+    for node in range(len(parents)):
+        chain=[];visiting=set();current=node
+        while current not in done:
+            if current in visiting:raise ValueError('Cyclic node hierarchy')
+            visiting.add(current);chain.append(current);parent=parents[current]
+            if parent<0:break
+            current=parent
+        for current in reversed(chain):
+            parent=parents[current]
+            if parent<0:result[:,current]=local[:,current]
+            else:result[:,current]=result[:,parent]@local[:,current]
+            done.add(current)
     return result
 
 
