@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Explicit conditioned authoring](docs/conditioned-authoring-v1.md): 71 checks pass; the corrected crawl passes the new separate-export authoring path and complete saved-observation replay. Original assets and failed decisions are retained. Studio and game-package integration remain next.
+
 - [Original-reference engine fidelity](docs/conditioned-engine-fidelity-v1.md): separate weight-conditioned exports pass skin fidelity for seven development actions and sampled import for the corrected crawl. Fifty-five related checks pass; four raw floor failures remain.
 
 - [Complete sampled crawl pass and native review packet](docs/native-crawl-pass-v1.md): fresh replay verifies zero failures across all original motion conditions and sampled floor times. Existing paired quaternion repair closes the final two errors. A verified original/corrected developer packet preserves native asset bytes and honest non-blind labels; 60 related Python checks and four Node suites pass. Broader engine/action/rig and human validation remain required.
