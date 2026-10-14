@@ -65,7 +65,8 @@
     "tests/test_studio_key_continuation.py",
     "tests/test_studio_read_imports.py",
     "tests/test_native_rig_transfer.py",
-    "tests/test_native_transfer_population.py"
+    "tests/test_native_transfer_population.py",
+    "tests/test_native_vertical_root.py"
   ],
   "node_tests": [
     "tests/test_native_scene_fit_editor.mjs",

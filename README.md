@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Bounded native root correction](docs/native-vertical-root-v1.md): the get-up proposal clears all 4,292 sampled floor checks but fails 53 exported motion-rate conditions and stays rejected. A representable-key solver finds no candidate in its restricted grid. All 32 targeted checks pass; broader floor-failure validation is queued.
+
 - [Multi-action native transfer study](docs/native-transfer-generalization-v1.md): all 24 matched transfers pass fidelity; 17 pass sampled floor clearance. The corrected crawl clears all three target assets, while get-up and roll failures remain visible. No contact, engine or human-quality approval is inferred.
 
 - [In-Studio correction comparison](docs/key-continuation-preview-v1.md): inspect the saved start and returned proposal at the same native time and camera, with recorded appended-clip selection and file hashes. The real proposal remains rejected at 41 rate/17 floor failures.
