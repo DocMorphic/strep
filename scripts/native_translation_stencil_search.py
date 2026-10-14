@@ -25,7 +25,7 @@ def apply_stencil(corrections,bundle):
     return output
 
 
-def plan(problem,worlds,corrections,value,policy,*,allowed_paths=('rotation','translation'),_ranker=None):
+def plan(problem,worlds,corrections,value,policy,*,allowed_paths=('rotation','translation'),_ranker=None,_metrics=(1,)):
     """Complete stencil for the worst supported positional acceleration failure.
 
     All rate failures remain in diagnostics. The proposal family explicitly
@@ -33,40 +33,44 @@ def plan(problem,worlds,corrections,value,policy,*,allowed_paths=('rotation','tr
     failure types as solved. Unsupported support falls through to the next
     eligible row; an empty plan means this family has no available proposal.
     """
+    if (not isinstance(_metrics,tuple) or not _metrics or any(type(m) is not int or m not in (0,1) for m in _metrics)
+            or len(set(_metrics))!=len(_metrics)):
+        raise ValueError('Explicit distinct positional speed/acceleration metrics required')
     _,failures=single_plan(problem,worlds,corrections,allowed_paths=allowed_paths)
     if 'translation' not in allowed_paths:return [],failures
     eligible=[]
     for failure in failures:
-        if failure['metric']!=1 or failure['actor'] not in problem.edits.actors:continue
+        if failure['metric'] not in _metrics or failure['actor'] not in problem.edits.actors:continue
         name=failure['actor'];actor=problem.scene.actors[name];node=failure['node'];ancestors=[];current=node
         while current>=0:ancestors.append(current);current=actor['rig'].parents[current]
         joint=actor['rig'].joints.index(node);rate=problem.caps[name];frame=failure['frame']
-        cap=float(rate.caps[1][frame,joint]);severity=failure['excess']/max(cap,.001)
+        metric=failure['metric'];width=metric+2
+        cap=float(rate.caps[metric][frame,joint]);severity=failure['excess']/max(cap,.001)
         for track in problem.edits.actors[name]['tracks']:
             if track['path']!='translation' or track['node'] not in ancestors:continue
-            times=problem.uniform[frame:frame+3];clock=track['clock'];keys=set()
+            times=problem.uniform[frame:frame+width];clock=track['clock'];keys=set()
             for time in times:
                 k=int(np.searchsorted(clock,time))
                 keys.update([k] if k<len(clock) and clock[k]==time else [max(0,k-1),min(len(clock)-1,k)])
             keys=sorted(keys)
-            if (len(times)!=3 or not 1<=len(keys)<=3 or keys!=list(range(keys[0],keys[0]+len(keys)))
+            if (len(times)!=width or not 1<=len(keys)<=3 or keys!=list(range(keys[0],keys[0]+len(keys)))
                     or any(k not in track['ids'] for k in keys)):continue
-            eligible.append((severity,-ancestors.index(track['node']),name,node,frame,track,keys,times,cap))
+            eligible.append((severity,-ancestors.index(track['node']),name,node,frame,track,keys,times,cap,metric))
     if not eligible:return [],failures
-    chosen=max(eligible,key=lambda row:row[:5]);severity,_,name,node,frame,track,keys,times,cap=chosen
+    chosen=max(eligible,key=lambda row:row[:5]);severity,_,name,node,frame,track,keys,times,cap,metric=chosen
     rate=problem.caps[name];root=track['node'];clock=track['clock'];value=problem.edits.controls(value)
     editor=ComponentAdjustedEdits(problem.edits,policy,corrections)
     current=editor.values(name,value)[root,'translation']
     nearest=problem.edits.values(name,value)[root,'translation'][keys]
-    weights=np.zeros((3,len(keys)))
+    weights=np.zeros((len(times),len(keys)))
     for i,key in enumerate(keys):
         basis=np.zeros((len(clock),3));basis[key,0]=1
         weights[:,i]=[NativeSupportSampler.value('translation',clock,basis,'LINEAR',float(t))[0] for t in times]
     current_samples=np.array([NativeSupportSampler.value('translation',clock,current,'LINEAR',float(t)) for t in times])
     ids=np.searchsorted(problem.times,times);parent=problem.scene.actors[name]['rig'].parents[root]
-    parent_linear=worlds[name][ids,parent,:3,:3] if parent>=0 else np.repeat(np.eye(3)[None],3,axis=0)
+    parent_linear=worlds[name][ids,parent,:3,:3] if parent>=0 else np.repeat(np.eye(3)[None],len(times),axis=0)
     ranked=rank(nearest,current_samples,weights,parent_linear,worlds[name][ids,node,:3,3],
-                cap=cap,dt=float(rate.dt),tolerance=float(rate.tolerance))
+                cap=cap,dt=float(rate.dt),tolerance=float(rate.tolerance),metric='speed' if metric==0 else 'acceleration')
     result=[]
     # Equal local predictions can include gratuitous whole-support offsets.
     # Prefer fewer absolute corrections on ties, so a nearest-value restoration
@@ -88,7 +92,7 @@ def plan(problem,worlds,corrections,value,policy,*,allowed_paths=('rotation','tr
     # Retain the exact target and population in the existing stage diagnostics.
     failures=copy.deepcopy(failures)
     for failure in failures:
-        if (failure['actor'],failure['node'],failure['frame'],failure['metric'])==(name,node,frame,1):
+        if (failure['actor'],failure['node'],failure['frame'],failure['metric'])==(name,node,frame,metric):
             failure['translation_stencil']=dict(track_node=root,keys=keys,complete_population=ranked['population'],
                 minimum_predicted_excess=float(ranked['predicted_excess'].min()),proposal_only=True)
             if ranking is not None:failure['translation_stencil']['interval_ranking']=copy.deepcopy(ranking)

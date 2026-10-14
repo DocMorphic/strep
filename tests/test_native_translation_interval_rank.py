@@ -104,3 +104,62 @@ def test_rank_hook_cannot_drop_repeat_or_forge_population_indices(tmp_path,fault
         return order,{}
     with pytest.raises(ValueError,match='permutation'):
         local.plan(problem,worlds,[row],base.initial,policy,_ranker=invalid)
+
+
+def test_fast_accounting_rejects_a_fabricated_baseline():
+    args=observations();args[9][0]=.1
+    with pytest.raises(ValueError,match='baseline differs'):score(args)
+
+
+@pytest.mark.parametrize('location',[0,6,12])
+def test_support_crop_keeps_edges_and_unchanged_joint_rows(location):
+    f=13;points=np.zeros((f,2,3));points[:,1,0]=np.arange(f)*.1
+    source=points.copy();weights=np.zeros((f,1));weights[location,0]=1
+    current=np.zeros((1,3));candidates=np.array([[[0,0,0]],[[0,.2,0]]],float)
+    speed=np.full((f-1,2),.3);acc=np.full((f-2,2),.1)
+    baseline=np.r_[np.full(f*2,-1.),((np.linalg.norm(np.diff(points,axis=0),axis=2)-speed)/speed).ravel(),
+        ((np.linalg.norm(np.diff(points,n=2,axis=0),axis=2)-acc)/acc).ravel()]
+    result=interval.scores(candidates,current,weights,np.repeat(np.eye(3)[None],f,axis=0),points,source,
+        np.array([True,False]),speed,acc,baseline,np.array([.02]),dt=1.,displacement=1.,tolerance=0.)
+    assert result['recomputed_positional_rows']+result['reused_positional_rows']==len(baseline)
+    assert result['reused_positional_rows']>0
+    for index in range(2):
+        full=points.copy();full[location,0]+=candidates[index,0]
+        rows=np.r_[(np.linalg.norm(full-source,axis=2)-1).T.ravel(),
+            ((np.linalg.norm(np.diff(full,axis=0),axis=2)-speed)/speed).ravel(),
+            ((np.linalg.norm(np.diff(full,n=2,axis=0),axis=2)-acc)/acc).ravel()]
+        positive=np.maximum(np.r_[.02,rows],0)
+        assert result['maximum_excess'][index]==positive.max()
+        assert result['squared_positive'][index]==pytest.approx(float(positive@positive),rel=1e-14)
+        assert result['introduced_positional_rows'][index]==np.sum((rows>0)&(baseline<=0))
+
+
+def test_speed_target_plan_keeps_real_complete_motion_checks(tmp_path):
+    from rig_asset import RigAsset
+    from gltf_tools import append_accessor,write_glb
+    from native_scene_contacts import SceneContacts
+    from native_scene_boundary_edit import BoundarySceneEdits
+    from native_rotation_storage_repair import authoring_digest
+    from strep import read,save,sha256
+    base,policy,row,contacts,permissions_path,boundary_path=fixture(tmp_path)
+    # Construct a fresh high-rate constant source. Its caps are still derived
+    # from the unchanged source values; the ULP jitter now exceeds speed too.
+    source=Path(next(iter(base.scene.inputs)));rig=RigAsset.load(source)
+    doc=copy.deepcopy(rig.document);binary=bytearray(rig.binary);animation=doc['animations'][0]
+    channel=next(c for c in animation['channels'] if c['target']==dict(node=0,path='translation'))
+    sampler=animation['samplers'][channel['sampler']]
+    sampler['input']=append_accessor(doc,binary,np.arange(241,dtype=np.float32)/120,'SCALAR')
+    sampler['output']=append_accessor(doc,binary,np.tile([0.,1.2,0.],(241,1)),'VEC3')
+    write_glb(source,doc,binary);spec=read(contacts);spec['actors']['A']['sha256']=sha256(source);save(contacts,spec)
+    request=read(boundary_path);request['permissions']['contacts_sha256']=sha256(contacts)
+    base=BoundarySceneEdits(request,SceneContacts(spec,tmp_path),sha256(contacts),rotation_storage_policy='unit')
+    policy['authoring_sha256']=authoring_digest(base);row['key_index']=120
+    problem=SceneProblem(base.scene,base);editor=ComponentAdjustedEdits(base,policy,[row])
+    path=tmp_path/'seed.glb';editor.export('A',base.initial,path);before,worlds=problem.decoded({'A':path},base.initial)
+    options,failures=local.plan(problem,worlds,[row],base.initial,policy,_ranker=interval.interval_order,_metrics=(0,))
+    target=next(r for r in failures if 'translation_stencil' in r)
+    assert target['metric']==0 and len(options)==target['translation_stencil']['complete_population']
+    candidate=local.apply_stencil([row],options[0]);corrected=ComponentAdjustedEdits(base,policy,candidate)
+    output=tmp_path/'corrected.glb';corrected.export('A',base.initial,output)
+    after,_=problem.decoded({'A':output},base.initial)
+    assert np.any(before>0) and np.all(after<=0) and corrected.audit('A',output,0,value=base.initial)['passed']

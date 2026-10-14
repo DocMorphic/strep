@@ -84,3 +84,20 @@ def test_input_observations_are_not_mutated_and_results_are_detached():
     args=fixture();copies=[x.copy() for x in args[:5]]
     result=rank(*args[:5],**args[5]);result['candidate_key_values'][:]=100
     for actual,expected in zip(args,copies):np.testing.assert_array_equal(actual,expected)
+
+
+def test_two_sample_speed_uses_first_difference_and_complete_population():
+    nearest=np.array([[.5,.3,-.2],[.51,.29,-.19]],np.float32)
+    points=nearest.astype(float);weights=np.eye(2);parent=np.repeat(np.eye(3)[None],2,axis=0)
+    result=rank(nearest,points,weights,parent,points,cap=.02,dt=.5,tolerance=1e-5,metric='speed')
+    assert result['population']==729 and result['metric']=='speed' and result['proposal_only']
+    for index in (0,364,728):
+        predicted=result['candidate_key_values'][index]
+        expected=(np.linalg.norm(predicted[1]-predicted[0])/.5-.02-1e-5)/.02
+        assert result['predicted_excess'][index]==expected
+
+
+@pytest.mark.parametrize('metric',[None,True,'jerk'])
+def test_unknown_speed_metric_rejects(metric):
+    args=fixture()
+    with pytest.raises(ValueError):rank(*args[:5],**args[5],metric=metric)

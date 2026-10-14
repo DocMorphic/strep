@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Faster positional scoring and velocity repair](docs/native-translation-speed-v1.md): all 209 related checks pass. Fresh humanoid continuation/replay reduces failures from eight to two with no regressions, while every sampled floor check passes. Both remaining angular failures keep the clip rejected. Matched complete scoring accounts for every row while reusing unchanged support.
+
 - [Complete positional-interval ranking](docs/native-translation-interval-v1.md): all 200 related checks pass. Matched humanoid export failures fall from 30 to 8, with 22 repaired and no new failures; complete intended motion, native replay and sampled floor results reproduce. Eight remaining failures still reject the clip. The optional ranking preserves original limits and existing defaults.
 
 - [Optional checked translation-stencil search](docs/native-translation-stencil-search-v1.md): all 179 related tests pass. A matched humanoid trial lowers worst motion error about 21%, but repairs one row and introduces another. Both full floor audits replay; 30 motion failures keep the clip rejected. Ranking the complete affected interval is next.

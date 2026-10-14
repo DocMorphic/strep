@@ -50,7 +50,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    # Windows retained 43 passing cases before the 20-minute job cancellation.
+    # Match the full source-suite budget and expose the running case/durations.
+    timeout-minutes: 90
     env:
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
       HF_HUB_OFFLINE: "1"
@@ -73,7 +75,7 @@ jobs:
         run: >-
           python -m pip install --only-binary=:all: -r requirements-ci.txt
       - name: Verify portable material authoring and native job integration
-        run: python -m pytest -q tests/test_material_scene_package.py tests/test_material_scene_surface_job.py tests/test_studio_material_patch.py tests/test_studio_material_region.py tests/test_studio_material_region_pose.py tests/test_rigid_contact_normal_bound.py tests/test_native_contact_mask_probe.py tests/test_saved_contact_stencil_step.py
+        run: python -m pytest -vv --durations=20 tests/test_material_scene_package.py tests/test_material_scene_surface_job.py tests/test_studio_material_patch.py tests/test_studio_material_region.py tests/test_studio_material_region_pose.py tests/test_rigid_contact_normal_bound.py tests/test_native_contact_mask_probe.py tests/test_saved_contact_stencil_step.py
   source-checks:
     strategy:
       fail-fast: false

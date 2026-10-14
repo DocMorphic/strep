@@ -35,29 +35,51 @@ def scores(candidates,current_keys,weights,parent_linear,positions,source_positi
         raise ValueError('Complete finite uniform positional observations and original row populations required')
     if any(type(v) not in (int,float) or not np.isfinite(v) for v in (dt,displacement,tolerance)) or dt<=0 or displacement<=0 or tolerance<0:
         raise ValueError('Positive uniform step/displacement and nonnegative original tolerance required')
-    fixed_positive=np.maximum(fixed,0);fixed_max=float(fixed_positive.max(initial=0));fixed_square=float(fixed_positive@fixed_positive)
-    fixed_failed=int((fixed>0).sum());maxima=[];squares=[];failed=[];introduced=[]
+    expected=np.r_[((np.linalg.norm(points-source,axis=2)-displacement)/displacement).T.ravel(),
+        ((np.linalg.norm(np.diff(points,axis=0)/dt,axis=2)-speed_caps-tolerance)/np.maximum(speed_caps,.001)).ravel(),
+        ((np.linalg.norm(np.diff(points,n=2,axis=0)/dt**2,axis=2)-acc_caps-tolerance)/np.maximum(acc_caps,.001)).ravel()]
+    if not np.array_equal(expected,baseline):raise ValueError('Complete original positional baseline differs from observed matrices')
+    active=np.flatnonzero(np.any(weights!=0,axis=1));joints=np.flatnonzero(affected)
+    lo=max(0,int(active[0])-2) if len(active) else 0
+    hi=min(f,int(active[-1])+3) if len(active) else 0
+    frames=np.arange(lo,hi)
+    selected=np.r_[(joints[:,None]*f+frames).ravel(),
+        f*j+(np.arange(lo,max(lo,hi-1))[:,None]*j+joints).ravel(),
+        (2*f-1)*j+(np.arange(lo,max(lo,hi-2))[:,None]*j+joints).ravel()] if len(joints) and len(frames) else np.array([],dtype=int)
+    untouched=np.ones(len(baseline),dtype=bool);untouched[selected]=False
+    # Outside the exact nonzero native interpolation support and descendants,
+    # every candidate leaves the observed position unchanged. Account for all
+    # those original rows once; retain the complete population and boundary
+    # differences rather than repeatedly computing identical norms.
+    augmented=np.r_[fixed,baseline[untouched]]
+    fixed_positive=np.maximum(augmented,0);fixed_max=float(fixed_positive.max(initial=0));fixed_square=float(fixed_positive@fixed_positive)
+    fixed_failed=int((augmented>0).sum());maxima=[];squares=[];failed=[];introduced=[]
     for start in range(0,len(candidates),chunk_size):
-        delta=np.einsum('fk,nkc->nfc',weights,candidates[start:start+chunk_size]-current)
-        shift=np.einsum('fij,nfj->nfi',parent,delta)
-        moved=points[None]+shift[:,:,None,:]*affected[None,None,:,None]
+        count=len(candidates[start:start+chunk_size])
+        if not len(selected):
+            maxima.extend([fixed_max]*count);squares.extend([fixed_square]*count)
+            failed.extend([fixed_failed]*count);introduced.extend([0]*count);continue
+        delta=np.einsum('fk,nkc->nfc',weights[lo:hi],candidates[start:start+chunk_size]-current)
+        shift=np.einsum('fij,nfj->nfi',parent[lo:hi],delta)
+        moved=points[lo:hi,joints][None]+shift[:,:,None,:]
         with np.errstate(over='ignore',divide='ignore',invalid='ignore'):
             # The established displacement audit uses joint-major advanced
             # indexing; positional rates use frame-major features. Preserve
             # both exact row orders when comparing against saved failures.
-            displacement_rows=((np.linalg.norm(moved-source[None],axis=3)-displacement)/displacement).transpose(0,2,1).reshape(len(moved),-1)
-            speed=((np.linalg.norm(np.diff(moved,axis=1)/dt,axis=3)-speed_caps-tolerance)/np.maximum(speed_caps,.001)).reshape(len(moved),-1)
-            acceleration=((np.linalg.norm(np.diff(moved,n=2,axis=1)/dt**2,axis=3)-acc_caps-tolerance)/np.maximum(acc_caps,.001)).reshape(len(moved),-1)
+            displacement_rows=((np.linalg.norm(moved-source[lo:hi,joints][None],axis=3)-displacement)/displacement).transpose(0,2,1).reshape(len(moved),-1)
+            speed=((np.linalg.norm(np.diff(moved,axis=1)/dt,axis=3)-speed_caps[lo:hi-1,joints]-tolerance)/np.maximum(speed_caps[lo:hi-1,joints],.001)).reshape(len(moved),-1)
+            acceleration=((np.linalg.norm(np.diff(moved,n=2,axis=1)/dt**2,axis=3)-acc_caps[lo:hi-2,joints]-tolerance)/np.maximum(acc_caps[lo:hi-2,joints],.001)).reshape(len(moved),-1)
         dynamic=np.concatenate([displacement_rows,speed,acceleration],axis=1)
         if not np.isfinite(dynamic).all():raise ValueError('Finite complete interval predictions required')
         positive=np.maximum(dynamic,0)
         maxima.extend(np.maximum(fixed_max,positive.max(axis=1)).tolist())
         squares.extend((fixed_square+np.sum(positive*positive,axis=1)).tolist())
         failed.extend((fixed_failed+np.sum(dynamic>0,axis=1)).tolist())
-        introduced.extend(np.sum((dynamic>0)&(baseline[None]<=0),axis=1).tolist())
+        introduced.extend(np.sum((dynamic>0)&(baseline[selected][None]<=0),axis=1).tolist())
     return dict(maximum_excess=np.asarray(maxima),squared_positive=np.asarray(squares),
         failed_rows=np.asarray(failed),introduced_positional_rows=np.asarray(introduced),
         positional_rows=len(baseline),fixed_rows=len(fixed),population=len(candidates),chunk_size=chunk_size,
+        recomputed_positional_rows=len(selected),reused_positional_rows=int(untouched.sum()),
         proposal_only=True,geometry_assessed=False,quality_approved=False,release_approved=False)
 
 
@@ -93,6 +115,7 @@ def interval_order(problem,worlds,corrections,value,policy,name,root,keys,ranked
         result['squared_positive'],result['maximum_excess'],result['introduced_positional_rows']))
     return order,dict(kind='complete-uniform-positional-interval',positional_rows=result['positional_rows'],
         fixed_rows=result['fixed_rows'],chunk_size=result['chunk_size'],complete_population=result['population'],
+        recomputed_positional_rows=result['recomputed_positional_rows'],reused_positional_rows=result['reused_positional_rows'],
         minimum_predicted_maximum_excess=float(result['maximum_excess'].min()),
         minimum_predicted_new_positional_rows=int(result['introduced_positional_rows'].min()),
         proposal_only=True,contacts_and_geometry_not_updated=True)
@@ -102,7 +125,7 @@ def search(problem,value,policy,corrections,decode,*,stages=8,probes_per_stage=3
     value=np.asarray(value).copy();policy=copy.deepcopy(policy)
     corrected,report=checked_search(problem,value,policy,corrections,decode,stages=stages,probes_per_stage=probes_per_stage,
         _adjusted_type=ComponentAdjustedEdits,
-        _planner=lambda p,w,c:local_plan(p,w,c,value,policy,allowed_paths=policy['allowed_paths'],_ranker=interval_order),
+        _planner=lambda p,w,c:local_plan(p,w,c,value,policy,allowed_paths=policy['allowed_paths'],_ranker=interval_order,_metrics=(0,1)),
         _chooser=apply_stencil,_result_schema='strep-native-translation-interval-search-v1')
     report.update(maximum_translation_population=19683,
         scope='Opt-in complete local translation population ranked across all uniform positional displacement/speed/acceleration rows of the affected actor, including all joints and native support edges. Other rows fixed for proposal ranking; contacts and geometry require independent full checks. Prioritize no new predicted positional failures. All original decoded constraints/caps/scales/control/authoring and finite export budgets remain required. No feasibility, quality or release approval.')
