@@ -494,7 +494,9 @@
     "tests/test_native_surface_pair_selection.py",
     "tests/test_native_key_contact_initializer.py",
     "tests/test_native_key_initializer_audit.py",
-    "tests/test_native_key_interval_model.py"
+    "tests/test_native_key_interval_model.py",
+    "tests/test_native_key_interval_restoration.py",
+    "tests/test_audit_native_key_restoration.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",
