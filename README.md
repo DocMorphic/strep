@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Original-reference engine fidelity](docs/conditioned-engine-fidelity-v1.md): separate weight-conditioned exports pass skin fidelity for seven development actions and sampled import for the corrected crawl. Fifty-five related checks pass; four raw floor failures remain.
+
 - [Complete sampled crawl pass and native review packet](docs/native-crawl-pass-v1.md): fresh replay verifies zero failures across all original motion conditions and sampled floor times. Existing paired quaternion repair closes the final two errors. A verified original/corrected developer packet preserves native asset bytes and honest non-blind labels; 60 related Python checks and four Node suites pass. Broader engine/action/rig and human validation remain required.
 
 - [Faster positional scoring and velocity repair](docs/native-translation-speed-v1.md): all 209 related checks pass. Fresh humanoid continuation/replay reduces failures from eight to two with no regressions, while every sampled floor check passes. Both remaining angular failures keep the clip rejected. Matched complete scoring accounts for every row while reusing unchanged support.

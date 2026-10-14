@@ -109,6 +109,8 @@ jobs:
       - name: Install test dependencies
         run: >-
           python -m pip install --only-binary=:all: -r requirements-ci.txt
+      - name: Install locked native reviewer runtime
+        run: npm ci --ignore-scripts --prefix assets/viewer
       - name: Verify geometry, contact certificates and Studio build
         run: >-
           python scripts/run_source_checks.py --shard-index ${{ matrix.shard }} --shard-count 4

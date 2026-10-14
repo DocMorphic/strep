@@ -61,6 +61,9 @@ jobs:
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '24'
+      - name: Install locked native reviewer runtime
+        if: matrix.suite == 'contact-rig'
+        run: npm ci --ignore-scripts --prefix assets/viewer
       - name: Verify correction editor requests and staging
         run: node tests/test_native_scene_fit_editor.mjs
       - name: Verify portable correction and speed lineage
