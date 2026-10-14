@@ -25,7 +25,7 @@ def apply_stencil(corrections,bundle):
     return output
 
 
-def plan(problem,worlds,corrections,value,policy,*,allowed_paths=('rotation','translation')):
+def plan(problem,worlds,corrections,value,policy,*,allowed_paths=('rotation','translation'),_ranker=None):
     """Complete stencil for the worst supported positional acceleration failure.
 
     All rate failures remain in diagnostics. The proposal family explicitly
@@ -73,6 +73,13 @@ def plan(problem,worlds,corrections,value,policy,*,allowed_paths=('rotation','tr
     # is tried before equally ranked jitter that can fail elsewhere in the clip.
     order=np.lexsort((np.arange(ranked['population']),
                       np.count_nonzero(ranked['absolute_steps'],axis=1),ranked['predicted_excess']))
+    ranking=None
+    if _ranker is not None:
+        order,ranking=_ranker(problem,worlds,corrections,value,policy,name,root,keys,ranked)
+        order=np.asarray(order)
+        if (order.shape!=(ranked['population'],) or not np.issubdtype(order.dtype,np.integer)
+                or not np.array_equal(np.sort(order),np.arange(ranked['population']))):
+            raise ValueError('Complete proposal population permutation required')
     for index in order:
         choices=[dict(actor=name,node=root,path='translation',key_index=key,component=component,step=int(step))
             for key,steps in zip(keys,ranked['absolute_steps'][index].reshape(len(keys),3))
@@ -84,6 +91,7 @@ def plan(problem,worlds,corrections,value,policy,*,allowed_paths=('rotation','tr
         if (failure['actor'],failure['node'],failure['frame'],failure['metric'])==(name,node,frame,1):
             failure['translation_stencil']=dict(track_node=root,keys=keys,complete_population=ranked['population'],
                 minimum_predicted_excess=float(ranked['predicted_excess'].min()),proposal_only=True)
+            if ranking is not None:failure['translation_stencil']['interval_ranking']=copy.deepcopy(ranking)
     return result,failures
 
 
