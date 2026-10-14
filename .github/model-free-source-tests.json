@@ -505,7 +505,8 @@
     "tests/test_native_transfer_population.py",
     "tests/test_native_vertical_root.py",
     "tests/test_native_motion_orientation.py",
-    "tests/test_native_scaled_root_grid.py"
+    "tests/test_native_scaled_root_grid.py",
+    "tests/test_native_affine_key_pose.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",

@@ -5,6 +5,7 @@ to replace an earlier bounded fit or to reset its original motion-rate reference
 """
 import argparse
 import copy
+import json
 from pathlib import Path
 import shutil
 import time
@@ -21,6 +22,9 @@ from native_support_clock import NativeSupportSampler
 from rig_asset import RigAsset
 from sampled_motion_caps import features,measures,SampledMotionCaps
 from strep import ROOT,read,save,sha256,now
+from native_key_boundaries import boundary_policy,key_frozen
+from native_affine_key_pose import AffineKeyPose,rotation_fractions
+from native_motion_orientation import extract as orientation_features,MODES as ORIENTATION_MODES
 
 SCHEMA='strep-native-key-contact-initializer-v1'
 
@@ -34,16 +38,18 @@ def right_jacobian(vector):
 
 class KeyPose:
     """Exact complete skin derivatives, point targets and plane inequalities."""
-    def __init__(self,scene,actor,time_s,nodes,degrees,displacement,planes,penetration,reserve):
+    def __init__(self,scene,actor,time_s,nodes,degrees,displacement,planes,penetration,reserve,*,pose_representation='rigid'):
+        if pose_representation not in ('rigid','native-trs-v1'):raise ValueError('Explicit supported pose representation required')
         self.scene=scene;self.actor=actor;self.time=float(time_s);self.nodes=list(nodes)
         a=scene.actors[actor];self.rig=a['rig'];self.skin=a['skin'];self.placement=a['placement']
         self.source=a['sampler'].sample(self.time);self.order=hierarchy_order(self.rig.parents)
         self.local=self.source.copy()
         for n,p in enumerate(self.rig.parents):
             if p>=0:self.local[n]=np.linalg.solve(self.source[p],self.source[n])
-        if (np.max(abs(self.local[:,:3,:3].swapaxes(-1,-2)@self.local[:,:3,:3]-np.eye(3)))>1e-8
+        if pose_representation=='rigid' and (np.max(abs(self.local[:,:3,:3].swapaxes(-1,-2)@self.local[:,:3,:3]-np.eye(3)))>1e-8
                 or np.max(abs(np.linalg.det(self.local[:,:3,:3])-1))>1e-8):
             raise ValueError('Proper rigid source locals required')
+        self.affine=AffineKeyPose(a,self.time,nodes,degrees) if pose_representation=='native-trs-v1' else None
         self.caps=np.radians(degrees);self.displacement=float(displacement)
         self.planes=copy.deepcopy(planes);self.penetration=penetration;self.reserve=reserve
         self.used=np.unique(faces_for(self.rig)[0]);self.desc=[]
@@ -76,23 +82,28 @@ class KeyPose:
         value=np.asarray(value,float)
         if value.shape!=(3*len(self.nodes),) or not np.isfinite(value).all():raise ValueError('Complete finite pose controls required')
         if self.cache is not None and np.array_equal(value,self.cache[0]):return self.cache[1]
-        self.calls+=1;world=self.source.copy();local=self.local.copy();vectors=value.reshape(-1,3)*self.caps[:,None]
-        local[self.nodes,:3,:3]=self.local[self.nodes,:3,:3]@Rotation.from_rotvec(vectors).as_matrix()
-        for n in self.order:
-            if self.affected[n]:world[n]=world[self.rig.parents[n]]@local[n] if self.rig.parents[n]>=0 else local[n]
-        skin=self.skin;components=np.einsum('vkij,vkj->vki',world[skin.nodes,:3,:],skin.points)
-        vertices=np.einsum('vki,vk->vi',components,skin.weights)
-        jac=np.zeros((len(vertices),3,len(value)));jj=np.zeros((len(self.rig.joints),3,len(value)))
-        joints=np.asarray(self.rig.joints);positions=world[joints,:3,3]
-        for k,(node,vector,cap,desc) in enumerate(zip(self.nodes,vectors,self.caps,self.desc)):
-            axes=world[node,:3,:3]@right_jacobian(vector)*cap
-            # Retain the actual inverse-bind homogeneous coordinate, including
-            # non-unit terms; a pivot translation acts on that coordinate.
-            delta=np.einsum('vki,vk->vi',components-world[node,:3,3]*skin.points[:,:,3,None],skin.weights*desc[skin.nodes])
-            joint_delta=(positions-world[node,:3,3])*desc[joints,None]
-            for component in range(3):
-                jac[:,:,3*k+component]=np.cross(axes[:,component],delta)
-                jj[:,:,3*k+component]=np.cross(axes[:,component],joint_delta)
+        self.calls+=1
+        if self.affine is not None:
+            world,vertices,jac,jj=self.affine.evaluate(value)
+            joints=np.asarray(self.rig.joints);positions=world[joints,:3,3]
+        else:
+            world=self.source.copy();local=self.local.copy();vectors=value.reshape(-1,3)*self.caps[:,None]
+            local[self.nodes,:3,:3]=self.local[self.nodes,:3,:3]@Rotation.from_rotvec(vectors).as_matrix()
+            for n in self.order:
+                if self.affected[n]:world[n]=world[self.rig.parents[n]]@local[n] if self.rig.parents[n]>=0 else local[n]
+            skin=self.skin;components=np.einsum('vkij,vkj->vki',world[skin.nodes,:3,:],skin.points)
+            vertices=np.einsum('vki,vk->vi',components,skin.weights)
+            jac=np.zeros((len(vertices),3,len(value)));jj=np.zeros((len(self.rig.joints),3,len(value)))
+            joints=np.asarray(self.rig.joints);positions=world[joints,:3,3]
+            for k,(node,vector,cap,desc) in enumerate(zip(self.nodes,vectors,self.caps,self.desc)):
+                axes=world[node,:3,:3]@right_jacobian(vector)*cap
+                # Retain the actual inverse-bind homogeneous coordinate, including
+                # non-unit terms; a pivot translation acts on that coordinate.
+                delta=np.einsum('vki,vk->vi',components-world[node,:3,3]*skin.points[:,:,3,None],skin.weights*desc[skin.nodes])
+                joint_delta=(positions-world[node,:3,3])*desc[joints,None]
+                for component in range(3):
+                    jac[:,:,3*k+component]=np.cross(axes[:,component],delta)
+                    jj[:,:,3*k+component]=np.cross(axes[:,component],joint_delta)
         p,r=self.placement;vertices=vertices@r.T+p;jac=np.einsum('ij,vjk->vik',r,jac)
         rows=[1-np.sum(value.reshape(-1,3)**2,axis=1)];derivatives=[]
         balls=np.zeros((len(self.nodes),len(value)))
@@ -133,8 +144,11 @@ class KeyPose:
 
 
 def prepare(scene,request,digest,policy):
-    fields(request,('schema','contacts_sha256','actor','root_node','rotations','window_s','frozen_times_s',
+    if not isinstance(request,dict):raise ValueError('Explicit key initializer object required')
+    optional={'pose_representation','orientation_mode','boundary_keys','acknowledge_changed_boundary_compatibility'}
+    fields({k:v for k,v in request.items() if k not in optional},('schema','contacts_sha256','actor','root_node','rotations','window_s','frozen_times_s',
         'maximum_joint_displacement_m','maximum_keys','iterations_per_key','maximum_seconds','floor_reserve_m'),'key initializer')
+    if request.get('pose_representation','rigid') not in ('rigid','native-trs-v1') or request.get('orientation_mode','strict') not in ORIENTATION_MODES:raise ValueError('Explicit supported pose/orientation modes required')
     if request['schema']!=SCHEMA or request['contacts_sha256']!=digest:raise ValueError('Original-bound explicit key initializer required')
     name=request['actor']
     if name not in scene.actors:raise ValueError('Existing selected actor required')
@@ -164,7 +178,11 @@ def prepare(scene,request,digest,policy):
     if type(displacement) not in (int,float) or not np.isfinite(displacement) or not 0<displacement<=.22:raise ValueError('Explicit positive joint displacement bound up to 22 cm required')
     if type(reserve) not in (int,float) or not np.isfinite(reserve) or not 0<=reserve<policy['limits']['penetration_m']:raise ValueError('Floor reserve must fit the unchanged authored tolerance')
     if window.shape!=(2,) or not np.isfinite(window).all() or not 0<=window[0]<window[1]<=scene.duration or not np.isin(window,clock).all():raise ValueError('Finite editable source window must use existing selected native keys')
-    if frozen.ndim!=1 or not len(frozen) or not np.isfinite(frozen).all() or len(np.unique(frozen))!=len(frozen) or not np.isin(frozen,clock).all() or not np.isin([clock[0],clock[-1]],frozen).all():raise ValueError('Both endpoints and every explicit frozen time must be original selected native keys')
+    if frozen.ndim!=1 or not np.isfinite(frozen).all() or len(np.unique(frozen))!=len(frozen) or not np.isin(frozen,clock).all():raise ValueError('Every explicit frozen time must be an original selected native key')
+    boundaries=boundary_policy(request,clock)
+    if ((boundaries['start']=='edit' and float(clock[0])!=0.)
+            or (boundaries['end']=='edit' and float(clock[-1])!=scene.duration)):
+        raise ValueError('Endpoint edits require the actual clip boundary, not an interior channel endpoint')
     if len(scene.actors[name]['skin'].nodes)>32768 or not policy['planes']:raise ValueError('Complete skin up to 32768 vertices and at least one explicit plane required')
     point_rows=0
     for entry in scene.rows:
@@ -198,6 +216,11 @@ def run(contacts,geometry,request_path,output):
         spec=read(contacts);scene=SceneContacts(spec,contacts.parent);policy=read(geometry);digest=sha256(contacts)
         geometry_times,_,_=policy_for(policy,scene,digest);request=read(request_path)
         name,nodes,caps,clock,channels=prepare(scene,request,digest,policy);actor=scene.actors[name]
+        uniform=np.arange(int(np.floor(scene.duration*120))+1)/120
+        source_uniform=np.array([actor['sampler'].sample(float(t)) for t in uniform])
+        orientation_mode=request.get('orientation_mode','strict')
+        original_payload,_,original_affine=orientation_features(source_uniform,actor['rig'].joints,orientation_mode)
+        rates=SampledMotionCaps(original_payload,uniform,np.linspace(0,scene.duration,5),tolerance=1e-5)
         pins={str(p):sha256(p) for p in (contacts,geometry,request_path)};pins.update(scene.inputs)
         methods={p.name:sha256(p) for p in (ROOT/'scripts').glob('*.py')}
         if any(Path(p).is_relative_to(output) for p in pins):raise ValueError('Original inputs must remain outside fresh output')
@@ -207,12 +230,22 @@ def run(contacts,geometry,request_path,output):
             source_animation_index=actor['animation_index'],temporal_representation='Independent existing native-key rotations, not the previous bounded-knot fit',quality_approved=False))
         values=np.zeros((len(clock),len(nodes),3));records=[];deadline=time.monotonic()+request['maximum_seconds']
         for index,stamp in enumerate(clock):
-            pose=KeyPose(scene,name,float(stamp),nodes,caps,request['maximum_joint_displacement_m'],policy['planes'],policy['limits']['penetration_m'],request['floor_reserve_m'])
-            frozen=bool(stamp in request['frozen_times_s'] or not request['window_s'][0]<stamp<request['window_s'][1])
+            pose=KeyPose(scene,name,float(stamp),nodes,caps,request['maximum_joint_displacement_m'],policy['planes'],policy['limits']['penetration_m'],request['floor_reserve_m'],pose_representation=request.get('pose_representation','rigid'))
+            frozen=key_frozen(request,clock,stamp)
             if frozen:record=dict(solved=False,frozen=True,pose_conditions_pass=bool(np.all(pose.evaluate(values[index].ravel())[0]>=0)))
             else:
-                selected,record=pose.solve(request['iterations_per_key'],deadline);values[index]=selected.reshape(len(nodes),3)
-            records.append(dict(time_s=float(stamp),**record));save(output/'key-progress.json',dict(completed_keys=len(records),planned_keys=len(clock),original_selected=True))
+                try:
+                    selected,record=pose.solve(request['iterations_per_key'],deadline);values[index]=selected.reshape(len(nodes),3)
+                except (TimeoutError,ValueError,FloatingPointError) as error:
+                    save(output/'failed-key.json',dict(time_s=float(stamp),completed_keys=len(records),error=type(error).__name__+': '+str(error),original_selected=True,quality_approved=False))
+                    if pose.cache is not None:
+                        cached=pose.cache[1]
+                        np.savez_compressed(output/'failed-key-observations.npz',controls=pose.cache[0],constraints=cached[0],jacobian=cached[1],world=cached[2],vertices=cached[3])
+                    raise
+            records.append(dict(time_s=float(stamp),**record))
+            with (output/'key-results.jsonl').open('a',encoding='utf-8') as journal:journal.write(json.dumps(records[-1],allow_nan=False)+'\n')
+            np.savez_compressed(output/'key-checkpoint.npz',times_s=clock,controls=values,completed_keys=len(records))
+            save(output/'key-progress.json',dict(completed_keys=len(records),planned_keys=len(clock),original_selected=True))
         save(output/'key-results.json',records);np.savez_compressed(output/'key-controls.npz',times_s=clock,controls=values)
         candidate=output/'character.glb';new_index=encode(actor['rig'],actor['animation_index'],nodes,channels,values,caps,candidate)
         derived=copy.deepcopy(spec)
@@ -225,15 +258,19 @@ def run(contacts,geometry,request_path,output):
         uniform=np.arange(int(np.floor(scene.duration*120))+1)/120
         times=np.unique(np.concatenate([geometry_times,uniform,clock]+[a for k,a in contact_arrays.items() if k.endswith('_times_s')]))
         before=np.asarray([actor['sampler'].sample(float(t)) for t in times]);after=np.asarray([decoded.actors[name]['sampler'].sample(float(t)) for t in times]);ids=np.searchsorted(times,uniform);joints=actor['rig'].joints
-        rates=SampledMotionCaps(features(before[ids],joints),uniform,np.linspace(0,scene.duration,5),tolerance=1e-5)
-        residual=np.concatenate([((v-c-rates.tolerance)/np.maximum(c,.001)).ravel() for v,c in zip(measures(features(after[ids],joints),rates.dt),rates.caps)])
+        if not np.array_equal(before[ids],source_uniform):raise ValueError('Original rate epoch changed during initialization')
+        candidate_payload,_,candidate_affine=orientation_features(after[ids],joints,orientation_mode)
+        residual=np.concatenate([((v-c-rates.tolerance)/np.maximum(c,.001)).ravel() for v,c in zip(measures(candidate_payload,rates.dt),rates.caps)])
         np.savez_compressed(output/'motion-observations.npz',times_s=times,source_world=before,candidate_world=after,uniform_times_s=uniform,rate_residual=residual,
-            **{f'metric_{i}':c for i,c in enumerate(rates.caps)})
+            **{f'metric_{i}':c for i,c in enumerate(rates.caps)},**{'source_'+k:v for k,v in original_affine.items()},**{'candidate_'+k:v for k,v in candidate_affine.items()})
         displacement=float(np.linalg.norm(after[:,joints,:3,3]-before[:,joints,:3,3],axis=-1).max())
-        angles=[]
-        for node,cap in zip(nodes,caps):
-            parent=actor['rig'].parents[node];a=np.linalg.solve(before[:,parent],before[:,node]);b=np.linalg.solve(after[:,parent],after[:,node])
-            angles.append(float(np.rad2deg(np.linalg.norm(Rotation.from_matrix(a[:,:3,:3].swapaxes(-1,-2)@b[:,:3,:3]).as_rotvec(),axis=1)).max())/cap)
+        if request.get('pose_representation','rigid')=='native-trs-v1':
+            angles=rotation_fractions(actor,decoded.actors[name],times,nodes,caps)
+        else:
+            angles=[]
+            for node,cap in zip(nodes,caps):
+                parent=actor['rig'].parents[node];a=np.linalg.solve(before[:,parent],before[:,node]);b=np.linalg.solve(after[:,parent],after[:,node])
+                angles.append(float(np.rad2deg(np.linalg.norm(Rotation.from_matrix(a[:,:3,:3].swapaxes(-1,-2)@b[:,:3,:3]).as_rotvec(),axis=1)).max())/cap)
         root_error=float(abs(after[:,request['root_node']]-before[:,request['root_node']]).max())
         edit_pass=bool(max(angles)<=1 and displacement<=request['maximum_joint_displacement_m'] and root_error==0)
         result=dict(schema=SCHEMA,status='complete',at=now(),keys=len(clock),pose_failures=sum(not r['pose_conditions_pass'] for r in records),
@@ -241,6 +278,8 @@ def run(contacts,geometry,request_path,output):
             decoded_edit_samples_pass=edit_pass,contact_samples_pass=contact_report['passed'],geometry_samples_pass=surface['sampled_conditions_pass'],
             original_rate_rows=len(residual),failed_original_rate_rows=int((residual>0).sum()),original_motion_caps_pass=bool(np.all(residual<=0)),
             sampled_conditions_pass=bool(edit_pass and contact_report['passed'] and surface['sampled_conditions_pass'] and np.all(residual<=0)),
+            **(dict(pose_representation=request.get('pose_representation','rigid'),orientation_mode=orientation_mode) if any(k in request for k in ('pose_representation','orientation_mode')) else {}),
+            **(dict(boundary_contract_changed=any(v=='edit' for v in boundary_policy(request,clock).values())) if 'boundary_keys' in request else {}),
             original_selected=True,quality_approved=False,training_admitted=False,release_approved=False,
             scope='Independent existing-key pose initializer with original per-pose bounds and point/floor intent, followed by complete decoded geometry/contact/edit and original 120-Hz four-bin rate audits. Different temporal representation; no prior fit-contract, continuous collision, balance, anatomy, engine or human approval.')
         scene.check_inputs()

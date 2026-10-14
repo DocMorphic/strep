@@ -8,6 +8,7 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Affine rig contact initialization](docs/native-affine-contact-initializer-v1.md): edit actual quaternion channels with complete skin/contact derivatives and explicit boundary permissions. The 477-key crawl pilot reduces failed floor samples from 672 to 49, but retains 412 motion-rate failures and a missed ground touch; complete replay confirms rejection. Original clips and source limits remain intact.
 - [Explicit affine-rig orientation metrics](docs/native-affine-angular-metrics-v1.md): preserve stored transforms while measuring orientation separately from stretch; strict remains the default. All 50 targeted checks pass. Complete replay verifies three floor-passing exports, but their motion-rate failures keep them rejected; corrected Float32 grid trials produce no candidate.
 
 - [Bounded native root correction](docs/native-vertical-root-v1.md): unaffected skin ancestors stay fixed while all original motion caps remain checked. All 34 correction and 40 launcher/read-import checks pass. The broader study retains root-budget, rig-transform and solver failures; no new animation is accepted. The get-up floor-only proposal remains rejected by 53 motion-rate conditions.

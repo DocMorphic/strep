@@ -11,6 +11,9 @@ from native_scene_contacts import SceneContacts,fields
 from native_scene_geometry import policy_for,evaluate_to_archive
 from sampled_motion_caps import features,measures,SampledMotionCaps
 from strep import ROOT,read,save,sha256,now
+from native_key_boundaries import boundary_policy,key_frozen
+from native_affine_key_pose import rotation_fractions
+from native_motion_orientation import extract as orientation_features
 
 
 def require(condition,message):
@@ -32,9 +35,13 @@ def bound(producer,expected_result_sha256,expected_request_sha256):
     fields(result,('schema','status','at','keys','pose_failures','glb_sha256','output_animation_index','maximum_joint_displacement_m',
         'maximum_rotation_fraction','root_world_element_error','decoded_edit_samples_pass','contact_samples_pass','geometry_samples_pass',
         'original_rate_rows','failed_original_rate_rows','original_motion_caps_pass','sampled_conditions_pass',
-        'original_selected','quality_approved','training_admitted','release_approved','scope'),'native key proposal result')
+        'original_selected','quality_approved','training_admitted','release_approved','scope')+ (('pose_representation','orientation_mode') if any(k in request for k in ('pose_representation','orientation_mode')) else ())+ (('boundary_contract_changed',) if 'boundary_keys' in request else ()),'native key proposal result')
     fields(saved,('request','source_bindings_sha256','implementation_sha256','source_animation_index','temporal_representation','quality_approved'),'original key proposal request')
     require(saved['quality_approved'] is False,'Original request scope changed')
+    if any(k in request for k in ('pose_representation','orientation_mode')):
+        require(result['pose_representation']==request.get('pose_representation','rigid') and result['orientation_mode']==request.get('orientation_mode','strict'),'Declared pose/orientation metric changed')
+    if 'boundary_keys' in request:
+        require(result['boundary_contract_changed'] is any(v=='edit' for v in request['boundary_keys'].values()),'Boundary compatibility declaration changed')
     require(result['schema']==SCHEMA and result['status']=='complete' and result['original_selected'] is True
         and all(result[k] is False for k in ('quality_approved','training_admitted','release_approved')),'Proposal scope or selection changed')
     require(all(sha256(p)==h for p,h in pins.items()),'Original input binding changed')
@@ -66,9 +73,9 @@ def run(producer,output,expected_result_sha256,expected_request_sha256):
         records=read(producer/'key-results.json');require(len(records)==len(clock),'Complete key results required');failed=0
         for index,stamp in enumerate(clock):
             require(records[index]['time_s']==float(stamp),'Original native key clock changed')
-            frozen=bool(stamp in request['frozen_times_s'] or not request['window_s'][0]<stamp<request['window_s'][1])
+            frozen=key_frozen(request,clock,stamp)
             if frozen:require(not np.any(controls[index]),'Frozen native key changed')
-            pose=KeyPose(scene,name,float(stamp),nodes,caps,request['maximum_joint_displacement_m'],policy['planes'],policy['limits']['penetration_m'],request['floor_reserve_m'])
+            pose=KeyPose(scene,name,float(stamp),nodes,caps,request['maximum_joint_displacement_m'],policy['planes'],policy['limits']['penetration_m'],request['floor_reserve_m'],pose_representation=request.get('pose_representation','rigid'))
             passed=bool(np.all(pose.evaluate(controls[index].ravel())[0]>=(-1e-7 if records[index]['solved'] else 0)))
             require(records[index]['pose_conditions_pass'] is passed,'Stored key-pose decision changed');failed+=not passed
         output.mkdir(parents=True);index=encode(actor['rig'],actor['animation_index'],nodes,channels,controls,caps,output/'character.glb')
@@ -88,14 +95,19 @@ def run(producer,output,expected_result_sha256,expected_request_sha256):
         geometry_times,_,_=policy_for(policy,scene,sha256(contacts));uniform=np.arange(int(np.floor(scene.duration*120))+1)/120
         times=np.unique(np.concatenate([geometry_times,uniform,clock]+[a for k,a in contact_arrays.items() if k.endswith('_times_s')]))
         before=np.asarray([actor['sampler'].sample(float(t)) for t in times]);after=np.asarray([decoded.actors[name]['sampler'].sample(float(t)) for t in times]);ids=np.searchsorted(times,uniform);joints=actor['rig'].joints
-        rates=SampledMotionCaps(features(before[ids],joints),uniform,np.linspace(0,scene.duration,5),tolerance=1e-5)
-        residual=np.concatenate([((v-c-rates.tolerance)/np.maximum(c,.001)).ravel() for v,c in zip(measures(features(after[ids],joints),rates.dt),rates.caps)])
-        np.savez_compressed(output/'motion-observations.npz',times_s=times,source_world=before,candidate_world=after,uniform_times_s=uniform,rate_residual=residual,**{f'metric_{i}':c for i,c in enumerate(rates.caps)})
+        original_payload,_,original_affine=orientation_features(before[ids],joints,request.get('orientation_mode','strict'))
+        candidate_payload,_,candidate_affine=orientation_features(after[ids],joints,request.get('orientation_mode','strict'))
+        rates=SampledMotionCaps(original_payload,uniform,np.linspace(0,scene.duration,5),tolerance=1e-5)
+        residual=np.concatenate([((v-c-rates.tolerance)/np.maximum(c,.001)).ravel() for v,c in zip(measures(candidate_payload,rates.dt),rates.caps)])
+        np.savez_compressed(output/'motion-observations.npz',times_s=times,source_world=before,candidate_world=after,uniform_times_s=uniform,rate_residual=residual,**{f'metric_{i}':c for i,c in enumerate(rates.caps)},**{'source_'+k:v for k,v in original_affine.items()},**{'candidate_'+k:v for k,v in candidate_affine.items()})
         arrays_equal(output/'motion-observations.npz',producer/'motion-observations.npz')
         displacement=float(np.linalg.norm(after[:,joints,:3,3]-before[:,joints,:3,3],axis=-1).max());angles=[]
-        for node,cap in zip(nodes,caps):
-            parent=actor['rig'].parents[node];a=np.linalg.solve(before[:,parent],before[:,node]);b=np.linalg.solve(after[:,parent],after[:,node])
-            angles.append(float(np.rad2deg(np.linalg.norm(Rotation.from_matrix(a[:,:3,:3].swapaxes(-1,-2)@b[:,:3,:3]).as_rotvec(),axis=1)).max())/cap)
+        if request.get('pose_representation','rigid')=='native-trs-v1':
+            angles=rotation_fractions(actor,decoded.actors[name],times,nodes,caps)
+        else:
+            for node,cap in zip(nodes,caps):
+                parent=actor['rig'].parents[node];a=np.linalg.solve(before[:,parent],before[:,node]);b=np.linalg.solve(after[:,parent],after[:,node])
+                angles.append(float(np.rad2deg(np.linalg.norm(Rotation.from_matrix(a[:,:3,:3].swapaxes(-1,-2)@b[:,:3,:3]).as_rotvec(),axis=1)).max())/cap)
         root_error=float(abs(after[:,request['root_node']]-before[:,request['root_node']]).max())
         edit_pass=bool(max(angles)<=1 and displacement<=request['maximum_joint_displacement_m'] and root_error==0)
         expected=dict(keys=len(clock),pose_failures=int(failed),maximum_joint_displacement_m=displacement,maximum_rotation_fraction=max(angles),root_world_element_error=root_error,
