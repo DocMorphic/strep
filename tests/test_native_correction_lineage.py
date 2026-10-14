@@ -118,7 +118,7 @@ def test_scene_package_includes_complete_source_bound_lineage(tmp_path,monkeypat
     assert 'native_correction_lineage.py' in prepared['implementation_sha256']
     assert scenes.frozen(scene_folder)==prepared
     assets=scene_folder/'authoring/actors-engine';assets.mkdir(parents=True);(assets/'A-animation.res').write_bytes(b'mocked resource')
-    result=dict(artifacts=dict(active_contacts=str(scene_folder/'contacts.json')),sampled_conditions_pass=False)
+    result=dict(artifacts=dict(active_contacts=str(scene_folder/'contacts.json'),active_policy=str(scene_folder/'geometry-policy.json')),sampled_conditions_pass=False)
     save(scene_folder/'authoring/result.json',result);scenes.package(scene_folder,prepared,result)
     with zipfile.ZipFile(scene_folder/'assets.zip') as z:
         extracted=tmp_path/'extracted';z.extractall(extracted)

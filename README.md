@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Generation versus rig-transfer floor diagnostics](docs/source-target-floor-v1.md): a reusable comparison reproduces seven complete native-key studies. Original motion has ground errors, and transferred get-up/roll clips have much larger head penetrations. A checked kick repair improves only 0.124 mm; motion quality remains unresolved.
+
 - [Studio and game export integration](docs/studio-weight-export-v1.md): explicit weight-only exports retain originals and fidelity receipts through scene/game downloads. Real Godot checks and complete replay pass at 2,017 times; targeted and compatibility batches pass. Raw floor failures and human/runtime validation remain open.
 
 - [Explicit conditioned authoring](docs/conditioned-authoring-v1.md): 71 checks pass; the corrected crawl passes the new separate-export authoring path and complete saved-observation replay. Original assets and failed decisions are retained. Studio and game-package integration remain next.

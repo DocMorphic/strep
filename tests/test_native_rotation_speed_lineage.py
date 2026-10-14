@@ -100,7 +100,7 @@ def test_scene_and_game_packages_keep_complete_speed_evidence(tmp_path,monkeypat
     folder=scenes.folder_for('scene');prepared=scenes.prepare(draft,folder,lambda url:corrections.served_file(url.removeprefix('/files/')))
     assert set(SPEED_METHODS)<=set(prepared['implementation_sha256']) and scenes.frozen(folder)==prepared
     actors=folder/'authoring/actors-engine';actors.mkdir(parents=True);(actors/'A-animation.res').write_bytes(b'mocked resource')
-    result=dict(artifacts=dict(active_contacts=str(folder/'contacts.json')),sampled_conditions_pass=False)
+    result=dict(artifacts=dict(active_contacts=str(folder/'contacts.json'),active_policy=str(folder/'geometry-policy.json')),sampled_conditions_pass=False)
     save(folder/'authoring/result.json',result);scenes.package(folder,prepared,result)
     game=tmp_path/'game';game.mkdir();shutil.copyfile(folder/'assets.zip',game/'source-assets.zip')
     assert set(SPEED_METHODS)<=set(games.source_method_names(SceneContacts(read(folder/'contacts.json'),folder),folder))

@@ -487,7 +487,8 @@
     "tests/test_native_asset_developer_review.py",
     "tests/test_conditioned_skin_fidelity.py",
     "tests/test_native_conditioned_authoring.py",
-    "tests/test_studio_weight_export.py"
+    "tests/test_studio_weight_export.py",
+    "tests/test_native_key_floor_comparison.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",
