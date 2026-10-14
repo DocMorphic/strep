@@ -483,7 +483,8 @@
     "tests/test_native_component_triple_search.py",
     "tests/test_native_translation_stencil.py",
     "tests/test_native_translation_stencil_search.py",
-    "tests/test_native_translation_interval_rank.py"
+    "tests/test_native_translation_interval_rank.py",
+    "tests/test_native_asset_developer_review.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",
@@ -527,6 +528,7 @@
     "tests/test_scene_placement_editor.mjs",
     "tests/test_generation_job_status.mjs",
     "tests/test_cleanup_timer.mjs",
-    "tests/test_selected_joint_guides.mjs"
+    "tests/test_selected_joint_guides.mjs",
+    "tests/test_review_native_selection.mjs"
   ]
 }

@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Complete sampled crawl pass and native review packet](docs/native-crawl-pass-v1.md): fresh replay verifies zero failures across all original motion conditions and sampled floor times. Existing paired quaternion repair closes the final two errors. A verified original/corrected developer packet preserves native asset bytes and honest non-blind labels; 60 related Python checks and four Node suites pass. Broader engine/action/rig and human validation remain required.
+
 - [Faster positional scoring and velocity repair](docs/native-translation-speed-v1.md): all 209 related checks pass. Fresh humanoid continuation/replay reduces failures from eight to two with no regressions, while every sampled floor check passes. Both remaining angular failures keep the clip rejected. Matched complete scoring accounts for every row while reusing unchanged support.
 
 - [Complete positional-interval ranking](docs/native-translation-interval-v1.md): all 200 related checks pass. Matched humanoid export failures fall from 30 to 8, with 22 repaired and no new failures; complete intended motion, native replay and sampled floor results reproduce. Eight remaining failures still reject the clip. The optional ranking preserves original limits and existing defaults.

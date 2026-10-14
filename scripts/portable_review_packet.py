@@ -25,6 +25,8 @@ def package(packet,archive):
     shutil.copyfile(three/'LICENSE',runtime/'three/LICENSE')
     shutil.copyfile(ROOT/'scripts/soma-preview-skin.js',runtime/'soma-preview-skin.js')
     html=(packet/'viewer.html').read_text(encoding='utf-8')
+    if manifest.get('review_type')=='developer' and manifest.get('native_asset_bytes_preserved') is True:
+        html=html.replace('Condition and seed labels are hidden.','This developer comparison shows condition labels and original metadata.')
     html=html.replace('../../assets/viewer/node_modules/three/','./runtime/three/').replace('../../scripts/soma-preview-skin.js','./runtime/soma-preview-skin.js')
     if '../../scripts/review-identity.js' in html:
         shutil.copyfile(ROOT/'scripts/review-identity.js',runtime/'review-identity.js')
@@ -32,6 +34,9 @@ def package(packet,archive):
     if '../../scripts/cleanup-timer.mjs' in html:
         shutil.copyfile(ROOT/'scripts/cleanup-timer.mjs',runtime/'cleanup-timer.mjs')
         html=html.replace('../../scripts/cleanup-timer.mjs','./runtime/cleanup-timer.mjs')
+    if '../../scripts/review-native-selection.mjs' in html:
+        shutil.copyfile(ROOT/'scripts/review-native-selection.mjs',runtime/'review-native-selection.mjs')
+        html=html.replace('../../scripts/review-native-selection.mjs','./runtime/review-native-selection.mjs')
     if '../../' in html:raise ValueError('Viewer still references workspace files')
     (packet/'viewer.html').write_text(html,encoding='utf-8')
     shutil.copyfile(ROOT/'scripts/serve_review_packet.py',packet/'serve.py')
@@ -56,6 +61,9 @@ SOMA preview and skin helper: NVIDIA Kimodo / Strep modifications, Apache-2.0 (L
     if manifest.get('review_type')=='developer':
         readme=packet/'README.txt';text=readme.read_text(encoding='utf-8')
         text=text.replace('Strep independent animation review','Strep developer animation review')
+        if manifest.get('native_asset_bytes_preserved') is True:
+            text=text.replace('Condition and seed labels are hidden.',
+                'This native-asset developer comparison is not blinded. Condition labels and original animation metadata are visible.')
         readme.write_text(text+'\nDeveloper ratings remain separate from independent animator evidence. This packet cannot confer release approval.\n',encoding='utf-8')
     inventory={p.relative_to(packet).as_posix():sha256(p) for p in sorted(packet.rglob('*')) if p.is_file()}
     save(packet/'package-integrity.json',dict(schema=1,created_at=now(),files=inventory,

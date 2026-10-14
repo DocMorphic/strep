@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {selectReviewMotion} from '../scripts/review-native-selection.mjs';
+const bone={name:'mixamorigHips'},other={name:'Hips'},nodes=[bone,other],clips=[{duration:2},{duration:1}];
+const gltf={animations:clips,parser:{associations:new Map([[bone,{nodes:21}],[other,{nodes:0}]])},scene:{traverse:f=>nodes.forEach(f),getObjectByName:name=>nodes.find(n=>n.name===name)}};
+assert.equal(selectReviewMotion({reference_node:'mixamorig:Hips',reference_node_index:21,animation_index:1,duration_s:1},gltf).root,bone);
+assert.equal(selectReviewMotion({reference_node_index:21,animation_index:1},gltf).clip,clips[1]);
+assert.equal(selectReviewMotion({},gltf).root,other);
+for(const patch of [{reference_node_index:22},{reference_node_index:-1},{reference_node_index:1.5},{reference_node_index:true},{animation_index:true},{animation_index:2},{animation_index:-1},{duration_s:3},{duration_s:NaN}])assert.throws(()=>selectReviewMotion(patch,gltf));
+assert.throws(()=>selectReviewMotion({reference_node_index:21},{...gltf,parser:{}}));
+const duplicate={};assert.throws(()=>selectReviewMotion({reference_node_index:21},{...gltf,parser:{associations:new Map([[bone,{nodes:21}],[duplicate,{nodes:21}]])},scene:{traverse:f=>[bone,duplicate].forEach(f)}}));
+console.log('Native node association, renamed joints, exact animation/duration, legacy defaults and malformed/ambiguous bindings passed.');
