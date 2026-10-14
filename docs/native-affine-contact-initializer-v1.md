@@ -74,4 +74,21 @@ Production uses 214.328 seconds, peak sampled process-tree RSS 278,138,880 bytes
 
 Local evidence is retained under `reports/crawl-affine-articulated-v1`, `reports/crawl-affine-articulated-replay-v1` and `reports/native-affine-key-pose-validation-v1` through `v5`. The original transfer SHA-256 is `925709b5b2fad06d398d3a232687c217b635960fb7ef2ff0e54f844521530c56`; the proposal is `c4cdcff60eea9279f915acd270c789a4f1cf660d383f28956c195bdedb623643`. Reports and third-party asset payloads remain local. The source animation is index 0; the proposal appends index 1.
 
-Next work must address the failed authored contact and coupled temporal behavior without resetting source limits or discarding failed samples. No held-out actions, new generation, training, engine playback, human ratings or cleanup evidence are claimed. This failed Quaternius pilot is separate from the earlier Kenney crawl developer-review packet. All fourteen capability/calibration approvals remain unchanged and the full-project goal stays active.
+## Fixed-budget failed-pose probe
+
+A later development probe retries **all seven** failed, nonfrozen keys from the original zero controls, using 40 iterations per key and a shared 120-second deadline. Rotation, displacement, floor and contact limits remain unchanged. All seven converge in 13–20 iterations, including the authored touch key at index 12. Thus the original four-iteration failures are not evidence that those isolated spatial poses are impossible. The probe takes 19.016 seconds of computation; its guard completes in 41.906 seconds, peak sampled RSS 148,525,056 bytes, with all 43 resource observations replayed. Controls, complete pose constraints and surface observations are retained for every retry. This is pose feasibility, not a clip-quality result.
+
+A separate integration probe replaces exactly those seven keys (12 and 95–100), retaining every other native control. It exports from the same original animation, reconstructs original source poses, verifies all four original cap arrays exactly, and evaluates the complete decoded contact, edit, geometry and rate populations:
+
+| Observation | Four-iteration initializer | Seven-key integration |
+| --- | ---: | ---: |
+| Failed floor times, same 2,829 samples | 49 | 8 |
+| Peak floor depth | 20.646 mm | 5.446870 mm |
+| Ground-touch error | 20.646 mm | 5.000004582 mm |
+| Failed original rate rows, same 123,630 rows | 412 | 377 |
+
+The integrated clip still fails contact acceptance: the decoded error exceeds the unchanged 5-mm limit by about **4.582 nanometers**. No epsilon or rounding waiver is applied. This demonstrates the need for an explicitly declared contact reserve before quaternion serialization, followed by the same decoded acceptance check. The eight between-key floor failures and 377 rate failures remain substantive separate work; their respective positional-speed/acceleration and angular-speed/acceleration counts are 89/85/120/83. Edit limits still pass at 185.230 mm maximum displacement and 62.319% of the rotation permission, with an exact root and preserved final world pose. Lower total failure counts do not establish per-row nonregression or justify selecting this proposal.
+
+Integration takes 87.828 seconds, peak sampled RSS 232,546,304 bytes, with all 88 resource observations replayed. This is a complete decoded development check using shared methods, not the earlier fresh bound replay protocol. No optimizer reruns the other 470 keys. Evidence remains local under `reports/crawl-affine-contact-budget-v1` and `reports/crawl-affine-refined-keys-v1`; the integrated GLB SHA-256 is `23e3e1daccc3010843ac4b76352da3a7d8356c60ffb1d712e35fb2019c11057c`.
+
+Next work must add explicit contact reserve and address coupled temporal behavior without resetting source limits or discarding failed samples. No held-out actions, new generation, training, engine playback, human ratings or cleanup evidence are claimed. This failed Quaternius pilot is separate from the earlier Kenney crawl developer-review packet. All fourteen capability/calibration approvals remain unchanged and the full-project goal stays active.
