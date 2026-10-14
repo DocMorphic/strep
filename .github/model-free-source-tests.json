@@ -501,7 +501,8 @@
     "tests/test_native_key_continuation_job.py",
     "tests/test_frozen_key_continuation.py",
     "tests/test_studio_key_continuation.py",
-    "tests/test_studio_read_imports.py"
+    "tests/test_studio_read_imports.py",
+    "tests/test_native_transfer_population.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",
