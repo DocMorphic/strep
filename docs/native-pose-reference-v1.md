@@ -57,3 +57,8 @@ saved. It is not rerun for the fixture correction. The corrected module's
 The source inventories now declare **519 Python modules / 45 Node suites**;
 contact/rig contains **83 Python modules / five Node suites**. This does not
 establish a full source-inventory, model, animation, engine or release pass.
+
+The [focused hosted run](https://github.com/DocMorphic/strep/actions/runs/38706794907)
+at `ee9874c` passes all **12 new reference cases on each OS**: Ubuntu **1.41 s**,
+Windows **2.62 s**. This module result is separate from the existing 51 cases
+in the local affected selection and does not establish a full-inventory pass.

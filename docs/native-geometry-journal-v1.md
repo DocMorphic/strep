@@ -43,7 +43,7 @@ A fresh process verifies that pinned 512-frame prefix and computes only the next
 
 The next predeclared 128-frame continuation completes, reaching **720 of 2,017**. It reuses the prior 592 frames, verifies all 720 artifact sets and preserves the old checkpoint. Its 768 MiB CPU guard completes in **547.031 seconds**, peak **667,226,112 bytes**, with all **540** resource observations replayed. The following 256-frame batch reaches **976**, verifies the complete prefix and preserves the prior checkpoint: **743.109 seconds**, peak **652,992,512 bytes**, with all **730** resource observations replayed. At 976, 1,041 times remain. The 512-frame continuation under ignored `reports/high-five-imported-geometry-journal-batch5-v1` stops at its unchanged 1,200-second execution guard after 77 new committed frames, reaching **1,053 of 2,017**. It is not a RAM stop: peak 671,895,552 bytes, last available 4,282,601,472 bytes, total guard time 1,216.172 seconds; all 1,197 resource observations replay. A fresh guarded process verifies every committed artifact in the pinned 1,053-frame chain before further work. The incomplete frame attempt remains preserved. The next 32-frame continuation completes and verifies every committed artifact through **1,085 of 2,017**, preserving the prior checkpoint. Its unchanged 768 MiB CPU guard completes in **558.657 seconds**, peak **664,199,168 bytes**; all **552** resource observations replay. At verified 1,085, 932 original times remain. The next 48-frame batch completes and re-verifies **1,133 of 2,017** artifacts, preserving the prior checkpoint: **871.250 seconds**, peak **649,302,016 bytes**, with all **855** resource observations replayed. At verified 1,133, 884 original times remain. That next 48-frame continuation completes and re-verifies **1,181 of 2,017** committed artifacts, preserving the prior checkpoint: **371.328 seconds**, peak **714,907,648 bytes**, with all **366** resource observations replayed. At verified 1,181, 836 original times remain. The 128-frame batch completes and re-verifies **1,309** artifacts in **207.360 seconds**, peak **666,054,656 bytes**, with all **205** resource observations replayed. The final 708-frame work budget then completes and verifies every artifact through **2,017 of 2,017**: **457.359 seconds**, peak **659,910,656 bytes**, with all **449** observations replayed. Both use the unchanged 768 MiB CPU cap, 600 MiB free floor, 1,200-second execution guard and original predicates. Every prior checkpoint and abandoned attempt remains preserved. Records remain under ignored `reports/high-five-imported-geometry-journal-batch9-v1` and `-batch10-v1`. The complete population contains failed conditions; completeness is not a pass. Earlier resume records remain under `reports/high-five-imported-geometry-journal-resume-v1`, `reports/high-five-imported-geometry-journal-next-v1` and `reports/high-five-imported-geometry-journal-batch4-v1`.
 
-The [captured audit completion bridge](native-scene-engine-completion-v1.md) can feed a finished journal into normal full-skin/contact replay, original-reference checks and explicit root/event exports. It rejects incomplete populations, so this real high-five prefix cannot yet be completed or packaged through that bridge. No complete full-clock audit, final scene/game package, original-reference fidelity or realistic interaction is claimed.
+The [captured audit completion bridge](native-scene-engine-completion-v1.md) rejects incomplete populations. The real high-five population is now complete and has passed through that bridge, strict saved-observation replay, original-reference fidelity and explicit reference root/intent exports. These completed checks retain the original failed scene conditions; no full playable game package or realistic interaction is claimed.
 
 The installed Trimesh 5.1.0 fallback ray test can draw from its shared [random generator](https://trimesh.org/trimesh.util.html#trimesh.util.random_generator), whose default initialization uses OS entropy. V1 preserves and verifies committed measurements; it does **not** checkpoint that fallback generator's state. Fixture equality and exact saved-array verification therefore do not establish fresh numerical rerun equality for ambiguous fallback cases across processes. Explicit evaluator seed/state binding remains necessary before making that stronger reproducibility claim.
 
@@ -66,7 +66,21 @@ Local final artifacts remain under ignored
 job later fails a new test fixture assumption; the assembly itself succeeds and
 is preserved independently. Its corrected test run does not repeat assembly.
 See [reference-control validation](native-pose-reference-v1.md) for the complete
-status and resource accounting. The actual [capture-completion bridge](native-scene-engine-completion-v1.md)
-is now running fresh full-clock imported/native skin and contact comparisons.
-Consumer replay, original-reference fidelity/game packaging and human quality
-remain separate; no complete motion or release approval follows from assembly.
+status and resource accounting. The actual [capture-completion bridge](native-scene-engine-completion-v1.md),
+strict saved-observation replay, original-reference fidelity and explicit reference
+root/intent exports now complete. Human quality and full game packaging remain
+separate; no corrected motion or release approval follows from assembly.
+
+Across the original declared clock, the pair fails at **402 of 2,017 times**.
+There are **129,274 recorded surface outcomes**: 129,268 proper crossings and
+six boundary/near-contact records. Maximum recorded inside-vertex depths are
+**21.552571 mm** for A inside B at 1.8166666666666667 s (vertex 12652), and
+**33.499061 mm** for B inside A at 1.2479166666666666 s (vertex 2977).
+Neither actor has an unavailable containment result. Both fail the original
+5-mm ground tolerance at every sampled time: maximum penetration **10.436220 mm**
+for A at 0.8208333333333333 s, and **8.331528 mm** for B at
+0.8583333333333333 s. Thus the complete scene fails at every declared time.
+These are counts on a nonuniform clock, not duration percentages. Recorded
+vertex depths are not exact triangle penetration, continuous collision or
+physical/human quality certification. The summary is independently bound under
+ignored `reports/high-five-captured-engine-replay-v1/geometry-summary.json`.
