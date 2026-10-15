@@ -4,6 +4,7 @@ import sys
 from types import SimpleNamespace
 import numpy as np
 import pytest
+from scipy import sparse
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 import native_scene_conic as conic
 from native_scene_norms import NormRows
@@ -89,3 +90,35 @@ def test_invalid_secondary_keeps_finite_primary(monkeypatch,second,status):
     delta,info=solve(monkeypatch,second,status=status)
     np.testing.assert_array_equal(delta,[.5])
     assert not info['minimum_norm_selected']
+
+
+@pytest.mark.parametrize('fixed_excess',[2.,20.])
+@pytest.mark.parametrize('sparse_input',[False,True])
+def test_uneditable_soft_failure_does_not_stall_other_editable_target(fixed_excess,sparse_input):
+    # Another joint/time is outside this edit window. Its failed condition
+    # remains in full merit, but must not make the editable target irrelevant.
+    model=NormRows([[fixed_excess+1.,0,0],[-.4,0,0]],[1.,0.],[1.,1.])
+    jac=np.zeros((2,3,1));jac[1,0,0]=1.
+    derivative=sparse.csc_matrix(jac.reshape(6,1)) if sparse_input else jac
+    delta,info=conic.direction(model,derivative,np.zeros(1),-np.ones(1),np.ones(1),1.)
+    assert delta is not None
+    assert abs(model.residual(derivative,delta)[1])<1e-6
+    assert delta[0]==pytest.approx(.4,abs=1e-6)
+    assert info['fixed_failed_rows']==1
+    assert info['fixed_soft_excess']==pytest.approx(fixed_excess)
+    assert info['predicted_norm_merit'][0]==pytest.approx(fixed_excess)
+    assert info['primary_affine_global_soft_excess']==pytest.approx(fixed_excess)
+    assert info['soft_objective_policy']=='responsive_rows_then_minimum_control_norm'
+
+
+def test_fixed_protected_failure_still_prevents_a_direction():
+    model=NormRows([[3.,0,0],[-.4,0,0]],[1.,0.],[1.,1.]);jac=np.zeros((2,3,1));jac[1,0,0]=1.
+    delta,info=conic.direction(model,jac,[0.],[-1.],[1.],1.,hard_rows=1)
+    assert delta is None and info['status']=='FixedProtectedConflict'
+
+
+def test_all_fixed_soft_failures_keep_zero_edit_and_failed_full_merit():
+    model=NormRows([[3.,0,0]],[1.],[1.]);jac=sparse.csc_matrix((3,1))
+    delta,info=conic.direction(model,jac,[0.],[-1.],[1.],1.)
+    assert abs(delta[0])<1e-8
+    assert info['predicted_norm_merit'][0]==pytest.approx(2.)

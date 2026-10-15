@@ -70,9 +70,17 @@ def direction(system, jacobian, value, lower, upper, trust, *, hard_rows=0):
         # Each consecutive four-row group is one full, unsimplified norm cone.
         bound = np.c_[system.caps[active],system.vectors[active]]/system.scales[active,None]
         mats.append(matrix); rhs.append(bound.ravel()); cones.extend(solver.SecondOrderConeT(4) for _ in active)
-    if len(fixed):
-        mats.append(sparse.csc_matrix(np.r_[np.zeros(n),-1.][None])); rhs.append(np.array([-float(fixed.max())]))
-        cones.append(solver.NonnegativeConeT(1))
+    # Fixed soft failures remain in full merit and decoded acceptance, but a
+    # larger failure at another joint/time must not flatten this window's
+    # objective. Minimizing responsive excess also minimizes max(fixed, excess),
+    # and refines its otherwise-flat optimum before minimizing control norm.
+    # Only exactly zero derivative rows are fixed; no small slope is discarded.
+    responsive_soft=np.flatnonzero((counts>0)&(np.arange(len(counts))>=hard_rows))
+    fixed_soft_excess=float(max(0.,fixed.max())) if len(fixed) else 0.
+    def soft_excess(residual):
+        return float(max(0.,residual[responsive_soft].max())) if len(responsive_soft) else 0.
+    def global_soft_excess(residual):
+        return float(max(0.,residual[hard_rows:].max())) if hard_rows<len(residual) else 0.
     matrix = sparse.vstack(mats,format='csc'); bound = np.concatenate(rhs)
     settings = solver.DefaultSettings(); settings.verbose=False; settings.max_iter=100; settings.time_limit=30.
     settings.tol_gap_abs=settings.tol_gap_rel=settings.tol_feas=1e-9
@@ -83,6 +91,8 @@ def direction(system, jacobian, value, lower, upper, trust, *, hard_rows=0):
         solver_version=solver.__version__,norm_rows=len(system.vectors),active_cones=len(active),
         protected_norm_rows=hard_rows,
         fixed_failed_rows=len(fixed),omitted_fixed_passing_rows=omitted,
+        fixed_soft_excess=fixed_soft_excess,responsive_soft_rows=len(responsive_soft),
+        soft_objective_policy='responsive_rows_then_minimum_control_norm',
         omitted_affine_box_passing_rows=int(box_passing.sum()),
         affine_box_bound='norm(abs(vector) + abs(J) @ maximum_absolute_step) plus arithmetic reserve',
         scope='Affine vector-norm proposal only; decoded constraints still decide acceptance.')
@@ -92,7 +102,7 @@ def direction(system, jacobian, value, lower, upper, trust, *, hard_rows=0):
     optimum = max(0.,float(point[-1]))
     primary_delta=np.clip(value+point[:n]*trust,lower,upper)-value
     primary_residual=system.residual(jacobian,primary_delta)
-    primary_soft=float(max(0.,primary_residual[hard_rows:].max())) if hard_rows<len(primary_residual) else 0.
+    primary_soft=soft_excess(primary_residual)
     # The reported objective can itself slightly understate the primary
     # point's actual affine error. Preserve the measured candidate merit.
     refinement_bound=max(optimum,primary_soft)+1e-9
@@ -102,7 +112,7 @@ def direction(system, jacobian, value, lower, upper, trust, *, hard_rows=0):
     second = solver.DefaultSolver(sparse.diags(np.r_[np.ones(n),0.],format='csc'),np.zeros(n+1),
         second_matrix,second_bound,cones+[solver.NonnegativeConeT(1)],settings).solve()
     info.update(minimum_norm_phase_status=str(second.status),affine_optimum=optimum,
-        primary_affine_soft_excess=primary_soft)
+        primary_affine_soft_excess=primary_soft,primary_affine_global_soft_excess=global_soft_excess(primary_residual))
     info['minimum_norm_selected']=False
     attempts=[]
     def refinement(solution,phase):
@@ -120,17 +130,17 @@ def direction(system, jacobian, value, lower, upper, trust, *, hard_rows=0):
         check['finite_affine_rows']=bool(np.isfinite(residual).all())
         if not check['finite_affine_rows']:return None
         hard_valid=bool(np.all(residual[:hard_rows]<=0))
-        soft_excess=float(max(0.,residual[hard_rows:].max())) if hard_rows<len(residual) else 0.
+        responsive_excess=soft_excess(residual)
         # Comparing two rounded affine objective values needs an explicit
         # floating-point reserve. This applies only to the proposal tie-break;
         # it never changes hard rows or actual decoded acceptance caps.
-        comparison_reserve=128*(n+4)*np.finfo(float).eps*max(1.,abs(refinement_bound),abs(soft_excess))
-        selected=bool(box_valid and hard_valid and soft_excess<=refinement_bound+comparison_reserve)
+        comparison_reserve=128*(n+4)*np.finfo(float).eps*max(1.,abs(refinement_bound),abs(responsive_excess))
+        selected=bool(box_valid and hard_valid and responsive_excess<=refinement_bound+comparison_reserve)
         check.update(selected=selected,affine_hard_rows_pass=hard_valid,
-            affine_soft_excess=soft_excess,affine_bound=refinement_bound,
+            affine_soft_excess=responsive_excess,affine_global_soft_excess=global_soft_excess(residual),affine_bound=refinement_bound,
             comparison_reserve=comparison_reserve,control_box_pass=box_valid)
         info.update(minimum_norm_selected=selected,minimum_norm_affine_hard_rows_pass=hard_valid,
-            minimum_norm_affine_soft_excess=soft_excess,minimum_norm_affine_bound=refinement_bound,
+            minimum_norm_affine_soft_excess=responsive_excess,minimum_norm_affine_global_soft_excess=global_soft_excess(residual),minimum_norm_affine_bound=refinement_bound,
             minimum_norm_comparison_reserve=comparison_reserve,
             minimum_norm_control_box_pass=box_valid)
         return secondary if selected else None

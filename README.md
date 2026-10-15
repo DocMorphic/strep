@@ -8,7 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
-- [Longer intervals with selected joints](docs/native-interval-track-selection-v1.md): an explicit variable-joint list allows more native keys within the same control budget. Other tracks and every original physical condition remain protected; public replay and continuation retain the selection.
+- [Correction across separate failure intervals](docs/native-responsive-soft-objective-v1.md): fixed failures elsewhere no longer flatten the shared proposal objective. All 169 affected checks pass; complete decoded constraints and failure reporting remain unchanged.
+- [Longer intervals with selected joints](docs/native-interval-track-selection-v1.md): the crawl trial reduces failed floor times from seven to five, but all 377 rate failures keep it rejected. Exact four-export replay passes; joint/time localization identifies the next bilateral interval within the same control budget.
 - [Shared solver initialization](docs/highs-thread-order-v1.md): LP/MILP calls inherit the process scheduler without resetting another caller's runtime. All 229 combined checks pass locally; complete hosted confirmation remains pending.
 - [Public correction from saved controls](docs/native-seeded-restoration-v1.md): command, replay, continuation and frozen runtime support explicit original inputs and native controls. A wider crawl step repairs one floor sample with no condition worsening; complete four-export replay passes. Seven floor and 377 rate failures remain.
 - [Affine-aware neighboring-key correction](docs/native-affine-temporal-v1.md): retain actual rig scale, load bounded saved controls against the original source, and stream complete floor guidance. All 33 selected checks pass. A half step reduces violation severity without worsening any condition, but 377 rate and eight floor failures still reject the crawl.
