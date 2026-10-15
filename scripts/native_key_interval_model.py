@@ -23,6 +23,17 @@ from strep import read,sha256,save,ROOT
 from native_motion_orientation import extract as orientation_features
 from native_key_boundaries import key_frozen
 
+FLOOR_GATHER_BUDGET_BYTES=64*1024**2
+
+
+def floor_tiles(vertices,influences,budget=FLOOR_GATHER_BUDGET_BYTES):
+    """Bound the gathered Float64 3x4 skin matrices, without discarding rows."""
+    require(all(type(v) is int and v>0 for v in (vertices,influences,budget)), 'Positive complete floor tile dimensions required')
+    row_bytes=influences*3*4*np.dtype(float).itemsize
+    span=min(vertices,budget//row_bytes)
+    require(span>=1,'Floor workspace cannot hold one complete vertex; no influences discarded')
+    return min(32,max(1,budget//(span*row_bytes))),span
+
 
 class KeyIntervalModel:
     def __init__(self,producer,result_digest,request_digest,active_keys,*,active_nodes=None):
@@ -208,12 +219,21 @@ class KeyIntervalModel:
     def floor(self,worlds):
         planes=list(self.policy['planes'].values());require(bool(planes),'Explicit complete plane guidance required')
         gaps=np.empty((len(planes),len(self.geometry_ids)));witnesses=np.empty(gaps.shape,int)
-        for start in range(0,len(self.geometry_ids),32):
-            stop=min(start+32,len(self.geometry_ids));points=self.points(worlds,self.used,self.geometry_ids[start:stop])
-            for i,plane in enumerate(planes):
-                distance=points@np.asarray(plane['normal_world'])-plane['offset_m'];ids=np.argmin(distance,axis=1)
-                witnesses[i,start:stop]=self.used[ids]
-                gaps[i,start:stop]=distance[np.arange(len(ids)),ids]+self.policy['limits']['penetration_m']
+        frames,vertices=floor_tiles(len(self.used),self.skin.nodes.shape[1],FLOOR_GATHER_BUDGET_BYTES)
+        for start in range(0,len(self.geometry_ids),frames):
+            stop=min(start+frames,len(self.geometry_ids));best=np.full((len(planes),stop-start),np.inf)
+            selected=np.full(best.shape,-1,int)
+            for first in range(0,len(self.used),vertices):
+                used=self.used[first:first+vertices];points=self.points(worlds,used,self.geometry_ids[start:stop])
+                require(np.isfinite(points).all(),'Finite complete floor vertices required')
+                for i,plane in enumerate(planes):
+                    distance=points@np.asarray(plane['normal_world'])-plane['offset_m'];ids=np.argmin(distance,axis=1)
+                    depth=distance[np.arange(len(ids)),ids];improved=depth<best[i]
+                    # Strict comparison keeps the first original vertex on ties,
+                    # just like one argmin over the complete ordered population.
+                    best[i,improved]=depth[improved];selected[i,improved]=used[ids[improved]]
+            require(np.all(selected>=0) and np.isfinite(best).all(),'Complete finite floor minima required')
+            witnesses[:,start:stop]=selected;gaps[:,start:stop]=best+self.policy['limits']['penetration_m']
         return gaps.ravel(),witnesses
 
     def witness_gaps(self,worlds,witnesses):

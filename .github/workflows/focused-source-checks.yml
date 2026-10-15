@@ -15,6 +15,7 @@ on:
           - tests/test_native_seed_restoration.py
           - tests/test_native_key_cached_recourse.py
           - tests/test_native_key_contact_retention.py
+          - tests/test_native_floor_tiles.py
           - tests/test_highs_thread_policy.py
           - tests/test_native_scene_conic_secondary.py
           - tests/test_desktop_build_preservation.py
