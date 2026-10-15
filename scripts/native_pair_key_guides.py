@@ -141,7 +141,7 @@ class PairKeyGuides:
             derivative=((np.r_[n.vectors,c.vectors]-smooth_vectors)/h).ravel()
             gd=np.r_[(witnesses(changed)-smooth_floor)/h,(self.guide_gaps(other,changed)-smooth_guide)/h]
             ids=np.flatnonzero(derivative);gids=np.flatnonzero(gd);count+=len(ids)+len(gids)
-            require(count<=maximum_nonzeros,'Complete joint Jacobian exceeds budget; no entries discarded')
+            require(count<=maximum_nonzeros,f'Complete joint Jacobian has {count} entries at column {column}, exceeding budget {maximum_nonzeros}; no entries discarded')
             data.append(derivative[ids]);indices.append(ids);pointers.append(pointers[-1]+len(ids))
             gdata.append(gd[gids]);gindices.append(gids);gpointers.append(gpointers[-1]+len(gids));actual_steps.append(float(h))
         jac=sparse.csc_matrix((np.concatenate(data),np.concatenate(indices),pointers),shape=(base_vectors.size,self.size))

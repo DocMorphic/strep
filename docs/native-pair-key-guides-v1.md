@@ -67,6 +67,10 @@ The source inventories now declare **520 Python test modules / 45 Node suites**;
 contact/rig contains **84 Python modules / five Node suites**. This focused
 selection does not establish a full-inventory or release pass.
 
+The [focused hosted run](https://github.com/DocMorphic/strep/actions/runs/38715030869)
+at `f0b028e` passes all **17 new cases on each OS**: Ubuntu **4.01 s**,
+Windows **12.62 s**. This is distinct from the 48-case local affected selection.
+
 ## Actual motion study
 
 The real source-native high-five trial under ignored
@@ -78,8 +82,24 @@ explicit backoff probes. Complete decoded motion, contact and floor checks
 decide whether a proposal anchor can be retained; the original motion remains
 selected for the project.
 
-This study is running; no solver, exported-motion or geometry success is inferred
-until its authoritative result. Its 1 GiB CPU estimate covers two simultaneous
+The initial 3,000,000-nonzero Jacobian budget stops the actual study before a
+solver result or decoded proposal. It does not truncate any derivative or motion
+population. The guard records **376.281 s**, peak sampled tree RSS **611,860,480
+bytes**, with all **372** resource observations replayed. This is a declared
+matrix-entry budget failure, not a RAM guard stop or a motion-feasibility result.
+Its original source observations and failure remain intact. The actual model
+contains **461 controls**, **619,662 hard original native rows** and **32,250
+regional guide rows**, alongside coupled contacts and complete floor protection.
+
+A fresh study under ignored `reports/high-five-joint-native-approach-v2` raises
+only the sparse-entry budget to 6,000,000, with the **same 1 GiB RAM guard**, free
+floor, time population, controls and motion/contact/geometry conditions. Doubling
+the stored-entry allowance adds at most 48 MB of raw Float64/Int64 entry chunks,
+before sparse assembly/solver overhead; this is an estimate, and the unchanged
+RAM guard remains authoritative. The helper's failure message now reports the
+actual count, column and limit; its mathematical operations are unchanged.
+This continuation is running; no solver, exported-motion or geometry success is
+inferred until its authoritative result. The 1 GiB CPU estimate covers two simultaneous
 interval models and the complete sparse populations, based on twice the earlier
 346,353,664-byte moving-guide peak plus a 128 MiB allowance. The additional
 600 MiB free floor stays in force; engine/model admission is unchanged. No model
