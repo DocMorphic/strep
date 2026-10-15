@@ -8,6 +8,7 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Smooth native-control seed study](docs/native-anchor-seed-study-v1.md): two fixed blends clear sampled floor failures and reduce the worst excess, but add rate failures. Both remain rejected. All three evaluations complete; the baseline cold replay passes and two replay cases remain pending after RAM-guard stops.
 - [Reproducible Studio build](docs/desktop-ui-v1.md#build-reproducibility-follow-up-2026-10-15): rebuilding preserves the saved-correction panel and its startup. Six Python checks, three editor suites and local HTTP read-back pass; broader hosted checks remain separate.
 - [Correction across separate failure intervals](docs/native-responsive-soft-objective-v1.md): a real crawl half step reduces rate failures from 377 to 351 with no checked condition worsening. All four exports replay exactly. Five floor failures remain, keeping the asset rejected; 169 affected solver checks pass.
 - [Longer intervals with selected joints](docs/native-interval-track-selection-v1.md): the crawl trial reduces failed floor times from seven to five, but all 377 rate failures keep it rejected. Exact four-export replay passes; joint/time localization identifies the next bilateral interval within the same control budget.

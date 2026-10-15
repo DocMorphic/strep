@@ -1,0 +1,46 @@
+# Smooth native-control seeds around a supplied contact
+
+Two declared temporal blends clear the Quaternius crawl's sampled floor failures and preserve its authored touch, but introduce additional original-rate failures. Both remain rejected against the previously retained clip. The experiment motivates a different initialization branch; it does not establish realistic crawling or justify weaker acceptance limits.
+
+## Inputs and fixed proposal recipe
+
+The starting clip is the [exactly replayed bilateral continuation](native-responsive-soft-objective-v1.md), SHA-256 `bfced13e10292f5e60e2b0063a0ebdf71d37e5743aaa3814a2fb8a25e6337a9f`. It has 351 original-rate failures and five failed floor times. The original character, source animation, 477-key clock, 16 permitted rotation tracks, explicit editable start/preserved end, 30-degree rotation limits, 0.22-m joint displacement bound, four original 120-Hz/four-bin rate-cap arrays and 5-mm floor/touch limits remain unchanged.
+
+Only permitted nodes 62, 61, 60 and 59 are blended. Their correction controls at native key 12 (0.10000000149011612 s) supply the anchor. This is the existing authored calf-surface-to-world touch, not an inferred planted knee or support interval. No additional contact target is invented. Other local tracks, every zero-weight key and the complete anchor controls remain unchanged.
+
+For original controls `c(t)`, anchor `a`, and weight `w(t)`, the proposal is `(1-w(t))*c(t) + w(t)*a` on those four tracks. Weights stay in [0,1], so this construction stays within the original control-vector unit balls; full decoded edit, displacement, contact, rate and geometry checks are still necessary. Export retains the original native keys and interpolation. No model inference, learned editor or optimizer runs.
+
+Both weights use `f(s) = 1 - 10s³ + 15s⁴ - 6s⁵` for clamped `s` in [0,1], with exact values one and zero at the support boundaries:
+
+- **Plateau:** `s=(t-0.15)/0.5`, giving a constant anchor through 0.15 s and zero weight from 0.65 s onward.
+- **Centered:** `s=abs(t-anchor_time)/width`, with width 0.35 s before the anchor and 0.55 s after it. At the original anchor key, the weight is exactly one.
+
+Both proposals are fixed before evaluation. No parameter search chooses a favorable clip afterward. Complete control/weight archives, request bindings, source methods, exported clips and every failure remain local.
+
+## Complete decoded measurements
+
+| Clip | Original rate failures | Failed floor times | Worst normalized excess | Squared positive excess | Peak floor depth |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Reproduced start | 351 | 5 | 345.953947 | 713,338.340066 | 5.258764 mm |
+| Plateau | 499 | 0 | 16.787599 | 4,087.873910 | 4.860700 mm |
+| Centered | 528 | 0 | 16.787599 | 4,019.179421 | 4.881983 mm |
+
+All three preserve zero root error, zero decoded edit failures and the same 4.934019947-mm touch error. All four source-cap arrays remain identical. Both blends fail the original rate acceptance and the complete per-condition no-worsening test against the starting clip. A smaller worst error or floor-only pass cannot override that rejection. No animation is automatically selected for game use.
+
+The plateau GLB SHA-256 is `9e39f4e7abbb9a5846899a4e86a93c852403350f044e226ac2aa45b30f708679`; the centered GLB SHA-256 is `b41504002b28996f0fff03c71f1cbaa704638a8ca34bf132afaa440ce4f794e7`. This is one development actor and an explicit plane/contact policy. It adds no self-intersection, force-balance, object/partner, held-out, engine, animator or cleanup-time evidence.
+
+## Interrupted execution and continuation
+
+The original guard stops for `available_ram_guard` after 215.796 seconds, with peak sampled process-tree RSS 402,317,312 bytes. It observes available memory below the unchanged 600 MiB floor; all 215 resource observations replay. Baseline and plateau exports finish before the stop. The centered export and contact report exist, but its geometry file is partial. The original run remains marked failed, and its partial outputs are preserved.
+
+The first fresh continuation stops before evaluation because its bookkeeping accesses a lazily populated row count too early. Its 47.781-second/49-observation resource trace replays as a failure. A separate corrected continuation derives the original offset from the bound complete observations and verifies it against the freshly evaluated population. It reuses both completed cases and evaluates only the interrupted centered case. The reconstructed centered GLB matches the interrupted export exactly. This continuation completes in 97.578 seconds with peak sampled RSS 413,376,512 bytes; all 98 resource observations replay.
+
+Every attempt retains the same declared 768 MiB CPU estimate/cap, additional 600 MiB free-memory floor, 15-second admission stability and 1,200-second supervisor limit. No guard is bypassed and no raw failed run is relabeled complete. A separate completion manifest references the two earlier complete cases and the new third case.
+
+The initial combined cold replay also stops at the available-memory floor after 109.375 seconds; all 110 resource observations replay as a failure. It completes the starting export/contact/geometry stages but not the full case receipt. The follow-up uses three sequential, individually guarded complete-case workers so a later interruption cannot discard an earlier verified case. Each still reconstructs its declared kernel and full controls, re-exports the actual GLB, compares every observation/contact/geometry result and replays the original retention decision. This changes checkpoint granularity, not numerical or memory limits.
+
+The baseline case replay completes in 105.547 seconds with peak sampled RSS 418,975,744 bytes, including exact GLB bytes, complete observations/reports, unchanged channel/anchor values and retention. All 106 resource observations replay. The plateau case then stops at the free-memory floor after 114.891 seconds with peak sampled RSS 297,627,648 bytes; all 115 observations replay as a failure. The verified baseline remains checkpointed. Plateau and centered cold replays are still pending, so full three-case replay is not claimed.
+
+A fresh plateau attempt adds a stricter preflight: at least 2 GiB free for 60 continuous seconds, with a 600-second waiting bound. Only after that does it enter the original declared guarded policy. This adds initial headroom without changing the owned-process cap, execution floor, numerical conditions or time limit. Readiness cannot guarantee that unrelated memory use stays constant; the execution guard remains authoritative.
+
+Evidence remains under ignored `reports/crawl-anchor-curve-seeds-v1`, both `reports/crawl-anchor-curve-seeds-continuation-v*` attempts, `reports/crawl-anchor-curve-seeds-replay-v1`, `reports/crawl-anchor-curve-seeds-replay-split-v2` and its per-case folders, and `reports/crawl-anchor-curve-seeds-replay-plateau-v3`. All fourteen release capability/calibration gates remain unapproved; the entire-project goal stays active. A later correction experiment may use a rejected blend as an explicitly separate initialization branch; it must not silently replace the earlier retained comparison clip or inherit approval.
