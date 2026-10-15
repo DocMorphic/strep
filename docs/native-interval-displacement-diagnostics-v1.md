@@ -65,3 +65,9 @@ under ignored `reports/high-five-native-displacement-replay-v1`; earlier raw
 results and incorrectly attributed reports remain intact. This replay does not
 requery floor/scene geometry or reexecute the engine. All prior collision,
 floor, motion-rate and release failures remain unresolved; no clip is adopted.
+
+The [focused hosted workflow](https://github.com/DocMorphic/strep/actions/runs/38699445093)
+at `d1a1110628150849a738de4f7020782c33a3b265` passes all **14 interval-model
+checks per OS**: Ubuntu 4.43 seconds and Windows 113.72 seconds. That selected
+module includes the five new cases and nine earlier checks; it is not a hosted
+rerun of all 41 locally affected checks or the full source inventory.
