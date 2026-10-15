@@ -155,13 +155,21 @@ an animation. Original complete-mesh acceptance remains a separate operation.
         if not all(np.isfinite(a).all() for a in result):raise ValueError('Nonfinite complete pose observations')
         self.cache=(value.copy(),result);return result
 
-    def solve(self,iterations,deadline):
-        zero=np.zeros(3*len(self.nodes));before=self.evaluate(zero)[0]
-        if np.all(before>=0):return zero,dict(solved=False,calls=self.calls,pose_conditions_pass=True)
+    def solve(self,iterations,deadline,*,reference_controls=None):
+        zero=np.zeros(3*len(self.nodes));reference=zero;metadata={}
+        if reference_controls is not None:
+            source=np.asarray(reference_controls)
+            if source.dtype.kind not in 'iuf':raise ValueError('Finite real normalized reference controls required')
+            reference=np.asarray(source,dtype=float).copy()
+            if reference.shape!=zero.shape or not np.isfinite(reference).all() or np.any(abs(reference)>1):
+                raise ValueError('Complete finite reference controls inside the original component box required')
+            metadata=dict(reference_conditioned=True,reference_controls=reference.tolist())
+        before=self.evaluate(reference)[0]
+        if np.all(before>=0):return reference.copy(),dict(solved=False,calls=self.calls,pose_conditions_pass=True,**metadata)
         def observed(x):
             if time.monotonic()>deadline:raise TimeoutError('Explicit complete-key initialization time budget exhausted')
             return self.evaluate(x)
-        result=minimize(lambda x:float(x@x),zero,jac=lambda x:2*x,method='SLSQP',bounds=[(-1,1)]*len(zero),
+        result=minimize(lambda x:float((x-reference)@(x-reference)),reference.copy(),jac=lambda x:2*(x-reference),method='SLSQP',bounds=[(-1,1)]*len(zero),
             constraints=dict(type='ineq',fun=lambda x:observed(x)[0],jac=lambda x:observed(x)[1]),
             options=dict(maxiter=iterations,ftol=1e-12))
         finite=np.isfinite(result.x).all();passed=bool(finite and np.all(observed(result.x)[0]>=-1e-7))
@@ -169,7 +177,7 @@ an animation. Original complete-mesh acceptance remains a separate operation.
         return selected,dict(solved=True,solver_success=bool(result.success),message=str(result.message),iterations=int(result.nit),
             calls=self.calls,pose_conditions_pass=passed,candidate_controls=result.x.tolist() if finite else None,
             minimum_candidate_inequality=float(observed(result.x)[0].min()) if finite else None,
-            failed_pose_retains_original=not passed)
+            failed_pose_retains_original=not passed,**metadata)
 
 
 def prepare(scene,request,digest,policy):
