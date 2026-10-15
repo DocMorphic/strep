@@ -8,6 +8,7 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Affine-aware neighboring-key correction](docs/native-affine-temporal-v1.md): retain actual rig scale, load bounded saved controls against the original source, and stream complete floor guidance. All 33 selected checks pass. A half step reduces violation severity without worsening any condition, but 377 rate and eight floor failures still reject the crawl.
 - [Contact margins for quaternion export](docs/native-key-contact-reserve-v1.md): explicit tighter solver targets retain the original decoded acceptance limit. The crawl touch now passes at 4.50 mm against 5 mm; eight floor samples and 377 motion-rate checks still fail, keeping the clip rejected.
 - [Affine rig contact initialization](docs/native-affine-contact-initializer-v1.md): edit actual quaternion channels with complete skin/contact derivatives and explicit boundary permissions. The 477-key crawl pilot reduces failed floor samples from 672 to 49, but retains 412 motion-rate failures and a missed ground touch; complete replay confirms rejection. Original clips and source limits remain intact.
 - [Explicit affine-rig orientation metrics](docs/native-affine-angular-metrics-v1.md): preserve stored transforms while measuring orientation separately from stretch; strict remains the default. All 50 targeted checks pass. Complete replay verifies three floor-passing exports, but their motion-rate failures keep them rejected; corrected Float32 grid trials produce no candidate.

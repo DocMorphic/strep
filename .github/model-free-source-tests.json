@@ -507,7 +507,8 @@
     "tests/test_native_motion_orientation.py",
     "tests/test_native_scaled_root_grid.py",
     "tests/test_native_affine_key_pose.py",
-    "tests/test_native_key_contact_reserve.py"
+    "tests/test_native_key_contact_reserve.py",
+    "tests/test_native_affine_interval_seed.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",
