@@ -139,3 +139,11 @@ report 13 passed in 1.20 s / 3.39 s. These runs do not establish a complete
 518-module suite, engine or human-quality pass.
 
 All release capabilities and human/held-out calibration gates remain unapproved.
+
+
+A later [complete-region facet guide](facet-plane-contact-guidance-v1.md) includes
+forearm and hand skin, adds every returned hull facet normal, and reserves
+joint-displacement room inside the original bound. It clears the measured pair
+at one native pose and in the exported curve at that time, while neighboring
+frames, original rates, floor and unchanged meeting contacts still fail. This
+does not approve an animation.
