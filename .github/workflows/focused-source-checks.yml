@@ -13,6 +13,7 @@ on:
           - tests/test_native_vertical_root.py
           - tests/test_native_affine_interval_seed.py
           - tests/test_native_seed_restoration.py
+          - tests/test_highs_thread_policy.py
 
 permissions:
   contents: read

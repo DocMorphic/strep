@@ -16,7 +16,7 @@ def inward_step(x, residuals, jacobian, lower, upper, trust):
     derivative=csr_matrix(j*radius);ceiling=np.maximum(g,0.)-g
     fit=linprog(np.r_[np.zeros(len(x)),-1.],A_ub=hstack([derivative,csr_matrix(weights[:,None])]),
         b_ub=ceiling,bounds=bounds+[(0.,1.)],method='highs',
-        options=dict(primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9))
+        options=dict(primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9,threads=1))
     info=dict(success=bool(fit.success),status=int(fit.status),message=str(fit.message))
     if not fit.success:return None,info
     eta=float(fit.x[-1]);info['common_improvement']=eta
@@ -27,7 +27,7 @@ def inward_step(x, residuals, jacobian, lower, upper, trust):
     tie=linprog(np.r_[np.zeros(len(x)),1.],
         A_ub=vstack([hstack([derivative,csr_matrix((len(g),1))]),hstack([identity,ones]),hstack([-identity,ones])]),
         b_ub=np.r_[ceiling-target*weights,np.zeros(2*len(x))],bounds=bounds+[(0.,1.)],method='highs',
-        options=dict(primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9))
+        options=dict(primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9,threads=1))
     delta=(tie.x[:-1] if tie.success else fit.x[:-1])*radius
     step=np.clip(x+delta,lo,hi)-x
     predicted=g+j@step

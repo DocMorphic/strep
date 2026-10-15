@@ -26,7 +26,7 @@ def interior_witness(a, b):
     objective = np.r_[np.zeros(6), -1.]
     result = linprog(objective, A_ub=inequality, b_ub=np.zeros(6),
                      A_eq=equality, b_eq=[0,0,0,1,1], bounds=[(0,1)]*7,
-                     method='highs', options={'primal_feasibility_tolerance':1e-9,'dual_feasibility_tolerance':1e-9})
+                     method='highs', options={'primal_feasibility_tolerance':1e-9,'dual_feasibility_tolerance':1e-9,'threads':1})
     if not result.success:
         return dict(feasible=False, status=int(result.status), message=result.message)
     residual = float(np.abs(equality@result.x-[0,0,0,1,1]).max())

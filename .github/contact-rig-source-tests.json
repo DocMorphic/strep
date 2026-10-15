@@ -73,7 +73,8 @@
     "tests/test_native_contact_reserve.py",
     "tests/test_native_key_contact_reserve.py",
     "tests/test_native_affine_interval_seed.py",
-    "tests/test_native_seed_restoration.py"
+    "tests/test_native_seed_restoration.py",
+    "tests/test_highs_thread_policy.py"
   ],
   "node_tests": [
     "tests/test_native_scene_fit_editor.mjs",
