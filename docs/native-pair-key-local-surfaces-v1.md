@@ -77,6 +77,10 @@ guard completes in **31.438 s**, peak sampled tree RSS **136,560,640 bytes**, wi
 all **33** resource observations replayed. Local results remain under
 `reports/native-pair-local-surface-legacy-checks-20261015-v1`.
 
+The [focused hosted run](https://github.com/DocMorphic/strep/actions/runs/38723902164)
+at `e79e428` passes all **26 new cases on each OS**: Ubuntu **3.70 s**, Windows
+**19.16 s**. It is distinct from the two local affected selections.
+
 ## Actual temporal study
 
 The source-native trial under ignored `reports/high-five-local-surface-temporal-v1`
@@ -153,3 +157,10 @@ allowing one actor/time to worsen while another dominates the minimax objective.
 That does not replace the existing physical acceptance or justify weakening the
 geometry comparison. The full-project goal retains broader motions, rigs,
 objects, controls, held-out testing and human cleanup evidence.
+
+A read-only canonical-index attribution matches all **15 increased directional
+peak-depth observations** across the four probes to vertices already present in
+the original inside-vertex witness set. It does not establish why the solver
+allowed those depths to grow, but those particular maxima were not missing
+from the witness population. Inputs, row identities and per-probe peak indices
+remain bound under ignored `reports/high-five-local-surface-regression-attribution-v1`.
