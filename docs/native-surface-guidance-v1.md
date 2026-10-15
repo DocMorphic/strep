@@ -66,7 +66,7 @@ The 768 MiB CPU guard completes in **70.047 seconds**, peak **224,411,648 bytes*
 all **71** resource observations replay. Local records remain under ignored
 `reports/high-five-separation-proposal-v1`.
 
-A separate declared hand-region trial follows. It takes every incident triangle
+A separate declared hand-region trial takes every incident triangle
 of vertices carrying at least 0.5 total skin weight from the named RightHand
 subtree, then includes every vertex of those triangles. It evaluates the fixed
 three world axes, orders the actor patches by their original mean projection,
@@ -76,5 +76,64 @@ Its complete actor meshes must still be checked after the pose proposal. If
 both poses fit, exactly one predefined compact-quintic native-curve construction
 is tested against unchanged original motion rates, floor and point contacts.
 Neither trial relaxes acceptance or automatically selects a new clip.
+
+That trial selects world X and fits B in eight iterations / A in ten. Both
+explicit hand regions have a **2 mm** positive projection gap at the fitted
+pose. The subsequent complete-mesh query still fails:
+
+| Native-source diagnostic at 1.1395833333333334 s | Surface outcomes | A inside B maximum | B inside A maximum |
+| --- | ---: | ---: | ---: |
+| Original | 301 | 7.143428 mm | 21.138767 mm |
+| Fitted pose | 92 | 5.965841 mm | 6.044843 mm |
+| Exported native curve | 92 | 5.978984 mm | 6.056315 mm |
+
+These are native-source evaluations of the conditioned export, distinct from
+the earlier imported-engine measurements. The fitted regions are separated;
+the complete actors are not. Floor depths at the pose remain 7.285620 mm and
+6.336010 mm, exceeding the unchanged 5 mm screen.
+
+The single predefined curve uses a 0.5 s approach half-width on both actors and
+reuses the prior A meeting-pose seed with a separate 0.2 s half-width. Each
+quintic falloff modifies existing native keys only. Root matrices and all
+endpoint matrices remain exactly unchanged; all original caps/scales are kept.
+Both actors' full 2,017-time floor clocks still fail at every time, without
+worsening. Actor A has **15 rotation/joint-bound rows and 215 original-rate
+rows** failing; B has **192 and 109**, respectively. Combined point contacts
+pass at 2 s, with a **29.500027 mm** hand-to-hand gap inside the original
+30 mm limit. Full geometry at that time has **666 surface outcomes** and
+10.679468 / 13.498281 mm maximum inside depths. The clip remains rejected.
+Only two selected geometry times were queried for the exported curve; no
+complete-clock geometry or engine pass is inferred.
+
+The trial guard completes in **274.125 seconds**, peak **359,026,688 bytes**;
+all **272** resource observations replay. Records remain under ignored
+`reports/high-five-hand-region-proposal-v1`. This demonstrates why region
+guidance and point-contact success are not motion acceptance.
+
+A read-only follow-up attributes every recorded surface outcome through the
+unchanged canonical skin weights. All 92 residual early outcomes are proper
+crossings between A's named RightForeArm region and B's RightHand/Pinky regions
+(72 Pinky1, 13 Pinky2, seven Hand). The selected hand/hand regions therefore
+cannot cover the whole failure. These are weighted mesh labels, not reviewed
+anatomical ground truth. The same follow-up recomputes every stored motion
+residual and verifies every original rate-cap array plus its unchanged 1e-5
+tolerance. All bound failures are joint-displacement rows, and the complete
+source/candidate floor-gap arrays are exactly identical for both actors.
+This scalar replay does not independently reconstruct the decoded motion;
+fresh time/track attribution is still required before another curve proposal.
+
+The first follow-up stops on an incorrect assumption that only two contact
+rows are stored per actor. The interval model retains all three, including the
+unchanged other actor's row. That failed attempt is preserved. The corrected
+fresh follow-up completes in **35.485 seconds**, peak **141,750,272 bytes**;
+all **37** resource observations replay under its 512 MiB CPU guard. Records
+remain under ignored `reports/high-five-hand-region-diagnostic-v1` and `-v2`.
+
+The focused hosted workflows at `fadd579d6e790ea888ac8172894c96506fb641be`
+pass all **31 new checks per OS**: [projection checks](https://github.com/DocMorphic/strep/actions/runs/38696567039)
+report 18 passed in 0.59 s on Ubuntu / 0.99 s on Windows, and
+[region checks](https://github.com/DocMorphic/strep/actions/runs/38696570288)
+report 13 passed in 1.20 s / 3.39 s. These runs do not establish a complete
+518-module suite, engine or human-quality pass.
 
 All release capabilities and human/held-out calibration gates remain unapproved.
