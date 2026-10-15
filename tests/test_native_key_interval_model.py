@@ -37,6 +37,11 @@ def test_batch_curve_matches_actual_new_animation_at_all_native_and_geometry_tim
     assert np.array_equal(actual[:,problem.request['root_node']],problem.source_world[:,problem.request['root_node']])
     current=problem.controls(value);np.testing.assert_array_equal(current[np.setdiff1d(np.arange(len(problem.clock)),problem.active)],problem.seed[np.setdiff1d(np.arange(len(problem.clock)),problem.active)])
     rows=problem.rows(value,actual);np.testing.assert_array_equal(rows.caps[problem.edit_count:],np.concatenate([(c+1e-5).ravel() for c in problem.original_caps]))
+    report=problem.displacement_diagnostics(value,actual)
+    expected=max(np.linalg.norm(actual[t,node,:3,3]-problem.source_world[t,node,:3,3])
+        for node in problem.rig.joints for t in range(len(problem.times)))
+    assert report['maximum']['displacement_m']==pytest.approx(expected,abs=1e-15)
+    assert report['checked_rows']==len(problem.times)*len(problem.rig.joints)
 
 
 def test_sparse_model_keeps_complete_rate_and_plane_populations(producer):
@@ -55,3 +60,38 @@ def test_sparse_model_keeps_complete_rate_and_plane_populations(producer):
 def test_mutated_source_caps_cannot_become_the_restoration_reference(producer):
     problem=model(producer);problem.rate.caps[0][0,0]+=1
     with pytest.raises(ValueError,match='source-rate caps changed'):problem.rows(problem.initial)
+
+
+def test_displacement_failure_witnesses_use_actual_joint_major_row_order(producer):
+    problem=model(producer);worlds=problem.source_world.copy();count=len(problem.times)
+    assert count!=len(problem.rig.joints)
+    expected=[(0,1,.26),(len(problem.rig.joints)-1,count-2,.29)]
+    for joint,stamp,distance in expected:worlds[stamp,problem.rig.joints[joint],0,3]+=distance
+    before=problem.rows(problem.initial,worlds);saved=[a.copy() for a in (before.vectors,before.caps,before.scales)]
+    report=problem.displacement_diagnostics(problem.initial,worlds)
+    assert len(report['failures'])==2 and not report['displacement_conditions_pass']
+    for row,(joint,stamp,distance) in zip(report['failures'],expected):
+        assert row['node']==problem.rig.joints[joint] and row['time_index']==stamp
+        assert row['time_s']==problem.times[stamp] and row['row']==count*len(problem.nodes)+joint*count+stamp
+        assert row['displacement_m']==pytest.approx(distance,abs=1e-14) and row['limit_m']==problem.request['maximum_joint_displacement_m']
+        # The old time-major interpretation points to a different physical pose.
+        assert divmod(row['row']-report['row_start'],len(problem.rig.joints))!=(stamp,joint)
+    assert report['maximum']==report['failures'][-1] and report['checked_rows']==count*len(problem.rig.joints)
+    assert report['all_original_vectors_match'] and not report['native_export_reconstructed'] and not report['quality_approved']
+    after=problem.rows(problem.initial,worlds)
+    for a,b in zip(saved,(after.vectors,after.caps,after.scales)):np.testing.assert_array_equal(a,b)
+
+
+def test_source_displacement_diagnostic_keeps_other_acceptance_separate(producer):
+    problem=model(producer);report=problem.displacement_diagnostics(problem.initial,problem.source_world)
+    assert report['displacement_conditions_pass'] and not report['failures'] and report['maximum']['displacement_m']==0.
+    assert not report['engine_verified'] and not report['release_approved']
+
+
+@pytest.mark.parametrize('fault',['shape','nan','infinite'])
+def test_incomplete_or_nonfinite_displacement_observations_reject(producer,fault):
+    problem=model(producer);worlds=problem.source_world.copy()
+    if fault=='shape':worlds=worlds[:-1]
+    elif fault=='nan':worlds[0,0,0,0]=np.nan
+    else:worlds[0,0,0,0]=np.inf
+    with pytest.raises(ValueError,match='Complete finite interval world'):problem.displacement_diagnostics(problem.initial,worlds)

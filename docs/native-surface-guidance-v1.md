@@ -120,7 +120,9 @@ residual and verifies every original rate-cap array plus its unchanged 1e-5
 tolerance. All bound failures are joint-displacement rows, and the complete
 source/candidate floor-gap arrays are exactly identical for both actors.
 This scalar replay does not independently reconstruct the decoded motion;
-fresh time/track attribution is still required before another curve proposal.
+its original time-major displacement labels are superseded by the later
+[fresh native replay](native-interval-displacement-diagnostics-v1.md), which
+checks every actual decoded witness and retains all numerical failure counts.
 
 The first follow-up stops on an incorrect assumption that only two contact
 rows are stored per actor. The interval model retains all three, including the

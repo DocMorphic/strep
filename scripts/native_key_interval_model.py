@@ -216,6 +216,42 @@ class KeyIntervalModel:
         for vector,cap in zip(rate_vectors(payload,self.rate.dt),self.rate.caps):add(vector,(cap+self.rate.tolerance).ravel(),np.maximum(cap,.001).ravel())
         return NormRows(np.concatenate(vectors),np.concatenate(caps),np.concatenate(scales))
 
+    def displacement_diagnostics(self,value,worlds=None):
+        """Attribute every displacement failure without changing row layout.
+
+The existing displacement block is joint-major, then time: NumPy's separated
+advanced joint index and final scalar index put the joint dimension first.
+Reconstruct it with explicit scalar joint indexing, rather than assuming a
+time-major flatten. Provided worlds are observations, not proof of native
+export/engine fidelity. Rotation, contact, rate and geometry acceptance remain
+separate even when this diagnostic has no displacement failures.
+        """
+        self.check();self.controls(value)
+        observed=self.worlds(value) if worlds is None else np.asarray(worlds,float)
+        require(observed.shape==self.source_world.shape and np.isfinite(observed).all(),
+            'Complete finite interval world observations required')
+        norms=self.rows(value,observed);count=len(self.times);joints=self.rig.joints
+        vectors=np.stack([observed[:,node,:3,3]-self.source_world[:,node,:3,3] for node in joints]).reshape(-1,3)
+        start=count*len(self.nodes);stop=start+len(vectors)
+        require(np.array_equal(vectors,norms.vectors[start:stop]),'Displacement diagnostic does not match complete original vector rows')
+        limit=self.request['maximum_joint_displacement_m'];caps=norms.caps[start:stop]
+        require(np.all(caps==limit),'Original displacement limits changed')
+        measured=np.linalg.norm(vectors,axis=1);failed=np.flatnonzero(measured>caps)
+        def witness(index):
+            joint,stamp=divmod(int(index),count);node=int(joints[joint])
+            return dict(row=start+int(index),joint_index=joint,node=node,
+                name=self.rig.document['nodes'][node].get('name'),time_index=stamp,time_s=float(self.times[stamp]),
+                displacement_m=float(measured[index]),limit_m=float(caps[index]),excess_m=float(measured[index]-caps[index]))
+        self.check()
+        return dict(schema='strep-native-interval-displacement-diagnostic-v1',actor=self.name,
+            layout='joint-major-then-time',row_start=start,row_stop_exclusive=stop,samples=count,joints=len(joints),
+            checked_rows=len(vectors),all_original_vectors_match=True,original_limit_m=float(limit),
+            failures=[witness(int(i)) for i in failed],maximum=witness(int(measured.argmax())),
+            displacement_conditions_pass=not len(failed),caller_provided_worlds=worlds is not None,
+            native_export_reconstructed=False,engine_verified=False,quality_approved=False,release_approved=False,
+            scope='Complete supplied interval-world displacement observations attributed to the unchanged original norm-row order and limit. '
+                'No independent native-export reconstruction, other motion/contact conditions, geometry, engine or quality approval.')
+
     def floor(self,worlds):
         planes=list(self.policy['planes'].values());require(bool(planes),'Explicit complete plane guidance required')
         gaps=np.empty((len(planes),len(self.geometry_ids)));witnesses=np.empty(gaps.shape,int)

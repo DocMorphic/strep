@@ -158,3 +158,8 @@ Pinned Godot 4.7.2 conversion completes without bundled animation FBXs. The gene
 ## 2026-10-11: explicit Kenney derivative and seven development transfers
 
 A separate static-rig derivative preserves the converted GLB default shape with about 0.205 micrometres peak reference error, confirmed with separate quaternion/hierarchy and blended skin calculations. It passes unchanged rigid-transform intake. Seven existing seed-77 development motions transfer and independently replay with one fixed profile, while crawl, kick, get-up and run/roll/stand retain substantial ground penetration. The original rejection and asset stay saved; no raw asset payload is published. See [adaptation methodology, complete transfer comparison and failures](rig-scale-adaptation-v1.md). This is reused development data, not a held-out reservation, FBX conversion equivalence, new model generation/training, engine playback or human/release approval.
+
+
+## 2026-10-15: Uni-Inter author-source and artifact screen
+
+The [dated source screen](uni-inter-source-screen-2026-10-15.md) pins author commit `0d5248c9948939d47382f482b06f6e86b037b012`. Its repository LICENSE is CC BY-NC-SA 4.0; commercial product permission is not established. The inspected tree contains no motion checkpoint files and its GitHub releases endpoint is empty; this does not prove no checkpoint exists elsewhere. Its dataset-based 22-joint inference writes GIFs, and the inspected NTU path predicts one person conditioned on the other recorded motion. No third-party code is executed, installed or incorporated, no weights/data are acquired, and no training is admitted. The unchanged Kimodo baseline and original evaluation contracts remain in place.
