@@ -31,6 +31,13 @@ completes in **22.266 seconds**, peak **126,070,784 bytes**; all **24** resource
 observations replay. No new module is added to the existing 518-Python/45-Node
 inventory; contact/rig remains 82 Python modules / five Node suites.
 
+The [focused hosted workflow](https://github.com/DocMorphic/strep/actions/runs/38702239444)
+passes all **31 projection/facet checks per OS** at
+`213f94f1bff4da456a0a059a95b25eca39dd5c67`: Ubuntu 0.51 seconds and Windows
+0.97 seconds. These are 18 earlier and 13 new cases. The 13 pose-region checks
+are included in the separate local 44-check result, not this hosted selection.
+Neither result is a complete inventory, model, engine or quality pass.
+
 ## Actual forearm/hand pose trial
 
 The source is the unchanged native motion of the weight-conditioned SOMA
