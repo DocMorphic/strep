@@ -458,6 +458,8 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
   <label>Rotation bound (degrees)<input id="nativeSceneRotation" type="number" min="0" max="45" step="any" value="2"></label>
   <label>Maximum object keys<input id="nativeSceneKeys" type="number" min="2" max="3601" step="1" value="3601"></label>
  </div>
+ <label class="small"><input id="nativeSceneWeightExport" type="checkbox"> Condition skin weights for Godot export</label>
+ <p class="small">Keeps the original character and checks the exported mesh against it. Contact and collision checks still apply.</p>
  <div class="toolbar">
   <button class="btn" id="nativeSceneSave">Save scene draft</button>
   <label class="btn">Open scene draft<input id="nativeSceneImport" type="file" accept=".json,application/json" hidden></label>
@@ -629,7 +631,7 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
  <p class="small">Staging requires the recorded native and sampled geometry checks to pass. Build and review new scene assets to verify import; numerical checks do not approve animation quality.</p>
 </details>
 
-<details id="keyContinuationPanel" class="rig-panel">
+   <details id="keyContinuationPanel" class="rig-panel">
  <summary>Continue verified correction</summary>
  <p class="small">Continue a saved correction using its original character, contacts and movement limits. Every returned clip is checked again. Your current scene stays selected.</p>
  <div class="rig-field-grid">
@@ -644,7 +646,6 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
  <iframe id="keyContinuationPreview" title="Saved correction comparison" hidden style="width:100%;height:570px;border:0;border-radius:12px" loading="lazy"></iframe>
  <p class="small">Finished jobs include the saved starting clip, returned proposal and complete replay results. Failed motion checks remain visible. No proposal is automatically selected or approved for game use.</p>
 </details>
-
 
    <details id="nativeSceneGamePanel" class="rig-panel">
  <summary>Root &amp; gameplay tracks</summary>

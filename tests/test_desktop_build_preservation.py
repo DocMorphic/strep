@@ -43,3 +43,13 @@ def test_scene_feedback_controls_have_unambiguous_dom_ids():
     assert not [name for name,count in counts.items() if count>1]
     for name in ['sceneFeedbackFields','sceneReviewNote','sceneExportFeedback','sceneNoteStart','sceneNoteEnd']:
         assert counts[name]==1
+
+
+def test_rebuild_retains_verified_correction_panel_and_module_startup():
+    page=render()
+    panel=(ROOT/'scripts/key-continuation-editor.html').read_text(encoding='utf8')
+    assert page.count(panel)==1
+    assert '__KEY_CONTINUATION_EDITOR__' not in page
+    assert page.count("await import('/key-continuation-editor.mjs')")==1
+    assert "createKeyContinuationEditor({api,post});},C('keyContinuationStatus')" in page
+    assert 'id="nativeSceneWeightExport"' in page

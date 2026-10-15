@@ -8,7 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
-- [Correction across separate failure intervals](docs/native-responsive-soft-objective-v1.md): fixed failures elsewhere no longer flatten the shared proposal objective. All 169 affected checks pass; complete decoded constraints and failure reporting remain unchanged.
+- [Reproducible Studio build](docs/desktop-ui-v1.md#build-reproducibility-follow-up-2026-10-15): rebuilding preserves the saved-correction panel and its startup. Six Python checks, three editor suites and local HTTP read-back pass; broader hosted checks remain separate.
+- [Correction across separate failure intervals](docs/native-responsive-soft-objective-v1.md): a real crawl half step reduces rate failures from 377 to 351 with no checked condition worsening. All four exports replay exactly. Five floor failures remain, keeping the asset rejected; 169 affected solver checks pass.
 - [Longer intervals with selected joints](docs/native-interval-track-selection-v1.md): the crawl trial reduces failed floor times from seven to five, but all 377 rate failures keep it rejected. Exact four-export replay passes; joint/time localization identifies the next bilateral interval within the same control budget.
 - [Shared solver initialization](docs/highs-thread-order-v1.md): LP/MILP calls inherit the process scheduler without resetting another caller's runtime. All 229 combined checks pass locally; complete hosted confirmation remains pending.
 - [Public correction from saved controls](docs/native-seeded-restoration-v1.md): command, replay, continuation and frozen runtime support explicit original inputs and native controls. A wider crawl step repairs one floor sample with no condition worsening; complete four-export replay passes. Seven floor and 377 rate failures remain.
