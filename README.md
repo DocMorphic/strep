@@ -8,6 +8,7 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Optional cached native recourse](docs/native-cached-recourse-v1.md): fresh correction and verified continuation can try a bounded repair of a rejected backoff. Original limits and full decoded geometry remain authoritative; all attempts and choices are replayed. The 104-check compatibility group and final 35-check repair suite pass locally. The public retained-asset trial is in progress.
 - [Cached repair pilot](docs/native-cached-repair-pilot-v1.md): a tiny constrained repair makes a rejected half step retainable without changing acceptance limits. All returned clips and the repair replay exactly. The result still has 485 motion-rate failures, so it is not approved for game use.
 - [Smooth native-control seed study](docs/native-anchor-seed-study-v1.md): two fixed blends clear sampled floor failures but add rate failures, keeping both rejected. All three complete cold replays now pass. A separate bounded correction branch tests the verified smooth starting curve under the original limits.
 - [Reproducible Studio build](docs/desktop-ui-v1.md#build-reproducibility-follow-up-2026-10-15): rebuilding preserves the saved-correction panel and its startup. Six Python checks, three editor suites and local HTTP read-back pass; broader hosted checks remain separate.

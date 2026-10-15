@@ -8,6 +8,7 @@ from action_worker_lock import worker_lock
 from native_key_interval_restoration import evaluate,retain
 from native_key_continuation_job import SCHEMA,validate,start
 from native_scene_contacts import fields
+from native_key_cached_recourse import probe_label,replay_history
 from audit_native_key_initializer import require,arrays_equal
 from strep import ROOT,read,save,sha256,now
 
@@ -37,7 +38,7 @@ def run(producer,output,result_digest,request_digest):
         require(problem.size==request['controls'],'Complete original control population required')
         fresh={};cases=[]
         for record in result['probes']:
-            label=record['label'];require(type(label) is str and (label in ('start','final') or label.replace('-','').isdigit()) and label not in fresh,'Distinct contained probe label required')
+            label=record['label'];require(probe_label(label) and label not in fresh,'Distinct contained probe label required')
             folder=producer/'probes'/label;value=np.asarray(record['controls'],float)
             require(read(folder/'probe.json')==record,'Original returned probe record changed')
             for filename,key in [('character.glb','glb_sha256'),('observations.npz','observations_sha256'),('geometry-result.json','geometry_result_sha256'),('contact-result.json','contact_result_sha256')]:
@@ -55,22 +56,8 @@ def run(producer,output,result_digest,request_digest):
             ignored={'observations_sha256','geometry_result_sha256','contact_result_sha256'}
             require({k:v for k,v in record.items() if k not in ignored}=={k:v for k,v in current['record'].items() if k not in ignored},'Decoded probe decision changed')
             cases.append(dict(label=label,exact_bytes_and_complete_observations=True,original_rate_failures=current['record']['original_rate_failures'],floor_failures=current['record']['floor_failures']))
-        require('start' in fresh and 'final' in fresh,'Complete endpoints required');selected=fresh['start'];value=start_value.copy()
-        np.testing.assert_array_equal(selected['record']['controls'],value);visited={'start','final'}
-        for entry in result['history']:
-            iteration=entry['iteration'];require(type(iteration) is int and 1<=iteration<=recipe['iterations'],'Bounded original iteration required')
-            choices=entry['probes'];require(len(choices)<=recipe['backoffs'],'Original backoff budget exceeded');accepted=None
-            for index,choice in enumerate(choices):
-                label=choice['label'];require(label==f'{iteration}-{index}' and label in fresh and label not in visited,'Complete ordered iteration probe required');visited.add(label)
-                require(choice['fraction']==.5**index,'Original backoff fraction changed')
-                with np.load(producer/'iterations'/str(iteration)/'direction.npz') as data:delta=data['delta']
-                expected=np.clip(value+choice['fraction']*delta,problem.lower,problem.upper)
-                np.testing.assert_array_equal(fresh[label]['record']['controls'],expected)
-                actual=retain(selected,fresh[label]);require(choice['accepted'] is actual,'Decoded retention decision changed')
-                if actual:
-                    require(index==len(choices)-1,'Search continued after accepted step');selected=fresh[label];value=expected;accepted=choice['fraction']
-            require(entry['accepted_fraction']==accepted,'Accepted iteration fraction changed')
-        require(visited==set(fresh),'Returned probe missing from retention history')
+        require('start' in fresh and 'final' in fresh,'Complete endpoints required')
+        value=replay_history(problem,recipe,producer,result['history'],fresh,start_value,retain)
         np.testing.assert_array_equal(result['selected_controls'],value);np.testing.assert_array_equal(fresh['final']['record']['controls'],value)
         require(all(result[k]==fresh['final']['record'][k] for k in ('sampled_conditions_pass','original_rate_failures','floor_failures')),'Final result changed')
         problem.check();require(all(sha256(p)==h for p,h in pins.items()) and sha256(producer/'result.json')==result_digest and sha256(producer/'request.json')==request_digest,'Original replay bindings changed')

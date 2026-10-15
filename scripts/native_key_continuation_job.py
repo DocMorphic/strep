@@ -8,6 +8,7 @@ from action_worker_lock import worker_lock
 from native_key_interval_restoration import validate as validate_effort,evaluate,retain
 from native_key_restoration_continuation import load
 from native_scene_conic import direction,solver_identity
+from native_key_cached_recourse import search_model,attempt as repair_attempt
 from native_scene_contacts import fields
 from audit_native_key_initializer import require
 from strep import ROOT,read,save,sha256,now
@@ -16,7 +17,8 @@ SCHEMA='strep-native-key-continuation-job-v1'
 
 
 def validate(recipe):
-    fields(recipe,('schema','parent','iterations','trust','difference_step','backoffs','maximum_seconds'),'continuation job recipe')
+    fields(recipe,('schema','parent','iterations','trust','difference_step','backoffs','maximum_seconds')
+        +(('native_recourse',) if 'native_recourse' in recipe else ()),'continuation job recipe')
     require(recipe['schema']==SCHEMA,'Explicit continuation job schema required')
     fields(recipe['parent'],('path','result_sha256','request_sha256','replay','replay_sha256'),'verified standard restoration parent')
     parent=recipe['parent']
@@ -24,7 +26,8 @@ def validate(recipe):
     for key in ('result_sha256','request_sha256','replay_sha256'):
         require(type(parent[key]) is str and len(parent[key])==64 and all(c in '0123456789abcdef' for c in parent[key]),'Trusted lowercase SHA256 required')
     validate_effort(dict(schema='strep-native-key-interval-restoration-v1',producer={k:parent[k] for k in ('path','result_sha256','request_sha256')},
-        active_keys=[1],**{k:recipe[k] for k in ('iterations','trust','difference_step','backoffs','maximum_seconds')}))
+        active_keys=[1],**{k:recipe[k] for k in ('iterations','trust','difference_step','backoffs','maximum_seconds')},
+        **({'native_recourse':recipe['native_recourse']} if 'native_recourse' in recipe else {})))
     return recipe
 
 
@@ -53,18 +56,31 @@ def run(recipe_path,output):
             np.savez_compressed(folder/'affine-system.npz',value=value,vectors=system.vectors,caps=system.caps,scales=system.scales)
             sparse.save_npz(folder/'affine-jacobian.npz',jac);save(folder/'identity.json',identity)
             delta,info=direction(system,jac,value,problem.lower,problem.upper,radius,hard_rows=identity['hard_rows']);save(folder/'solver.json',info)
-            step=None;probes=[]
+            del system,jac
+            step=None;probes=[];repair_count=0;selected_label=None
             if delta is not None:
                 np.savez_compressed(folder/'direction.npz',delta=delta)
                 for backoff in range(recipe['backoffs']):
                     if time.monotonic()-started>=recipe['maximum_seconds']:reason='time_budget';break
                     fraction=.5**backoff;candidate_value=np.clip(value+fraction*delta,problem.lower,problem.upper)
                     candidate=evaluate(problem,candidate_value,output/'probes'/f'{iteration}-{backoff}');records.append(candidate['record'])
-                    accepted=retain(current,candidate);probes.append(dict(label=candidate['record']['label'],fraction=fraction,accepted=accepted))
+                    accepted=retain(current,candidate);choice=dict(label=candidate['record']['label'],fraction=fraction,accepted=accepted);probes.append(choice)
                     print(candidate['record']['label'],candidate['record']['original_rate_failures'],candidate['record']['floor_failures'],accepted,flush=True)
-                    if accepted:value=candidate_value;current=candidate;step=fraction;break
+                    if 'native_recourse' in recipe:
+                        choice['recourse']=[];config=recipe['native_recourse']
+                        if not accepted and repair_count<config['attempts_per_iteration'] and time.monotonic()-started<recipe['maximum_seconds']:
+                            _,eligibility=search_model(current,candidate,problem.edit_count,config)
+                            if eligibility['eligible']:
+                                repair_count+=1
+                                repair,repaired=repair_attempt(problem,current,candidate,folder,folder/('repair-'+str(backoff)),config)
+                                choice['recourse'].append(repair)
+                                if repaired is not None:records.append(repaired['record'])
+                                if repair['accepted']:
+                                    value=np.asarray(repaired['record']['controls'],float);current=repaired;step=fraction;selected_label=repair['label'];break
+                    if accepted:value=candidate_value;current=candidate;step=fraction;selected_label=candidate['record']['label'];break
             else:reason='no_direction'
             entry=dict(iteration=iteration,accepted_fraction=step,probes=probes,solver_status=info['status']);history.append(entry);save(output/'history.json',history)
+            if 'native_recourse' in recipe:entry['selected_label']=selected_label;save(output/'history.json',history)
             if reason=='time_budget' or delta is None:break
             if step is None:
                 radius*=.25
