@@ -74,7 +74,12 @@ def test_explicit_polar_recipe_exports_without_repairing_the_stored_affine_rig(r
         root.run(path,tmp_path/'strict-rejection')
     value['orientation_mode']='right-polar-v1';save(path,value)
     result=root.run(path,tmp_path/'polar-proposal')
-    assert result['sampled_conditions_pass'] and result['rate_failures']==[0,0,0,0]
+    diagnostics={key:result.get(key) for key in ('sampled_conditions_pass','solver_success','solver_status','solver_message',
+        'rate_failures','floor_failed_samples','peak_floor_depth_m','minimum_vertical_joint_shift_m',
+        'maximum_joint_displacement_m','maximum_horizontal_joint_drift_m','all_linear_transforms_preserved',
+        'unaffected_joint_world_transforms_preserved','frozen_keys_and_other_tracks_preserved','dependencies')}
+    print('Actual polar export observations:',diagnostics)
+    assert result['sampled_conditions_pass'] and result['rate_failures']==[0,0,0,0],diagnostics
     assert result['floor_failed_samples']==0 and result['orientation_mode']=='right-polar-v1'
     assert result['all_linear_transforms_preserved'] and result['frozen_keys_and_other_tracks_preserved']
     assert result['original_selected'] and not result['quality_approved'] and source.read_bytes()==original

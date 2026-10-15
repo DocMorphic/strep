@@ -1,0 +1,51 @@
+name: Focused source diagnostics
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_file:
+        description: Model-free source suite
+        required: true
+        type: choice
+        default: tests/test_native_motion_orientation.py
+        options:
+          - tests/test_native_motion_orientation.py
+          - tests/test_native_vertical_root.py
+          - tests/test_native_affine_interval_seed.py
+          - tests/test_native_seed_restoration.py
+
+permissions:
+  contents: read
+
+jobs:
+  focused:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      HF_HUB_OFFLINE: '1'
+      TRANSFORMERS_OFFLINE: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      STREP_TEST_FILE: ${{ inputs.test_file }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.10'
+          cache: pip
+          cache-dependency-path: requirements-ci.txt
+      - name: Install pinned CPU dependencies
+        run: python -m pip install --only-binary=:all: -r requirements-ci.txt
+      - name: Run selected source suite with observations
+        shell: bash
+        run: python -m pytest -q -s --showlocals "$STREP_TEST_FILE"
