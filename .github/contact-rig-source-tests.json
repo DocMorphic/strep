@@ -78,7 +78,8 @@
     "tests/test_native_interval_track_selection.py",
     "tests/test_native_key_cached_recourse.py",
     "tests/test_native_key_contact_retention.py",
-    "tests/test_native_floor_tiles.py"
+    "tests/test_native_floor_tiles.py",
+    "tests/test_native_geometry_journal.py"
   ],
   "node_tests": [
     "tests/test_native_scene_fit_editor.mjs",

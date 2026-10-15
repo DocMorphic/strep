@@ -8,6 +8,7 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Resumable scene geometry](docs/native-geometry-journal-v1.md): checkpoint complete samples from the full native clock or a sealed Godot capture. Resume verifies the exact prefix and preserves failures; finalization requires the complete population. All 124 targeted checks pass. The real high-five capture prefix is being measured separately.
 - [Bounded native floor workspace](docs/native-floor-workspace-v1.md): keep all times, vertices and skin influences while limiting gathered matrices to 64 MiB. All 50 targeted checks and fourteen new checks on each OS pass. All three predefined high-five curves now reproduce exactly in a fresh frozen replay under a 512 MiB cap; all still fail rate/floor acceptance. The resumed baseline audit exposes a slow containment pass; a separate diagnostic frame finds partner overlap beyond 5 mm. Full-clock engine geometry remains incomplete.
 - [Native contact completion](docs/native-contact-completion-v1.md): completing a failed contact can now be retained when the separate rate/floor score is already zero, with all original limits preserved. All 57 targeted checks pass, and the exact old rule fails the new native-export regression as expected. A separate real high-five preflight measures a 33.28-mm partner gap against its original 30-mm limit; it remains rejected.
 - [Optional cached native recourse](docs/native-cached-recourse-v1.md): fresh correction and verified continuation can try a bounded repair of a rejected backoff. The public crawl trial retains 485 rate failures versus its 499-failure research seed, with zero sampled floor failures and no checked condition worsening; all five exports and choices replay exactly. The 104-check compatibility group passes locally, and the final 35-check repair suite passes locally and on Ubuntu/Windows. The clip still fails original motion acceptance and is not adopted as a game asset.
@@ -191,7 +192,7 @@ These development workflows retain failures and their stated limits. Scene conta
 
 ## Source checks
 
-The [public source-check workflow](docs/model-free-source-checks.md) declares 514 Python test modules and 45 Node suites on Linux and Windows, plus separate native CPU fixture jobs. It does not need motion checkpoints or local study outputs. Inference, engine, full-system and human-quality evaluation are separate. Some additional tests need acquired model/rig fixtures or Godot; a full fresh-clone suite pass is not established.
+The [public source-check workflow](docs/model-free-source-checks.md) declares 515 Python test modules and 45 Node suites on Linux and Windows, plus separate native CPU fixture jobs. It does not need motion checkpoints or local study outputs. Inference, engine, full-system and human-quality evaluation are separate. Some additional tests need acquired model/rig fixtures or Godot; a full fresh-clone suite pass is not established.
 
 | Path | Contents |
 |---|---|

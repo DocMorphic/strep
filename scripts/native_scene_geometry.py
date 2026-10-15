@@ -94,8 +94,15 @@ def volume_state(vertices, faces):
         self_intersection_checked=False, containment_available=valid)
 
 
-def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, object_poses=None, observation_sink=None):
+def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, object_poses=None, observation_sink=None,
+        sample_indices=None):
     times, populations, resolution = policy_for(policy, scene, digest)
+    selected = np.arange(len(times))
+    if sample_indices is not None:
+        selected = np.asarray(sample_indices)
+        if (selected.ndim != 1 or selected.dtype.kind not in 'iu' or not len(selected)
+                or np.any(selected < 0) or np.any(selected >= len(times)) or np.any(np.diff(selected.astype(np.int64)) <= 0)):
+            raise ValueError('Sorted unique existing integer geometry sample indices required')
     faces = {}; topology = {}
     for name, actor in scene.actors.items():
         faces[name], primitives = faces_for(actor['rig'])
@@ -106,8 +113,9 @@ def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, objec
     object_query = scene.object_poses if object_poses is None else object_poses
     poses = {n: object_query(n, times) for n in scene.objects}
     samples = []; arrays = {} if observation_sink is None else observation_sink; passed = True
-    arrays['times_s'] = times
-    for frame, time in enumerate(times):
+    arrays['times_s'] = times[selected]
+    for frame in selected:
+        frame = int(frame); time = times[frame]
         vertices = {}; meshes = {}; states = {}; degenerate = {}
         for name, actor in scene.actors.items():
             p, r = actor['placement']
@@ -162,8 +170,8 @@ def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, objec
         samples.append(dict(time_s=float(time), volumes=states, degenerate_faces=degenerate,
             actor_objects=objects, actor_pairs=pairs, world_planes=planes, conditions_available=available, passed=ok))
         if progress: progress(dict(status='processing', completed_samples=frame+1, total_samples=len(times), time_s=float(time)))
-    return dict(schema='strep-native-scene-geometry-result-v1', status='complete', samples=samples,
-        sampled_conditions_pass=bool(passed), topology=topology, clock_mode=policy['clock']['mode'], times_s=times.tolist(),
+    result = dict(schema='strep-native-scene-geometry-result-v1', status='complete', samples=samples,
+        sampled_conditions_pass=bool(passed), topology=topology, clock_mode=policy['clock']['mode'], times_s=times[selected].tolist(),
         frame_populations=[dict(id=p['id'], rate_hz=p['rate_hz'], phase_offset_frames=p['phase_offset_frames'],
             times_s=p['times_s'].tolist()) for p in populations], frame_contract_sha256=contract_sha256(),
         limits=policy['limits'], declared_planes=list(policy['planes']),
@@ -174,7 +182,14 @@ def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, objec
             'Depth brackets are floating-point diagnostics. Actor/object center containment requires an '
             'unmodified closed outward-volume mesh; unavailable/near-surface results fail the sampled conditions. '
             'Partner crossings and vertex containment are separate; near/coplanar outcomes remain unresolved. '
-            'No object/object, self-collision, continuous-time, exact-arithmetic, engine or quality certification.'), arrays
+            'No object/object, self-collision, continuous-time, exact-arithmetic, engine or quality certification.')
+    if sample_indices is not None:
+        # A completed slice is never a completed full-clock audit, even when
+        # every condition in that slice happens to pass.
+        result.update(schema='strep-native-scene-geometry-slice-v1', status='partial',
+            sample_indices=selected.tolist(), complete_clock_s=times.tolist(),
+            checked_conditions_pass=bool(passed), sampled_conditions_pass=False)
+    return result, arrays
 
 
 def evaluate_to_archive(scene, policy, digest, path, progress=None, *, actor_vertices=None,
