@@ -76,7 +76,8 @@
     "tests/test_native_seed_restoration.py",
     "tests/test_highs_thread_policy.py",
     "tests/test_native_interval_track_selection.py",
-    "tests/test_native_key_cached_recourse.py"
+    "tests/test_native_key_cached_recourse.py",
+    "tests/test_native_key_contact_retention.py"
   ],
   "node_tests": [
     "tests/test_native_scene_fit_editor.mjs",

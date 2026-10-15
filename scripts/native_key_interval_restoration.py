@@ -141,7 +141,11 @@ def retain(before,after):
     require(before['geometry_face_state'].keys()==after['geometry_face_state'].keys(),'Complete unchanged face populations required')
     safe=bool(after['record']['decoded_prefix_pass'] and np.all(after['full']<=np.maximum(0,before['full']))
         and all(after['geometry_face_state'][k]<=faces for k,faces in before['geometry_face_state'].items()))
-    improved=bool(after['record']['score'][:2]<before['record']['score'][:2])
+    # Rate/floor merit deliberately excludes the hard edit/contact/root prefix.
+    # Completing that prefix is real progress even when every soft row already
+    # passes and its zero score cannot decrease. Safe still guards each row.
+    improved=bool(after['record']['score'][:2]<before['record']['score'][:2]
+        or not before['record']['decoded_prefix_pass'])
     return safe and improved
 
 

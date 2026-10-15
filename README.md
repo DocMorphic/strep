@@ -8,6 +8,7 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Native contact completion](docs/native-contact-completion-v1.md): completing a failed contact can now be retained when the separate rate/floor score is already zero, with all original limits preserved. All 57 targeted checks pass, and the exact old rule fails the new native-export regression as expected. A separate real high-five preflight measures a 33.28-mm partner gap against its original 30-mm limit; it remains rejected.
 - [Optional cached native recourse](docs/native-cached-recourse-v1.md): fresh correction and verified continuation can try a bounded repair of a rejected backoff. The public crawl trial retains 485 rate failures versus its 499-failure research seed, with zero sampled floor failures and no checked condition worsening; all five exports and choices replay exactly. The 104-check compatibility group passes locally, and the final 35-check repair suite passes locally and on Ubuntu/Windows. The clip still fails original motion acceptance and is not adopted as a game asset.
 - [Cached repair pilot](docs/native-cached-repair-pilot-v1.md): a tiny constrained repair makes a rejected half step retainable without changing acceptance limits. All returned clips and the repair replay exactly. The result still has 485 motion-rate failures, so it is not approved for game use.
 - [Smooth native-control seed study](docs/native-anchor-seed-study-v1.md): two fixed blends clear sampled floor failures but add rate failures, keeping both rejected. All three complete cold replays now pass. A separate bounded correction branch tests the verified smooth starting curve under the original limits.
@@ -189,7 +190,7 @@ These development workflows retain failures and their stated limits. Scene conta
 
 ## Source checks
 
-The [public source-check workflow](docs/model-free-source-checks.md) declares 465 Python test modules and 42 Node suites on Linux and Windows, plus separate native CPU fixture jobs. It does not need motion checkpoints or local study outputs. Inference, engine, full-system and human-quality evaluation are separate. Some additional tests need acquired model/rig fixtures or Godot; a full fresh-clone suite pass is not established.
+The [public source-check workflow](docs/model-free-source-checks.md) declares 513 Python test modules and 45 Node suites on Linux and Windows, plus separate native CPU fixture jobs. It does not need motion checkpoints or local study outputs. Inference, engine, full-system and human-quality evaluation are separate. Some additional tests need acquired model/rig fixtures or Godot; a full fresh-clone suite pass is not established.
 
 | Path | Contents |
 |---|---|
