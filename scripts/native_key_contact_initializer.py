@@ -49,8 +49,13 @@ def right_jacobian(vector):
 
 
 class KeyPose:
-    """Exact complete skin derivatives, point targets and plane inequalities."""
-    def __init__(self,scene,actor,time_s,nodes,degrees,displacement,planes,penetration,reserve,*,pose_representation='rigid',contact_reserve_m=0.):
+    """Complete skin derivatives and explicit pose-guidance inequalities.
+
+Planes default to every triangle-referenced vertex. Explicit plane_vertices
+can guide a declared surface region; neither mode approves full geometry or
+an animation. Original complete-mesh acceptance remains a separate operation.
+    """
+    def __init__(self,scene,actor,time_s,nodes,degrees,displacement,planes,penetration,reserve,*,pose_representation='rigid',contact_reserve_m=0.,plane_vertices=None):
         if pose_representation not in ('rigid','native-trs-v1'):raise ValueError('Explicit supported pose representation required')
         self.scene=scene;self.actor=actor;self.time=float(time_s);self.nodes=list(nodes)
         self.contact_reserve=contact_reserve(scene,actor,contact_reserve_m)
@@ -66,6 +71,16 @@ class KeyPose:
         self.caps=np.radians(degrees);self.displacement=float(displacement)
         self.planes=copy.deepcopy(planes);self.penetration=penetration;self.reserve=reserve
         self.used=np.unique(faces_for(self.rig)[0]);self.desc=[]
+        if plane_vertices is None:self.plane_used={name:self.used for name in planes}
+        else:
+            if not isinstance(plane_vertices,dict) or set(plane_vertices)!=set(planes):
+                raise ValueError('Explicit vertex populations must match every guidance plane')
+            self.plane_used={}
+            for name,ids in plane_vertices.items():
+                if (not isinstance(ids,list) or not ids or any(type(v) is not int for v in ids)
+                        or len(set(ids))!=len(ids) or any(v not in self.used for v in ids)):
+                    raise ValueError('Distinct existing triangle-referenced guidance vertices required')
+                self.plane_used[name]=np.array(ids,dtype=np.int64)
         for edited in self.nodes:
             affected=[]
             for n in range(len(self.rig.parents)):
@@ -125,10 +140,11 @@ class KeyPose:
         delta=positions-self.source[joints,:3,3];radius=self.displacement
         rows.append(1-np.sum(delta*delta,axis=1)/radius**2)
         derivatives.append(-2*np.einsum('ji,jik->jk',delta,jj)/radius**2)
-        for plane in self.planes.values():
+        for name,plane in self.planes.items():
+            used=self.plane_used[name]
             normal=np.asarray(plane['normal_world']);scale=max(self.penetration,.001)
-            rows.append((vertices[self.used]@normal-plane['offset_m']+self.penetration-self.reserve)/scale)
-            derivatives.append(np.einsum('i,vik->vk',normal,jac[self.used])/scale)
+            rows.append((vertices[used]@normal-plane['offset_m']+self.penetration-self.reserve)/scale)
+            derivatives.append(np.einsum('i,vik->vk',normal,jac[used])/scale)
         for ids,reduction,fixed,limit in self.contacts:
             point=vertices[ids];derivative=jac[ids]
             if reduction=='centroid':point=point.mean(0,keepdims=True);derivative=derivative.mean(0,keepdims=True)

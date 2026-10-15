@@ -18,6 +18,8 @@ on:
           - tests/test_native_floor_tiles.py
           - tests/test_native_geometry_journal.py
           - tests/test_native_scene_engine_complete.py
+          - tests/test_surface_separation_planes.py
+          - tests/test_native_pose_plane_vertices.py
           - tests/test_highs_thread_policy.py
           - tests/test_native_scene_conic_secondary.py
           - tests/test_desktop_build_preservation.py
