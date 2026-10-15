@@ -1,7 +1,7 @@
 """Load an exactly replayed restoration state without rebasing source motion caps."""
 from pathlib import Path
 import numpy as np
-from native_key_interval_restoration import SCHEMA,validate,evaluate
+from native_key_interval_restoration import SCHEMA,validate,evaluate,build_problem
 from native_key_interval_model import KeyIntervalModel
 from audit_native_key_initializer import require,arrays_equal
 from strep import ROOT,read,sha256,save,now
@@ -28,8 +28,8 @@ def load(producer,result_digest,request_digest,replay,replay_digest,output):
     require(all(sha256(ROOT/'scripts'/n)==h==sha256(producer/'implementation'/n) for n,h in methods.items()),'Original restoration methods changed')
     recipes=[Path(p) for p in pins if Path(p).suffix=='.json' and read(p).get('schema')==SCHEMA]
     require(len(recipes)==1 and read(recipes[0])==request['recipe'],'Original restoration recipe changed')
-    recipe=validate(request['recipe']);original=(recipes[0].parent/recipe['producer']['path']).resolve()
-    problem=KeyIntervalModel(original,recipe['producer']['result_sha256'],recipe['producer']['request_sha256'],recipe['active_keys'])
+    recipe=validate(request['recipe'])
+    problem=build_problem(recipe,recipes[0],output.with_name(output.name+'-seed'))
     require(problem.size==request['controls'],'Original complete control population required')
     value=np.asarray(result['selected_controls'],float);problem.controls(value)
     final=producer/'probes/final';record=read(final/'probe.json')
@@ -45,7 +45,7 @@ def load(producer,result_digest,request_digest,replay,replay_digest,output):
     require(current['record']['decoded_prefix_pass'],'Continuation must retain original edit/contact/root conditions')
     problem.check()
     receipt=dict(schema='strep-native-key-restoration-continuation-v1',status='complete',at=now(),producer=str(producer),producer_result_sha256=result_digest,
-        producer_request_sha256=request_digest,numerical_replay_sha256=replay_digest,controls=value.tolist(),original_initializer=str(problem.producer),
+        producer_request_sha256=request_digest,numerical_replay_sha256=replay_digest,controls=value.tolist(),original_initializer=str(producer/'seed' if 'seed' in recipe else problem.producer),
         original_rate_caps_preserved=True,exact_final_clip_and_complete_arrays=True,original_selected=True,quality_approved=False,release_approved=False,
         scope='Fresh verification of the saved edited controls against the unchanged original initializer, rig, clocks, contact intent and motion caps. No reference reset or inherited approval.')
     save(output/'continuation.json',receipt)

@@ -6,7 +6,7 @@ import numpy as np
 from threadpoolctl import threadpool_limits
 from action_worker_lock import worker_lock
 from native_key_interval_model import KeyIntervalModel
-from native_key_interval_restoration import SCHEMA,validate,evaluate,retain
+from native_key_interval_restoration import SCHEMA,validate,evaluate,retain,build_problem
 from native_scene_contacts import fields
 from audit_native_key_initializer import require,arrays_equal
 from strep import ROOT,read,save,sha256,now
@@ -29,11 +29,10 @@ def run(producer,output,result_digest,request_digest):
     require(all(sha256(ROOT/'scripts'/n)==h==sha256(producer/'implementation'/n) for n,h in methods.items()),'Original restoration method changed')
     recipes=[Path(p) for p in pins if Path(p).suffix=='.json' and read(p).get('schema')==SCHEMA]
     require(len(recipes)==1 and read(recipes[0])==request['recipe'],'Exact original restoration recipe required');recipe=validate(request['recipe'])
-    original=(recipes[0].parent/recipe['producer']['path']).resolve()
     with worker_lock(),threadpool_limits(limits=1):
-        problem=KeyIntervalModel(original,recipe['producer']['result_sha256'],recipe['producer']['request_sha256'],recipe['active_keys'])
+        problem=build_problem(recipe,recipes[0],output/'seed')
         require(problem.size==request['controls'],'Complete original control population required')
-        output.mkdir(parents=True);fresh={};cases=[]
+        output.mkdir(parents=True,exist_ok='seed' in recipe);fresh={};cases=[]
         for record in result['probes']:
             label=record['label'];require(type(label) is str and (label in ('start','final') or label.replace('-','').isdigit()) and label not in fresh,'Distinct contained probe label required')
             folder=producer/'probes'/label;value=np.asarray(record['controls'],float)
@@ -70,6 +69,11 @@ def run(producer,output,result_digest,request_digest):
             require(entry['accepted_fraction']==accepted,'Accepted iteration fraction changed')
         require(visited==set(fresh),'Returned probe missing from retention history')
         np.testing.assert_array_equal(result['selected_controls'],value);np.testing.assert_array_equal(fresh['final']['record']['controls'],value)
+        if 'seed' in recipe:
+            with np.load(producer/'key-controls.npz',allow_pickle=False) as controls:
+                require(set(controls.files)=={'times_s','controls'},'Complete final native controls required')
+                np.testing.assert_array_equal(controls['times_s'],problem.clock)
+                np.testing.assert_array_equal(controls['controls'],problem.controls(value))
         require(all(result[k]==fresh['final']['record'][k] for k in ('sampled_conditions_pass','original_rate_failures','floor_failures')),'Final result changed')
         problem.check();require(all(sha256(p)==h for p,h in pins.items()) and sha256(producer/'result.json')==result_digest and sha256(producer/'request.json')==request_digest,'Original replay bindings changed')
         receipt=dict(schema='strep-native-key-restoration-replay-v1',status='complete',at=now(),producer_result_sha256=result_digest,producer_request_sha256=request_digest,

@@ -75,6 +75,31 @@ def test_recorded_imports_survive_changed_live_source_and_share_project_lock(tmp
     assert read(replay/'result.json')['value']==7 and read(replay/'frozen-runtime-execution.json')['auditor_executed']
 
 
+@pytest.mark.parametrize('changed',[False,True])
+def test_explicit_seed_freezes_parent_methods_and_exact_original_inputs(tmp_path,monkeypatch,changed):
+    recipe,initial,parent,live=fixture(tmp_path,monkeypatch);original=tmp_path/'reports/original-recipe.json'
+    inputs={}
+    for name in ('contacts','geometry','request','controls'):
+        path=tmp_path/'reports'/(name+'.data');path.write_bytes(name.encode());inputs[name]=dict(path=path.name,sha256=sha256(path))
+    save(original,dict(schema='strep-native-key-interval-restoration-v1',seed=inputs))
+    request=read(parent/'request.json');request.update(recipe=read(original),source_bindings_sha256={str(original):sha256(original)});save(parent/'request.json',request)
+    result=read(parent/'result.json');result['source_request_sha256']=sha256(parent/'request.json');save(parent/'result.json',result)
+    proof=tmp_path/'reports/proof.json';checked=read(proof);checked.update(producer_request_sha256=sha256(parent/'request.json'),producer_result_sha256=sha256(parent/'result.json'));save(proof,checked)
+    request=read(recipe);request['parent'].update(request_sha256=sha256(parent/'request.json'),result_sha256=sha256(parent/'result.json'),replay_sha256=sha256(proof));save(recipe,request)
+    if changed:(tmp_path/'reports/controls.data').write_bytes(b'changed')
+    frozen=tmp_path/'reports/runtime'
+    if changed:
+        with pytest.raises(ValueError,match='seed binding changed'):runtime.build(recipe,frozen)
+        assert not frozen.exists()
+    else:
+        receipt=runtime.build(recipe,frozen)
+        assert receipt['original_reference_unchanged'] and not receipt['release_approved']
+        assert all(str(tmp_path/'reports'/row['path']) in receipt['inputs_sha256'] for row in inputs.values())
+        result=child(live,'run',frozen,tmp_path/'reports/run')
+        assert result.returncode==0,result.stderr
+        assert read(tmp_path/'reports/run/result.json')['value']==7
+
+
 @pytest.mark.parametrize('fault',['archive','conflict','parent','replay','approval','escape'])
 def test_invalid_source_rejects_without_runtime(tmp_path,monkeypatch,fault):
     recipe,initial,parent,live=fixture(tmp_path,monkeypatch)

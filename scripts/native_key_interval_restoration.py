@@ -65,17 +65,38 @@ def geometry_conditions(report):
 
 
 def validate(recipe):
-    fields(recipe,('schema','producer','active_keys','iterations','trust','difference_step','backoffs','maximum_seconds'),'interval restoration recipe')
+    require(isinstance(recipe,dict) and len({'producer','seed'}&set(recipe))==1,'Choose exactly one initializer or explicit seed source')
+    source='producer' if 'producer' in recipe else 'seed'
+    fields(recipe,('schema',source,'active_keys','iterations','trust','difference_step','backoffs','maximum_seconds'),'interval restoration recipe')
     require(recipe['schema']==SCHEMA,'Explicit native-key interval restoration required')
-    fields(recipe['producer'],('path','result_sha256','request_sha256'),'original-bound initializer')
-    require(type(recipe['producer']['path']) is str and bool(recipe['producer']['path']),'Explicit initializer path required')
-    for key in ('result_sha256','request_sha256'):require(type(recipe['producer'][key]) is str and len(recipe['producer'][key])==64,'Trusted initializer digests required')
+    if source=='producer':
+        fields(recipe['producer'],('path','result_sha256','request_sha256'),'original-bound initializer')
+        require(type(recipe['producer']['path']) is str and bool(recipe['producer']['path']),'Explicit initializer path required')
+        for key in ('result_sha256','request_sha256'):require(type(recipe['producer'][key]) is str and len(recipe['producer'][key])==64,'Trusted initializer digests required')
+    else:
+        fields(recipe['seed'],('contacts','geometry','request','controls'),'explicit original-bound seed')
+        for entry in recipe['seed'].values():
+            fields(entry,('path','sha256'),'original seed input')
+            require(type(entry['path']) is str and bool(entry['path']),'Explicit seed input path required')
+            require(type(entry['sha256']) is str and len(entry['sha256'])==64
+                and all(c in '0123456789abcdef' for c in entry['sha256']),'Trusted lowercase seed SHA256 required')
     require(type(recipe['iterations']) is int and 1<=recipe['iterations']<=4,'Choose 1-4 bounded interval iterations')
     require(type(recipe['backoffs']) is int and 1<=recipe['backoffs']<=10,'Choose 1-10 actual decoded backoffs')
     for key,lo,hi in [('trust',1e-6,.02),('difference_step',1e-6,.01),('maximum_seconds',1,750)]:
         require(type(recipe[key]) in (int,float) and np.isfinite(recipe[key]) and lo<=recipe[key]<=hi,'Finite bounded '+key+' required')
     require(isinstance(recipe['active_keys'],list) and bool(recipe['active_keys']) and all(type(v) is int for v in recipe['active_keys']), 'Explicit active native keys required')
     return recipe
+
+
+def build_problem(recipe,recipe_path,seed_output):
+    """Load either source form without changing the original motion reference."""
+    base=Path(recipe_path).resolve().parent
+    if 'producer' in recipe:
+        producer=recipe['producer']
+        return KeyIntervalModel(base/producer['path'],producer['result_sha256'],producer['request_sha256'],recipe['active_keys'])
+    paths={k:(base/v['path']).resolve() for k,v in recipe['seed'].items()}
+    return KeyIntervalModel.from_inputs(**paths,active_keys=recipe['active_keys'],output=seed_output,
+        expected_sha256={k:v['sha256'] for k,v in recipe['seed'].items()})
 
 
 def evaluate(problem,value,folder):
@@ -118,12 +139,16 @@ def retain(before,after):
 
 def run(recipe_path,output):
     recipe_path,output=Path(recipe_path).resolve(),Path(output).resolve();require(not output.exists(),'Fresh interval restoration output required')
-    recipe=validate(read(recipe_path));producer=(recipe_path.parent/recipe['producer']['path']).resolve()
-    require(not output.is_relative_to(producer) and not recipe_path.is_relative_to(output),'Original inputs must remain outside restoration output')
+    recipe=validate(read(recipe_path))
+    require(not recipe_path.is_relative_to(output),'Original inputs must remain outside restoration output')
+    if 'producer' in recipe:
+        require(not output.is_relative_to((recipe_path.parent/recipe['producer']['path']).resolve()),'Original inputs must remain outside restoration output')
+    else:
+        require(all(not (recipe_path.parent/v['path']).resolve().is_relative_to(output) for v in recipe['seed'].values()),'Original inputs must remain outside restoration output')
     with worker_lock(),threadpool_limits(limits=1):
-        problem=KeyIntervalModel(producer,recipe['producer']['result_sha256'],recipe['producer']['request_sha256'],recipe['active_keys'])
+        problem=build_problem(recipe,recipe_path,output/'seed')
         pins={str(recipe_path):sha256(recipe_path),**problem.pins};methods={p.name:sha256(p) for p in (ROOT/'scripts').glob('*.py')};solver=solver_identity()
-        output.mkdir(parents=True);archive=output/'implementation';archive.mkdir()
+        output.mkdir(parents=True,exist_ok='seed' in recipe);archive=output/'implementation';archive.mkdir()
         for n in methods:shutil.copyfile(ROOT/'scripts'/n,archive/n)
         save(output/'request.json',dict(schema=SCHEMA,recipe=recipe,source_bindings_sha256=pins,implementation_sha256=methods,solver=solver,controls=problem.size,
             original_selected=True,quality_approved=False,release_approved=False))
@@ -136,6 +161,7 @@ def run(recipe_path,output):
             np.savez_compressed(folder/'affine-system.npz',value=value,vectors=system.vectors,caps=system.caps,scales=system.scales)
             sparse.save_npz(folder/'affine-jacobian.npz',jac);save(folder/'identity.json',identity)
             delta,info=direction(system,jac,value,problem.lower,problem.upper,radius,hard_rows=identity['hard_rows']);save(folder/'solver.json',info)
+            del system,jac
             step=None;probes=[]
             if delta is not None:
                 np.savez_compressed(folder/'direction.npz',delta=delta)
@@ -153,6 +179,7 @@ def run(recipe_path,output):
                 radius*=.25
                 if radius<1e-6:reason='no_accepted_step';break
         final=evaluate(problem,value,output/'probes/final');records.append(final['record']);problem.check()
+        if 'seed' in recipe:np.savez_compressed(output/'key-controls.npz',times_s=problem.clock,controls=problem.controls(value))
         require(all(sha256(p)==h for p,h in pins.items()) and all(sha256(ROOT/'scripts'/n)==h for n,h in methods.items()),'Original inputs or methods changed')
         require(solver_identity()==solver,'Installed solver changed')
         result=dict(schema=SCHEMA,status='complete',at=now(),stop_reason=reason,probes=records,history=history,selected_controls=value.tolist(),

@@ -43,11 +43,21 @@ def build(recipe_path,output,*,audit=None):
         require(value['original_selected'] is True and value['quality_approved'] is False and value['release_approved'] is False,'Frozen execution cannot inherit approval')
     recipes=[contained(p) for p in request['source_bindings_sha256'] if Path(p).suffix=='.json' and read(p).get('schema')=='strep-native-key-interval-restoration-v1']
     require(len(recipes)==1 and read(recipes[0])==request['recipe'],'Original initializer recipe required')
-    initial=contained(recipes[0].parent/request['recipe']['producer']['path'])
-    for filename,key in (('request.json','request_sha256'),('result.json','result_sha256')):
-        path=initial/filename;value=request['recipe']['producer'][key]
-        require(digest(value) and sha256(path)==value,'Original initializer binding changed');pins[str(path)]=value
-    initial_request=read(initial/'request.json');files={};origins={};archives=[(initial,initial_request),(producer,request)];target=None
+    files={};origins={};archives=[];target=None;original=request['recipe']
+    require(len({'producer','seed'}&set(original))==1,'Exactly one original source form required')
+    if 'producer' in original:
+        initial=contained(recipes[0].parent/original['producer']['path'])
+        for filename,key in (('request.json','request_sha256'),('result.json','result_sha256')):
+            path=initial/filename;value=original['producer'][key]
+            require(digest(value) and sha256(path)==value,'Original initializer binding changed');pins[str(path)]=value
+        archives.append((initial,read(initial/'request.json')))
+    else:
+        require(isinstance(original['seed'],dict) and set(original['seed'])=={'contacts','geometry','request','controls'},'Complete explicit seed source required')
+        for entry in original['seed'].values():
+            require(isinstance(entry,dict) and set(entry)=={'path','sha256'} and isinstance(entry['path'],str),'Typed explicit seed source required')
+            path=contained(recipes[0].parent/entry['path']);value=entry['sha256']
+            require(digest(value) and sha256(path)==value,'Original seed binding changed');pins[str(path)]=value
+    archives.append((producer,request))
     if audit is not None:
         path,rd,qd=audit;path=contained(path)
         require(not output.is_relative_to(path),'Audited job must remain separate')
