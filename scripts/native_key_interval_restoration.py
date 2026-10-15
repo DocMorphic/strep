@@ -67,7 +67,8 @@ def geometry_conditions(report):
 def validate(recipe):
     require(isinstance(recipe,dict) and len({'producer','seed'}&set(recipe))==1,'Choose exactly one initializer or explicit seed source')
     source='producer' if 'producer' in recipe else 'seed'
-    fields(recipe,('schema',source,'active_keys','iterations','trust','difference_step','backoffs','maximum_seconds'),'interval restoration recipe')
+    fields(recipe,('schema',source,'active_keys','iterations','trust','difference_step','backoffs','maximum_seconds')
+        +(('active_nodes',) if 'active_nodes' in recipe else ()),'interval restoration recipe')
     require(recipe['schema']==SCHEMA,'Explicit native-key interval restoration required')
     if source=='producer':
         fields(recipe['producer'],('path','result_sha256','request_sha256'),'original-bound initializer')
@@ -85,6 +86,10 @@ def validate(recipe):
     for key,lo,hi in [('trust',1e-6,.02),('difference_step',1e-6,.01),('maximum_seconds',1,750)]:
         require(type(recipe[key]) in (int,float) and np.isfinite(recipe[key]) and lo<=recipe[key]<=hi,'Finite bounded '+key+' required')
     require(isinstance(recipe['active_keys'],list) and bool(recipe['active_keys']) and all(type(v) is int for v in recipe['active_keys']), 'Explicit active native keys required')
+    if 'active_nodes' in recipe:
+        nodes=recipe['active_nodes']
+        require(isinstance(nodes,list) and 1<=len(nodes)<=16 and all(type(n) is int and n>=0 for n in nodes)
+            and len(nodes)==len(set(nodes)), 'Distinct explicit active rotation nodes required')
     return recipe
 
 
@@ -93,10 +98,10 @@ def build_problem(recipe,recipe_path,seed_output):
     base=Path(recipe_path).resolve().parent
     if 'producer' in recipe:
         producer=recipe['producer']
-        return KeyIntervalModel(base/producer['path'],producer['result_sha256'],producer['request_sha256'],recipe['active_keys'])
+        return KeyIntervalModel(base/producer['path'],producer['result_sha256'],producer['request_sha256'],recipe['active_keys'],active_nodes=recipe.get('active_nodes'))
     paths={k:(base/v['path']).resolve() for k,v in recipe['seed'].items()}
     return KeyIntervalModel.from_inputs(**paths,active_keys=recipe['active_keys'],output=seed_output,
-        expected_sha256={k:v['sha256'] for k,v in recipe['seed'].items()})
+        expected_sha256={k:v['sha256'] for k,v in recipe['seed'].items()},active_nodes=recipe.get('active_nodes'))
 
 
 def evaluate(problem,value,folder):

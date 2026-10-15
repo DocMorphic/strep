@@ -8,7 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
-- [Solver initialization compatibility](docs/highs-thread-order-v1.md): geometry and correction LPs use consistent thread starts without resetting other callers' schedulers. All 214 affected checks pass locally; complete hosted confirmation remains pending.
+- [Longer intervals with selected joints](docs/native-interval-track-selection-v1.md): an explicit variable-joint list allows more native keys within the same control budget. Other tracks and every original physical condition remain protected; public replay and continuation retain the selection.
+- [Shared solver initialization](docs/highs-thread-order-v1.md): LP/MILP calls inherit the process scheduler without resetting another caller's runtime. All 229 combined checks pass locally; complete hosted confirmation remains pending.
 - [Public correction from saved controls](docs/native-seeded-restoration-v1.md): command, replay, continuation and frozen runtime support explicit original inputs and native controls. A wider crawl step repairs one floor sample with no condition worsening; complete four-export replay passes. Seven floor and 377 rate failures remain.
 - [Affine-aware neighboring-key correction](docs/native-affine-temporal-v1.md): retain actual rig scale, load bounded saved controls against the original source, and stream complete floor guidance. All 33 selected checks pass. A half step reduces violation severity without worsening any condition, but 377 rate and eight floor failures still reject the crawl.
 - [Contact margins for quaternion export](docs/native-key-contact-reserve-v1.md): explicit tighter solver targets retain the original decoded acceptance limit. The crawl touch now passes at 4.50 mm against 5 mm; eight floor samples and 377 motion-rate checks still fail, keeping the clip rejected.

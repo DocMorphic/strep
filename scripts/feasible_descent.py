@@ -16,7 +16,7 @@ def direction(x,gradient,constraints,jacobian,bounds,trust,margin=1e-6):
     if np.any(c[~movable]<-1e-8):return None,dict(success=False,reason='Violated locally constant constraint')
     lower=np.maximum(-1.,(-b-x)/trust);upper=np.minimum(1.,(b-x)/trust)
     fit=linprog(g/np.max(np.abs(g)),A_ub=-csr_matrix(scaled[movable]),b_ub=c[movable]-margin,
-        bounds=list(zip(lower,upper)),method='highs',options=dict(primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9,threads=1))
+        bounds=list(zip(lower,upper)),method='highs',options=dict(primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9))
     record=dict(success=bool(fit.success),status=int(fit.status),message=str(fit.message),trust=trust,margin=margin,
         movable_constraints=int(movable.sum()),constant_constraints=int((~movable).sum()))
     if not fit.success:return None,record

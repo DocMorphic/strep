@@ -20,7 +20,7 @@ def direction_hull(directions, supports):
     from scipy.optimize import linprog
     d=np.asarray(directions);s=np.asarray(supports)
     # Largest inscribed ball supplies a strict interior point for Qhull.
-    fit=linprog([0,0,0,-1],A_ub=np.c_[d,np.ones(len(d))],b_ub=s,bounds=[(None,None)]*3+[(0,None)],method='highs',options=dict(threads=1))
+    fit=linprog([0,0,0,-1],A_ub=np.c_[d,np.ones(len(d))],b_ub=s,bounds=[(None,None)]*3+[(0,None)],method='highs')
     if not fit.success or fit.x[3]<1e-6:raise ValueError('Body region lacks finite 3D volume')
     points=HalfspaceIntersection(np.c_[d,-s],fit.x[:3]).intersections
     hull=ConvexHull(points);points=points[hull.vertices]

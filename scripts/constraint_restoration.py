@@ -30,7 +30,7 @@ def minimax_step(x, residuals, jacobian, lower, upper, trust):
     ceilings = np.maximum(g, 0.)-g
     fit = linprog(np.r_[np.zeros(x.size), 1.], A_ub=vstack([a, nonregression], format='csr'),
                   b_ub=np.r_[-g, ceilings],
-                  bounds=bounds+[(0., None)], method='highs',options=dict(threads=1))
+                  bounds=bounds+[(0., None)], method='highs')
     record = dict(success=bool(fit.success), status=int(fit.status), message=str(fit.message))
     if not fit.success:
         return None, record
@@ -43,7 +43,7 @@ def minimax_step(x, residuals, jacobian, lower, upper, trust):
                  hstack([-identity, csr_matrix(-np.ones((x.size, 1)))])], format='csr')
     b2 = np.r_[np.minimum(-g+(g > 0)*(target+1e-10), ceilings), np.zeros(2*x.size)]
     small = linprog(np.r_[np.zeros(x.size), 1.], A_ub=a2, b_ub=b2,
-                    bounds=bounds+[(0., 1.)], method='highs',options=dict(threads=1))
+                    bounds=bounds+[(0., 1.)], method='highs')
     z = (small.x if small.success else fit.x)[:-1]
     proposed = np.clip(x+z*trust, lo, hi)
     step = proposed-x

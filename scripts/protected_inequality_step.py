@@ -44,7 +44,7 @@ def _linear_feasible_start(values,jac,caps,lower,upper,seconds):
         A_ub=np.block([[-jac,zeros],[eye,-eye],[-eye,-eye]]),
         b_ub=np.r_[values-caps,np.zeros(2*size)],
         bounds=list(zip(lower,upper))+list(zip(np.zeros(size),maximum)),method='highs',
-        options=dict(time_limit=min(20.,seconds),primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9,threads=1))
+        options=dict(time_limit=min(20.,seconds),primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9))
     report=dict(status=int(result.status),success=bool(result.success),message=str(result.message),
         seconds=time.monotonic()-started,time_limit_seconds=min(20.,seconds),
         objective='Minimum L1 normalized step',caps=caps.tolist(),lower_delta=lower.tolist(),upper_delta=upper.tolist(),
@@ -96,7 +96,7 @@ def _geometry_descent_start(values,jac,caps,lower,upper,seconds,vectors,priority
         remaining=limit-(time.monotonic()-started)
         if remaining<=0:return None,dict(report,success=False,status='geometry_start_time_guard',seconds=time.monotonic()-started)
         matrix=np.vstack([-jac,*planes]) if planes else -jac;right=np.concatenate([values-caps,*bounds])
-        step_bounds=list(zip(lower,upper));options=dict(time_limit=remaining,primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9,threads=1)
+        step_bounds=list(zip(lower,upper));options=dict(time_limit=remaining,primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9)
         if priority=='worst-first':
             matrix=np.vstack([np.c_[matrix,np.zeros(len(matrix))],np.r_[gradient,0.][None],np.c_[-jac,-np.ones(len(jac))]])
             right=np.r_[right,-1e-8,values];step_bounds+=[(0.,report['initial_worst'])]

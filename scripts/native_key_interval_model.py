@@ -25,7 +25,7 @@ from native_key_boundaries import key_frozen
 
 
 class KeyIntervalModel:
-    def __init__(self,producer,result_digest,request_digest,active_keys):
+    def __init__(self,producer,result_digest,request_digest,active_keys,*,active_nodes=None):
         self.producer=Path(producer).resolve()
         result,saved,request,pins,methods,contacts,policy=bound(self.producer,result_digest,request_digest)
         self.pins=dict(pins);self.pins.update({str(self.producer/'result.json'):result_digest,str(self.producer/'request.json'):request_digest})
@@ -33,12 +33,12 @@ class KeyIntervalModel:
         self.scene=SceneContacts(self.spec,contacts.parent);self.policy=policy
         self.pins[str(self.producer/'key-controls.npz')]=sha256(self.producer/'key-controls.npz')
         with np.load(self.producer/'key-controls.npz',allow_pickle=False) as data:
-            self._prepare(data['controls'],data['times_s'],active_keys)
+            self._prepare(data['controls'],data['times_s'],active_keys,active_nodes)
         candidate=self.producer/'character.glb'
         self._decode_seed(candidate,result['output_animation_index'],result['glb_sha256'])
 
     @classmethod
-    def from_inputs(cls,contacts,geometry,request,controls,active_keys,output,expected_sha256):
+    def from_inputs(cls,contacts,geometry,request,controls,active_keys,output,expected_sha256,*,active_nodes=None):
         """Reconstruct a bounded seed from original assets; no inherited approval."""
         paths={k:Path(p).resolve() for k,p in dict(contacts=contacts,geometry=geometry,request=request,controls=controls).items()}
         require(isinstance(expected_sha256,dict) and set(expected_sha256)==set(paths)
@@ -52,7 +52,7 @@ class KeyIntervalModel:
         self.methods={p.name:sha256(p) for p in (ROOT/'scripts').glob('*.py')}
         with np.load(paths['controls'],allow_pickle=False) as data:
             require(set(data.files)=={'times_s','controls'},'Complete original-clock seed controls required')
-            self._prepare(data['controls'],data['times_s'],active_keys)
+            self._prepare(data['controls'],data['times_s'],active_keys,active_nodes)
         output.mkdir(parents=True);candidate=output/'character.glb'
         index=self.export(self.initial,candidate)
         derived=copy.deepcopy(self.spec)
@@ -62,12 +62,12 @@ class KeyIntervalModel:
         self.pins[str(output/'contacts.json')]=sha256(output/'contacts.json')
         self._decode_seed(candidate,index,sha256(candidate))
         save(output/'seed.json',dict(schema='strep-native-key-interval-seed-v1',source_bindings_sha256=self.pins,
-            implementation_sha256=self.methods,active_keys=active_keys,original_caps_rebuilt_from_original=True,
+            implementation_sha256=self.methods,active_keys=active_keys,active_nodes=self.active_nodes,original_caps_rebuilt_from_original=True,
             original_selected=True,quality_approved=False,release_approved=False,
             scope='Exact-source bounded control seed reconstructed through native export; no inherited motion, geometry, engine or human approval.'))
         return self
 
-    def _prepare(self,controls,clock,active_keys):
+    def _prepare(self,controls,clock,active_keys,active_nodes=None):
         request=self.request;policy=self.policy
         self.name,self.nodes,self.degrees,self.clock,self.channels=prepare(self.scene,request,self.digest,policy)
         self.actor=self.scene.actors[self.name];self.rig=self.actor['rig'];self.skin=self.actor['skin'];self.parents=self.rig.parents
@@ -80,9 +80,13 @@ class KeyIntervalModel:
             and active_keys==sorted(set(active_keys)) and np.all(np.diff(active_keys)==1),'Explicit contiguous complete active-key interval required')
         require(all(0<=i<len(self.clock) and not key_frozen(request,self.clock,self.clock[i]) for i in active_keys),'Frozen/outside-window key cannot become editable')
         require(all(not np.any(self.seed[i]) for i,t in enumerate(self.clock) if key_frozen(request,self.clock,t)), 'Frozen/outside-window seed controls must remain original')
-        self.active=np.asarray(active_keys,int);self.size=len(active_keys)*len(self.nodes)*3
+        selected=self.nodes.copy() if active_nodes is None else active_nodes
+        require(isinstance(selected,list) and bool(selected) and all(type(n) is int and n in self.nodes for n in selected)
+            and len(selected)==len(set(selected)), 'Distinct existing permitted active rotation nodes required')
+        self.active_nodes=selected.copy();self.active_tracks=np.array([self.nodes.index(n) for n in selected],int)
+        self.active=np.asarray(active_keys,int);self.size=len(active_keys)*len(self.active_tracks)*3
         require(self.size<=768,'Complete interval exceeds 768 control components; no variables discarded')
-        self.initial=self.seed[self.active].ravel().copy();self.lower=np.full(self.size,-1.);self.upper=np.full(self.size,1.)
+        self.initial=self.seed[np.ix_(self.active,self.active_tracks)].ravel().copy();self.lower=np.full(self.size,-1.);self.upper=np.full(self.size,1.)
         self.geometry_times,_,_=policy_for(policy,self.scene,self.digest)
         self.uniform=np.arange(int(np.floor(self.scene.duration*120))+1)/120
         native=[c[2] for a in self.scene.actors.values() for c in a['sampler'].channels]+[o['times'] for o in self.scene.objects.values()]
@@ -138,7 +142,7 @@ class KeyIntervalModel:
     def controls(self,value):
         value=np.asarray(value,float)
         require(value.shape==(self.size,) and np.isfinite(value).all() and np.all(value>=self.lower) and np.all(value<=self.upper),'Finite original-box interval controls required')
-        full=self.seed.copy();full[self.active]=value.reshape(len(self.active),len(self.nodes),3);return full
+        full=self.seed.copy();full[np.ix_(self.active,self.active_tracks)]=value.reshape(len(self.active),len(self.active_tracks),3);return full
 
     def quaternions(self,value,*,quantized):
         full=self.controls(value);result=[]

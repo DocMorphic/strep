@@ -54,7 +54,7 @@ def solve(matrix, limits, values, axis, maximum_displacement, frozen):
     fit = milp(spacing / objective_scale, integrality=np.ones(len(spacing)),
         bounds=Bounds(lower, upper),
         constraints=LinearConstraint(transformed, -np.inf, limits - matrix @ intercept - reserve),
-        options=dict(time_limit=60., mip_rel_gap=0., threads=1,
+        options=dict(time_limit=60., mip_rel_gap=0.,
             mip_feasibility_tolerance=1e-9, primal_feasibility_tolerance=1e-9))
     metadata = dict(method='scipy-highs-milp', maximum_solver_seconds=60.,
         model_row_reserve=reserve, local_axis_coefficients=np.asarray(axis).tolist(),grid_spacing_m=spacing.tolist(),

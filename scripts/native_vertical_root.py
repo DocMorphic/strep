@@ -140,13 +140,13 @@ def run(recipe_path,output):
             fit,storage=solve_storage(matrix,limits,channel[3],axis,recipe['maximum_displacement_m'],recipe['frozen_keys'])
             save(output/'storage.json',storage)
         else:
-            fit=linprog(np.ones(len(clock)),A_ub=matrix,b_ub=limits,bounds=bounds,method='highs',options=dict(primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9,threads=1))
+            fit=linprog(np.ones(len(clock)),A_ub=matrix,b_ub=limits,bounds=bounds,method='highs',options=dict(primal_feasibility_tolerance=1e-9,dual_feasibility_tolerance=1e-9))
         sparse.save_npz(output/'linear-system.npz',matrix)
         np.savez_compressed(output/'reference.npz',uniform_times_s=uniform,geometry_times_s=times,source_world=world,
             rhs=limits,root_times_s=clock,root_axis_local=axis,affected_skin_joint_mask=affected,**source_affine,**{f'cap_{i}':c for i,c in enumerate(original.caps)},
             **{f'order_{k}_{n}':v for k,d in intervals.items() for n,v in d.items()})
         from importlib.metadata import version
-        result=dict(dependencies={name:version(name) for name in ('numpy','scipy','threadpoolctl')},solver_method='scipy-highs-lp' if storage is None else storage['method'],storage_mode=recipe.get('storage_mode','continuous'),solver_threads=1,schema=SCHEMA,status='complete',at=now(),solver_success=bool(fit.success),solver_status=int(fit.status),solver_message=str(fit.message),
+        result=dict(dependencies={name:version(name) for name in ('numpy','scipy','threadpoolctl')},solver_method='scipy-highs-lp' if storage is None else storage['method'],storage_mode=recipe.get('storage_mode','continuous'),solver_threads=None,solver_thread_policy='inherit_process',schema=SCHEMA,status='complete',at=now(),solver_success=bool(fit.success),solver_status=int(fit.status),solver_message=str(fit.message),
             scalar_controls=len(clock),linear_rows=matrix.shape[0],full_original_rate_rows=sum(c.size for c in original.caps),affected_skin_joints=int(affected.sum()),unaffected_skin_joints=int((~affected).sum()),source_sha256=sha256(path),
             orientation_mode=orientation_mode,source_orientation=source_orientation,original_caps_preserved=True,contact_verified=False,engine_verified=False,sampled_conditions_pass=False,**FLAGS)
         if fit.success:

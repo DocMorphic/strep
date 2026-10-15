@@ -20,7 +20,7 @@ def epigraph_step(surface, surface_jac, protected, protected_jac, margins, radiu
     b = np.r_[surface, protected-margins]
     bounds = list(zip(np.maximum(-1., lower/radius), np.minimum(1., upper/radius))) + [(None, None)]
     objective = np.r_[np.zeros(n), 1.]
-    options = dict(primal_feasibility_tolerance=1e-9, dual_feasibility_tolerance=1e-9,threads=1)
+    options = dict(primal_feasibility_tolerance=1e-9, dual_feasibility_tolerance=1e-9)
     primary = linprog(objective, A_ub=a, b_ub=b, bounds=bounds, method='highs', options=options)
     record = dict(success=bool(primary.success), message=str(primary.message), status=int(primary.status))
     if not primary.success:

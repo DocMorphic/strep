@@ -130,7 +130,7 @@ def analyze(track, pins, rates, window):
     for axis in range(3):
         fit = linprog(np.r_[np.zeros(n), 1.], A_ub=augmented, b_ub=rhs[:, axis],
                       bounds=[(-radius, radius)]*n+[(0, None)], method='highs',
-                      options=dict(primal_feasibility_tolerance=1e-9, dual_feasibility_tolerance=1e-9, time_limit=30.,threads=1))
+                      options=dict(primal_feasibility_tolerance=1e-9, dual_feasibility_tolerance=1e-9, time_limit=30.))
         row = dict(axis='XYZ'[axis], solver_status=int(fit.status), solver_message=str(fit.message), conflict_verified=False)
         y = np.zeros(matrix.shape[0])
         solution = np.full(n, np.nan)

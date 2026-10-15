@@ -25,7 +25,7 @@ def linear_step(x, constraints, jacobian, bounds, trust=1e-5, margin=1e-4):
     objective = np.r_[np.zeros(len(x)), 1.]
     fit = linprog(objective, A_ub=inequalities, b_ub=rhs,
         bounds=list(zip(lower, upper))+[(0., 1.)], method='highs',
-        options=dict(primal_feasibility_tolerance=1e-9, dual_feasibility_tolerance=1e-9, threads=1))
+        options=dict(primal_feasibility_tolerance=1e-9, dual_feasibility_tolerance=1e-9))
     record = dict(success=bool(fit.success), status=int(fit.status), message=str(fit.message),
         movable_constraints=int(movable.sum()), constant_constraints=int((~movable).sum()),
         trust=trust, interior_margin=margin)
