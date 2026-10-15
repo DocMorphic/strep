@@ -515,7 +515,8 @@
     "tests/test_native_key_cached_recourse.py",
     "tests/test_native_key_contact_retention.py",
     "tests/test_native_floor_tiles.py",
-    "tests/test_native_geometry_journal.py"
+    "tests/test_native_geometry_journal.py",
+    "tests/test_native_scene_engine_complete.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",

@@ -29,6 +29,9 @@ def load(contacts, policy_path, actor_dir):
     contacts, policy_path, actor_dir = [Path(p).resolve() for p in (contacts, policy_path, actor_dir)]
     require(read(actor_dir/'pipeline.json')['status'] == 'complete', 'Complete actor producer required')
     result = read(actor_dir/'result.json')
+    if result.get('schema') == 'strep-native-scene-engine-journal-completion-v1':
+        from native_scene_engine_complete import load as completed_load
+        return completed_load(contacts,policy_path,actor_dir,actor_only=True)
     require(result['status'] == 'complete' and result['schema'] == 'strep-native-scene-engine-v1', 'Complete native actor result required')
     require(result['original_selected'] is True and all(result[k] is False for k in (
         'gpu_skin_verified','physics_playback_verified','gameplay_event_playback_verified',
