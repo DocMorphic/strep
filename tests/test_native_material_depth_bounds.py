@@ -106,3 +106,50 @@ def test_invalid_parent_hard_prefix_rejects(hard):
     old=NormRows([[0.,0,0],[1.,0,0]],[1.,1.],[1.,1.]);j=sparse.csc_matrix((6,1))
     new=NormRows([[.01,0,0]],[.02],[.02])
     with pytest.raises(ValueError):append_hard(old,j,hard,new,sparse.csc_matrix((3,1)))
+
+
+def threshold_problem(inputs):
+    pair,_=problem(inputs);m=pair.models['B'];stamp=pair.surface.rows[0]['time_s'];index=int(np.searchsorted(pair.times,stamp))
+    p,r=m.actor['placement'];vertices=m.rig.vertices(pair.source_worlds['B'][index])@r.T+p;faces=faces_for(m.rig)[0]
+    edge=vertices[faces[:,1]]-vertices[faces[:,0]];triangle=int(np.linalg.norm(edge,axis=1).argmax());length=np.linalg.norm(edge[triangle]);assert length>.012
+    rows=[]
+    for depth in (.004,.0049,.012):
+        row=copy.deepcopy(pair.surface.rows[0]);row['target_triangle']=triangle;row['left']['vertices']=[int(faces[triangle,0])]
+        row['right'].update(vertices=faces[triangle].tolist(),weights=[1-depth/length,depth/length,0.]);rows.append(row)
+    surface=SurfaceRows(pair.scene,rows,dict(rows=len(rows)));pair=PairKeyGuides(pair.models,[],surface_rows=surface)
+    return pair,edge[triangle]/length
+
+
+def test_individual_threshold_blocks_shallow_crossing_allowed_by_group_peak(inputs):
+    pair,direction=threshold_problem(inputs);old=MaterialDepthBounds(pair,pair.source_worlds)
+    bounds=MaterialDepthBounds(pair,pair.source_worlds,penetration_limit_m=.005)
+    np.testing.assert_allclose(bounds.caps,[.005,.005,.012],atol=1e-12,rtol=0)
+    assert np.all(bounds.rows(pair.source_worlds).residual()<=0)
+    worlds={n:w.copy() for n,w in pair.source_worlds.items()};worlds['A'][:,:,:3,3]-=.0004*direction
+    assert old.rows(worlds).residual()[1]<0 and bounds.rows(worlds).residual()[1]>0
+    assert bounds.rows(worlds).residual()[0]<0 and bounds.rows(worlds).residual()[2]>0
+
+
+def test_individual_threshold_retains_group_ceiling_and_zero_limit_reference(inputs):
+    pair,_=threshold_problem(inputs);old=MaterialDepthBounds(pair,pair.source_worlds)
+    loose=MaterialDepthBounds(pair,pair.source_worlds,penetration_limit_m=.1)
+    zero=MaterialDepthBounds(pair,pair.source_worlds,penetration_limit_m=0)
+    np.testing.assert_array_equal(loose.caps,old.caps)
+    np.testing.assert_array_equal(zero.caps,np.linalg.norm(zero.reference_vectors,axis=1))
+    np.testing.assert_array_equal(zero.reference_vectors,old.reference_vectors)
+    assert np.all(zero.rows(pair.source_worlds).residual()<=0)
+
+
+def test_threshold_changes_caps_only_and_records_explicit_derivative_policy(inputs):
+    pair,_=threshold_problem(inputs);old=MaterialDepthBounds(pair,pair.source_worlds)
+    bounds=MaterialDepthBounds(pair,pair.source_worlds,penetration_limit_m=.005)
+    a,ja,_=old.linearize(pair.initial,pair.source_worlds);b,jb,info=bounds.linearize(pair.initial,pair.source_worlds)
+    np.testing.assert_array_equal(a.vectors,b.vectors);np.testing.assert_array_equal(ja.toarray(),jb.toarray())
+    assert info['penetration_limit_m']==.005 and info['bound_policy']=='individual_reference_or_threshold_with_group_ceiling'
+    assert np.all(b.caps<=a.caps) and np.any(b.caps<a.caps)
+
+
+@pytest.mark.parametrize('threshold',[True,-.001,.100001,float('nan'),float('inf'),'0.005'])
+def test_invalid_individual_threshold_rejects(inputs,threshold):
+    pair,_=problem(inputs)
+    with pytest.raises(ValueError,match='penetration threshold'):MaterialDepthBounds(pair,pair.source_worlds,penetration_limit_m=threshold)

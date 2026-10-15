@@ -16,9 +16,12 @@ def require(value,message):
 
 
 class MaterialDepthBounds:
-    def __init__(self,pair,reference_worlds,*,maximum_rows=20000):
+    def __init__(self,pair,reference_worlds,*,maximum_rows=20000,penetration_limit_m=None):
         pair.check();pair.validate_worlds(reference_worlds)
         require(type(maximum_rows) is int and 1<=maximum_rows<=100000,'Explicit material-row budget required')
+        require(penetration_limit_m is None or type(penetration_limit_m) in (int,float)
+            and np.isfinite(penetration_limit_m) and 0<=penetration_limit_m<=.1,'Explicit finite penetration threshold in metres required')
+        self.penetration_limit_m=penetration_limit_m
         require(pair.surface is not None,'Explicit partner surface witnesses required')
         self.pair=pair;self.row_ids=[];packed={};faces={n:faces_for(m.rig)[0] for n,m in pair.models.items()}
         for index,row in enumerate(pair.surface.rows):
@@ -43,7 +46,10 @@ class MaterialDepthBounds:
             self.groups.append(group);self.labels.append(key);self.group_ids[group['indices']]=group_id
         self.reference_vectors=self.vectors(reference_worlds);lengths=np.linalg.norm(self.reference_vectors,axis=1)
         self.group_caps=np.array([lengths[g['indices']].max() for g in self.groups])
-        self.caps=self.group_caps[self.group_ids].copy();self.scales=np.maximum(self.caps,.001)
+        self.caps=self.group_caps[self.group_ids].copy()
+        if penetration_limit_m is not None:self.caps=np.minimum(self.caps,np.maximum(lengths,penetration_limit_m))
+        self.scales=np.maximum(self.caps,.001)
+        self.bound_policy='group_reference_maximum' if penetration_limit_m is None else 'individual_reference_or_threshold_with_group_ceiling'
         self._caps=self.caps.copy();self._scales=self.scales.copy()
 
     def check(self):
@@ -87,7 +93,8 @@ class MaterialDepthBounds:
             data.append(derivative[nonzero]);indices.append(nonzero);pointers.append(pointers[-1]+len(nonzero));steps.append(float(h))
         jac=sparse.csc_matrix((np.concatenate(data) if data else np.empty(0),np.concatenate(indices) if indices else np.empty(0,int),pointers),shape=(base.vectors.size,p.size))
         self.check()
-        return base,jac,dict(material_rows=len(self.row_ids),groups=[dict(time_s=t,source=a,target=b,reference_distance_m=float(self.group_caps[i])) for i,(t,a,b) in enumerate(self.labels)],
+        return base,jac,dict(material_rows=len(self.row_ids),bound_policy=self.bound_policy,penetration_limit_m=self.penetration_limit_m,
+            groups=[dict(time_s=t,source=a,target=b,reference_distance_m=float(self.group_caps[i])) for i,(t,a,b) in enumerate(self.labels)],
             original_surface_row_ids=self.row_ids,controls=p.size,sparse_nonzeros=jac.nnz,actual_difference_steps=steps,
             structurally_zero_columns=structural,zero_policy='Exact native-key open support intervals and independent plane-offset variables only',
             scope='Decoded material-vector anchor with continuous native differences. Bounds cover tracked vertices only, not new contacts, crossings or complete geometry. Source native motion limits remain separate.',
