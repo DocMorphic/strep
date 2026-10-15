@@ -496,6 +496,7 @@
     "tests/test_native_key_initializer_audit.py",
     "tests/test_native_key_interval_model.py",
     "tests/test_native_pair_key_guides.py",
+    "tests/test_native_pair_contact_objectives.py",
     "tests/test_native_pair_surface_guidance.py",
     "tests/test_native_material_depth_bounds.py",
     "tests/test_native_pair_material_recourse.py",

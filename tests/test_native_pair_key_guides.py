@@ -13,9 +13,10 @@ from rig_asset import RigAsset
 from strep import read,save,sha256
 
 
-def make_inputs(folder,*,contacts_enabled=True):
+def make_inputs(folder,*,contacts_enabled=True,partner_offset_m=0.):
     _,scene,contacts,policy,request=affine_setup(folder)
     spec=read(contacts);spec['actors']['B']=copy.deepcopy(spec['actors']['A'])
+    if partner_offset_m:spec['actors']['B']['placement']['translation_m'][0]+=partner_offset_m
     native_clock=next(c[2] for c in scene.actors['A']['sampler'].channels if c[:2]==(3,'rotation'))
     contact_time=float((native_clock[3]+native_clock[4])/2)
     spec['contacts'][0].update(actor='A',mode='touch',interval_s=[contact_time,contact_time],

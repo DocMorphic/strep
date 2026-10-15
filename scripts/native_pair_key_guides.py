@@ -16,8 +16,10 @@ def require(value,message):
 
 
 class PairKeyGuides:
-    def __init__(self,models,guides,*,surface_rows=None):
+    def __init__(self,models,guides,*,surface_rows=None,fit_contacts=False):
         require(isinstance(models,dict) and len(models)==2,'Two explicit actor interval models required')
+        require(type(fit_contacts) is bool,'Explicit boolean authored-contact objective choice required')
+        self.fit_contacts=fit_contacts
         self.models=dict(models);self.names=list(models);first=models[self.names[0]]
         require(set(first.scene.actors)==set(models),'Complete two-actor scene required')
         for name,model in models.items():
@@ -59,7 +61,8 @@ class PairKeyGuides:
                     require(weights.dtype.kind in 'fiu' and weights.shape==(len(ids),) and np.isfinite(weights).all()
                         and np.all(weights>=0) and abs(weights.sum()-1)<1e-10,'Complete convex surface weights required')
             self.surface=SurfaceRows(self.scene,copy.deepcopy(surface_rows.rows),copy.deepcopy(surface_rows.report))
-        require(bool(guides) or self.surface is not None,'Nonempty regional or local surface guidance required')
+        require(not fit_contacts or bool(first.contact_rows),'Authored contacts required for contact objectives')
+        require(bool(guides) or self.surface is not None or fit_contacts,'Nonempty regional/local guidance or explicit contact objectives required')
         expected={'time_s','left_actor','right_actor','axis_world','vertices','midpoint_m','maximum_shift_m','clearance_m','reserve_m'}
         for guide in self.guides:
             require(isinstance(guide,dict) and set(guide)==expected,'Exact explicit guide fields required')
@@ -153,7 +156,7 @@ class PairKeyGuides:
                 model=self.models[name];stamp=int(np.searchsorted(self.times,time))
                 return model.points(worlds[name],np.arange(len(model.skin.nodes)),np.array([stamp]))[0]
             gaps.append(self.surface.gaps(posed)-np.array([row['clearance_m'] for row in self.surface.rows]))
-        return np.concatenate(gaps)
+        return np.concatenate(gaps) if gaps else np.empty(0)
 
     def linearize(self,value,worlds,trust,*,step=.001,maximum_nonzeros=3_000_000):
         self.check();value=self.controls(value);self.validate_worlds(worlds)
@@ -187,7 +190,11 @@ class PairKeyGuides:
         f=len(floor_gaps);contact_count=len(self.contact_caps);hard=len(base.caps)+contact_count+f
         system=NormRows(np.r_[base_vectors,lifted.vectors],np.r_[base.caps,self.protected_contact_caps,lifted.caps],np.r_[base.scales,self.contact_scales,lifted.scales])
         derivative=sparse.vstack([jac,ljac],format='csc');self.check()
+        if self.fit_contacts:
+            system=NormRows(np.r_[system.vectors,contact.vectors],np.r_[system.caps,contact.caps],np.r_[system.scales,contact.scales])
+            derivative=sparse.vstack([derivative,jac[base.vectors.size:]],format='csc')
         return system,derivative,dict(hard_rows=hard,native_rows=len(base.caps),contact_rows=contact_count,floor_rows=f,guide_rows=len(guide),
+            contact_objective_rows=contact_count if self.fit_contacts else 0,
             local_surface_rows=0 if self.surface is None else len(self.surface.rows),
             controls=self.size,nonzero_entries=derivative.nnz,actual_difference_steps=actual_steps,conversion=identity,
             original_native_caps_scales_unchanged=True,contact_and_floor_protection='No worsening of original failures; authored acceptance unchanged',
