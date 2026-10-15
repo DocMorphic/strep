@@ -23,6 +23,7 @@ on:
           - tests/test_native_pose_reference.py
           - tests/test_native_key_interval_model.py
           - tests/test_native_pair_key_guides.py
+          - tests/test_native_pair_surface_guidance.py
           - tests/test_highs_thread_policy.py
           - tests/test_native_scene_conic_secondary.py
           - tests/test_desktop_build_preservation.py

@@ -63,26 +63,41 @@ class SurfaceRows:
         self.scene.check_inputs();return np.asarray(values)
 
 
-def build(scene,policy,digest,*,clearance=.0005,maximum_rows=20000,plane_guidance='all-vertices'):
+def build(scene,policy,digest,*,clearance=.0005,maximum_rows=20000,plane_guidance='all-vertices',
+        sample_indices=None,actor_vertices=None,include_world_planes=True):
     if type(clearance) not in (int,float) or not np.isfinite(clearance) or not 0<=clearance<=.005:
         raise ValueError('Choose 0-5 mm explicit proposal clearance')
     if type(maximum_rows) is not int or not 1<=maximum_rows<=100000:raise ValueError('Finite explicit surface-row budget required')
     if type(plane_guidance) is not str or plane_guidance not in ('all-vertices','minimum-envelope'):
         raise ValueError('Explicit all-vertices or minimum-envelope plane guidance required')
+    if type(include_world_planes) is not bool or actor_vertices is not None and not callable(actor_vertices):
+        raise ValueError('Explicit world-plane choice and callable posed-vertex source required')
     times,_,_=policy_for(policy,scene,digest);faces={n:faces_for(a['rig'])[0] for n,a in scene.actors.items()}
+    selected_samples=np.arange(len(times))
+    if sample_indices is not None:
+        if any(isinstance(v,(bool,np.bool_)) for v in np.asarray(sample_indices,dtype=object).flat):
+            raise ValueError('Sorted unique existing integer proposal sample indices required')
+        selected_samples=np.asarray(sample_indices)
+        if (selected_samples.ndim!=1 or selected_samples.dtype.kind not in 'iu' or not len(selected_samples)
+                or np.any(selected_samples<0) or np.any(selected_samples>=len(times)) or np.any(np.diff(selected_samples.astype(np.int64))<=0)):
+            raise ValueError('Sorted unique existing integer proposal sample indices required')
     used={n:np.unique(f) for n,f in faces.items()};rows=[];samples=[]
     plane_evaluations=plane_candidates=plane_rows=0
     def entry(actor,ids,weights):return dict(actor=actor,vertices=np.asarray(ids,int).tolist(),weights=np.asarray(weights,float).tolist())
     def add(kind,time,normal,left,right=None,constant=0.,**identity):
         if len(rows)>=maximum_rows:raise ValueError('Complete surface rows exceed explicit resource budget; no subset returned')
         rows.append(dict(kind=kind,time_s=float(time),normal_world=np.asarray(normal).tolist(),left=left,right=right,constant_m=float(constant),clearance_m=float(clearance),**identity))
-    for time in times:
+    for sample_index in selected_samples:
+        time=times[int(sample_index)]
         vertices={};meshes={};plane_population=[]
         for n,a in scene.actors.items():
-            p,r=a['placement'];vertices[n]=a['rig'].vertices(a['sampler'].sample(float(time)))@r.T+p
+            p,r=a['placement'];vertices[n]=(a['rig'].vertices(a['sampler'].sample(float(time)))@r.T+p
+                if actor_vertices is None else np.asarray(actor_vertices(n,float(time)),float))
+            if vertices[n].shape!=(len(a['skin'].nodes),3) or not np.isfinite(vertices[n]).all():
+                raise ValueError('Complete finite posed actor vertex population required')
             if len(scene.actors)>1 or scene.objects:
                 meshes[n]=trimesh.Trimesh(vertices[n][used[n]],np.searchsorted(used[n],faces[n]),process=False)
-            for name,plane in policy['planes'].items():
+            for name,plane in (policy['planes'].items() if include_world_planes else []):
                 normal=np.array(plane['normal_world']);gap=vertices[n]@normal-plane['offset_m']
                 plane_vertex_candidates=np.flatnonzero(gap<clearance);minimum=int(np.argmin(gap))
                 plane_evaluations+=len(gap);plane_candidates+=len(plane_vertex_candidates)
@@ -130,11 +145,14 @@ def build(scene,policy,digest,*,clearance=.0005,maximum_rows=20000,plane_guidanc
         samples.append(dict(time_s=float(time),pairs=pairs,actor_objects=objects,world_planes=plane_population))
     scene.check_inputs()
     report=dict(samples=samples,rows=len(rows),clearance_m=float(clearance),maximum_rows=maximum_rows,
+        total_declared_samples=len(times),sample_indices=selected_samples.tolist(),
+        complete_declared_time_population=bool(np.array_equal(selected_samples,np.arange(len(times)))),
+        provided_actor_vertices=actor_vertices is not None,world_planes_included=include_world_planes,
         plane_guidance=plane_guidance,world_plane_vertex_evaluations=plane_evaluations,
         world_plane_candidate_vertices=plane_candidates,world_plane_guidance_rows=plane_rows,
         source_vertices={n:len(a['skin'].nodes) for n,a in scene.actors.items()},referenced_vertices={n:len(u) for n,u in used.items()},
         complete_triangle_populations={n:len(f) for n,f in faces.items()},objects_included=bool(scene.objects),
-        scope='Complete partner surface broadphase/crossing and referenced-vertex containment queries at declared times. '
+        scope='Complete partner surface broadphase/crossing and referenced-vertex containment queries at explicitly selected original times. '
             'Local fixed-axis/barycentric scalar proposal rows only; recompute after motion changes and retain full decoded geometry checks. '
             'Declared primitive whole-triangle and center-enclosure support-plane guides included. '
             'Minimum-envelope planes reevaluate every vertex, including changed minima; full decoded acceptance remains required. '

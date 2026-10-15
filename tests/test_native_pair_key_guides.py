@@ -13,14 +13,14 @@ from rig_asset import RigAsset
 from strep import read,save,sha256
 
 
-@pytest.fixture(scope='module')
-def inputs(tmp_path_factory):
-    folder=tmp_path_factory.mktemp('pair-key-guides');_,scene,contacts,policy,request=affine_setup(folder)
+def make_inputs(folder,*,contacts_enabled=True):
+    _,scene,contacts,policy,request=affine_setup(folder)
     spec=read(contacts);spec['actors']['B']=copy.deepcopy(spec['actors']['A'])
     native_clock=next(c[2] for c in scene.actors['A']['sampler'].channels if c[:2]==(3,'rotation'))
     contact_time=float((native_clock[3]+native_clock[4])/2)
     spec['contacts'][0].update(actor='A',mode='touch',interval_s=[contact_time,contact_time],
         target=dict(space='actor',actor='B',vertices=spec['contacts'][0]['vertices'],reduction=spec['contacts'][0]['reduction']),limits=dict(position_m=.03))
+    if not contacts_enabled:spec['contacts']=[]
     save(contacts,spec);scene=SceneContacts(spec,folder);policy['contacts_sha256']=sha256(contacts);gp=folder/'geometry.json';save(gp,policy)
     models={}
     for name in ('A','B'):
@@ -35,6 +35,11 @@ def inputs(tmp_path_factory):
     guide=dict(time_s=stamp,left_actor='A',right_actor='B',axis_world=[1.,0.,0.],vertices=dict(A=[vertex],B=[vertex]),
         midpoint_m=float(point[0]),maximum_shift_m=.05,clearance_m=.001,reserve_m=.0005)
     return models,[guide]
+
+
+@pytest.fixture(scope='module')
+def inputs(tmp_path_factory):
+    return make_inputs(tmp_path_factory.mktemp('pair-key-guides'))
 
 
 def test_both_moving_actors_determine_contact_error_instead_of_fixed_partner(inputs):
