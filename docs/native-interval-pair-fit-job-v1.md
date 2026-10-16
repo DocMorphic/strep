@@ -135,6 +135,68 @@ complete-clock geometry, engine fidelity, semantic review, broad held-out
 actions/rigs/objects, editing/style and developer/independent cleanup evidence
 remain required. No model training or release approval is admitted.
 
+## Aggregate surface objectives and frozen retries
+
+`native_scene_conic_sum.direction` minimizes the sum of positive normalized
+soft-row excesses with one nonnegative slack per responsive soft row. A fixed
+worst row therefore cannot flatten the objective for every other row. Full
+hard vector norms retain their second-order cones and original supplied caps.
+Scalar soft norms use both signs of their absolute value as linear bounds;
+general three-dimensional soft norms retain complete cones. Fixed and whole-
+trust-box passing rows are accounted for separately. A complete-row budget
+rejects an oversized problem rather than returning a subset.
+
+This objective is a search alternative. Its aggregate loss is not an animation
+rating, a triangle-count guarantee or a collision certificate. Actual decoded
+native motion, contacts, floor and mesh conditions still decide acceptance.
+
+`scripts/native_interval_pair_retry_job.py` accepts schema
+`strep-native-interval-pair-retry-v1`, a pinned `parent` request, explicit
+`rate_headroom` and objective `minimax` or `sum-positive-excess`. The parent must
+be a completed original-source current-point restoration with a complete saved
+matrix. If its resource-guard records exist, their completed independent replay
+is required. Every archived producer file must still match the current source;
+additional retry implementation files are recorded separately in the new
+implementation snapshot. Original inputs, control order, source-reference copy,
+native observations/caps/scales and original search reserve are checked before
+using the complete matrix. Search headroom may only increase within 0.01.
+
+The retry preserves the original current point, trust box, all frozen contact
+and floor rows, and every original acceptance cap. It does not recompute the
+matrix or independently resample its parent source reference. A passing affine
+proposal is exported from original source models, with full decoded acceptance
+left to separate validators. Both unsuccessful proposals and exports remain
+unselected; no quality or release approval is granted. This permits an objective
+comparison with the same matrix and margin without repeating finite differences.
+
+Run through an owned resource-guarded worker in the pinned CPU environment:
+
+```text
+python scripts/native_interval_pair_retry_job.py retry.json fresh-output
+```
+
+The `parent.path` resolves to the existing restoration's `request.json`; its
+complete original input files and implementation archive must remain available.
+The command is a backend component, with Studio integration still pending.
+
+Twelve aggregate-solver tests verify full hard vector norms, signed scalar
+absolute norms, general soft cones, original boxes, normalization units, fixed
+conflicts and complete-population rejection. Nineteen retry tests cover frozen
+source caps/vectors/scales, producer archives, actor/control order, stricter-only
+reserves, first-pin retention across a mid-validation change, unsuccessful
+directions, rejection of an unsafe `Solved` iterate and untouched existing
+outputs. All 31 cases pass across the completed local runs. The initial combined
+27-case run passes in 168.75 seconds (185.578 guarded seconds, 150,155,264-byte
+peak, 185 replayed resource observations). After hardening, 18 retry cases pass
+and one test reverses a single-node list without actually changing it. Correcting
+that test to change the node passes the targeted rerun in 63.67 seconds
+(81.125 guarded seconds, 148,312,064-byte peak, 82 replayed observations).
+The earlier integer-NaN and single-node test-fixture failures remain retained
+and audited; they are not counted as passes. These source checks provide no
+animation, engine, held-out or full-inventory approval. Declared inventories
+now contain 531 Python modules and 45 Node suites; the contact/rig subset has
+95 Python modules and five Node suites.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
