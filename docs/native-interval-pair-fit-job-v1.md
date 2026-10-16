@@ -1075,6 +1075,45 @@ geometry status and leaves real-time, physics, quality and release approval
 false. All fourteen capabilities, four unset gates and nineteen release gaps
 remain unchanged; the same full-project goal stays active.
 
+The next passive stage reuses the chosen exported mixed mode: A extracted and
+B embedded. It retains all 2,017 captured joint, skeleton and mesh-world matrices
+per actor, raw bind points/weights, canonical vertex correspondence, per-vertex
+mesh ownership and complete source triangles in a compact NPZ. No motion is
+regenerated, weights renormalized or pose clock resampled. Its stored arrays
+round-trip exactly. Reconstruction matches every canonical vertex at the five
+original critical times per actor with **zero** coordinate difference from the
+raw-frame affine skin calculation. Both paths share the existing imported-data
+decoder and CPU algebra; this is not a second engine or GPU readback.
+
+The resulting `compact.npz` has 22,267,847 bytes (SHA-256
+`831010dcbd4b1d95de974cd66b616e09bedfa8baa199f93a6ab644c3c30204a4`).
+Its development metadata remains reference-based, not a self-contained portable
+asset bundle. Source files, complete clocks, producer archives and raw captures
+remain hash-bound. This prototype is not yet a public geometry-provider API.
+
+The full actual mixed-mode floor history now passes all **4,034** unchanged
+5-mm screen samples. A has maximum depth 4.499748 mm and minimum screen margin
+0.500252 mm; B has maximum depth 2.395090 mm and margin 2.604910 mm. These are
+positive remaining penetrations; zero penetration, planted support, balance and
+continuous-time grounding are not certified. The earlier native floor histories
+remain separate rather than being overwritten with engine observations.
+
+Complete world-surface bounds also split the 2,017 partner times: **1,415** have
+strict AABB separation, which excludes partner triangle intersection at those
+exact sampled times. The other **602** have overlapping or touching bounds and
+need detailed partner queries. Overlapping bounds do not prove intersection.
+No narrow-phase partner query is performed here, and the earlier five-time
+native partner failure at 15.180169 mm is not replaced or approved by this work.
+
+The compact/floor/bounds guard completes in 130.922 seconds at 702,857,216 sampled
+bytes; all 131 observations replay. Source and results remain under
+`reports/high-five-shared-placement-runtime-compact-v1`. Next, turn the measured
+compact representation into a tested geometry consumer and complete the
+remaining detailed geometry checks with explicit provenance. Legacy capture or
+Studio completion receipts must not be fabricated to fit an older schema.
+Runtime/controller integration, broader actions and all release criteria still
+require their own evidence; all quality/release flags remain false.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
