@@ -885,6 +885,62 @@ GLB bytes and all target/plane/limit data. Independent validation must check
 the new scene transforms, complete original local-motion observations, the
 full floor clock and fresh paired meshes. The original case remains intact.
 
+At `fabe75a`, [focused run 38932953039](https://github.com/DocMorphic/strep/actions/runs/38932953039)
+passes all 17 cases on Ubuntu (0.98 seconds) and Windows (7.23 seconds).
+The real variant stages and independently replays in 19.187 seconds at
+163,160,064 sampled process-tree bytes, with all 21 observations replayed.
+It references the unchanged restored GLBs and changes only their shared world
+placement and the contact-file hash binding in the otherwise identical
+geometry policy. No scene is automatically selected.
+
+Full actor, coupled-scene and independent saved-observation validation now
+complete. Every native observation, residual and control/time array remains
+bitwise identical to the unshifted restored candidate. Reference caps, scales
+and clocks also match the original source arrays: all 660,002 conditions still
+pass. The global world-placement permission is checked
+separately; the old frozen world-root contract is explicitly changed for this
+variant. The original request and its failed floor history remain preserved.
+
+All 2,017 floor samples per actor pass the unchanged 5-mm screen, with minimum
+screen margins 0.500000 mm for A and 2.604777 mm for B. The independently
+queried floor histories match the predicted translation exactly. Remaining
+physical peak penetrations are 4.500000 and 2.395223 mm; this is not zero
+penetration, planted-feet evidence or realistic-grounding approval.
+
+The audit checks 155,309 world-joint positions and 90,280 cached world-vertex
+positions per actor. Maximum shift error is 1.284e-16 m for joints and
+9.368e-17 m for vertices, within the separately declared 6-mm bound. An initial
+summary incorrectly assumed time-major joint storage and stops; its 20
+resource observations replay. The corrected summary explicitly checks the
+saved joint-major/time/xyz layout and independently verifies the complete
+cached surface shifts. No producer data is transposed or replaced.
+
+Actual contacts are 29.773872 / 10.320870 / 29.608442 mm, all within the original
+30-mm limits. All 3,249 original material-reference bounds still pass strictly,
+retaining at least 0.485394 micrometre of margin. All 25 partner geometry
+measurements at the five selected times are exactly unchanged; ten world-plane
+measurements improve. Partner peak penetration remains 15.180169 mm and the
+scene still fails its geometry screen. There is no animation-quality or
+release approval and no full-clock partner/continuous-geometry proof.
+
+Actor A's guard completes in 158.188 s at 276,627,456 sampled bytes with 158
+observations replayed; B takes 148.219 s at 279,719,936 bytes with 148
+observations; the scene takes 90.703 s at 308,887,552 bytes with 91 observations.
+The corrected summary completes in 19.250 s at 151,519,232 bytes with all 21
+observations replayed. Results remain under `reports/high-five-shared-placement-v1/job`,
+`reports/high-five-shared-placement-{actor-A,actor-B,scene}-v1` and
+`reports/high-five-shared-placement-summary-v2`.
+
+This is native scene-transform validation. The existing `native_scene_engine`
+audit applies authored placements after imported CPU skin reconstruction;
+that scope is not proof of actual engine actor-root placement or runtime
+playback. The existing `native_scene_runtime` consumer does configure placement
+matrices and compare actual embedded, extracted and mixed root modes. That
+path requires an honestly produced source game package and has not yet been
+run for this variant. Engine consumer/export validation and the approximately 15-mm
+partner intersections remain separate next work. No inference or training is
+performed, and the same broad project-wide release goal remains active.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
