@@ -410,6 +410,19 @@ then expands any improving candidate to the complete original clock. Proposed
 transformed captures must remain labeled as counterfactuals until fresh native
 and Godot validation; the original capture cannot certify a changed placement.
 
+At source `6e1dec8`, the focused
+[38957181110](https://github.com/DocMorphic/strep/actions/runs/38957181110)
+passes all 27 pivot-placement tests on both Ubuntu and Windows. These checks
+exercise nonidentity original orientations and all three coordinate axes,
+fixed-pivot and common-angle distance invariants, complete local curve/source
+byte preservation, fixed participants, explicit rotation/origin bounds,
+malformed declarations, unchanged target/object/geometry clocks and limits,
+and replay rejection of changed assets, sources, helpers, metadata claims or
+rebound variant checksums. These are source/API checks, not evidence of an
+improved high-five or accepted motion. Inventories contain 543 Python modules
+and 45 Node suites; the contact/rig subset contains 107 Python modules and five
+Node suites. Full-inventory approval is not claimed.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
