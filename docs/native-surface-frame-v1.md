@@ -239,3 +239,33 @@ engine playback or human cleanup evidence is produced by these pose pilots.
 The next implementation should expose all relevant weighted finger joints
 within measured memory bounds, retain the original affine evaluator and source
 epoch, and evaluate complete decoded curves before any asset promotion.
+
+
+## Complete weighted hand actuation
+
+`scripts/native_partitioned_affine_pose.py` adds a separate constructor for
+1–32 explicit native joints while inheriting the unchanged
+`AffineKeyPose.evaluate` method. Constructor blocks validate original tracks;
+the resulting evaluation propagates one coupled hierarchy and all skin
+influences, including ancestry across block boundaries. Original zero controls,
+source matrices, scales and translations remain the reference. The original
+16-joint constructor remains unchanged.
+
+Allocation screening caps the full vertex derivative at 128 MiB and an explicit
+workspace estimate at 256 MiB. These estimates are not measured RSS guarantees;
+actual jobs still require the resource guard. Invalid or oversized requests
+reject rather than discard joints or skin influences.
+
+Fifteen local tests pass, including exact equivalence across constructor block
+sizes, a 19-joint weighted descendant crossing the block boundary, finite
+differences of skin and joint derivatives, and invalid/budget-limited inputs.
+The guarded test run completes in 21.234 s at 115,236,864 sampled bytes, with
+23 resource observations independently replayed. No motion or quality approval
+follows from these constructor tests. Updated inventories contain 548 Python/
+45 Node suites; the contact subset contains 112/five, not full-inventory passes.
+
+A new pose-only study exposes every positively weighted descendant of RightHand
+plus arm, forearm and hand. The previous sixteen caps remain unchanged; newly
+enabled finger joints receive explicit 20-degree balls. Contact, orientation,
+collision, source epoch and 60-mm joint-displacement limits remain unchanged.
+The run must finish before any conclusion about the wider actuation is drawn.
