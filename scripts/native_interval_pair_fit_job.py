@@ -92,7 +92,7 @@ def run(recipe_path,output):
             for name,source in sources.items():
                 phase('source-model',actor=name)
                 paths=dict(contacts=cp,geometry=gp,request=source['request'],controls=source['controls'])
-                model=KeyIntervalModel.from_inputs(**paths,active_keys=source['active_keys'],output=output/name/'source-seed',expected_sha256={k:sha256(p) for k,p in paths.items()})
+                model=KeyIntervalModel.from_inputs(**paths,active_keys=source['active_keys'],output=output/name/'source-seed',expected_sha256={k:pins[str(p)] for k,p in paths.items()})
                 if model.name!=name:raise ValueError('Actor recipe names differ from bound source requests')
                 models[name]=model;pins.update(model.pins)
                 layouts[name]=dict(nodes=model.nodes,degrees=model.degrees,active_keys=source['active_keys'])

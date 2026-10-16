@@ -17,8 +17,19 @@ Rows at inactive keys remain present with zero derivatives.
 The implementation rejects interpolated times, mismatched rotation clocks,
 endpoint edits, minimum-envelope rows, incomplete actor layouts, invalid
 material weights and exhausted sparse budgets. It returns no truncated subset.
-It linearizes the original zero-control epoch only. This is not an analytic
-replacement for full interval rates, decoded Float32 export, or mesh acceptance.
+The default linearizes the original zero-control epoch. An explicit `value`
+now permits a complete, finite current control point inside the original edit
+box, while retaining the source-zero canonical-vertex check and original
+control layout. This does not replace full interval rates, decoded Float32
+export, or mesh acceptance.
+
+The current-point extension passes 18 tests, including complete central finite
+differences at a nonzero point, exact default/explicit-zero agreement and invalid
+control rejection. Local execution takes 12.62 seconds; its guarded run takes
+29.344 seconds, peaks at 136,638,464 process-tree bytes, and independently replays
+31 resource observations. At commit `499fea0`,
+[hosted run 38898614845](https://github.com/DocMorphic/strep/actions/runs/38898614845)
+passes all 18 cases on Ubuntu (1.86 seconds) and Windows (15.09 seconds).
 
 Twelve tests compare the complete surface Jacobian with the existing native
 interval model's continuous finite differences, using both actors, different

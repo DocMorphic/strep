@@ -6,6 +6,63 @@ contacts, geometry and explicit edit permissions. It does not generate prompts,
 select an animation or grant motion-quality approval. It is a backend component;
 Studio integration and full release validation remain pending.
 
+## Restoring a current candidate without changing source bounds
+
+`scripts/native_interval_pair_restore_job.py` adds one bounded relinearization
+at an exported candidate. Its `strep-native-interval-pair-restore-v1` recipe
+contains pinned `source_recipe`, `reference` and `current_contacts` files, the
+complete absolute original-source `value`, and explicit `trust`,
+`difference_step`, `rate_headroom` and `maximum_nonzeros` settings. The reference
+is the original fit's `start-observations.npz`; the source recipe still uses
+original zero controls. Run it inside an owned resource guard:
+
+```text
+python scripts/native_interval_pair_restore_job.py restore.json fresh-output
+```
+
+Before linearizing, the job exactly replays original source vectors, caps,
+scales, contact bounds, times and floor arrays. It verifies that the current
+export matches the supplied controls, original static rig and unedited tracks,
+and unchanged scene/contact contract. Source pins are retained across validation
+and loading. Fresh surface witnesses use current decoded vertices; the scene
+and interval models retain their original source epoch.
+
+The `rate_headroom` setting tightens responsive native search rows by the
+smaller of that dimensionless fraction of their normalization scale and one
+percent of their original cap. It is a search heuristic, not a certified
+nonlinear error bound. Actual acceptance always uses original caps. Position
+contact search reserves retain their original units and policy. Surfaces remain
+soft objectives. Complete decoded native motion, floor, contact and geometry
+validation is still required after a passing affine proposal.
+
+`direction.npz` stores absolute original-source controls under the legacy
+`delta` key for staged validator compatibility; `controls.npz` separately
+stores the absolute point and local step. Results explicitly state that
+meaning. Original motion remains selected and quality/release approval remains
+false, including no-op and unsuccessful solver outcomes.
+
+The combined restoration, current-point derivative and fit suites pass all 47
+checks locally in 134.39 seconds. The guarded run takes 151.234 seconds,
+peaks at 163,786,752 process-tree bytes and independently replays all 151
+resource observations. These checks cover original-cap replay, changed inputs,
+control/export mismatch, rig metadata, contact contracts, immutable result
+directories and unsuccessful/no-op outcomes. They do not establish successful
+restoration of a production animation.
+
+A subsequent memory-lifetime change releases current decoded arrays before
+the solve. All 13 affected restoration checks pass again in 48.29 seconds;
+the guard takes 64.906 seconds, peaks at 153,255,936 bytes and replays all
+66 resource observations. The CPU memory policy is unchanged.
+
+The preceding high-five diagnostic measures the failed candidate both before
+and after Float32 storage. Both representations retain the same 49 native
+failures for A and 44 for B. The quantized preview and exported vectors agree
+within 4.80e-11 per component. Continuous normalized excess reaches 0.0325214
+for A and 0.0458966 for B. Storage is not the main source of these failures;
+the next restoration must address nonlinear motion while preserving the
+original bounds. The diagnostic completes in 76.047 seconds at a
+286,441,472-byte peak, with 77 independently replayed resource observations.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text

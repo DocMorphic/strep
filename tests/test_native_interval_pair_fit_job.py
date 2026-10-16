@@ -88,3 +88,19 @@ def test_feasible_export_remains_unselected_until_independent_validation(tmp_pat
     assert result['affine_pass'] and result['decoded_authored_contacts_pass'] and result['decoded_native_floor_geometry_pending']
     assert result['original_selected'] and not result['quality_approved']
     assert Path(result['candidate_contacts']).is_file() and (tmp_path/'fit/proposed-direction.npz').is_file()
+
+
+def test_source_change_between_validation_and_loading_keeps_the_original_pin(separated,tmp_path,monkeypatch):
+    import native_interval_pair_fit_job as module
+    models,_=separated;path,value=recipe(models,tmp_path)
+    declaration=tmp_path/'actor.json';save(declaration,read(value['actors']['A']['request']['path']))
+    expected=sha256(declaration);value['actors']['A']['request']=dict(path=str(declaration),sha256=expected);save(path,value)
+    original=module.KeyIntervalModel.from_inputs;calls=[]
+    def changed(**kwargs):
+        if not calls:
+            data=read(declaration);data['maximum_joint_displacement_m']*=.9;save(declaration,data)
+            assert kwargs['expected_sha256']['request']==expected
+        calls.append(True);return original(**kwargs)
+    monkeypatch.setattr(module.KeyIntervalModel,'from_inputs',changed)
+    with pytest.raises(ValueError,match='bindings'):run(path,tmp_path/'fit')
+    assert calls and not (tmp_path/'fit/result.json').exists()
