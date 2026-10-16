@@ -296,6 +296,35 @@ There are 1,889 original samples left in this journal; the separately queried
 contact-time failure is retained. No complete geometry, quality or release pass
 is inferred. Continuing uses the exact checkpoint and source receipt.
 
+The separate `native_configured_scene_runtime.py` and
+`godot_configured_scene_runtime_audit.gd` sidecars address exact selected-mask
+coverage. The older three-mode producer remains unchanged for its existing
+receipts. The new producer captures an embedded baseline and a `configured`
+mode whose per-actor extraction choices remain exactly as supplied to export.
+Each raw mode echoes its applied root mask. The comparator requires that echo
+to match the requested mask and selects the original extracted-root or embedded
+checks explicitly for each actor, preserving all frame, affine-skin, object,
+preview, callback, malformed-config, rejection and bootstrap checks. Fixed
+alternating-mode results cannot substitute for the chosen combination.
+
+The new request and mode-file/result schemas identify this producer directly;
+the older surface-capture consumer does not silently accept or relabel it.
+The producer also pins the generated request, exported scene configuration and
+bootstrap/project files before execution and rejects changes before packaging.
+Only the exact observed configuration can supply the finite-controller flag.
+Failed numerical checks still produce diagnostic output with failed acceptance;
+geometry, GPU, physics, real-time playback and human quality remain separate.
+
+Initial stdlib-only structural checks verify the retained comparison arithmetic
+and complete Godot audit steps. Syntax/inventory checks include 542 Python
+modules/45 Node suites, with 106 Python modules/five Node suites in the
+contact/rig subset. All 62 current geometry-worker methods remain byte-identical.
+This is structural verification, not a numerical or actual engine result. The
+new source-only suite includes every two-actor mask, a non-alternating three-actor
+mask, equivalence against the prior comparator for the three known modes,
+changed/incomplete observations, exact packaged configurations and mutation
+rejection. Numerical and actual-engine validation remain pending at this point.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
