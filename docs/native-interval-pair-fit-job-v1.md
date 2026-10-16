@@ -293,6 +293,68 @@ refusal to label a worse feasible target as progress. The guard completes in
 now declare 532 Python/45 Node suites and a contact/rig subset of 96/five.
 These checks do not confer animation or release approval.
 
+At `19012ce`, [aggregate source run 38910367992](https://github.com/DocMorphic/strep/actions/runs/38910367992)
+passes all 18 tests on Ubuntu/Windows (0.61/0.93 seconds), and
+[segment run 38910372784](https://github.com/DocMorphic/strep/actions/runs/38910372784)
+passes all 11 cases (0.48/0.68 seconds).
+
+The complete precision replay retains both finite failed proposals. The first
+has five failed hard rows at 1.6296216e-7 normalized excess; the tighter
+`NumericalError` point has three at 6.4993650e-8. Neither is exported directly.
+The new run takes 55.797 guarded seconds at 614,199,296 bytes, with 57 resource
+observations replayed. This captures the failed-status point missing from the
+first retained precision run, without interpreting its status as success.
+
+The separate deterministic segment study uses the already measured feasible
+minimax control as anchor, the lower-aggregate failed point as proposal, and
+the exact same original matrix, point, 0.02 trust and 0.002 search headroom.
+It records the proposal's `NumericalError` status explicitly. All 34 full-row
+probes replay exactly. A fraction of 0.9998908720444888 passes all 664,039 hard
+affine rows under the unchanged 1e-8 comparison; maximum excess is
+9.9999825e-9. Positive soft sum falls from 7,683.425513 to 5,163.755522.
+This is a new deterministic restoration result, not a relabelled solver result.
+
+Actual exported validation passes every one of the 660,002 original native
+conditions. Caps, scales and times match the previous control exactly.
+Fresh contact distances are 29.499724/10.781735/29.498655 mm, within 30 mm.
+Floor arrays remain source-exact: all 2,017 times per actor still fail the
+physical screen, at 10.436307/8.331530-mm maximum depths.
+
+Direct geometry shows a tradeoff, not a qualifying improvement. Against the
+original source, 19 selected measures improve, five regress and 11 are unchanged.
+Against the minimax control, 12 improve, 13 regress and ten are unchanged.
+Crossing counts decrease at all five times, but eight directional depth peaks
+and five deep-vertex counts worsen. Largest depth rises from the control's
+15.216414 to 16.083803 mm, still above the 5-mm screen.
+
+| Time (s) | Original crossings | Minimax control | Aggregate segment |
+| --- | ---: | ---: | ---: |
+| 1.933333278 | 640 | 631 | 611 |
+| 1.966666698 | 567 | 715 | 612 |
+| 2.000000000 | 594 | 774 | 652 |
+| 2.033333302 | 644 | 713 | 669 |
+| 2.066666603 | 455 | 627 | 589 |
+
+Existing native and geometry implementation hashes match between these decoded
+studies; only the aggregate proposal module changes and the segment module is
+added. Historical producer snapshots are verified separately, rather than
+declaring their complete source maps equal to the current checkout.
+
+| Guarded stage | Seconds | Peak process-tree bytes | Replayed observations |
+| --- | ---: | ---: | ---: |
+| Segment and original-source exports | 110.718 | 248,594,432 | 111 |
+| Actual actor A | 151.234 | 280,289,280 | 151 |
+| Actual actor B | 149.219 | 274,505,728 | 149 |
+| Coupled direct geometry | 88.266 | 335,163,392 | 89 |
+| Full saved probe/native/report replay | 32.438 | 232,615,936 | 34 |
+
+The candidate remains rejected and the original stays selected. Aggregate loss
+or crossing count alone cannot protect depth. Next, investigate depth-aware
+contact/surface guidance at a feasible pose, with the original motion bounds,
+explicit contact geometry and independent full decoded acceptance retained.
+Do not continue aggregate-weight tuning as if this loss were an animation
+rating. Grounding and the broader release requirements remain unresolved.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
