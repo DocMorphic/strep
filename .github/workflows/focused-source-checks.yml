@@ -25,6 +25,7 @@ on:
           - tests/test_native_pair_key_guides.py
           - tests/test_native_pair_contact_objectives.py
           - tests/test_native_contact_actor_validation.py
+          - tests/test_native_surface_key_jacobian.py
           - tests/test_native_pair_surface_guidance.py
           - tests/test_native_material_depth_bounds.py
           - tests/test_native_pair_material_recourse.py
