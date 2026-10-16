@@ -8,7 +8,7 @@ runtime evidence remains separate from geometry, GPU, physics and quality.
 import argparse
 from collections.abc import Mapping
 from pathlib import Path
-import copy, shutil, subprocess, zipfile
+import copy, hashlib, shutil, subprocess, zipfile
 import numpy as np
 from threadpoolctl import threadpool_limits
 from action_worker_lock import worker_lock
@@ -206,6 +206,11 @@ def run(source,output,modes,*,engine=None):
             require(all(sha256(p)==h for p,h in bindings.items()) and sha256(output/'source-game-assets.zip')==bindings[str(source)],'Original source/engine/snapshot changed')
             require(all(sha256(p)==h for p,h in runtime_bindings.items()),'Executed/exported runtime configuration changed')
             original.make_package(output/'source-game-assets.zip',output,result,config)
+            with zipfile.ZipFile(output/'runtime-assets.zip') as exported:
+                for name in ('runtime-v1/scene-runtime.json','runtime-v1/scene.tscn','project.godot'):
+                    require(hashlib.sha256(exported.read(name)).hexdigest()==runtime_bindings[str(project/name)],
+                        'Exported runtime configuration differs from executed selection')
+            require(all(sha256(p)==h for p,h in runtime_bindings.items()),'Runtime configuration changed during packaging')
             result.update(schema='strep-configured-scene-runtime-audit-v1',status='complete',at=now(),engine=header['engine'],
                 input_sha256=bindings,implementation_sha256=methods,executed_script_sha256={n:sha256(runtime/n) for n in GDS},
                 raw_mode_files_sha256=raw_hashes,files_sha256={n:sha256(output/n) for n in ('source-game-assets.zip','request.json','engine.log','observations.npz','runtime-assets.zip','package.json')},

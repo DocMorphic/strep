@@ -153,6 +153,29 @@ def test_export_configuration_changed_during_engine_run_cannot_be_published(tmp_
     assert not (tmp_path/'runtime/runtime-assets.zip').exists() and read(tmp_path/'runtime/pipeline.json')['status']=='failed'
 
 
+def test_self_consistent_zip_cannot_substitute_another_exported_configuration(tmp_path,monkeypatch,fixture):
+    import json
+    package,_,_,_,_,actual=fixture;modes=dict(A='embedded',B='extracted');value=observations(actual,modes)
+    engine=tmp_path/'engine';engine.write_bytes(b'explicit-source-test-double')
+    def fake(command,**kwargs):
+        path=Path(command[-1]);save(path,wire(path.parent,value));return SimpleNamespace(returncode=0)
+    real=original.make_package
+    def changed(source,folder,result,config):
+        manifest=real(source,folder,result,config);path=folder/'runtime-assets.zip'
+        with zipfile.ZipFile(path) as z:files={name:z.read(name) for name in z.namelist()}
+        selected_config=json.loads(files['runtime-v1/scene-runtime.json']);selected_config['actors'][0]['extract']=True
+        files['runtime-v1/scene-runtime.json']=json.dumps(selected_config).encode()
+        manifest['files_sha256']['runtime-v1/scene-runtime.json']=hashlib.sha256(files['runtime-v1/scene-runtime.json']).hexdigest()
+        files['package.json']=json.dumps(manifest).encode()
+        with zipfile.ZipFile(path,'w') as z:
+            for name,data in files.items():z.writestr(name,data)
+        return manifest
+    monkeypatch.setattr(selected.subprocess,'run',fake);monkeypatch.setattr(original,'make_package',changed)
+    with pytest.raises(ValueError,match='Exported runtime configuration differs'):
+        selected.run(package,tmp_path/'runtime',modes,engine=engine)
+    assert read(tmp_path/'runtime/pipeline.json')['status']=='failed'
+
+
 def test_godot_sidecar_retains_all_original_audit_steps():
     expected=(ROOT/'scripts/godot_native_scene_runtime_mode_audit.gd').read_text()
     actual=(ROOT/'scripts'/selected.AUDIT).read_text()
