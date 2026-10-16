@@ -48,3 +48,37 @@ release approval. Original source modules, meshes, pose observations and
 reported metrics remain unchanged. Complete source-vertex audits, treatment
 of ambiguous surfaces, self-collision, motion clocks, engine observations and
 human review are still required before promotion.
+
+The thirteen source checks also pass on hosted Ubuntu (0.56 s) and Windows
+(0.94 s), run 38976063117 at source b0beef2. The actual saved witnesses are
+classified unresolved for A17307 and inside for B17040; the guarded witness
+replay completes in 18.250 s at 155,844,608 sampled bytes (20 observations).
+Both resource traces replay independently. Inventories contain 550 Python/
+45 Node suites, with 114/five in the contact subset, not full-inventory passes.
+
+
+## Complete source populations at the rejected pose
+
+A separate shadow audit accounts for all 18,056 source vertices in each
+direction at 2 s. The unchanged numerical convex-hull screen excludes 17,444
+A vertices and 18,032 B vertices; every retained query uses every original
+target triangle. This is conservative numerical screening, not exact geometry.
+
+Of A's 612 retained vertices, 607 agree outside, one agrees inside at
+0.030812-mm unsigned distance, and four are unresolved: 3067, 12102, 17307 and
+17316. Of B's 24 retained vertices, 23 agree outside and one agrees inside at
+0.083357 mm; none are unresolved. No retained query is near-surface at the
+1e-7-m threshold. Arrays preserve every state, raw sign, ray result and winding;
+nonqueried hull-excluded entries have explicit state zero and NaN distances.
+
+The guard completes in 36.531 s at 245,948,416 sampled bytes, with 38 resource
+observations independently replayed. Source hashes remain unchanged. This
+completes the two source populations at one pose, not a whole-clock geometry
+audit. Four unresolved vertices, existing surface records and failed contact
+conditions prevent promotion. The next check is complete self-surface and
+local topology analysis around the disputed index/middle-finger region before
+changing any containment evaluator or repeating curve optimization.
+
+All twelve retained inter-actor surface records are classified as proper
+crossings, independently of the disputed signed-depth witness. Resolving that
+containment disagreement therefore cannot turn this pose into a passing one.
