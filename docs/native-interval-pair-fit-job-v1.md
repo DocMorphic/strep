@@ -485,14 +485,108 @@ point bounds the source vertex's nearest-surface distance from above. A fixed
 normal projection lacks that guarantee. The bound covers only declared
 vertices; nonlinear motion, serialization, floating-point error, newly
 penetrating vertices, triangle intersections and complete mesh acceptance still
-require independent evaluation. This helper is not yet evidence that a new
-production candidate passes.
+require independent evaluation. Distance is unsigned, so this conservative
+local bound can also restrict harmless separation after a vertex leaves the
+partner. Refreshing containment and material witnesses remains necessary.
+This helper is not evidence that a production candidate passes.
 
 All 16 new source cases pass in 14.20 seconds. The final guarded run takes
 31.422 seconds at 132,448,256 sampled process-tree bytes; all 33 observations
 replay. Before the weight-normalization refinement, all 18 existing scalar
 derivative checks also pass. Inventories declare 534 Python/45 Node suites
 and a contact/rig subset of 98/five; these counts are not full-suite approval.
+
+At `187bc66`, [focused run 38921219126](https://github.com/DocMorphic/strep/actions/runs/38921219126)
+passes all 16 new cases on Ubuntu (3.05 seconds) and Windows (10.63 seconds).
+
+The matched full-vector trial retains the previous free branch's complete
+base vectors, caps, scales and sparse matrix exactly before inserting all
+3,249 full-vector guards. Canonical material rows are reused from that pinned
+current-pose query; vector derivatives are freshly evaluated at the same
+absolute original-source controls. Actual decoded anchor vectors define the
+guard constants, and the smooth/decoded difference remains recorded.
+All other controls, trust, native/contact reserves and physical acceptance
+limits stay as declared above. The resulting system has 667,288 hard rows,
+701,680 total norm rows and 3,500,086 sparse entries.
+
+The solver reports `AlmostSolved`; separate complete affine postchecking
+passes the entire proposed step. Aggregate soft excess falls from 5542.073479
+to 5343.440306. Both exported actors meet the authored contacts, while original
+source epoch, controls and bounds remain preserved. The producer completes
+in 125.062 seconds at 868,278,272 process-tree bytes, with all 125 resource
+observations replayed.
+
+All three actual stages and the separate saved-row summary now complete.
+The candidate is rejected: all eight failed native conditions are original
+world-angular-acceleration rows (A: five, B: three), despite passing their
+affine search bounds. Authored contact distances are 29.007674, 13.757977 and
+29.762859 mm. Floor arrays remain source-exact, including all 2,017 physical
+failures per actor. The original source remains selected.
+
+At the five selected geometry times, 23 measurements improve against the
+feasible anchor, one regresses and eleven are unchanged. All five crossing
+counts decrease, to 614 / 661 / 740 / 707 / 613. Peak partner depth is
+15.130781 mm, about 0.085633 mm below the anchor but still above the 5-mm
+physical screen. A-inside-B depth at 2 seconds instead increases from
+9.124863 to 9.126193 mm. Compared with the original source, twenty measurements
+improve, five regress and ten stay unchanged. These are measured geometry
+tradeoffs on a rejected clip, not animation-quality approval.
+
+The independent summary replays all complete affine rows and probes, verifies
+all inserted vector rows/caps/scales and sparse entries, and independently
+reconstructs normalized target-face material points from decoded meshes.
+Fourteen material distances exceed the added search limits after nonlinear
+export, at a maximum deficit of 0.011888 mm. Four projected scalar bounds fail;
+ten scalar passes miss a distance-bound failure. This reinforces the need for
+decoded checking even when the full-vector affine model passes. Unsigned
+material-distance failure still does not itself prove physical penetration.
+
+The original eight failed native rows have strictly passing affine predictions;
+their actual-versus-predicted vector differences are about 0.303–0.933 rad/s².
+Those residuals alone do not separate derivative staleness, finite-difference
+error, nonlinear curvature and serialization. The directional-fidelity study below
+compares current-pose central differences at two step sizes with the cached
+direction and continuous-versus-decoded vectors, preserving original caps.
+
+The three stage guards complete in 150.719 s / 274,067,456 bytes, 145.469 s /
+273,514,496 bytes and 89.453 s / 301,273,088 bytes; all 150 / 145 / 90 resource
+observations replay. The passive summary takes 20.329 s at 331,628,544 bytes,
+with all 22 observations replayed. Results are retained under
+`reports/high-five-material-vector-{actor-A,actor-B,scene,summary}-v1` and
+`reports/high-five-material-vector-guards-v1`. No inference, training or engine
+run is involved; full-clock geometry, grounding and broader release work remain.
+
+### Current-direction error decomposition
+
+The separate `reports/high-five-material-direction-fidelity-v1` study now
+completes. It reconstructs each actor from the original zero-control source,
+replays all 660,002 original native vectors/caps/scales and clocks, then compares
+the same proposed direction at the actual feasible anchor. Central directional
+differences use relative step fractions 0.01 and 0.001; they do not rebuild a
+complete current-point Jacobian or produce a new candidate.
+
+Across the eight failed angular-acceleration rows, the two central estimates
+agree within 4.974e-7 rad/s². Their difference from the cached predicted
+direction is 0.263682–1.068921 rad/s². The full-step continuous nonlinear
+remainder is 0.176080–0.897765 rad/s². By comparison, continuous-to-decoded
+full-step vector differences are only 0.000282–0.000365 rad/s²; anchor storage
+differences are 0.000162–0.000631 rad/s². Two-step agreement is a numerical
+observation, not a derivative-error certificate, and component norms are not
+additive error shares.
+
+A prediction using the fresh current-direction derivative flags one failed
+row for actor A and two for B. The actual export fails five and three,
+respectively. Thus refreshing derivatives alone would still miss five of
+the eight actual violations at this step size. Serialization is not the
+dominant discrepancy in these rows. The next proposal should refresh native
+derivatives at the feasible current point, use smaller/adaptive trust and
+require complete nonlinear decoded acceptance before retention. Original
+source caps must remain unchanged, and geometry/grounding still need separate
+correction and full-clock checking.
+
+The directional study completes in 81.171 seconds at 320,024,576 process-tree
+bytes, and all 82 resource observations independently replay. Its outputs are
+diagnostic only; no animation is selected and no quality or release gate changes.
 
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
