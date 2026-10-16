@@ -169,46 +169,6 @@ left to separate validators. Both unsuccessful proposals and exports remain
 unselected; no quality or release approval is granted. This permits an objective
 comparison with the same matrix and margin without repeating finite differences.
 
-The subsequent actual Godot native-resource import passes its three endpoint/
-contact-time pose, raw-skin and contact checks. Each character then passes the
-existing independent embedded/extracted root-runtime audit at all 2,017 original
-clock samples, with 77 bones and 18,056 vertices. Maximum matrix-element errors
-are 1.344e-6 for A and 1.290e-6 for B; maximum mode skin-position differences are
-0.725 and 0.841 micrometres. Preview parity also passes. These are actual engine
-observations under the amended placement, rather than post-skin placement alone.
-They do not establish simultaneous scene playback or collision acceptance.
-
-Import admission/execution completes in 25.312 seconds at 325,799,936 sampled
-process-tree bytes, with 27 observations replayed. A completes in 106.547 seconds
-at 959,086,592 bytes; B in 106.594 seconds at 1,087,848,448 bytes. Both actor traces
-replay all 107 observations. The source clips/resources and contracts remain
-hash-bound. No new motion generation or training is performed.
-
-The first combined scene runtime reaches 2,202,349,568 sampled process-tree bytes
-and stops under the unchanged 2-GiB cap. Its 30 resource observations replay;
-no combined runtime pass is recorded. The source diagnostic package remains
-preserved. Its contact report also needs a corrected raw-weight metadata label
-and outer-placement calculation; the replacement is a separate artifact.
-
-`native_scene_runtime_modes.py` adds a smaller working-set runner. Its Godot
-audit saves each complete embedded/extracted/mixed mode into a separately
-hashed file before proceeding. Python caches the embedded reference and loads
-other modes on demand. The existing numerical comparator, samples, raw vertices,
-callbacks, preview/restart and malformed-input checks remain unchanged. This
-reduces retained observations without guaranteeing a fixed memory ceiling.
-The same resource guard remains necessary. The final runtime package uses the
-existing controller and source-asset preservation path.
-
-All 70 affected source tests pass in 35.25 seconds, including 13 new mode-file
-checks. They compare every result and stored array with the original in-memory
-comparator, retain deliberately failed numerics, reject missing/changed/escaping
-mode files, preserve source ZIP entries and verify that the Godot script differs
-only in observation transport. The test guard completes in 51.937 seconds at
-121,323,520 bytes, with all 53 observations replayed. The unchanged-cap combined
-engine retry remains pending at this source checkpoint; a unit test is not a
-real engine pass. Inventories now declare 538 Python/45 Node suites and a
-contact/rig subset of 102/five, not full-suite approval.
-
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
@@ -980,6 +940,62 @@ path requires an honestly produced source game package and has not yet been
 run for this variant. Engine consumer/export validation and the approximately 15-mm
 partner intersections remain separate next work. No inference or training is
 performed, and the same broad project-wide release goal remains active.
+
+The subsequent actual Godot native-resource import passes its three endpoint/
+contact-time pose, raw-skin and contact checks. Each character then passes the
+existing independent embedded/extracted root-runtime audit at all 2,017 original
+clock samples, with 77 bones and 18,056 vertices. Maximum matrix-element errors
+are 1.344e-6 for A and 1.290e-6 for B; maximum mode skin-position differences are
+0.725 and 0.841 micrometres. Preview parity also passes. These are actual engine
+observations under the amended placement, rather than post-skin placement alone.
+They do not establish simultaneous scene playback or collision acceptance.
+
+Import admission/execution completes in 25.312 seconds at 325,799,936 sampled
+process-tree bytes, with 27 observations replayed. A completes in 106.547 seconds
+at 959,086,592 bytes; B in 106.594 seconds at 1,087,848,448 bytes. Both actor traces
+replay all 107 observations. The source clips/resources and contracts remain
+hash-bound. No new motion generation or training is performed.
+
+The first combined scene runtime reaches 2,202,349,568 sampled process-tree bytes
+and stops under the unchanged 2-GiB cap. Its 30 resource observations replay;
+no combined runtime pass is recorded. The source diagnostic package remains
+preserved. Its contact report also needs a corrected raw-weight metadata label
+and outer-placement calculation; the replacement is a separate artifact.
+
+`native_scene_runtime_modes.py` adds a smaller working-set runner. Its Godot
+audit saves each complete embedded/extracted/mixed mode into a separately
+hashed file before proceeding. Python caches the embedded reference and loads
+other modes on demand. The existing numerical comparator, samples, raw vertices,
+callbacks, preview/restart and malformed-input checks remain unchanged. This
+reduces retained observations without guaranteeing a fixed memory ceiling.
+The same resource guard remains necessary. The final runtime package uses the
+existing controller and source-asset preservation path.
+
+All 70 affected source tests pass in 35.25 seconds, including 13 new mode-file
+checks. They compare every result and stored array with the original in-memory
+comparator, retain deliberately failed numerics, reject missing/changed/escaping
+mode files, preserve source ZIP entries and verify that the Godot script differs
+only in observation transport. The test guard completes in 51.937 seconds at
+121,323,520 bytes, with all 53 observations replayed. The unchanged-cap combined
+engine retry remains pending at this source checkpoint; a unit test is not a
+real engine pass. Inventories now declare 538 Python/45 Node suites and a
+contact/rig subset of 102/five, not full-suite approval.
+
+Source `2c05ec7` is published. [Focused run 38937730628](https://github.com/DocMorphic/strep/actions/runs/38937730628)
+passes the 13 new tests on Ubuntu in 2.46 seconds and Windows in 4.66 seconds.
+The next diagnostic package preserves the earlier package and corrects the
+contact calculation to apply outer placement after local raw skin, with
+`loaded_skin_weights_normalized=false`. Its source scope remains CPU skin and
+authored placement; actual mesh-world placement is the combined runtime's
+separate responsibility. Three confirmed markers are explicitly technical
+start/meeting/end audit timestamps, not verified gameplay semantics.
+
+The corrected-package/mode-file runtime retry is queued under the same 2-GiB
+process estimate/cap plus 600-MiB reserve and 15-second stable admission. Free
+memory has fallen below admission, so this checkpoint records no completed
+combined retry. The original unapproved scene, 15.180169-mm sampled partner
+penetration and all project release gaps remain unchanged. No other application
+is stopped, and neither the process cap nor the scene clock is reduced.
 
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
