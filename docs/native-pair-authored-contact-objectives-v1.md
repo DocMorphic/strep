@@ -78,3 +78,105 @@ unchanged native-motion/contact/floor protection and no regressions in the
 declared complete-mesh comparison. A qualifying result would remain an internal
 candidate, with the original source retained and full geometry, physical,
 engine, semantic, held-out and human cleanup evidence still required.
+
+## Fresh native baseline geometry
+
+The baseline now measures the complete native meshes at the five declared
+times. All five samples fail the existing physical screen before any new fit.
+At exactly 2 s, the point-contact gap is still 33.282370 mm, yet the meshes
+already have **594 crossing records**, with directional peak penetrations
+**11.205837 mm** (A inside B) and **13.483237 mm** (B inside A). Original floor
+depths are **8.591902 mm** and **6.466365 mm**. Meeting the authored point
+distance therefore cannot establish actual surface contact or collision quality.
+
+| Native time (s) | Crossing records | A inside B peak (mm) | B inside A peak (mm) |
+| --- | ---: | ---: | ---: |
+| 1.933333278 | 640 | 16.834276 | 10.842976 |
+| 1.966666698 | 567 | 13.713630 | 12.986183 |
+| 2.000000000 | 594 | 11.205837 | 13.483237 |
+| 2.033333302 | 644 | 7.778888 | 16.701882 |
+| 2.066666603 | 455 | 8.421581 | 20.590680 |
+
+These are the original source's fresh native measurements, not a candidate
+improvement, a whole-clock partner audit or a continuous collision certificate.
+The retained failure baseline remains the no-regression comparator; physical
+acceptance still requires its own passing evidence.
+
+## Fitted model and completed candidate checks
+
+The fresh matrix takes **365.234 s** and contains **623,702** norm rows with
+**2,878,957** nonzeros. Its hard prefix retains **619,662** original native
+motion rows, three protected-contact rows and **4,034** floor-protection rows.
+The final three soft rows use authored 30-mm contact caps. Each actor supplies
+**72** nonzeros to those objectives. The original failed hand contact's hard
+protective cap is 33.282370 mm; it does not replace the 30-mm authored target.
+
+The primary fit reports **Solved in 12 iterations** and zero affine contact
+excess. The optional minimum-norm result is `AlmostSolved` without satisfying
+its affine checks and is rejected; its retry reports `NumericalError`. Only
+the primary direction is used for actual export checks.
+
+The full exported step passes every original native motion row and all three
+authored contact position rows. Its world-target distances are **15.908061 mm**
+and **15.991548 mm**; the hand-to-hand distance is **29.363431 mm**. Original
+floor/contact protection also passes. However, **14** selected mesh measures
+regress, so the candidate is rejected. At 2 s, crossing records increase
+**594 to 669** and B-inside-A peak depth increases **13.483237 to 15.165955 mm**.
+No source clip is replaced.
+
+The half step also preserves every native-motion row and the original
+floor/contact protection. Its hand gap is **30.794602 mm**, still outside the
+30-mm authored limit, and some mesh measures regress. It is rejected as well.
+Neither a solved affine fit nor a passing point target establishes a usable
+interaction.
+
+## Preserved resource stop and remaining checks
+
+After two complete candidate checks, free RAM falls to **584,622,080 bytes**,
+below the unchanged 600 MiB floor. The original guard stops the worker during
+the quarter-step check. The two complete comparisons, saved matrix/direction
+and incomplete third export remain untouched. The failed run records
+**1,466.484 s**, peak sampled tree RSS **766,238,720 bytes**, with all **1,429**
+resource observations replayed. This is a resource stop, not a completed
+four-candidate study.
+
+The remaining quarter/eighth checks use a separate saved-fit continuation,
+without loading/rebuilding the matrix or solving again. It must bind every
+recorded original method/input, reconstruct the complete original starting
+arrays exactly, and retain the byte-identical native geometry baseline. All
+original limits, comparison measures and the 1 GiB CPU / 600 MiB free resource
+profile stay unchanged. Completed full/half results are not rerun.
+
+The first continuation attempt is interrupted before any candidate result is
+saved. Its guard record remains unfinished; later absence of both recorded
+processes and the missing execution handle are recorded separately, without
+inventing a clean terminal resource audit. A fresh attempt under
+`reports/high-five-authored-contact-resume-v2` uses identical worker/launcher
+bytes. The interrupted attempt and its partial files remain preserved.
+
+## Completed four-fraction outcome
+
+The second continuation completes the quarter step before another RAM stop.
+The [staged validation](native-contact-staged-validation-v1.md) then finishes
+the exact eighth-step exports, including all original motion/floor times and
+the same coupled contact and five-time native geometry checks.
+
+| Fraction | Native failures | Hand gap (mm) | All authored contacts pass | Regressed mesh measures |
+| --- | ---: | ---: | --- | ---: |
+| 1 | 0 | 29.363431 | Yes | 14 |
+| 0.5 | 0 | 30.794602 | No | 12 |
+| 0.25 | 0 | 31.920551 | No | 11 |
+| 0.125 | 0 | 32.573864 | No | 15 |
+
+All four preserve the original floor/contact conditions, but every mesh
+comparison regresses and **none qualifies**. The original clips remain
+selected. The saved-report assembly accounts for all four declared fractions
+without inventing completion of either interrupted guard or rerunning the
+already finished comparisons.
+
+The remaining full-task problem is joint contact and geometry correction:
+enforcing authored contact targets while also proposing surface-aware changes,
+with every original motion bound and independent mesh screen retained. A
+passing point-distance objective alone is insufficient. Floor/grounding,
+whole-clock geometry, engine/semantic/human review and the broader action,
+rig, object, editing/style and held-out requirements still need evidence.
