@@ -54,6 +54,14 @@ the solve. All 13 affected restoration checks pass again in 48.29 seconds;
 the guard takes 64.906 seconds, peaks at 153,255,936 bytes and replays all
 66 resource observations. The CPU memory policy is unchanged.
 
+At commit `a0f81f5`,
+[focused restoration run 38900532752](https://github.com/DocMorphic/strep/actions/runs/38900532752)
+passes all 13 cases on Ubuntu (7.97 seconds) and Windows (50.88 seconds).
+The accompanying
+[fit run 38900536662](https://github.com/DocMorphic/strep/actions/runs/38900536662)
+passes all 16 cases on Ubuntu (7.33 seconds) and Windows (68.45 seconds),
+including the regression for input changes between validation and loading.
+
 The preceding high-five diagnostic measures the failed candidate both before
 and after Float32 storage. Both representations retain the same 49 native
 failures for A and 44 for B. The quantized preview and exported vectors agree
@@ -62,6 +70,70 @@ for A and 0.0458966 for B. Storage is not the main source of these failures;
 the next restoration must address nonlinear motion while preserving the
 original bounds. The diagnostic completes in 76.047 seconds at a
 286,441,472-byte peak, with 77 independently replayed resource observations.
+
+The first current-point high-five restoration retains all 660,002 original
+native rows, three authored contacts and 4,034 floor-protection rows. It uses
+the same 672 original-source controls, a 0.02 trust box, a 0.001 difference
+step and 0.001 dimensionless search headroom. Its fresh 31,201 surface guides
+produce 695,243 total rows and 2,988,967 nonzeros. Original canonical vertices
+agree within 6.66e-16 m; current smooth versus decoded material gaps differ
+by at most 4.63e-8 m.
+
+Clarabel reports `Solved` after 48 iterations. The optional minimum-norm phase
+reports `NumericalError`, so the checked primary direction is retained. All
+664,039 hard affine rows pass the existing 1e-8 normalized postcheck, with
+1.10e-9 maximum excess. Actual exported contacts pass their authored bounds.
+This is a proposal result pending separate actual native/floor/mesh validation.
+The guard completes in 648.391 seconds at an 811,671,552-byte process-tree
+peak, with all 641 resource observations independently replayed. It preserves
+the original selection and grants no quality or release approval.
+
+Independent actual-export validation rejects this candidate. Each actor retains
+all 330,001 original native conditions; failures fall from 49/44 to one each.
+Row identity matters: 92 previous failures resolve, B retains one, and A gains
+one new failure. Both are positional accelerations at the source 2.025-second
+interval start:
+
+| Actor / joint | Actual (m/s²) | Original cap (m/s²) | Normalized excess | Identity |
+| --- | ---: | ---: | ---: | --- |
+| A / RightHandMiddle2 | 27.886508713 | 27.872578035 | 0.000499799 | newly failed row 238963 |
+| B / RightHandThumbEnd | 31.143904529 | 31.142564795 | 0.0000430194 | retained row 238956 |
+
+All 2,017 source floor protections pass for each actor; all 2,017 physical floor
+failures per actor remain. The coupled validator independently replays all
+660,002 saved native vectors/caps/scales and all retained canonical meshes,
+then performs fresh contacts and the unchanged direct geometry query. Exported
+contact distances are 29.109847, 12.541951 and 29.506907 mm, within the authored
+30-mm bounds.
+
+Compared with the original source at the five declared times, 20 mesh measures
+improve, five regress and ten are unchanged. Intersections increase from
+567 to 700, 594 to 770, 644 to 701 and 455 to 628 at the last four times.
+A's vertices deeper than tolerance inside B increase from 18 to 30 at
+2.033333302 seconds. The largest depth is 15.212721 mm, still above the 5-mm
+screen. Several intersection counts are also worse than the preceding failed
+fit, despite its larger maximum depth. Fewer failed rows or lower peak depth
+therefore do not establish better animation quality.
+
+The actor guards complete in 148.375 / 139.859 seconds, peaking at
+272,142,336 / 274,845,696 bytes with 148 / 140 observations replayed. The coupled
+guard takes 86.281 seconds, peaks at 350,162,944 bytes and replays 87 observations.
+An inherited auxiliary table in B's worker accidentally pairs the preceding
+A result with current B. That table is excluded. A separate passive replay of
+both current actors verifies every native residual, failed-row identity and
+geometry change; its 17.187-second guard peaks at 56,995,840 bytes and replays
+19 observations. The coupled acceptance result uses the correct two current
+actors and is unaffected by that auxiliary-table defect.
+
+The original remains selected. This run establishes a bounded current-point
+repair mechanism, not a usable high-five. Next, investigate the two actual
+acceleration failures and increased crossings together. A stricter search
+margin may be tested against the frozen same-point matrix after exact input,
+implementation and original-cap replay; it must not substitute for decoded
+acceptance or a method that handles newly introduced crossings. Grounding,
+complete-clock geometry, engine fidelity, semantic review, broad held-out
+actions/rigs/objects, editing/style and developer/independent cleanup evidence
+remain required. No model training or release approval is admitted.
 
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
