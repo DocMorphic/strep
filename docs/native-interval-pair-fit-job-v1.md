@@ -381,6 +381,35 @@ with the unchanged 2-GiB engine admission/cap and 600-MiB free-RAM reserve. Its
 result is pending here; no engine success, motion quality or release approval
 is inferred from launching it.
 
+The next proposed correction changes scene placement explicitly rather than
+quietly overriding frozen world roots. `native_pivot_placement.py` defines a
+new source-bound placement variant: a declared unit world axis and pivot, one
+signed angle per original actor, and per-actor maximum rotation and origin
+displacement permissions. Every participant must be listed, including fixed
+actors with zero permissions. Existing local clip bytes and their native
+curves are preserved. The world placement becomes `R_delta * placement`, with
+translation chosen to rotate about the declared world pivot; it is not a local
+rotation about each actor's own origin.
+
+Zero angles preserve the original quaternion signs and placement declarations
+exactly. Nonzero angles explicitly amend the original world-placement contract.
+The original contact/target declarations, objects, complete geometry clock,
+planes and limits remain unchanged. Actor-attached targets follow their actor
+placements; world targets stay fixed. An actor-origin displacement bound is
+not a bound on every joint. Native world bounds, support, contact, geometry,
+engine and human quality therefore require fresh checks. This is neither a
+redefinition of the earlier fit's fixed-root permissions nor accepted motion.
+
+For the development high-five, the saved actual hand points suggest testing
+small independent yaw rotations around the fixed meeting point. Such rotations
+preserve each hand's distance to that point while changing the actors' relative
+orientation. Partner hand distance and collision may improve or worsen, so
+they must be remeasured. The first intended study screens bounded angles using
+the actual captured surfaces at an earlier failing time and the contact time,
+then expands any improving candidate to the complete original clock. Proposed
+transformed captures must remain labeled as counterfactuals until fresh native
+and Godot validation; the original capture cannot certify a changed placement.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
