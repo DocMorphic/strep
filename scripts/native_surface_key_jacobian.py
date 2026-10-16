@@ -8,7 +8,7 @@ from scipy import sparse
 from native_affine_key_pose import AffineKeyPose
 
 
-def linearize(surface, layouts, *, maximum_nonzeros=6000000):
+def linearize(surface, layouts, *, value=None, maximum_nonzeros=6000000):
     if (not isinstance(layouts, dict) or set(layouts) != set(surface.scene.actors)
             or type(maximum_nonzeros) is not int or maximum_nonzeros <= 0):
         raise ValueError('Complete explicit actor layouts and positive sparse budget required')
@@ -39,6 +39,13 @@ def linearize(surface, layouts, *, maximum_nonzeros=6000000):
         width += len(keys)*3*len(nodes)
     if width > 768:
         raise ValueError('Explicit 768-component proposal budget exceeded')
+    supplied = value is not None
+    if supplied and any(isinstance(v, (bool, np.bool_)) for v in np.asarray(value, dtype=object).flat):
+        raise ValueError('Complete finite original-box control point required')
+    point = np.zeros(width) if value is None else np.asarray(value)
+    if (point.shape != (width,) or point.dtype.kind not in 'fiu' or not np.isfinite(point).all()
+            or np.any(abs(point) > 1)):
+        raise ValueError('Complete finite original-box control point required')
     vertices = {}; derivatives = {}; maximum_error = 0.
     for row in surface.rows:
         if row.get('plane_guidance') == 'minimum-envelope':
@@ -69,6 +76,10 @@ def linearize(surface, layouts, *, maximum_nonzeros=6000000):
             error = float(np.max(np.abs(posed-actual))); maximum_error = max(maximum_error, error)
             if error > 1e-12:
                 raise ValueError('Affine canonical vertices disagree with unchanged native source')
+            if time in active[name]:
+                start = offsets[name]+active[name][time]*graph.size
+                local = point[start:start+graph.size]
+                if np.any(local): _, posed, jac, _ = graph.evaluate(local)
             p, r = actor['placement']; vertices[key] = posed@r.T+p
             derivatives[key] = np.einsum('ij,vjc->vic', r, jac)
     gaps = surface.gaps(lambda name, time: vertices[name, time])
@@ -87,7 +98,11 @@ def linearize(surface, layouts, *, maximum_nonzeros=6000000):
             rr.extend([index]*len(used)); cc.extend(start+used); vv.extend(local[used])
     matrix = sparse.csr_matrix((vv, (rr, cc)), shape=(len(gaps), width))
     matrix.eliminate_zeros(); surface.scene.check_inputs()
-    return gaps, matrix, dict(controls=width, rows=len(gaps), nonzero_entries=matrix.nnz,
+    report = dict(controls=width, rows=len(gaps), nonzero_entries=matrix.nnz,
         native_pose_vertex_maximum_error_m=maximum_error, actor_offsets=offsets,
         source_epoch='original zero controls', exact_native_keys_only=True,
         quality_approved=False, release_approved=False)
+    if supplied:
+        report.update(linearization_controls=point.tolist(), linearization_at_source_zero=not bool(np.any(point)),
+            source_epoch='original source retained; supplied control point')
+    return gaps, matrix, report

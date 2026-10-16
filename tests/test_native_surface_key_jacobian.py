@@ -25,9 +25,11 @@ def fixture(models):
     return SurfaceRows(scene, rows, {}), layouts
 
 
-def test_complete_sparse_key_jacobian_matches_native_interval_finite_differences(separated):
+@pytest.mark.parametrize('nonzero',[False,True])
+def test_complete_sparse_key_jacobian_matches_native_interval_finite_differences(separated,nonzero):
     models, _ = separated; surface, layouts = fixture(models)
-    gaps, jac, report = linearize(surface, layouts)
+    point = np.tile([.05,-.03,.02],4) if nonzero else np.zeros(sum(m.size for m in models.values()))
+    gaps, jac, report = linearize(surface, layouts,**({'value':point} if nonzero else {}))
     def evaluate(value):
         offset = 0; worlds = {}
         for n, m in models.items():
@@ -37,16 +39,30 @@ def test_complete_sparse_key_jacobian_matches_native_interval_finite_differences
             p, r = surface.scene.actors[name]['placement']
             return m.rig.vertices(worlds[name][index])@r.T+p
         return surface.gaps(vertices)
-    np.testing.assert_allclose(gaps, evaluate(np.zeros(report['controls'])), atol=1e-12, rtol=0)
+    np.testing.assert_allclose(gaps, evaluate(point), atol=1e-12, rtol=0)
     fd = []
     for i in range(report['controls']):
         delta = np.eye(report['controls'])[i]*1e-6
-        fd.append((evaluate(delta)-evaluate(-delta))/2e-6)
+        fd.append((evaluate(point+delta)-evaluate(point-delta))/2e-6)
     np.testing.assert_allclose(jac.toarray(), np.stack(fd, axis=1), atol=3e-9, rtol=2e-7)
     assert jac.shape == (len(surface.rows), sum(m.size for m in models.values()))
     assert jac[0].nnz == jac[3].nnz == 0 and jac[1:3, :models['A'].size].nnz
     assert jac[1:3, models['A'].size:].nnz and not report['quality_approved']
     assert report['native_pose_vertex_maximum_error_m'] <= 1e-12
+    if nonzero:assert not report['linearization_at_source_zero']
+
+
+def test_explicit_zero_point_keeps_the_complete_legacy_default_population(separated):
+    models,_=separated;surface,layouts=fixture(models)
+    before,jbefore,_=linearize(surface,layouts);after,jafter,report=linearize(surface,layouts,value=np.zeros(sum(m.size for m in models.values())))
+    np.testing.assert_array_equal(before,after);np.testing.assert_array_equal(jbefore.toarray(),jafter.toarray())
+    assert report['linearization_at_source_zero']
+
+
+@pytest.mark.parametrize('point',[[True]*12,[float('nan')]*12,[1.01]*12,[0.]*11])
+def test_bad_linearization_point_rejects_without_rebasing(separated,point):
+    models,_=separated;surface,layouts=fixture(models)
+    with pytest.raises(ValueError,match='control point'):linearize(surface,layouts,value=point)
 
 
 @pytest.mark.parametrize('fault', ['fractional-time', 'endpoint', 'boolean-key', 'repeated-key',
