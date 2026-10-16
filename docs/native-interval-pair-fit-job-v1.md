@@ -389,6 +389,45 @@ The 512-MiB guard completes in 20.219 seconds at 112,513,024 bytes; all 22
 resource observations replay. Inventories now declare 533 Python/45 Node suites
 and a contact/rig subset of 97/five. These are source checks, not clip approval.
 
+At `2bf86d9`, [focused run 38915248406](https://github.com/DocMorphic/strep/actions/runs/38915248406)
+passes all 13 new cases on Ubuntu (0.52 seconds) and Windows (0.59 seconds).
+
+The first matched current-state study starts at the independently measured
+feasible minimax export. It exactly replays both complete saved native
+populations against original reference caps/scales, replays all five cached
+meshes against their actual GLBs, and freshly measures coupled contacts.
+Native/contact/floor derivatives are reused from the earlier point; their
+constant vectors and scalar-lift certificates are rebuilt around the current
+pose without changing source epoch or acceptance limits.
+
+Fresh actual-pose surface queries retain 34,389 rows and 1,399,023 analytic
+derivative entries, with the original source canonical vertices matching to
+6.66e-16 m. Both variants use these same data, 672 original controls, 0.02
+trust, adaptive headroom up to 0.002, position reserves up to 0.5 mm and 0.5-mm
+surface search clearance. The guarded variant adds 3,249 local material bounds:
+currently shallow contained witnesses stay within the 5-mm policy tolerance;
+currently deep witnesses stay within the current directional material peak.
+These are proposal guards, not permission to accept existing physical failures.
+
+| Variant | Hard rows | Total norm rows | Sparse entries |
+| --- | ---: | ---: | ---: |
+| Free aggregate control | 664,039 | 698,431 | 3,089,605 |
+| Local depth guards | 667,288 | 701,680 | 3,226,432 |
+
+Both branches produce a lower-loss direction through the separately checked
+bounded-segment method and meet all affine hard rows. Both actual exports meet
+the authored contact limits. Raw solver statuses remain `AlmostSolved` and
+`NumericalError`; the latter is not relabelled as solved. The shared guarded
+study completes in 256.094 seconds at an 841,142,272-byte process-tree peak,
+with all 253 resource observations independently replayed.
+
+Full actual validation is running serially for the two variants. The first
+free-variant actor A check finds five failures among 330,001 original native
+conditions. That candidate cannot qualify, despite its affine/contact passes.
+Remaining actor/floor/direct-mesh checks and the guarded variant are pending.
+No geometry or animation-quality success is established; cached derivatives
+remain local approximations and all original acceptance conditions still apply.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
