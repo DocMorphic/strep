@@ -277,6 +277,25 @@ fixture remains explicitly separate from actual Godot evidence. Inventories
 now contain 541 Python modules/45 Node suites and 105 Python modules/five Node
 suites in the contact/rig subset; this is not a full-inventory pass.
 
+At commit `3fc3392`, hosted focused run
+[38952947481](https://github.com/DocMorphic/strep/actions/runs/38952947481)
+passes all 15 journal cases on Ubuntu (3.89 seconds) and Windows (68.16 seconds).
+The first actual journal batch then completes and independently verifies all
+128 original geometry samples from 0 through 0.25 seconds. Every condition in
+this prefix passes, while complete-clock acceptance remains false. All source
+participants, original policy and geometry queries remain present. This is
+early-clip recovery/provenance evidence, not a new contact-window success.
+
+The actual guard completes in 197.125 seconds, peaking at 219,693,056 sampled
+bytes below the unchanged 1-GiB cap with a 600-MiB free-RAM reserve; all 196
+resource observations independently replay. The pinned checkpoint is
+`checkpoints/000128-d5d7e7f255d64f58b69ebd21a01be889.json`, SHA-256
+`68f630c1dad21e22c43d25816e9af22bd2b567207b332a743145c5d072290ce5`.
+The journal and audit remain under `reports/high-five-runtime-geometry-journal-v1`.
+There are 1,889 original samples left in this journal; the separately queried
+contact-time failure is retained. No complete geometry, quality or release pass
+is inferred. Continuing uses the exact checkpoint and source receipt.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
