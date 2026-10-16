@@ -83,3 +83,64 @@ compares existing finger rotations and the unanimated bind mesh before choosing
 explicit hand-posture/axis restrictions or repairing the source geometry.
 Whole-clock self/partner checks, contact, rates, engine and human evidence
 remain required; the selected source assets and release gates are unchanged.
+
+
+## Bind mesh and reference-posture screen
+
+The stored unanimated bind-position mesh is exactly shared by both actors.
+Its complete scan finds 61 transverse pairs, each with an exact represented
+triangle witness: head/head 32, head/jaw eight, left toe 15 and right toe six
+under descriptive skin-weight labels. None touches the declared 5,892-face
+right-hand region. This separates an asset-level issue from later hand edits;
+it does not excuse inherited geometry or approve the character. The guard
+completes in 77.234 s at 134,017,024 bytes (78 observations), resource-replayed.
+
+A localized screen includes every original triangle incident to a vertex with
+any positive right-hand-descendant weight, without a mass threshold or omitted
+skin influence. It interpolates existing local source quaternions toward the
+rig's stored bind quaternions while retaining source translations, scales and
+zero-reference bounds. At fractions 0, 0.5, 0.85 and 1, detected hand-region
+records are respectively 101/0/0/0 for A and 65/0/0/0 for B. Fractions 0.5 and
+0.85 pass the declared angular/displacement permissions; fraction 1 exceeds
+30-degree finger limits and is not accepted. These are localized single-pose
+results, not anatomical or whole-body/motion clearance. The screen guard takes
+94.469 s at 174,698,496 bytes (95 observations), resource-replayed.
+
+## Reference fingers with arm/wrist fitting
+
+A distinct proposal fixes the fingers at the halfway reference posture and
+fits only nine arm/forearm/wrist controls per actor. It retains the original
+zero epoch, prior 20-degree finger caps/30-degree Thumb1 cap, 60-mm world-joint
+displacement and physical contact/geometry limits. The former conservative
+whole-hand halfspace fitting guide is explicitly omitted; this changes that
+proposal condition, not physical collision acceptance or any release gate.
+
+The first integration attempt stops before fitting because its experiment
+script refers to a deleted initializer. That failed output remains archived:
+29.375 s, 239,833,088 bytes, 31 resource observations, independently replayed.
+Its three coupled directional checks pass at 1.361493e-6 maximum absolute
+normalized derivative error. A fresh corrected run retains the same check.
+
+The corrected fit takes 13 iterations/22 observations in 19.016 s and passes
+all 210 pose inequalities. Its direct marker gap is 4.997499 mm, opposing
+normal error 4.997498 degrees and tangent agreement 5.100726 degrees. Both
+localized hand self scans have zero records. However the complete partner
+query finds 1,056 proper crossings, versus 834 in the configured source, and
+reports legacy maximum signed depth 13.633041 mm. Thus the candidate is still
+rejected: marker alignment and a nonfolding individual hand do not establish
+contact between the complete two hand surfaces.
+
+The corrected guard completes in 100.656 s at 267,534,336 bytes (101 resource
+observations), independently replayed. Full saved worlds, vertices and all
+inequalities reproduce exactly in 29.406 s at 188,112,896 bytes (31 resource
+observations). Six directional frame checks stay below 1.116438e-9. These
+replays do not independently rerun collision predicates. A static marked
+comparison is retained at `reports/high-five-hand-diagnostic-v2/hand-comparison.png`;
+its guard takes 20.219 s at 149,180,416 bytes (22 observations), replayed.
+
+The reference posture still has curved fingers that interlock when the
+selected patches meet. The next geometric experiment straightens outgoing
+finger directions in an explicitly declared palm plane, clips every rotation
+against the unchanged source-relative cap, and measures actual skin again.
+This is an unreviewed geometric posture, not inferred anatomical limits or a
+promise of collision-free contact. No clip, engine or quality is promoted.
