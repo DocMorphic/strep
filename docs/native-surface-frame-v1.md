@@ -269,3 +269,48 @@ plus arm, forearm and hand. The previous sixteen caps remain unchanged; newly
 enabled finger joints receive explicit 20-degree balls. Contact, orientation,
 collision, source epoch and 60-mm joint-displacement limits remain unchanged.
 The run must finish before any conclusion about the wider actuation is drawn.
+
+The same fifteen checks also pass in hosted Ubuntu (1.00 s) and Windows
+(3.36 s) jobs, run 38973704227, at source commit d3678c9.
+
+
+The wider study controls 22 joints/66 rotation components per actor. It finishes
+100 feasibility iterations (109 observations) in 115.563 s of fitting. It still
+fails 647 inequalities and full-mesh geometry: 240 surface records, 3.008139-mm
+maximum depth. The direct palm gap is 5.606300 mm, normal opposition error
+5.606762 degrees and tangent agreement error 16.831362 degrees, above the
+unchanged 5-mm/5-degree/15-degree limits. Local edit balls, 60-mm displacement
+and the three newly authored palm-point contacts pass. Worst hand-halfspace
+vertices are dominated by Pinky4 and Ring4, now both controllable. All weighted
+hand articulation alone does not solve this local search.
+
+The run completes in 171.000 s at 335,712,256 sampled bytes (170 observations),
+independently resource-replayed. Full source reconstruction reproduces every
+stored world matrix, vertex and inequality exactly in 30.437 s at 235,229,184
+bytes (32 observations); six directional material-frame derivatives differ by
+at most 1.052646e-9. Collision predicates are not independently rerun in that
+reconstruction. Original assets remain selected; this is a rejected pose,
+not an exported correction or a proof of global infeasibility.
+
+## Bounded shared contact orientation
+
+`scripts/native_meeting_orientation.py` exposes a shared normal/tangent frame
+as three bounded rotation-vector controls, with complete analytic derivatives
+and a separate unit-ball edit margin. Zero controls preserve the original
+frame exactly. Finite out-of-ball trial values are evaluated but have negative
+margins; they are not accepted or silently clipped. The constructor requires
+an explicit orthonormal reference and a positive cap of at most 30 degrees.
+
+Seventeen local tests verify the geometry, derivatives at zero and nonzero
+rotations, boundary/outside margins, immutable source reference and invalid
+inputs. Their guard completes in 18.281 s at 97,034,240 sampled bytes, with all
+20 observations independently replayed. Inventories now contain 549 Python/
+45 Node suites; contact subset 113/five, not full-inventory passes.
+
+The next explicit authoring condition allows the source-derived common plane
+to rotate within a 10-degree ball. The automatic fixed orientation was not
+specified by the user's action. This changes that orientation condition;
+it does not change the original source epoch, hand controls, meeting center,
+physical pair-gap/direction thresholds, joint displacement or collision policy.
+Complete coupled derivatives are checked numerically before the actual fit.
+No passing result is assumed, and no old condition is relabelled as passing.

@@ -9,6 +9,7 @@ on:
         type: choice
         default: tests/test_native_motion_orientation.py
         options:
+          - tests/test_native_meeting_orientation.py
           - tests/test_native_partitioned_affine_pose.py
           - tests/test_native_surface_frame_pair.py
           - tests/test_native_surface_frame.py
