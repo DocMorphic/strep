@@ -626,8 +626,88 @@ cover independent pair-row comparison at nonzero and boundary controls,
 explicit observed anchors, source epoch/cap/scale rejection, malformed inputs,
 complete budgets and preservation of tiny nonzeros. Inventories declare
 535 Python/45 Node suites and a contact/rig subset of 99/five; these counts
-are not full-inventory approval. Real current-point derivatives will be
-refreshed in separate guarded actor stages before any coupled smaller-step fit.
+are not full-inventory approval. The real current-point evaluation below uses
+separate guarded actor stages before the coupled smaller-step fit.
+
+At `ad25217`, [focused run 38924013825](https://github.com/DocMorphic/strep/actions/runs/38924013825)
+passes all 14 new cases on Ubuntu (4.14 seconds) and Windows (12.41 seconds).
+The first real stage stops before differentiation because the old anchor's
+whole producer map includes an older `native_scene_conic_sum.py`. Its immutable
+failure and all 31 resource observations are retained and replayed. The revised
+stage reconstructs original assets using the newer independently validated
+current-pose receipt, checks its controls against the same anchor export, and
+verifies every old producer archive file against its saved hash. It builds new
+derivatives; it does not reuse or rebind the old optimizer matrix.
+
+Both revised real stages complete and independently replay. Each retains
+330,001 native rows and 336 controls at the same feasible anchor. Actor A's
+matrix has 844,800 nonzeros; its guard takes 269.344 seconds at 337,731,584
+bytes, with all 267 observations replayed. Actor B has 845,010 nonzeros and
+takes 268.531 seconds at 335,286,272 bytes, with all 266 observations replayed.
+Their full original source vectors/caps/scales and clocks match the bound
+references; current observed native vectors match the separately decoded
+anchor. No sparse entries or native rows are discarded. The matrices and
+receipts are under `reports/high-five-current-native-derivative-{A,B}-v2`.
+
+The matched proposal uses their complete block diagonal native matrix,
+fresh analytic derivatives for all three authored position contacts, and a
+0.005 trust radius instead of 0.02. Surface and full-vector material witnesses
+remain pinned to the same anchor; floor derivatives are explicitly cached.
+Search reserves and original acceptance caps remain as before. Changing both
+derivatives and trust is not an isolated ablation. Complete decoded native,
+contact, floor and mesh validation remains required before any retention.
+
+The complete refreshed matrices also replay the previous rejected clip's
+independent directional probes at this anchor. Maximum vector differences
+are 1.795060e-8 and 1.799344e-8 across each actor's complete native rows.
+Maximum differences normalized by original row scales are 1.287490e-9 for A
+and 5.924157e-10 for B, versus 0.008789510 and 0.005428227 for the cached
+direction. This validates the assembled current-point projection for that
+direction, not arbitrary steps or nonlinear feasibility.
+
+The fresh smaller-step model retains 667,288 hard rows, 701,680 total norms
+and 3,499,962 sparse entries. Its raw status is `AlmostSolved`; independent
+full-row affine checking passes the full proposed step with maximum normalized
+hard excess 5.991284e-9, below the unchanged 1e-8 search comparison. Soft excess
+decreases from 5542.073479 to 5458.721593. Actual authored hand contacts pass
+on both exports. The producer completes in 114.766 seconds at 820,752,384
+process-tree bytes, and all 115 resource observations replay.
+
+Full actual validation and the independent saved-row summary now complete.
+Both exports pass every original native condition: zero failures among all
+660,002 rows, versus eight in the preceding full-step trial. The authored
+contact distances are 29.578526 / 13.420479 / 29.608919 mm, all within their
+unchanged 30-mm limits. Floor arrays remain source-exact, including all 2,017
+physical failures per actor. Changing derivatives and trust together does not
+isolate either change's effect.
+
+Against the feasible anchor, 24 of the 35 selected geometry measurements
+improve, none regress and eleven are unchanged. Crossing counts are
+617 / 700 / 754 / 701 / 627. Largest partner depth is 15.179006 mm, about
+0.037408 mm below that anchor but still above the 5-mm physical screen.
+Against the original source, twenty measurements improve, five regress and
+ten are unchanged. The original-source geometry qualification therefore fails;
+the candidate remains unselected, with all quality/release flags false. This
+is a native-feasible measured correction, not a production-quality high-five.
+
+All projected scalar material bounds pass, but seven full material distances
+exceed the added search bounds after nonlinear export, by at most 0.001152 mm.
+The summary reconstructs normalized canonical target-face points and replays
+every inserted vector row and sparse entry. These tiny failures are retained;
+they are not rounded into a pass. A local full-vector affine pass still does
+not certify nonlinear material bounds or full mesh clearance. Further work
+must retain original native/contact bounds while correcting these nonlinear
+material violations and the remaining physical intersections. Grounding and
+full-clock geometry remain separate required work.
+
+The actual stage guards complete in 162.344 s / 276,103,168 bytes,
+148.265 s / 275,247,104 bytes and 82.187 s / 340,938,752 bytes; all
+162 / 148 / 83 resource observations independently replay. The summary takes
+20.234 seconds at 242,860,032 bytes with all 22 observations replayed. Raw
+results remain under `reports/high-five-fresh-small-{actor-A,actor-B,scene,summary}-v1`
+and `reports/high-five-fresh-native-small-step-v1`. No inference, training,
+engine playback, held-out action coverage, animator rating or cleanup-time
+approval is inferred from this single selected-time scene comparison.
 
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
