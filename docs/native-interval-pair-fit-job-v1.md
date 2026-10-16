@@ -588,6 +588,47 @@ The directional study completes in 81.171 seconds at 320,024,576 process-tree
 bytes, and all 82 resource observations independently replay. Its outputs are
 diagnostic only; no animation is selected and no quality or release gate changes.
 
+### Staged current native derivative refresh
+
+`scripts/native_actor_derivatives.py` differentiates every native rotation,
+displacement and rate row for one actor at current absolute source controls.
+It requires a zero original seed and independently rebuilds the complete
+original reference caps/scales before checking the caller's reference arrays.
+Current observed vectors anchor the proposal; differences use continuous
+quaternion evaluation, while original caps/scales stay unchanged. Caller-
+supplied worlds are checked for complete shape/finite values; their provenance
+and correspondence to the controls remain the caller's responsibility.
+
+Every control column is evaluated with central differences at the declared
+step (default 0.0001). Near a box boundary, two inward samples produce a
+second-order one-sided derivative without stepping outside original controls.
+All exactly nonzero entries are retained, including tiny coefficients. The
+complete three-component matrix must fit the explicit 3-million-entry actor
+budget; exhaustion rejects rather than returning a truncated population.
+Coupled contacts, floor minima, surface witnesses, nonlinear export and actual
+acceptance are separate; the metadata never grants quality or release approval.
+
+The first source test attempt finds two failures when its independent pair
+reference uses a 2e-6 control step. A guarded five-step diagnostic retains that
+failure and measures a maximum 1.478714e-5 derivative difference at that tiny
+step. An independent 2e-4 reference gives 5.300677e-7 maximum difference with
+zero violations of the original test tolerance. The tests use this stable
+reference without widening their tolerance, and additionally compare the
+stencils with closed-form trigonometric/polynomial derivatives at both box
+boundaries. This diagnostic does not certify the production step for every rig.
+
+All 14 new cases and 14 existing actor-validation cases pass locally in
+25.11 seconds. The guard completes in 41.656 seconds at 142,356,480 sampled
+process-tree bytes; all 43 observations independently replay. The separate
+step diagnostic takes 29.484 seconds at 112,295,936 bytes, with all 31
+observations replayed. Tests
+cover independent pair-row comparison at nonzero and boundary controls,
+explicit observed anchors, source epoch/cap/scale rejection, malformed inputs,
+complete budgets and preservation of tiny nonzeros. Inventories declare
+535 Python/45 Node suites and a contact/rig subset of 99/five; these counts
+are not full-inventory approval. Real current-point derivatives will be
+refreshed in separate guarded actor stages before any coupled smaller-step fit.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text

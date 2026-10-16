@@ -498,6 +498,7 @@
     "tests/test_native_pair_key_guides.py",
     "tests/test_native_pair_contact_objectives.py",
     "tests/test_native_contact_actor_validation.py",
+    "tests/test_native_actor_derivatives.py",
     "tests/test_native_surface_key_jacobian.py",
     "tests/test_native_pair_separation_cuts.py",
     "tests/test_native_interval_pair_fit_job.py",
