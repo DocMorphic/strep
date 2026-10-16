@@ -325,6 +325,24 @@ mask, equivalence against the prior comparator for the three known modes,
 changed/incomplete observations, exact packaged configurations and mutation
 rejection. Numerical and actual-engine validation remain pending at this point.
 
+The subsequent focused source runs pass on both Ubuntu and Windows:
+[38954402056](https://github.com/DocMorphic/strep/actions/runs/38954402056)
+checks the initial 29 cases at `4f8448d`;
+[38954627833](https://github.com/DocMorphic/strep/actions/runs/38954627833)
+checks 30 cases at `044f2e4`, including a self-consistent ZIP that substitutes a
+different exported configuration. The producer now compares the final ZIP's
+configuration, scene and project bytes directly to the pre-execution pins.
+Both a changed staged configuration and a substituted packaged configuration
+prevent successful publication. Terminal output is also limited to a small
+summary; the complete maps and numerical observations remain on disk.
+
+Final source `6b2c1f2` passes all 31 cases on both systems in
+[38954823319](https://github.com/DocMorphic/strep/actions/runs/38954823319).
+These fixtures use explicit engine test doubles. Actual Godot validation of
+the opposite two-actor mask (A embedded/B extracted), Studio integration and
+release approval still require their own evidence. The earlier three-mode
+producer and the active geometry journal's 62 pinned methods remain unchanged.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
