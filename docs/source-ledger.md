@@ -219,3 +219,39 @@ contradicts the publisher's separate benchmark under different evaluation
 conditions. See [the version comparison](kimodo-version-comparison-v1.md) and
 its published prompt/seed protocol. Historical default and files remain intact;
 no raw training data or model training is introduced.
+
+## 2026-10-16: scene-aware alternatives after placement failures
+
+Primary-source intake is saved under the ignored
+`reports/interaction-backend-screen-2026-10-16/`, with public metadata,
+revision-pinned READMEs, available license text and SHA-256 receipts. No model
+weights, body models, raw datasets or third-party execution were acquired.
+
+- [Uni-Inter's paper](https://arxiv.org/html/2511.13032v2) describes joint
+  prediction conditioned on a shared interaction volume spanning people,
+  objects and scenes. The available [repository at 0d5248c](https://github.com/Darkdawner/Uni-Inter/tree/0d5248c9948939d47382f482b06f6e86b037b012)
+  provides a 4D diffusion implementation, preprocessing and inference following
+  training; its README documents four-GPU distributed training. Its archived
+  [LICENSE](https://github.com/Darkdawner/Uni-Inter/blob/0d5248c9948939d47382f482b06f6e86b037b012/LICENSE)
+  states CC BY-NC-SA 4.0. It remains research precedent, not an adopted commercial
+  backend. A ready checkpoint and laptop inference fit were not established.
+- [ReMoGen at f2b667c](https://github.com/4DVLab/ReMoGen/tree/f2b667c895998370dcc60fb5921ff474ad78fe7a)
+  documents released checkpoint download scripts, partner/scene adapters and
+  autoregressive reaction generation with SMPL-X. Those rollouts could be
+  studied for offline baking; they are not a change to Strep's asset-authoring
+  objective. Its documented environment uses Python 3.8, Torch 2.1/CUDA 11.8 and
+  PyTorch3D. The public repository API returned null license metadata and its
+  license endpoint returned 404. Suitable code/weight/body-model permissions
+  and 8-GB inference fit are unverified; no integration is approved.
+- [InterAct at 96180a3](https://github.com/wzyabcas/InterAct/tree/96180a34f7b516e7f3520b853c19ea8679b8204f)
+  documents pretrained text-to-object-interaction checkpoints and contact-guided
+  inference. Its README requests non-commercial dataset access and separate
+  source-dataset/body-model terms; its pipeline requires SMPL-family assets and
+  `pointnet2_ops`. Dataset access statements do not establish commercial rights
+  for the checkpoints. The PDF license was located but not parsed in this
+  screen, and full checkpoint terms and laptop execution remain unqualified.
+
+These are capability and intake observations, not measured comparisons to
+Kimodo or legal conclusions about every component. Continue the existing
+licensed baseline and explicit deterministic scene corrections while evaluating
+alternatives against the same rig/contact/export and human-review requirements.

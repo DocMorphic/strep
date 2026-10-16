@@ -68,3 +68,54 @@ counterfactual transforms of the sealed observed vertices, not new engine
 observations. This is a development screen at two known failures. Full-clock
 geometry, support, native reference bounds and engine playback remain separate.
 The original stays selected until broader checks justify a candidate.
+
+## Completed screen and replay
+
+All 18 proposals pass the original point-contact checks; none passes geometry
+at both queried times. No candidate is selected. The nominal best is A +10
+degrees, B -10 degrees, with a 20-mm point gap. Its two fixed-world-target
+errors are 10.750386 mm and its inter-actor point error is 20 mm, all within
+the original 30-mm limits. Final actor-origin displacements are 66.493033 and
+91.687623 mm, within the explicitly amended 150-mm bound.
+
+| Counterfactual | Early maximum depth, mm | Contact maximum depth, mm | Early/contact surface records |
+| --- | ---: | ---: | ---: |
+| Original placement, prior pinned queries | 21.138522 | 10.549988 | 301 / 754 |
+| Zero yaw, zero gap, registered points | 20.741802 | 18.703156 | 545 / 801 |
+| Best screened placement, +10/-10 degrees, 20-mm gap | 1.584968 | 13.303428 | 36 / 834 |
+
+Even the best's early sample has proper surface crossings; a sub-5-mm maximum
+vertex depth alone cannot pass the declared geometry policy. Its contact-time
+depth is worse than the original. These counts are triangle-pair records, not
+distinct independent anatomical collisions.
+
+The screen completes in 468.547 s at 460,324,864 sampled process-tree bytes;
+458 resource observations and its terminal state replay. The source geometry
+thresholds, curves, capture and original failures remain unchanged. Result
+SHA-256: `c6a502067caa0a3901c78e08af1d0b7304c56eba853308d9a1c631402e72217c`.
+
+An independent sin/cos implementation replays all 18 placement transforms,
+translations, original point-target errors and summary reductions. It checks
+every case's source/method/artifact bindings and the complete observation
+archive receipts. Maximum point replay error is zero for this finite study.
+The geometry observation archives in this object-free scene contain the query
+clock; archive verification is not an independent collision-predicate rerun.
+The replay completes in 34.796 s at 232,181,760 sampled bytes, with 36 resource
+observations independently replayed. Result SHA-256:
+`46bfc05b360584cd09ba7f7fa4dbff2cd6795da0eca339cfa9e47bd0a7539caa`.
+
+As a diagnostic, original skin weights label each recorded crossing triangle
+by its largest aggregate joint influence. The selected contact vertices are
+dominated by `RightHandIndex1`, which is not a complete palm frame. For the best
+proposal, the early sample's 36 proper crossings involve hand/forearm versus
+pinky labels. At 2 s, large groups involve ring/middle/index/pinky labels; the
+deepest A vertex is dominated by `RightHandPinky2` (13.303428 mm). These are
+skin-weight labels, not independent anatomical annotations or new geometry
+queries. They motivate palm-orientation and finger-pose corrections while
+retaining complete-surface checks, rather than approving a point match.
+
+The 24 source tests also pass on Ubuntu (1.39 s) and Windows (6.25 s) in
+[hosted run 38965864726](https://github.com/DocMorphic/strep/actions/runs/38965864726).
+Inventories are 545 Python/45 Node suites and contact subset 109/five; those
+counts do not assert a complete inventory run. Full-clock geometry, updated
+support/native bounds, engine playback and human cleanup remain unresolved.
