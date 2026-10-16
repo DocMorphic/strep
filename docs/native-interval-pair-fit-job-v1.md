@@ -343,6 +343,44 @@ the opposite two-actor mask (A embedded/B extracted), Studio integration and
 release approval still require their own evidence. The earlier three-mode
 producer and the active geometry journal's 62 pinned methods remain unchanged.
 
+The next actual geometry batch requests 512 additional full frames from the
+128-sample checkpoint. It reaches a time guard rather than its requested
+640-sample endpoint: 900.750 execution seconds, 915.984 total seconds, a
+335,052,800-byte sampled peak below the unchanged 1-GiB cap, and 901 independently
+replayed resource observations. Its terminal status remains **failed**, reason
+`execution_time_guard`; this stop is not a RAM stop or an animation verdict.
+Completed frames are retained while the interrupted frame is left uncommitted.
+
+The complete retained prefix now has **581 of 2,017** original samples, ending
+at 1.141666667 seconds. Its pinned checkpoint is
+`checkpoints/000581-f538d5a5b26148398a55fb59f666320d.json`, SHA-256
+`c27aa523398b58f20346cb7c0db41e43f6d3ba149cf98c0d033c5315fd8ec421`.
+The source/method bindings, whole checkpoint chain and numerical archive
+transport are verified separately after termination. That verification guard
+completes in 45.875 seconds at 120,913,920 sampled bytes, with all 47 resource
+observations independently replayed. Verification of stored evidence is not a
+second implementation or recomputation of the geometry arithmetic.
+
+There are **35 failed samples** in this prefix. The first failing sampled time
+is original index 546, 1.075 seconds. The largest directional depth in the
+prefix is B-inside-A 21.138522 mm at index 579, 1.139583333 seconds. The largest
+proper crossing count is 351 at index 578, 1.1375 seconds; these maxima need
+not occur together. They are prefix maxima, not full-clip maxima or continuous
+collision times. The earlier separate 2-second measurement stays visible.
+This failure occurs well before the contact instant, so contact-time correction
+alone cannot establish a passing scene. There are still 1,436 journal samples
+left; no full-clock acceptance follows from this failed prefix.
+
+The interrupted producer remains under `reports/high-five-runtime-geometry-journal-v2`.
+Read-only prefix inspections are under
+`reports/high-five-runtime-prefix-inspection-v1` and `-v2`; full retained-prefix
+verification is under `reports/high-five-runtime-prefix-verification-v1`.
+The original journal and prior checkpoints remain immutable. The new exact-mask
+Godot audit is launched separately under `reports/high-five-configured-runtime-v1`
+with the unchanged 2-GiB engine admission/cap and 600-MiB free-RAM reserve. Its
+result is pending here; no engine success, motion quality or release approval
+is inferred from launching it.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
