@@ -26,7 +26,8 @@ def assemble(system,jacobian,hard_rows,vectors,vector_jacobian,source_limits_m,*
         scope='Explicit restoration from violated material bounds. Only material search caps tighten; original base rows and reference material limits remain unchanged. Complete decoded acceptance remains necessary.')
 
 
-def direction(system,jacobian,value,lower,upper,trust,*,hard_rows):
+def direction(system,jacobian,value,lower,upper,trust,*,hard_rows,precision='strict'):
+    if precision not in ('strict','standard'):raise ValueError('Explicit strict or standard solver convergence required')
     if any(isinstance(v,(bool,np.bool_)) for v in np.asarray(value,dtype=object).flat):raise ValueError('Explicit numeric original controls required')
     value,lower,upper=[np.asarray(v,float) for v in (value,lower,upper)]
     if (not isinstance(system,NormRows) or value.ndim!=1 or not 1<=len(value)<=768 or lower.shape!=value.shape or upper.shape!=value.shape
@@ -39,6 +40,7 @@ def direction(system,jacobian,value,lower,upper,trust,*,hard_rows):
     counts=np.diff(j.indptr).reshape(-1,3).sum(1);initial=hard.residual();fixed=counts==0
     if not np.isfinite(initial).all():raise ValueError('Complete finite hard norm measurements required')
     meta=dict(protected_norm_rows=hard_rows,initial_failed_hard_rows=int((initial>0).sum()),soft_rows_retained_not_optimized=len(system.caps)-hard_rows,
+        convergence_precision=precision,
         objective='minimum normalized control step under every hard norm',original_selected=True,quality_approved=False,release_approved=False,
         scope='Affine restoration proposal only; no nonlinear native, material, mesh, engine or quality approval.')
     if np.any(initial[fixed]>0):return None,dict(meta,status='FixedProtectedConflict')
@@ -51,8 +53,8 @@ def direction(system,jacobian,value,lower,upper,trust,*,hard_rows):
         matrix=sparse.csc_matrix((derivative.data,(4*(derivative.row//3)+1+derivative.row%3,derivative.col)),shape=(4*len(active),n))
         mats.append(matrix);rhs.append((np.c_[hard.caps[active],hard.vectors[active]]/hard.scales[active,None]).ravel());cones.extend(solver.SecondOrderConeT(4) for _ in active)
     settings=solver.DefaultSettings();settings.verbose=False;settings.max_iter=100;settings.time_limit=30.
-    settings.tol_gap_abs=settings.tol_gap_rel=settings.tol_feas=1e-11
-    settings.reduced_tol_gap_abs=settings.reduced_tol_gap_rel=settings.reduced_tol_feas=1e-10
+    settings.tol_gap_abs=settings.tol_gap_rel=settings.tol_feas=1e-11 if precision=='strict' else 1e-9
+    settings.reduced_tol_gap_abs=settings.reduced_tol_gap_rel=settings.reduced_tol_feas=1e-10 if precision=='strict' else 1e-8
     if hasattr(settings,'max_threads'):settings.max_threads=1
     matrix=sparse.vstack(mats,format='csc');bound=np.concatenate(rhs)
     if not np.isfinite(matrix.data).all() or not np.isfinite(bound).all():raise ValueError('Finite scaled restoration cones required')

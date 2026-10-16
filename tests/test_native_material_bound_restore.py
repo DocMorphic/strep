@@ -15,19 +15,21 @@ def example():
     return base,j,np.array([[.010001,0,0]]),sparse.csr_matrix([[1],[0],[0]])
 
 
-def test_infeasible_material_start_restores_with_inward_reserve_and_keeps_soft_rows():
+@pytest.mark.parametrize('precision',['strict','standard'])
+def test_infeasible_material_start_restores_with_inward_reserve_and_keeps_soft_rows(precision):
     base,j,v,vj=example()
     with pytest.raises(ValueError):insert_guards(base,j,1,v,vj,[.01])
-    model,jac,meta=module.assemble(base,j,1,v,vj,[.01]);step,info=module.direction(model,jac,[0],[-1],[1],.001,hard_rows=meta['hard_rows'])
+    model,jac,meta=module.assemble(base,j,1,v,vj,[.01]);step,info=module.direction(model,jac,[0],[-1],[1],.001,hard_rows=meta['hard_rows'],precision=precision)
     assert step is not None and -1.51e-6<step[0]<-1.49e-6 and info['affine_hard_rows_pass']
     assert np.linalg.norm(v+np.asarray(vj@step).reshape(1,3))<.01
     for key in ('vectors','caps','scales'):np.testing.assert_array_equal(getattr(model,key)[[0,2]],getattr(base,key))
     assert meta['initial_reference_material_failures']==1 and meta['material_search_reserve_m']==5e-7 and info['soft_rows_retained_not_optimized']==1
 
 
-def test_full_vector_correction_handles_tangential_nonlinearity_with_margin():
+@pytest.mark.parametrize('precision',['strict','standard'])
+def test_full_vector_correction_handles_tangential_nonlinearity_with_margin(precision):
     x=np.array([0.,.03]);v=np.array([[.01+x[0],x[1]**2,0]]);vj=sparse.csr_matrix([[1,0],[0,2*x[1]],[0,0]])
-    base=NormRows([[0,0,0]],[1],[1]);model,j,meta=module.assemble(base,sparse.csr_matrix((3,2)),1,v,vj,[.01]);delta,info=module.direction(model,j,x,[-1,-1],[1,1],.001,hard_rows=meta['hard_rows'])
+    base=NormRows([[0,0,0]],[1],[1]);model,j,meta=module.assemble(base,sparse.csr_matrix((3,2)),1,v,vj,[.01]);delta,info=module.direction(model,j,x,[-1,-1],[1,1],.001,hard_rows=meta['hard_rows'],precision=precision)
     assert delta is not None and info['affine_hard_rows_pass'];y=x+delta
     assert np.linalg.norm([.01+y[0],y[1]**2,0])<=.01
 
@@ -72,3 +74,8 @@ def test_nonfinite_norm_postcheck_never_becomes_a_serialized_pass(monkeypatch):
     with np.errstate(over='ignore',invalid='ignore'):
         step,info=module.direction(model,sparse.csr_matrix([[1e308],[0],[0]]),[0],[-1],[1],.001,hard_rows=1)
     assert step is None and info['nonfinite_affine_rows'] and not info['affine_hard_rows_pass']
+
+
+def test_unsupported_convergence_setting_rejects_before_solving():
+    base,j,_,_=example()
+    with pytest.raises(ValueError):module.direction(base,j,[0],[-1],[1],.001,hard_rows=1,precision='automatic')

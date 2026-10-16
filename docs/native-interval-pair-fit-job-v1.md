@@ -745,6 +745,30 @@ trust is 0.0005 with a 0.5-micrometre inward material search reserve. Original
 native/contact/floor acceptance and the actual full-vector reference limits
 must still pass after export.
 
+At `5fc4b29`, [focused run 38928435610](https://github.com/DocMorphic/strep/actions/runs/38928435610)
+passes all 16 new cases on Ubuntu (0.81 seconds) and Windows (1.07 seconds).
+The first real worker stops before solving because its inferred producer-guard
+path assumes the older folder layout. Its 27 resource observations replay;
+the corrected worker pins explicit producer guard/audit paths.
+
+The corrected real model completes with 397 active cones, but reports
+`NumericalError` after 21 iterations. Its finite diagnostic point passes the
+complete affine hard postcheck (maximum normalized excess 8.558588e-10).
+The status gate still rejects it: no candidate is exported and the failure is
+not relabelled as solved. All 83 observations replay over 82.297 seconds at
+554,586,112 bytes. This is numerical termination, not proof that the original
+constraints are infeasible.
+
+Restoration now accepts an explicit solver convergence setting: `strict`
+(default 1e-11, reduced 1e-10) or `standard` (1e-9, reduced 1e-8). This changes
+solver termination only; the complete 1e-8 affine postcheck, original physical
+caps, statuses and separate decoded acceptance stay unchanged. All 19 source
+cases pass in 5.19 seconds, exercising both settings on actual small solves.
+The final guard takes 23.500 seconds at 120,107,008 bytes, with all 25
+observations replayed. A matched real study rebuilds from original inputs
+and must verify identical vectors/caps/scales/Jacobian against the failed
+model before testing `standard` convergence.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
