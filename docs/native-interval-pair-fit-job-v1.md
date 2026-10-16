@@ -197,6 +197,54 @@ animation, engine, held-out or full-inventory approval. Declared inventories
 now contain 531 Python modules and 45 Node suites; the contact/rig subset has
 95 Python modules and five Node suites.
 
+At commit `f6dd3b7`,
+[aggregate run 38906203916](https://github.com/DocMorphic/strep/actions/runs/38906203916)
+passes all 12 tests on Ubuntu (0.28 seconds) and Windows (0.85 seconds).
+[Retry run 38906210837](https://github.com/DocMorphic/strep/actions/runs/38906210837)
+passes all 19 tests on Ubuntu (7.36 seconds) and Windows (247.18 seconds).
+
+The first paired comparison reuses the same 695,243-row matrix, original
+control point, 0.02 trust box and 0.002 search headroom for both objectives.
+The minimax control reports `Solved` after 48 iterations and passes the full
+664,039-row hard postcheck, at 4.55e-11 maximum normalized excess. It exports
+and independently passes all 660,002 actual native conditions: the preceding
+two acceleration failures are resolved without changing original caps.
+Fresh coupled contacts are 29.161454, 12.693444 and 29.506691 mm, within the
+authored 30-mm limits.
+
+This control still fails geometry. Twenty selected measures improve, five
+regress and ten are unchanged. Crossings increase from 567/594/644/455 to
+715/774/713/627 at the last four selected times; the deep-vertex count again
+increases from 18 to 30 at 2.033333302 seconds. Peak depth is 15.216414 mm.
+Floor arrays remain exactly equal to the source at all 2,017 times per actor;
+all fail the physical screen, with maximum depths 10.436307 mm for A and
+8.331530 mm for B. The candidate remains rejected and unselected.
+
+The aggregate solver reports `Solved` after 31 iterations but fails five native
+hard affine rows above the unchanged 1e-8 postcheck tolerance. Maximum excess
+is 1.6296216e-7. Its proposal is retained and **not exported**. Saved affine
+positive soft excess sums are 7,683.425513 for minimax and 5,163.747810 for
+aggregate; worst soft excess instead increases from 3.141435 to 3.422485.
+These are surrogate tradeoffs. With no aggregate animation, this experiment
+cannot establish a decoded objective-quality improvement.
+
+| Guarded stage | Seconds | Peak process-tree bytes | Independently replayed observations |
+| --- | ---: | ---: | ---: |
+| Minimax proposal/export | 124.875 | 535,465,984 | 125 |
+| Aggregate rejected proposal | 43.594 | 611,127,296 | 45 |
+| Actual actor A | 143.343 | 275,427,328 | 143 |
+| Actual actor B | 134.125 | 275,476,480 | 134 |
+| Coupled scene | 85.375 | 332,333,056 | 86 |
+| Complete saved affine/report replay | 30.359 | 171,278,336 | 32 |
+
+The passive replay reproduces every saved affine residual for both proposals,
+including all five rejected rows. Next, improve aggregate numerical precision
+under the same objective, boxes, caps and postcheck, then measure any actual
+export independently. No tolerance relaxation or animation-quality inference
+from aggregate loss is justified. Broader motion/rig/object, grounding,
+complete-clock geometry, engine, semantic/held-out and human cleanup evidence
+remain required; the single entire-project goal stays active.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
