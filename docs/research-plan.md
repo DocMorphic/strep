@@ -44,3 +44,17 @@ Keep one immutable attempt directory per case/seed/actor/condition, with command
 Randomize neutral preview IDs for blind comparisons; keep the condition key away from reviewers. Report all five seeds, not best-of-five highlights. Separate tool/setup failures from motion failures. Freeze the rubric before review.
 
 After the baseline, compare deterministic corrections against unchanged output. Only collect self-captured or separately licensed training data for measured failure categories. A paper needs held-out actions, objects, partners, and rigs; ablations; animator ratings and cleanup time; learning curves; and explicit failure reporting.
+
+## Checkpoint comparison addendum - 2026-10-16
+
+The v1.1 conditions above remain the historical unchanged baseline. NVIDIA's
+October 15 v1.2 release corrects benchmark training/test leakage; see the dated
+[source ledger](source-ledger.md) and pinned acquisition record. Treat v1.2 as
+a separate versioned condition, with its own checkpoint/configuration/stats
+hashes and loader qualification. Reuse established development prompts, seeds,
+timings, rig and scene fixtures for a matched comparison; preserve raw and
+postprocessed conditions separately. Do not silently replace v1.1, claim that
+an old output used v1.2, tune on reserved release trials, or assume that the new
+checkpoint resolves object/partner contacts. Compare actual local motion and
+resource outcomes before choosing a default. No new-version inference or
+training is established merely by acquiring its files.

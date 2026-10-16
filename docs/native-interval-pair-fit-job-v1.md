@@ -423,6 +423,67 @@ improved high-five or accepted motion. Inventories contain 543 Python modules
 and 45 Node suites; the contact/rig subset contains 107 Python modules and five
 Node suites. Full-inventory approval is not claimed.
 
+The exact selected-mask actual audit now completes for A embedded/B extracted,
+separately from the old fixed mixed mask. Both actors retain all 2,017 times and
+18,056 vertices each. Every finite runtime condition passes. Embedded pose
+element errors are at most 1.083135e-6; B's configured affine-skin difference
+against the embedded baseline is 3.134125 micrometres. Preview differences and
+callback pose differences are zero. All three confirmed technical markers,
+four traversal scenarios per mode, eleven malformed configurations per mode,
+late/reentrant rejection and exported bootstrap checks pass. This is complete
+finite CPU evidence for this asset pair and selected mask, not arbitrary-rig,
+GPU, frame-rate, physics, contact or animation-quality approval.
+
+Its guard completes in 563.421 seconds at 1,178,521,600 sampled bytes below the
+unchanged 2-GiB cap; all 554 resource observations independently replay. The
+earlier admission attempt stays deferred without engine execution (600.906
+seconds, 597 observations). The completed result is under
+`reports/high-five-configured-runtime-v2`, SHA-256
+`a242e2fe7358bea1a77c5c569d208db3acbb2c86d11c1307fdc5e77c892e1330`.
+The verified runtime ZIP is
+`afda63d69ec829e472c75f27b4b69b03f42cf9b23fe015a3db5092cfc4203333`.
+Source game bytes and complete typed arrays remain exact. The scene's failed
+geometry is neither cleared nor overwritten by successful runtime export.
+
+The bounded pivot study completes all 25 combinations of -10/-5/0/5/10 degrees
+per actor around world pivot [0, 1.5, 0], using explicit 10-degree and 100-mm
+actor-origin permissions. The unchanged three 30-mm contact conditions pass
+for 15 combinations; ten contact failures stay recorded and do not proceed
+to geometry. Fourteen nonzero candidates receive complete surface queries at
+original indices 579 and 1016. The zero-angle baseline reuses its already
+completed pinned measurements instead of repeating them. These are known
+development times, not held-out evaluation or full-clock certification.
+
+No candidate passes both sampled geometry checks. The nominal best is A +10,
+B -10 degrees. Its three contact distances are 29.773921, 10.321052 and
+26.332146 mm. The two maximum directional depths change from
+21.138522/10.549988 to 15.961132/14.627887 mm; proper crossing counts change
+from 301/754 to 275/676. The worse-time depth decreases while contact-time
+depth regresses. Both times still fail, and the original remains selected.
+A better worst depth or fewer intersections is not acceptance.
+
+The counterfactual grid guard completes in 512.593 seconds at 468,443,136
+sampled bytes, with all 505 resource observations independently replayed.
+Source, every rejected candidate, unchanged policy/targets, placement
+amendments and raw query arrays remain under `reports/high-five-pivot-screen-v1`.
+The subsequent separate consumer checks every variant/source/method/array,
+reconstructs the placement and contact arithmetic with explicit sin/cos,
+and reduces every saved geometry record. Maximum point replay error is
+2.220446e-16 metres. Common-rotation-equivalent cases have matching crossing
+counts and depth spread below 2.43e-17 metres. Collision archive transport is
+verified; collision arithmetic is not independently reimplemented or rerun.
+That replay completes in 38.578 seconds at 229,171,200 sampled bytes, with all
+40 resource observations independently replayed, under
+`reports/high-five-pivot-replay-v1`.
+
+The explicit placement primitive is validated, but yaw-only correction is not
+sufficient on this finite development grid. A later bounded translation/anchor
+registration study may preserve stronger hand meeting while changing layout;
+it must declare its extra permissions, retain the same targets/limits, and
+recheck support, native world bounds, complete geometry and actual export.
+Neither the unchanged v1.1 model nor a new checkpoint is qualified by these
+two-time counterfactuals.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text

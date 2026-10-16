@@ -163,3 +163,49 @@ A separate static-rig derivative preserves the converted GLB default shape with 
 ## 2026-10-15: Uni-Inter author-source and artifact screen
 
 The [dated source screen](uni-inter-source-screen-2026-10-15.md) pins author commit `0d5248c9948939d47382f482b06f6e86b037b012`. Its repository LICENSE is CC BY-NC-SA 4.0; commercial product permission is not established. The inspected tree contains no motion checkpoint files and its GitHub releases endpoint is empty; this does not prove no checkpoint exists elsewhere. Its dataset-based 22-joint inference writes GIFs, and the inspected NTU path predicts one person conditioned on the other recorded motion. No third-party code is executed, installed or incorporated, no weights/data are acquired, and no training is admitted. The unchanged Kimodo baseline and original evaluation contracts remain in place.
+
+## 2026-10-16: corrected Kimodo checkpoint release
+
+NVIDIA's [v1.2 model card](https://huggingface.co/nvidia/Kimodo-SOMA-RP-v1.2)
+announces corrected training splits after some benchmark test sequences leaked
+into v1.1 training. It reports reduced skating but retains single-skeleton and
+scene-object-awareness limits. Keep v1.1 as historical baseline; benchmark
+comparability and our own trial performance are separate questions.
+
+Public model revision `0e3c89024d896064b6851201373f7834784a386b` and author
+code revision `e1c219c99b4b94ba48be1fb6a1cbc64ecee4c954` are pinned in
+`reports/kimodo-v12-source-screen-2026-10-16`. The checkpoint's LICENSE bytes
+match the installed v1.1 license; the linked
+[NVIDIA Open Model License](https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/)
+was rechecked. Raw BONES-SEED training permission does not follow from a model
+license and remains separately restricted.
+
+The exact public checkpoint is acquired into a separate ignored directory,
+with all ten files checked against pinned Git/LFS identities and stored-byte
+hashes. Weight SHA-256 is
+`fdcef624140a12c0a4840192ce0b75cafb4e73228a893da3864b4a990d3e919e`;
+payload size is 1,133,177,724 bytes. The acquisition guard completes in 123.969
+seconds at 42,909,696 sampled bytes, with 124 observations independently replayed.
+The existing model manifest, v1.1 files, vendor source and default remain
+unchanged. No raw training data, new third-party code execution, new-model
+inference or training occurs. Acquisition is not model/runtime/quality approval;
+compatibility and a controlled comparison remain separate work.
+
+The first compatibility attempt stops at a missing YAML dependency in the
+minimal source-test environment before reading model metadata; its failed
+guard remains recorded (16.187 seconds, 18 observations). The retry uses the
+existing project environment, Python 3.10.21/NumPy 2.2.6/PyYAML 6.0.3. It verifies
+that parsed configurations match and all six normalization arrays have equal
+shapes/dtypes and identical values. Raw checkpoint keys differ. A further
+complete check applies the existing upstream `denoiser.backbone.` removal rule:
+all 408 mapped keys, shapes and F32 dtypes match, without collisions. Every one
+of the 408 tensor payloads differs, so this is a real weight change rather
+than only a renamed container. All F32 values in both checkpoints are finite.
+
+Those inspections complete in 17.234 seconds/43,573,248 sampled bytes/19 replayed
+observations and 20.328 seconds/48,869,376 bytes/22 replayed observations. They
+remain under `reports/kimodo-v12-compatibility-v1`, `-v2` and `-v3`. File/metadata
+compatibility does not prove CUDA loading, sampling or better motion. No model
+is constructed and no neural forward is executed. The pinned vendor registry
+still lacks v1.2; a separate explicit loader qualification and matched
+development comparison are required before considering a default change.
