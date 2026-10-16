@@ -223,6 +223,14 @@ def run(source,output,modes,*,engine=None):
             save(output/'pipeline.json',dict(status='failed',error=str(exc),quality_approved=False,release_approved=False));raise
 
 
+def summary(result):
+    """Keep complete raw arrays/maps on disk, not in terminal output."""
+    fields=('schema','status','samples','all_sampled_runtime_conditions_pass','configured_mode_observed',
+        'configured_root_modes','complete_clock_retained','arrays_roundtrip_exact',
+        'real_time_playback_verified','quality_approved','physics_verified','release_approved')
+    return {key:result[key] for key in fields}
+
+
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('package');parser.add_argument('output');parser.add_argument('--modes',required=True);parser.add_argument('--engine');args=parser.parse_args()
-    print(run(args.package,args.output,read(args.modes),engine=args.engine))
+    print(summary(run(args.package,args.output,read(args.modes),engine=args.engine)))

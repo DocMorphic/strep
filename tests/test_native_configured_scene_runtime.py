@@ -207,3 +207,16 @@ def test_comparator_changes_only_explicit_root_selection_and_scope():
     actual=actual.replace("if mode=='configured' and root_modes[name]=='extracted':","if mode=='extracted' or (mode=='mixed' and index%2==0):")
     actual=actual.replace('samples=len(times),\n        configured_root_modes=dict(root_modes),configured_mode_observed=True),arrays','samples=len(times)),arrays')
     assert actual==expected
+
+
+def test_cli_summary_keeps_bulk_observation_maps_on_disk():
+    import json
+    value=dict(schema='strep-configured-scene-runtime-audit-v1',status='complete',samples=2017,
+        all_sampled_runtime_conditions_pass=False,configured_mode_observed=True,
+        configured_root_modes=dict(A='embedded',B='extracted'),complete_clock_retained=True,
+        arrays_roundtrip_exact=True,real_time_playback_verified=False,quality_approved=False,
+        physics_verified=False,release_approved=False,modes={'configured':{'bulk_mapping':'x'*1000000}})
+    displayed=selected.summary(value)
+    assert 'modes' not in displayed and len(json.dumps(displayed))<4096
+    assert displayed['configured_root_modes']==value['configured_root_modes']
+    assert displayed['all_sampled_runtime_conditions_pass'] is False
