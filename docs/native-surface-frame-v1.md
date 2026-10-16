@@ -46,8 +46,9 @@ including independently differenced deformation derivatives and signed-angle
 failures. The guard completes in 18.312 s at 76,316,672 sampled bytes, with 20
 observations independently replayed. A subsequent source check composes the
 frame derivative with the actual native affine skinner and independently
-differences fresh pose evaluations. That added integration check is reported
-separately once run; no full-inventory pass is claimed.
+differences fresh pose evaluations. All 26 checks pass on Ubuntu (0.66 s) and
+Windows (1.40 s) in [hosted run 38968193740](https://github.com/DocMorphic/strep/actions/runs/38968193740).
+No full-inventory pass is claimed.
 
 The actual pose pilot is a separate experiment at 2 s on the best failed
 anchor proposal. It retains the source clips and tests palm origin/facing/twist,
@@ -66,3 +67,118 @@ triangle indices and mapped joint names must match. The failed intake is
 retained. The geometry-derived palm candidate remains anatomically unreviewed.
 No animation is exported until native-key timing and full decoded acceptance
 are addressed separately.
+
+The failed intake completes in 18.265 s at 120,356,864 sampled bytes with 20
+observations independently replayed. The corrected intake verifies exact
+float32 encoding (maximum difference from the higher-precision source is
+5.722046e-8 m), topology and joint mapping, then uses actual stored vertices for
+the candidate patch. Original files remain unchanged. Its complete local Python
+method population is archived and hashed before fitting.
+
+## Completed pose pilot: mixed result, retained failure
+
+At the initial pose, the proposed material normals differ from their desired
+directions by 66.464921 degrees for A and 42.975495 degrees for B. The fitted
+pose reduces those errors but does not meet all declared constraints. SLSQP
+reaches its 60-iteration limit after 120 observations; 29 inequality rows still
+fail. No solver-success or animation-quality claim follows.
+
+| Frame condition | A candidate | B candidate | Declared limit |
+| --- | ---: | ---: | ---: |
+| Material-origin position error, mm | 21.661144 | 10.410453 | 5 |
+| Signed normal error, degrees | 9.075535 | 6.724029 | 5 |
+| Signed tangent error, degrees | 15.914853 | 15.006644 | 15 |
+
+Separate matched native CPU geometry queries at 2 s find 834 surface records
+and 13.303821-mm maximum vertex depth in the starting pose, versus zero records
+and zero depth in the candidate. The candidate passes the declared geometry at
+that single time. It nevertheless remains a failed pose because geometry and
+contact/edit constraints are separate requirements. No curve, other time,
+original world-reference budget, motion rate, export or engine playback is
+validated by that result.
+
+The complete pilot takes 185.296 s at 251,097,088 sampled process-tree bytes;
+183 resource observations independently replay. Fitting itself takes 111.813 s.
+Original clips stay selected and unchanged; all quality/release flags remain
+false. Further work must identify the conflicting bounds and find a feasible
+contact pose before extending the correction across native keys.
+
+The separate native replay reconstructs both actors from the original source
+and saved controls. Every stored world matrix, skinned vertex and inequality
+matches exactly. It classifies the 29 failures as six material-frame rows,
+thirteen local edit balls, and ten whole-hand halfspace rows. All three original
+point contacts pass, and maximum joint displacements are 47.474118/55.355145 mm,
+below the explicit 60-mm limit. Thus the result does not justify changing the
+original point thresholds or claiming incompatible landmark definitions.
+
+Three independently differenced frame-derivative directions per actor have
+maximum absolute error 1.007536e-9 at step 1e-5. These are directional checks,
+not a complete Jacobian certificate or collision rerun. The replay completes in
+30.593 s at 188,911,616 sampled bytes, with 32 resource observations replayed.
+Pose result SHA-256:
+`102dcd43e9920ebd0988e7a4bb861ce9813334a02a5e94cb3c6a3df786a34a21`.
+
+A separately recorded feasibility-first follow-up keeps all physical and edit
+limits unchanged. It initializes from the failed pose projected into each
+original local edit ball, retains the zero source-reference epoch, minimizes
+complete constraint violations with group scaling, then refines inside a
+normalized 0.001 search reserve. The reserve tightens search; original limits
+remain the acceptance authority. Its artifacts are kept under
+`reports/high-five-surface-frame-pose-v3/`, separately from the initial intake,
+SLSQP pilot and replay.
+
+## Protected feasibility and expanded finger condition
+
+The first feasibility-first run reduces its worst violation to 0.789987,
+but the following norm-refinement step regresses while still infeasible.
+It completes in 188.203 s at 257,179,648 sampled bytes (186 observations
+replayed). This is retained as evidence to gate quality refinement on actual
+feasibility rather than solver termination alone.
+
+The next experiment protects local edit balls, joint displacement and original
+point contacts, while temporarily allowing slack on material targets and hand
+halfspaces. Acceptance still requires zero violations in every original row;
+temporary slack never approves a pose. It retains a protected-feasible candidate,
+but palm/halfspace conditions fail. Its geometry has 294 surface records and
+5.574071-mm maximum depth. The run takes 146.157 s at 252,588,032 sampled bytes
+with 146 observations replayed. Independent source/array/inequality replay
+takes 29.453 s at 189,857,792 bytes (31 observations); directional derivative
+error is at most 1.544075e-9. The worst halfspace vertices are dominated by
+`RightHandThumb1` for A and `RightHandPinky4` for B. The thumb was not editable.
+
+A separately labelled expanded condition adds `RightHandThumb1` and permits
+20-degree edits for twelve finger joints plus a 30-degree thumb-base edit.
+Arm/forearm/hand caps remain 15/20/30 degrees and joint displacement remains
+60 mm. All target, gap-halfspace and geometry conditions are unchanged. Warm
+controls are remapped by joint labels and rescaled to preserve physical rotation
+vectors; the original zero source-reference epoch remains unchanged. It is not
+a pass under the earlier 10-degree/no-thumb permissions.
+
+That 96-control pose passes all of its declared inequalities strictly, with
+minimum normalized margin 0.001. It also has zero surface records and zero
+vertex depth at the one queried time. The run takes 76.344 s at 260,513,792
+sampled bytes with 77 observations replayed; fitting takes 23.859 s. Independent
+replay exactly reproduces all stored worlds, vertices and inequalities, with
+six directional frame-derivative checks below 1.319772e-9. That replay takes
+31.594 s at 203,165,696 bytes with 33 observations replayed.
+
+Nevertheless its two material origins are 13.993424 mm apart. Individual 5-mm
+world-target tolerances around distinct target points do not establish a
+5-mm pair gap. This pose is not approved as a finished high-five.
+
+## Direct material-frame pair constraints
+
+`scripts/native_surface_frame_pair.py` adds a direct origin-gap norm and signed
+normal/tangent relationship norms. The default is opposing normals with aligned
+tangents. Explicit shared control ownership sums both derivatives in one basis;
+independent actors concatenate their columns. Unit-vector chord caps retain
+the declared angular tolerances. The API rejects invalid ownership, signs,
+frame directions, derivative populations and incompatible shared widths.
+
+Twelve isolated source tests pass in 1.73 s, including independent geometry
+differences on both actors and cancellation under shared translation. The guard
+completes in 18.234 s at 80,318,464 sampled bytes with 20 observations replayed.
+A stronger pose experiment adds a 5-mm direct material-origin gap, 5-degree
+normal opposition and 15-degree tangent agreement. It preserves the expanded
+condition's edit bounds and all original contact/geometry limits. Its results
+are separate from the individually targeted pose above.

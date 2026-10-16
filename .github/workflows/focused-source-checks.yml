@@ -9,6 +9,7 @@ on:
         type: choice
         default: tests/test_native_motion_orientation.py
         options:
+          - tests/test_native_surface_frame_pair.py
           - tests/test_native_surface_frame.py
           - tests/test_native_anchor_placement.py
           - tests/test_kimodo_versioned_checkpoint.py
