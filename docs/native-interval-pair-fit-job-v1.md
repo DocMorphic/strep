@@ -850,6 +850,41 @@ not resolved by the sampling interval. Results remain under
 full-clock partner geometry, broad actions/rigs/objects, engine and human cleanup
 validation remain required under the same project-wide goal.
 
+### Explicit shared world-placement variant
+
+`scripts/native_shared_placement.py` adds a native-rig authoring path for a
+bounded shared world translation. The separate existing placement editor uses
+another scene format; this path consumes source-bound native contact/geometry
+JSON. The amendment pins both source files and declares every actor, an
+original-relative world-translation box and a displacement norm bound. It
+cannot omit actors, alter rotations, move targets/objects, edit local animation
+or widen geometry limits. A nonzero translation explicitly changes the world-
+placement contract; it is not claimed to preserve the original frozen world
+root positions.
+
+The new output references unchanged, hash-bound local GLBs and canonicalizes
+their paths. It preserves original snapshots, writes a separately bound contact
+and geometry request, and saves a code archive. Replay reconstructs the exact
+placement-only variant and detects changed assets, original files, targets,
+contact/geometry limits, placements and archives, even when an outer artifact
+checksum is updated. Geometry clocks must stay exact. Outputs are reference-
+based authoring requests, not self-contained asset bundles or quality approval.
+
+All 17 new source checks pass in 9.62 seconds, covering nontrivial actor
+rotations, unchanged sampled local poses, shared relative surfaces, explicit
+permission bounds and world/object/partner targets. The guard completes in
+26.297 seconds at 128,585,728 sampled process-tree bytes; all 28 observations
+replay. An earlier fixture combined touch mode with a hold interval; its
+failure and 27 resource observations remain preserved. Correcting that test
+setup did not change contact validation. Inventories declare 537 Python/45 Node
+suites and a contact/rig subset of 101/five, not full-inventory approval.
+
+The real amendment proposes the previously measured 5.936307-mm shared upward
+shift with a 6-mm vertical-only permission. It preserves the selected restored
+GLB bytes and all target/plane/limit data. Independent validation must check
+the new scene transforms, complete original local-motion observations, the
+full floor clock and fresh paired meshes. The original case remains intact.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
