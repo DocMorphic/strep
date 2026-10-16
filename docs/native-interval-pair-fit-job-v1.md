@@ -236,6 +236,47 @@ the guard completes in 89.641 seconds including admission, at 116,916,224 sample
 bytes, with all 90 observations independently replayed. Both final test modules
 now contain 39 cases in total; this does not describe a fresh combined local run.
 
+At source commit `3e66e69`, hosted focused runs
+[38952211634](https://github.com/DocMorphic/strep/actions/runs/38952211634) and
+[38952216217](https://github.com/DocMorphic/strep/actions/runs/38952216217) pass
+all 39 cases on both operating systems. Surface capture passes 21 cases in
+17.98 seconds on Ubuntu and 66.81 seconds on Windows; incremental framing
+passes 18 in 0.22 and 0.60 seconds respectively. These are source-only checks,
+separate from the actual Godot measurements and from full-inventory approval.
+
+`native_runtime_geometry_journal.py` adds a resumable consumer for this explicit
+surface receipt. `prepare(capture, receipt_sha256, fresh_output)` records the
+original complete policy clock, source acceptance, chosen root mask, complete
+source bindings and an implementation archive. It rejects output inside the
+immutable surface capture. Its request has a new runtime-surface schema; it
+reuses the existing generic frame/checkpoint protocol without manufacturing an
+old native-import receipt. The source capture stays reference-based and is not
+copied into a second bulk archive.
+
+`advance(journal, checkpoint, checkpoint_sha256, maximum_samples=16)` evaluates
+whole original time samples using the unchanged geometry evaluator and explicit
+surface callbacks. Each completed frame retains the full JSON and numerical
+observation archive under an immutable receipt, followed by a pinned checkpoint.
+An interrupted uncommitted frame remains visible and is recomputed on resume;
+previous completed frames are verified rather than recomputed. Source, method
+and request changes prevent publication. Work-count bounds do not truncate the
+declared clock. `verify` checks the complete saved prefix. Neither a checkpoint
+nor prefix verification can claim full-clock acceptance. Only `finalize` after
+every original sample can assemble the complete result, streaming observations
+with unchanged global array keys. Even then physics, continuous/self collision,
+GPU and human-quality approval remain false.
+
+The final journal suite passes all 15 source-only cases in 71.07 seconds. Its
+guard completes in 87.375 seconds at 125,100,032 sampled bytes, with all 88
+resource observations independently replayed. Tests compare full direct and
+resumed geometry JSON plus every observation byte, retain interrupted work,
+reject premature finalization, changed requests/methods/frames/arrays/receipts,
+fake complete-clock approval, noninteger/unbounded batches, wrong external
+surface pins and writes inside the source capture. The source-only runtime
+fixture remains explicitly separate from actual Godot evidence. Inventories
+now contain 541 Python modules/45 Node suites and 105 Python modules/five Node
+suites in the contact/rig subset; this is not a full-inventory pass.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text

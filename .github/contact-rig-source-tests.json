@@ -75,6 +75,7 @@
     "tests/test_native_scene_runtime_modes.py",
     "tests/test_native_runtime_surface_capture.py",
     "tests/test_native_runtime_mode_stream.py",
+    "tests/test_native_runtime_geometry_journal.py",
     "tests/test_native_pair_surface_guidance.py",
     "tests/test_native_material_depth_bounds.py",
     "tests/test_native_pair_material_recourse.py",
