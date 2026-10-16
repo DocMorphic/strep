@@ -209,3 +209,13 @@ compatibility does not prove CUDA loading, sampling or better motion. No model
 is constructed and no neural forward is executed. The pinned vendor registry
 still lacks v1.2; a separate explicit loader qualification and matched
 development comparison are required before considering a default change.
+
+Subsequent local work completes actual v1.2 CUDA construction and a matched
+28-clip v1.1/v1.2 development comparison, using the original pinned vendor
+rather than updating upstream code. All 14 newly generated v1.1 outputs exactly
+reproduce their historical arrays. v1.2 has mixed proxy results, including worse
+crawl floor depth and better run/roll/stand depth. This neither verifies nor
+contradicts the publisher's separate benchmark under different evaluation
+conditions. See [the version comparison](kimodo-version-comparison-v1.md) and
+its published prompt/seed protocol. Historical default and files remain intact;
+no raw training data or model training is introduced.

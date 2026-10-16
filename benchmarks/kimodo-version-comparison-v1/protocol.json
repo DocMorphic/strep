@@ -1,0 +1,36 @@
+{
+  "schema": "strep-kimodo-version-comparison-v1",
+  "scope": "Matched development comparison; reused prompts are not held-out.",
+  "requests_file": "requests.json",
+  "requests_file_sha256": "1ef3372bd20972d50d0de6c3fa53dc2d346a4c7a0859af25bfe1ea8beb75cd27",
+  "request_digest": "82002052b40cccd7beef067dba0edef0cf1e59e0237ca7235b8107c57757f521",
+  "checkpoint_conditions": {
+    "v1.1": {
+      "repo": "nvidia/Kimodo-SOMA-RP-v1.1",
+      "revision": "6c9233af1180b8151e3c4703477104af5dce9dd5",
+      "weights_sha256": "ef0a0ca45a6089ab4532dde609785771ae3f38755b4ae6cf314b0213e07cd4a3"
+    },
+    "v1.2": {
+      "repo": "nvidia/Kimodo-SOMA-RP-v1.2",
+      "revision": "0e3c89024d896064b6851201373f7834784a386b",
+      "weights_sha256": "fdcef624140a12c0a4840192ce0b75cafb4e73228a893da3864b4a990d3e919e"
+    }
+  },
+  "kimodo_commit": "58e781898b3d7e328a676a75d3e338c45dce3ad9",
+  "settings": {
+    "steps": 100,
+    "samples": 1,
+    "post_processing": false,
+    "cfg_type": "separated",
+    "cfg_weight": [
+      2,
+      2
+    ],
+    "num_transition_frames": 5,
+    "fps": 30
+  },
+  "conditioning_manifest_sha256": "a413492a0098d1b41f2921c6c0d664fef63684e8c083bae5675fe63598732895",
+  "conditioning_qualification": "Original BF16 base/FP32 adapters with experimental disk offloading; full 8B resident equivalence untested.",
+  "quality_approved": false,
+  "release_approved": false
+}

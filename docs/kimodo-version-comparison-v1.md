@@ -51,8 +51,9 @@ Local artifacts: `reports/kimodo-v12-load-probe-v1/` (ignored).
 
 ## Matched generation protocol
 
-Use all seven requests and both original seeds (11 and 22) from
-`reports/action-coverage-v1/request.json`: jump/land, crawl, dance/turn, wave,
+Use all seven requests and both original seeds (11 and 22) from the published
+`benchmarks/kimodo-version-comparison-v1/requests.json`, copied byte-for-byte
+from `reports/action-coverage-v1/request.json`: jump/land, crawl, dance/turn, wave,
 kick/recover, get-up and run/roll/stand. Generate all 14 clips per version in
 separate sequential processes, preserving every raw output and failed attempt.
 These are reused development prompts, not held-out evaluation.
@@ -79,6 +80,85 @@ can improve these proxies, so they cannot decide action correctness or realism.
 No automatic default promotion, retargeting, engine or release approval follows.
 
 Local artifacts: `reports/kimodo-version-comparison-v1/` (ignored).
-Results will be recorded after both guarded workers and independent replays
-finish. Human review, object/partner geometry, rigs and export validation remain
-separate requirements under the single project-wide goal.
+## Completed matched generation and analysis
+
+Both guarded model workers completed all 14 clips: 28 new neural generations,
+not training, postprocessing or renamed historical outputs. All arrays, frame
+counts and proper rotations validate. All 14 regenerated v1.1 clips have exactly
+equal arrays to their historical counterparts across every saved array. This
+supports reproduction for these particular seeds/inputs, not general equivalence
+of all possible model executions.
+
+The results are mixed. Each value below is an unweighted mean across clips;
+the final column counts strictly lower values among the fourteen paired clips.
+
+| Raw skeleton proxy | v1.1 | v1.2 | v1.2 lower |
+| --- | ---: | ---: | ---: |
+| Mean height-mask foot speed, m/s | 0.143399 | 0.134638 | 8/14 |
+| Mean predicted-contact foot speed, m/s | 0.040030 | 0.041033 | 6/14 |
+| Per-clip maximum joint-floor depth, mm | 45.166 | 42.810 | 5/14 |
+| Joint-depth integral, m·s | 0.075799 | 0.085488 | 4/14 |
+
+The height-mask sample populations differ (6,299 versus 6,692 intervals), as do
+the model-predicted contact populations (7,526 versus 7,998). Neither is an
+independent contact annotation, so masked means do not compare identical samples.
+These fourteen pairs are too small and reused to establish broad quality claims.
+
+Run/roll/stand maximum joint depth improves from 64.948/80.222 mm at seeds
+11/22 to 7.309/25.135 mm. Crawl regresses from 109.636/70.797 mm to
+125.612/95.555 mm; get-up still reaches 151.517 mm in one v1.2 clip. These
+remain failures requiring correction and visual inspection. No claim about the
+roll's semantic correctness follows from its better depth proxy.
+
+The v1.1 worker completes in 170.688 s at 1,598,459,904 sampled process-tree
+bytes (169 observations); v1.2 in 183.172 s at 1,580,924,928 bytes (181
+observations). Both retain the 2 GiB estimate/cap and 600 MiB reserve. These
+wall-clock totals include admission/setup and are not comparative inference
+performance claims. Both recorded resource traces and terminal states replay.
+
+The separately guarded analysis recomputes every stored metric and exports 28
+grey SOMA previews with full root trajectories and every original frame. Every
+decoded integer-frame joint/rotation is checked against its source; maximum
+joint round-trip error is 6.115514e-7 m and maximum rotation-matrix element error
+is 2.446521e-6. All eight stored skin weights are exact. Preview export is not
+retargeting or game-engine import validation. The analysis completes in
+34.719 s at 95,739,904 sampled bytes, with 36 observations independently replayed.
+
+Comparison receipt SHA-256:
+`55e67645370e6450f0c485dc5601f9d335df5eac84a9d9f2aa4d116a30e19c53`.
+The 22 loader source tests also pass on Ubuntu (0.29 s) and Windows (1.05 s)
+in [hosted run 38964162481](https://github.com/DocMorphic/strep/actions/runs/38964162481).
+Inventories are 544 Python/45 Node suites, contact subset 108/five; these are
+inventory counts, not full-inventory pass claims.
+
+Decision: retain the historical default and preserve v1.2 as an explicit
+condition. Use its corrected-split provenance when planning new research;
+do not retroactively call v1.1 benchmark results uncontaminated. The next
+comparison needs action correctness and developer/animator inspection before
+any quality-based default change. Object/partner geometry, other rigs,
+transitions, editing controls and full engine acceptance remain separate work.
+No capability or release gate is approved by this experiment.
+
+## Developer preview packet
+
+The local `reports/kimodo-version-comparison-v1/packet/` contains the labelled
+comparison, 28 preview GLBs, all local browser dependencies, licenses and a
+README with review steps. Its 543-file ZIP has SHA-256
+`3be76b4e6a301180fdb0cf844a2f661758aea7f61160210412e33b99d4655d68`
+and size 28,238,320 bytes. Every archived file's bytes and ZIP CRC validate.
+Packaging completes in 47.078 s at 37,003,264 sampled bytes; all 48 resource
+observations replay. The viewer's module syntax validates; browser rendering
+and interaction have not been tested. No server was started by this work.
+
+To view the already prepared local packet on Windows, open PowerShell and run:
+
+```powershell
+cd C:\wassup\strep\reports\kimodo-version-comparison-v1\packet
+py -3 serve.py --port 8772
+```
+
+Keep that window open, then visit `http://127.0.0.1:8772/viewer.html`. Choose
+each action/seed and press Play. Watch at full speed first, then scrub landings,
+plants and transitions. Record the version, action, seed, time and visible
+defect or preference; either or both versions may be unsuitable. Playback is
+not cleanup time. Stop the preview server with Ctrl+C when finished.
