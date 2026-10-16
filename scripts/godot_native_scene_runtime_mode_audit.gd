@@ -97,8 +97,8 @@ func audit() -> void:
 		if scene.advance_to(times[-1]).valid or scene.seek_preview(0.0) == OK or scene.restart() == OK or Observe.snapshot(scene) != before or scene.events.cursor != event_cursor: fail("Late participant failure partially advanced scene"); return
 		entry.late_participant_rejected = true; entry.reentrant_rejected = reentrant_rejected
 		# Flush the complete mode before the next mode allocates its frames.
-		var mode_name := "engine-mode-" + mode + ".json"
-		var mode_path := args[1].get_base_dir().path_join(mode_name)
+		var mode_name: String = "engine-mode-" + str(mode) + ".json"
+		var mode_path: String = String(args[1]).get_base_dir().path_join(mode_name)
 		var mode_output := FileAccess.open(mode_path, FileAccess.WRITE)
 		if mode_output == null: fail("Cannot write complete root mode"); return
 		mode_output.store_string(JSON.stringify(entry, "", true, true)); mode_output.close()
