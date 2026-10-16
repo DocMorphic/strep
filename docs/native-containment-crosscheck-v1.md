@@ -82,3 +82,9 @@ changing any containment evaluator or repeating curve optimization.
 All twelve retained inter-actor surface records are classified as proper
 crossings, independently of the disputed signed-depth witness. Resolving that
 containment disagreement therefore cannot turn this pose into a passing one.
+
+Complete [self-surface diagnostics](native-self-surface-v1.md) now show
+additional self-crossings in the rejected edited mesh. All 1,457 reported
+source/edited pairs have exact represented-triangle interior witnesses. This
+strengthens the rejection; it does not retroactively alter legacy metrics or
+prove the exact cause of the local sign/winding disagreement.

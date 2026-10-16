@@ -40,3 +40,46 @@ A source-bound study compares complete self surfaces at 2 s for both original
 actors and the rejected 30-degree finger-edit pose. Each completed case is
 saved before the next starts. This is four complete single-pose mesh queries,
 not a complete animation or a change in the selected asset.
+
+
+## Actual source and rejected pose
+
+The same seventeen tests pass on Ubuntu (0.62 s) and Windows (0.55 s), run
+38976673483, source 4bd9c2c. Complete scans of each 18,056-vertex/36,108-triangle
+mesh at 2 s finish as follows. These original sources are the configured scene
+clips, not a claim about every raw neural output.
+
+| Actor | Configured source crossings | Rejected 30-degree edit crossings | Retained / removed / introduced pairs |
+| --- | ---: | ---: | --- |
+| A | 232 | 608 | 131 / 101 / 477 |
+| B | 135 | 482 | 70 / 65 / 412 |
+
+All stored records are transverse crossings; no degenerate face or other
+ambiguous record is reported in these four queries. The combined guard takes
+222.860 s at 138,993,664 sampled bytes (221 observations), independently
+resource-replayed. Each individual complete case remains saved.
+
+The existing independent rational `exact_triangle_crossing_witness` method
+constructs and replays a strict-interior witness for every one of the 1,457
+reported triangle pairs. It proves these crossings for the represented
+binary-float coordinates; it does not certify prior animation/skinning
+arithmetic, unreported pairs, complete volumes or motion. Fresh source skin
+reconstruction also reproduces the stored original vertex arrays exactly.
+Each mesh has one connected vertex component. This replay completes in
+27.282 s at 128,430,080 bytes (29 resource observations), independently
+resource-replayed.
+
+Many introduced records carry Index2/Middle2/Ring/Pinky skin weights. Other
+unchanged records include head, jaw, torso/arm and toe labels. These are
+summed influence descriptions, not reviewed anatomical regions. The four
+unresolved A-to-B containment points lie 4.589–8.298 mm from exactly witnessed
+self-crossings in B's index/middle region. Proximity does not establish the
+cause of the containment disagreement, but whole-body positive volume alone
+is plainly insufficient to treat this edited mesh as a valid collision solid.
+
+The correction is rejected: it reduces partner crossing records while adding
+many self-crossings. No larger edit budget is adopted. The next investigation
+compares existing finger rotations and the unanimated bind mesh before choosing
+explicit hand-posture/axis restrictions or repairing the source geometry.
+Whole-clock self/partner checks, contact, rates, engine and human evidence
+remain required; the selected source assets and release gates are unchanged.
