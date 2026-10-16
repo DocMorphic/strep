@@ -769,6 +769,87 @@ observations replayed. A matched real study rebuilds from original inputs
 and must verify identical vectors/caps/scales/Jacobian against the failed
 model before testing `standard` convergence.
 
+At `c7d513e`, [focused run 38929459863](https://github.com/DocMorphic/strep/actions/runs/38929459863)
+passes all 19 cases on Ubuntu (0.68 seconds) and Windows (1.05 seconds).
+The rebuilt real model matches every saved vector/cap/scale, sparse entry and
+hard-row count from the strict attempt. Its recipe differs only in convergence
+and the comparison-report reference. Standard convergence reports `Solved`
+after twenty iterations; all 667,288 affine hard rows independently pass at
+maximum normalized excess 8.512191e-10. Actual exported authored contacts also
+pass. This shows a termination difference for the same numerical problem;
+it does not relax or prove nonlinear acceptance.
+
+The producer completes in 123.750 seconds at 612,347,904 process-tree bytes,
+with all 124 resource observations replayed. Full independent actual native,
+floor, material and selected-mesh validation and two saved-row summaries now
+complete. The original clip remains selected; this candidate is not approved.
+
+Both restored exports pass every original native row (660,002 total) and all
+three original hand contacts at 29.578263 / 13.420551 / 29.608442 mm. The strict
+material audit verifies every normalized canonical target-face point: all
+3,249 original distance limits pass with no comparison tolerance needed and
+at least 0.485394 micrometre of margin. This clears the previous seven failed
+reference bounds. Three tightened internal search caps miss by at most
+0.014606 micrometre after export, while the original limits retain their margin. Search
+targets and original acceptance limits remain separately reported.
+
+Full mesh checks still reject the clip. Against the pre-restoration candidate,
+four measurements improve, eight regress and 23 stay unchanged. Crossings at
+the first sampled time increase from 617 to 619; the other counts remain
+700 / 754 / 701 / 627. Peak depth increases by about 1.164 micrometres to
+15.180169 mm. Against the earlier feasible minimax anchor, 24 measurements
+still improve, none regress and eleven remain unchanged. Against the original
+source, five regressions remain. Passing the fixed material bounds does not
+certify complete mesh clearance or improvement of the current nearest depths.
+Both actors also retain all 2,017 physical floor failures.
+
+The actual actor/scene guards complete in 151.140 s / 273,645,568 bytes,
+138.093 s / 274,190,336 bytes and 87.141 s / 343,990,272 bytes. All
+151 / 138 / 88 resource observations replay. The first summary completes in
+19.219 s at 246,489,088 bytes with 21 observations replayed. The expanded strict
+reference-versus-search audit completes in 19.218 s at 252,461,056 bytes with
+21 observations replayed. Raw results are retained under
+`reports/high-five-material-restored-{actor-A,actor-B,scene}-v1` and
+`reports/high-five-material-restored-summary-{v1,v2}`.
+
+### Complete-floor placement diagnosis
+
+A read-only diagnosis checks all 2,017 saved floor samples per actor and exact
+point-contact translation algebra with every original target fixed. Floor
+arrays remain source-exact. Physical peak depth is 10.436307 mm for A and
+8.331530 mm for B; floor-gap ranges across time are 3.195332 and 2.970733 mm. These data
+motivate a placement hypothesis; they do not prove an import-origin defect.
+
+Separate minimum actor lifts to the existing 5-mm screen are 5.436307 and
+3.331530 mm. Those unequal shifts would move the hand-to-hand distance to
+30.187724 mm, outside its 30-mm limit. Separate lifts to zero penetration
+also fail that contact, and actor A's world-point contact. No such lift is
+applied.
+
+A shared upward scene offset of 5.936307 mm (the larger screen offset plus
+0.5 mm reserve) predicts passing all saved floor-screen samples while keeping
+original point-contact distances at 29.773872 / 10.320870 / 29.608442 mm,
+all below 30 mm. Predicted remaining physical floor depths are 4.500000 mm
+for A and 2.395223 mm for B. This is within the declared screen; it is not
+zero penetration or proof of planted feet. A shared 10.936307-mm lift would
+clear the plane, but breaks actor A's world contact at 30.837374 mm.
+
+The shared-screen hypothesis is a candidate for an explicitly authored scene
+placement variant. It has not changed the current root/placement contract,
+assets, targets, geometry policy or source bounds. A future variant must
+declare its world-placement permission and independently validate exported
+transforms, original motion data, contacts and complete floor/mesh geometry.
+A common translation preserves partner-relative geometry in exact arithmetic,
+so it cannot solve the approximately 15-mm partner intersections. No general
+automatic grounding rule for other actions is inferred.
+
+The two profile guards complete in 16.172 and 16.187 seconds, with all eighteen
+resource observations replayed for each. The short workers' true peak RSS is
+not resolved by the sampling interval. Results remain under
+`reports/grounding-offset-profile-{v1,v2}`. All quality/release flags remain false;
+full-clock partner geometry, broad actions/rigs/objects, engine and human cleanup
+validation remain required under the same project-wide goal.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
