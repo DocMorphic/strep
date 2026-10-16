@@ -1,6 +1,7 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_kimodo_versioned_checkpoint.py",
     "tests/test_native_rotation_speed_integration.py",
     "tests/test_native_skin_encoding.py",
     "tests/test_native_scene_engine.py",

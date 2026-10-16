@@ -9,6 +9,7 @@ on:
         type: choice
         default: tests/test_native_motion_orientation.py
         options:
+          - tests/test_kimodo_versioned_checkpoint.py
           - tests/test_native_motion_orientation.py
           - tests/test_native_vertical_root.py
           - tests/test_native_affine_interval_seed.py
