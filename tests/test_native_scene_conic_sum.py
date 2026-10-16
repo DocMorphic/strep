@@ -63,3 +63,49 @@ def test_invalid_or_overbudget_population_rejects(fault):
     elif fault=='hard':kwargs['hard_rows']=True
     else:trust=True
     with pytest.raises(ValueError):direction(rows,jac,np.zeros(1),-np.ones(1),np.ones(1),trust,**kwargs)
+
+
+def precision(monkeypatch,points,statuses=None):
+    import native_scene_conic_sum as module
+    from types import SimpleNamespace
+    actual=module.solver_module();calls=[];statuses=statuses or ['Solved']*len(points)
+    def solver(p,q,a,b,cones,settings):
+        index=len(calls);calls.append(dict(p=p.copy(),q=q.copy(),a=a.copy(),b=b.copy(),tol=settings.tol_feas,max_iter=settings.max_iter,time_limit=settings.time_limit))
+        return SimpleNamespace(solve=lambda:SimpleNamespace(status=statuses[index],iterations=3,x=points[index]))
+    fake=SimpleNamespace(DefaultSettings=actual.DefaultSettings,DefaultSolver=solver,NonnegativeConeT=actual.NonnegativeConeT,SecondOrderConeT=actual.SecondOrderConeT,__version__=actual.__version__)
+    monkeypatch.setattr(module,'solver_module',lambda:fake)
+    rows,delta,info=solve([[0,.8,0],[2,0,0]],[1,0],[[[1],[0],[0]],[[-1],[0],[0]]],hard=1)
+    return rows,delta,info,calls
+
+
+def test_precision_retry_measures_full_hard_norm_and_keeps_same_problem(monkeypatch):
+    rows,delta,info,calls=precision(monkeypatch,[[.60001,1.4],[.599999999,1.4]])
+    assert len(calls)==2 and calls[0]['tol']==1e-9 and calls[1]['tol']==1e-11
+    for key in ('p','a'):assert (calls[0][key]!=calls[1][key]).nnz==0
+    for key in ('q','b'):np.testing.assert_array_equal(calls[0][key],calls[1][key])
+    assert all(v['max_iter']==100 and v['time_limit']==30 for v in calls)
+    assert info['affine_hard_rows_pass'] and not info['returned_for_diagnostics_only']
+    assert [v['selected'] for v in info['attempts']]==[False,True]
+    assert info['attempts'][0]['affine_failed_hard_rows']==1 and info['attempts'][0]['delta']==[.60001]
+    assert delta[0]<.6 and info['hard_postcheck_tolerance']==1e-8
+    np.testing.assert_array_equal(rows.caps,[1,0])
+
+
+def test_two_failed_numerical_attempts_remain_diagnostic(monkeypatch):
+    _,delta,info,calls=precision(monkeypatch,[[.60001,1.4],[.60002,1.4]])
+    assert len(calls)==2 and delta[0]>.6 and not info['affine_hard_rows_pass'] and info['returned_for_diagnostics_only']
+    assert all(not v['selected'] and len(v['delta'])==1 for v in info['attempts'])
+
+
+@pytest.mark.parametrize('failure',['status','invalid'])
+def test_failed_precision_retry_cannot_adopt_the_first_failed_point(monkeypatch,failure):
+    points=[[.60001,1.4],[.5,1.5] if failure=='status' else [2.,1.5]]
+    statuses=['Solved','MaxIterations'] if failure=='status' else None
+    _,delta,info,calls=precision(monkeypatch,points,statuses)
+    assert len(calls)==2 and delta[0]==.60001 and info['returned_for_diagnostics_only'] and not info['affine_hard_rows_pass']
+    assert not any(v['selected'] for v in info['attempts'])
+
+
+def test_already_feasible_point_does_not_trigger_another_solve(monkeypatch):
+    _,delta,info,calls=precision(monkeypatch,[[.5,1.5]])
+    assert len(calls)==1 and delta[0]==.5 and info['affine_hard_rows_pass'] and not info['precision_retry_performed']

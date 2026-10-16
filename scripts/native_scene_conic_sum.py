@@ -53,17 +53,35 @@ def direction(system,jacobian,value,lower,upper,trust,*,hard_rows=0,maximum_soft
     settings=solver.DefaultSettings();settings.verbose=False;settings.max_iter=100;settings.time_limit=30.
     settings.tol_gap_abs=settings.tol_gap_rel=settings.tol_feas=1e-9
     if hasattr(settings,'max_threads'):settings.max_threads=1
-    solution=solver.DefaultSolver(quadratic,objective,matrix,b,cones,settings).solve()
-    info=dict(status=str(solution.status),iterations=solution.iterations,solver_version=solver.__version__,
+    info=dict(solver_version=solver.__version__,
         norm_rows=rows,protected_norm_rows=hard_rows,responsive_soft_rows=k,scalar_soft_rows=len(scalar_ids),vector_soft_rows=len(vector_soft),
         fixed_soft_positive_sum=float(np.maximum(residual[hard_rows:][fixed[hard_rows:]],0).sum()),
         omitted_fixed_rows=int(fixed.sum()),omitted_affine_box_passing_rows=int(passing.sum()),
         soft_objective_policy='sum_positive_normalized_excess',variables=width,conic_rows=matrix.shape[0],matrix_nonzeros=matrix.nnz,
         scope='Affine sum-of-positive-excess proposal only. Hard norm caps unchanged; decoded acceptance remains required.')
-    if info['status'] not in ('Solved','AlmostSolved'):return None,info
-    point=np.asarray(solution.x)
-    if point.shape!=(width,) or not np.isfinite(point).all() or np.any(point[:n]<lo-1e-9) or np.any(point[:n]>hi+1e-9):return None,dict(info,invalid_solution=True)
-    delta=np.clip(value+trust*point[:n],lower,upper)-value;after=system.residual(jac,delta)
-    info.update(maximum_control_step=float(abs(delta).max()),affine_hard_rows_pass=bool(np.all(after[:hard_rows]<=1e-8)),
-        affine_positive_soft_sum=float(np.maximum(after[hard_rows:],0).sum()),affine_worst_soft_excess=float(max(0.,after[hard_rows:].max())) if hard_rows<rows else 0.)
-    return delta,info
+    attempts=[];returned=None;returned_phase=None
+    for phase in ('initial','precision-retry'):
+        if phase=='precision-retry':
+            settings.tol_gap_abs=settings.tol_gap_rel=settings.tol_feas=1e-11
+            settings.reduced_tol_gap_abs=settings.reduced_tol_gap_rel=settings.reduced_tol_feas=1e-10
+        solution=solver.DefaultSolver(quadratic,objective,matrix,b,cones,settings).solve()
+        attempt=dict(phase=phase,status=str(solution.status),iterations=solution.iterations,tol_gap_abs=settings.tol_gap_abs,
+            tol_gap_rel=settings.tol_gap_rel,tol_feas=settings.tol_feas,max_iter=settings.max_iter,time_limit=settings.time_limit,selected=False)
+        attempts.append(attempt);info.update(status=attempt['status'],iterations=attempt['iterations'],attempts=attempts,precision_retry_performed=len(attempts)>1)
+        if attempt['status'] not in ('Solved','AlmostSolved'):break
+        point=np.asarray(solution.x)
+        valid=point.shape==(width,) and np.isfinite(point).all()
+        if valid:attempt['normalized_control_point']=point[:n].tolist()
+        if not valid or np.any(point[:n]<lo-1e-9) or np.any(point[:n]>hi+1e-9):
+            attempt['invalid_solution']=True;info['invalid_solution']=True;break
+        delta=np.clip(value+trust*point[:n],lower,upper)-value;after=system.residual(jac,delta)
+        measured=dict(maximum_control_step=float(abs(delta).max()),affine_hard_rows_pass=bool(np.all(after[:hard_rows]<=1e-8)),
+            affine_failed_hard_rows=int((after[:hard_rows]>1e-8).sum()),affine_maximum_hard_excess=float(after[:hard_rows].max()) if hard_rows else 0.,
+            affine_positive_soft_sum=float(np.maximum(after[hard_rows:],0).sum()),affine_worst_soft_excess=float(max(0.,after[hard_rows:].max())) if hard_rows<rows else 0.)
+        attempt.update(measured,delta=delta.tolist());info.update(measured);returned=delta;returned_phase=phase
+        if measured['affine_hard_rows_pass']:
+            attempt['selected']=True;break
+        del after
+    info.update(returned_phase=returned_phase,returned_for_diagnostics_only=returned is not None and not info['affine_hard_rows_pass'],
+        total_iterations=sum(v['iterations'] for v in attempts),hard_postcheck_tolerance=1e-8)
+    return returned,info

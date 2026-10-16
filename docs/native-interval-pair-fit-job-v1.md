@@ -245,6 +245,30 @@ from aggregate loss is justified. Broader motion/rig/object, grounding,
 complete-clock geometry, engine, semantic/held-out and human cleanup evidence
 remain required; the single entire-project goal stays active.
 
+### Selective aggregate precision retry
+
+The aggregate solver now measures the complete clipped proposal before
+returning it. A finite, in-box `Solved`/`AlmostSolved` point that fails the
+unchanged 1e-8 hard-row postcheck triggers one cold retry with gap/feasibility
+tolerances tightened from 1e-9 to 1e-11. Each attempt retains the same matrix,
+objective, caps, boxes, 100-iteration limit and 30-second solver time limit.
+Already feasible proposals do not trigger another solve.
+
+Both attempts retain their normalized controls, clipped deltas, settings and
+full-row measured failure summaries. If the retry also fails, the last finite
+failed direction is returned explicitly for diagnostics and remains ineligible
+for export. A failed-status or invalid retry cannot adopt the preceding failed
+point. Actual decoded acceptance is still separate.
+
+All 17 aggregate source tests pass locally in 2.04 seconds, including the real
+solver cases and injected retry outcomes. New regressions verify identical
+conic matrices/objectives across attempts, unchanged caps and postcheck,
+retained rejected controls, rejection after two failures or an invalid/status
+failure, and no extra solve for an already feasible point. The 512-MiB guard
+completes in 19.218 seconds, peaks at 111,730,688 process-tree bytes and
+independently replays 21 resource observations. This is source validation,
+not proof that the retained large aggregate problem is repaired.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
