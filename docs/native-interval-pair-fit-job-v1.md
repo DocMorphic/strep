@@ -355,6 +355,40 @@ explicit contact geometry and independent full decoded acceptance retained.
 Do not continue aggregate-weight tuning as if this loss were an animation
 rating. Grounding and the broader release requirements remain unresolved.
 
+### Current-state assembly with explicit depth limits
+
+`scripts/native_depth_guarded_recourse.py` assembles current observed native,
+contact, floor and material rows while checking native/contact caps and scales
+against explicit original reference arrays. The current anchor must already
+pass those original conditions. It keeps duplicate contact objectives, and
+position search reserves never affect relative-speed rows. Native search
+reserves are limited by the declared normalized headroom, one percent of the
+original cap and half the current original slack; fixed rows keep their caps.
+Position reserves likewise consume at most half the current authored slack.
+
+Original acceptance caps are not reset to the current pose. Scalar floor and
+surface lifts receive new positivity certificates over the current original
+control/trust box. Explicit depth-row indices and metre limits add local hard
+material bounds; the caller must supply limits that contain the anchor. Every
+surface row remains in the soft objective, including protected witnesses.
+The complete matrix is rejected if oversized, without dropping conditions.
+
+This separates current observations from derivative refresh: cached native,
+contact and floor derivatives remain approximations, while material witnesses
+and analytic surface derivatives can be rebuilt at the actual current pose.
+Fixed material limits do not certify the nearest surface or newly penetrating
+vertices. Separate full decoded native/contact/floor/mesh acceptance is required.
+
+All 42 affected checks pass locally in 3.01 seconds, including 13 new assembly
+cases plus the 29 aggregate/segment cases. Tests verify reference-bound rejection,
+feasible limited reserves, contact units, complete hard depth rows, nullable
+contacts/empty floors, invalid anchors and complete-budget rejection. An actual
+small conic comparison changes only the local depth guard and confirms that
+it bounds the direction that the unguarded aggregate objective would deepen.
+The 512-MiB guard completes in 20.219 seconds at 112,513,024 bytes; all 22
+resource observations replay. Inventories now declare 533 Python/45 Node suites
+and a contact/rig subset of 97/five. These are source checks, not clip approval.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
