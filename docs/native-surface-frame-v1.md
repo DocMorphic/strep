@@ -182,3 +182,60 @@ A stronger pose experiment adds a 5-mm direct material-origin gap, 5-degree
 normal opposition and 15-degree tangent agreement. It preserves the expanded
 condition's edit bounds and all original contact/geometry limits. Its results
 are separate from the individually targeted pose above.
+
+The 12 pair checks also pass on Ubuntu (0.36 s) and Windows (0.72 s) in
+[hosted run 38970899597](https://github.com/DocMorphic/strep/actions/runs/38970899597).
+Current inventories contain 547 Python/45 Node suites, contact subset 111/five;
+these are inventory counts, not full-inventory passes.
+
+## Stricter pair conditions remain unresolved
+
+The direct-pair fixed-facing condition still fails: 507 surface records and
+4.068930-mm maximum depth at 2 s. It completes in 145.594 s at 258,252,800
+sampled bytes; 145 resource observations replay. A sub-5-mm vertex depth does
+not waive the separate zero-crossing condition.
+
+A new authoring condition derives a common plane normal from the difference
+of the two original posed material normals, and a common tangent by projecting
+their summed tangents into that plane. It does not assert a fixed world Z/Y
+orientation, which the user's high-five prompt did not specify. The same gap,
+angular, contact, edit and geometry thresholds remain in force. This condition
+also fails: 280 surface records and 3.898044-mm depth. The run completes in
+144.187 s at 259,919,872 sampled bytes, with 144 observations replayed.
+
+Source reconstruction and all stored inequalities replay exactly in 32.547 s
+at 204,472,320 bytes (34 observations). Six directional derivative checks stay
+below 1.052289e-9. The candidate's material-origin gap is 5.758464 mm, opposing
+normal error 5.759106 degrees, and tangent agreement error 7.061906 degrees;
+the first two miss their 5-mm/5-degree caps. Local edit balls, 60-mm joint
+displacement and the three legacy point contacts pass, but 824 other rows fail.
+No global infeasibility is proven by this local search.
+
+Finally, a separately authored landmark condition replaces the legacy index
+vertex with the geometry-derived candidate palm vertex in all three contact
+rows. It retains the world meeting points, timing, tolerances, placements,
+source clips and geometry policy; the old landmark condition is measured
+separately and never relabelled as passing. The new point contacts are restored
+as goals rather than assumed feasible at the original pose. Anatomical review
+of this candidate patch remains pending.
+
+This condition still fails: 177 surface records and 3.885398-mm maximum depth.
+Its direct palm-origin gap is 5.712439 mm, opposing-normal error 5.712972 degrees
+and tangent agreement error 17.152402 degrees, all above the respective
+5-mm/5-degree/15-degree caps. The original landmark diagnostic also fails,
+including a 41.238888-mm inter-landmark error against its unchanged 30-mm cap.
+Changing contact intent is explicit authoring, not a pass of the old benchmark.
+
+That run completes in 138.547 s at 281,247,744 sampled bytes (138 observations),
+with replay in 32.594 s at 203,907,072 bytes (34 observations). All stored worlds,
+vertices and inequalities reproduce exactly; six directional derivative checks
+stay below 7.347316e-10. The worst hand-halfspace vertex in each actor is
+dominated by `RightHandRing4`, which is absent from the 16-joint edit set.
+This is a reason to test fuller hand articulation, not proof that it alone
+will solve the interaction.
+
+The original clips remain selected. No animation, native motion-rate result,
+engine playback or human cleanup evidence is produced by these pose pilots.
+The next implementation should expose all relevant weighted finger joints
+within measured memory bounds, retain the original affine evaluator and source
+epoch, and evaluate complete decoded curves before any asset promotion.
