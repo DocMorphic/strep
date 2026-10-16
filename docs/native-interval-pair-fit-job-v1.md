@@ -709,6 +709,42 @@ and `reports/high-five-fresh-native-small-step-v1`. No inference, training,
 engine playback, held-out action coverage, animator rating or cleanup-time
 approval is inferred from this single selected-time scene comparison.
 
+### Restoration from a material-infeasible export
+
+`scripts/native_material_bound_restore.py` adds an explicit restoration path
+for the seven nonlinear material-bound violations. Existing feasible-anchor
+insertion behavior is unchanged. The new assembly requires a passing original
+base prefix but allows material vectors outside their original limits. It
+retains every base vector/cap/scale and all material rows. Only material search
+caps tighten by the declared inward reserve (default 0.5 micrometre); original
+reference limits remain unchanged and complete matrices reject on budget
+exhaustion.
+
+The restoration solver minimizes the normalized control-step norm under the
+complete hard prefix. Soft rows remain saved and measured, but their animation
+guidance objective is not optimized during this correction. Every active
+three-vector norm remains a cone; fixed failed rows reject. A row can be
+omitted from the solver only with the complete affine-box bound and arithmetic
+reserve, and the returned point is checked against every hard row afterward.
+Both an accepted solver status and the full affine postcheck are required.
+Nonfinite residuals cannot be serialized as a passing result. No source caps
+are enlarged, and no nonlinear/export/mesh acceptance is inferred.
+
+All 16 new checks pass in 1.97 seconds, including actual infeasible-start and
+curved-contact solves, source/soft-row retention, budget rejection, fixed
+conflicts, status/postcheck disagreement and nonfinite norm rejection. The
+final guard takes 19.266 seconds at 122,085,376 bytes; all 21 observations
+replay. Before the nonfinite-result refinement, all 16 existing material-vector
+checks also pass. Inventories now declare 536 Python/45 Node suites and a
+contact/rig subset of 100/five, not full-inventory approval.
+
+The real restoration will keep the previous material faces and reference
+limits, refresh material/contact derivatives at the current decoded candidate,
+and explicitly reuse native/floor derivatives as approximations. Its declared
+trust is 0.0005 with a 0.5-micrometre inward material search reserve. Original
+native/contact/floor acceptance and the actual full-vector reference limits
+must still pass after export.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
