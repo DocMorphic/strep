@@ -421,12 +421,78 @@ the authored contact limits. Raw solver statuses remain `AlmostSolved` and
 study completes in 256.094 seconds at an 841,142,272-byte process-tree peak,
 with all 253 resource observations independently replayed.
 
-Full actual validation is running serially for the two variants. The first
-free-variant actor A check finds five failures among 330,001 original native
-conditions. That candidate cannot qualify, despite its affine/contact passes.
-Remaining actor/floor/direct-mesh checks and the guarded variant are pending.
-No geometry or animation-quality success is established; cached derivatives
-remain local approximations and all original acceptance conditions still apply.
+All six actual validation stages now complete, followed by independent replay
+of the complete affine proposals, original native caps/scales, floor arrays,
+contacts, geometry comparisons and material witnesses. Neither candidate
+qualifies. The original remains selected.
+
+| Decoded measurement | Free aggregate | Scalar depth guards |
+| --- | ---: | ---: |
+| Native failures / 660,002 rows | 6 (A: 5, B: 1) | 0 |
+| Contact distances, mm (30-mm limits) | 29.412465 / 14.497135 / 29.760901 | 29.160359 / 12.713532 / 29.511312 |
+| Largest sampled partner depth, mm | 15.581546 | 15.216402 |
+| Mesh measurements improved / regressed / unchanged versus anchor | 17 / 8 / 10 | 8 / 5 / 22 |
+| Physical floor failures per actor / 2,017 times | 2,017 | 2,017 |
+
+The free proposal fails one position-acceleration and five world-angular-
+acceleration conditions. Cached native derivatives did not certify decoded
+acceptance. The guarded proposal passes every original native condition, but
+its worst depth decreases only about 11 nanometres from the anchor's
+15.216414 mm. That is not meaningful physical progress. Crossings at the last
+sample increase from 627 to 631; both variants retain five mesh regressions
+against the original source. Floor arrays are source-exact, preserving the
+original physical failures rather than fixing grounding. These are five-time
+partner geometry measurements, not full-clock or continuous clearance.
+
+The guarded direction retains only 0.0191148198 of the proposed step after
+34 bounded-segment probes. Its raw `NumericalError` status stays visible;
+the segment's complete affine check is separate. All six validation resource
+traces replay. Per-stage elapsed times and sampled process-tree peaks are
+free A 161.500 s / 274,452,480 bytes, free B 148.156 s / 272,723,968 bytes,
+free scene 87.656 s / 365,936,640 bytes, guarded A 174.485 s / 276,340,736 bytes,
+guarded B 146.984 s / 274,227,200 bytes and guarded scene 93.016 s /
+319,565,824 bytes. The passive summary completes in 23.359 s at 340,774,912
+bytes, with all 25 observations replayed. Raw results remain under
+`reports/high-five-current-depth-{free,depth}-actor-{A,B}-v1`, the corresponding
+scene folders and `reports/high-five-current-depth-summary-v1`.
+
+### Full-vector material guards
+
+The passive replay checks all 3,249 penetrating-vertex witnesses against
+canonical target triangles and convex weights. At the anchor, material vector
+norms and negative projected gaps agree within 4.568e-16 m. After the free
+proposal, 46 projected scalar bounds fail while 51 material-distance bounds
+fail: five projected passes miss a full-distance failure. A distance-bound
+failure alone does not prove penetration; the full mesh evaluator remains
+authoritative. In the guarded clip both checks fail four witnesses, with
+maximum material deficit about 31 nanometres, comparable to the approximately
+24-nanometre smooth/decoded gap difference. No substantial quality improvement
+is established by those differences.
+
+`scripts/native_partner_material_vectors.py` now provides relative 3D material
+vectors and their exact-key sparse Jacobians. It validates the complete
+declared source-vertex/target-face population, canonical face order, distinct
+actors and convex weights. Accepted roundoff in weight sums is normalized on
+a copy. Three Cartesian evaluations reuse the unchanged scalar derivative
+implementation, retaining original-source vertex agreement checks, current
+absolute controls, both actor placements and all three vector components.
+
+`insert_guards` adds full vector-norm conditions after the original hard
+prefix, keeping every original vector, cap, scale and soft objective in order.
+It requires a feasible anchor and rejects an oversized complete matrix without
+truncation. In exact arithmetic the distance to a convex target-face material
+point bounds the source vertex's nearest-surface distance from above. A fixed
+normal projection lacks that guarantee. The bound covers only declared
+vertices; nonlinear motion, serialization, floating-point error, newly
+penetrating vertices, triangle intersections and complete mesh acceptance still
+require independent evaluation. This helper is not yet evidence that a new
+production candidate passes.
+
+All 16 new source cases pass in 14.20 seconds. The final guarded run takes
+31.422 seconds at 132,448,256 sampled process-tree bytes; all 33 observations
+replay. Before the weight-normalization refinement, all 18 existing scalar
+derivative checks also pass. Inventories declare 534 Python/45 Node suites
+and a contact/rig subset of 98/five; these counts are not full-suite approval.
 
 Run through an owned resource-guarded worker in the pinned CPU environment:
 

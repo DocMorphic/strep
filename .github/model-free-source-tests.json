@@ -506,6 +506,7 @@
     "tests/test_native_scene_conic_sum.py",
     "tests/test_native_affine_sum_segment.py",
     "tests/test_native_depth_guarded_recourse.py",
+    "tests/test_native_partner_material_vectors.py",
     "tests/test_native_pair_surface_guidance.py",
     "tests/test_native_material_depth_bounds.py",
     "tests/test_native_pair_material_recourse.py",
