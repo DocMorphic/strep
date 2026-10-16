@@ -997,6 +997,84 @@ combined retry. The original unapproved scene, 15.180169-mm sampled partner
 penetration and all project release gaps remain unchanged. No other application
 is stopped, and neither the process cap nor the scene clock is reduced.
 
+The corrected source package now completes. It preserves the selected GLB and
+resource bytes, keeps the original geometry policy and its rejected-scene scope,
+and records the corrected raw-skin/outer-placement calculation. Its guard takes
+593.281 seconds including 551.219 seconds of admission waiting, peaks at
+686,968,832 sampled process-tree bytes, and replays all 588 observations.
+
+The first mode-file runtime attempt fails before animation evaluation: Godot
+cannot infer `mode_name` from the untyped loop variable. Its original script,
+engine log and failed output remain preserved; all 38 resource observations
+replay. Source `d0f3c0a` explicitly types the filename/path strings. The same 13
+checks pass locally in 7.01 seconds and in [focused run 38939502199](https://github.com/DocMorphic/strep/actions/runs/38939502199)
+on Ubuntu in 2.53 seconds and Windows in 3.62 seconds. This source-test result is
+separate from the subsequent actual engine evidence.
+
+The fresh full scene runtime **passes** in actual headless Godot 4.7.2. Both
+actors share every one of the original 2,017 absolute sample times in embedded,
+extracted and mixed root modes. Each actor retains all 77 bones, 18,056 vertices
+and 36,108 triangles. The unchanged comparator checks whole skeletons, original
+native resource keys, raw CPU skin followed by observed mesh-world transforms,
+preview/restart behavior and event-time actor states. No source clock, mesh
+population or tolerance is reduced.
+
+| Runtime mode | A maximum matrix-element error | B maximum matrix-element error | Maximum affine skin difference from embedded |
+| --- | ---: | ---: | ---: |
+| Embedded | 1.083135e-6 | 1.051259e-6 | 0 |
+| Extracted | 1.196635e-6 | 1.056586e-6 | 3.134126 micrometres |
+| Mixed: A extracted, B embedded | 1.196635e-6 | 1.051259e-6 | 1.468609 micrometres |
+
+The existing matrix-element tolerance is 1e-4, and the raw-skin position
+tolerance is 1e-4 m. Matrix-element errors mix basis elements and translation
+components and are not all distances. All preview and callback pose differences
+are zero. Each mode checks three confirmed technical markers over four traversal
+scenarios. All eleven malformed configurations per mode, invalid clocks,
+reentrant updates and late participant changes reject without partial mutation.
+The exported bootstrap delivers its initial event after the parent listener is
+ready and advances through four actual engine frames. These three markers are
+technical audit timing, not certified gameplay meaning or physical hand contact.
+
+The full runtime guard completes in 945.125 seconds at 1,452,212,224 sampled
+process-tree bytes, below the unchanged 2-GiB cap. All 926 observations replay.
+Its separately saved mode files contain 93,590,388 / 95,645,381 / 94,619,362 bytes.
+Complete Float64 result arrays round-trip exactly; all original game package
+entries and source resources remain byte-preserved. The resulting runtime ZIP
+is `reports/high-five-shared-placement-scene-runtime-v3/runtime/runtime-assets.zip`
+(SHA-256 `8056f4ecb2f619cab78f2fb5781405cece43dff9251d779704f8878606775ed0`).
+It configures A extracted and B embedded, with the existing finite controller.
+
+A separate passive audit then reconstructs every canonical vertex at the 2-s
+contact time from each mode's **observed skeleton and mesh-world transforms**.
+It verifies the source-to-imported vertex correspondence, complete clock,
+portable scene/policy equivalence, raw file hashes and producer archives before
+measuring the unchanged three contacts. Raw skin weights remain unnormalized;
+outer mesh translation is applied after local skin.
+
+| Runtime mode | A to world target | B to world target | Hand to hand |
+| --- | ---: | ---: | ---: |
+| Embedded | 29.773939 mm | 10.321052 mm | 29.608688 mm |
+| Extracted | 29.773921 mm | 10.321053 mm | 29.608658 mm |
+| Mixed | 29.773921 mm | 10.321052 mm | 29.608660 mm |
+
+All nine measurements pass the original 30-mm limits. The passive guard takes
+45.922 seconds at 705,175,552 sampled bytes; all 47 observations replay. Its
+canonical world vertices and contact observations remain under
+`reports/high-five-shared-placement-runtime-contact-summary-v1`. Compact final
+bindings and runtime metrics are in
+`reports/high-five-shared-placement-runtime-final-validation-v1`.
+
+This completes finite runtime/export validation for this separately amended
+development scene. It does not approve its motion. No full-clock floor or
+partner geometry is requeried by this audit; the earlier native floor history
+is not replaced. The approximately 15.180169-mm sampled partner penetration,
+larger scene corrections, continuous contact/geometry, physics, rendered GPU
+evidence, held-out actions/rigs/objects and human cleanup/review requirements
+remain unresolved. The runtime package preserves the source scene's failed
+geometry status and leaves real-time, physics, quality and release approval
+false. All fourteen capabilities, four unset gates and nineteen release gaps
+remain unchanged; the same full-project goal stays active.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
