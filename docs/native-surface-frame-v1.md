@@ -7,6 +7,12 @@ canonical hand-region and posture tools remain available. The new
 `scripts/native_surface_frame.py` connects actual skinned material geometry and
 its native affine pose derivatives to explicit norm constraints.
 
+Containment qualification: legacy depth values below are signed-distance
+outputs, not independently certified volumetric penetration. The newest
+30-degree finger pose exposes a local-sign/ray/winding disagreement. See
+[native containment cross-check](native-containment-crosscheck-v1.md). No
+rejected pose is promoted by this finding.
+
 ## Geometry and authored intent
 
 `measure(points, derivatives, faces, selection)` uses every vertex of an
@@ -314,3 +320,78 @@ it does not change the original source epoch, hand controls, meeting center,
 physical pair-gap/direction thresholds, joint displacement or collision policy.
 Complete coupled derivatives are checked numerically before the actual fit.
 No passing result is assumed, and no old condition is relabelled as passing.
+
+All seventeen meeting-orientation source checks also pass in hosted Ubuntu
+and Windows jobs, run 38974184261, at source commit efbb83a. The actual
+135-control coupled pilot checks three directional differences before fitting;
+maximum absolute normalized-constraint derivative error is 1.177642e-6.
+This sampled derivative check does not certify solver feasibility or quality.
+
+
+The 10-degree shared-orientation study also fails: 649 inequalities, 228
+surface records and 3.055905-mm maximum depth. Direct palm gap is 5.602661 mm,
+normal opposition error 5.603108 degrees and tangent agreement error 16.820356
+degrees; the selected shared-frame rotation is 9.786726 degrees. It completes
+in 201.640 s at 335,929,344 sampled bytes (199 observations), independently
+resource-replayed. All saved worlds, vertices and inequalities reproduce
+exactly in 30.375 s at 216,965,120 bytes (32 observations); six directional
+frame derivative checks stay below 1.243444e-9. The extra orientation freedom
+alone does not establish feasibility, and no global impossibility is proven.
+
+A separate study changes the explicitly permitted maximum world-joint edit
+from 60 to 80 mm, retaining the fixed source-derived plane, original source
+reference, local angular caps, material contact limits and collision policy.
+It warm-starts from the rejected 60-mm pose; a verified scaling ray keeps the
+initial protected rows feasible without rebasing any bound to that pose.
+The original 60-mm condition remains rejected. This is a permission-budget
+sensitivity study, not a relaxation of physical contact/collision acceptance.
+
+
+The 80-mm displacement condition fails 674 inequalities. It reduces the number
+of crossing records to 120 but worsens maximum depth to 10.593239 mm, compared
+with 3.008139 mm under the 60-mm condition. A smaller crossing count alone is
+not success. Direct gap/opposition/tangent errors remain 5.601224 mm,
+5.601714 degrees and 16.816048 degrees. It completes in 202.172 s at
+337,207,296 sampled bytes (200 observations), resource-replayed. Full saved
+world/vertex/inequality reconstruction is exact in 33.500 s at 230,240,256
+bytes (35 observations); six directional frame derivatives stay below
+5.662094e-10. Increased displacement permission alone does not solve this
+local search and the candidate remains rejected.
+
+Many finger joints reach their 20-degree edit balls. A second isolated
+permission study retains the original 60-mm displacement, fixed common plane
+and physical thresholds while allowing weighted finger joints 30 degrees.
+Warm initialization is converted by the old/new angular cap ratio to preserve
+actual rotations, and protected bounds still reference the original source.
+This does not pass or replace the rejected 20-degree condition. Both studies
+are local sensitivities, not anatomical range-of-motion qualification.
+
+
+The 30-degree finger condition fails 391 inequalities. Its direct palm gap is
+5.304147 mm, normal opposition error 5.304362 degrees and tangent agreement
+error 15.918106 degrees. Twelve surface records remain. The legacy evaluator
+reports a 7.803029-mm maximum signed depth, now disputed by ray/winding
+cross-checks at the deepest witness; it must not be treated as established
+volumetric penetration. The run completes in 173.031 s at 333,373,440 sampled
+bytes (172 observations), independently resource-replayed. Full saved worlds,
+vertices and inequalities reproduce exactly in 29.344 s at 230,158,336 bytes
+(31 observations); six directional frame derivatives stay below 8.762559e-10.
+
+| Condition | Failed pose rows | Surface records | Legacy maximum signed depth |
+| --- | ---: | ---: | ---: |
+| 22 joints, 20-degree fingers, 60-mm displacement | 647 | 240 | 3.008139 mm |
+| Additional 10-degree shared orientation | 649 | 228 | 3.055905 mm |
+| 20-degree fingers, 80-mm displacement | 674 | 120 | 10.593239 mm |
+| 30-degree fingers, 60-mm displacement | 391 | 12 | 7.803029 mm, disputed witness |
+
+All four conditions fail; a lower row/crossing count is not physical acceptance.
+No complete motion, old permission contract, engine playback or human quality
+is approved. The local searches do not establish global infeasibility.
+
+An actual-mesh diagnostic renders the original, 20-degree and 30-degree poses
+from three orthographic views using the complete selected hand-region
+triangles. Its local PNG is `reports/high-five-hand-diagnostic-v1/hand-comparison.png`.
+The rendering guard completes in 21.234 s at 148,234,240 bytes (23 observations),
+resource-replayed. This is static native CPU geometry, not engine output,
+anatomical annotation, independent human review or a collision certificate.
+The selected source-palm patch and resulting finger postures still need review.
