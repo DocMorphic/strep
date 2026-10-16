@@ -104,8 +104,17 @@ def test_failed_precision_retry_cannot_adopt_the_first_failed_point(monkeypatch,
     _,delta,info,calls=precision(monkeypatch,points,statuses)
     assert len(calls)==2 and delta[0]==.60001 and info['returned_for_diagnostics_only'] and not info['affine_hard_rows_pass']
     assert not any(v['selected'] for v in info['attempts'])
+    if failure=='status':
+        assert info['attempts'][1]['delta']==[.5] and info['attempts'][1]['affine_hard_rows_pass']
 
 
 def test_already_feasible_point_does_not_trigger_another_solve(monkeypatch):
     _,delta,info,calls=precision(monkeypatch,[[.5,1.5]])
     assert len(calls)==1 and delta[0]==.5 and info['affine_hard_rows_pass'] and not info['precision_retry_performed']
+
+
+def test_first_failed_status_retains_finite_point_without_returning_it(monkeypatch):
+    _,delta,info,calls=precision(monkeypatch,[[.5,1.5]],['NumericalError'])
+    assert delta is None and len(calls)==1 and info['returned_phase'] is None
+    assert info['attempts'][0]['delta']==[.5] and info['attempts'][0]['affine_hard_rows_pass']
+    assert not info['attempts'][0]['selected']

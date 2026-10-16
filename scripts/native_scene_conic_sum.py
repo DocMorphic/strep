@@ -68,7 +68,6 @@ def direction(system,jacobian,value,lower,upper,trust,*,hard_rows=0,maximum_soft
         attempt=dict(phase=phase,status=str(solution.status),iterations=solution.iterations,tol_gap_abs=settings.tol_gap_abs,
             tol_gap_rel=settings.tol_gap_rel,tol_feas=settings.tol_feas,max_iter=settings.max_iter,time_limit=settings.time_limit,selected=False)
         attempts.append(attempt);info.update(status=attempt['status'],iterations=attempt['iterations'],attempts=attempts,precision_retry_performed=len(attempts)>1)
-        if attempt['status'] not in ('Solved','AlmostSolved'):break
         point=np.asarray(solution.x)
         valid=point.shape==(width,) and np.isfinite(point).all()
         if valid:attempt['normalized_control_point']=point[:n].tolist()
@@ -78,7 +77,9 @@ def direction(system,jacobian,value,lower,upper,trust,*,hard_rows=0,maximum_soft
         measured=dict(maximum_control_step=float(abs(delta).max()),affine_hard_rows_pass=bool(np.all(after[:hard_rows]<=1e-8)),
             affine_failed_hard_rows=int((after[:hard_rows]>1e-8).sum()),affine_maximum_hard_excess=float(after[:hard_rows].max()) if hard_rows else 0.,
             affine_positive_soft_sum=float(np.maximum(after[hard_rows:],0).sum()),affine_worst_soft_excess=float(max(0.,after[hard_rows:].max())) if hard_rows<rows else 0.)
-        attempt.update(measured,delta=delta.tolist());info.update(measured);returned=delta;returned_phase=phase
+        attempt.update(measured,delta=delta.tolist())
+        if attempt['status'] not in ('Solved','AlmostSolved'):break
+        info.update(measured);returned=delta;returned_phase=phase
         if measured['affine_hard_rows_pass']:
             attempt['selected']=True;break
         del after

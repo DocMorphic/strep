@@ -254,7 +254,7 @@ tolerances tightened from 1e-9 to 1e-11. Each attempt retains the same matrix,
 objective, caps, boxes, 100-iteration limit and 30-second solver time limit.
 Already feasible proposals do not trigger another solve.
 
-Both attempts retain their normalized controls, clipped deltas, settings and
+Finite in-box attempts, including failed solver statuses, retain normalized controls, clipped deltas, settings and
 full-row measured failure summaries. If the retry also fails, the last finite
 failed direction is returned explicitly for diagnostics and remains ineligible
 for export. A failed-status or invalid retry cannot adopt the preceding failed
@@ -268,6 +268,30 @@ failure, and no extra solve for an already feasible point. The 512-MiB guard
 completes in 19.218 seconds, peaks at 111,730,688 process-tree bytes and
 independently replays 21 resource observations. This is source validation,
 not proof that the retained large aggregate problem is repaired.
+
+The first large precision run reproduces the same five failures in its initial
+31-iteration solve. The tighter solve stops with `NumericalError` at iteration
+33. No clip is exported, and the initial failed direction remains diagnostic.
+The guard completes in 57.703 seconds, peaks at 613,462,016 bytes and replays
+59 observations. Failed-status finite points are now captured and measured
+without adopting them; a separate regression verifies that a failed status
+cannot return a point even when its measured hard rows pass.
+
+`scripts/native_affine_sum_segment.py` provides a separate deterministic
+restoration method. Given a hard-feasible anchor and a proposed point inside
+the original delta box, it bisects their affine segment and checks the complete
+hard prefix at every probe using the existing 1e-8 comparison. Caps and scales
+are unchanged. It returns a changed point only when its complete positive soft
+excess sum improves beyond an explicit arithmetic reserve. It does not claim a
+global or segment-loss optimum, decoded feasibility or mesh clearance.
+
+All 29 affected checks pass locally in 2.61 seconds: 18 aggregate tests and 11
+segment tests. The segment cases cover full three-dimensional norms, multiple
+hard rows, invalid anchors, original boxes, incomplete/oversized matrices and
+refusal to label a worse feasible target as progress. The guard completes in
+19.250 seconds at a 101,957,632-byte peak; all 21 observations replay. Inventories
+now declare 532 Python/45 Node suites and a contact/rig subset of 96/five.
+These checks do not confer animation or release approval.
 
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
