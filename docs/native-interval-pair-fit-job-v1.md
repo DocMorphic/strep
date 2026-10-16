@@ -169,6 +169,73 @@ left to separate validators. Both unsuccessful proposals and exports remain
 unselected; no quality or release approval is granted. This permits an objective
 comparison with the same matrix and margin without repeating finite differences.
 
+The public `native_runtime_surface_capture.py` consumer now seals this mode-file
+producer explicitly, without relabeling it as the older scene-import capture.
+Its `stage(runtime, result_sha256, fresh_output, mode=None)` entry point requires
+an externally pinned completed result. Automatic mode selection requires an
+actually captured root-mode mask matching the export. An explicit different
+captured mode remains diagnostic and reports that mismatch. Source assets,
+executed scripts, producer archives, raw captures, complete clocks and every
+captured joint/skeleton/mesh/object matrix remain bound. Completed audits with
+failed numerical conditions preserve those failures; source-scene acceptance is
+copied separately, never inferred from runtime success.
+
+`load(capture, receipt_sha256)` checks the caller's receipt pin, immutable source
+snapshots, methods, complete typed arrays and source triangles. It exposes exact
+captured-time `actor_vertices`, `actor_points` and `object_poses` queries, with no
+interpolation, raw-weight normalization or motion edits. Each mesh's observed
+world transform is applied after local skinning, including its translation.
+Object queries retain raw matrices but explicitly report projection to proper
+rigid bases within the existing object-pose tolerance; they do not certify
+general affine object surfaces. Arrays are read-only and metadata is copied on
+access. The capture remains reference-based, rather than a portable asset bundle.
+
+The first full-file attempt stopped at the unchanged 600-MiB free-RAM reserve
+before sealing or querying geometry (690,073,600 sampled bytes; 42 observations
+replayed). Its output remains under
+`reports/high-five-runtime-surface-capture-v1`. The companion
+`native_runtime_mode_stream.py` then enabled incremental parsing of every raw
+frame, with strict duplicate/nonfinite/malformed-value rejection and explicit
+complete-value budgets. No sample, participant or array was dropped. The retry
+kept the same 1-GiB worker cap and 600-MiB reserve.
+
+The streaming retry completed in 84.875 seconds at 472,743,936 sampled bytes;
+all 85 resource observations replay. Its externally pinned surface receipt is
+`0f0bd10afb84e859b3e1f3cee010cde38d3b1b763aabb92f61251e07114c96a9`.
+All 19 typed arrays match the previously floor-tested compact representation
+byte-for-byte. Five full-surface raw-frame references per actor also reconstruct
+with zero coordinate difference. This reuses the floor evidence through exact
+data equivalence; it does not claim another engine or floor run.
+
+The unchanged direct geometry evaluator queried original index 1016 (2 seconds)
+using the sealed actual mixed-mode surfaces. It finds 754 proper crossing
+triangle pairs. A-inside-B maximum depth is 9.123517 mm, with 44 vertices deeper
+than 5 mm; B-inside-A is 10.549988 mm, with 76 such vertices. This one-time slice
+fails and cannot approve the full clock. Of the 602 overlapping/touching-bound
+times, 601 still need detailed queries. The earlier five-time native maximum
+remains separate. Source, exact-array equivalence, observations and failed
+geometry remain under `reports/high-five-runtime-surface-capture-v2`.
+
+The initial streaming source check passes 38 tests in 129.74 seconds, with a
+127,938,560-byte peak and 183 independently replayed resource observations.
+Coverage includes full-clock reconstruction, fractional raw weights, additional
+actors/primitives, artifact/source tampering, mode selection, object projection,
+immutable query data and strict incremental framing. Engine observations in
+these tests are explicit test doubles; actual Godot evidence is the separate
+run above. The inventory includes 540 Python modules and 45 Node suites; the
+contact/rig subset includes 104 Python modules and five Node suites. Inventory
+membership and focused checks do not approve the full suite or animation.
+
+An additional test confirms distinct mesh-world placements are reconstructed
+independently while an intentional object-pose defect retains the runtime's
+failed numerical status. The first test version incorrectly expected a valid
+mesh placement itself to fail the comparator; that assertion failed and is
+retained in `reports/native-runtime-surface-capture-tests-v4`. The corrected
+fixture introduces an actual object-pose defect. It passes in 13.54 seconds;
+the guard completes in 89.641 seconds including admission, at 116,916,224 sampled
+bytes, with all 90 observations independently replayed. Both final test modules
+now contain 39 cases in total; this does not describe a fresh combined local run.
+
 Run through an owned resource-guarded worker in the pinned CPU environment:
 
 ```text
