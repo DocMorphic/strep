@@ -1,6 +1,9 @@
+from pathlib import Path
+import sys
 import numpy as np
 import pytest
 from scipy import sparse
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 import native_conic_hinge_step as module
 
 
