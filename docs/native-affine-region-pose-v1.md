@@ -2535,3 +2535,99 @@ potential; new-domain count remains 6,114 potential. Thus the near-key error
 was confined to the failed chain-study driver. Guard: 28.390 s /
 126,017,536 bytes / 30 observations. This is dependency replay, not proof of
 feasible rate correction or a motion-quality score.
+
+## Bounded source-rate derivatives and full-influence point maps
+
+`native_motion_rate_stencil.motion_rate_stencil` computes one declared
+linear-speed, linear-acceleration, angular-speed or angular-acceleration
+population on its complete two/three-frame stencil. Inputs include every
+supplied joint, original per-joint caps, sample interval, original tolerance
+and optionally every declared world-derivative column. Values reuse the
+existing `sampled_motion_caps.measures` kernel and retain the original positive
+violation sign, tolerance subtraction and `max(cap, .001)` normalization.
+No source cap, clock or joint set is inferred or rebased.
+
+Positional derivatives are analytic. Angular derivatives use central
+differences of the existing matrix-to-rotation decoder, in batches of at most
+16 columns. This retains its projection behavior for near-orthogonal source
+matrices. Perturbed branch ambiguity or branch crossing rejects the derivative
+request. A zero vector norm uses the symmetric zero subgradient; this is not
+a structural fixed-condition or infeasibility proof. The default decoder step
+is 1e-6, bounded to [1e-8, 1e-4]. Input and output Jacobians must each fit the
+unchanged 64-MiB cap, with at most 768 columns and 256 supplied joints. No
+joint/time condition or derivative column is discarded to fit a budget.
+
+Forty-eight new cases plus 12 existing motion-lattice regressions pass all
+60 checks. Values match the independent existing kernel byte for byte;
+every derivative column is compared against nonlinear pose perturbations.
+Coverage includes column batches crossing 16/32, near-orthogonal matrices,
+zero norms, ambiguity guards, full input/output budgets and invalid types.
+Prototype guard: 35.453 s / 119,504,896 bytes / 37 observations. The earlier
+test run stays failed at 57 passed / 1 failed: it incorrectly demanded bitwise
+gradient equality between differently shaped column batches, with discrepancy
+2.842e-14. Its source method is unchanged; the corrected gradient comparison
+uses 1e-10 absolute / 1e-12 relative numerical tolerance. Physical motion
+acceptance limits were not changed. Failed guard: 34.360 s / 117,440,512 bytes /
+36 observations.
+
+Actual wider-basis derivatives now cover every original 120-Hz source-rate
+sample on both rigs: 477 frames, 77 joints per actor, 146,454 rate scalars per
+actor, 292,908 total. The original source epoch/caps and 1e-5 rate tolerance
+remain unchanged. The chain retains all 264 / 276 declared latent columns and
+only buffers three world-derivative frames. All streamed rate values match an
+independent whole-clip evaluation byte for byte. Each original scalar enters
+the complete reducer; four grouped derivatives require 8,448 / 8,832 bytes.
+
+The raw seed still fails 3,803 / 2,311 rate scalars, 6,114 total. These counts
+match the earlier encoded failure counts; raw and encoded scalar arrays are
+not claimed identical. Both physically passing and failing rows remain in the
+population. Two directional comparisons on every actor/metric worst stencil
+cover all 77 joint rows: eight stencils, 16 comparisons. Maximum normalized
+derivative discrepancy is 2.833e-8; maximum scaled error is 5.651e-5 against
+the numerical comparison rule `5e-4 + 2e-5 * abs(reference)`. These are
+derivative comparisons, not physical acceptance tolerances. Guard: 286.547 s /
+183,689,216 bytes / 284 observations, independently replayed. There is no
+full-clip dense world Jacobian, encoded derivative, optimizer, contact/pose/
+geometry composition or motion improvement claim from this study.
+
+`native_skin_frame_map.skin_frame_map` maps supplied full world derivatives to
+explicitly selected native surface points or a complete selected centroid.
+It retains each requested vertex, all influence slots (up to eight), inverse-
+bind homogeneous points and the original placement. Values retain the normal
+skin arithmetic; derivatives propagate through every influence. Full point
+Jacobians must fit the unchanged 64-MiB cap. Centroids accumulate bounded
+batches without allocating a vertex-by-all-columns output Jacobian. A request
+that cannot fit even one complete vertex/influence/column batch rejects.
+The function does not infer contacts, source bindings, edit permissions or
+target geometry, and it never approves a motion.
+
+Thirty-three new point-map cases include independent full-influence skinning,
+every-column nonlinear finite differences, batch sizes 1/3/17, affine scale,
+nonunit homogeneous point coordinates, the eighth influence, complete centroid
+reduction and input/output/working-budget rejection. Together with the 48 rate
+and 12 existing motion cases, all 93 pass in both mixed prototype and production
+source-import runs. Guards: 35.500 s / 121,708,544 bytes / 37 observations and
+36.594 s / 114,294,784 bytes / 38 observations respectively; pytest 5.96 s /
+3.40 s. Both new suites are declared in the complete/contact inventories and
+focused hosted workflow. Inventory totals are 571 Python / 45 Node and
+137 Python / 5 Node contact paths, not whole-suite passes.
+
+Actual point-map qualification uses both original supplied rigs, six complete
+actor/time settings and two admitted proposals. It compares explicitly authored
+contact points and each complete 18,056-vertex mesh centroid: 24 checks, all
+eight influence slots and 264 / 276 latent columns retained. The actual world
+frame helper is AST-identical to the qualified full-rate study. Independent
+`RigAsset.vertices` full-skin values agree within 2.221e-16; 48 nonlinear
+directional comparisons agree within 3.333e-11. Comparison limits are 2e-12
+for positions and 2e-7 for derivative checks, not physical acceptance limits.
+Frozen meeting derivatives remain exactly zero. The complete centroids use
+39/41-vertex working batches under an 8-MiB gather budget and only 6,336 /
+6,624 output-Jacobian bytes; no full mesh-by-latent Jacobian is allocated.
+Guard: 44.609 s / 135,385,088 bytes / 46 observations, independently replayed.
+These skin position queries add no triangle-geometry acceptance samples.
+
+The full rate and selected-point derivatives now exist separately. Contact
+error/hold-speed norms, source displacement/native pose rows and original
+geometry conditions still need complete coupled composition before correction
+or any Studio solver switch. Original motion remains selected; no capability,
+semantic, engine or human-review gate is approved by these numerical studies.
