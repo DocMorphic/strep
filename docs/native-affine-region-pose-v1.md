@@ -791,3 +791,96 @@ The [focused hosted run](https://github.com/DocMorphic/strep/actions/runs/390061
 at source `be13bc0` passes the 22 new selected-column cases on Ubuntu and
 Windows. This is the focused suite; the complete repository inventory is not
 claimed as a passing run.
+
+## Continuing an edited clip without resetting its source
+
+`scripts/native_seeded_region_fit.py` now exposes `SeededRegionProblem` and
+`fit`. This is a reusable multi-time proposal/export path, with no action-name
+whitelist. The caller supplies the original actor, complete original native
+clock, declared joint order and degree caps, a complete original-relative seed,
+explicit editable key/joint pairs, frozen native keys, original world bands,
+and timed surface halfspaces. It can start from an already edited clip without
+turning that clip into a new zero or losing its fixed finger/other-hand edits.
+
+Frozen keys must include both true clip endpoints; edits cannot name a frozen
+key. Frozen values and every unselected key/joint retain the supplied seed
+exactly. That is preservation of the supplied seed, not an assertion that its
+endpoints equal the raw source. All measurements still use the unchanged raw
+source epoch. Callers explicitly freeze authored contact keys as needed.
+
+Every observation retains complete pose rotation balls, all joint/world bands,
+every supplied region vertex and every selected native-key ball, including
+keys outside that observation's interpolation bracket. A global limit of
+128 observations, 100,000 rows and 64 MiB of dense Jacobian storage rejects
+the complete request if exceeded. It never returns a reduced observation set.
+The existing per-pose workspace guards still apply. Run in a supervised worker.
+
+The SLSQP objective minimizes normalized displacement from the seed. Solver
+success is reported separately from actual condition acceptance. Final raw
+rows and Float32 endpoint rows are independently evaluated against `>= 0`,
+with no acceptance tolerance. Quantization has no claimed analytic derivative.
+Each distinct evaluated proposal and its failed-row count remain in the fit
+report. Infeasible frozen observations are retained and reported as failures.
+
+`controls` reconstructs the complete original-relative key array and rejects
+native rotations outside their original balls. `export` appends a separate
+unselected animation, retains original binary/animations, and refuses to
+overwrite an existing file. Export does not mean the observation rows passed.
+File hashes, scene/permission provenance and immutable output retention remain
+the job caller's responsibility; the source-bound interpolation helper rejects
+changed in-memory source curves, pose caps and placements.
+
+The local affected selection passes 84 tests in 23.05 s: 16 new seeded-fit
+cases, 46 key-map cases and 22 selected-column cases. Tests exercise multi-time
+derivatives, out-of-bracket pose rows, nonzero fixed seeds, frozen keys,
+correction of a surface target, infeasible fixed observations, solver limits,
+global budgets and actual Float32 native save/reload. The guard completes in
+55.859 s at 125,042,688 sampled bytes, with all 57 observations and archived
+bindings replayed. Inventories now declare 558 Python/45 Node suites and
+124/five in the contact subset; these counts are not a complete-inventory pass.
+
+This API is not yet wired into the Studio correction form. Its explicit
+observations are proposal constraints, not a complete contact, collision,
+dynamics, engine, anatomical or human acceptance procedure. The existing
+source-zero scene fit remains a distinct workflow until integration is tested.
+
+### Encoded native limits and the first real-scene attempt
+
+The initial 84-case selection is followed by a stronger encoded native-angle
+check. Final Float32 rows now measure the actual encoded angle of every
+selected key relative to its original quaternion, including keys outside the
+observation bracket. Checking the unrounded unit vector alone can hide a small
+encoded angle overshoot. The added regression exports seven boundary directions
+and compares every native-ball row with an independent saved-file reader;
+at least one direction exposes that overshoot without changing a physical cap.
+
+The new affected selection passes 85 cases in 23.27 s (17 seeded-fit cases
+plus the previous 68 map/selected-column cases). The guard completes in
+54.000 s at 122,269,696 sampled bytes, with all 55 observations and archived
+bindings replayed. This is the source version used by subsequent proposals.
+
+The first actual approach proposal, `high-five-seeded-approach-region-fit-v1`,
+tries to separate A's complete forearm/hand incident region and B's complete
+right-hand region using one source-derived plane per time, before invoking
+the seeded solver. The first plane preflight fails and no motion fit/export
+runs. Its guard is retained and replayed: 22.281 s / 144,236,544 sampled bytes /
+24 observations. It is a failed proposed constraint setup, not a memory stop
+or evidence that the native fitter succeeded.
+
+Fresh `high-five-seeded-approach-plane-diagnosis-v1` records the complete
+preflight at all six declared times. Every bounded floating LP reports success
+with zero margin, so this search finds no positive-gap plane. All matrices,
+solutions and conventions are retained. This is not an exact proof of convex
+nonseparability, and it does not contradict the earlier 85 individual triangle
+separation proofs. Whole curved regions can impose a stronger condition than
+local surface separation. The diagnosis guard completes in 30.484 s /
+150,867,968 sampled bytes / 32 replayed observations.
+
+The next explicit condition uses all recorded crossing triangle pairs at
+the six selected times, rather than a single convex-region plane. It retains
+every pair within that declared selection, with bounded groups of at most
+32 region constraints. It permits body keys 34–37 while freezing the authored
+contact key and true clip endpoints and holding all other keys/fingers fixed.
+This is a new proposal condition, not a relaxed geometry acceptance rule.
+Until it completes, it is not counted as a successful repair, and even a
+selected-time pass would require complete affected-interval validation.
