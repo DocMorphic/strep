@@ -2843,3 +2843,27 @@ The fresh geometry driver's first version stops at the exact contact-policy
 digest check before querying triangles. It is retained as failed evidence.
 The separate v2 policy binds the corrected clip specification while retaining
 the original clock, world planes and physical geometry limits.
+
+Hosted run [39048152222](https://github.com/DocMorphic/strep/actions/runs/39048152222)
+passes all 37 proposal cases on Ubuntu and Windows at source
+`7f9f951e90a52f3fdccc7d0a0748beeff8ac7904`. This independently qualifies the
+proposal utility; motion quality and the project release requirements remain
+separate.
+
+The corrected candidate's fresh geometry study v2 completes all 58 changed
+poses with zero scene-geometry or saved rotation/joint-bound failures. Each
+actor retains all 36,108 faces and 18,056 vertices. Guard: 321.031 s /
+214,564,864 bytes / 318 observations. A separate receipt study verifies
+every archive digest, original policy clock/limits, complete scene report,
+actual saved hierarchy/local rotations and independently computed floor
+depths: 31.390 s / 160,104,448 bytes / 33 observations, zero failures.
+
+Together with 174 poses whose complete hierarchy bytes and static geometry
+are unchanged, the corrected candidate again has 232 sampled scene/pose
+checks, all passing. This includes all 120 native keys. The other 1,785
+policy samples remain unchecked; full self-collision, continuous motion,
+dynamics, semantics, engine imports and human review remain unapproved.
+The frozen contact's inherited self crossings are unchanged. The original
+motion remains selected. Evidence is preserved in
+`reports/native-world-corrected-geometry-v1` (failed binding), `v2` and
+`reports/native-world-corrected-geometry-receipts-v1`.
