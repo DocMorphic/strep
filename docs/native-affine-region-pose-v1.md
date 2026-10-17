@@ -635,3 +635,41 @@ These counts are recorded separately in `assembly-v4/edit-scope.json`,
 including the complete key lists and their comparison references. They are
 encoding/provenance measurements; the new combined candidate still needs
 its complete sampled motion and expanded-interval geometry checks.
+
+## Combined two-key repair and expanded dense check
+
+Assembly-v4 subsequently completes the full sampled motion checks. Both
+actors pass original joint displacement and angular limits at all 2,017
+times, and complete floor checks pass with the original floor minima intact.
+Actual world transforms are freshly compared with assembly-v3 outside native
+interval 73–76; those worlds remain exact. True clip endpoints and root
+movement remain raw-source exact, and the authored 2-s contact pose remains
+unchanged from the tapered initializer.
+
+All 32 fresh selected partner/floor checks pass with zero surface records.
+They include the preceding selected points, the five dense failures, key 75
+and post-75 samples. The full guard completes in 272.875 s at 369,061,888
+peak sampled bytes, with 271 observations and archived bindings replayed.
+
+`high-five-native-subkey-dense-partner-v2` then freshly evaluates every
+declared geometry-clock sample inside native intervals 63–65 and 73–76.
+All 86 samples pass complete partner/floor checks with zero surface records.
+This includes the additional interpolation interval introduced by editing
+key 75; checking only the previous interval would be insufficient. The guard
+completes in 271.594 s at 192,000,000 peak sampled bytes, with all 269
+observations and archived bindings replayed.
+
+The two runs' sample-index union contains 102 distinct times for the same
+candidate out of the 2,017-time geometry clock. Thus 1,915 times have not
+received partner geometry checks from these runs. Complete sampled coverage
+of two intervals is not a whole-clip or continuous-time collision certificate.
+Localized hand-self scans remain the 22 selected-time observations from the
+fit; whole-clip self geometry is not established.
+
+Unchanged source-relative rate budgets still fail: A has 632 / 388 / 2,188 /
+280 failed rows; B has 886 / 425 / 500 / 249. B's linear-speed and
+linear-acceleration counts increase relative to assembly-v3. These are the
+same diagnostic edit budgets, not newly calibrated realism thresholds.
+The original remains selected and no anatomical, engine, developer/animator
+or release approval is granted. Next steps are complete clip coverage and
+integration of the tested key-map component into the scene authoring path.
