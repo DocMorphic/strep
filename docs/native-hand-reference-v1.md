@@ -131,3 +131,111 @@ A's IndexEnd/RingEnd and B's IndexEnd/MiddleEnd reach about 59.970 mm under the
 60-mm limit. The separate 100-mm-finger/60-mm-wrist-and-body experiment uses
 the rejected pose only as a warm proposal; its original zero reference,
 fixed reference fingers, angular caps and physical thresholds are unchanged.
+
+## Per-joint permissions and wrist preference
+
+The 100-mm finger / 60-mm wrist-and-body condition completes but fails 12
+pose rows. Complete partner-triangle checks at 2 s find zero crossings, while
+the localized hand scans find zero for A and five for B. Exact rational
+witnesses confirm all five B pairs. Their skin weights span RightForeArm and
+RightHand: these are wrist-seam intersections, rather than the earlier finger
+folds. This condition remains rejected. Its guard completes in 308.969 s at
+273,108,992 bytes; all 305 resource observations replay. Independent array
+replay takes 30.468 s at 182,317,056 bytes (32 observations), with directional
+frame error at most 1.13363e-9.
+
+A separate 150-mm finger condition retains 60 mm for the wrist and every
+other joint. It passes all 6,130 pose rows after four iterations, with zero
+partner crossings, but retains the five B wrist intersections. Increasing an
+edit allowance is not a pass of the smaller-budget studies. The guard takes
+73.047 s at 277,708,800 bytes (74 observations replayed). Complete saved
+worlds, vertices and inequalities reproduce exactly in a separate 30.390-s
+replay at 185,208,832 bytes (32 resource observations replayed); its
+directional frame error is at most 1.110694e-9.
+
+The next condition freezes A's nine arm/forearm/wrist controls and starts
+from that feasible pose. A secondary constrained objective minimizes B's
+squared source-relative wrist control, with a 1e-8 penalty on its other body
+controls. Every original pose inequality remains enforced with a 0.001
+optimization reserve; selection additionally requires all original rows to
+be nonnegative. After 14 iterations the wrist objective decreases from
+0.774230656 to 0.572572986. This does not change the original zero reference,
+angular caps, per-joint permissions, or physical contact/collision limits.
+
+This supported-patch v4 pose passes all 6,130 rows, has zero detected complete
+partner-triangle crossings, and has zero records in either localized hand
+self scan at 2 s. A's saved worlds and vertices remain exactly equal to v3;
+its controls equal the secondary initializer exactly. Independent replay
+reproduces both actors' complete saved worlds, vertices and inequalities.
+The direct material-frame gap is 4.997841 mm, normal opposition error
+4.997488 degrees and tangent disagreement 14.992447 degrees. These are close
+to the declared 5-mm / 5-degree / 15-degree limits; no robustness margin or
+moving-contact result is implied. Sampled directional frame error is at most
+1.567398e-9. The pose guard takes 87.125 s at 278,695,936 bytes (88 observations
+replayed); the independent replay takes 29.359 s at 184,332,288 bytes
+(31 observations replayed).
+
+The immutable v4 input inherited a stale `quality_refinement=False` template
+flag. Its explicit `secondary_wrist_preference` declaration and archived
+secondary fit record describe the operation above. A separate local
+methodology qualification records this inconsistency without changing the
+raw input. All quality/release approvals remain false.
+
+The supported material patch is still an unreviewed geometric choice. A
+passing hand/partner pose does not certify the full body, an animation,
+anatomical intent, native rates, engine behavior or cleanup time.
+
+## Full-body check rejects v4
+
+Complete 36,108-triangle self scans at 2 s find 131 transverse pairs for A
+and 80 for B. Exact rational witnesses confirm all 211 represented-coordinate
+crossings. Comparing original triangle IDs with the configured source gives:
+
+| Actor | Retained source pairs | Removed source pairs | Introduced pairs |
+| --- | ---: | ---: | ---: |
+| A | 131 | 101 | 0 |
+| B | 70 | 65 | 10 |
+
+Nine introduced B pairs have dominant RightArm/RightShoulder weights; one
+has RightShoulder/RightShoulder weights. These labels describe weights, not
+anatomical approval. The wrist preference increased B's source-relative arm
+edit from 6.368498 to 12.130172 degrees while reducing its wrist edit from
+26.397113 to 22.700566 degrees. The additional shoulder pairs demonstrate why
+localized hand and partner checks alone are insufficient. This pose is
+rejected for whole-body quality; no corrected animation is promoted.
+
+The full-body guard takes 135.079 s at 138,457,088 bytes with 135 resource
+observations replayed. The independent comparison/proof guard takes 21.282 s
+at 119,758,848 bytes (23 observations replayed); its unchanged original skin
+arrays reproduce exactly. Neither computation certifies a valid collision
+solid, clearance or continuous-time behavior.
+
+A three-view static figure renders the actual source, rejected open-finger
+fit and v4 CPU-skinned hand triangles, with the same 17039 material patch
+marked in all columns. The earlier columns did not optimize that patch.
+Its guard takes 21.313 s at 148,357,120 bytes (23 observations replayed).
+The figure exposes separated finger surfaces around the palm-heel contact;
+passing that selected material patch is not evidence of a convincing palm
+slap. Human semantic review remains pending.
+
+A fixed 0.5 interpolation between the feasible v3 and v4 controls is measured
+as v5, with no optimizer. It leaves A unchanged and retains every source
+reference, permission and physical threshold. It fails one paired-frame row:
+the material-origin gap is 5.332149 mm against the 5-mm limit. Partner checks
+still find zero crossings, but hand self records are A zero / B three, and
+B's complete self scan finds 81 transverse pairs. Original face-ID comparison
+retains 70 source pairs, removes 65 and introduces 11; no additional exact
+witnesses are claimed for this comparison. Endpoint feasibility does not
+establish midpoint feasibility, and this proposal is rejected too.
+
+The v5 guard takes 113.172 s at 231,321,600 bytes (113 observations replayed).
+A separate replay reproduces all saved worlds, vertices and 6,130 inequality
+values exactly, including the failed row. A's worlds/vertices equal v3
+exactly. The replay takes 31.641 s at 171,106,304 bytes (33 observations
+replayed), with directional frame error at most 9.698822e-10.
+
+The next correction must account for wrist and shoulder behavior together,
+with complete self-surface checks, rather than optimize one joint in
+isolation. Original assets remain selected. Native-key motion, rates,
+complete sampled geometry, engine checks and cleanup review remain required;
+the pose-level failures above are retained.
