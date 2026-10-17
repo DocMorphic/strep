@@ -1679,3 +1679,19 @@ match. The guard replays 28.531 s / 116,424,704 bytes / 30 observations. Timing
 observations are local map measurements, not a whole-optimizer speed guarantee.
 This preserves the previously measured motion and its 43 failed geometry times;
 it is not a new animation correction or quality approval.
+
+The [58-case interpolation suite](https://github.com/DocMorphic/strep/actions/runs/39018172184)
+also passes on Ubuntu and Windows at source `2665422`. The next private trial,
+`high-five-coupled-expanded-gap-fit-v2`, starts from the complete recovered seed
+and adds all 6,937 newly observed proper-crossing pairs to the previous 23,050.
+None of the new crossings is a previously constrained pair. All 29,987 pair
+references remain, with original bounds at all 120 selected times, the same
+126 controls, source epoch, frozen poses and degree/world limits. Its 53,909 rows
+use 54,340,272 Jacobian bytes within the unchanged limits.
+
+This trial saves numerical results and exports before a separate process checks
+geometry; it performs no inline mesh queries. It also releases the saved initial
+Jacobian before optimization. These changes avoid retaining solver workspace
+during geometry without reducing constraints. A running trial or a numerical
+pass alone does not establish a repair, and fresh complete selected-clock mesh
+checks remain required on any resulting candidate.
