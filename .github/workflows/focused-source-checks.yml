@@ -9,6 +9,7 @@ on:
         type: choice
         default: tests/test_native_motion_orientation.py
         options:
+          - tests/test_native_mesh_prop_surface_seed.py
           - tests/test_native_mesh_prop_pose.py
           - tests/test_native_mesh_prop_scene.py
           - tests/test_native_local_warm_start.py
