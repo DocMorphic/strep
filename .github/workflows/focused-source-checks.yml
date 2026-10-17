@@ -9,6 +9,7 @@ on:
         type: choice
         default: tests/test_native_motion_orientation.py
         options:
+          - tests/test_native_local_warm_start.py
           - tests/test_native_local_basis.py
           - tests/test_native_evaluated_world_derivatives.py
           - tests/test_native_evaluated_world_rows.py
