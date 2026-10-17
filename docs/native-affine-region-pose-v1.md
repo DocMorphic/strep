@@ -1966,3 +1966,10 @@ Both public source and tests are byte-identical to the qualified isolated
 snapshots. The source manifests and focused hosted workflow include the new
 52-case file. Hosted results must be checked against the actual pushed source;
 no broad inventory or motion-quality pass is inferred from registration.
+
+Hosted run `39025753066` at exact source `fbc8029` passes all 52 selected
+cases on Ubuntu and Windows. Final run/job metadata and both observed test
+counts are retained separately from local qualification. Fresh four-slice
+mesh validation and independent receipt/actual-pose replay of the new
+35,344-pair candidate are now running; those results remain pending and are
+not replaced by any numerical-component test result.
