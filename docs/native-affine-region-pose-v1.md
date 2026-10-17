@@ -2384,3 +2384,8 @@ These condition-clock checks add no surface-geometry queries. Existing 232
 geometry/pose samples, 1,785 unchecked geometry-policy times and contact-pose
 self failures A131/B70 retain their previous scope. Engine, semantic, held-out
 and human cleanup requirements remain open under the full project goal.
+
+Hosted run [39037711339](https://github.com/DocMorphic/strep/actions/runs/39037711339)
+passes all 38 world-condition cases on Ubuntu and Windows at source
+`b44513179b2dda3a462c41cc3645b04e7fa896be`. This qualifies the evaluator;
+the recorded motion-rate failures remain failures.
