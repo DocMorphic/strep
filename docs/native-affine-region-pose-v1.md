@@ -2638,3 +2638,118 @@ and [39041563123](https://github.com/DocMorphic/strep/actions/runs/39041563123)
 pass all 48 rate-stencil and 33 skin-map cases respectively on both Ubuntu and
 Windows. Local complete-rig evidence and the outstanding failure/gate counts
 retain their stated scope.
+
+## Complete coupled world-condition derivatives
+
+`SceneWorldDerivatives` composes every original world displacement,
+source-relative linear/angular speed/acceleration, world/object/partner
+contact-position and hold-speed row. It takes a source-bound `SceneWorldRows`
+snapshot, the complete global column count and one explicit callback per
+edited actor. A callback receives the original time and a Boolean derivative
+mode; it must return the full affine hierarchy and either every global
+derivative column or explicit `None` in value-only mode. Actors without edit
+caps retain their original worlds and known zero derivatives.
+
+The first pass samples every original condition time and obtains scalar values
+from the unchanged `SceneWorldRows.violations` kernel. Those exact values are
+the physical authority and are retained in the result. The second pass computes
+bounded derivatives. Every returned derivative pose must match its first-pass
+world bytes exactly; changed poses, incomplete columns, nonfinite data or
+source mutations reject the evaluation. Local derivative arithmetic is checked
+against the authoritative value within `1e-10 * (1 + abs(value))` as a numerical
+consistency comparison only. It never replaces the anchor or changes a physical
+pass/fail threshold.
+
+Displacement groups are refined per joint so their original joint-major time
+order can be streamed without storing a full clip-by-joint Jacobian. Rate and
+contact populations keep their original contiguous row ordering. Every original
+scalar is counted, hashed and included in an exact maximum. Smooth maxima and
+their full derivatives are stronger search guidance, not physical infeasibility
+proofs. A zero norm derivative uses the symmetric zero subgradient. `values`
+returns the same complete scalar/group populations with no invented derivative
+columns, allowing value-only line searches.
+
+World derivatives use a bounded LRU cache and complete two/three-frame rate
+stencils; held contacts use two complete error frames. Contacts retain all
+selected skin vertices/influences, both actor contributions, original placement
+and moving-object local coordinates. Every authored hold population remains,
+including a fixed failed row when its speed clock is unavailable. Jacobian,
+world-cache, contact-cache and skin working budgets each cannot exceed 64 MiB;
+the default skin working budget is 8 MiB. Constructor admission requires space
+for complete stencils and at least one complete influence/column skin batch.
+No condition, time or global derivative column is dropped to fit a budget.
+
+Thirty-six new cases plus all 48 rate-stencil cases pass 84 checks. Nonlinear
+four-column differences cover world targets, rotating/moving objects and
+coupled actors with individual/centroid points and holds. Every original scalar
+value and per-group hash is retained. Tests also cover an unedited partner,
+unequal per-joint displacement caps, minimum-cache eviction, unavailable short
+hold clocks, value-only callbacks, snapshots and source mutation before/after
+the value pass. Incomplete/mismatching callback worlds or Jacobians and
+over-budget requests reject without a partial successful result. Enhanced
+prototype guard: 70.110 s / 124,579,840 bytes / 71 observations; pytest 41.39 s.
+The earlier 32-case version plus the same 48 regressions passes 80 checks:
+64.093 s / 125,022,208 bytes / 65 observations; pytest 32.46 s. Method bytes are
+unchanged between those prototype qualifications.
+
+This evaluator still excludes native parameter balls/permissions, extra native
+pose bounds, explicit rotation-speed policies and surface geometry. It does not
+run an optimizer, change Studio's solver, select an export or approve a release.
+Those constraints and saved-output/engine/human checks remain mandatory before
+an integrated correction can be accepted.
+
+The complete real-pair qualification retains all 589 original condition times,
+366,369 physical world scalars and 540 global derivative columns. Refining the
+displacement partition yields 165 groups and a 712,800-byte grouped Jacobian.
+The bounded world cache peaks at 64,816,128 bytes, below its unchanged
+67,108,864-byte cap. Maximum local-versus-anchor scalar discrepancy is exactly
+zero. All 292,908 earlier raw rate values replay byte for byte; all eight
+previous rate-gradient groups have zero maximum numerical difference and
+exactly zero columns for the other actor. An independent value-only callback
+using the saved encoded clips matches both direct `evaluate_files` and the
+earlier complete 366,369-value encoded archive byte for byte. No encoded
+derivative is supplied or invented.
+
+Raw and encoded candidates still fail 6,114 original rate scalars; all original
+displacement and three 30-mm touch conditions pass. This actual contact set
+has frozen touches at 2 s and no holds. Nontrivial world/object/partner hold
+derivatives are covered by the nonlinear fixtures, not claimed as a new real
+object-motion result. Each actor supplies 589 value poses and 478 derivative
+poses. Raw coupled evaluation takes 448.390 s; total guard 490.172 s /
+298,921,984 bytes / 485 observations, independently replayed. There is no
+optimizer, corrected motion, new geometry query or Studio solver change.
+
+A separate wider-seed replay checks all original native, pose and directional
+triangle-pair conditions in both raw and encoded modes. Its pose/pair clock
+contains the original 120 coupled-observation times, distinct from the complete
+120 native keys used by the coefficient-ball check. Every one of the 129,568
+scalar conditions passes under the original source epoch, caps and thresholds:
+
+| Condition population | Rows per mode | Minimum raw margin | Minimum encoded margin |
+| --- | ---: | ---: | ---: |
+| Complete native coefficient/angle balls | 5,400 | 9.925e-6 | 9.515e-6 |
+| Original coupled-observation pose bounds | 23,880 | 9.442e-6 | 8.974e-6 |
+| Original directional triangle-pair references | 35,504 | 1.002e-4 | 1.013e-4 |
+
+Margins are normalized according to their original conditions. Directional-pair
+margins use the original .01-m scale and 20-micrometre threshold; these positive
+margins are not new physical tolerances. Frozen coefficient bytes remain
+unchanged. Independent saved-world decoding agrees within 1.666e-15 against
+a 2e-12 numerical comparison limit. Prior encoded pair margins agree within
+6.395e-14 against a 2e-10 numerical comparison limit. Guard: 48.719 s /
+177,139,712 bytes / 50 observations, independently replayed.
+
+This establishes a valid wider seed for a source-preserving correction trial;
+it is not a solved interaction. Directional pair conditions do not replace
+triangle-intersection/containment, remaining policy-time coverage, self-contact,
+dynamics, semantic or human acceptance. Existing 232 geometry/pose samples,
+1,785 unchecked policy times, contact-pose self failures A131/B70 and the 61
+default-pose crossings retain their earlier scope. All 6,114 world-rate failures
+and the full release gates remain open.
+
+Production source imports pass the same 84 selected cases with zero failures
+or skips: pytest 41.08 s; guard 72.328 s / 113,315,840 bytes / 73 observations.
+The new 36-case suite is declared in both source inventories and the focused
+hosted workflow. Inventories contain 572 Python / 45 Node and 138 Python /
+5 Node contact paths, not whole-suite passes. No large generated evidence,
+downloaded character payloads, model weights or credentials are published.

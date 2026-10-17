@@ -1,6 +1,7 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_native_scene_world_derivatives.py",
     "tests/test_native_skin_frame_map.py",
     "tests/test_native_motion_rate_stencil.py",
     "tests/test_native_complete_max_rows.py",
