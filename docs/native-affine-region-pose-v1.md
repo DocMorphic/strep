@@ -1561,3 +1561,31 @@ It extends the baseline interval from 85 to 120 dense samples before fitting
 the proposed six-key range. Native-clock count 120 and dense-interval count 120
 refer to different time sets. The added sample results remain pending; no
 expanded-interval or animation acceptance follows from their preparation.
+
+The [50-case seeded-fit suite](https://github.com/DocMorphic/strep/actions/runs/39015047535)
+passes on both Ubuntu and Windows at source `dd03f09`. This verifies the public
+preflight and its unchanged evaluator/export regressions; it does not approve
+the paired animation or implement a public coupled solver.
+
+The added 35 samples complete with seven geometry passes, 28 failures and passing
+motion limits. The guard replays 247.125 s / 201,121,792 bytes / 245 observations.
+`high-five-expanded-interval-replay-v1` independently combines all 120 dense
+times from indices 559–678: 59 geometry passes, 61 failures at 611–671
+(1.2020833333–1.3208333333 s), and passing original motion limits throughout.
+Actual reconstructed rotation rows again match exactly. It validates the archived
+source snapshots while explicitly allowing only the changed, unused `fit`
+function in the broad source inventory: all other AST nodes in that module match,
+and the read-only producers do not import it. Other source bindings remain exact.
+This does not silently treat old source as current. The replay guard completes
+in 51.969 s / 165,498,880 bytes / 53 observations.
+
+`high-five-coupled-expanded-gap-fit-v1` starts a revised proposal from the complete
+v10 seed with native keys 34–39 editable on the same body joints, giving 126
+controls. Original degree/world bands and frozen keys 0/60/119 remain. It retains
+all 12,405 historical anchor pairs plus all 10,645 dense crossing pairs: 23,050
+total references, with pose bounds at every one of 120 selected times. Its
+46,972 rows require 47,347,776 Jacobian bytes, within the unchanged 100,000-row /
+64-MiB budget. Every captured pair time has structural support in the revised
+key range, unlike the rejected four-key proposal. No pair, vertex or bound is
+discarded. Raw/encoded postchecks and all 120 fresh independent mesh checks
+remain required; the running solver is not a measured motion repair yet.
