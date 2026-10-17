@@ -1,6 +1,7 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_native_basis_pose_population.py",
     "tests/test_native_basis_pose_rows.py",
     "tests/test_native_world_hinge_step.py",
     "tests/test_native_world_minimax_step.py",

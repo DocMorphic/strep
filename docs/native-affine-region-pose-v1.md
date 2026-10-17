@@ -3047,3 +3047,75 @@ passes all 45 new adapter cases on Ubuntu and Windows at source
 `563df15ca5c6d51069d7b3f00bcb3721c3fb910d`. The actual supplied-character
 values and geometry coverage remain separately qualified; these hosted
 fixture tests do not approve the animation.
+
+## Fresh coupled world model and complete native/pose populations
+
+The world model is now relinearized at the verified 6,100-failure point,
+without rebasing its original source, caps or frozen coefficients. Every
+366,369 raw world value replays byte for byte. The 165-group, 540-column
+Jacobian uses 712,800 bytes; each actor supplies 589 value and 478 derivative
+poses. The actual derivative calculation takes 534.766 seconds.
+
+The parent job reaches its unchanged 900-second execution guard after saving
+the complete model and three complete value probes. Its failed record remains:
+916.265 s / 315,695,104 bytes / 902 observations. Separate recovery reuses the
+model and all three probes, computes only the missing probe with an
+AST-identical callback body and independently checks both full directions.
+Maximum discrepancies are 3.586e-7 and 8.442e-8 across all 165 groups and
+540 columns. Recovery: 123.703 s / 206,098,432 bytes / 123 observations.
+No derivative calculation is repeated, no physical tolerance changes and no
+motion candidate is selected by these sensitivity checks.
+
+`scripts/native_basis_pose_population.py` now supplies
+`BasisPosePopulation`. It retains the complete native key/node grid and every
+provided pose rotation/joint bound in caller order. Duplicate observations
+are retained. Explicit joint bands may vary by observation while the actor,
+full source channel population, rotation units, clock, basis and node order
+remain bound. Source changes, incompatible domains and allocation overruns
+reject before population evaluation. The complete coefficient grid anchors
+native scalar values; per-key arithmetic is compared numerically without
+changing the physical zero threshold.
+
+Groups are split across bounded complete reducers, including populations with
+more than 512 groups. Nothing is dropped to fit a backend block. Exact grouped
+margins preserve every supplied inequality; smooth guidance is stronger and
+is not an infeasibility certificate. Encoded clips, original pairs, rates,
+full geometry, game imports and human approval remain separate requirements.
+
+Prototype v2 and production imports each pass **100 focused tests**: 26 new
+population, 45 existing basis-pose and 29 complete-reducer cases. These cover
+full scalar counts/hashes/signs/order, full nonlinear directional replays,
+every column, multiple backend blocks, duplicate observations, varying joint
+bands, source changes including an unobserved channel, invalid domains,
+budgets and modes. Prototype v1 fails collection on a Python 3.10
+starred-subscript expression in the test. The failed record is preserved;
+v2 changes that test expression with identical implementation bytes.
+Prototype v2: 66.344 s / 128,806,912 bytes / 67 observations; production:
+61.313 s / 126,050,304 bytes / 62 observations. No entire-suite pass is claimed.
+
+On the supplied characters, all **5,400 raw native** and **23,880 raw pose**
+values replay byte for byte, preserving every physical verdict. Actor A has
+14,520 rows, actor B 14,760. Each produces 360 complete groups with 264/276
+local columns. Disjoint embedding yields **720 groups and all 540 global
+columns**, with zero other-actor derivatives, in 3,110,400 bytes. Two complete
+720-group direction checks pass with maximum errors 5.203e-7 and 2.305e-6.
+Actor B has three failing smooth proxy groups while every exact raw condition
+passes: this is stronger guidance, not physical infeasibility.
+
+Concatenation with the refreshed world model gives **885 model rows** in
+3,823,200 bytes, retaining **395,649 original raw conditions**. Actual guard:
+103.078 s / 377,872,384 bytes / 103 observations. Original directional-pair
+guidance still needs complete composition; it is not substituted by a small
+observed-cut subset. Every raw/saved native/pose/pair condition remains in the
+final acceptance path. No new animation, optimization, triangle query or
+release approval occurs here. The candidate still has 6,100 raw/saved world
+failures, and its earlier 232 sampled scene/pose checks remain separate.
+
+Immutable local evidence is in `reports/native-basis-world-relinearization-v1`
+(failed parent with complete checkpoint),
+`reports/native-basis-world-relinearization-recovery-v1`,
+`reports/native-basis-pose-population-prototype-tests-v1` (failed collection),
+`v2`, `reports/native-basis-pose-population-source-tests-v1` and
+`reports/native-basis-pose-population-actual-v1`. Inventories contain
+576 Python / 45 Node and 142 Python / 5 Node contact paths, not full-suite
+passes. The entire-project goal and all capability approvals remain open.
