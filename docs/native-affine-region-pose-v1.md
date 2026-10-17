@@ -3596,3 +3596,41 @@ No derivative, optimizer, geometry, semantic, engine or human approval is
 claimed. The next implementation step is bounded derivative guidance for the
 expanded clock, retaining every original row and individual guard, then strict
 raw/saved acceptance and fresh geometry checks for any corrected candidate.
+
+### Evaluated-time derivative guidance implementation
+
+`scripts/native_evaluated_world_derivatives.py` adds
+`EvaluatedWorldDerivatives` for the expanded value operator. It retains the
+original displacement/rate/contact derivative arithmetic and ordering, then
+streams the additional exact-time joint bands through the same bounded pose
+cache. It never allocates a whole-clip time × joint × coordinate × control
+tensor. Every supplied control column remains present, including explicit
+zeros belonging to the other actor. Combined row/group/Jacobian and
+three-frame/cache/contact/skin admission limits remain enforced.
+
+All **22** focused synthetic cases pass. World, object and coupled-partner
+fixtures retain every original scalar, group receipt, exact/smooth margin and
+gradient byte for byte; added gradients match independent perturbations.
+Other cases require every added actor/time derivative, reject callback faults
+only at an added time, exercise the minimum complete cache, retain all 768
+supported columns, enforce resource admission and reject source mutation.
+Value-only evaluation never requests derivatives. Guard: 109.656 s /
+182,390,784 bytes / 109 observations. Source `a9473ff` is committed and pushed.
+
+The real-character replay is launched at
+`reports/native-evaluated-world-derivatives-actual-v1`, under the unchanged
+1 GiB worker budget, 600 MiB system reserve and stable admission requirement.
+It must freshly produce all 319 groups × 540 columns, preserve the original
+165-group gradient prefix, and match all 383,617 independently verified value
+rows. A durable value checkpoint precedes derivatives. The supplied actor-local
+basis callback is reused with an identical AST body; actor permissions, source
+epoch, caps and frozen coefficients remain unchanged. A prepared independent
+direction study will check all 319 groups against four complete value
+perturbations after that model finishes. Neither a pending replay nor a green
+source suite qualifies this real-character model or repairs the animation.
+
+Hosted [run 39067360333](https://github.com/DocMorphic/strep/actions/runs/39067360333)
+passes all **22 cases on both Windows and Ubuntu** at exact source
+`a9473ff8b492e38a260c46dad2e7d21bd7601959`. The existing real-character
+supervisor is waiting for stable free-memory admission; no duplicate replay
+has been launched and no completed real-character derivative is claimed.
