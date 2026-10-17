@@ -1356,3 +1356,72 @@ reuses the existing complete-control reconstruction and separate-clip export;
 it is not a newly qualified public coupled fitter. It still needs independent
 raw/encoded, six-time full mesh, interval, self, engine and human checks. No
 planned check is counted as passed.
+
+The [21-case pose-bounds suite](https://github.com/DocMorphic/strep/actions/runs/39012068529)
+and [42-case region suite](https://github.com/DocMorphic/strep/actions/runs/39012070638)
+both pass on Ubuntu and Windows at source `4bc8736`. The inventories contain
+561 Python/45 Node suites and 127/five in the contact subset; these are counts,
+not a complete repository run.
+
+Proposal-v6 completes with solver success after nine iterations, zero raw and
+encoded declared failures, and initial directional errors 3.296e-7/3.648e-7.
+Its 12,450 rows / 84 controls retain all 11,228 pair references. Full geometry
+passes at indices 586/590/595 and fails at 600/605/610 with 124/299/229 proper
+crossings. All tracked pairs are absent from those 652 new records. The guard
+independently replays 87.203 s / 343,773,184 bytes / 88 observations. This remains
+a rejected motion proposal with three sampled passes, not a validated interval.
+
+`high-five-coupled-relative-gap-fit-v7` retains all 11,880 cumulative pair
+references and uses the complete original-relative v6 seed, the same direct
+pose-bounds setup, controls, caps and frozen poses. Every one of the six sampled
+times is checked again after fitting. The original remains selected, and whole
+affected-interval, whole-clip, self, task correctness, engine and human checks
+remain required regardless of these six outcomes.
+
+Further cumulative feedback trials retain all preceding pair references and
+use the same original source, caps, clock, frozen poses and 84 controls:
+
+| Trial | Retained pairs | Iterations | Raw/encoded failed rows | Passing mesh samples | New proper crossings |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| v7 | 11,880 | 10 | 0 / 0 | 4 / 6 | 353 |
+| v8 | 12,233 | 12 | 0 / 0 | 5 / 6 | 126 |
+| v9 | 12,359 | 12 | 0 / 0 | 5 / 6 | 46 |
+
+All three optimizers report success; none approves the motion. No retained
+pair occurs in the new surface records. Proposal-v7 passes indices 586–600
+in this six-time selection, then reports 142/211 crossings at 605/610. Both
+v8 and v9 pass the first five selected times and fail at 610. Their independently
+replayed guards are respectively 87.485 s / 345,432,064 bytes / 88 observations,
+80.187 s / 328,712,192 bytes / 81, and 78.250 s / 325,079,040 bytes / 79.
+This is evidence of decreasing collision migration at the sampled times, not
+general convergence, anatomical correctness or interval clearance.
+
+Proposal-v10 retains all 12,405 cumulative pairs and the complete v9 seed;
+its planned checks are not counted as completed. Before broader acceptance,
+an explicit affected-interval audit must include all original policy clock
+samples within the interpolation support of edited keys 34–37 (bounded by
+native keys 33 and 38), all original pose/joint limits, actual encoded joint
+positions and complete native-key rotation checks. A prepared slice harness
+keeps per-frame geometry/observation/bound receipts and requires all six anchor
+mesh checks to pass before starting. The harness has not yet established any
+interval result. The entire 2,017-time clock, self/dynamics, engine and human
+validation remain separate requirements.
+
+Proposal-v10 completes with solver success after 12 iterations and zero raw or
+encoded declared failures. All six independent anchor geometry checks now pass,
+with zero surface records. All 12,405 accumulated pair references remain in its
+13,627 rows / 84-control problem. Its independently replayed guard completes in
+74.094 s / 330,276,864 bytes / 75 observations. This establishes the six sampled
+conditions for this candidate only; the original is still selected and no
+animation-quality or release decision changes.
+
+The first affected-interval slice, `high-five-coupled-approach-interval-v1`
+case `anchor-v10-first32`, now starts on that exact candidate. It requests the
+first 32 full-policy clock samples inside native keys 33–38, retains every
+geometry observation and pose-bound result, verifies the saved complete native
+quaternion tracks against the original-relative seed, and checks all native-key
+rotation balls. At each selected time it also compares modeled encoded affine
+transforms with the actual saved clip and checks actual joint displacement
+bands independently. The matrix equivalence threshold is diagnostic, not a
+relaxed acceptance tolerance. Until its committed receipts and terminal guard
+are audited, no interval sample is counted as passed.
