@@ -1799,3 +1799,53 @@ return or guard failure is retained. Solver termination tolerance is separate
 from the unchanged strict physical comparisons. Fresh full selected-clock mesh
 validation remains mandatory for any exported candidate; a running or prepared
 trial cannot pass the motion.
+
+The global-region/finger trial stops at the unchanged 900-second execution
+guard without exporting a candidate. All 13 committed checkpoints (0–12) fail
+its physical search rows. Its independently replayed failure is 915.937 s /
+665,899,008 bytes / 904 observations. The final checkpoint has 83 pose, 29
+region and one native-ball violation. This is a failed bounded search, not a
+proof that the rig, action or original pair conditions are infeasible. The
+global envelope had already been shown to reject 17 geometry-clear times.
+
+`high-five-exact-group-diagnosis-v1` instead expands every retained triangle pair
+into its nine scalar vertex comparisons along the common direction. Left
+vertices with identical right-side neighborhoods form complete bipartite groups;
+the symmetric right partition is also computed, and the smaller partition is
+chosen. The group products are disjoint and their union is exactly the original
+comparison relation. Consequently group support gaps preserve the original
+projected inequalities for a common point-set/time/direction/threshold context.
+They introduce none of the global region's cross-pairs.
+
+All 34,018 pairs reduce to 100,533 distinct vertex comparisons and 5,493 groups.
+Every edge is covered, none is added, and the minimum group and pair gaps match
+within 1.041e-17 m on the decoded character meshes. Failure times are the same
+33 as the original pair conditions, rather than the global envelope's 50.
+The diagnosis also verifies ZIP integrity and classifies all committed failed
+global-trial checkpoints. Its guard replays 31.516 s / 129,761,280 bytes /
+33 observations. This changes the representation of existing requirements,
+not physical tolerances or the full-mesh validation population.
+
+At 306 scalars the exact grouped Jacobian would require 72,154,800 bytes, so
+that allocation is rejected under the existing 64-MiB budget. Keeping all arm
+keys 34–39 and the five finger keys 35–39 uses 276 scalars, 29,465 rows and
+65,058,720 bytes. The current failed interval uses native keys 36–38; those
+finger keys surround it while retaining every original pair and all 120
+validation times. This is a declared edit-window choice, not a reduced test
+population, relaxed bound or fitted result.
+
+The reusable `native_pair_gap_groups.triangle_gap_groups` validates complete
+bounded integer reference triples, binds their count/order with a canonical
+digest and returns the exact neighborhood cover. Callers must partition
+different actors/point sets, evaluation times, directions or thresholds before
+grouping. Twenty-six new cases plus 61 support-gap cases pass in 3.33 s,
+including independent edge expansion, gap-equivalence checks, duplicates,
+permutations, sparse IDs, full reference budgets and invalid inputs. The guard
+replays 34.640 s / 98,586,624 bytes / 36 observations.
+
+`native-pair-gap-groups-actual-v1` independently reproduces all 5,493 group ID
+sets, every edge and all 67 supplied-character gap populations. Group minima
+and pass flags match the original pairs without added comparisons; maximum
+gap difference is again 1.041e-17 m. Its guard replays 34.641 s / 135,864,320
+bytes / 36 observations. These transport and numerical checks do not create a
+new motion or approve any animation.

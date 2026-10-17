@@ -9,6 +9,7 @@ on:
         type: choice
         default: tests/test_native_motion_orientation.py
         options:
+          - tests/test_native_pair_gap_groups.py
           - tests/test_native_region_support_gap.py
           - tests/test_native_support_gap.py
           - tests/test_native_halfspace_certificate.py
