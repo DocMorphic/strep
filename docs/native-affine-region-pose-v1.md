@@ -490,3 +490,108 @@ fresh survey, `high-five-native-subkey-dense-partner-v1`, is launched to check
 all 70 declared geometry-clock samples inside native intervals 63–65 and 73–75.
 Its results are pending; it does not cover the rest of the clip or unsampled
 time, and this section does not count planned work as passed coverage.
+
+## Complete sampled check of the two repaired intervals
+
+The dense survey completes all 70 declared geometry-clock samples in native
+intervals 63–65 and 73–75. It freshly skins both complete meshes at every
+time; no interpolation result or geometry observation is inherited. The
+first interval passes throughout its sampled clock. Five failures remain
+near the end of the second interval:
+
+| Time (s) | Surface records | Legacy depth (mm) |
+| --- | ---: | ---: |
+| 2.489583333 | 83 | 3.018054 |
+| 2.491666667 | 91 | 6.012435 |
+| 2.493750000 | 158 | 4.401407 |
+| 2.495833333 | 97 | 6.851848 |
+| 2.497916667 | 87 | 4.919284 |
+
+All five fail the surface condition; two also exceed the unchanged 5-mm
+legacy penetration limit. The passing 23 selected checks therefore do not
+establish an acceptable sampled path. The survey completes in 261.547 s
+at 188,465,152 peak sampled bytes, with 258 resource observations and the
+archived bindings independently replayed. All failed samples retain their
+full posed vertices and geometry observations.
+
+The next condition explicitly adds neighboring body key 75 to editable key
+74 and jointly constrains 11 times, including every newly observed failure,
+both native keys and two samples after 75. Key 75 is an interior clip key;
+the unchanged original taper experiment spans native keys 0–119. This is
+a different authoring condition from editing only key 74. Fingers, original
+physical caps, root motion, the 2-s contact and actual clip endpoints remain
+fixed. Extending the editable pair also extends its affected interpolation
+window to native interval 73–76, which needs separate validation.
+
+The first two-key attempt (`high-five-native-subkey-constraint-fit-v3`)
+stops before optimization at its requested 1e-6 inner search reserve. The failed guard
+completes in 52.078 s at 247,689,216 bytes with all 53 observations replayed.
+The original physical inequality still uses zero; its threshold is not
+increased or relaxed. Fresh study `-v4` records every initial row and verifies
+a body-only warm ray. Multiplying just the two editable body-key controls by
+0.99999 yields a minimum hard row of 1.877527e-5 with the original source,
+fixed fingers and physical limits unchanged. The fresh reconstruction records
+the original initializer's minimum hard row as 9.021998e-7. This is an
+initializer, not a new source zero or an accepted animation.
+
+The two-key fit then converges in three optimizer iterations and 12 evaluated
+controls, taking 145.937 s for search. All 67,309 original angular/world/
+region rows pass before and after Float32 export at the 11 declared times.
+This includes 2,189 complete angular/joint rows. Fresh complete partner/floor
+checks pass with zero surface records at every time, and all 22 localized
+hand-self scans have zero records. The selected raw minimum original hard
+row is 9.915691e-7 and the minimum region row is 0.002738149. Physical
+thresholds remain unchanged; temporary search slack is not accepted.
+
+The guard completes in 403.734 s at 415,297,536 peak sampled bytes, with
+399 observations and all archived bindings replayed. These are selected-time
+results of the explicitly different two-key condition. Complete sampled
+displacement/floor/dynamics and partner coverage over the expanded 73–76
+interval remain unproven until separately evaluated.
+
+## Reusable native-key map
+
+[`KeyPoseMap`](../scripts/native_key_pose_map.py) makes the tested interpolation
+construction available to the authoring layer. It accepts a qualified
+`PartitionedAffineKeyPose`, the unchanged original source time, a complete
+original-relative native control seed, and explicit `(key, node)` pairs.
+The pairs may use arbitrary permitted joints and nonprefix control order.
+It does not select permissions, infer anatomical targets or edit an asset.
+
+`controls(value, quantized=True)` reproduces Float32 endpoint encoding for
+comparison with saved native clips. `evaluate(value)` returns continuous
+sample-time original-relative controls and a central-difference map Jacobian.
+Only the actual one or two interpolation endpoints contribute pose derivatives;
+other selected keys retain exact zero columns. Their native rotation-ball
+rows remain present regardless of whether they influence this sample time.
+
+`region_rows(problem, value)` composes the map with all declared affine
+angular/world/region rows and appends every selected native rotation ball.
+The region problem must use the identical original model/time and all local
+controls in source order. No source pose, control zero, physical degree cap,
+skin influence or requested region row is replaced or truncated. Fixed seed
+rotation balls are verified at construction; selected native balls are
+observable inequalities even for a key outside the sampled interval.
+
+The bounded component supports at most 4,096 native keys, 768 selected scalar
+coordinates, 100,000 complete composed rows and 64 MiB per returned Jacobian.
+Smaller caller budgets reject completely when insufficient. Finite-difference
+steps are bounded from 1e-8 through 1e-4. Proposal components outside [-2,2]
+reject as a numerical-domain guard; the physical normalized rotation-ball
+limit remains one. File/rig provenance, editing permissions, decoded motion,
+complete geometry, dynamics, engine import and human quality remain caller
+responsibilities.
+
+The locally guarded affected selection passes 103 tests in 30.65 s: 46 new
+map cases, 42 existing region cases and 15 partitioned-pose cases. New tests
+use an actual changing affine source with alternating quaternion signs,
+Float32 native export/reload at boundaries, native and between-key times,
+placed/homogeneous skin derivatives, complete native ball rows outside the
+sample interval, input copies, source mutation rejection and complete budget
+rejection before pose evaluation. The guard completes in 74.219 s at
+131,969,024 bytes, with all 75 observations and archived bindings replayed.
+The public source and tests are byte-identical to this tested candidate.
+
+Inventories now declare 556 Python/45 Node suites and a contact subset of
+122/five. These are registration counts; the newly changed complete inventory
+and hosted map checks have not yet established a pass at this point.
