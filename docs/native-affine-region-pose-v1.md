@@ -2631,3 +2631,10 @@ error/hold-speed norms, source displacement/native pose rows and original
 geometry conditions still need complete coupled composition before correction
 or any Studio solver switch. Original motion remains selected; no capability,
 semantic, engine or human-review gate is approved by these numerical studies.
+
+At source `7f4428faedeee8589d32684c9e5cc2d99ba0457f`, hosted runs
+[39041561246](https://github.com/DocMorphic/strep/actions/runs/39041561246)
+and [39041563123](https://github.com/DocMorphic/strep/actions/runs/39041563123)
+pass all 48 rate-stencil and 33 skin-map cases respectively on both Ubuntu and
+Windows. Local complete-rig evidence and the outstanding failure/gate counts
+retain their stated scope.
