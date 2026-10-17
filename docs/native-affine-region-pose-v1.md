@@ -2939,3 +2939,24 @@ and `v2`, `reports/native-world-pair-regression-cuts-v1`,
 and `reports/native-world-distributed-receipts-v1`. Inventories now contain
 574 Python / 45 Node and 140 Python / 5 Node contact paths, not full-suite
 passes. Generated assets and bulky evidence remain excluded from GitHub.
+
+Hosted run [39050277210](https://github.com/DocMorphic/strep/actions/runs/39050277210)
+passes all 48 hinge proposal cases on Ubuntu and Windows at source
+`4eb4abd`. These checks qualify the numerical proposal code; they do not
+approve the corrected motion or transfer collision evidence between files.
+
+Fresh distributed-geometry slice `slice-0-76` completes all 76 requested
+full 36,108-face-per-actor scene queries and actual saved rotation/joint
+bounds with zero failures. Guard: 513.500 s / 183,234,560 bytes / 505
+observations. A separate independent receipt/archive/report/actual pose/floor
+replay verifies all 76 samples: 35.531 s / 149,889,024 bytes / 37 observations.
+
+The newer 6,100-failure candidate therefore has 80 sampled scene/pose checks:
+76 fresh and four inherited through exact hierarchy/static identity. This is
+80 of 2,017 policy samples. The remaining 152 changed old samples and 1,785
+other policy samples remain unchecked. No complete 232-sample coverage is
+claimed for this candidate until the other slices receive independent replay.
+Results are immutable under `reports/native-world-distributed-geometry-v1`
+and `reports/native-world-distributed-geometry-receipts-v1`, each at
+`cases/slice-0-76`. Full self, continuous collision and release gates remain
+open; no corrected clip is promoted.
