@@ -241,3 +241,82 @@ times remain sparse coverage of the 2,017 native/frame sampling times.
 Passing the non-regression comparison does not make either scene collision-free
 or approve a box pickup. All outputs and the interrupted probe remain retained
 locally; no scene is promoted.
+
+## Surface-guided orientation proposals
+
+`scripts/native_mesh_prop_surface_seed.py` adds geometry-informed proposals to
+the same bounded, source-relative prop editor. It uses every triangle incident
+to the selected contact vertices at the editable key, suggesting orientations
+that oppose the prop grip's winding normal to each incident actor normal and
+their area-weighted mean. Explicit twist samples explore orientations around
+that world normal. The full actor mesh stays in the collision evaluation;
+incident faces supply guidance, not a replacement collision surface.
+
+```powershell
+python scripts/native_mesh_prop_surface_seed.py pose-permissions.json mesh-policy.json reports/my-surface-search --maximum-candidates 32
+```
+
+The editable key must lie in the selected contact interval. Guidance rejects
+degenerate incident faces and unsupported populations instead of silently
+dropping them. A cancelling mean is reported as unavailable while both opposed
+face directions remain. Winding normals are not certified outward normals;
+neither matching them nor fitting the selected point proves a grasp.
+
+The table begins with the original pose and optionally a saved starting point.
+`--warm-start warm-start.json` accepts only an explicit
+`strep-prop-source-relative-warm-start-v1` document containing
+`permissions_sha256` and four cumulative `controls` relative to those exact
+original permissions. Its geometry and contacts are remeasured. It does not
+create a new source or reset any angle/displacement limit. Invalid proposals are
+retained as rejected controls, never clipped into the permitted domain.
+
+Every admissible proposal checks all native/frame sampled pose-change bounds,
+all declared point contacts and all geometry policy conditions. A newly failing
+condition remains a rejection even if the total failure count stays unchanged.
+Source collision metrics cannot worsen; best proposals require componentwise
+improvement. Candidate limits and incomplete tables are explicit. No finite
+normal/twist table proves global infeasibility or complete action coverage.
+
+All **40** focused tests pass locally and on Windows/Ubuntu at `cc3a032` in
+[run 39079181801](https://github.com/DocMorphic/strep/actions/runs/39079181801).
+They include exact/opposed/general normal alignment, world twist composition,
+incident-face identities and area weighting, cancelling/degenerate guidance,
+strict caps and locked rotation, original source bindings, remeasured starting
+points, and complete contact/geometry repair of a generated convex fixture.
+The local guard records 23.625 s / 125,390,848 bytes / 41 observations. These are
+source tests and generated fixtures, not real-action or release approval.
+
+The retained real-character trial records the complete 22-entry table: the
+original, the remeasured previous best, and 20 proposals from four incident face
+normals plus their area-weighted mean, each with four twists. One guided
+proposal fails its strict native pose bound and is retained without export.
+The other 19 pass all sampled pose budgets and point contacts but introduce a
+previously passing partner/box condition failure. None is accepted; the previous
+best remains unchanged at 27.208295 mm peak penetration. Guard: 272.718 s /
+239,104,000 bytes / 284 observations, with an independently replayed resource
+trace. No source/cap/threshold changes or scene promotion occurred.
+
+This is useful failure evidence: probe 2 clears the box from actor A but moves
+it into actor B. The total failed geometry-time count remains one, and its
+41.504893 mm peak is below the original 81.464129 mm. Those aggregate numbers
+cannot justify accepting a new collision with the partner. The stable condition
+identities reject it. The finite table is not a proof that no valid orientation
+exists, and this authored contact demonstration is not a generated pickup.
+
+A separate replay imports none of the three new mesh/pose/guidance backends and
+independently reconstructs **rejected probe 2**. It reproduces all 2,017 sampled
+pose-budget values and world-vertex arrays and freshly recomputes every one of
+the 15 complete three-time mesh pairs. Actor A's condition is repaired; actor
+B's previously passing condition newly fails. All declared point contacts and
+original edit bounds still pass. Guard: 13.344 s / 192,659,456 bytes / 31
+observations. Existing collision/interpolation libraries are reused, so this is
+independent composition/transport rather than a separate collision algorithm.
+
+The unchanged best's earlier independent qualification is inherited through
+its byte-identical complete scene manifest and every geometry/contact/pose-budget
+observation array, with the earlier replay's inputs rehashed. Its geometry was
+not freshly recomputed in this replay. That best still fails collision checks.
+Full native/frame geometry, continuous collision, dynamics, action correctness,
+engine imports and human acceptance remain open. Next fitting work must use
+partner collision witnesses when proposing edits, while retaining the original
+source, frozen keys and all prior passing conditions.
