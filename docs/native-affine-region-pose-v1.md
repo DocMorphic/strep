@@ -2960,3 +2960,84 @@ Results are immutable under `reports/native-world-distributed-geometry-v1`
 and `reports/native-world-distributed-geometry-receipts-v1`, each at
 `cases/slice-0-76`. Full self, continuous collision and release gates remain
 open; no corrected clip is promoted.
+
+## Complete changed-pose replay and original-bound basis pose rows
+
+The newer 6,100-failure candidate now has fresh checks for all 228 changed
+old geometry poses. Every slice passes full 36,108-face-per-actor scene
+queries and original saved rotation/joint bounds. Each receives a separate
+receipt/archive/report/actual pose/floor replay with zero failures.
+
+| Slice | Fresh samples | Query guard seconds / peak bytes / observations | Independent replay seconds / peak bytes / observations |
+| --- | ---: | --- | --- |
+| `slice-0-76` | 76 | 513.500 / 183,234,560 / 505 | 35.531 / 149,889,024 / 37 |
+| `slice-76-76` | 76 | 475.609 / 172,097,536 / 468 | 40.734 / 152,367,104 / 42 |
+| `slice-152-76` | 76 | 372.579 / 212,246,528 / 369 | 32.484 / 152,272,896 / 34 |
+
+The independent composite verifies exact source/receipt bindings, unchanged
+physical clock/planes/limits, disjoint complete slices and their union with
+four poses whose full hierarchy/static data are unchanged. Coverage for the
+newer candidate is **232 of 2,017 policy samples**, including **all 120 native
+keys for each actor**, with zero sampled scene/pose failures. The other
+1,785 policy times remain unchecked. Composite guard: 36.516 s /
+122,683,392 bytes / 38 observations. Full self, continuous collision, dynamics,
+semantics, engine and human approval remain open. The frozen contact's
+inherited self crossings remain unchanged. The original stays selected.
+
+The larger rejected distributed proposals exposed native-ball and
+coupled-time pose limits that the previous world-only guidance did not
+compose. New `scripts/native_basis_pose_rows.py` provides `BasisPoseRows`:
+the complete declared temporal basis passes through original-bound native
+interpolation and the complete affine hierarchy into every interpolated
+rotation ball and original joint-displacement band. Raw native-key balls
+remain available in complete bounded chunks. Export refuses invalid raw
+balls without clipping and preserves frozen coefficient bytes.
+
+The adapter binds original curves, frames, caps, parenting, joint/order/local
+transforms and map context. It owns its basis and band snapshots, reports
+source/cap digests and rejects incomplete bracket/node domains or changed
+source state before evaluating a pose. Matrix and owned-array workspace
+admission retains all nodes/columns; it does not allocate a full-mesh skin
+Jacobian. Encoded mode returns values with explicit `None` Jacobians. It does
+not manufacture encoded derivatives or approve a saved asset.
+
+Prototype and production imports each pass **115 focused cases**: 45 new
+adapter, 49 existing key-basis and 21 pose-bound cases. Checks include
+independent existing row assembly, full chain finite directions with the last
+column, actual saved GLBs, complete native clocks, frozen bytes, snapshots,
+invalid domains/budgets/modes and source mutation without recentering.
+Prototype guard: 53.937 s / 129,912,832 bytes / 55 observations; production:
+44.688 s / 122,413,056 bytes / 46 observations. The production module path and
+actual qualified method bytes are verified explicitly. These are focused
+passes, not an entire repository test run.
+
+On the supplied character, all **5,400 raw native**, **23,880 raw pose** and
+**23,880 encoded pose** values replay byte for byte: 53,160 values, no changed
+physical verdicts. Both exported coefficient grids are byte-identical to the
+verified candidate. Independent actual saved-world discrepancy is
+1.4432899320127035e-15. Thirty finite-direction comparisons across both actors
+at 0 / 1.2 / 2 / 3 / duration, including the last late-key coordinate, give
+maximum pose-margin error 3.157e-10 and world error 4.944e-11. Frozen-key
+0/60/119 pose derivatives are exactly zero.
+
+All 78 hierarchy nodes and 77 original joint rows per actor are retained, with
+264/276 actor-local columns. World Jacobians use 2,635,776 / 2,755,584 bytes;
+estimated owned-array workspaces are 5,513,902 / 5,782,142 bytes, below the
+unchanged 64 MiB admission ceiling. Actual guard: 77.140 s / 212,840,448 bytes
+/ 78 observations. The adapter makes no new triangle query. It is a native/
+pose building block, not yet the combined 540-column native/pose/pair/rate
+operator. Complete saved-file, surface, engine and human acceptance remain
+separate, and the candidate still has 6,100 raw/saved rate failures.
+
+Next, stream every original native/pose/pair population into coupled proposal
+guidance and relinearize at verified working points while preserving the
+original source epoch. Do not substitute a small observed-cut subset for the
+complete physical postchecks. The broad release goal and all 14 capability
+approvals remain open.
+
+Immutable evidence is in `reports/native-world-distributed-geometry-composite-v1`,
+the three query/receipt slices, `reports/native-basis-pose-rows-prototype-tests-v1`,
+`reports/native-basis-pose-rows-source-tests-v1` and
+`reports/native-basis-pose-rows-actual-v1`. Inventories now declare 575 Python /
+45 Node and 141 Python / 5 Node contact paths. No large generated evidence,
+downloaded rig, model weights or credentials are published.
