@@ -3882,3 +3882,61 @@ The new version handles contact groups separately after proving their exact
 independence; it removes no world or postcheck conditions. Its complete
 guidance and all cumulative native cones are proposal inputs only; the full
 **944,562** raw/saved hard checks still decide numerical acceptance.
+
+`reports/native-local-conic-trial-v1` retains all 5,400 cumulative native
+cones, including 5,355 fixed cones, and 7,519 extra proposal guards. The full
+step is rejected despite a lower error: it newly fails one previously repaired
+row in both raw and saved motion. Its complete failed results are retained.
+The half step, **probe 01**, passes all **944,562** mandatory checks with no
+new failed world row and all 25 required repairs/regression rows preserved.
+
+| Check | Parent v5 | Local half step |
+| --- | ---: | ---: |
+| Raw rate failures | 6,097 | 6,094 |
+| Saved rate failures | 6,097 | 6,094 |
+| Raw peak normalized violation | 46.207741142 | 45.255020717 |
+| Saved peak normalized violation | 46.207739701 | 45.255023304 |
+| Raw squared positive violations | 58,197.495508 | 57,478.929899 |
+| Saved squared positive violations | 58,197.477259 | 57,478.916368 |
+
+All original/native-key pose, native-ball, pair, displacement and contact
+conditions pass. Source/caps/clocks/frozen controls remain unchanged. Guard:
+216.219 s / 306,032,640 bytes / 213 observations, complete. This is internal
+numerical acceptance, pending independent export replay and fresh geometry
+for every changed pose. The remaining 6,094 rate failures and all broader
+release gates remain open; the original is still selected.
+
+`reports/native-local-export-replay-v1` independently matches all **383,617
+saved world values byte for byte**. It reconstructs the original parent from
+its 540-coordinate basis, then explicitly inserts the 135 local values at
+native key 65 without importing the local basis/context. All **5,400 raw
+native balls** match byte for byte, as do all 5,400 independently decoded
+saved native balls. The full **177,328 archived nonworld hard margins** pass;
+the saved-world measurements are freshly recomputed, whereas this archived
+margin audit is not another raw pose/pair computation. Guard: 50.109 s /
+191,361,024 bytes / 51 observations, complete.
+
+Static rig data, source binary prefix, uncontrolled channels, clocks and
+frozen controls remain unchanged. Exact complete-hierarchy pose comparison
+preserves **231 of the 232 old scene samples**. The one changed old pose is
+at **2.1666667461395264 s** and requires fresh scene/pose queries. This identity
+statement covers those old samples only; it does not imply that motion between
+them is unchanged or continuously collision-free.
+
+`reports/native-local-geometry-v1/cases/all-changed` freshly checks that one
+changed pose against both complete 36,108-face meshes, the original world-plane
+policy and original saved rotation/joint bands: **zero failures**. Guard:
+29.578 s / 180,715,520 bytes / 31 observations. Independent complete receipt,
+scene-report, saved-pose and all-vertex floor replay in
+`reports/native-local-geometry-replay-v1` also passes: 43.891 s / 155,336,704
+bytes / 45 observations. It rechecks the full hierarchy bytes for all 231
+inherited poses and verifies the parent's complete sampled evidence.
+
+The disjoint composite again covers **232 old scene/pose samples and all 120
+native keys per actor**, with **zero sampled scene or pose failures**. Original
+physical policy, clocks, caps, source epoch and selection are preserved. This
+supports the localized half step as the next experimental numerical candidate,
+while retaining all failed attempts. Another **1,785 policy times**, inherited
+self-intersections, continuous motion/dynamics, action correctness, imports and
+actual human review remain open. Neither this count nor the approximately 2%
+peak-rate improvement establishes realistic animation or release readiness.
