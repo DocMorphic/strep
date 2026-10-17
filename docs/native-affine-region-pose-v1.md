@@ -3041,3 +3041,9 @@ the three query/receipt slices, `reports/native-basis-pose-rows-prototype-tests-
 `reports/native-basis-pose-rows-actual-v1`. Inventories now declare 575 Python /
 45 Node and 141 Python / 5 Node contact paths. No large generated evidence,
 downloaded rig, model weights or credentials are published.
+
+Hosted run [39053233117](https://github.com/DocMorphic/strep/actions/runs/39053233117)
+passes all 45 new adapter cases on Ubuntu and Windows at source
+`563df15ca5c6d51069d7b3f00bcb3721c3fb910d`. The actual supplied-character
+values and geometry coverage remain separately qualified; these hosted
+fixture tests do not approve the animation.
