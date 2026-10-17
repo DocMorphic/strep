@@ -1,6 +1,7 @@
 """Complete seeded edits, frozen poses, bounded rows and native codec replay."""
 from pathlib import Path
 import sys
+import copy
 import numpy as np
 import pytest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
@@ -102,9 +103,13 @@ def test_nonzero_seed_correction_improves_explicit_surface_target(tmp_path):
     _,vertices,derivative,_=mapper.model.evaluate_columns(full,[0]);normal=derivative[0,:,0];normal/=np.linalg.norm(normal)
     position,rotation=kwargs['actor']['placement'];point=vertices[0]@rotation.T+position;axis=rotation@normal
     kwargs['observations'][0]['regions']=[dict(vertices=[0],normal_world=axis.tolist(),offset_m=float(point@axis+.002),sign=1,minimum_gap_m=0.)]
-    problem=SeededRegionProblem(**kwargs);before=problem.evaluate(problem.initial)[0];value,report=fit(problem,iterations=16);after=problem.evaluate(value)[0]
+    problem=SeededRegionProblem(**kwargs);before=problem.evaluate(problem.initial)[0]
+    reserve=np.zeros(problem.rows);helper=problem.samples[0][1];reserve[helper.hard_rows:helper.report['rows']]=.001
+    value,report=fit(problem,iterations=16,search_reserve=reserve);after=problem.evaluate(value)[0]
     assert before.min()<-.1 and after.min()>before.min()+.1
     assert report['raw_failed_rows']==int(np.count_nonzero(after<0))
+    assert report['declared_raw_conditions_pass'] and report['declared_quantized_conditions_pass']
+    assert report['search_reserve']==reserve.tolist()
     np.testing.assert_array_equal(problem.controls(value)[list(problem.frozen)],problem.seed[list(problem.frozen)])
 
 
@@ -125,3 +130,60 @@ def test_invalid_permissions_clock_and_budgets_reject(tmp_path,change):
 def test_invalid_solver_budget_rejects(tmp_path,iterations):
     problem=SeededRegionProblem(**setup(tmp_path))
     with pytest.raises(ValueError):fit(problem,iterations=iterations)
+
+
+@pytest.mark.parametrize('operation',['evaluate','quantized_rows','controls'])
+def test_nonconsecutive_same_times_reuse_frames_and_keep_every_ordered_row(tmp_path,monkeypatch,operation):
+    kwargs=setup(tmp_path);observations=copy.deepcopy(kwargs['observations']*2)
+    observations[2]['regions'][0]['vertices'].reverse();observations[3]['regions'][0]['offset_m']=-9.
+    kwargs['observations']=observations;problem=SeededRegionProblem(**kwargs);value=problem.initial+.015
+    individual=[SeededRegionProblem(**dict(kwargs,observations=[observation])) for observation in observations]
+    if operation=='evaluate':expected=tuple(np.concatenate([p.evaluate(value)[i] for p in individual],axis=0) for i in [0,1])
+    elif operation=='quantized_rows':expected=np.concatenate([p.quantized_rows(value) for p in individual])
+    else:expected=individual[0].controls(value)
+    calls=[0]
+    for mapper,_ in problem.groups:
+        original=mapper.model.evaluate_columns
+        def wrapped(*args,_original=original,**kw):calls[0]+=1;return _original(*args,**kw)
+        monkeypatch.setattr(mapper.model,'evaluate_columns',wrapped)
+    actual=getattr(problem,operation)(value)
+    if operation=='evaluate':
+        for a,b in zip(actual,expected):np.testing.assert_array_equal(a,b)
+    else:np.testing.assert_array_equal(actual,expected)
+    assert problem.report['unique_pose_times']==2 and len(problem.samples)==4
+    assert calls[0]==(0 if operation=='controls' else 2)
+
+
+def test_reused_frame_still_checks_each_observation_fixed_seed(tmp_path):
+    kwargs=setup(tmp_path);kwargs['observations']=[kwargs['observations'][0]]*2;problem=SeededRegionProblem(**kwargs)
+    later=problem.samples[1][1];later.base=later.base.copy();later.base[3]+=.01
+    with pytest.raises(ValueError,match='Fixed'):problem.evaluate(problem.initial)
+    with pytest.raises(ValueError,match='Fixed'):problem.quantized_rows(problem.initial)
+
+
+def test_callback_and_search_reserve_copies_cannot_change_solver_observations(tmp_path):
+    problem=SeededRegionProblem(**setup(tmp_path));reserve=np.zeros(problem.rows);reserve[3]=.001;expected=reserve.copy();events=[]
+    def observe(event):
+        events.append((event['evaluation'],event['failed_rows']));event['controls'][:]=99;event['rows'][:]=np.nan;reserve[:]=.1
+    value,report=fit(problem,iterations=3,search_reserve=reserve,on_evaluation=observe)
+    np.testing.assert_array_equal(value,problem.initial);assert events
+    assert report['search_reserve']==expected.tolist() and report['declared_quantized_conditions_pass']
+    assert report['evaluations'][0]['controls']==problem.initial.tolist()
+
+
+@pytest.mark.parametrize('kind',['shape','negative','nan','bool','oversized','scalar'])
+def test_invalid_search_reserves_reject_before_solving(tmp_path,kind):
+    problem=SeededRegionProblem(**setup(tmp_path));value=np.zeros(problem.rows)
+    if kind=='shape':value=np.zeros(problem.rows+1)
+    elif kind=='negative':value[0]=-.001
+    elif kind=='nan':value[0]=np.nan
+    elif kind=='bool':value=value.astype(bool)
+    elif kind=='oversized':value[0]=.10001
+    else:value=np.array(0.)
+    with pytest.raises(ValueError,match='reserves'):fit(problem,search_reserve=value)
+
+
+@pytest.mark.parametrize('callback',[True,object()])
+def test_noncallable_observer_rejects(tmp_path,callback):
+    problem=SeededRegionProblem(**setup(tmp_path))
+    with pytest.raises(ValueError):fit(problem,on_evaluation=callback)

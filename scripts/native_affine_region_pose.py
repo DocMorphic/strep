@@ -91,7 +91,7 @@ class RegionPoseRows:
                   'Caller must bind source files/clock/permissions and independently check saved motion, '
                   'interpolation, dynamics, contacts, full mesh geometry, engine and human quality.')
 
-    def evaluate(self, value):
+    def _controls(self, value):
         value = np.asarray(value)
         if value.dtype.kind not in 'fiu' or value.shape != (self.size,) or not np.isfinite(value).all():
             raise ValueError('Complete finite active pose coordinates required')
@@ -101,7 +101,11 @@ class RegionPoseRows:
                 or any(not np.array_equal(a, b) for a, b in zip(self.model.actor['placement'], self.placement))):
             raise ValueError('Constructor-bound original pose reference changed')
         full = self.base.copy(); full[self.coordinates] = value
-        world, points, derivative, joint_jac = self.model.evaluate_columns(full,self.coordinates)
+        return full
+
+    def _rows(self, full, frame):
+        """Internal row assembly from this model's freshly computed native frame."""
+        world, points, derivative, joint_jac = frame
         position, rotation = self.placement
         points = points@rotation.T+position
         derivative = np.einsum('ij,vjc->vic', rotation, derivative)
@@ -119,3 +123,7 @@ class RegionPoseRows:
         if not np.isfinite(values).all() or not np.isfinite(matrix).all():
             raise ValueError('Nonfinite native pose condition or derivative')
         return values, matrix, world, points, full
+
+    def evaluate(self, value):
+        full = self._controls(value)
+        return self._rows(full, self.model.evaluate_columns(full,self.coordinates))

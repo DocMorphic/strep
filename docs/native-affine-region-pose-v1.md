@@ -936,3 +936,86 @@ with explicit inner search margins for saved-file rounding. Reuse evaluations
 at identical times to keep larger feedback sets practical on this laptop.
 Preserve original acceptance limits and require complete affected-interval,
 whole-clip/self, dynamics, engine and human checks before selecting any clip.
+
+## Reusing poses while retaining complete feedback constraints
+
+The seeded problem now groups observations by exact time. Each evaluation
+computes one fresh interpolation map and native affine frame per distinct
+time, then assembles every observation's rows into their original positions.
+Nonconsecutive observations retain their ordering. Only the current group's
+frame is held; there is no persistent pose cache across proposals. Repeated
+rotation, joint and native-key rows are retained rather than deduplicated.
+Every observation still checks its original reference, active dependencies,
+fixed seed and model identity. `RegionPoseRows.evaluate` retains its public
+signature and arithmetic; internal frame assembly is reused by the seeded path.
+
+`fit` also accepts a complete nonnegative `search_reserve` vector, bounded to
+0.1 normalized units per row and copied before solving. The search requires
+`row - reserve >= 0`; final raw and encoded acceptance still require the
+original `row >= 0`. The default is zero. The full vector and search failures
+are reported separately, so an inner optimization margin cannot silently
+become a changed physical acceptance tolerance. Reserves use the existing
+row scales: a 0.0001 reserve on a 1-cm-normalized surface row is 1 micrometre.
+
+An optional evaluation observer receives copies of the proposal and complete
+row array after each fresh evaluation. Jobs can save these immediately, keeping
+completed probes if an optimization later stops. Mutating these event copies
+cannot change the solver's cached data. Callback failures propagate as job
+failures; callbacks do not approve assets or alter the original source epoch.
+
+The affected selection passes 140 cases in 33.88 s: 30 seeded-fit, 46 key-map,
+22 selected-column and 42 region cases. New coverage includes interleaved
+repeated times, exact row ordering, one frame evaluation per distinct time,
+later-observation source/seed checks, strict encoded acceptance with an inner
+surface margin, callback copy isolation and invalid reserves/observers.
+The 512-MiB guard completes in 62.875 s at 125,157,376 sampled bytes, with
+all 64 observations/bindings replayed. Inventory counts remain 558 Python/45
+Node suites and 124/five in the contact subset; no full-inventory pass is claimed.
+
+### Actual replay and measured cost
+
+`native-seeded-region-reuse-actual-v1` reconstructs the preceding actual A/B
+problems with 58 observations but only six distinct times each. Every raw and
+encoded row matches the saved preceding candidate arrays bit-for-bit. Every
+Jacobian entry matches the frozen preceding seeded facade running on the
+current affine/map delegates. This is not a claim of separately replaying every
+historical dependency revision. The unchanged A/B failures (raw 0/4, encoded
+3/6) remain; arithmetic equivalence does not clear an animation.
+
+| Operation | A previous / reused (s) | B previous / reused (s) |
+| --- | --- | --- |
+| Construction | 3.109 / 1.079 | 3.094 / 1.062 |
+| Rows and derivatives | 10.093 / 1.485 | 11.031 / 1.407 |
+| Encoded rows | 8.390 / 1.391 | 7.218 / 1.078 |
+
+These are single-machine measurements, not latency guarantees. No new fit,
+export or geometry query runs in the replay. Its guard completes in 77.250 s
+at 174,243,840 sampled bytes, with all 78 observations/bindings replayed.
+
+### A raw-source overlap limits source-separating-plane guidance
+
+`high-five-seeded-approach-region-fit-v3` attempts to retain all 3,380 old and
+new pair witnesses. Its first time supplies 297 planes, but the next time
+finds no positive source projection gap for A face 26562 / B face 27471 at
+1.1625 s; the best tested unit-axis gap is -1.331691 mm. The job stops before
+fitting or export, preserving its setup failure. Its failed guard replays
+24.375 s / 146,821,120 sampled bytes / 26 observations.
+
+`high-five-feedback-raw-pair-proof-v1` independently reconstructs this one
+pair across three epochs. Exact rational witnesses prove represented-triangle
+crossings in the original clip and proposal-v2; the assembly-v4 pair has no
+strict straddle. This does not certify complete raw-scene absence or contradict
+the previous 85 separated original pairs at the earlier time. A new witness
+may require moving out of a raw-source collision rather than returning to raw
+motion. The proof guard completes in 26.328 s / 124,035,072 sampled bytes /
+28 replayed observations, without fitting or changing an asset.
+
+The next explicit proposal retains all 3,380 pairs but permits least-overlap
+source axes as guidance when source triangles already overlap. Such an axis
+is an optimization proposal, not a separation proof. It keeps the original
+movement limits and source epoch, freezes 0/60/119 and all other keys/fingers,
+and uses the previous complete original-relative proposal as its seed. Search
+adds a 1-micrometre inner surface margin; original 10-micrometre declared gaps
+and all strict acceptance comparisons remain. Success is unproven until fresh
+saved-candidate checks complete, followed by complete affected-interval and
+whole-scene/dynamics/engine/human validation.
