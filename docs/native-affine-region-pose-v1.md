@@ -2753,3 +2753,9 @@ The new 36-case suite is declared in both source inventories and the focused
 hosted workflow. Inventories contain 572 Python / 45 Node and 138 Python /
 5 Node contact paths, not whole-suite passes. No large generated evidence,
 downloaded character payloads, model weights or credentials are published.
+
+Hosted run [39043858295](https://github.com/DocMorphic/strep/actions/runs/39043858295)
+passes all 36 integration cases on Ubuntu and Windows at source
+`e4aafcc6ca36f58c8c7a932848a70ff944b47a54`. The complete-pair row failures and
+remaining native/geometry/engine/human requirements are unchanged by this
+cross-platform qualification.
