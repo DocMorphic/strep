@@ -6,6 +6,9 @@ topology do not establish a valid, non-self-intersecting character surface.
 Self-surface evidence is needed before interpreting the disputed metric or
 choosing another correction. The containment investigation is recorded in
 [native-containment-crosscheck-v1.md](native-containment-crosscheck-v1.md).
+Explicit original-axis guidance for subsequent corrections is described in
+[native-self-separation-cuts-v1.md](native-self-separation-cuts-v1.md); those
+proposal bounds do not replace the complete checks described here.
 
 `scripts/native_self_surface.py` screens every unique pair of original
 triangles whose numerical bounding boxes overlap, then uses the unchanged
