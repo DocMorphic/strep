@@ -3257,3 +3257,119 @@ must refresh explicit individual guards for all four rows at the verified
 working point, then combine them with the complete model and native cones.
 Every full raw/saved acceptance check remains mandatory. No source epoch,
 physical cap, frozen pose or release criterion is relaxed to fit this result.
+
+### Refreshing individual guards without changing the source contract
+
+`reports/native-conic-hinge-individual-guards-v1` refreshes every diagnosed
+row (20,330, 64,971, 203,473 and 207,766) at the verified 6,100-failure point.
+The original displacement norms and linear-speed stencil are evaluated
+through the complete basis/world chain. Their scalar gradients retain all
+540 columns, including the other actor's explicit zero columns. This uses
+the derivative of each current norm, rather than a projection toward an
+earlier rejected vector.
+
+All four raw values match the unchanged full original oracle within the
+separate 2e-12 numerical comparison limit. Eight complete direction checks
+pass: maximum errors are 1.428e-9 (A hand), 1.668e-8 (A ring finger speed),
+9.771e-10 (B hand) and 8.840e-10 (B index end). The scalar guard matrix is
+4 × 540, or 17,280 bytes. Half the smaller raw/saved passing slack is reserved
+in each proposal inequality; the physical cap and strict zero acceptance
+threshold remain unchanged. Only raw derivatives are used. The guard study
+completes in 40.843 s, with peak process-tree RSS 210,907,136 bytes and
+42 observations. No optimization, new animation or geometry query occurs
+while constructing these guards.
+
+The subsequent `reports/native-conic-hinge-actual-v3` trial combines all four
+guards with the complete 952-group model, the 944 passing physical-group
+guards and every 5,400 original native cone. All 540 controls, original source
+caps and frozen coefficients remain unchanged. Its complete constraint matrix
+uses 1,145,972 bytes. This is a new experiment; the rejected aggregate-only
+trial and every original measurement remain immutable.
+
+All four v3 probes pass the complete raw/saved native, pose and original pair
+conditions. Every full world check still rejects the result:
+
+| Step fraction | Raw / saved world failures | New failures per mode |
+| --- | --- | --- |
+| 1 | 6,112 / 6,112 | 14 / 14 |
+| 1/2 | 6,105 / 6,105 | 6 / 6 |
+| 1/4 | 6,104 / 6,105 | 5 / 5 |
+| 1/8 | 6,103 / 6,102 | 3 / 3 |
+
+Peak and squared-error improvements never override the no-new-failure rule.
+No candidate is accepted. Guard: 400.688 s / 283,672,576 bytes / 393 observations.
+The original qualified reference, source, caps, frozen poses and selection
+remain unchanged.
+
+`reports/native-conic-hinge-regression-diagnosis-v2` independently compares
+all 366,369 raw/saved world rows for each completed probe. It finds 56
+regression records and 14 unique rows. **None of the four explicitly guarded
+rows regress.** The failures move to unguarded rows: 11 previously repaired
+A thumb-acceleration rows, another A hand-displacement row and two A
+linear-speed rows. This identifies loss of previously earned repairs, rather
+than failure of those four individual guards. Diagnosis guard: 41.813 s /
+208,756,736 bytes / 43 observations.
+
+A separate vector qualification,
+`reports/native-conic-hinge-vector-guards-v1`, retains all 12 vector components
+for the four original guards and all 540 columns in 51,840 bytes. Eight vector
+direction checks pass, maximum discrepancy 1.565e-8. All 16 actual guarded-row
+comparisons pass; no guarded nonlinear failure is demonstrated. Guard:
+50.109 s / 208,048,128 bytes / 51 observations. This does not justify adding
+new vector-cone restrictions to explain these failures; the measured issue
+is the missing individual guard population.
+
+`reports/native-conic-hinge-active-union-v1` therefore builds a persistent
+union: every previously repaired original row plus every regressed original
+row in both complete conic diagnoses, across raw and saved modes. The raw
+and saved original-to-working repair sets agree on all 14 rows. Their union
+with the diagnosed regressions contains **21 rows**, not a sampled subset.
+All 21 receive fresh complete 540-column scalar norm/stencil gradients at
+the same verified point, including the unchanged angular decoder derivative.
+All **42** directions pass, maximum discrepancy 9.315e-8. The guard matrix
+uses 90,720 bytes. Angular anchor arithmetic has an explicit numerical
+comparison limit of 1e-9 × (1 + absolute original value), with unchanged
+physical signs and strict original acceptance thresholds. Half smaller
+raw/saved slack still restricts proposals only. Guard: 60.047 s /
+230,203,392 bytes / 61 observations, including a 24.157 s admission period.
+
+The next trial, `reports/native-conic-hinge-actual-v4`, has been launched
+with all 21 guards, all 952 complete model groups, 944 passing-group guards
+and 5,400 native cones. Its proposal uses 965 extra inequalities and a
+1,151,048-byte sparse matrix. This paragraph records a launch and a numerical
+proposal, not terminal motion acceptance; its full actual checks are pending.
+No training, geometry query, new physical permission or release approval is
+introduced by this update.
+
+V4 subsequently completes with **probe 00 internally accepted at full step**.
+Raw and saved world failures both fall from 6,100 to **6,097**, with no newly
+failing original row, all prior repairs retained, and lower peak and squared
+error in both modes. Every 129,568 raw/saved native/pose/original-pair scalar
+check passes; every 366,369-row world mode is retained. Peak violations are
+46.207741142 raw and 46.207739701 saved. The 6,097 remaining failures are still
+unresolved; this is a small no-regression correction, not motion-quality
+approval. Guard: 130.672 s / 244,629,504 bytes / 130 observations.
+
+`reports/native-conic-hinge-receipts-v2` independently replays every saved
+world scalar byte for byte, reconstructs all 5,400 raw native coefficient
+balls, and replays all 5,400 saved native rotation-cap values byte for byte.
+It audits all 129,568 archived raw/saved native/pose/pair scalars and verifies
+the original static geometry, uncontrolled channels, native clocks and frozen
+coefficient bytes. No new raw pose/pair recomputation is claimed by this
+receipt. Original-to-candidate repair sets now contain 17 identical rows in
+both modes: 14 preserved plus **57,714, 102,918 and 174,313** newly repaired.
+Neither the original 6,114-failure reference nor the previous 6,100-failure
+reference gains a newly failing row. Receipt guard: 50.063 s /
+192,110,592 bytes / 51 observations.
+
+Exact full-hierarchy sampling at all 232 previously checked scene times
+finds **three unchanged poses and 229 changed poses**. Unchanged times are
+0, 2 and 3.9666666984558105 s. Frozen native coefficients alone do not establish
+identity at nearby sampled times: one additional old sampled pose now changes.
+Only those three exact-identity receipts can be inherited. The fresh-query
+driver `reports/native-conic-hinge-geometry-v1` uses the newly verified files
+and the original scene policy, with slices of 76, 76 and 77 changed times.
+The first 76-sample slice has been launched; no completed collision result is
+claimed here. All 229 changed times and independent composite receipt replay
+are still required. The original stays selected; full self/continuous motion,
+semantic, engine, human and release approvals remain open.
