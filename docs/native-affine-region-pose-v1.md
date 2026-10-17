@@ -1868,11 +1868,48 @@ completion or optimality. Its complete guard independently replays 675.453 s /
 705,716,224 bytes / 663 observations. No physical acceptance threshold,
 source pose, native/world displacement cap or frozen key is relaxed.
 
-Fresh four-slice full-mesh validation is now running serially, followed by a
+Fresh four-slice full-mesh validation runs serially, followed by a
 separate receipt/actual-pose audit. These workers require the terminal,
 resource-audited numerical parent and every strict motion and original-pair
 condition. They retain all 120 selected policy times, unchanged thresholds and
 original source poses; no prior candidate's geometry observations can be
-reused. Their results remain pending. Numerical feasibility alone does not
+reused. Their completed results follow below. Numerical feasibility alone does not
 approve new triangle intersections, self contact, dynamics, task semantics,
 engine imports, animator ratings or cleanup time. The original stays selected.
+
+The four fresh mesh slices and independent receipt/export/actual-pose audit now
+complete the same 120 selected times. There are 104 geometry passes, 16 failures
+at indices 616–631 (1.2125–1.241666667 s), 1,326 surface crossing records and
+zero motion-bound failures. The preceding candidate had 87 passes, 33 failures
+and 4,031 records over that identical population. This measures fewer mesh
+failures; visual quality and cleanup time have not been measured. The maximum
+independent pose-row difference is 8.882e-15, used only as a numerical comparison;
+every physical row is checked separately against its unchanged threshold.
+
+The four complete guards independently replay 200.297 s / 182,902,784 bytes /
+199 observations; 202.250 s / 193,802,240 bytes / 201; 198.969 s / 200,417,280
+bytes / 198; and 146.109 s / 178,733,056 bytes / 146. The independent receipt
+audit replays 52.703 s / 150,949,888 bytes / 54 observations. These fresh reports
+and their complete source/clock/transport/receipt populations are retained in
+`high-five-exact-group-candidate-geometry-v1` and
+`high-five-exact-group-candidate-receipts-v1`.
+
+`high-five-exact-group-transport-diagnosis-v1` samples the actual saved GLBs
+and computes scalar triangle projections without the interpolation map,
+optimizer or support-gap helper. All 34,018 retained pair gaps independently
+pass 20 micrometers. Their maximum difference from the archived encoded gaps
+is 8.743e-16 m; that comparison tolerance does not relax physical acceptance.
+All 1,326 fresh crossing records are unique, previously unconstrained pairs;
+none belongs to the retained input. The complete guard independently replays
+35.469 s / 130,084,864 bytes / 37 observations.
+
+Keeping all earlier pairs and all newly observed pairs gives 35,344 references.
+The exact neighborhood cover still has 5,493 groups, with different comparison
+contents. The 276-scalar / 29,465-row / 65,058,720-byte allocation remains inside
+the unchanged 64-MiB Jacobian cap. Allocation arithmetic is not a feasible fit.
+The following exact-group trial is running from the last candidate's controls,
+with the original source epoch, all 120 times, native/world caps, frozen keys
+and body/finger edit permissions unchanged. Its numerical and fresh full-mesh
+results remain pending. The original is still selected; 1,897 other policy
+times, self contact, dynamics, semantics, engine imports and human review remain
+unverified. No whole-motion or release approval follows from this study.
