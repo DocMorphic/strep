@@ -1971,5 +1971,45 @@ Hosted run `39025753066` at exact source `fbc8029` passes all 52 selected
 cases on Ubuntu and Windows. Final run/job metadata and both observed test
 counts are retained separately from local qualification. Fresh four-slice
 mesh validation and independent receipt/actual-pose replay of the new
-35,344-pair candidate are now running; those results remain pending and are
-not replaced by any numerical-component test result.
+35,344-pair candidate are measured separately; their completed results and a
+distinct memory-stop recovery follow below. No numerical-component test result
+substitutes for that mesh validation.
+
+The same complete 120-time population now has 113 geometry passes, seven
+failures at indices 623–629 (1.227083333–1.2375 s), 160 crossing records and
+zero motion-bound failures. The previous candidate had 104 passes, 16 failures
+and 1,326 records on that identical clock. This measures fewer mesh failures,
+not a visual-quality score or a whole-motion pass. The independent pose-row
+comparison differs by at most 7.661e-15; physical bounds are separately strict.
+
+The four query guards independently complete at 194.875 s / 185,077,760 bytes /
+194 observations; 184.797 s / 177,283,072 bytes / 184; 202.359 s / 194,289,664
+bytes / 201; and 160.250 s / 175,640,576 bytes / 159. The original receipt
+worker then fails at the unchanged available-RAM guard: 19.344 s /
+149,012,480 bytes / 22 observations. Its failed receipt report and stopped
+controller remain unchanged. After memory recovers, a fresh, byte-identical
+receipt worker in `high-five-exact-group-candidate-receipts-v3` independently
+verifies every original current-candidate query/receipt/source/clock/export/
+actual-pose observation. It completes at 53.797 s / 168,759,296 bytes /
+55 observations. This does not rerun geometry or relabel the failed worker.
+
+`high-five-exact-group-transport-diagnosis-v3` independently samples the actual
+saved clips and verifies all 35,344 retained pair gaps against 20 micrometers.
+Maximum difference from archived encoded gaps is 9.437e-16 m. The public
+GroupedPairGapRows component matches every direct projection with zero
+difference and matching grouped extrema. All 160 remaining crossing records
+are unique, previously unconstrained pairs. Its complete guard independently
+replays 36.563 s / 145,235,968 bytes / 38 observations and binds both the failed
+original receipt audit and successful separate recovery audit.
+
+The next retained-pair trial uses the shared component for its actual fit rows,
+per-side derivatives and original-pair physical postchecks. All 35,504 references
+remain, as 5,508 exact groups / 29,480 rows / 65,091,840 Jacobian bytes with
+the same 276 native scalars and unchanged 64-MiB cap. All 120 times, original
+source epoch, rotation/world bands, frozen keys and body/finger permissions
+remain unchanged. Initial full-Jacobian and value-only rows match bit for bit;
+two directional comparisons have maximum errors 3.029e-7 and 3.872e-7 under
+the unchanged 2e-5 numerical criterion. The worker is still running; its fit,
+export and distinct fresh mesh/receipt validation are not counted as passed.
+The original stays selected. The other 1,897 policy times, self/dynamics,
+semantics, engine and human review remain unverified.
