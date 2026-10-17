@@ -1849,3 +1849,22 @@ and pass flags match the original pairs without added comparisons; maximum
 gap difference is again 1.041e-17 m. Its guard replays 34.641 s / 135,864,320
 bytes / 36 observations. These transport and numerical checks do not create a
 new motion or approve any animation.
+
+The exact pair-group source at `bfb03dc` also passes all 26 focused cases on
+Ubuntu and Windows in hosted run `39023085921`; the local run metadata retains
+the exact tested source and both successful jobs.
+
+The following arm/finger numerical trial uses that exact grouping, 276 native
+scalars and all 29,465 rows. Its value-only calculation matches the complete
+Jacobian-path row vector byte for byte. Two initial directional comparisons
+have maximum errors 3.677e-7 and 3.735e-7 under the unchanged 2e-5 numerical
+criterion; these checks validate derivatives, not motion quality. All 34,018
+original raw and Float32-encoded pair gaps remain independent postchecks.
+The initial point fails those physical requirements. The worker is still
+running; no successful fit, export or geometry result is counted yet.
+
+Fresh four-slice full-mesh validation and a separate receipt/actual-pose audit
+are prepared for this candidate. They require a terminal, resource-audited
+numerical parent that passes every strict motion and original-pair condition.
+They retain all 120 selected policy times, unchanged thresholds and original
+source poses; no prior candidate's geometry observations can be reused.
