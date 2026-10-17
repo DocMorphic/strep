@@ -2220,3 +2220,57 @@ unchanged. This is a complete native-key sample pass, not full interpolated
 motion, continuous collision, self-intersection, dynamics, semantics, engine,
 animator or release acceptance. The previously measured contact-pose self
 failures remain open.
+
+### Bounded coupled correction API
+
+`scripts/native_coupled_pair_fit.py` adds `preflight(problem, value=None)` and
+`fit(problem, iterations=32, maximum_evaluations=128, search_reserve=None,
+on_evaluation=None, starting_value=None)` for a complete `CoupledKeyPairRows`.
+This is a development API; Studio's existing contact/rate solver is unchanged.
+Callers must retain every original scene/contact/rate condition when composing
+an integrated problem, and independently audit actual saved assets afterward.
+
+Preflight reconstructs native endpoint support and complete row/pair layouts.
+It rejects exact raw/Float32 physical violations outside that support, retaining
+all original pair indices. A negative smooth gap, reserve margin or numerical
+zero derivative is not an infeasibility proof. Fixed self conditions consider
+only their referenced actor. Source and structural bindings are checked before
+cached values are consumed; fresh kernels perform their own complete source
+checks. Every potentially feasible point receives a fresh exact postcheck,
+including after an evaluation callback.
+
+The solver minimizes distance to the unchanged original problem seed under all
+declared pose, native-ball and directional self/partner rows. Search reserves
+are complete normalized guidance arrays, not physical acceptance thresholds.
+An already feasible starting point is preserved. A new proposal can stop at an
+independently postchecked feasible checkpoint without optimizer convergence or
+optimality. Solver success alone never accepts motion. Limits remain 1–64
+iterations and 1–512 complete evaluations, plus caller-enforced resource guards.
+Callbacks receive copies of complete controls and rows for durable checkpoints.
+
+`starting_value` accepts a complete native variable vector in the existing
+scalar search box, without automatic clipping. It does not rebase the original
+source, objective seed, caps, frozen keys or permissions. Callers must bind the
+checkpoint to its complete original recipe and source hashes. A restart resets
+SLSQP's internal state; it is not a resumed Hessian or a reclassification of a
+failed job. Failed proposals remain unselected.
+
+Thirty-six new fitter cases plus 41 coupled-row cases pass in both isolated
+prototype and production-import tests. These include a real small contact
+repair with independently sampled saved GLBs, fixed physical failures, stronger
+smooth-proxy failures, callback/source invalidation, exact evaluation limits
+and preservation of the original objective across a restart. Prototype guard:
+69.875 s / 132,284,416 bytes / 71 observations. Production-import guard:
+72.063 s / 122,056,704 bytes / 73 observations. Earlier failed prototype records
+remain immutable; validation-order and stale cached-postcheck failures are
+covered by the passing suite.
+
+The full 120-time / 29,480-row / 276-variable / 35,504-reference prototype run
+reproduces all twelve prior research checkpoints with byte-identical complete
+control and row arrays. It reaches checkpoint 11 but stops at the unchanged
+900-s execution guard before final verification: failed guard 916.063 s /
+725,618,688 bytes / 901 observations. That attempt remains failed. A separate
+production-API recovery checks the durable point under the original problem;
+its outcome is recorded separately and is not inferred from positive search
+rows. No new model inference, training, data license, edit permission, motion
+selection, complete scene implementation or release approval is implied.
