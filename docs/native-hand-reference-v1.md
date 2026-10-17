@@ -239,3 +239,11 @@ with complete self-surface checks, rather than optimize one joint in
 isolation. Original assets remain selected. Native-key motion, rates,
 complete sampled geometry, engine checks and cleanup review remain required;
 the pose-level failures above are retained.
+
+The subsequent [self-surface-guided coupled study](native-self-separation-cuts-v1.md)
+finds a strict single-pose candidate with all 6,302 declared rows passing,
+zero partner/hand crossings, and no introduced full-body self pairs relative
+to the configured source at 2 s. It uses explicit additional B shoulder
+permission and candidate-derived search axes; it does not pass the rejected
+conditions above. Inherited source defects, animation/rate/engine validation
+and semantic/cleanup review remain unresolved. Original assets stay selected.
