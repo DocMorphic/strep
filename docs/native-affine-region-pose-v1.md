@@ -1019,3 +1019,52 @@ adds a 1-micrometre inner surface margin; original 10-micrometre declared gaps
 and all strict acceptance comparisons remain. Success is unproven until fresh
 saved-candidate checks complete, followed by complete affected-interval and
 whole-scene/dynamics/engine/human validation.
+
+### Accumulated body-only feedback: rounding passes, scene still fails
+
+`high-five-seeded-approach-region-fit-v4` completes the revised 3,380-pair
+condition. Twelve source-pair axis searches are initially nonseparating or
+near-contact by the declared floating gap criterion; only the specifically
+diagnosed pair above receives the independent exact witness claim. Each actor
+has 109 observations over six times, with 10,140 triangle-vertex rows. Complete
+totals are 22,239 rows / 36 optimizer coordinates for A and 22,784 / 48 for B.
+Every earlier pair is retained; the complete original-relative proposal-v2
+seed and original raw source epoch remain distinct.
+
+A converges in nine iterations and B in eight. Both have zero failed physical
+raw rows and zero failed encoded rows under the original strict comparison.
+Encoded minima are 9.937343e-5 and 9.962540e-5 normalized. Search-reserve rows
+still have four/five tiny negative residuals against the extra inner margin;
+those counts remain separate and are not relabeled as a search-condition pass.
+Every evaluated proposal/row array is saved by the observer before completion.
+
+Full-mesh checks nevertheless fail at all six selected times. Surface record
+counts at indices 586, 590, 595, 600, 605 and 610 are 439, 543, 383, 294, 237
+and 200. The complete proposal guard replays 303.407 s / 304,222,208 sampled
+bytes / 301 observations. No mesh approval follows from passing pose rows.
+
+`high-five-seeded-approach-pair-replay-v2` independently accounts for the saved
+reports and row layouts. All 3,380 accumulated target pairs are absent, but
+2,096 different per-time pairs are now reported as proper crossings. Final raw
+and encoded negative-row lists are empty. As before, this is report accounting,
+not independent exact predicates or a duration/unique-whole-clip count. The
+replay guard completes in 23.297 s / 59,228,160 bytes / 25 observations.
+
+The [focused hosted run](https://github.com/DocMorphic/strep/actions/runs/39007883418)
+at source `eb16486` also passes all 30 seeded-fit cases on Ubuntu and Windows.
+The tested source is pushed; the candidate remains unselected and unapproved.
+
+The next falsifiable comparison is an explicit permission change: allow the
+five proximal finger joints as well as the arm controls at keys 34–37, while
+retaining all previous/new geometry feedback, original degree/world limits,
+other tracks, true endpoints and the authored contact pose. The failure does
+not prove that extra finger controls will solve it. It motivates measuring
+that condition before assuming that body-only correction or a body-model
+fine-tune can supply detailed contact articulation.
+
+The accumulated next pair union has 5,476 per-time pairs, requiring 174 current
+32-region observation groups. That exceeds the present 128-observation
+admission bound even though the projected total row/Jacobian sizes remain
+within their global limits for the proposed proximal-finger permission set.
+Do not prune witnesses to fit. A separately qualified explicit admission option
+or another complete representation is required before running that comparison.

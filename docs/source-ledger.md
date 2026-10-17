@@ -255,3 +255,24 @@ These are capability and intake observations, not measured comparisons to
 Kimodo or legal conclusions about every component. Continue the existing
 licensed baseline and explicit deterministic scene corrections while evaluating
 alternatives against the same rig/contact/export and human-review requirements.
+
+## 2026-10-17: upstream constraints rechecked during scene-feedback work
+
+NVIDIA's current [skeleton documentation](https://research.nvidia.com/labs/sil/projects/kimodo/docs/key_concepts/skeleton.html)
+still distinguishes the reduced SOMA30 prediction skeleton from SOMA77 exports,
+with most hand/finger detail removed internally. The [constraint documentation](https://research.nvidia.com/labs/sil/projects/kimodo/docs/key_concepts/constraints.html)
+says SOMA77 constraints are reduced before conditioning and describes wrist/hand
+end targets. This corroborates the earlier pinned local representation audit;
+it is not a new model installation or evidence that finger omission caused a
+particular collision. The local target codec continues rejecting omitted-joint
+rotations that SOMA30 cannot represent rather than silently dropping them.
+
+The current [best-practice guidance](https://research.nvidia.com/labs/sil/projects/kimodo/docs/key_concepts/limitations.html)
+favors sparse conditioning apart from root paths, warns about conflicting
+constraints and recommends post-processing for precise contacts. Strep's many
+mesh inequalities are in its separate native asset editor, not thousands of
+new conditioning frames sent to Kimodo. No inference or training runs in this
+feedback study. A dedicated hand editor or expanded representation remains a
+research option, not an approved trained capability. The existing Uni-Inter
+intake above remains precedent; rereading its paper does not establish new
+checkpoint, commercial-use or laptop-runtime qualifications.
