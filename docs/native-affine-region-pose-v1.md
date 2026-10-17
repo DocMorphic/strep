@@ -1860,11 +1860,19 @@ Jacobian-path row vector byte for byte. Two initial directional comparisons
 have maximum errors 3.677e-7 and 3.735e-7 under the unchanged 2e-5 numerical
 criterion; these checks validate derivatives, not motion quality. All 34,018
 original raw and Float32-encoded pair gaps remain independent postchecks.
-The initial point fails those physical requirements. The worker is still
-running; no successful fit, export or geometry result is counted yet.
+The initial point fails those physical requirements. Checkpoint 7 independently
+passes all 29,465 strict physical rows and all 34,018 original pair gaps in
+both raw and Float32-encoded curves. The worker exports fresh candidate clips
+and stops at that verified feasible point without claiming optimizer
+completion or optimality. Its complete guard independently replays 675.453 s /
+705,716,224 bytes / 663 observations. No physical acceptance threshold,
+source pose, native/world displacement cap or frozen key is relaxed.
 
-Fresh four-slice full-mesh validation and a separate receipt/actual-pose audit
-are prepared for this candidate. They require a terminal, resource-audited
-numerical parent that passes every strict motion and original-pair condition.
-They retain all 120 selected policy times, unchanged thresholds and original
-source poses; no prior candidate's geometry observations can be reused.
+Fresh four-slice full-mesh validation is now running serially, followed by a
+separate receipt/actual-pose audit. These workers require the terminal,
+resource-audited numerical parent and every strict motion and original-pair
+condition. They retain all 120 selected policy times, unchanged thresholds and
+original source poses; no prior candidate's geometry observations can be
+reused. Their results remain pending. Numerical feasibility alone does not
+approve new triangle intersections, self contact, dynamics, task semantics,
+engine imports, animator ratings or cleanup time. The original stays selected.
