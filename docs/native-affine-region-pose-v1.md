@@ -3887,8 +3887,10 @@ guidance and all cumulative native cones are proposal inputs only; the full
 cones, including 5,355 fixed cones, and 7,519 extra proposal guards. The full
 step is rejected despite a lower error: it newly fails one previously repaired
 row in both raw and saved motion. Its complete failed results are retained.
-The half step, **probe 01**, passes all **944,562** mandatory checks with no
-new failed world row and all 25 required repairs/regression rows preserved.
+The half step, **probe 01**, completes all **944,562** mandatory checks and
+meets the strict numerical improvement rule, with no new failed world row
+and all 25 required repairs/regression rows preserved. The rate failures
+listed below remain failures.
 
 | Check | Parent v5 | Local half step |
 | --- | ---: | ---: |
