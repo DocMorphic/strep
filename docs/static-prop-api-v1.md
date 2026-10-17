@@ -320,3 +320,128 @@ Full native/frame geometry, continuous collision, dynamics, action correctness,
 engine imports and human acceptance remain open. Next fitting work must use
 partner collision witnesses when proposing edits, while retaining the original
 source, frozen keys and all prior passing conditions.
+
+## Scene-aware local prop fitting
+
+`scripts/native_mesh_prop_scene_fit.py` proposes original-relative rotations
+using both characters and every other mesh prop, rather than only the selected
+contact's normal. It keeps character-motion tracks, geometry, grip
+definitions, frozen prop keys and edit permissions unchanged. The clearance
+fraction stays at its explicitly supplied starting value.
+
+```powershell
+python scripts/native_mesh_prop_scene_fit.py pose-permissions.json mesh-policy.json warm-start.json reports/my-scene-fit --maximum-evaluations 96 --maximum-iterations 12
+```
+
+Guidance samples the three vertices, three edge midpoints and centroid of every
+selected triangle at the editable key. A conservative sphere around the
+**original** grip pivot encloses every permitted rigid prop orientation and
+clearance. Every actor/other-prop triangle whose box intersects that envelope
+contributes its fixed samples; no changing nearest-face subset replaces it.
+Full prop samples are also queried against each non-disjoint complete entity,
+so containment remains measurable even when an enclosing object's surfaces are
+outside the envelope. Declared primitives use the existing analytic triangle
+depth bounds; prop plane terms retain the original physical limits.
+
+Complete-entity boxes reject only impossible positive guidance residuals.
+Signed queries use batches of 16; exceeding 250,000 owned samples or requiring
+an unavailable outward volume rejects guidance instead of truncating it.
+Source normals/topology are not repaired. Seven samples per triangle are still
+a sampled objective, not complete triangle crossing detection.
+
+The local optimizer uses the pinned SciPy 1.15.3 implementation of
+[SLSQP](https://docs.scipy.org/doc/scipy-1.15.3/reference/optimize.minimize-slsqp.html)
+with explicit difference/iteration/evaluation limits. Its score uses
+[Trimesh signed distances](https://trimesh.org/trimesh.proximity.html), scaled by
+0.01 m for optimization. That scale is not a collision tolerance. Optimizer
+termination and score improvement never grant acceptance. Every evaluation is
+retained; exhausting its budget is reported explicitly. No controls are clipped
+into author permissions or rebased onto a corrected scene.
+
+The original, remeasured starting point and four explicit line proposals
+(full, half, quarter, eighth of the guidance step) undergo the complete original
+pose/contact/geometry checks. Those line values remain cumulative controls
+relative to the original source. Every original passing condition and all
+source collision metrics are protected; best proposals require componentwise
+improvement. Full collision/contact/pose-budget archives are separate from the
+guidance score and surface probes.
+
+All **25** focused tests pass locally and on Windows/Ubuntu at `2db6c4a` in
+[run 39080086249](https://github.com/DocMorphic/strep/actions/runs/39080086249).
+They cover both actors influencing the score, conservative far-entity rejection,
+containment without nearby faces, primitives/planes, source limits/locks,
+bounded interrupted optimization, actual objective reduction, positive-residual
+screening against complete queries, and full export checks of a known generated
+repair. Local guard: 24.937 s / 124,383,232 bytes / 42 observations. The earlier
+24-test source snapshot is retained. This is source evidence, not real-action or
+whole-suite approval.
+
+The real-scene preflight retains 151,732 fixed guidance probes: 101,017 from
+14,431 reachable actor A faces, 50,631 from 7,233 actor B faces, and 84 from all
+12 prop faces. Both actor meshes still have 36,108 complete faces in final
+geometry checks. The other box is provably outside the reachable envelope.
+Four preflight evaluations take 0.514–0.724 s each; the guarded run and its
+resource replay complete at 4.125 s / 150,642,688 bytes / 22 observations.
+
+The first actual fit performs 51 score evaluations and reaches its explicit
+12-iteration limit; the optimizer does **not** report convergence. Energy falls
+from 0.154930703026 to 0.004294257171, but all four line proposals create a new
+actor B collision. Full-step peak penetration falls to 10.120663 mm while the
+crossing count grows to 209 and a previously passing pair fails. No proposal
+replaces the retained 27.208295 mm / 113-record candidate. All six complete
+original/warm/line checks finish, with a replayed guard of 99.578 s /
+260,218,880 bytes / 115 observations.
+
+Independent diagnostic replay reconstructs rejected full-step probe 2 from the
+original permissions and exact recorded line formula. All 2,017 sampled pose
+budgets, every world-vertex array and all 15 complete three-time mesh pairs
+reproduce; the new partner collision is confirmed. Neither the new mesh/pose
+backends nor the scene fitter is imported. Existing interpolation/collision
+libraries are reused. Guard: 17.484 s / 210,653,184 bytes / 35 observations.
+
+An additional **experimental**, locally retained study adds signed surface-probe
+constraints for originally passing edited-prop pairs during optimization.
+Actor B's sampled clearance is initially 0.272803 mm; the other prop is outside
+the complete reachable envelope. These are guidance constraints, not new author
+permissions or substitutes for full collisions. It retains all 128 unique
+evaluations at its evaluation limit, then checks eight explicit line fractions
+from full to 1/128, as well as the original and remeasured starting point.
+The full proposed step still creates an unsampled partner collision and is
+rejected, demonstrating that surface-probe constraints alone are insufficient.
+
+Experimental probe 5 (the eighth step) reduces peak sampled penetration to
+24.266305 mm, about 10.8% below the retained candidate, with the same 113 crossing
+records and no newly failed condition at the three declared times. This is an
+internal numerical improvement; the actor A/box collision remains. Full study
+guard: 202.078 s / 257,912,832 bytes / 215 observations. A separate replay of
+that probe freshly recomputes all 15 three-time pairs, reproduces every world
+array and all 2,017 pose-budget samples, and verifies the exact original-relative
+line formula and non-worsening incumbent metrics. Source-relative maxima are
+0.118851621 m centre displacement and 46.022441 degrees rotation. Replay guard:
+15.406 s / 194,666,496 bytes / 33 observations. It uses existing collision
+libraries, not an independent geometric algorithm. This experimental guard is
+not yet exposed by the public CLI.
+
+The expanded comparison freshly evaluates all 45 actor/prop and prop/prop pairs
+at nine times: endpoints and native keys 62 through 68, plus the existing
+actor-scene and ground checks. It protects **both** original passing conditions
+and the retained candidate's prior repair at key 64. Reference source/incumbent
+reports are inherited after rehashing current inputs and verifying observation
+receipts; their geometry is not recomputed. The new candidate has no new failed
+condition relative to either reference and retains both prior repaired
+condition identities (mesh pair and whole sample).
+
+| Nine-time measurement | Retained candidate | Experimental probe 5 |
+| --- | ---: | ---: |
+| Failed geometry times | 1 | 1 |
+| Failed conditions | 2 | 2 |
+| Surface crossing records | 113 | 113 |
+| Peak vertex penetration | 27.208295 mm | 24.266305 mm |
+
+This comparison passes with strict metric improvement, but both candidates still
+fail the collision policy. The new nine-time queries use the producer backend;
+they are not an independent nine-time replay. Guard: 44.219 s / 223,707,136 bytes
+/ 61 observations. Complete 2,017-time geometry, continuous collision, dynamics,
+engine imports, action semantics and human cleanup/review remain open. The
+original Studio scene remains selected. Next: make the experimental guard a
+supported, tested fitting option before broader scene/action/rig evaluation.
