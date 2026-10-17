@@ -3124,3 +3124,136 @@ Hosted run [39056088447](https://github.com/DocMorphic/strep/actions/runs/390560
 passes all 26 population cases on Ubuntu and Windows at source
 `cc3857362de7a8fd10538005ab912fee2c9a89ff`. The source, raw measurement,
 geometry and human acceptance scopes remain distinct.
+
+### Complete pair guidance at the verified working point
+
+`reports/native-basis-pair-population-actual-v1` now retains every **35,504**
+original directional triangle-pair condition across the original 120
+observations: 67 nonempty groups and 53 explicitly recorded empty observations.
+Authoritative values use the complete original rig vertex calculation. All
+35,504 values replay byte for byte against the verified 6,100-failure candidate,
+with zero failed pair conditions. This is directional separation evidence;
+it does not replace full scene or self-intersection queries.
+
+Derivatives retain every skin influence and all 540 coupled basis columns.
+Selected original triangle vertices are processed in batches of 128 pairs with
+an 8 MiB skin working budget, avoiding a full-mesh basis Jacobian. The maximum
+selected-skin/direct-position discrepancy is 8.882e-16 m. Both complete
+67-group directions pass, with maximum comparison errors 3.360e-8 and 3.190e-8.
+The inner triangle and outer complete-group smooth approximations remain
+separate from exact physical values; neither approximation proves motion
+infeasibility. Numerical comparison limits change no physical threshold.
+
+Composition with the refreshed world/native/pose model gives **952 groups,
+540 columns and 4,112,640 Jacobian bytes**, retaining **431,153 original raw
+conditions**. Guard replay completes in 78.578 s, with peak process-tree RSS
+317,054,976 bytes and 79 observations. There is no optimization, encoded
+derivative, new clip, new scene query or selection in this study. Every saved
+motion gate and the remaining geometry, engine and human checks still apply.
+
+### Signed hinge proposals with complete native norm cones
+
+`scripts/native_conic_hinge_step.py` combines one nonnegative hinge per supplied
+signed model row, an L1 step penalty, complete optional linear guards and
+`norm(native_vector + native_matrix @ delta) <= native_radius` cones. Every
+supplied row, column and native cone remains represented, including fixed
+cones. The native coefficient map is affine; world motion and skin geometry
+still require their original nonlinear checks. Implementation follows the
+[official Clarabel Python cone format](https://clarabel.org/stable/python/getting_started_py/)
+with the repository's pinned Clarabel 0.11.1 dependency.
+
+Inputs and sparse matrix assembly have explicit 64 MiB budgets; solver time
+and iterations are bounded and the solver uses one thread. An explicit
+1e-9 interior search-box reserve addresses solver roundoff without clipping
+the returned direction or changing caller motion bounds. Strict original
+box checks still apply to the unmodified returned direction. Linear and
+cone residual tolerances qualify a proposal numerically; they never replace
+strict physical raw/saved acceptance. Solver status, including infeasibility,
+does not establish nonlinear motion feasibility or infeasibility.
+
+Prototype v1 passes 81 focused cases (33 new and 48 existing hinge cases).
+Its full-size study retains all 952 model rows, 540 columns, 944 passing
+physical-group guards and all 5,400 native cones, including 135 fixed cones.
+The solver reports `Solved`, but its unmodified step exceeds the search box
+by 2.188e-11. The strict guard rejects it, so no actual clip is evaluated.
+Native norm excess is -1.268e-7. This rejected proposal is preserved in
+`reports/native-conic-hinge-actual-v1`; guard 41.875 s / 238,379,008 bytes /
+43 observations. No correction or selection is inferred.
+
+Separate prototype v2 introduces the explicit interior solver box reserve;
+its 38 new cases and 48 existing hinge cases all pass. Production repeats
+the same **86** cases using the actual public module, with byte-identical
+prototype/source and test files. Tests cover the curved native constraint
+with a hand-derived solution, fixed conflicting and passing cones, complete
+signed rows/columns, peak/extra guards, input preservation, allocation guards
+and the explicit search restriction. Prototype v1 guard: 40.890 s /
+152,338,432 bytes / 42 observations. Prototype v2: 38.813 s / 168,898,560 bytes /
+40 observations. Production: 39.797 s / 183,808,000 bytes / 41 observations.
+These are focused checks, not an entire-suite or motion-quality approval.
+
+Hosted run [39057498645](https://github.com/DocMorphic/strep/actions/runs/39057498645)
+at `026fd27` fails collection on both operating systems: the new standalone
+test omitted the repository's explicit scripts import path. The local guarded
+runner supplied that path, so its 86 passes did not qualify a clean standalone
+invocation. Logs and failure metadata are preserved with the first source
+test record. Commit `34afbd0` adds only the test import bootstrap; numerical
+module bytes and all test assertions remain unchanged. Hosted run
+[39057624247](https://github.com/DocMorphic/strep/actions/runs/39057624247)
+then passes all **38** conic cases on both Ubuntu and Windows. This is a new
+qualification and does not relabel the earlier failed run.
+
+The production full-size trial is preserved in
+`reports/native-conic-hinge-actual-v2`. Two complete affine coefficient-map
+checks cover all 5,400 vectors and 540 columns; each maximum discrepancy is
+1.111e-16. All 952 signed groups, 944 passing-group guards and 5,400 cones
+remain in a 1,144,820-byte sparse constraint matrix. The unmodified direction
+is inside the original box (maximum excess -9.781e-10); native norm excess
+is -1.271e-7. Predicted summed violation falls from 122.0412033 to
+122.0314307. These are proposal measurements, not an animation approval.
+
+The unchanged nonlinear checker rejects every tested step:
+
+| Step fraction | Raw/saved pose failures | Raw/saved world failures | New world failures per mode | Verdict |
+| --- | --- | --- | --- | --- |
+| 1, 1/2, 1/4, 1/8 | 4 / 4 each | Not reached | Not evaluated | Reject |
+| 1/16 | 0 / 0 | 6,103 / 6,103 | 4 / 4 | Reject |
+| 1/32 | 0 / 0 | 6,103 / 6,103 | 4 / 4 | Reject |
+| 1/64 | 0 / 0 | 6,103 / 6,102 | 3 / 3 | Reject |
+| 1/128 | 0 / 0 | 6,102 / 6,102 | 2 / 2 | Reject |
+
+All eight probes pass their complete raw/saved native and original directional
+pair conditions. The four complete world checks each retain all 366,369
+original scalars per mode. Peak and squared-error reductions do not compensate
+for a newly failing row. The unchanged four-complete-evaluation budget ends
+the trial, with no accepted candidate. Its guard completes in **444.906 s**,
+peak process-tree RSS **279,220,224 bytes**, 436 observations; there is no
+memory stop. The previously qualified 6,100-failure reference and its 232
+sampled geometry receipts remain unchanged. No new geometry receipt or
+visual/engine/human approval follows from this trial.
+
+`reports/native-conic-hinge-regression-diagnosis-v1` independently compares
+every original raw/saved world scalar for all four complete probes. Its 26
+regression records identify four unique rows:
+
+| Original row | Condition | Time |
+| --- | --- | --- |
+| 20,330 | A RightHand displacement | 2.466667 s |
+| 64,971 | A RightHandRing4 linear speed | 3.050000–3.058333 s |
+| 203,473 | B RightHand displacement | 2.133333 s |
+| 207,766 | B RightHandIndexEnd displacement | 2.133333 s |
+
+The three displacement rows belong to physically passing groups that already
+received aggregate guards. Their individual inequalities still regress.
+The speed row belongs to a block with 650 pre-existing failures, whose worst
+row is elsewhere; that block does not receive a passing-group guard. Thus
+complete scalar retention and correct grouped derivatives do not guarantee
+protection of every previously passing inequality. The three displacement
+identities also match the earlier independently qualified individual-cut
+studies. Those guards cannot be assumed replaced by a smooth group maximum.
+
+Diagnosis guard: 38.781 s / 206,528,512 bytes / 40 observations; source and
+caps unchanged, no optimization or geometry query. The next bounded experiment
+must refresh explicit individual guards for all four rows at the verified
+working point, then combine them with the complete model and native cones.
+Every full raw/saved acceptance check remains mandatory. No source epoch,
+physical cap, frozen pose or release criterion is relaxed to fit this result.
