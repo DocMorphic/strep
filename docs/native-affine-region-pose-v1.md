@@ -1425,3 +1425,90 @@ transforms with the actual saved clip and checks actual joint displacement
 bands independently. The matrix equivalence threshold is diagnostic, not a
 relaxed acceptance tolerance. Until its committed receipts and terminal guard
 are audited, no interval sample is counted as passed.
+
+## Dense affected-interval measurement
+
+`anchor-v10-first32` completes all requested indices 559–590, with geometry,
+raw/encoded pose bounds and independently measured saved-joint bands passing
+at each time. All 120 native keys on A's 22 controlled joints and B's 23 joints
+also pass their original raw/encoded rotation limits (5,400 unique rows per
+representation). The complete interval has 85 original-policy samples,
+indices 559–643 within 1.1000000238–1.2666666508 s. The first batch therefore
+leaves 53 interval samples and 1,932 other full-clock samples unverified for
+this candidate. Its guard independently replays 211.671 s / 183,558,144 bytes /
+210 observations. A passing partial batch does not pass the interval.
+
+`partner-query-batch4-actual-v2` compares batch sizes one and four on v10's
+passing frame 590 and v9's failing frame 610. Every report field matches except
+the explicitly declared `partner_query_batch_size`; their single archived
+clock arrays match by logical bytes too. These fixtures contain no archived
+per-point signed-distance transcript, so that is not a per-point byte-equality
+claim. Observed query times are 1.339/1.215 s and 1.993/1.623 s respectively,
+not an end-to-end or general speed guarantee. The guard independently replays
+32.422 s / 162,119,680 bytes / 34 observations. The first comparison attempt
+is retained as a failed harness check because it incorrectly required the
+batch-configuration field itself to remain one; its failed guard also replays.
+
+A separate interval-v2 harness preserves the first batch's source bindings and
+uses batch size four for `anchor-v10-rest53`, requesting indices 591–643.
+Preliminary committed results expose partner crossings starting at index 611
+(1.2020833333 s), immediately after the last passing anchor. Movement limits
+pass there. This is new measured failure evidence beyond the six anchor poses;
+the interval remains rejected. The job continues measuring its complete requested
+population, rather than discarding later failures after finding the first one.
+
+An independent receipt replay is prepared to verify exact 85-sample coverage,
+all per-frame file/observation hashes, complete native rows, actual encoded
+joint/rotation bands and floor depths. It will preserve failed geometry as failed;
+no prepared replay is counted as completed. The next correction prototype will
+retain every historical anchor pair and every newly exposed dense-time pair,
+while applying the original pose limits at all 85 times. It is not started until
+the measurements and receipt replay finish.
+
+The remaining 53-sample batch completes with 20 geometry passes and 33 failures,
+at every index 611–643 (1.2020833333–1.2666666508 s). All movement limits pass.
+Together the batches cover all 85 selected times: 52 geometry passes, 33 failures,
+and 7,913 additional proper-crossing pair references, bringing the prospective
+retained anchor-plus-dense population to 20,318. No old anchor constraints are
+discarded. The second guard independently replays 510.438 s / 232,058,880 bytes /
+503 observations. The six-anchor candidate remains rejected for its interval.
+
+`high-five-coupled-approach-replay-v1` independently verifies exact ordered
+85-time coverage without gaps or duplicates, all source/case/frame/observation
+bindings and complete native rows. It reconstructs actual saved joint and local
+rotation bands and floor depths; the reconstructed rotation rows match exactly
+(maximum difference zero), while the physical comparisons remain strictly
+nonnegative. Stored raw model rows are retained. Partner geometry queries are
+not rerun by this receipt audit. It confirms the 52/33 split and passing motion
+bounds throughout. Its guard replays 43.610 s / 165,085,184 bytes / 45 observations.
+The other 1,932 full-policy clock points remain outside this interval audit.
+
+## Correct temporal edit support before another solve
+
+`high-five-fixed-endpoint-diagnosis-v1` finds a structural obstacle at index 643:
+the exact time is native key 38, while both actors permit edits only at keys
+34–37. Both `KeyPoseMap` instances report singleton bracket `[38]` and no
+dependent editable pair. Their entire native-to-pose Jacobians are zero, and
+raw/encoded arrays remain bitwise identical across distinct bounded probes.
+The conclusion comes from the absent bracket dependency, not from observing a
+zero derivative at just one nonlinear pose.
+
+That saved endpoint reports 150 proper crossings. An independent exact rational
+witness verifies a strict interior crossing for represented triangles A 25612 /
+B 26622. It certifies those represented triangle coordinates, not upstream
+skinning arithmetic, penetration depth or continuous motion. Under the unchanged
+key-34–37-only problem, the endpoint pose cannot change, so that crossing cannot
+be corrected by any choice of its 84 variables. This is a limitation of the
+current temporal edit permissions; it does not prove the rig, action, model or
+another edit representation infeasible. The guard independently replays
+26.407 s / 165,167,104 bytes / 28 observations.
+
+The prepared dense-85 proposal is therefore gated off before optimization;
+its no-launch decision and source-bound diagnosis remain recorded. Original
+rotation/world caps and frozen gameplay poses are not relaxed. The next step
+is `high-five-native-clock-scope-v1`: measure the candidate's complete 120-key
+native clock, reusing only the six exact already-audited dense geometry receipts
+and querying the remaining native times afresh. It also checks actual saved
+joint and local rotation limits. This coarse scan will locate the failing edit
+region before choosing revised temporal permissions. It is not full coverage
+of the 2,017-time policy clock, and its planned results are not counted as passed.
