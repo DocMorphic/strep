@@ -859,6 +859,10 @@ plus the previous 68 map/selected-column cases). The guard completes in
 54.000 s at 122,269,696 sampled bytes, with all 55 observations and archived
 bindings replayed. This is the source version used by subsequent proposals.
 
+The [focused hosted run](https://github.com/DocMorphic/strep/actions/runs/39006835337)
+at source `0ee6f65` passes all 17 seeded-fit cases on Ubuntu and Windows.
+The full repository inventory remains outside this focused result.
+
 The first actual approach proposal, `high-five-seeded-approach-region-fit-v1`,
 tries to separate A's complete forearm/hand incident region and B's complete
 right-hand region using one source-derived plane per time, before invoking
@@ -884,3 +888,51 @@ contact key and true clip endpoints and holding all other keys/fingers fixed.
 This is a new proposal condition, not a relaxed geometry acceptance rule.
 Until it completes, it is not counted as a successful repair, and even a
 selected-time pass would require complete affected-interval validation.
+
+### The captured pairs clear, but new collisions appear
+
+`high-five-seeded-approach-region-fit-v2` completes that proposal. It uses all
+1,748 previously recorded triangle pairs across six times, grouped into 58
+observations per actor. A has 36 editable native-key coordinates and 11,682
+complete constraint rows; B has 48 coordinates and 11,972 rows. Existing caps,
+source epoch, frozen 0/60/119 keys, all fingers and all other keys are retained.
+Both SLSQP calls report success in six iterations, but this is not acceptance:
+A has zero raw/three quantized failed rows, and B has four raw/six quantized.
+
+All failures are surface halfspace rows. B's four raw negatives are about
+-1.565e-14 normalized. Quantized minima are -4.422e-7 for A and -6.804e-7
+for B: roughly 4.422/6.804 nm short of the declared 10-micrometre plane gap.
+They remain recorded failures under the unchanged zero comparison. Rotation,
+world-joint and selected-native ball rows have no negative entries in this
+study. The new encoded native-angle regression remains separately necessary;
+it is not the source of these particular failures.
+
+More seriously, every fresh full-mesh partner/floor sample fails. Surface
+record counts at indices 586, 590, 595, 600, 605 and 610 are respectively
+212, 246, 448, 248, 252 and 226. The proposal guard completes in 424.578 s
+at 316,424,192 sampled bytes, with all 420 observations/bindings replayed.
+No complete affected-interval, self, dynamics, engine or human pass follows.
+
+`high-five-seeded-approach-pair-replay-v1` then accounts for all six saved
+reports and every negative row. None of the original 1,748 pairs remain in
+the new surface records, but 1,632 different pairs are now reported as proper
+crossings. These are per-time pair counts, not distinct mesh pairs across the
+entire clip. The comparison replays retained floating predicate reports; it
+does not run independent exact crossing proofs. Its guard completes in
+24.343 s / 55,681,024 sampled bytes / 26 replayed observations.
+
+The immutable proposal summary's `region_vertices` fields retain the earlier
+whole-region preflight sizes (3,300/2,960). They are not the vertex populations
+used by this triangle-pair fit. The actual population is in `condition.json`:
+1,748 three-vertex region records, or 5,244 vertex rows per actor, with repeated
+vertices retained. The summary's `complete_controls` means the 36/48 selected
+optimizer coordinates, not the complete nonzero native seed. Those metadata
+labels must not be used to claim all native controls were optimization variables.
+
+This result demonstrates why satisfying a captured witness set cannot approve
+a full scene: a local repair can create different intersections. Next add
+feedback from fresh complete geometry while retaining earlier constraints,
+with explicit inner search margins for saved-file rounding. Reuse evaluations
+at identical times to keep larger feedback sets practical on this laptop.
+Preserve original acceptance limits and require complete affected-interval,
+whole-clip/self, dynamics, engine and human checks before selecting any clip.
