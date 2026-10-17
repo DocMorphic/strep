@@ -1907,9 +1907,62 @@ Keeping all earlier pairs and all newly observed pairs gives 35,344 references.
 The exact neighborhood cover still has 5,493 groups, with different comparison
 contents. The 276-scalar / 29,465-row / 65,058,720-byte allocation remains inside
 the unchanged 64-MiB Jacobian cap. Allocation arithmetic is not a feasible fit.
-The following exact-group trial is running from the last candidate's controls,
+The following exact-group trial starts from the last candidate's controls,
 with the original source epoch, all 120 times, native/world caps, frozen keys
-and body/finger edit permissions unchanged. Its numerical and fresh full-mesh
-results remain pending. The original is still selected; 1,897 other policy
+and body/finger edit permissions unchanged. Its numerical result follows below;
+fresh full-mesh results remain pending. The original is still selected; 1,897 other policy
 times, self contact, dynamics, semantics, engine imports and human review remain
 unverified. No whole-motion or release approval follows from this study.
+
+The 35,344-pair follow-up now exports a numerically feasible checkpoint 9:
+all 29,465 physical rows and all retained pair gaps pass in raw and Float32
+curves. It stops on the independently postchecked point without an optimizer
+completion or optimality claim. Its complete guard independently replays
+633.687 s / 705,622,016 bytes / 625 observations. Fresh mesh validation of this
+new motion is still required; the previous candidate's 16 failures cannot be
+reused as its result.
+
+`native_grouped_pair_gap_rows.GroupedPairGapRows` extracts the grouped row
+calculation into an action- and rig-independent numerical component. Each
+instance snapshots paired triangle-index triples, complete vertex counts,
+unit direction, physical gap, temperature and normalization scale. Callers
+must partition distinct actors/objects, times, normals and thresholds and bind
+their source files, clocks and edit permissions. The class does not infer
+contact intent, choose edit keys, optimize motion or approve an animation.
+
+`evaluate` accepts complete world-space point populations and optional
+per-side `vertices × 3 × coordinates` derivative tensors. It returns every
+grouped row and separate left/right Jacobians for later native-key composition.
+A fixed side can omit derivatives. Exact extrema mode is values-only; smooth
+gradients are never mislabeled as derivatives of a nonsmooth exact minimum.
+`exact_pairs` separately checks every original reference in its original order,
+including duplicates, against the unchanged physical gap. Conservative smooth
+guidance is not collision detection or a feasibility proof.
+
+The component retains the existing 16,384-pair context limit, 65,536-vertex
+population limits and at most 768 derivative coordinates per side. Input
+derivatives are bounded to 128 MiB per side; the complete returned Jacobians
+together must fit the caller's limit, capped at 64 MiB. Over-budget requests
+raise an error without dropping references, groups, vertices or coordinates.
+All supplied positions and derivatives, including unreferenced vertices, must
+be finite and have the complete declared shapes.
+
+The isolated prototype passes 139 cases: 52 new integration/finite-difference/
+strict-threshold/budget/input-snapshot cases plus 87 existing gap cases. All
+5,493 grouped rows and 35,344 pair gaps over 67 real-character times reproduce
+the archived failed initial trial point bit for bit in raw smooth, raw exact
+and Float32 exact modes. One complete 276-native-scalar chain with 24/27 pose
+coordinates passes two directional comparisons (2.067e-7 and 1.624e-7 versus
+2e-5). Reproducing a failed input tests truthful transport; it does not repair
+or approve that input. The prototype test guard independently replays
+44.625 s / 107,200,512 bytes / 46 observations; the actual-character replay
+replays 42.547 s / 146,882,560 bytes / 44 observations. Public source is copied
+byte for byte from those qualified snapshots; public import-path checks and
+hosted diagnostics are tracked separately.
+
+The public import-path run independently passes the same 139 cases in 4.47 s;
+its complete guard replays 33.453 s / 94,826,496 bytes / 35 observations.
+Both public source and tests are byte-identical to the qualified isolated
+snapshots. The source manifests and focused hosted workflow include the new
+52-case file. Hosted results must be checked against the actual pushed source;
+no broad inventory or motion-quality pass is inferred from registration.
