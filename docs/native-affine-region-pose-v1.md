@@ -1277,3 +1277,25 @@ with all 8,887 accumulated pairs and the complete original-relative v3 seed.
 It retains the original 84 controls, caps, frozen poses, source epoch and mesh
 acceptance policy. Its planned checks are not counted as passed before the
 complete numerical and independent geometry results are recorded.
+
+The [focused support-gap run](https://github.com/DocMorphic/strep/actions/runs/39011456159)
+at source `1ea7936` passes on both Ubuntu and Windows. It checks the 27-case
+standalone helper suite; it does not validate the coupled optimizer or approve
+its output. The model-free inventories now contain 560 Python/45 Node suites
+and 126/five in the contact subset; these are inventory counts.
+
+Proposal-v4 completes successfully after seven optimizer iterations with zero
+raw/encoded declared failures. Its two initial directional errors are 3.366e-7
+and 3.480e-7 normalized. The independent full geometry at index 586
+(1.1541666667 s) passes; the other five samples still fail with
+155/95/493/348/266 proper-crossing records. All 8,887 retained pair references
+are absent from those 1,357 new records. This is a limited sampled improvement,
+not a clean approach interval or a selected animation. The independently replayed
+guard completes in 160.219 s / 362,749,952 sampled bytes / 159 observations.
+
+`high-five-coupled-relative-gap-fit-v5` retains all 10,244 accumulated pairs,
+uses the complete original-relative v4 seed and the same public support helper,
+source epoch, 84 controls, caps and frozen poses. It repeats all six mesh checks,
+including the previously passing time: changing shared native keys may introduce
+other pairs there. A prior sampled pass cannot substitute for checking the new
+candidate. No planned checks count as completed before the result is recorded.
