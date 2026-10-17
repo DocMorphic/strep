@@ -1299,3 +1299,60 @@ source epoch, 84 controls, caps and frozen poses. It repeats all six mesh checks
 including the previously passing time: changing shared native keys may introduce
 other pairs there. A prior sampled pass cannot substitute for checking the new
 candidate. No planned checks count as completed before the result is recorded.
+
+Proposal-v5 completes with solver success after seven iterations and zero raw
+or encoded declared failures. Full geometry passes at indices 586 and 590;
+the four remaining samples report 62/367/290/265 proper crossings. The 10,244
+retained pair references are absent from the 984 new records. The independently
+replayed guard completes in 117.890 s / 361,000,960 sampled bytes / 118 observations.
+The original remains selected. A further cumulative trial requires 11,228 pairs
+and all six fresh mesh checks; two sampled passes do not establish an interval.
+
+## Pose bounds independent of separation guidance
+
+`scripts/native_affine_pose_bounds.py` provides `PoseBoundsRows` for a native
+source pose, complete original-relative controls, explicit editable native
+joints and every skin-joint displacement band. It evaluates all rotation-ball
+and joint-band rows and their selected-coordinate derivatives, retaining fixed
+controls and the constructor-bound original source, native affine transforms,
+placement and complete skin surface. It takes no synthetic region or separating
+plane. It is a pose constraint evaluator, not a collision or motion validator.
+
+`RegionPoseRows` now extends that common evaluator and appends every explicitly
+supplied region vertex. Its public constructor, nonempty region requirement,
+row order, original bounds and complete row/Jacobian budgets remain. This avoids
+constructing obsolete heuristic plane rows merely to extract the motion limits
+for a coupled correction. New standalone bounds tests exercise reordered active
+controls, homogeneous skin coordinates, finite differences, tight budgets,
+input copies, immutable source bindings and observable violated rotation balls.
+
+The focused 196-case local selection passes in 44.05 s: 21 new pose-bound cases
+plus region, seeded-native-curve, key-map, selected-column and support-gap
+regressions. Its guard independently replays 75.312 s / 125,427,712 bytes /
+76 observations. The existing region module's LF endings are preserved; the
+qualified archive differs only by CRLF-to-LF encoding, with identical AST.
+Saved real-character row/derivative equivalence is checked separately before
+using this evaluator in another coupled proposal. No human or release approval
+is inferred from those checks.
+
+`native-pose-bounds-actual-replay-v1` compares the refactor with the frozen
+pre-extraction region/seeded implementations, using current unchanged affine
+and key-map delegates. On original actor sources and the complete saved v5
+seeds, all 35,742 rows / 36 controls for A and 36,612 rows / 48 controls for B,
+their full Jacobians, and encoded rows are bitwise identical. The 174 legacy
+observations per actor remain complete. A separate fresh bounds-only evaluation
+at every one of six times per actor matches the old bound prefix, Jacobian,
+native world transforms, posed complete surface and controls bit for bit.
+The legacy proxy failures (6,452/5,520) remain failures; they are not requirements
+of the newer relative-gap proposal. The independently replayed guard completes
+in 56.843 s / 188,502,016 bytes / 58 observations.
+
+`high-five-coupled-relative-gap-fit-v6` carries all 11,228 accumulated collision
+references, the complete original-relative v5 seed, 84 controls, and unchanged
+source, caps and frozen poses. Each actor/time context now constructs
+`KeyPoseMap` and `PoseBoundsRows` directly. It needs no obsolete fixed-plane
+region rows to obtain movement limits. The study-local seed/export holder
+reuses the existing complete-control reconstruction and separate-clip export;
+it is not a newly qualified public coupled fitter. It still needs independent
+raw/encoded, six-time full mesh, interval, self, engine and human checks. No
+planned check is counted as passed.

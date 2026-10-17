@@ -14,6 +14,7 @@ on:
           - tests/test_native_seeded_region_fit.py
           - tests/test_native_affine_selected_columns.py
           - tests/test_native_key_pose_map.py
+          - tests/test_native_affine_pose_bounds.py
           - tests/test_native_affine_region_pose.py
           - tests/test_convex_partner_surface.py
           - tests/test_native_scene_geometry.py
