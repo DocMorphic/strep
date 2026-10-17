@@ -2009,7 +2009,82 @@ the same 276 native scalars and unchanged 64-MiB cap. All 120 times, original
 source epoch, rotation/world bands, frozen keys and body/finger permissions
 remain unchanged. Initial full-Jacobian and value-only rows match bit for bit;
 two directional comparisons have maximum errors 3.029e-7 and 3.872e-7 under
-the unchanged 2e-5 numerical criterion. The worker is still running; its fit,
-export and distinct fresh mesh/receipt validation are not counted as passed.
+the unchanged 2e-5 numerical criterion. Checkpoint 11 subsequently passes every
+raw/Float32 physical row and retained pair condition. The worker exports fresh
+clips and stops without claiming optimizer completion or optimality. Its guard
+independently replays 748.421 s / 751,206,400 bytes / 738 observations. Its
+distinct fresh mesh/receipt results follow below.
 The original stays selected. The other 1,897 policy times, self/dynamics,
 semantics, engine and human review remain unverified.
+
+The complete shared-row candidate interval now passes all 120 original policy
+times, with zero reported surface crossing records and zero motion-bound
+failures. All native-key raw and encoded bounds independently pass. The four
+fresh query guards independently replay 188.890 s / 183,054,336 bytes /
+188 observations; 190.469 s / 180,588,544 bytes / 189; 205.656 s /
+177,270,784 bytes / 204; and 143.922 s / 177,696,768 bytes / 144. The independent
+source/export/clock/receipt/actual-pose audit replays 51.750 s / 155,021,312
+bytes / 53 observations. Its maximum pose-row comparison difference is
+8.993e-15; every physical bound remains a separate strict check. This clears
+the specified interval policy, not whole-motion, self, continuous-collision,
+dynamics, task-semantic, engine or human acceptance. The original stays selected.
+
+The direct saved-GLB projection audit independently verifies all 35,504
+retained gaps against 20 micrometers; maximum difference from archived encoded
+gaps is 7.807e-16 m. The public grouped-row component matches every projection
+exactly and reproduces the grouped extrema. There are no new crossing records.
+The complete guard replays 40.797 s / 144,060,416 bytes / 42 observations.
+These complete current-candidate observations are retained in
+`high-five-shared-row-candidate-geometry-v1`, its separate receipt audit and
+`high-five-shared-row-transport-diagnosis-v1`.
+
+`native_coupled_key_pair_rows.CoupledKeyPairRows` now exposes the complete
+two-rig row evaluator without the study's hardcoded rig names, key indices or
+triangle tables. Each left/right specification supplies a loaded original
+native actor, nodes, rotation bands, original clock and complete seed (including
+any nonzero fixed keys),
+explicit editable key/node pairs, frozen keys and per-joint world bands.
+Each observation supplies a distinct increasing shared time and complete gap
+contexts: paired triangle IDs, unit world direction, physical gap and optional
+normalization scale/temperature. Different native clocks and node counts are
+allowed across actors; their durations must match exactly. Controlled channels
+must retain their original common per-actor LINEAR quaternion clocks. Both
+sides currently require nonempty explicit edit pairs; this is a numerical
+two-rig component, not a fixed-object adapter or complete scene fitter.
+
+`evaluate` returns every declared pose, pair-guidance and variable-native-key
+row and the complete combined Jacobian. `values` supports raw or Float32
+sampling; `postcheck` separately retains strict exact raw/Float32 original-pair
+conditions. `controls` reconstructs the full seed grid while preserving every
+uneditable/frozen key and rejecting out-of-ball native proposals. Constructor
+arguments are copied; repeated evaluations reject changed source/pose bindings.
+The layout retains structurally fixed time rows instead of dropping them.
+The component neither optimizes nor exports, selects motion, infers contacts
+or approves a clip; whole-curve/fixed-seed, actual saved-mesh, rates, dynamics,
+engine and human validation remain caller responsibilities.
+
+The unchanged complete-request limits are 768 combined native variables,
+100,000 rows and 64 MiB for the dense Jacobian. Observations default to at
+most 128 and can be explicitly raised to 512; each time accepts at most
+32 separately bound gap contexts, each preserving at most 16,384 original
+references. Over-budget or invalid requests raise rather than discard data.
+
+Twenty-four new coupled/source-mutation/finite-difference/frozen-key/native-codec
+cases plus 123 related cases pass in both isolated and public import-path runs.
+The isolated test guard replays 79.172 s / 131,026,944 bytes / 80 observations;
+the public run passes 147 cases in 32.61 s with guard 62.875 s / 122,322,944
+bytes / 64 observations. Complete real-character 120-time / 276-variable /
+29,480-row / 35,504-reference replay matches all archived smooth/raw/Float32
+rows and original-pair conditions bit for bit. Row positions and roles are
+equivalent with an explicit `gap` to `region` label alias. Both archived analytic
+direction products match exactly; new finite differences give 3.029e-7 and
+3.872e-7 under the unchanged 2e-5 comparison criterion. The failed initial
+point remains failed; this is operator qualification, not a new correction.
+The complete real-character guard replays 137.172 s / 362,131,456 bytes /
+137 observations. Public source/test bytes equal their qualified snapshots.
+
+The other 1,897 full-policy times, full-body self contact, motion dynamics,
+contact anatomy/semantics, held-out actions/rigs/objects/partners and actual
+engine/human cleanup requirements remain open. A separate current/reference
+whole-body self-surface, scene and pose-band diagnostic is prepared for the
+frozen 2-s contact; it does not inherit the cleared approach interval's result.

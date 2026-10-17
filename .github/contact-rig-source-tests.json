@@ -1,6 +1,7 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_native_coupled_key_pair_rows.py",
     "tests/test_native_grouped_pair_gap_rows.py",
     "tests/test_native_pair_gap_groups.py",
     "tests/test_native_region_support_gap.py",
