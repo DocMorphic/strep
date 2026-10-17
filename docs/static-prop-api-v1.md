@@ -180,5 +180,64 @@ The retained real-character pilot explicitly permits editing only the middle
 0.5 micrometres of intentional clearance along the declared local direction.
 Both endpoints and all character assets stay fixed. These are new, explicit prop
 edit permissions for this diagnostic; prior geometry thresholds and the original
-1 micrometre grip-position limit are unchanged. Its result remains pending until
-the guarded search and independent source/pose/contact/geometry replay finish.
+1 micrometre grip-position limit are unchanged.
+
+The finite table now has **80 completed candidate decisions**. The original run
+stopped at its unchanged 900-second execution limit after 70 decisions, with a
+partial next probe retained. A separate versioned continuation verified the
+closed prefix, source/method hashes and every saved decision, then evaluated
+only the remaining ten proposals. It kept the original source, baseline,
+condition identities, permissions and thresholds. The first run remains marked
+failed; the continuation does not rewrite its history or claim it completed.
+Resource replays verify both runs: first 900.172 s / 240,918,528 bytes / 895
+observations, continuation 134.437 s / 223,690,752 bytes / 149 observations.
+Memory did not cause the stop.
+
+All 80 satisfy the sampled pose-edit bounds and declared point contacts, but
+**none passes all three-time geometry conditions**. Fifty-nine introduce a
+previously passing condition failure; ten meet the source comparison rules.
+Best admissible probe 5 reduces peak sampled penetration from 81.464129 mm to
+27.208295 mm and surface crossing records from 247 to 113. Both still fail the
+collision policy. A small finite orientation table without a passing candidate
+does not prove that the authored constraints are infeasible. No character motion
+was changed, and the original scene stays selected.
+
+Independent replay imports neither new backend. It reconstructs the edited
+key from the original grip and permissions, verifies both frozen endpoints and
+all other scene content, and reproduces all **2,017** native/frame pose-change
+samples byte for byte. Peak centre displacement is 0.114805271 m and rotation
+45 degrees, within the explicit prop edit bounds. The grip error is about
+0.5 micrometres, within its original 1 micrometre limit. Every world-vertex
+array and all 15 complete mesh pairs across the three declared times reproduce;
+the same geometry failure remains. Original passing-condition identities and
+all source collision metrics are independently checked. Guard: 15.390 s /
+204,976,128 bytes / 33 observations.
+
+This replay independently checks composition and saved transport using the
+existing rotation/interpolation/collision libraries. It is not a separate
+collision algorithm. The 2,017 pose-bound samples do **not** imply 2,017 geometry
+samples: geometry here covers only the three declared times. Continuous
+collision, grasp dynamics, action semantics, engine import and human quality
+remain unverified.
+
+A subsequent diagnostic evaluates **both** original and candidate at the
+endpoints and original native keys 62 through 68: nine times per scene, all
+90 actor/prop and prop/prop pair queries, plus the existing actor scene and
+ground conditions. Source binding, geometry thresholds and ground planes stay
+unchanged. The candidate removes the source collision at key 64 without
+introducing any newly failed condition in this population:
+
+| Nine-time measurement | Original | Probe 5 |
+| --- | ---: | ---: |
+| Failed geometry times | 2 | 1 |
+| Failed conditions, including whole-sample decisions | 4 | 2 |
+| Surface crossing records | 293 | 113 |
+| Peak vertex penetration | 81.464129 mm | 27.208295 mm |
+
+The remaining failure is at key 65. This expanded comparison uses the producer's
+geometry stack; it has not had a separate geometry replay. Its resource replay
+confirms completion (72.812 s / 330,895,360 bytes / 89 observations). Nine explicit
+times remain sparse coverage of the 2,017 native/frame sampling times.
+Passing the non-regression comparison does not make either scene collision-free
+or approve a box pickup. All outputs and the interrupted probe remain retained
+locally; no scene is promoted.
