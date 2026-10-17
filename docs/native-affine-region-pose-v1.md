@@ -710,6 +710,18 @@ approach and interacting body regions rather than only the late palm contact.
 The independent diagnosis guard completes in 47.672 s at 130,899,968 sampled
 bytes, with all 49 observations replayed. Assembly-v4 remains unapproved.
 
+`high-five-early-crossing-origin-v1` next compares exactly those same 85 pairs
+at the first failed time across three immutable epochs. All 85 pairs have
+strict rational separating-axis proofs in the raw source; all 85 have exact
+crossing witnesses in both tapered-v4 and assembly-v4. Complete vertices for
+both actors are bitwise identical between taper and assembly at this time.
+Thus these specific intersections were introduced by the broad taper, not by
+the later key repairs. This is a failure-conditioned 85-pair comparison, not
+an assertion that the raw scene has no other collisions. The guard completes
+in 30.485 s / 176,984,064 sampled bytes / 32 replayed observations. The next
+repair must reconsider the approach correction and validate its complete
+affected time range, while preserving the authored contact and original bounds.
+
 ## Complete fixed poses with bounded derivative columns
 
 The generic native pose evaluator now separates the full edited pose from
@@ -774,3 +786,8 @@ observations (22.329 s / 121,610,240 bytes); the successful guard replays 36
 (34.422 s / 146,448,384 bytes). No physical cap, workspace cap or collision
 tolerance changes. These are math/encoding probes, not a fit or a fresh
 collision check; the synthetic other-hand seed is not selected for the scene.
+
+The [focused hosted run](https://github.com/DocMorphic/strep/actions/runs/39006110672)
+at source `be13bc0` passes the 22 new selected-column cases on Ubuntu and
+Windows. This is the focused suite; the complete repository inventory is not
+claimed as a passing run.
