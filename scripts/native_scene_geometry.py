@@ -95,7 +95,9 @@ def volume_state(vertices, faces):
 
 
 def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, object_poses=None, observation_sink=None,
-        sample_indices=None):
+        sample_indices=None, partner_query_batch_size=32):
+    if type(partner_query_batch_size) is not int or not 1 <= partner_query_batch_size <= 32:
+        raise ValueError('Integer partner query batch size between 1 and 32 required')
     times, populations, resolution = policy_for(policy, scene, digest)
     selected = np.arange(len(times))
     if sample_indices is not None:
@@ -157,7 +159,8 @@ def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, objec
             depths = []
             for a, b in ((left, right), (right, left)):
                 if states[b]['containment_available']:
-                    measure = penetration(vertices[a], vertices[b], faces[b], tolerance_m=max(limit, 1e-12))
+                    measure = penetration(vertices[a], vertices[b], faces[b], tolerance_m=max(limit, 1e-12),
+                        query_batch_size=partner_query_batch_size)
                     depths.append(dict(source=a, target=b, available=True, count_tolerance_m=max(limit, 1e-12), **measure))
                 else: depths.append(dict(source=a, target=b, available=False))
             ok = bool(not surface['records'] and not any(surface['degenerate_faces']) and
@@ -175,6 +178,7 @@ def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, objec
         frame_populations=[dict(id=p['id'], rate_hz=p['rate_hz'], phase_offset_frames=p['phase_offset_frames'],
             times_s=p['times_s'].tolist()) for p in populations], frame_contract_sha256=contract_sha256(),
         limits=policy['limits'], declared_planes=list(policy['planes']),
+        partner_query_batch_size=partner_query_batch_size,
         original_selected=True, collision_verified=False, continuous_collision_certified=False,
         self_collision_verified=False, engine_playback_verified=False, quality_approved=False,
         training_admitted=False, release_approved=False,
@@ -193,17 +197,19 @@ def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, objec
 
 
 def evaluate_to_archive(scene, policy, digest, path, progress=None, *, actor_vertices=None,
-        object_poses=None, maximum_array_bytes=256*1024**2):
+        object_poses=None, maximum_array_bytes=256*1024**2, partner_query_batch_size=32):
     """Stream every query array; report decisions and numeric precision stay identical."""
     path = Path(path)
     with ObservationArchive(path, maximum_array_bytes=maximum_array_bytes) as observations:
         report, _ = evaluate(scene, policy, digest, progress, actor_vertices=actor_vertices,
-            object_poses=object_poses, observation_sink=observations)
+            object_poses=object_poses, observation_sink=observations, partner_query_batch_size=partner_query_batch_size)
     return report, dict(observations_sha256=sha256(path),
         observation_receipt_sha256=sha256(Path(str(path)+'.receipt.json')))
 
 
-def run(contacts_path, policy_path, output):
+def run(contacts_path, policy_path, output, *, partner_query_batch_size=32):
+    if type(partner_query_batch_size) is not int or not 1 <= partner_query_batch_size <= 32:
+        raise ValueError('Integer partner query batch size between 1 and 32 required')
     contacts_path, policy_path, output = [Path(p).resolve() for p in (contacts_path, policy_path, output)]
     if output.exists(): raise ValueError('Fresh geometry audit output required')
     with worker_lock(), threadpool_limits(limits=1):
@@ -222,7 +228,7 @@ def run(contacts_path, policy_path, output):
         save(output/'pipeline.json', dict(status='processing'))
         try:
             result, transport = evaluate_to_archive(scene, policy, bindings[str(contacts_path)], output/'observations.npz',
-                lambda p: save(output/'pipeline.json', p))
+                lambda p: save(output/'pipeline.json', p), partner_query_batch_size=partner_query_batch_size)
             for path, snapshot in snapshots.items():
                 if sha256(path) != snapshot['sha256'] or sha256(output/snapshot['path']) != snapshot['sha256']:
                     raise ValueError('Geometry source or snapshot changed')
@@ -241,4 +247,6 @@ def run(contacts_path, policy_path, output):
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description=__doc__)
     for name in ('contacts', 'policy', 'output'): p.add_argument(name, type=Path)
-    a = p.parse_args(); run(a.contacts, a.policy, a.output)
+    p.add_argument('--partner-query-batch-size', type=int, default=32, choices=range(1, 33),
+        help='Maximum simultaneous signed-distance points; smaller batches reduce transient memory, not the mesh population')
+    a = p.parse_args(); run(a.contacts, a.policy, a.output, partner_query_batch_size=a.partner_query_batch_size)

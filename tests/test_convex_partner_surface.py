@@ -48,3 +48,29 @@ def test_degenerate_hull_falls_back_and_invalid_inputs_fail():
     assert ids.tolist()==[0] and info['hull_fallback']
     with pytest.raises(ValueError):candidates([[np.nan,0,0]],target)
     with pytest.raises(ValueError):candidates([[0,0,0]],target,padding=0)
+
+
+@pytest.mark.parametrize('batch',[1,2,7,32])
+def test_query_batch_bound_preserves_complete_nonconvex_depths(monkeypatch,batch):
+    first=trimesh.creation.box();second=first.copy();second.apply_translation([2,0,0])
+    mesh=trimesh.util.concatenate([first,second])
+    points=np.random.default_rng(77).uniform([-.49,-.49,-.49],[2.49,.49,.49],(73,3))
+    points=np.vstack([points,[0,0,0],[1,0,0],[2,0,0],mesh.vertices])
+    expected=penetration(points,mesh.vertices,mesh.faces)
+    sizes=[];signed=trimesh.proximity.signed_distance
+    def observed(m,p):sizes.append(len(p));return signed(m,p)
+    monkeypatch.setattr(trimesh.proximity,'signed_distance',observed)
+    actual=penetration(points,mesh.vertices,mesh.faces,query_batch_size=batch)
+    assert sizes and max(sizes)<=batch
+    assert sum(sizes)==actual['convex_broadphase']['hull_candidates']
+    assert actual['vertices_checked']==len(points)
+    assert actual['max_depth_m']==pytest.approx(expected['max_depth_m'],abs=1e-12)
+    assert {k:v for k,v in actual.items() if k!='max_depth_m'}=={k:v for k,v in expected.items() if k!='max_depth_m'}
+
+
+@pytest.mark.parametrize('batch',[0,33,True,1.0,None,float('nan'),'1'])
+def test_invalid_batch_fails_before_geometric_query(monkeypatch,batch):
+    def forbidden(*args,**kwargs):raise AssertionError('Invalid batch reached a geometry query')
+    monkeypatch.setattr(trimesh.proximity,'signed_distance',forbidden)
+    with pytest.raises(ValueError,match='batch size'):
+        penetration([],[],[],query_batch_size=batch)

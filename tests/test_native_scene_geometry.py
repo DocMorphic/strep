@@ -122,6 +122,34 @@ def test_nested_closed_partners_fail_without_surface_crossings(tmp_path):
         assert pair['vertex_containment'][1]['max_depth_m'] > .099
 
 
+def test_small_partner_query_batch_survives_archived_run(tmp_path,monkeypatch):
+    monkeypatch.setattr(action_worker_lock,'ROOT',tmp_path/'fixture-lock')
+    _,path,spec=closed_fixture(tmp_path)
+    spec['actors']['B']=copy.deepcopy(spec['actors']['A'])
+    spec['actors']['B']['placement']['translation_m'][0]=.1
+    save(path,spec);pp=tmp_path/'policy.json';save(pp,policy(path))
+    sizes=[];signed=trimesh.proximity.signed_distance
+    def observed(mesh,points):sizes.append(len(points));return signed(mesh,points)
+    monkeypatch.setattr(trimesh.proximity,'signed_distance',observed)
+    small=geometry.run(path,pp,tmp_path/'small',partner_query_batch_size=1)
+    assert sizes and max(sizes)==1 and small['partner_query_batch_size']==1
+    assert read(tmp_path/'small/result.json')['partner_query_batch_size']==1
+    default,_=evaluate(path,spec,policy(path))
+    assert default['partner_query_batch_size']==32
+    assert small['samples']==default['samples']
+    assert not small['sampled_conditions_pass'] and not small['quality_approved']
+
+
+@pytest.mark.parametrize('batch',[0,33,True,1.0,None,float('nan'),'1'])
+def test_invalid_partner_batch_rejected_before_scene_or_output(tmp_path,batch):
+    with pytest.raises(ValueError,match='batch size'):
+        geometry.evaluate(None,None,None,partner_query_batch_size=batch)
+    output=tmp_path/'must-not-exist'
+    with pytest.raises(ValueError,match='batch size'):
+        geometry.run(tmp_path/'missing',tmp_path/'missing-policy',output,partner_query_batch_size=batch)
+    assert not output.exists()
+
+
 def test_unavailable_conditions_do_not_pass_and_frames_include_native_and_contact_keys(tmp_path):
     _, _, _, spec = setup(tmp_path)
     path = tmp_path/'contacts.json'; save(path, spec)

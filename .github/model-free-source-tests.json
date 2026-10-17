@@ -1,6 +1,7 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_convex_partner_surface.py",
     "tests/test_native_key_control_taper.py",
     "tests/test_native_self_separation_cuts.py",
     "tests/test_native_self_surface.py",

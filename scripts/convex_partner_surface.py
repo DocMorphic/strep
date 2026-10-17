@@ -36,7 +36,11 @@ def candidates(source, target, padding=1e-7):
     return retained,dict(aabb_candidates=count,hull_candidates=len(retained),hull_fallback=False)
 
 
-def penetration(source_vertices,target_vertices,target_faces,tolerance_m=.005):
+def penetration(source_vertices,target_vertices,target_faces,tolerance_m=.005,*,query_batch_size=32):
+    # A point query can expand to most of a dense target mesh. Bound the
+    # simultaneous points separately from the unchanged geometric condition.
+    if type(query_batch_size) is not int or not 1<=query_batch_size<=32:
+        raise ValueError('Integer query batch size between 1 and 32 required')
     source=np.asarray(source_vertices,dtype=float);target=np.asarray(target_vertices,dtype=float)
     if not np.isfinite(tolerance_m) or tolerance_m<=0:raise ValueError('Positive finite tolerance required')
     selected,broadphase=candidates(source,target)
@@ -44,8 +48,8 @@ def penetration(source_vertices,target_vertices,target_faces,tolerance_m=.005):
     if not mesh.is_watertight or not mesh.is_winding_consistent:raise ValueError('Closed wound target required')
     result=dict(vertices_checked=len(source),broadphase_candidates=broadphase['aabb_candidates'],
                 convex_broadphase=broadphase,max_depth_m=0.,vertices_over_tolerance=0,deepest_vertex=None)
-    for start in range(0,len(selected),32):
-        chunk=selected[start:start+32]
+    for start in range(0,len(selected),query_batch_size):
+        chunk=selected[start:start+query_batch_size]
         depths=np.maximum(0,trimesh.proximity.signed_distance(mesh,source[chunk]))
         if not np.isfinite(depths).all():raise ValueError('Nonfinite signed distance')
         i=int(depths.argmax());value=float(depths[i]);result['vertices_over_tolerance']+=int((depths>tolerance_m).sum())
