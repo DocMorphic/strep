@@ -3975,3 +3975,26 @@ not a new complete constraint replay or another motion correction. Guard:
 50.125 s / 300,523,520 bytes / 51 observations. Fresh derivatives about this
 new incumbent are required before the next proposal; original selection and
 all unresolved release gates remain unchanged.
+
+`reports/native-local-world-model-v2` freshly qualifies the complete **319-group,
+383,617-scalar, 135-column** world model about that accepted cumulative point.
+The anchor matches the parent's raw world values byte for byte. Both complete
+direction checks pass (maximum differences 1.996e-8 and 2.313e-7), with five
+complete value perturbations including a fully uncached byte-identity replay.
+Original pose/pair/contact independence and source/cap/clock/cumulative bounds
+are unchanged. Guard: 287.984 s / 286,756,864 bytes / 283 observations, complete
+with matching archived bindings. This qualifies new guidance, not another
+corrected animation. The next complete guide must retain all 25 prior witnesses
+plus newly repaired rows **93289, 93687 and 276872**, giving 28 required guards.
+
+`reports/native-local-complete-guide-v3` retains all **448,401 original raw
+guidance conditions**, **1,106 groups**, **135 columns** and **5,400 cumulative
+native balls** for the next proposal. All 28 required rows are refreshed, and
+every passing temporally affected displacement/rate row is retained, giving
+**6,424 individual guards**. Two complete native-coefficient direction checks
+and two independent all-guard checks pass (maximum guard errors 3.563e-7 and
+2.909e-7). All original pose/pair/contact conditions remain exactly invariant
+in this local window. Guard: 58.219 s / 343,265,280 bytes / 59 observations.
+This guide preserves the three newly repaired conditions; numerical acceptance
+still requires every raw/saved hard check, followed by independent saved export
+and fresh geometry for any changed candidate.
