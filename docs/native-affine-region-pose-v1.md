@@ -2867,3 +2867,75 @@ The frozen contact's inherited self crossings are unchanged. The original
 motion remains selected. Evidence is preserved in
 `reports/native-world-corrected-geometry-v1` (failed binding), `v2` and
 `reports/native-world-corrected-geometry-receipts-v1`.
+
+## Distributed proposals retain the complete physical acceptance bar
+
+`scripts/native_world_hinge_step.py` offers an alternative search objective:
+the sum of positive model violations plus an L1 step penalty, with an optional
+ceiling on the worst model violation. Every supplied row, cut and column is
+retained under complete dense/sparse storage admission. Existing HiGHS
+scheduling is preserved. This is local proposal guidance, not nonlinear
+feasibility, optimizer convergence, clip selection or quality approval.
+
+The prototype and production imports each pass 114 selected tests: 48 hinge,
+37 existing minimax and 29 complete-reducer cases. New analytic cases cover
+the difference between improving a sum and a maximum, an explicit peak
+ceiling, unreachable proxy ceilings, complete storage admission and invalid
+inputs. The production test driver's first version fails before running
+tests because its pytest hook used an incorrect argument name; the failed
+record is retained. Separate v2 fixes the hook with unchanged proposal code:
+37.578 s / 182,124,544 bytes / 39 observations. Both actual 165-group,
+540-column research LPs replay with maximum direction differences 0 and
+1.898e-19 against a 1e-12 numerical comparison threshold.
+
+The first distributed study starts from the verified 6,103-failure working
+point, retaining the original source epoch, caps, frozen keys and original
+zero-point local derivative model. All nine probes are rejected: one native
+ball failure, four original directional-pair failures, and four complete-world
+trials with one or two newly failed world rows. No failed trial is selected.
+Guard: 404.344 s / 249,970,688 bytes / 400 observations.
+
+Every observed regression is retained. The original triangle-pair row 22,968
+at 1.2291666666666667 s yields all nine vertex-gap cuts. Two actor-B hand/index
+displacement rows yield vector cuts. Full 540-column derivatives pass two
+independent direction checks; maximum discrepancies are 5.183e-10 for the
+nine triangle gaps and 1.701e-10 for displacement. Half the smaller raw/saved
+slack is reserved only in proposal guidance. Physical thresholds are unchanged.
+The next study also guards all 157 original groups that currently pass in
+both modes, for 170 extra proposal rows in total. These group guards cannot
+replace the complete original native, coupled-pose and scalar postchecks.
+
+Larger steps fail native/pose permissions or introduce a world regression.
+The accepted backoff is 0.0625 of a component-bounded 0.0005 incremental step.
+It passes all 129,568 native/pose/original directional-pair scalars and all
+original displacement/contact conditions. All 366,369 raw and 366,369 saved
+world scalars remain checked. Failures decrease from 6,103 to 6,100 in each
+mode with no newly failing row; both peak and squared positive violation
+decrease. Raw peak is 46.208073464743045, saved 46.208072844694016. These
+remain severe failures. Guard: 233.079 s / 275,034,112 bytes / 231 observations.
+
+An independent audit reproduces every saved world scalar byte for byte and
+checks complete array populations, original rig/static/binary-prefix/channel/
+clock/frozen identities and all hard rows. Against the original 6,114-failure
+reference, the same 14 scalar indices are repaired in both modes: 11 actor-A
+angular-acceleration rows and three actor-B angular-speed rows. This is a
+small numerical improvement, not demonstrated visual realism. Audit:
+39.609 s / 186,388,480 bytes / 41 observations.
+
+Both actor files now differ from the old geometry candidate. Of 232 previously
+checked geometry poses, only four retain exact full-hierarchy identity;
+228 require fresh full scene/pose queries. The previous 6,103-failure candidate
+still retains its own 232 sampled passes; that coverage does not transfer to
+the newer candidate. Fresh queries are split into bounded serial slices and
+must receive independent composite receipt replay before coverage is claimed.
+The original motion remains selected. Full-clip geometry, inherited self
+crossings, dynamics, semantics, engine and human gates remain open.
+
+Local evidence is preserved in `reports/native-world-distributed-trial-v1`
+and `v2`, `reports/native-world-pair-regression-cuts-v1`,
+`reports/native-world-distributed-regression-cuts-v1`,
+`reports/native-world-hinge-step-prototype-tests-v1`,
+`reports/native-world-hinge-step-source-tests-v1` (failed driver) and `v2`,
+and `reports/native-world-distributed-receipts-v1`. Inventories now contain
+574 Python / 45 Node and 140 Python / 5 Node contact paths, not full-suite
+passes. Generated assets and bulky evidence remain excluded from GitHub.
