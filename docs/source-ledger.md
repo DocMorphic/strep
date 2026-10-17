@@ -276,3 +276,29 @@ feedback study. A dedicated hand editor or expanded representation remains a
 research option, not an approved trained capability. The existing Uni-Inter
 intake above remains precedent; rereading its paper does not establish new
 checkpoint, commercial-use or laptop-runtime qualifications.
+
+## 2026-10-17: contact correction and continuous validation
+
+The primary [IPC project](https://ipc-sim.github.io/) formulates contact through
+a barrier and an optimization method for deformable simulation. The
+[Rigid IPC paper](https://ipc-sim.github.io/rigid-ipc/assets/rigid_ipc_paper_350ppi.pdf)
+explicitly requires a non-interpenetrating initial configuration and validates
+curved rigid-body trajectories through conservative collision queries. Strep's
+current candidate already contains intersections, and joint quaternion
+interpolation followed by skinning is not a straight vertex trajectory.
+Therefore an IPC citation or a linear vertex query would not certify this
+native clip. This is an inference about applicability, not an implementation
+or guarantee transferred from the paper.
+
+The official [IPC Toolkit](https://github.com/ipc-sim/ipc-toolkit) exposes
+distance derivatives, barrier terms, and linear/nonlinear continuous collision
+queries with C++ and Python interfaces. Its README identifies an MIT code
+license and explicitly says it is not a complete simulator or solver. No new
+dependency is installed, and no bundled model/data permissions follow from that
+code license. A possible follow-on experiment must first restore sampled
+feasibility, implement the actual native interpolation trajectory and its
+conservative bounds, then compare continuous checks against retained discrete
+failures. A feasible seed, supported trajectory interface, native derivative
+composition and Windows memory/runtime behavior all require evidence before
+adoption. Current sampled mesh checks and strict source-relative bounds remain
+the acceptance rules for the present trials.

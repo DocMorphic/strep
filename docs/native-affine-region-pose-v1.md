@@ -1695,3 +1695,31 @@ Jacobian before optimization. These changes avoid retaining solver workspace
 during geometry without reducing constraints. A running trial or a numerical
 pass alone does not establish a repair, and fresh complete selected-clock mesh
 checks remain required on any resulting candidate.
+
+The v2 search reaches 21 complete checkpoints (indices 0–20) but stops at its
+unchanged 900-second execution guard while refining tiny reserve residuals.
+Its failed result independently replays 915.860 s / 617,672,704 bytes / 900
+observations, exit 15, reason `execution_time_guard`. This is not a RAM failure,
+optimizer completion or measured motion repair.
+
+`high-five-expanded-candidate-recovery-v2` selects the largest committed
+checkpoint index with finite complete nonnegative physical search rows: index
+20. All checkpoint NPZs through that committed index pass ZIP integrity checks.
+The calculation function's AST matches the stopped worker; all 53,909 saved
+smooth rows reproduce byte for byte. Independent exact raw and Float32 endpoint
+postchecks each have zero failed rows. The new process exports a fresh candidate
+without running the optimizer or claiming that its search completed or found
+an optimum. The failed search, original assets and every checkpoint remain.
+Its guard independently replays 147.844 s / 278,413,312 bytes / 147 observations.
+
+`high-five-expanded-candidate-geometry-v2` now requests fresh slices of
+32/32/32/24 samples on that exact recovery output. A serial controller starts
+one guarded worker at a time and stops on a deferred or failed worker; it does
+not retry or rerun successful slices. Each worker first verifies every native
+rotation bound, Float32 track reconstruction, noneditable and frozen controls,
+original animations/rig/topology and unchanged noncontrolled channels. It then
+reconstructs actual saved joint/local-rotation/floor checks and retains complete
+mesh and observation receipts for each declared clock index. Four successful
+slices must still pass an independent exact-coverage receipt audit before the
+selected 120-time population can be reported as passing. Prepared or partial
+results do not approve the candidate, and the original stays selected.
