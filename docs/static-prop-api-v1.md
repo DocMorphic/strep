@@ -120,3 +120,65 @@ geometry decisions agree exactly: 27.516 s / 182,136,832 bytes / 29 observations
 These are three authored diagnostic times, not complete 2,017-time, continuous,
 physics, semantic, engine or human qualification. The earlier character motion's
 6,093 source-rate failures and every project-wide release gate remain open.
+
+## Explicit grip-centred prop pose edits
+
+`scripts/native_mesh_prop_pose.py` adds a source-bound prop pose operator and a
+bounded finite search. A `strep-native-mesh-prop-pose-edit-v1` permission file
+binds the original mesh scene, prop, existing key index and authored contact ID.
+It explicitly declares frozen keys, maximum rotation in degrees, maximum centre
+displacement in metres, maximum intentional clearance and its unit direction in
+prop-local coordinates. No boundary permission or clearance direction is inferred.
+
+The four controls are a cumulative, source-relative local rotation vector and a
+clearance fraction. Rotation uses a strict normalized unit ball; excessive
+rotation or centre displacement rejects export without clipping. The chosen grip
+is the rotation pivot at the edited key; clearance moves it along the explicitly
+authored local direction. Actual grip errors are still checked against the
+original contact limits. A pivot at one key does not guarantee other grips or
+whole hold intervals, so every contact is re-evaluated.
+
+Zero controls reproduce the original poses exactly. Only the declared prop key
+may change; actor clips, prop geometry, grips, key times, frozen and unrelated
+keys remain intact. Derived manifests relocate source paths explicitly without
+changing source payloads. Repeated calls use the original permission origin,
+not the previous correction as a new reference.
+
+```powershell
+python scripts/native_mesh_prop_pose.py pose-permissions.json mesh-policy.json reports/my-pose-search --maximum-candidates 80
+```
+
+The guarded CLI retains all proposals and failures. Its finite table includes all
+three rotation axes: 26 directions at quarter, half and full authored angle,
+plus the original and a clearance-only proposal when those components are
+unlocked. A declared numerical interior fraction keeps proposed rotations inside
+their original bounds; it is not output clipping. A finite search is neither a
+global feasibility proof nor an exhaustive orientation search.
+
+Every natively admissible candidate checks the complete native/frame sampled
+pose-change clock, **all** original and mesh point contacts and **every declared
+geometry policy time/condition**. No original passing geometry condition may
+newly fail. Failed-condition/sample counts, crossing records and peak penetration
+also cannot worsen relative to the source. Intermediate best proposals use
+componentwise improvement, so fewer crossings cannot conceal deeper penetration.
+`sampled_feasible_probe` identifies a candidate passing those declared conditions;
+`best_admissible_probe` may still be an invalid diagnostic. Originals remain
+selected; neither field grants continuous, physical, engine or human approval.
+
+All **34** focused tests pass locally and on Windows/Ubuntu at `2cf6736` in
+[run 39077460300](https://github.com/DocMorphic/strep/actions/runs/39077460300).
+They verify source/frozen/unrelated-key identity, all rotation axes, separate
+displacement limits, malformed/locked permissions, repeated source-relative
+edits, exact zero changes for nontrivial source rotations, multi-grip rejection,
+finite-search limits and a generated scene with a known collision repair.
+Local guard: 55.250 s / 134,209,536 bytes / 56 observations. The earlier passing
+31-case source snapshot is retained. These are generated-fixture source tests,
+not real-action or release evidence.
+
+The retained real-character pilot explicitly permits editing only the middle
+`authored_box` key: up to 180 degrees and 0.5 m centre displacement, with at most
+0.5 micrometres of intentional clearance along the declared local direction.
+Both endpoints and all character assets stay fixed. These are new, explicit prop
+edit permissions for this diagnostic; prior geometry thresholds and the original
+1 micrometre grip-position limit are unchanged. Its result remains pending until
+the guarded search and independent source/pose/contact/geometry replay finish.
