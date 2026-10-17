@@ -1779,3 +1779,23 @@ at one witnessed time. Two directional comparisons differ by 1.632e-9 m and
 7.630e-10 m. Its guard replays 37.703 s / 180,310,016 bytes / 39 observations.
 These are numerical comparisons, not motion acceptance tolerances. No new
 correction, solver feasibility or human quality is established by this helper.
+
+The [34-case region helper suite](https://github.com/DocMorphic/strep/actions/runs/39020864727)
+also passes on Ubuntu and Windows at source `bea82c1`. The private
+`high-five-coupled-region-envelope-fit-v1` trial now uses those complete regions
+and the already declared arm/proximal-finger nodes, with the same six editable
+keys, original limits and frozen poses. All 34,018 original pairs remain exact
+raw and encoded postchecks. The stronger envelope is guidance for this trial,
+not a new claim that all geometry-clear poses must satisfy one shared plane.
+
+Value-only evaluations use the existing affine API with an empty derivative
+coordinate list, preserving the complete hierarchy, pose and eight skin
+influences. Before search, all 24,049 rows must reproduce the Jacobian-bearing
+path byte for byte and the complete problem must pass two directional checks.
+Search can stop at a checkpoint only after independent raw/encoded aggregate
+and original-pair postchecks pass; it then records that no optimizer-completion
+or optimality claim follows from this stop. Otherwise the actual optimizer
+return or guard failure is retained. Solver termination tolerance is separate
+from the unchanged strict physical comparisons. Fresh full selected-clock mesh
+validation remains mandatory for any exported candidate; a running or prepared
+trial cannot pass the motion.
