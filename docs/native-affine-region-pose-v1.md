@@ -2187,6 +2187,36 @@ both archived analytic direction products match exactly. Fresh finite
 differences give 3.029e-7 / 3.872e-7 under 2e-5. The failed initial point remains
 failed. Its guard replays 134.813 s / 377,913,344 bytes / 135 observations.
 
+Hosted focused run [39032025228](https://github.com/DocMorphic/strep/actions/runs/39032025228)
+passes all 41 coupled-row cases on Ubuntu and Windows at source
+`0eabd8f90a99d76588004c21c255d334f0179c6d`. This covers the evaluator's source
+suite; it does not replace the separately archived real-character checks.
+
 The diagnostic separation conditions remain failed. These results qualify
 an evaluator and native export checks, not an optimized self correction,
 new collision-free motion, anatomy, whole-clip realism or release approval.
+
+### Full original animation-key sweep
+
+The current saved candidate is now checked at all 120 original native animation
+keys across the entire clip. The earlier interval/contact studies covered nine
+of those keys. A new query covers every remaining 111 keys, with all 18,056
+vertices / 36,108 faces per actor, unchanged partner/plane geometry policy and
+direct actual saved-clip joint/local-rotation bands. All 111 new samples pass
+scene geometry and pose bounds, with zero reported partner surface crossings.
+Every raw/Float32 native rotation bound, frozen/uneditable coefficient,
+unmodified track and original mesh/skin/node binding is independently retained.
+Native rotation row comparisons differ by at most 1.111e-15; physical rows are
+checked separately against zero without a tolerance. The query guard replays
+574.172 s / 217,124,864 bytes / 567 observations.
+
+A separate receipt audit independently verifies complete native-clock coverage,
+every observation/receipt hash, actual pose rows, floor extrema and current
+actor GLB identities against both prior studies. It replays 44.782 s /
+151,597,056 bytes / 46 observations. Composite current-candidate scene/pose
+coverage is 232 of 2,017 policy times, including all original 120 native keys;
+1,785 other in-between policy times remain unchecked. Previous reports remain
+unchanged. This is a complete native-key sample pass, not full interpolated
+motion, continuous collision, self-intersection, dynamics, semantics, engine,
+animator or release acceptance. The previously measured contact-pose self
+failures remain open.
