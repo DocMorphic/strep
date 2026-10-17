@@ -17,6 +17,52 @@ from rig_asset import RigAsset
 from test_native_partitioned_affine_pose import large_actor
 
 
+def complete_controls_difference_reference(mapper,value):
+    result=np.empty((mapper.model.size,mapper.size))
+    for column in range(mapper.size):
+        delta=np.eye(mapper.size)[column]*mapper.step
+        result[:,column]=(mapper.controls(value+delta)-mapper.controls(value-delta))/(2*mapper.step)
+    return mapper.controls(value),result
+
+
+@pytest.mark.parametrize('mode',['start','native','subkey','end'])
+@pytest.mark.parametrize('offset',[0.,.025])
+def test_track_reuse_matches_complete_control_differences_bitwise(tmp_path,mode,offset):
+    model,stamp,seed,pairs=inputs(tmp_path,mode);mapper=KeyPoseMap(model,stamp,seed,pairs);value=mapper.initial+offset
+    expected=complete_controls_difference_reference(mapper,value);actual=mapper.evaluate(value)
+    for a,b in zip(actual,expected):
+        np.testing.assert_array_equal(a,b)
+        assert a.dtype==b.dtype and a.tobytes()==b.tobytes()
+    assert actual[1].shape==(model.size,3*len(pairs))
+
+
+@pytest.mark.parametrize('reverse',[False,True])
+def test_multiple_endpoint_edits_on_same_track_keep_all_columns(tmp_path,reverse):
+    model,stamp,seed,_=inputs(tmp_path);pairs=[(5,model.nodes[-1]),(6,model.nodes[0]),(5,model.nodes[0]),(6,model.nodes[-1]),(1,model.nodes[2])]
+    if reverse:pairs.reverse()
+    mapper=KeyPoseMap(model,stamp,seed,pairs);value=mapper.initial+np.linspace(-.015,.02,mapper.size)
+    for a,b in zip(mapper.evaluate(value),complete_controls_difference_reference(mapper,value)):
+        np.testing.assert_array_equal(a,b);assert a.tobytes()==b.tobytes()
+    outside=next(i for i,p in enumerate(pairs) if p[0]==1);assert np.count_nonzero(mapper.evaluate(value)[1][:,3*outside:3*outside+3])==0
+
+
+def test_only_perturbed_tracks_are_resampled_with_fresh_full_baseline(tmp_path,monkeypatch):
+    model,stamp,seed,pairs=inputs(tmp_path);mapper=KeyPoseMap(model,stamp,seed,pairs);calls=[];original=NativeSupportSampler.value;local_clock=mapper.clock[mapper.bracket]
+    def observed(path,times,values,mode,time):
+        if path=='rotation' and np.array_equal(times,local_clock):calls.append(np.asarray(values).copy())
+        return original(path,times,values,mode,time)
+    monkeypatch.setattr(NativeSupportSampler,'value',staticmethod(observed));mapper.evaluate(mapper.initial+.01)
+    assert len(calls)==len(model.nodes)+2*3*len(mapper.dependent)
+    assert len(calls)<len(model.nodes)*(1+2*3*len(mapper.dependent))
+
+
+def test_reuse_never_keeps_a_pose_from_another_evaluation_point(tmp_path):
+    model,stamp,seed,pairs=inputs(tmp_path);mapper=KeyPoseMap(model,stamp,seed,pairs);initial=mapper.evaluate(mapper.initial)
+    value=mapper.initial+np.linspace(-.04,.03,mapper.size)
+    for a,b in zip(mapper.evaluate(value),complete_controls_difference_reference(mapper,value)):np.testing.assert_array_equal(a,b)
+    for a,b in zip(mapper.evaluate(mapper.initial),initial):np.testing.assert_array_equal(a,b)
+
+
 def inputs(tmp_path, mode='subkey'):
     actor, nodes = large_actor(tmp_path)
     doc = copy.deepcopy(actor['rig'].document); binary = bytearray(actor['rig'].binary)

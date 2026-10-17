@@ -104,6 +104,7 @@ class KeyPoseMap:
                            maximum_composed_rows=MAXIMUM_ROWS, difference_step=self.step,
                            fixed_endpoint_encoding='Float32, identical to native initializer export',
                            derivative='Central-difference local-control map; analytic native-ball rows',
+                           derivative_reuse='Only the perturbed local track is resampled; complete relative-control vectors retained, fresh baseline per evaluation',
                            normalized_proposal_component_domain=[-2.,2.],
                            physical_native_rotation_ball_limit=1.,
                            quality_approved=False, release_approved=False,
@@ -135,7 +136,7 @@ class KeyPoseMap:
                     or not np.array_equal(channels[0][3], self.original_quaternions[j])):
                 raise ValueError('Constructor-bound original native curve changed')
 
-    def _controls(self, value, quantized=False):
+    def _sampled(self, value, quantized=False):
         q = self.fixed_quaternions[:, self.bracket].copy(); vectors = value.reshape(-1, 3)
         for p in self.dependent:
             key, _ = self.pairs[p]; track = self.track_ids[p]
@@ -147,7 +148,26 @@ class KeyPoseMap:
             q[track, int(np.flatnonzero(self.bracket == key)[0])] = changed
         local_clock = self.clock[self.bracket]
         sampled = np.array([NativeSupportSampler.value('rotation', local_clock, v, 'LINEAR', self.time_s) for v in q])
+        return sampled
+
+    def _relative_controls(self, sampled):
         return (self.original_inverse*Rotation.from_quat(sampled)).as_rotvec().ravel()/np.repeat(self.caps, 3)
+
+    def _controls(self, value, quantized=False):
+        return self._relative_controls(self._sampled(value,quantized))
+
+    def _sampled_track(self, value, track):
+        # Local quaternion tracks are independent before complete affine FK.
+        # Reuse only unaffected samples from this same evaluation point.
+        q=self.fixed_quaternions[track,self.bracket].copy();vectors=value.reshape(-1,3)
+        for p in self.dependent:
+            if self.track_ids[p]!=track:continue
+            key,_=self.pairs[p];original=self.original_quaternions[track,key];changed=original.copy()
+            if np.any(vectors[p]):
+                changed=(Rotation.from_quat(original)*Rotation.from_rotvec(vectors[p]*self.caps[track])).as_quat()
+                if changed@original<0:changed*=-1
+            q[int(np.flatnonzero(self.bracket==key)[0])]=changed
+        return NativeSupportSampler.value('rotation',self.clock[self.bracket],q,'LINEAR',self.time_s)
 
     def controls(self, value, *, quantized=False):
         if type(quantized) is not bool: raise ValueError('Explicit Boolean endpoint quantization required')
@@ -157,12 +177,14 @@ class KeyPoseMap:
         return full
 
     def evaluate(self, value):
-        self._check(); value = self._value(value); full = self._controls(value)
+        self._check(); value = self._value(value); sampled=self._sampled(value);full=self._relative_controls(sampled)
         jac = np.zeros((self.model.size, self.size))
         for p in self.dependent:
             for axis in range(3):
                 column = 3*p+axis; delta = np.zeros(self.size); delta[column] = self.step
-                jac[:, column] = (self._controls(value+delta)-self._controls(value-delta))/(2*self.step)
+                track=int(self.track_ids[p]);plus=sampled.copy();minus=sampled.copy()
+                plus[track]=self._sampled_track(value+delta,track);minus[track]=self._sampled_track(value-delta,track)
+                jac[:,column]=(self._relative_controls(plus)-self._relative_controls(minus))/(2*self.step)
         if not np.isfinite(full).all() or not np.isfinite(jac).all():
             raise ValueError('Nonfinite complete native-key map or Jacobian')
         return full, jac

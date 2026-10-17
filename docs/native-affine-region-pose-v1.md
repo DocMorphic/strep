@@ -1589,3 +1589,93 @@ total references, with pose bounds at every one of 120 selected times. Its
 key range, unlike the rejected four-key proposal. No pair, vertex or bound is
 discarded. Raw/encoded postchecks and all 120 fresh independent mesh checks
 remain required; the running solver is not a measured motion repair yet.
+
+The expanded worker subsequently exceeds its unchanged 1-GiB process-tree limit
+while running geometry, and the guard terminates it. Its failed status and
+independent resource replay remain intact: 806.390 s / 1,097,506,816 bytes /
+793 observations. It had saved a complete numerical proposal, exported tracks
+and 44 geometry reports, but no completed study result. Those partial reports
+do not establish an interval pass.
+
+`high-five-expanded-solution-replay-v1` recovers the saved numerical work in a
+separate process without calling the optimizer. It checks NPZ integrity and
+source bindings, verifies the copied calculation function's AST against the
+failed worker, and reproduces all 46,972 raw and encoded rows bit for bit, with
+zero failures. Complete saved controls, encoded tracks and all native-key
+rotation limits also match. Its independent guard replay completes in
+106.453 s / 280,477,696 bytes / 107 observations. This recovers a numerical
+solution; it does not change the failed study into a successful one or approve
+geometry.
+
+`high-five-expanded-geometry-replay-v1` requests fresh geometry at all 120
+selected times on that exact recovered candidate. It retains no optimizer
+workspace, collects temporary geometry objects after each frame, and reuses
+none of the failed worker's 44 partial checks. Saved joint positions, local
+rotation limits and floor depths are reconstructed independently of the pose
+Jacobian, and complete per-frame reports and observation receipts are retained.
+The same 1-GiB limit and physical acceptance thresholds apply. Completion and
+coverage verification remain required before reporting the selected sample set
+as passing; the full 2,017-time clock, self-collision, dynamics and human review
+remain separate requirements.
+
+The geometry-only attempt is deliberately stopped after 75 committed samples
+(indices 559–633), once it has established 23 geometry failures and zero motion
+bound failures. This is a performance handoff to previously qualified query
+batch size four for the unfinished indices, rather than another RAM stop.
+The owned worker PID, creation time and descendants are recorded before stopping
+only that tree; its supervisor remains to finish the independent resource audit.
+The failed attempt retains all receipts and replays 679.735 s / 217,366,528 bytes /
+668 observations, exit 15, with no resource-guard reason. The separate
+`intentional-stop.json` explains the stop; it must not be described as a completed
+120-sample run. Fresh bounded tail slices and an aggregate exact-coverage audit
+are required before using the full feedback population. Completed prefixes are
+reused only through their immutable receipts, never converted into a successful
+guard result.
+
+The two fresh tails complete the remaining 45 samples. The 32-sample guard
+replays 227.047 s / 201,314,304 bytes / 224 observations; the 13-sample guard
+replays 104.235 s / 175,865,856 bytes / 104 observations. Both remain partial
+slices of the selected interval, and neither changes the failed prefix status.
+
+`high-five-expanded-geometry-receipts-v2` independently verifies all three
+committed receipt populations, their source bindings and observation transport,
+and exact coverage of indices 559–678. It reconstructs all saved actual joint,
+rotation and floor checks and the complete native rotation limits. The selected
+120 times have 77 geometry passes and 43 failures at indices 611–653, with 6,937
+surface records and zero motion-bound failures. The maximum reconstructed pose
+row difference is 5.885e-15; comparison tolerance never relaxes physical row
+acceptance. The guard replays 53.032 s / 169,676,800 bytes / 54 observations.
+The unchanged v10 baseline had 61 failed times in this same sample set. This is
+a reduction in sampled defects, not an accepted animation: 1,897 other policy
+times, self-collision, dynamics, semantics, engine playback and human review
+remain unverified for this candidate, and the original stays selected.
+
+`KeyPoseMap.evaluate` now resamples only the perturbed local quaternion track
+for each finite-difference column, starting from a fresh complete sample at the
+current evaluation point. It still reconstructs the complete relative-control
+vector for each side of the difference and retains every Jacobian row and
+column. Multiple editable endpoints on one track are applied together. Full
+affine hierarchy and skin derivatives, original references, Float32 export,
+native rotation balls and allocation limits remain unchanged; no pose is cached
+across evaluations. Local track independence is used before forward kinematics,
+not to discard effects through ancestors or skin influences.
+
+Twelve new cases check byte equality against full-control finite differences
+at native, interpolated and outside-support times, both endpoint edits on the
+same track, pair order, complete columns and fresh evaluation points. An
+instrumented case verifies fewer local track samples without dropping tracks
+from the complete result. All 220 focused regressions pass in 54.80 s; the guard
+replays 97.125 s / 125,349,888 bytes / 97 observations. This qualifies the source
+change's regression behavior, not motion quality. A separate supplied-character
+comparison against the frozen previous implementation remains required before
+using it in another measured correction study.
+
+`native-track-local-map-actual-v1` completes that comparison on both supplied
+actors at six native/interpolated/outside-support times, each at the initial
+seed and recovered solution: 24 comparisons. Every complete local-control
+vector and Jacobian is byte-identical to the frozen previous implementation;
+Float32 endpoint controls and complete native-ball values and derivatives also
+match. The guard replays 28.531 s / 116,424,704 bytes / 30 observations. Timing
+observations are local map measurements, not a whole-optimizer speed guarantee.
+This preserves the previously measured motion and its 43 failed geometry times;
+it is not a new animation correction or quality approval.
