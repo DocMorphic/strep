@@ -10,6 +10,37 @@ python scripts/developer_packet_review.py prepare PATH_TO_INDEPENDENT_PACKET PAT
 
 Extract the complete ZIP, run `python serve.py` (or `py -3 serve.py` on Windows), and open the printed local URL. A WebGL browser and Python 3 are required. No account, motion model or network download is needed for review. The user supplies every rating. Use normal-speed playback first and retain poor takes. For unavailable object or partner context, contacts/collisions must remain N/A with an explanation.
 
+## Windows walkthrough for the crawl comparison
+
+1. In File Explorer, open `C:\wassup\strep\reports\crawl-native-developer-review-v2`.
+2. Right-click `crawl-developer-review.zip`, choose **Extract All**, and extract
+   the complete archive to a new folder. Open the extracted folder containing
+   `serve.py`, `viewer.html`, `manifest.json`, `clips` and `runtime`.
+3. Click File Explorer's address bar, type `powershell`, and press Enter.
+   In that window, enter `py -3 serve.py`. Leave the window open during review.
+4. Open `http://127.0.0.1:8771/viewer.html` in your browser. Opening the HTML
+   file by double-clicking does not start the viewer correctly. If the server
+   reports an occupied port, run `py -3 serve.py --port 8772` and open
+   `http://127.0.0.1:8772/viewer.html` instead.
+5. Enter a reviewer identifier and check the human developer-review attestation.
+   Select a clip and watch its complete motion at normal speed before scoring.
+   Use **Play**, **Restart** and the timeline; drag to orbit and scroll to zoom.
+   Inspect the crawl's floor contact, supporting hands and knees, torso movement,
+   limb intersections and any sudden changes. Compare each labeled condition
+   independently; a correction is allowed to look worse.
+6. Fill every rating, the major-defect answer, confidence and any notes. Record
+   the visible problem and playback time, such as a knee slipping at 1.2 s.
+   Leave cleanup **Not performed** unless you actually edit the downloaded clip.
+   Click **Save this review**, then select the next clip and repeat.
+7. Click **Export saved reviews**. Keep the downloaded JSON file and return it
+   to the organizer for import. The viewer does not upload it. A partial export
+   is allowed; its saved-review count shows what remains. Press Ctrl+C in the
+   PowerShell window after finishing.
+
+These steps use the existing local crawl packet. They do not start the Studio
+server, run the motion model or convert developer feedback into independent
+animator approval.
+
 The export uses `strep-developer-packet-review-v1`, with `human_review=true`, `review_type=developer`, `independent_human=false`, `quality_approved=false` and `release_approved=false`. It contains the exact packet/manifest binding and the same five-category rubric and cleanup records as independent review. Cleanup requires actual edits to the downloaded clip, active editing seconds and operations; playback time is not cleanup. Abandoned and time-limited attempts are retained. These are human attestations, not machine verification of editing or animation quality.
 
 ```powershell

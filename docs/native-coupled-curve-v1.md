@@ -320,3 +320,10 @@ retain the original reference epoch and explicit permissions, and check
 decoded interpolation, dynamics and complete partner/self coverage.
 Neither this candidate nor the original gains engine, developer/animator,
 anatomical or release acceptance from this diagnosis.
+
+The subsequent [native affine region study](native-affine-region-pose-v1.md)
+adds reusable original-bound surface rows, verifies saved corrections at
+15 selected native keys, and measures their combined curve separately.
+The first combined curve still fails eight wrist-displacement rows and
+three of 21 selected subkey partner checks; passing poses do not establish
+a passing interaction path.
