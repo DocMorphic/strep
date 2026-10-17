@@ -3813,3 +3813,72 @@ joint bands and original frozen controls unchanged. Require complete baseline
 equivalence before any proposal, preserve every repaired row, and independently
 recheck all changed poses afterwards. A local search is not a global
 feasibility proof; unsuccessful motion still remains unapproved.
+
+### Source-bound local temporal controls
+
+`scripts/native_local_basis.py` adds an explicit local temporal direction while
+holding the incumbent's 540-coordinate correction fixed. It retains all 45
+authorized nodes and all three axes, giving 135 local variables. The warm
+controls remain cumulative relative to the original quaternion source: degree
+caps, displacement bands, original frozen keys and the full cumulative unit
+balls are unchanged. Export rejects exceeded bounds; it does not clip controls.
+Untouched and frozen coefficients retain their bytes, including signed zeros.
+
+Seventeen focused tests pass locally and on Windows/Ubuntu in
+[run 39072015553](https://github.com/DocMorphic/strep/actions/runs/39072015553)
+at source `8c1e065`. They cover complete local derivatives, cumulative limits,
+nonuniform clocks, frozen support, malformed inputs and byte-identical baseline
+GLB export. These are source tests, not character quality approval.
+
+The actual-character baseline in `reports/native-local-basis-baseline-v1`
+replays all **944,562 raw/saved scalars** across ten groups, with every value
+and both saved GLBs **byte-identical** to accepted numerical parent v5.
+Guard: 147.547 s / 283,000,832 bytes / 146 observations. The subsequent narrow
+window uses exact native keys **64/65/66**, at 2.133333444595337,
+2.1666667461395264 and 2.200000047683716 s. Only key 65 has nonzero weight.
+`reports/native-local-basis-narrow-proof-v1` proves all 478 single/adjacent
+endpoint requests and both GLBs identical at zero local correction. It reuses
+the full baseline through exact identity; it is **not another full replay**.
+Guard: 43.984 s / 193,011,712 bytes / 45 observations.
+
+`reports/native-local-world-model-v1` completes a fresh **319-group,
+383,617-scalar, 135-column** world derivative model. Its baseline values match
+the complete baseline byte for byte. Two independent complete directional
+checks pass (maximum differences 1.018e-7 and 1.533e-7); all four signed
+perturbations retain every original row. A fifth, completely uncached
+perturbation matches cached values and groups byte for byte. Cached poses and
+zero derivatives are allowed only when every original LINEAR endpoint weight
+is exactly zero; no small-weight threshold or row removal is used. All 120
+original pose/pair observation times have that exact independence. Guard:
+321.969 s / 285,593,600 bytes / 316 observations, complete with matching
+archived bindings. The original larger 540-column replay that stopped on low
+memory remains failed and unqualified; this is a separately declared added
+local block. All jobs retain the 600 MiB system reserve.
+
+These results qualify correction coordinates and numerical guidance, not a new
+animation. Full cumulative cones, raw/saved checks, independent export and
+fresh geometry for every changed pose remain required before accepting a
+candidate. All project-wide release gates and the original selection remain.
+
+`reports/native-local-complete-guide-v2` composes **448,401 raw guidance
+conditions in 1,106 groups**, retaining all 135 local columns. All original
+23,880 pose and 35,504 pair conditions remain present, with zero derivatives
+justified by exact endpoint independence. Pair groups here aggregate the
+unchanged physical pair margins; the older inner smooth surface surrogate is
+unnecessary for conditions that are constant in this local search.
+
+All 25 prior repair/regression guards are refreshed in local coordinates.
+The guard set also contains every temporally affected displacement/rate
+condition that passes in both raw and saved motion: **6,421 individual rows**.
+No gradient-smallness or anatomy filter is used. Two full native-coefficient
+direction checks pass (maximum errors below 1.4e-10), as do two independent
+checks of all guard rows (below 4.1e-7). Contact conditions are exactly
+invariant in this window. Guard: 62.438 s / 340,070,400 bytes / 63 observations.
+
+The first private composition attempt, `native-local-complete-guide-v1`,
+failed before optimization because a contact ID was looked up as an actor
+name (`A-meeting`). It remains immutable, with no candidate or quality result.
+The new version handles contact groups separately after proving their exact
+independence; it removes no world or postcheck conditions. Its complete
+guidance and all cumulative native cones are proposal inputs only; the full
+**944,562** raw/saved hard checks still decide numerical acceptance.
