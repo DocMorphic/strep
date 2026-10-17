@@ -3373,3 +3373,226 @@ The first 76-sample slice has been launched; no completed collision result is
 claimed here. All 229 changed times and independent composite receipt replay
 are still required. The original stays selected; full self/continuous motion,
 semantic, engine, human and release approvals remain open.
+
+### First fresh slice and faster complete input verification
+
+The 6,097-failure candidate's first 76 changed scene times complete in
+`reports/native-conic-hinge-geometry-v1/cases/slice-0-76`: zero scene-geometry
+or saved-pose-bound failures. Every sample queries the full original actor
+meshes and scene policy. Guard: 419.344 s / 183,394,304 bytes / 411 observations.
+Independent receipt, complete report, saved pose and full-vertex floor replay
+in `reports/native-conic-hinge-geometry-receipts-v1/cases/slice-0-76` confirms
+all 76. Guard: 62.250 s / 151,838,720 bytes / 63 observations. Together with
+three exact-identity poses, this qualifies **79 sampled scene/pose times**,
+leaving 1,938 policy times unverified. The other 153 changed old samples are
+not yet counted; this is not complete old-population or native-clock coverage.
+
+File-write interval inspection suggests repeated input checks dominate much
+of the first slice: across an intermediate 54-interval prefix, query/archive
+intervals average 0.788 s, versus 4.168 s between a frame receipt and the next
+frame's bounds. Those intervals include other work and do not isolate one
+function. A separate benchmark therefore measures complete hash verification
+directly, rather than attributing all elapsed time to collision queries.
+
+New `scripts/open_file_bindings.py` keeps read handles open while **rehashing
+every byte on every verification**. It caches neither content nor digests.
+Path and handle device/inode identities, sizes and read-time modification
+timestamps are checked; same-size changes with restored timestamps still
+fail their fresh hash. File replacement is detected or blocked by OS sharing.
+Only regular files with stable nonzero identities are accepted. Explicit
+limits are 4,096 open files and a read buffer no larger than 1 MiB; failed
+construction and context exit close the handles. Unsupported filesystems
+must use the original path-hashing method, not a reduced verification.
+
+Prototype v1 records 20 passes and two setup/teardown errors: an automatically
+generated test identifier contains the large test payload and exceeds the
+Windows environment-variable limit. The failed record is retained; benchmark
+execution is not claimed. V2 changes only that test identifier and uses short
+tracebacks, preserving identical implementation bytes. All **21** functional
+cases then pass, including complete multi-chunk reads, same-size mutation
+with restored timestamps, replacement, partial-open cleanup, caller-binding
+immutability and resource admission. Production repeats all 21 through the
+actual public module with identical implementation bytes.
+
+On the unchanged **1,480-file / 22,675,189-byte** first-slice binding set,
+prototype standard hashing takes 4.017/3.643 s per pass; retained-handle fresh
+hashing takes 0.243/0.232 s, with 0.445 s initialization. Production takes
+4.411/4.599 s versus 0.345/0.325 s, with 0.631 s initialization. Every file and
+byte remains verified. This measures that one-machine hashing workload, not
+a whole-pipeline or cross-platform speed guarantee. Failed v1 guard:
+30.547 s / 66,863,104 bytes / 32 observations; v2: 41.828 s / 76,709,888 bytes /
+43 observations; production: 62.484 s / 69,046,272 bytes / 63 observations.
+
+Hosted run [39062091764](https://github.com/DocMorphic/strep/actions/runs/39062091764)
+passes all 21 cases on Windows and Ubuntu at source `c96b4fd`.
+`reports/native-conic-hinge-geometry-v2/integration-proof.json` confirms that
+the new driver's AST matches the original after removing only the explicit
+integrity-reader import/context, equivalent verification call and three
+backend metadata fields. All motion math, scene queries, original caps,
+sampling, source checks and limits remain unchanged. Every frame still checks
+the complete binding map, with added file-identity checks and no hash cache.
+The second 76-time slice is now running through this driver. Its partial
+results are not counted before terminal resource and independent receipt
+validation; the original remains selected and all release gates stay open.
+
+### Complete old sample coverage reveals a native-clock pose regression
+
+The second slice finishes with zero scene and pose failures: 76 fresh times,
+208.985 s / 178,008,064 bytes / 206 observations. Its independent receipt,
+pose and floor replay also passes: 34.609 s / 146,370,560 bytes / 36
+observations. The final 77-time slice finishes in 132.750 s / 211,345,408 bytes /
+132 observations. Its collision queries pass, but **one saved-pose limit
+fails**. Independent replay confirms that failure rather than treating worker
+completion as animation acceptance: 33.578 s / 150,466,560 bytes / 35 observations.
+
+`reports/native-conic-hinge-geometry-composite-v1` verifies the disjoint
+76/76/77 slices and three inherited exact-identity poses. All 232 old sample
+times and all 120 stored keys for each actor are covered, with **zero sampled
+scene-geometry failures and one pose failure**. The remaining 1,785 policy
+times, full self/continuous motion, dynamics, semantics, engines and human
+review remain unverified. Composite guard: 37.735 s / 121,057,280 bytes /
+39 observations. The internally accepted 6,097-failure candidate therefore
+does **not** become the qualified reference or selected motion.
+
+The failure is actor B's RightHand, node 43 / joint ordinal 42, at policy index
+1,084 and the exact stored key time **2.133333444595337 s**. The nearest original
+displacement-grid time is **2.1333333333333333 s**, a difference of
+1.112620036e-7 s. `reports/native-clock-pose-gap-v1` reproduces the bounds:
+
+| Candidate | Exact time | Saved hand displacement | Original cap | Squared margin |
+| --- | --- | --- | --- | --- |
+| Qualified reference | Nominal grid | 0.059999703281 m | 0.06 m | +9.891e-6 |
+| Qualified reference | Stored key | 0.059999881747 m | 0.06 m | +3.942e-6 |
+| Numerical candidate | Nominal grid | 0.059999974948 m | 0.06 m | +8.351e-7 |
+| Numerical candidate | Stored key | 0.060000153279 m | 0.06 m | **-5.109e-6** |
+
+Raw and encoded model evaluation reproduce the failed key pose; decoded model
+worlds match the exported file within 7.772e-16. This is a missing constraint
+timestamp, not evidence of a broken exporter. Only **8 of 120** stored key
+times per actor occur in either the original pose-observation population or
+the uniform displacement population. All 120 are already present in the world
+value cache; evaluating a state does not itself impose its displacement band.
+No time snapping or physical epsilon waiver is applied. Diagnosis guard:
+46.032 s / 198,373,376 bytes / 47 observations.
+
+`reports/native-clock-pose-population-v1` checks every exact source/saved
+channel-key time for both actors, under both reference and candidate points.
+Each representation retains all 23,880 rotation/joint margins. The qualified
+reference has zero failures in raw, model-decoded and authoritative saved
+motion; the numerical candidate has the same one failure in all three.
+Model-decoded versus saved margins differ by at most 1.022e-14. Guard:
+80.937 s / 201,875,456 bytes / 81 observations. These results require exact
+stored-time pose coverage in subsequent acceptance and guidance.
+
+An expanded experimental checker in `reports/native-clock-checks-v1` preserves
+the original condition populations and adds raw/saved pose bands at every
+exact channel key time. Its actual replay is **incomplete**: the reference
+reaches the world-evaluation stage, then the available-RAM guard stops the
+worker below the unchanged 600 MiB reserve. The failed parent is retained at
+`reports/native-clock-checks-actual-v1`: 133.015 s / 223,842,304 bytes /
+133 observations, exit 15 / `available_ram_guard`. No completed qualification
+or successful candidate rejection is inferred from that interrupted replay.
+The new candidate remains blocked by the independently reproduced pose
+failure. Exact key times must be added to hard acceptance and guidance while
+retaining every original row, source epoch, cap and frozen coefficient.
+
+### Memory-admitted retry completes the expanded acceptance replay
+
+After memory becomes available, `reports/native-clock-checks-actual-v2`
+retries the same checker under the unchanged resource policy, checking the
+invalid candidate first so its rejection is durable before the longer
+reference replay. It completes in **213.344 s / 232,366,080 bytes / 210
+observations**, exit 0. The earlier memory-stopped attempt stays immutable.
+
+The candidate reproduces one raw and one saved exact-key pose failure and
+stops before recomputing world conditions. Its six original mandatory arrays
+remain byte-identical to the archived checks. The previous reference completes
+all ten groups: eight original arrays replay byte for byte and both additional
+23,880-row native-pose arrays pass. Every new array also matches the independent
+exact-clock scan byte for byte. No source, cap, clock or threshold changes are
+needed to distinguish these points. This verifies rejection and preservation
+of the reference; it does not repair the candidate or approve animation quality.
+
+### Public value adapter covers every already evaluated displacement time
+
+`scripts/native_evaluated_world_rows.py` adds `EvaluatedWorldRows` by
+composition, leaving the original `SceneWorldRows` unchanged. All original
+conditions remain a byte-identical prefix with their original row numbers.
+Joint displacement bands are appended at every cached time outside the
+original uniform displacement grid, using the same source, per-joint caps,
+joint-major order and norm arithmetic. No additional poses are inferred from
+nearby nominal timestamps. The original source/world budgets remain in force;
+the combined population must also fit the explicit two-million-row ceiling.
+
+The saved-file path retains the original exact duration, static rig/scene,
+source binary-prefix, candidate-index and fresh digest checks. Any saved
+channel key outside the registered exact clock is rejected; supporting a
+different clock requires rebuilding the evaluation population explicitly.
+The adapter snapshots its inputs and rejects malformed or incomplete world
+populations and changes to actors without edit permission. It deliberately
+does not inherit the original class: the old derivative operator's uniform
+displacement partition must reject it instead of silently omitting new rows.
+This is a value evaluator, not yet optimizer guidance or runtime integration.
+
+All **67** focused synthetic cases pass: 29 new cases and all 38 original
+world-row cases. They cover an off-grid-only displacement violation, exact
+old-row prefix identity, per-joint ordering/caps, world/object/partner contacts,
+saved-file validation, clock completeness, snapshots and admission ordering.
+The first attempt records 66 passes and one admission-order failure: reading
+the public report copied it before rejecting a too-small row budget. Two
+direct scalar/length accesses now admit the row budget before clock/report
+copies or the full source snapshot; the failure remains immutable. Failed
+guard: 75.734 s / 118,407,168 bytes / 76 observations. Passing guard:
+77.828 s / 122,691,584 bytes / 78 observations. Source `1554393` is pushed;
+real-character replay and hosted platform results are recorded separately.
+
+Hosted [run 39066362296](https://github.com/DocMorphic/strep/actions/runs/39066362296)
+passes all **29 new cases on both Windows and Ubuntu** at exact source
+`15543935f4eec6d6fa5cf2a0b2790dc71fe10121`. These are synthetic source checks;
+the local 67-case run additionally includes the 38 original world-row cases.
+
+The first real-character replay, `reports/native-evaluated-world-rows-actual-v1`,
+stops at a representation-comparison assertion, not a memory stop: 112.781 s /
+287,236,096 bytes / 112 observations. Its raw world checkpoint is durable.
+`reports/native-evaluated-margin-diagnosis-v1` independently verifies every
+366,369-row raw prefix byte for byte, then compares all 17,248 added raw bands
+with the independent native scan. The scan stores squared margins
+`m = 1 - (distance / cap)^2`, while the world evaluator stores norm violations
+`v = distance / cap - 1`. Inverting near-one squared margins through
+`sqrt(1-m)-1` amplifies rounding: the largest difference is 2.89746005e-12,
+with one comparison above the 2e-12 representation-comparison bound.
+
+Forward comparison in the scan's original representation, `1-(1+v)^2`,
+differs by at most **3.330669074e-16**. All strict physical failure signs agree:
+zero added actor-A failures and the same one actor-B failure. Neither public
+implementation nor physical limits change. The diagnostic uses only archived
+arrays, with no new world queries or optimizer; sampled guard: 16.235 s /
+10,059,776 bytes / 18 observations. Raw/saved reference and candidate replay
+still must complete under the forward comparison before qualification.
+
+`reports/native-evaluated-world-rows-actual-v2` now completes that full replay
+through the unchanged public implementation. Each raw/saved world population
+retains **366,369 original rows byte for byte** and adds **17,248 displacement
+bands**: 112 additional exact times × 77 joints × two actors. All 589 already
+cached times now impose displacement limits. Each mode has 383,617 rows;
+no world timestamp is added, rounded or omitted.
+
+| Motion point, identical raw/saved counts | Original failed rows | Added failed rows | Complete failed rows |
+| --- | --- | --- | --- |
+| Previous reference | 6,100 | 0 | 6,100 |
+| Numerical candidate | 6,097 | **1** | 6,098 |
+
+All added rows agree with the independent native scan in its squared
+representation within 3.330669074e-16, and every strict physical failure sign
+agrees. The reference gains no additional displacement violation; the candidate
+exposes the same hand failure in raw and saved motion. Existing source-rate
+failures remain visible, so neither row implies overall motion acceptance.
+The candidate remains unqualified and the original stays selected.
+
+Guard and independent resource replay: **248.406 s / 292,454,400 bytes / 245
+observations**, including 76.937 s waiting for stable admission, exit 0, all
+archived bindings matching. Completed and failed evidence remains immutable.
+No derivative, optimizer, geometry, semantic, engine or human approval is
+claimed. The next implementation step is bounded derivative guidance for the
+expanded clock, retaining every original row and individual guard, then strict
+raw/saved acceptance and fresh geometry checks for any corrected candidate.
