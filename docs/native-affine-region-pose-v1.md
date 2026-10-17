@@ -2303,3 +2303,84 @@ passes all 36 fitter cases on Ubuntu and Windows at source
 `484eafdd48db9912c1ad41804381ccd0dab860f0`. The overall release goal remains
 open. Integrating this API requires composing all original authored contacts,
 rates and scene conditions before switching any Studio correction path.
+
+### Complete existing Studio world conditions
+
+`scripts/native_scene_world_rows.py` adds a read-only `SceneWorldRows` adapter.
+It reuses `SceneProblem` arithmetic for every original displacement, 120-Hz
+source-relative speed/acceleration, contact-position and contact-speed row.
+World, moving-object and partner targets, individual/centroid points, original
+native clocks and every hold-rate population are retained. A zero-length
+parameter view means there are no optimization variables in this evaluator;
+it does not raise or bypass the existing Studio optimization limit. Native
+parameter permissions, surface geometry and explicit rotation-speed policies
+remain separate required conditions before integration.
+
+Construct `SceneWorldRows(original_scene, displacement_caps_m)`, use its
+`times` for complete actor-world arrays, and call `violations(worlds)` or
+`evaluate_files(candidate_bindings)`. Violation rows retain the Studio sign:
+every value must be `<= 0`. The file method returns both the complete vector
+and an unapproved world-condition summary; it does not select a proposal.
+
+The source scene/caps are snapshotted. Complete actor worlds are required;
+actors without declared edit caps must remain unchanged. Displacement limits
+may be scalar or complete per-joint vectors. The adapter preserves legacy
+joint-major displacement ordering and time-major rate ordering. Contact skin
+evaluation processes bounded frame batches, retaining every referenced vertex
+and all skin influences. Complete budgets are at most 16,384 clock points,
+64 MiB of actor worlds, two million scalar rows and 64 MiB of skin working
+storage; the default skin batch budget is 8 MiB. Over-budget requests reject
+without dropping times or rows. Saved-file evaluation requires bound digests,
+explicit animation indices, unchanged static rig/scene payload and original
+binary prefixes. Appended candidate clips are sampled at their supplied index.
+
+Thirty-eight new cases plus 49 related contact/rate cases pass all 87 checks
+in prototype and production-import runs. Full legacy world-row vectors and
+clocks match byte for byte across translation/rotation, all three target
+spaces and individual/centroid contacts. Single-frame skin batching matches
+within 2e-12 as a numerical comparison only. Native saved-file decoding,
+appended clip selection, unequal joint caps, snapshots, source mutation and
+complete budget rejection are covered. Guards: prototype 54.875 s /
+127,102,976 bytes / 56 observations; production 52.781 s / 120,717,312 bytes /
+54 observations. Failed setup, vector-broadcast and case-specific target
+assumptions remain visible in immutable reports.
+
+Full-character evaluation retains 589 distinct condition-clock points,
+477 uniform source-rate samples, 77 joints per actor and all 366,369 world
+conditions. Both meeting targets and the hand-to-hand target pass; independent
+full-skin distances are 8.933 mm, 9.154 mm and 4.000 mm against the original
+30-mm limits. All displacement conditions pass. **6,114 source-relative rate
+conditions fail**: actor A has 650 linear-speed, 489 linear-acceleration,
+2,300 angular-speed and 364 angular-acceleration failures; B has 860, 494,
+585 and 372 respectively. These are joint/time scalar policy failures, not
+6,114 distinct visual defects or an absolute biological realism metric.
+The original reference has two contact failures and no rate/displacement
+failures. The original 1e-5 source-rate tolerance and all limits remain intact.
+
+Independent saved-world decoding reproduces every candidate row byte for byte;
+direct full-skin touch checks agree within 1.366e-14 normalized units. The
+production path reproduces every prototype value and clock bit for bit.
+Guards: prototype actual 41.641 s / 209,776,640 bytes / 43 observations;
+production actual 43.641 s / 228,585,472 bytes / 45 observations. Appending these
+rows to the 29,480 native rows would produce 395,849 rows and require
+874,034,592 bytes for 276 dense derivative columns, exceeding the unchanged
+67,108,864-byte Jacobian cap. That matrix was not allocated. Full-condition
+compression/streaming and derivative composition remain required; no Studio
+solver switch or motion approval is made.
+
+Exact native-clock support analysis classifies all 6,114 failures: 5,425 have
+no editable native endpoint at any involved two/three-frame rate stencil;
+689 have potential support. Actor A contributes 3,485 fixed / 318 potentially
+editable failures, B 1,940 / 371. Three separately saved perturbations of every
+currently editable rotation vector preserve all 5,425 fixed row values byte
+for byte. The support graph, not zero gradients or the probes alone, proves
+that the unchanged current domain cannot repair those fixed conditions.
+Guard: 48.625 s / 217,337,856 bytes / 50 observations. Diagnostic probes are
+unselected and not collision-audited. Broader authored temporal permissions
+and compact complete constraints are needed for further rate correction;
+no other rig/action/domain is ruled out and no original limit is relaxed.
+
+These condition-clock checks add no surface-geometry queries. Existing 232
+geometry/pose samples, 1,785 unchecked geometry-policy times and contact-pose
+self failures A131/B70 retain their previous scope. Engine, semantic, held-out
+and human cleanup requirements remain open under the full project goal.
