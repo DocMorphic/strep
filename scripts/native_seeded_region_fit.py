@@ -15,19 +15,22 @@ from native_key_contact_initializer import encode
 
 MAXIMUM_ROWS=100000
 MAXIMUM_JACOBIAN_BYTES=64*1024**2
-MAXIMUM_OBSERVATIONS=128
+DEFAULT_MAXIMUM_OBSERVATIONS=128
+MAXIMUM_OBSERVATIONS=512
 
 
 class SeededRegionProblem:
     def __init__(self,actor,nodes,degrees,clock,seed_controls,active_pairs,
-                 frozen_keys,world_caps_m,observations,*,maximum_rows=MAXIMUM_ROWS,
+                 frozen_keys,world_caps_m,observations,*,maximum_observations=DEFAULT_MAXIMUM_OBSERVATIONS,
+                 maximum_rows=MAXIMUM_ROWS,
                  maximum_jacobian_bytes=MAXIMUM_JACOBIAN_BYTES):
         if (not isinstance(nodes,list) or not nodes or not isinstance(active_pairs,list)
                 or not active_pairs or any(not isinstance(p,(list,tuple)) or len(p)!=2
                     or any(type(v) is not int for v in p) for p in active_pairs)
                 or not isinstance(frozen_keys,list) or any(type(k) is not int for k in frozen_keys)
                 or len(set(frozen_keys))!=len(frozen_keys)
-                or not isinstance(observations,list) or not 1<=len(observations)<=MAXIMUM_OBSERVATIONS
+                or type(maximum_observations) is not int or not 1<=maximum_observations<=MAXIMUM_OBSERVATIONS
+                or not isinstance(observations,list) or not 1<=len(observations)<=maximum_observations
                 or type(maximum_rows) is not int or not 1<=maximum_rows<=MAXIMUM_ROWS
                 or type(maximum_jacobian_bytes) is not int
                 or not 1<=maximum_jacobian_bytes<=MAXIMUM_JACOBIAN_BYTES):
@@ -73,6 +76,7 @@ class SeededRegionProblem:
             controlled_joints=len(nodes),active_native_pairs=len(active_pairs),controls=size,
             frozen_keys=list(frozen_keys),complete_rows=count,jacobian_bytes=count*size*8,
             maximum_rows=maximum_rows,maximum_jacobian_bytes=maximum_jacobian_bytes,
+            maximum_observations=maximum_observations,
             original_reference_preserved=True,quality_approved=False,release_approved=False,
             scope='Explicit sampled region proposal from complete original-relative seed; not full-clock, '
                   'contact, self/partner/object collision, rate, engine or human acceptance.')

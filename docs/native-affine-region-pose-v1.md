@@ -1068,3 +1068,94 @@ admission bound even though the projected total row/Jacobian sizes remain
 within their global limits for the proposed proximal-finger permission set.
 Do not prune witnesses to fit. A separately qualified explicit admission option
 or another complete representation is required before running that comparison.
+
+## Explicit observation admission and the proximal-finger comparison
+
+The seeded API now accepts `maximum_observations` explicitly: the default stays
+128, while callers may request 1–512. The chosen bound is reported. Invalid
+bounds reject before pose construction, and the 100,000-row / 64-MiB Jacobian
+limits remain hard even with larger observation admission. No regions, vertices
+or earlier witnesses are discarded to meet those limits. Resource guards remain
+necessary; admitting 512 groups is not a process-memory or runtime guarantee.
+
+The affected selection passes 148 cases in 42.59 s, including eight new cases
+covering default rejection, explicit 129/512-group retention, single-time reuse,
+invalid bounds and unchanged global budgets. The guard completes in 74.328 s /
+123,101,184 sampled bytes / 75 replayed observations.
+
+`high-five-seeded-approach-region-fit-v5` retains all 5,476 accumulated pairs
+as 174 observations per actor over the same six times. It permits the arm and
+five proximal finger joints at keys 34–37; all other tracks/keys and frozen
+0/60/119 poses retain proposal-v4's complete original-relative seed. Original
+degree/world caps remain. A has 96 optimizer coordinates, 39,222 rows and a
+30,122,496-byte Jacobian; B has 108 coordinates, 40,092 rows and 34,639,488 bytes.
+Search adds 1 micrometre to surface rows and 1e-5 normalized reserve to other
+rows; original strict physical acceptance is unchanged.
+
+A's SLSQP call stops with status 8 after five iterations and only its initial
+distinct evaluation. It retains 3,463 raw and encoded failed rows; minimum
+raw row is -1.510531. This candidate is already rejected independently of the
+unfinished B search. B's subsequent completed probes remain archived, but its
+fit and any paired export/geometry result are not counted as completed.
+
+The owned worker tree is intentionally stopped to diagnose the guidance before
+further optimization or geometry scans. The supervisor remains running and
+records a failed terminal guard: 383.860 s / 423,272,448 sampled bytes / 380
+replayed observations, with the stop reason/verified process identities saved.
+This is not a RAM stop, completed motion comparison or proof that finger
+articulation cannot solve the actual interaction. All 40 retained probe archives
+subsequently pass ZIP CRC checks; no paired candidate is selected.
+
+## Exact diagnosis of conflicting generated planes
+
+`high-five-feedback-halfspace-proof-v1` groups the generated inequalities by
+actor, time and vertex. After 248 of 4,413 groups, it finds a four-row exact
+contradiction for A vertex 11118 at 1.1625 s. All four are original declared
+10-micrometre gap constraints; the extra search reserve is not used. With
+nonnegative rational weights summing to one, their combined normal is exactly
+zero and their combined bound is approximately -0.130870 mm. Thus the represented
+linear proxy requirements imply `0 <= -0.130870 mm`, even for a freely positioned
+vertex. These proxy planes cannot all be met by adding more rig freedom.
+
+The certificate concerns the generated fixed-plane setup, not true mesh
+separation, another guidance choice or feasibility of a different motion.
+The diagnosis guard completes in 28.453 s / 119,177,216 sampled bytes / 30
+replayed observations. This changes the next action: address the guidance
+representation before interpreting optimizer failure as a model/rig limitation.
+
+`scripts/native_halfspace_certificate.py` is a portable read-only verifier.
+It binds a certificate to the complete region request hash, requires a common
+declared vertex and up to four distinct region indices, reconstructs exact
+rational coefficients from represented normals/offsets/gaps, and checks the
+weighted contradiction independently. Input bounds and canonical rational
+weights are validated. It does not run a model, optimizer or geometry query,
+and a verified proxy contradiction never approves or rejects a different motion.
+
+```powershell
+python scripts/native_halfspace_certificate.py regions.json certificate.json
+```
+
+Its final 27 cases pass in 1.32 s, covering opposing and tetrahedral constraints,
+request/support tampering, feasible/touching cases, invalid/nonfinite/large
+numeric inputs and the actual JSON CLI. The guard completes in 31.469 s /
+81,162,240 bytes / 33 replayed observations. A preceding combined 173-case
+selection also passes; its guard replays 75.297 s / 126,619,648 bytes / 76
+observations. The final numeric-bound validation is independently rechecked
+in the 27-case suite; do not treat those as two separate sets of 173 new cases.
+Inventories now contain 559 Python/45 Node suites and 125/five in the contact
+subset; counts are not full-inventory pass results.
+
+`high-five-feedback-halfspace-proof-replay-v1` binds all 920 region records
+for the actual actor/time and supplies the four weights to the public checker.
+Both the checker and its separate CLI reconstruct the same exact negative
+fraction. The replay completes in 23.281 s / 47,869,952 bytes / 25 replayed
+observations. The portable request/certificate/verification JSON remains under
+that ignored report folder; it needs no character/model payload to audit.
+
+The next proposal should keep the collision-pair population while allowing
+the two actors to share separation movement. For a chosen pair normal, the
+relative condition `min(n·B) - max(n·A) >= 2*gap` retains every triangle vertex
+and is equivalent to allowing a separating plane offset to move, instead of
+fixing each actor's vertices to an arbitrary original midpoint. This formulation
+still needs implementation, numerical validation and fresh complete geometry,
+interval, self, dynamics, engine and human checks. No candidate is approved.

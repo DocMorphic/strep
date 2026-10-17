@@ -187,3 +187,35 @@ def test_invalid_search_reserves_reject_before_solving(tmp_path,kind):
 def test_noncallable_observer_rejects(tmp_path,callback):
     problem=SeededRegionProblem(**setup(tmp_path))
     with pytest.raises(ValueError):fit(problem,on_evaluation=callback)
+
+
+@pytest.mark.parametrize('count',[129,512])
+def test_explicit_observation_budget_retains_every_row_and_reuses_one_time(tmp_path,monkeypatch,count):
+    kwargs=setup(tmp_path);observation=kwargs['observations'][0];kwargs['observations']=[observation]
+    reference=SeededRegionProblem(**kwargs);value=reference.initial+.01;expected=reference.evaluate(value)
+    kwargs['observations']=[observation]*count
+    with pytest.raises(ValueError):SeededRegionProblem(**kwargs)
+    problem=SeededRegionProblem(**kwargs,maximum_observations=count);calls=[0]
+    model=problem.groups[0][0].model;original=model.evaluate_columns
+    def observed(*args,**kw):calls[0]+=1;return original(*args,**kw)
+    monkeypatch.setattr(model,'evaluate_columns',observed)
+    rows,jac=problem.evaluate(value)
+    np.testing.assert_array_equal(rows,np.tile(expected[0],count));np.testing.assert_array_equal(jac,np.tile(expected[1],(count,1)))
+    assert calls[0]==1 and len(problem.samples)==count and len(problem.groups)==1
+    assert problem.report['maximum_observations']==count and problem.rows==count*reference.rows
+    assert problem.report['maximum_rows']==100000 and problem.report['maximum_jacobian_bytes']==64*1024**2
+
+
+@pytest.mark.parametrize('budget',[0,True,513,128.])
+def test_invalid_observation_budget_rejects_before_pose_construction(tmp_path,monkeypatch,budget):
+    kwargs=setup(tmp_path)
+    import native_seeded_region_fit as module
+    monkeypatch.setattr(module,'PartitionedAffineKeyPose',lambda *a,**k:pytest.fail('Invalid admission constructed a pose'))
+    with pytest.raises(ValueError):module.SeededRegionProblem(**kwargs,maximum_observations=budget)
+
+
+@pytest.mark.parametrize('limit',['maximum_rows','maximum_jacobian_bytes'])
+def test_larger_observation_admission_keeps_complete_global_budgets(tmp_path,limit):
+    kwargs=setup(tmp_path);kwargs['observations']=[kwargs['observations'][0]]*129
+    with pytest.raises(ValueError,match='Complete multi-time'):
+        SeededRegionProblem(**kwargs,maximum_observations=512,**{limit:1})
