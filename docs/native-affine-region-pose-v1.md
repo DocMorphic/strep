@@ -3634,3 +3634,74 @@ passes all **22 cases on both Windows and Ubuntu** at exact source
 `a9473ff8b492e38a260c46dad2e7d21bd7601959`. The existing real-character
 supervisor is waiting for stable free-memory admission; no duplicate replay
 has been launched and no completed real-character derivative is claimed.
+
+### Full replay stops safely; qualify the measured exact-time active constraint
+
+The existing full-gradient replay eventually admits after 324.406 s, then
+stops below the unchanged 600 MiB system reserve after 31.860 s of execution.
+`reports/native-evaluated-world-derivatives-actual-v1` remains **failed**:
+356.359 s / 177,549,312 bytes / 355 observations, exit 15 /
+`available_ram_guard`; independent resource replay matches all archived
+bindings. No full value or derivative checkpoint was completed, so the
+319-group fresh model and its independent direction study remain unqualified.
+
+The smaller `reports/native-evaluated-active-union-v1` completes the direct
+constraint needed by the measured counterexample. It retains all **21**
+previously qualified individual rows, coefficients and proposal reserves
+byte for byte at the identical 6,100-failure point, then adds expanded world
+row **379,756**: actor B / node 43 / joint 42 at exact time
+2.133333444595337 s. The source-relative cap remains 0.06 m. Its raw norm
+violation matches the complete expanded evaluator exactly; the previously
+rejected candidate violates that same row in raw and saved motion.
+
+The new complete 540-column derivative passes two independent global
+directions, with differences 9.746e-10 and 3.832e-10. The proposal receives
+half the smaller raw/saved slack, 9.854403266e-7; this restricts the proposed
+step and does not relax the physical threshold. The union now contains
+**22 × 540** coefficients / 95,040 bytes. Guard: 49.187 s / 226,492,416 bytes /
+50 observations, independent resource replay complete. No motion is selected.
+
+`reports/native-conic-hinge-actual-v5` is launched with the already qualified
+952-group original model, all 5,400 exact native cones and all 22 individual
+guards. This uses constraint generation with complete hard postchecks; it
+does **not** claim the memory-stopped 319-world-group model is qualified.
+Every candidate must pass all original native/pose/pair conditions and exact
+stored-time pose bands. It must evaluate all **383,617 expanded world rows in
+both raw and saved motion**, with displacement/contact conditions passing.
+Existing rate failures may remain during numerical iteration, with no newly
+failed row and nonincreasing count/SSE plus an improved peak. Each mode has
+472,281 mandatory scalars, including retained duplicates. World acceptance
+uses the expanded population. An AST normalization proof confirms the checker
+changes only evaluator imports/composition and the asserted world-row count;
+every earlier hard check, scoring rule and physical zero is preserved.
+
+This proposal reuses model data rather than computing a fresh full Jacobian.
+The previous identical conic workload peaked at 244,629,504 sampled bytes;
+the new job has a stricter 512 MiB RSS stop and retains the 600 MiB system
+reserve. Pending or numerically accepted results still require independent
+saved replay and fresh geometry qualification before any promotion.
+
+The v5 full-step proposal now completes internal numerical acceptance in
+178.313 s / 283,344,896 bytes / 176 observations, exit 0 and matching archived
+bindings. It checks all **944,562** mandatory raw/saved scalars, including
+47,760 exact-key pose margins. The previously failing hand limit passes in
+both representations; all expanded displacement and contact conditions pass.
+
+| Expanded world measurement | Reference | Candidate |
+| --- | ---: | ---: |
+| Raw failed rate rows | 6,100 | 6,097 |
+| Saved failed rate rows | 6,100 | 6,097 |
+| New failed world rows, either mode | — | **0** |
+| Raw peak normalized violation | 46.208073465 | 46.207741142 |
+| Saved peak normalized violation | 46.208072845 | 46.207739701 |
+| Raw squared positive violations | 58,201.672814 | 58,197.495508 |
+| Saved squared positive violations | 58,201.683508 | 58,197.477259 |
+
+The failed-row counts concern the full 383,617-row population in each mode.
+All non-world mandatory margins pass; the thousands of remaining rate
+violations are still failures. This fixes the diagnosed pose regression while
+retaining the numerical improvement, not the motion's overall quality.
+`reports/native-conic-hinge-receipts-v3` is launched for independent expanded
+saved-world/native replay, static/frozen/channel preservation and exact pose
+identity. The candidate has **not** inherited any changed-pose geometry
+receipts or become the qualified reference; no Studio selection changes.
