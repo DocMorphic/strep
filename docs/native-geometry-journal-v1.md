@@ -84,3 +84,33 @@ These are counts on a nonuniform clock, not duration percentages. Recorded
 vertex depths are not exact triangle penetration, continuous collision or
 physical/human quality certification. The summary is independently bound under
 ignored `reports/high-five-captured-engine-replay-v1/geometry-summary.json`.
+
+## Pinned partner query working set
+
+Journal preparation now accepts `partner_query_batch_size` and the CLI flag
+`--partner-query-batch-size`, bounded to integer values 1–32. The default
+remains 32. The request records this setting, every resumed frame passes it
+to the existing geometry evaluator, and the final journal receipt reports it.
+Changing the setting invalidates the caller-pinned checkpoint/request binding.
+
+```powershell
+$receipt = python scripts/native_geometry_journal.py prepare contacts.json geometry-policy.json reports/scene-geometry-journal --partner-query-batch-size 1 | ConvertFrom-Json
+```
+
+This controls how many partner point queries are processed together. It does
+not reduce the original clock, mesh/vertex population, query predicates or
+physical tolerances. A smaller batch is not a memory guarantee: continue using
+resource admission and supervision. Method hashes still bind the journal to
+its recorded implementation; preserve older journals and use their recorded
+revision rather than silently upgrading an unfinished checkpoint.
+
+The affected local selection passes 114 tests in 42.42 s, including 13 new
+cases. Batches 1, 2 and 32 produce the complete resumed reports and arrays of
+their corresponding direct fixture queries. Invalid settings reject before
+opening a scene or creating output. A changed valid setting cannot resume a
+pinned prefix, and invalid context settings reject before loading assets.
+The existing interrupted-prefix, full-clock, source mutation and synthetic
+capture checks also pass. The 512-MiB test guard completes in 71.953 s at
+124,198,912 peak sampled bytes; all 73 observations and archived bindings
+replay. Fixture agreement does not remove the fallback RNG and boundary
+limitations above or establish actual engine, human or release acceptance.

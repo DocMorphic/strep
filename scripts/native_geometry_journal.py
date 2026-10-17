@@ -32,6 +32,11 @@ def require(value,message):
     if not value:raise ValueError(message)
 
 
+def partner_batch(value):
+    require(type(value) is int and 1<=value<=32,'Partner query batch size must be an integer from 1 through 32')
+    return value
+
+
 def runtime():return dict(python=sys.version,numpy=np.__version__,scipy=scipy.__version__,trimesh=trimesh.__version__)
 
 
@@ -64,7 +69,8 @@ def publish(folder,value):
     return receipt
 
 
-def prepare(contacts,policy_path,folder,*,engine_capture=None,capture_receipt_sha256=None):
+def prepare(contacts,policy_path,folder,*,engine_capture=None,capture_receipt_sha256=None,partner_query_batch_size=32):
+    partner_query_batch_size=partner_batch(partner_query_batch_size)
     contacts,policy_path,folder=[Path(p).resolve() for p in (contacts,policy_path,folder)]
     require(not folder.exists(),'Fresh geometry journal required')
     require((engine_capture is None)==(capture_receipt_sha256 is None),'Capture path and explicit receipt digest must be paired')
@@ -87,7 +93,8 @@ def prepare(contacts,policy_path,folder,*,engine_capture=None,capture_receipt_sh
             snapshots[p]=dict(path=target.relative_to(folder).as_posix(),sha256=h)
         request=dict(schema='strep-native-geometry-journal-v1',contacts=str(contacts),policy=str(policy_path),
             engine_capture=capture,inputs_sha256=inputs,source_snapshots=snapshots,implementation_sha256=methods,
-            times_s=times.tolist(),runtime=runtime(),quality_approved=False,release_approved=False)
+            times_s=times.tolist(),runtime=runtime(),partner_query_batch_size=partner_query_batch_size,
+            quality_approved=False,release_approved=False)
         require(all(sha256(p)==h for p,h in inputs.items()) and all(sha256(ROOT/'scripts'/n)==sha256(folder/'implementation'/n)==h for n,h in methods.items()),'Journal preparation binding changed')
         fresh_json(folder/'request.json',request)
         return publish(folder,dict(schema='strep-native-geometry-checkpoint-v1',request_sha256=sha256(folder/'request.json'),
@@ -98,6 +105,7 @@ def prepare(contacts,policy_path,folder,*,engine_capture=None,capture_receipt_sh
 def context(folder):
     request=read(folder/'request.json')
     require(request['schema']=='strep-native-geometry-journal-v1' and request['runtime']==runtime(),'Journal runtime differs')
+    partner_batch(request.get('partner_query_batch_size',32))
     require(set(request['implementation_sha256'])==set(METHODS),'Complete journal methods required')
     require(all(sha256(ROOT/'scripts'/n)==sha256(folder/'implementation'/n)==h for n,h in request['implementation_sha256'].items()),'Journal implementation changed')
     require(all(sha256(p)==h for p,h in request['inputs_sha256'].items()),'Journal source changed')
@@ -176,6 +184,7 @@ def advance(folder,checkpoint,expected_sha256,*,maximum_samples=16):
         if request['engine_capture'] is not None:
             capture=request['engine_capture'];observed=load_capture(scene,Path(request['contacts']),Path(request['policy']),capture['path'],capture['receipt_sha256'])
         kwargs={} if observed is None else dict(actor_vertices=observed.actor_vertices,object_poses=observed.object_poses)
+        kwargs['partner_query_batch_size']=partner_batch(request.get('partner_query_batch_size',32))
         for index in range(current['next_sample'],min(len(times),current['next_sample']+maximum_samples)):
             directory=folder/'frames'/f'{index:06d}-{uuid.uuid4().hex}';directory.mkdir()
             with ObservationArchive(directory/'observations.npz') as sink:
@@ -232,6 +241,7 @@ def finalize(folder,checkpoint,expected_sha256,output):
             geometry_sha256=sha256(output/'geometry.json'),observations_sha256=sha256(output/'observations.npz'),
             observation_receipt_sha256=sha256(output/'observations.npz.receipt.json'),sampled_conditions_pass=last['checked_prefix_pass'],
             measurement_source='Native source skin' if request['engine_capture'] is None else 'Sealed actual engine capture CPU skin',
+            partner_query_batch_size=partner_batch(request.get('partner_query_batch_size',32)),
             quality_approved=False,release_approved=False,scope='Complete declared scene geometry clock assembled from pinned full-frame results. '
                 'Original query predicates and tolerances retained. No full engine-skin comparison, contact, GPU, physics, human or release approval.')
         fresh_json(output/'result.json',result);return result
@@ -241,12 +251,13 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);sub=parser.add_subparsers(dest='command',required=True)
     p=sub.add_parser('prepare');p.add_argument('contacts',type=Path);p.add_argument('policy',type=Path);p.add_argument('output',type=Path)
     p.add_argument('--engine-capture',type=Path);p.add_argument('--capture-receipt-sha256')
+    p.add_argument('--partner-query-batch-size',type=int,default=32)
     for command in ('advance','finalize'):
         p=sub.add_parser(command);p.add_argument('journal',type=Path);p.add_argument('checkpoint');p.add_argument('checkpoint_sha256')
         if command=='advance':p.add_argument('--maximum-samples',type=int,default=16)
         else:p.add_argument('output',type=Path)
     a=parser.parse_args()
-    if a.command=='prepare':result=prepare(a.contacts,a.policy,a.output,engine_capture=a.engine_capture,capture_receipt_sha256=a.capture_receipt_sha256)
+    if a.command=='prepare':result=prepare(a.contacts,a.policy,a.output,engine_capture=a.engine_capture,capture_receipt_sha256=a.capture_receipt_sha256,partner_query_batch_size=a.partner_query_batch_size)
     elif a.command=='advance':result=advance(a.journal,a.checkpoint,a.checkpoint_sha256,maximum_samples=a.maximum_samples)
     else:result=finalize(a.journal,a.checkpoint,a.checkpoint_sha256,a.output)
     print(json.dumps(result))

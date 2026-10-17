@@ -37,6 +37,52 @@ def advance(folder,receipt,maximum_samples=1):
     return journal.advance(folder,receipt['checkpoint'],receipt['sha256'],maximum_samples=maximum_samples)
 
 
+@pytest.mark.parametrize('batch',[1,2,32])
+def test_query_batch_is_pinned_and_full_resumed_result_matches_same_direct_queries(tmp_path,monkeypatch,batch):
+    _,path,pp,spec=fixture(tmp_path,monkeypatch,True)
+    expected,arrays=evaluate(SceneContacts(spec,tmp_path),read(pp),sha256(path),partner_query_batch_size=batch)
+    folder=tmp_path/'journal';initial=journal.prepare(path,pp,folder,partner_query_batch_size=batch)
+    assert read(folder/'request.json')['partner_query_batch_size']==batch
+    real=journal.evaluate;observed=[]
+    def measured(*args,**kwargs):
+        observed.append(kwargs['partner_query_batch_size']);return real(*args,**kwargs)
+    monkeypatch.setattr(journal,'evaluate',measured)
+    first=advance(folder,initial);last=advance(folder,first,2)
+    assert observed==[batch]*3 and last['population_complete']
+    result=journal.finalize(folder,last['checkpoint'],last['sha256'],tmp_path/'final')
+    assert result['partner_query_batch_size']==batch
+    assert read(tmp_path/'final/geometry.json')==expected
+    with np.load(tmp_path/'final/observations.npz',allow_pickle=False) as actual:
+        assert set(actual.files)==set(arrays)
+        for k,v in arrays.items():np.testing.assert_array_equal(actual[k],v)
+    assert not result['quality_approved'] and not result['release_approved']
+
+
+@pytest.mark.parametrize('batch',[0,33,True,1.,None,'1',[],float('nan')])
+def test_invalid_query_batch_rejects_before_inputs_or_output_creation(tmp_path,monkeypatch,batch):
+    monkeypatch.setattr(journal,'SceneContacts',lambda *a,**k:pytest.fail('Invalid query batch opened a scene'))
+    folder=tmp_path/'journal'
+    with pytest.raises(ValueError,match='Partner query batch'):
+        journal.prepare(tmp_path/'missing-contacts',tmp_path/'missing-policy',folder,partner_query_batch_size=batch)
+    assert not folder.exists()
+
+
+def test_query_batch_cannot_change_between_pinned_frames(tmp_path,monkeypatch):
+    _,path,pp,_=fixture(tmp_path,monkeypatch);folder=tmp_path/'journal'
+    initial=journal.prepare(path,pp,folder,partner_query_batch_size=1);first=advance(folder,initial)
+    request=read(folder/'request.json');request['partner_query_batch_size']=2;save(folder/'request.json',request)
+    monkeypatch.setattr(journal,'evaluate',lambda *a,**k:pytest.fail('Changed pinned request evaluated a frame'))
+    with pytest.raises(ValueError,match='request changed'):advance(folder,first)
+    assert read(folder/'progress.json')==first
+
+
+def test_invalid_query_batch_in_context_rejects_before_scene_load(tmp_path,monkeypatch):
+    _,path,pp,_=fixture(tmp_path,monkeypatch);folder=tmp_path/'journal';journal.prepare(path,pp,folder)
+    request=read(folder/'request.json');request['partner_query_batch_size']=False;save(folder/'request.json',request)
+    monkeypatch.setattr(journal,'SceneContacts',lambda *a,**k:pytest.fail('Invalid context opened a scene'))
+    with pytest.raises(ValueError,match='Partner query batch'):journal.context(folder)
+
+
 @pytest.mark.parametrize('overlap',[False,True])
 def test_interrupted_prefix_recovers_without_recomputing_completed_frames_and_matches_whole(tmp_path,monkeypatch,overlap):
     source,path,pp,spec=fixture(tmp_path,monkeypatch,overlap);original=source.read_bytes()
