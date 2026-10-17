@@ -3705,3 +3705,57 @@ retaining the numerical improvement, not the motion's overall quality.
 saved-world/native replay, static/frozen/channel preservation and exact pose
 identity. The candidate has **not** inherited any changed-pose geometry
 receipts or become the qualified reference; no Studio selection changes.
+
+### Independent expanded export replay completes; fresh geometry starts
+
+Receipt v3 reaches its admission timeout without starting a worker:
+600.922 s / zero worker RSS / 596 observations, `admission_timeout`.
+Independent resource replay confirms that deferred state. It is not a failed
+animation or a completed validation. The prior equivalent receipt replay had
+peaked at 192,110,592 sampled bytes; a separate v4 job uses the **identical
+worker bytes**, a stricter 512 MiB RSS ceiling and the unchanged 600 MiB
+system reserve. No checks, assets, timestamps, rows or columns are reduced.
+
+`reports/native-conic-hinge-receipts-v4` completes in **72.657 s /
+243,232,768 bytes / 73 observations**, exit 0 and matching archived bindings.
+It independently replays all **383,617 saved world values byte for byte**,
+reconstructs 5,400 raw native balls and replays 5,400 saved native balls.
+All 177,328 archived native/pose/exact-key-pose/pair margins pass, including
+47,760 exact-key pose margins. Expanded displacement/contact conditions pass
+in raw and saved motion. The three new repairs and all 17 original repairs
+remain in each mode, with no new failed row relative to the expanded
+6,100-failure reference or original 366,369-row baseline prefix. Rate failures
+remain 6,097; raw pose/pair populations are audited archives, not independently
+recomputed by this receipt job.
+
+Static rig/scene data, source binary prefix, uncontrolled channels, exact
+channel clocks and frozen controls are preserved. Full-hierarchy sampling
+finds exactly **three** old poses byte-identical and **229** changed. Only the
+three unchanged poses can inherit their old geometry evidence. The new
+geometry driver differs from the previous retained-handle driver solely in
+candidate/receipt paths; normalized AST equality confirms every query, mesh,
+cap, clock, plane, batch and full fresh-hash operation is unchanged. Prior
+equivalent query peaks were 183,394,304 / 178,008,064 / 211,345,408 sampled
+bytes. The new geometry job uses a stricter 512 MiB RSS ceiling and the same
+600 MiB reserve, without reducing either actor's 36,108 faces.
+
+The first 76-time slice is launched at
+`reports/native-conic-hinge-geometry-v3/cases/slice-0-76`. Its pending or partial
+results are not qualified geometry evidence. Fresh queries and independent
+receipt replay remain required for all 229 changed times, followed by a
+disjoint 232-time/native-key composite. Other 1,785 policy times, full self,
+continuous motion, dynamics, semantics, engine and human gates remain open;
+the original stays selected and no candidate promotion is claimed.
+
+The first slice now completes **76 fresh full-mesh scene and saved-pose
+checks with zero failures**. Guard: 154.703 s / 185,118,720 bytes / 153
+observations, exit 0. Its independent complete receipt/report, saved-pose and
+full-vertex floor replay also passes: 41.953 s / 165,617,664 bytes / 43
+observations. Together with three exact-identity inherited poses, this verifies
+**79 sampled scene/pose times**, leaving **1,938 policy times unverified**,
+including the other 153 changed old samples. This does not certify geometry
+across the full 232-time population or all native keys, self-collision,
+dynamics or animation quality. The second 76-time slice is launched at
+`reports/native-conic-hinge-geometry-v3/cases/slice-76-76`; it is not counted
+until terminal resource and independent receipt replay complete. The prior
+reference and original selection remain unchanged.
