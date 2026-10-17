@@ -3759,3 +3759,57 @@ dynamics or animation quality. The second 76-time slice is launched at
 `reports/native-conic-hinge-geometry-v3/cases/slice-76-76`; it is not counted
 until terminal resource and independent receipt replay complete. The prior
 reference and original selection remain unchanged.
+
+### Complete old-population geometry and interpret the remaining rate failures
+
+The second 76-time slice passes all scene and pose checks: 196.766 s /
+175,460,352 bytes / 194 observations. Its independent replay passes in
+51.203 s / 157,437,952 bytes / 52 observations. The final 77-time slice also
+passes, including the earlier exact-key hand counterexample: 188.672 s /
+212,815,872 bytes / 187 observations; independent replay 40.094 s /
+150,626,304 bytes / 41 observations. All guards complete with matching
+archived bindings and no changed physical criteria.
+
+`reports/native-conic-hinge-geometry-composite-v2` verifies disjoint coverage
+of all **229 freshly queried changed poses plus three exact-identity poses**.
+All **232 prior scene/pose samples and all 120 stored keys per actor** are
+covered, with **zero sampled scene-geometry or pose-bound failures**. Guard:
+49.906 s / 124,973,056 bytes / 51 observations. This restores the previous
+sampled qualification while retaining the numerical improvement and the
+stricter exact-time checks. Another **1,785 policy times**, full self/continuous
+motion, dynamics, semantics, imports and human review remain unverified.
+The original remains selected; this is not an approved animation or release.
+
+`reports/native-rate-units-diagnosis-v1` independently decodes the saved clip
+at the original 120 Hz rate clock. All **292,908** normalized source-rate
+values replay byte for byte, and the actor/metric counts account for every
+one of the **6,097** remaining failures. These are original-source-bin motion
+preservation budgets, not universal biomechanical or human realism limits.
+No failing budget is zero or below the 0.001 normalization floor.
+
+| Actor | Metric | Failed rows | Value at worst normalized row | Original budget |
+| --- | --- | ---: | ---: | ---: |
+| A | Linear speed | 649 | 1.873677 m/s | 0.680540 m/s |
+| A | Linear acceleration | 488 | 282.068612 m/s² | 11.776936 m/s² |
+| A | Angular speed | 2,300 | 16.068620 rad/s | 2.721696 rad/s |
+| A | Angular acceleration | 352 | 2,833.610668 rad/s² | 60.024282 rad/s² |
+| B | Linear speed | 860 | 0.608386 m/s | 0.120302 m/s |
+| B | Linear acceleration | 494 | 143.837074 m/s² | 4.979249 m/s² |
+| B | Angular speed | 582 | 3.808166 rad/s | 0.777766 rad/s |
+| B | Angular acceleration | 372 | 910.688224 rad/s² | 80.056989 rad/s² |
+
+The largest normalized violation is A's RightForeArm/node 42 over
+2.158333333–2.175 s, centred near native key 65. These are sampled finite
+differences, not continuous acceleration or inverse-dynamics measurements.
+The original per-metric tolerance remains 1e-5. The diagnosis infers no
+realism, safety, human rating or permission waiver. Guard: 51.047 s /
+214,114,304 bytes / 52 observations; source/caps/thresholds unchanged.
+
+The next study should add a localized authorized temporal correction around
+this measured spike, rather than infer a new universal speed limit or train
+from these counts alone. Warm-start from the accepted cumulative controls,
+while keeping the original actor/quaternion source, cumulative rotation balls,
+joint bands and original frozen controls unchanged. Require complete baseline
+equivalence before any proposal, preserve every repaired row, and independently
+recheck all changed poses afterwards. A local search is not a global
+feasibility proof; unsuccessful motion still remains unapproved.
