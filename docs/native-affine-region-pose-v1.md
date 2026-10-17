@@ -65,6 +65,13 @@ The [focused hosted run](https://github.com/DocMorphic/strep/actions/runs/389943
 at source `35f6605` passes all 42 new cases on each OS: Ubuntu in 2.93 s
 and Windows in 13.64 s. This is separate from the 77-case local selection.
 
+The [contact/rig regression run](https://github.com/DocMorphic/strep/actions/runs/38994579949)
+at the same source passes all eight jobs across Ubuntu and Windows, including
+both contact shards, lineage and game-package source checks. The broader
+source inventory run is still in progress when these results are recorded.
+Source regression success does not validate the generated clips or constitute
+an actual engine import or human review.
+
 ## Follow-through pose feasibility pilot
 
 At existing native key 63 (2.0999999046325684 s), both actors retain the
@@ -398,3 +405,88 @@ This diagnostic performs no fit, new clip export or collision predicates.
 It does not change the failed assembled candidate or confer interval,
 dynamics, engine or human acceptance. Its private study implementation is
 archived with the report; it is not yet a public general-purpose solver API.
+
+## Joint constraints at subkey times
+
+`high-five-native-subkey-constraint-fit-v1` fits the 21 body coordinates at
+existing key 64 jointly against four actual interpolated times. Study `-v2`
+does the same at key 74. Each fit has four separately bounded guide-plane
+offset coordinates, giving 25 variables. Both retain the current saved
+fingers, all other native keys/tracks, original timestamps, root movement,
+2-s contact, endpoints, original animation prefix and unchanged physical caps.
+The original source pose is sampled independently at each constraint time.
+
+| Study | Constraint times (s) | Optimizer iterations | Search (s) |
+| --- | --- | ---: | ---: |
+| Key 64 | 2.116666667, 2.11875, 2.133333445, 2.15 | 5 | 52.031 |
+| Key 74 | 2.45, 2.466666698, 2.475, 2.483333333 | 4 | 47.375 |
+
+For each fit, all 24,476 complete angular/world/hand-region rows pass before
+and after Float32 export. This includes 796 original angular/joint rows
+and every region vertex at all four times. The shared plane offsets remain
+separate guide coordinates, each bounded to 60 mm; this does not expand any
+skeleton edit limit. Search requests a 1e-6 normalized hard reserve and a
+20-micrometre region reserve. Retention and decoded acceptance use the
+unchanged original inequalities with zero temporary slack; the selected raw
+minimum original hard rows are 9.999855e-7 and 9.021998e-7 respectively.
+
+The guide normal varies by normalized interpolation of neighboring oriented
+native guides, and offsets start at the actual initializer's support midpoint.
+The tested control-map Jacobian composes with the complete pose Jacobian.
+Two independent full-row directional checks run for each actual fit before
+search. The solver minimizes temporary feasibility slack with a small
+coefficient-change penalty. It does not optimize a physical dynamics model
+or claim a global solution.
+
+Fresh complete partner/floor checks pass at all eight selected times with
+zero surface records. Both localized hand-self scans have zero records at
+each time: 16 scans total. Neither fit alone establishes interpolation between
+those times, full sampled source-relative dynamics, whole-body self geometry,
+anatomical quality or engine/human acceptance.
+
+The key-64 guard completes in 166.781 s at 268,472,320 peak sampled bytes
+with 166 replayed observations. Key 74 completes in 150.375 s at
+255,590,400 bytes with 150 replayed observations. Both terminal traces and
+archived bindings replay. The failed assembly-v2 remains unchanged; these
+are separate candidate files until independently combined and checked.
+
+## Combined subkey-constrained candidate
+
+`high-five-native-contact-sequence-assembly-v3` combines the body-only
+key-64 and key-74 updates with assembly-v2. There are still 15 edited native
+keys relative to the original source; this revision changes only two body
+keys relative to its assembled initializer. All 120 timestamps, fingers,
+other tracks, root movement, endpoints, contact at 2 s, original binary
+prefix and original animations remain exact.
+
+Fresh complete joint/angular/floor evaluation at all 2,017 declared times
+passes for both actors. The previous candidate is also freshly decoded to
+verify exact world identity outside the two changed key intervals. Original
+source world/floor arrays retain the independently replayed file bindings
+described above. The candidate's floor minima remain exactly the original
+minima, including A's 4.5-mm maximum depth.
+
+All 23 fresh selected partner/floor checks pass with zero surface records:
+the previous 21 selected subkeys plus the two changed native poses. This
+includes the three assembly-v2 failures. No native-pose geometry observations
+are inherited in this run. Passing these selected samples is not full-clock
+partner coverage or a continuous-time separation proof.
+
+Source-relative rate failures remain, and several counts increase:
+
+| Actor | Linear speed | Linear acceleration | Angular speed | Angular acceleration |
+| --- | ---: | ---: | ---: | ---: |
+| A | 632 | 388 | 2,188 | 280 |
+| B | 862 | 400 | 500 | 249 |
+
+These are the same unchanged original edit budgets. Neither improved selected
+collision results nor passing displacement bands establish overall motion
+quality. The candidate has no whole-clock self, anatomical, engine, animator
+or release approval, and the original remains selected.
+
+The combined guard completes in 250.766 s at 367,927,296 peak sampled bytes,
+with all 248 resource observations and archived bindings replayed. A separate
+fresh survey, `high-five-native-subkey-dense-partner-v1`, is launched to check
+all 70 declared geometry-clock samples inside native intervals 63–65 and 73–75.
+Its results are pending; it does not cover the rest of the clip or unsampled
+time, and this section does not count planned work as passed coverage.
