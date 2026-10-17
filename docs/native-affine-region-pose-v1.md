@@ -2083,8 +2083,50 @@ point remains failed; this is operator qualification, not a new correction.
 The complete real-character guard replays 137.172 s / 362,131,456 bytes /
 137 observations. Public source/test bytes equal their qualified snapshots.
 
-The other 1,897 full-policy times, full-body self contact, motion dynamics,
-contact anatomy/semantics, held-out actions/rigs/objects/partners and actual
-engine/human cleanup requirements remain open. A separate current/reference
-whole-body self-surface, scene and pose-band diagnostic is prepared for the
-frozen 2-s contact; it does not inherit the cleared approach interval's result.
+Hosted focused run [39030349815](https://github.com/DocMorphic/strep/actions/runs/39030349815)
+passes all 24 selected coupled-row cases on Ubuntu and Windows at source
+`8a24e427f1b1344b8926a14c2227c555717259c5`.
+
+### Frozen contact-pose self geometry and default-pose calibration
+
+Separate full-surface queries at the exact 2-s native key retain all 18,056
+vertices and 36,108 triangles per actor, including crossings between triangles
+with shared topology. Current partner/plane geometry and actual saved-clip
+joint/local-rotation bands pass at this time. Self-surface checks fail: actor A
+has 131 proper-crossing face pairs and B has 70. The original authored reference
+has 232 and 135 respectively. Exact face-pair identity confirms that every
+current pair was already present in that reference, 101/65 reference pairs are
+absent from the candidate, and no new pairs were introduced at this pose.
+These counts measure surface intersections, not visible severity or realism.
+
+All positive influences across all eight skin-weight slots and their ancestor
+closures are retained in a separate diagnostic. Remaining dominant weighted
+labels include head, left shoulder/arm, chest and toes. None of the remaining
+faces has a positive influence descended from a currently editable node. Also,
+the exact native bracket is the frozen key 60, with no dependent editable pair.
+Both spatial ancestry and temporal support therefore exclude these records
+from the current approach-edit domain. This is not a proof that the rig or
+action cannot be corrected. No permissions, frozen keys, caps or exclusions
+were changed. The complete self study replays 217.625 s / 179,511,296 bytes /
+216 observations; influence/support diagnosis replays 25.360 s / 147,865,600
+bytes / 27 observations.
+
+Full self-surface calibration at the unanimated glTF default node transforms
+finds 61 proper-crossing face pairs. Both actors have byte-identical default
+geometry and triangle populations, so this complete query is performed once
+and its geometry/report hashes explicitly bind both actors. Of the current
+contact-pose pairs, A shares 56 with the default pose and has 75 contact-only
+pairs; B shares 47 and has 23 contact-only pairs. Five default-pose pairs for A
+and 14 for B are absent at contact. The guard independently replays
+70.078 s / 132,255,744 bytes / 71 observations. Every record remains visible;
+default-pose persistence does not authorize an anatomical exclusion. Default
+node transforms are not assumed to equal bind, clean rest or intended anatomy,
+and contact-only pairs do not establish causality from the latest correction.
+
+Composite scene/pose sample coverage is now 121 of the 2,017 full-policy times;
+the earlier 120-time receipts remain unchanged. The other 1,896 times,
+full-clip self contact, motion dynamics, contact anatomy/semantics, held-out
+actions/rigs/objects/partners and actual engine/human cleanup requirements
+remain open. Next correction work must distinguish persistent asset geometry
+from deformation and explicitly version any expanded edit domain. Neither
+this diagnostic nor the cleared approach interval approves motion quality.
