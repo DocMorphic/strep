@@ -171,13 +171,48 @@ def fit(problem,*,iterations=32,search_reserve=None,on_evaluation=None):
             if on_evaluation is not None:
                 on_evaluation(dict(history[-1],controls=value.copy(),rows=rows.copy()))
         return cache[1],cache[2]
-    result=minimize(lambda x:.5*float((x-initial)@(x-initial)),initial,
-        jac=lambda x:x-initial,method='SLSQP',bounds=[(-1.,1.)]*problem.size,
-        constraints=[dict(type='ineq',fun=lambda x:evaluate(x)[0]-reserve,jac=lambda x:evaluate(x)[1])],
-        options=dict(maxiter=iterations,ftol=1e-12))
+    def fixed_pose_observations():
+        fixed=[]
+        for mapper,indices in problem.groups:
+            mapper._check()
+            key=int(np.searchsorted(mapper.clock,mapper.time_s,side='left'))
+            if key==0:bracket=[0]
+            elif key==len(mapper.clock):bracket=[len(mapper.clock)-1]
+            elif mapper.clock[key]==mapper.time_s:bracket=[key]
+            else:bracket=[key-1,key]
+            dependent=tuple(i for i,(k,n) in enumerate(mapper.pairs) if k in bracket)
+            if (mapper.pairs!=problem.pairs or not np.array_equal(mapper.bracket,bracket)
+                    or mapper.dependent!=dependent):
+                raise ValueError('Constructor-bound temporal edit support changed')
+            if not dependent:fixed.extend(indices)
+        return sorted(fixed)
+    fixed_indices=fixed_pose_observations()
+    initial_rows=evaluate(initial)[0]
+    if fixed_pose_observations()!=fixed_indices:
+        raise ValueError('Temporal edit support changed during initial observation')
+    fixed_failures=[]
+    for index in fixed_indices:
+        mapper,helper=problem.samples[index];first=problem.offsets[index];last=first+helper.report['rows']
+        violated=np.flatnonzero(initial_rows[first:last]<0)
+        if len(violated):
+            fixed_failures.append(dict(observation=index,time_s=mapper.time_s,native_endpoint_keys=mapper.bracket.tolist(),
+                failed_pose_rows=violated.tolist(),failed_global_rows=(violated+first).tolist(),
+                reason='No editable native key influences this sampled pose'))
+    if fixed_failures:
+        from types import SimpleNamespace
+        result=SimpleNamespace(x=initial.copy(),success=False,status=-1,
+            message='Physical pose conditions fail outside the editable native keys; optimization not started',nit=0)
+    else:
+        result=minimize(lambda x:.5*float((x-initial)@(x-initial)),initial,
+            jac=lambda x:x-initial,method='SLSQP',bounds=[(-1.,1.)]*problem.size,
+            constraints=[dict(type='ineq',fun=lambda x:evaluate(x)[0]-reserve,jac=lambda x:evaluate(x)[1])],
+            options=dict(maxiter=iterations,ftol=1e-12))
     raw=problem.evaluate(result.x)[0];quantized=problem.quantized_rows(result.x)
     return result.x,dict(schema='strep-native-seeded-region-fit-v1',solver='scipy SLSQP',
         solver_success=bool(result.success),solver_status=int(result.status),solver_message=str(result.message),
+        solver_was_run=not bool(fixed_failures),preflight_rejected=bool(fixed_failures),
+        unchangeable_pose_violations=fixed_failures,
+        preflight_scope='Structural native-clock dependency and negative physical pose rows only; not numerical zero-gradient, reserve-margin or general rig/action infeasibility.',
         iterations=int(result.nit),maximum_iterations=iterations,evaluations=history,
         raw_failed_rows=int(np.count_nonzero(raw<0)),quantized_failed_rows=int(np.count_nonzero(quantized<0)),
         minimum_raw_row=float(raw.min()),minimum_quantized_row=float(quantized.min()),

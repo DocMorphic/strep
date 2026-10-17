@@ -219,3 +219,88 @@ def test_larger_observation_admission_keeps_complete_global_budgets(tmp_path,lim
     kwargs=setup(tmp_path);kwargs['observations']=[kwargs['observations'][0]]*129
     with pytest.raises(ValueError,match='Complete multi-time'):
         SeededRegionProblem(**kwargs,maximum_observations=512,**{limit:1})
+
+
+@pytest.mark.parametrize('location',['outside','frozen','endpoint','between_fixed'])
+def test_violated_fixed_pose_skips_optimizer_without_dropping_any_rows(tmp_path,monkeypatch,location):
+    import native_seeded_region_fit as module
+    kwargs=setup(tmp_path);clock=kwargs['clock'];stamp={'outside':float(clock[1]),'frozen':float(clock[2]),'endpoint':float(clock[-1]),'between_fixed':float((clock[2]+clock[3])/2)}[location]
+    observation=copy.deepcopy(kwargs['observations'][1]);observation['time_s']=stamp;observation['regions'][0]['offset_m']=100.
+    kwargs['observations'].append(observation);p=module.SeededRegionProblem(**kwargs);before=p.seed.copy();events=[]
+    monkeypatch.setattr(module,'minimize',lambda *a,**k:pytest.fail('Unchangeable physical condition reached optimizer'))
+    value,report=module.fit(p,on_evaluation=lambda event:events.append(event))
+    np.testing.assert_array_equal(value,p.initial);np.testing.assert_array_equal(p.controls(value),before)
+    assert not report['solver_was_run'] and report['preflight_rejected'] and report['solver_status']==-1 and report['iterations']==0
+    failure=report['unchangeable_pose_violations'][0];assert failure['observation']==2 and failure['time_s']==stamp
+    helper=p.samples[2][1];expected=np.flatnonzero(p.evaluate(value)[0][p.offsets[2]:p.offsets[2]+helper.report['rows']]<0)
+    assert failure['failed_pose_rows']==expected.tolist() and failure['failed_global_rows']==(expected+p.offsets[2]).tolist()
+    assert report['raw_failed_rows']==int(np.count_nonzero(p.evaluate(value)[0]<0)) and report['quantized_failed_rows']==int(np.count_nonzero(p.quantized_rows(value)<0))
+    assert len(events)==len(report['evaluations'])==1 and events[0]['rows'].shape==(p.rows,)
+    assert report['original_selected'] and not report['quality_approved'] and not report['release_approved']
+
+
+def test_repeated_fixed_observations_keep_distinct_complete_failure_offsets(tmp_path,monkeypatch):
+    import native_seeded_region_fit as module
+    kwargs=setup(tmp_path);bad=copy.deepcopy(kwargs['observations'][1]);bad['regions'][0]['offset_m']=100.
+    kwargs['observations']=[bad,kwargs['observations'][0],bad];p=module.SeededRegionProblem(**kwargs)
+    monkeypatch.setattr(module,'minimize',lambda *a,**k:pytest.fail('Fixed constraints reached optimizer'))
+    _,report=module.fit(p);failures=report['unchangeable_pose_violations'];assert [r['observation'] for r in failures]==[0,2]
+    assert set(failures[0]['failed_global_rows']).isdisjoint(failures[1]['failed_global_rows'])
+
+
+def record_solver_calls(monkeypatch,module):
+    from types import SimpleNamespace
+    calls=[]
+    def minimize(function,value,**settings):
+        calls.append(value.copy());return SimpleNamespace(x=value.copy(),success=False,status=9,message='one-point fixture',nit=1)
+    monkeypatch.setattr(module,'minimize',minimize);return calls
+
+
+def test_nonempty_clock_support_is_not_proved_infeasible_by_zero_surface_gradient(tmp_path,monkeypatch):
+    import native_seeded_region_fit as module
+    kwargs=setup(tmp_path);kwargs['active_pairs']=[(5,kwargs['nodes'][-1])];kwargs['observations']=kwargs['observations'][:1]
+    kwargs['observations'][0]['regions']=[dict(vertices=[1],normal_world=[0.,1.,0.],offset_m=100.,sign=1,minimum_gap_m=0.)]
+    p=module.SeededRegionProblem(**kwargs);mapper,helper=p.samples[0];rows,jac=p.evaluate(p.initial)
+    assert mapper.dependent and rows[helper.hard_rows]<0 and not np.any(jac[helper.hard_rows])
+    calls=record_solver_calls(monkeypatch,module);_,report=module.fit(p)
+    assert calls and report['solver_was_run'] and not report['preflight_rejected']
+
+
+def test_fixed_search_reserve_failure_is_not_a_physical_preflight_rejection(tmp_path,monkeypatch):
+    import native_seeded_region_fit as module
+    kwargs=setup(tmp_path);kwargs['observations']=kwargs['observations'][1:];probe=module.SeededRegionProblem(**kwargs)
+    mapper,helper=probe.samples[0];point=helper.evaluate(mapper.controls(probe.initial)[helper.coordinates])[3][0]
+    kwargs['observations'][0]['regions']=[dict(vertices=[0],normal_world=[0.,1.,0.],offset_m=float(point[1]),sign=1,minimum_gap_m=0.)]
+    p=module.SeededRegionProblem(**kwargs);row=p.samples[0][1].hard_rows;assert p.evaluate(p.initial)[0][row]==0
+    reserve=np.zeros(p.rows);reserve[row]=.001;calls=record_solver_calls(monkeypatch,module);_,report=module.fit(p,search_reserve=reserve)
+    assert calls and not report['preflight_rejected'] and report['declared_raw_conditions_pass'] and report['declared_quantized_conditions_pass'] and report['search_failed_rows']>0
+
+
+def test_encoded_native_ball_outside_pose_bracket_remains_variable(tmp_path,monkeypatch):
+    import native_seeded_region_fit as module
+    kwargs=setup(tmp_path);kwargs['observations']=kwargs['observations'][1:];found=None
+    for direction in ([1.,0,0],[-1.,0,0],[0,1.,0],[0,-1.,0],[0,0,1.],[0,0,-1.],[.6,.8,0]):
+        changed=dict(kwargs,seed_controls=kwargs['seed_controls'].copy());changed['seed_controls'][5,0]=direction;p=module.SeededRegionProblem(**changed)
+        helper=p.samples[0][1]
+        if np.any(p.quantized_rows(p.initial)[helper.report['rows']:]<0):found=p;break
+    assert found is not None and not found.samples[0][0].dependent
+    calls=record_solver_calls(monkeypatch,module);_,report=module.fit(found)
+    assert calls and not report['preflight_rejected'] and report['quantized_failed_rows']>0
+
+
+@pytest.mark.parametrize('field',['bracket','dependent','pairs'])
+def test_changed_temporal_support_cannot_fabricate_a_fixed_pose_rejection(tmp_path,monkeypatch,field):
+    import native_seeded_region_fit as module
+    p=module.SeededRegionProblem(**setup(tmp_path));mapper=p.groups[0][0]
+    if field=='bracket':mapper.bracket=np.array([0])
+    elif field=='dependent':mapper.dependent=()
+    else:mapper.pairs=tuple(reversed(mapper.pairs))
+    monkeypatch.setattr(module,'minimize',lambda *a,**k:pytest.fail('Mutated temporal support reached optimizer'))
+    with pytest.raises(ValueError):module.fit(p)
+
+
+def test_preflight_observation_callback_failure_propagates_before_solving(tmp_path,monkeypatch):
+    import native_seeded_region_fit as module
+    p=module.SeededRegionProblem(**setup(tmp_path));monkeypatch.setattr(module,'minimize',lambda *a,**k:pytest.fail('Callback failure reached optimizer'))
+    def reject(event):raise RuntimeError('Retain numerical failure')
+    with pytest.raises(RuntimeError,match='Retain numerical failure'):module.fit(p,on_evaluation=reject)

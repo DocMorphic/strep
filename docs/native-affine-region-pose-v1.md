@@ -1512,3 +1512,52 @@ and querying the remaining native times afresh. It also checks actual saved
 joint and local rotation limits. This coarse scan will locate the failing edit
 region before choosing revised temporal permissions. It is not full coverage
 of the 2,017-time policy clock, and its planned results are not counted as passed.
+
+The native-clock scan completes all 120 original keys: 117 geometry passes,
+failures only at keys 37/38/39 (238/150/88 crossing records), and passing actual
+joint/local-rotation limits everywhere. It performs 114 fresh geometry queries
+and reuses six exact dense receipts. Combined geometry coverage is 199 distinct
+times of the 2,017-time policy clock, leaving 1,818 unmeasured times. It does not
+clear subframes outside the dense interval. The independently replayed guard
+completes in 749.094 s / 217,075,712 bytes / 738 observations. The measured next
+edit range is keys 34–39, with validation extending to its neighboring keys
+33 and 40. This broadens temporal support without changing the original caps
+or frozen gameplay poses.
+
+## Solver preflight for fixed sampled pose conditions
+
+The public `native_seeded_region_fit.fit` now checks structural native-clock
+support before optimization. If a sampled pose has no editable endpoint in its
+interpolation bracket and a physical pose row is negative, SLSQP is not started.
+The report retains every original row and the initial evaluation, identifies
+the observation, endpoint keys and local/global failing rows, and returns the
+unchanged seed with `solver_was_run=false`, `preflight_rejected=true`, zero
+iterations and reserved status `-1`. Original raw/encoded conditions remain
+failed and the original remains selected. Existing successful proposals retain
+their numerical conditions and solver path.
+
+The check excludes native-key ball rows outside the sampled bracket: those
+variables can still change at their own times. It also excludes search-reserve
+failures and does not infer infeasibility from a zero numerical gradient.
+Clock support is recomputed from bound clocks/pairs before evaluation and
+rechecked after the initial observer callback; mutated support metadata fails.
+This is a single-actor sampled-region preflight, not general coupled or geometric
+reachability analysis and not an automatic expansion of edit permissions.
+
+Twelve added cases bring the focused local selection to 208 passes in 45.10 s,
+covering 50 seeded-fit cases plus region, pose-bounds, key-map, selected-column
+and support-gap regressions. Its guard independently replays 75.110 s /
+126,808,064 bytes / 76 observations. The real endpoint replay constructs an
+explicit A-side separation requirement against B's fixed triangle at native 38:
+all 114 rows, their 36-control Jacobian and encoded rows match the frozen previous
+implementation bit for bit. Both failed rows remain failed, the initial complete
+observation is retained, the seed/frozen controls remain unchanged and the
+optimizer is called zero times. That guard independently replays 27.453 s /
+155,877,376 bytes / 29 observations. This does not claim a coupled motion repair.
+
+`high-five-expanded-interval-v1`, case `anchor-v10-extend35`, measures the
+remaining 35 policy times through native key 40 on the unchanged v10 candidate.
+It extends the baseline interval from 85 to 120 dense samples before fitting
+the proposed six-key range. Native-clock count 120 and dense-interval count 120
+refer to different time sets. The added sample results remain pending; no
+expanded-interval or animation acceptance follows from their preparation.
