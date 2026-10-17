@@ -41,20 +41,40 @@ class AffineKeyPose:
         self.order=hierarchy_order(self.rig.parents)
         self.rotations=[Rotation.from_quat(entries[n].get('rotation',[0,0,0,1])).as_matrix() for n in self.nodes]
         self.scales=[np.diag(entries[n].get('scale',[1.,1.,1.])) for n in self.nodes]
+        self.maximum_derivative_controls=self.size
         self.affected=np.zeros(len(entries),bool)
         for n in self.order:self.affected[n]=n in self.nodes or (self.rig.parents[n]>=0 and self.affected[self.rig.parents[n]])
 
-    def evaluate(self,value):
+    def _columns(self,columns):
+        if not isinstance(columns,(list,tuple,np.ndarray)):
+            raise ValueError('Explicit distinct derivative coordinates required')
+        array=np.asarray(columns)
+        if array.ndim!=1:
+            raise ValueError('One-dimensional derivative coordinates required')
+        if any(isinstance(c,(bool,np.bool_)) for c in columns):
+            raise ValueError('Boolean derivative coordinates are not indices')
+        if (array.ndim!=1 or len(array)>self.maximum_derivative_controls
+                or (len(array) and array.dtype.kind not in 'iu')
+                or any(not 0<=int(c)<self.size for c in array.tolist())
+                or len(set(array.tolist()))!=len(array)):
+            raise ValueError('Complete selected derivative request exceeds its declared coordinate budget')
+        return array.astype(int,copy=True)
+
+    def _forward(self,value,columns):
+        columns=self._columns(columns)
         value=np.asarray(value,float)
         if value.shape!=(self.size,) or not np.isfinite(value).all():
             raise ValueError('Complete finite affine pose controls required')
         vectors=value.reshape(-1,3)*self.caps[:,None];local=self.local.copy()
-        local_jac=np.zeros((len(local),4,4,self.size))
+        count=len(columns);lookup={int(c):i for i,c in enumerate(columns)}
+        local_jac=np.zeros((len(local),4,4,count))
         for k,(node,v,cap,base,scale) in enumerate(zip(self.nodes,vectors,self.caps,self.rotations,self.scales)):
             rotation=base@Rotation.from_rotvec(v).as_matrix()
             if np.any(v):local[node,:3,:3]=rotation@scale
-            jr=right_jacobian(v)
-            for c in range(3):local_jac[node,:3,:3,3*k+c]=rotation@skew(jr[:,c]*cap)@scale
+            selected=[(c,lookup[3*k+c]) for c in range(3) if 3*k+c in lookup]
+            if selected:
+                jr=right_jacobian(v)
+                for c,index in selected:local_jac[node,:3,:3,index]=rotation@skew(jr[:,c]*cap)@scale
         world=self.source.copy();jac=np.zeros_like(local_jac);changed=bool(np.any(value))
         for node in self.order:
             if not self.affected[node]:continue
@@ -65,16 +85,28 @@ class AffineKeyPose:
             else:
                 if changed:world[node]=world[parent]@local[node]
                 jac[node]=np.einsum('ijc,jk->ikc',jac[parent],local[node])+np.einsum('ij,jkc->ikc',world[parent],local_jac[node])
-        skin=self.skin
+        return world,jac
+
+    def transforms(self,value,*,columns=None):
+        """Full hierarchy and all skin-joint derivatives, without skinning."""
+        world,jac=self._forward(value,list(range(self.size)) if columns is None else columns)
+        return world,jac[np.asarray(self.rig.joints),:3,3,:]
+
+    def evaluate_columns(self,value,columns):
+        """Apply every control; differentiate only explicit, ordered coordinates."""
+        world,jac=self._forward(value,columns);count=jac.shape[-1];skin=self.skin
         components=np.einsum('vkij,vkj->vki',world[skin.nodes,:3,:],skin.points)
         vertices=np.einsum('vki,vk->vi',components,skin.weights)
-        derivative=np.empty((len(vertices),3,self.size))
+        derivative=np.empty((len(vertices),3,count))
         # Bound temporary gathers without discarding any vertex or influence.
         for start in range(0,len(vertices),512):
             ids=slice(start,start+512)
             derivative[ids]=np.einsum('vkijc,vkj,vk->vic',jac[skin.nodes[ids],:3,:,:],skin.points[ids],skin.weights[ids],optimize=True)
         joint_jac=jac[np.asarray(self.rig.joints),:3,3,:]
         return world,vertices,derivative,joint_jac
+
+    def evaluate(self,value):
+        return self.evaluate_columns(value,list(range(self.size)))
 
 
 def rotation_fractions(before_actor,after_actor,times,nodes,caps):

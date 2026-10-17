@@ -114,3 +114,31 @@ capture checks also pass. The 512-MiB test guard completes in 71.953 s at
 124,198,912 peak sampled bytes; all 73 observations and archived bindings
 replay. Fixture agreement does not remove the fallback RNG and boundary
 limitations above or establish actual engine, human or release acceptance.
+
+The [focused hosted run](https://github.com/DocMorphic/strep/actions/runs/39003789224)
+at source `515d746` passes the journal suite on Ubuntu and Windows.
+
+## Assembly-v4 prefix: real failures retained
+
+`high-five-subkey-full-geometry-journal-v1` is a fresh study of the later
+assembly-v4 candidate, separate from the older captured-engine candidate
+above. It retains the full 2,017-time clock and uses pinned batches of one.
+Initial 64- and 320-frame prefixes pass; their guards complete in 46.765 s /
+150,093,824 sampled bytes / 48 observations and 118.687 s / 155,508,736 bytes /
+119 observations, respectively. All recorded bindings and resource traces replay.
+
+The next continuation commits through frame 610: 611 samples, 25 failed.
+The first failure is index 586 at 1.1541666666666666 s. After confirming real
+crossings, this continuation is intentionally stopped, retaining the committed
+checkpoint, failure frames, source/method bindings and next abandoned attempt.
+Its guard is accounted as intentionally failed: 700.984 s / 220,811,264 bytes /
+692 observations, not a memory failure or completed full-clock sweep.
+
+The pinned prefix ends at
+`checkpoints/000611-24a59fac1c954accb05e04676c36490a.json`, SHA-256
+`6da03974e5ecbf1725c2aac0d75c8307f9aa6e37dae36def09487006ad0a6a44`.
+Independent diagnosis verifies its chain and all 85 exact rational crossing
+witnesses for the first failed frame's represented Float64 triangles. These
+failures do not depend on the containment fallback RNG. This prefix is neither
+a full-population pass nor evidence of continuous, anatomical or human quality.
+See the [region constraint study](native-affine-region-pose-v1.md) for scope.

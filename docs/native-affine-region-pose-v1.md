@@ -673,3 +673,104 @@ same diagnostic edit budgets, not newly calibrated realism thresholds.
 The original remains selected and no anatomical, engine, developer/animator
 or release approval is granted. Next steps are complete clip coverage and
 integration of the tested key-map component into the scene authoring path.
+
+## Whole-clock continuation exposes earlier intersections
+
+The later journal `high-five-subkey-full-geometry-journal-v1` uses assembly-v4
+and the complete 2,017-time clock with partner query batches of one. Its first
+64 and then 320 committed samples pass. Continuing the same pinned journal
+finds the first failure at index 586, time 1.1541666666666666 s. At the saved
+611-sample prefix, 25 samples fail (indices 586–610). This contradicts any
+whole-clip interpretation of the preceding 86-sample interval result; that
+interval result remains valid within its original scope.
+
+The continuation was intentionally stopped after those failures were saved,
+to avoid spending the remaining query time on a known failing candidate.
+The owned worker processes were identified before stopping; the supervisor
+recorded a failed terminal result. This was neither a RAM stop nor a complete
+population run. The stopped guard records 700.984 s, 220,811,264 peak sampled
+bytes and 692 observations, with archived bindings and resource replay intact.
+The final committed checkpoint and the abandoned next-frame attempt remain
+available. The suffix of 1,406 clock samples is not counted as verified.
+
+`high-five-subkey-full-geometry-diagnosis-v1` independently revalidates the
+611-frame checkpoint chain and reconstructs the first failure using the public
+geometry path. All 85 first-frame surface records receive independently
+verified exact rational crossing witnesses for the represented Float64
+triangles. This certifies those represented triangle crossings; it does not
+certify unrounded skinning, penetration depth or continuous collision. The
+public and affine skin providers differ by less than 1e-15 m at this frame,
+so provider rounding cannot explain these millimetre-scale intersections.
+
+Across the 25 failed frames, 4,781 records involve A triangles outside the
+declared right-hand influence region against B's right-hand region; another
+2,897 involve both right-hand regions. These are influence-region labels,
+not anatomical classifications. Further correction must inspect the complete
+approach and interacting body regions rather than only the late palm contact.
+The independent diagnosis guard completes in 47.672 s at 130,899,968 sampled
+bytes, with all 49 observations replayed. Assembly-v4 remains unapproved.
+
+## Complete fixed poses with bounded derivative columns
+
+The generic native pose evaluator now separates the full edited pose from
+the coordinates being differentiated. `evaluate_columns(value, columns)`
+applies every supplied control and returns derivatives in the explicitly
+requested column order. `transforms` evaluates the complete hierarchy and
+skin-joint position derivatives without allocating skinned vertex derivatives.
+The existing `evaluate(value)` remains a complete-column request.
+
+`PartitionedAffineKeyPose` permits 1–96 declared joints with an optional
+`maximum_derivative_controls` bound. Its 16-node constructor blocks, 30-degree
+maximum caps, 128-MiB derivative limit and 256-MiB estimated workspace limit
+remain unchanged. Allocation estimates now use the declared derivative width.
+Requests exceeding that width fail; no fixed control, vertex or skin influence
+is removed. A real two-hand pose can retain more than 32 joint controls while
+differentiating only the explicitly editable arm coordinates. This is a
+working-set bound, not a promise of process RSS; guarded execution still applies.
+
+`RegionPoseRows` retains every declared rotation, joint and region row while
+requesting only its active derivative coordinates. `KeyPoseMap.region_rows`
+accepts that partial helper only if it covers every topologically dependent
+coordinate and its fixed values exactly match the complete original-relative
+seed at the sampled time. All selected native-key ball rows remain, including
+keys outside that time's interpolation bracket. There is no source rebase.
+
+The affected local selection passes 145 cases in 106.72 s: 22 new selected-column
+cases and 123 existing key-map, region, partitioned and affine cases. The new
+tests cover a 64-controlled-joint hierarchy, empty/nonprefix/reversed columns,
+full-pose and finite-difference agreement, Float32 save/reload, fixed-control
+row retention, interpolation dependencies and invalid/changed budgets. The
+512-MiB guard completes in 137.344 s at 128,335,872 peak sampled bytes; all 137
+observations and archived bindings replay. Inventories declare 557 Python/45
+Node suites and 123/five in the contact subset; these are inventory counts,
+not full-inventory test results. This math change does not grant motion quality
+or release approval and is not yet an end-to-end scene editing workflow.
+
+### Actual two-hand rig probe
+
+`native-affine-selected-columns-actual-v2` probes both actual SOMA rigs at
+four times each. It retains 44/46 controlled joints (132/138 coordinates),
+all 77 skin-joint rows, both complete 2,960-vertex incident hand regions and
+every one of the eight skin influences. Only 9/12 arm coordinates are
+differentiated. Requesting full derivatives still rejects at the unchanged
+workspace budget. The other hand has an explicitly synthetic nonzero seed,
+with exact zero at the true clip endpoints; it is not a generated or reviewed
+animation. Zeroing it changes vertices by 3.536–11.510 mm, confirming that
+the fixed hand's pose is actually retained rather than silently ignored.
+
+Eight actor/time checks, 16 directional vertex checks and eight composed-row
+checks pass. The maximum vertex derivative error is 3.149e-10; the maximum
+normalized composed-row directional error is 3.267e-8. Native Float32 exports
+preserve the original binary prefix and original animations. Quantized pose
+worlds agree with native reload within 1.333e-15, and all complete skinned
+vertices within 1.342e-15 m. The unrounded proposal differs from the encoded
+clip by up to 2.507e-8 m, measured separately from encoded replay agreement.
+
+The first probe is preserved as a validation-script failure: it incorrectly
+required unrounded active proposals to match Float32 exports within 3e-12.
+The fresh probe keeps that strict tolerance for quantized reload, measures
+proposal rounding separately, and passes. The failed guard replays 24
+observations (22.329 s / 121,610,240 bytes); the successful guard replays 36
+(34.422 s / 146,448,384 bytes). No physical cap, workspace cap or collision
+tolerance changes. These are math/encoding probes, not a fit or a fresh
+collision check; the synthetic other-hand seed is not selected for the scene.

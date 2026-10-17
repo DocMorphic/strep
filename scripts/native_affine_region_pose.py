@@ -63,6 +63,8 @@ class RegionPoseRows:
                                 offset_m=float(region['offset_m']), sign=region['sign'],
                                 minimum_gap_m=float(region['minimum_gap_m'])))
         self.size = 3*len(active_nodes)
+        if self.size > model.maximum_derivative_controls:
+            raise ValueError('Complete active pose derivative request exceeds its declared model budget')
         self.hard_rows = len(model.nodes)+len(model.rig.joints)
         count = self.hard_rows+sum(len(r['vertices']) for r in checked)
         required = count*self.size*8
@@ -71,6 +73,7 @@ class RegionPoseRows:
         self.model = model; self.base = base.copy(); self.caps = caps.astype(float).copy()
         self.source = model.source.copy(); self.local = model.local.copy()
         self.rotation_caps = model.caps.copy(); self.nodes = tuple(model.nodes)
+        self.derivative_limit = model.maximum_derivative_controls
         self.placement = tuple(np.array(v, float).copy() for v in model.actor['placement'])
         self.node_indices = np.array([model.nodes.index(n) for n in active_nodes])
         self.coordinates = (3*self.node_indices[:, None]+np.arange(3)).ravel()
@@ -94,12 +97,11 @@ class RegionPoseRows:
             raise ValueError('Complete finite active pose coordinates required')
         if (not np.array_equal(self.model.source, self.source) or not np.array_equal(self.model.local, self.local)
                 or not np.array_equal(self.model.caps, self.rotation_caps) or tuple(self.model.nodes) != self.nodes
+                or self.model.maximum_derivative_controls != self.derivative_limit
                 or any(not np.array_equal(a, b) for a, b in zip(self.model.actor['placement'], self.placement))):
             raise ValueError('Constructor-bound original pose reference changed')
         full = self.base.copy(); full[self.coordinates] = value
-        world, points, derivative, joint_jac = self.model.evaluate(full)
-        derivative = np.take(derivative, self.coordinates, axis=2)
-        joint_jac = np.take(joint_jac, self.coordinates, axis=2)
+        world, points, derivative, joint_jac = self.model.evaluate_columns(full,self.coordinates)
         position, rotation = self.placement
         points = points@rotation.T+position
         derivative = np.einsum('ij,vjc->vic', rotation, derivative)

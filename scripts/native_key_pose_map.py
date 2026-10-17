@@ -67,6 +67,7 @@ class KeyPoseMap:
         self.size = size; self.step = float(difference_step); self.maximum_bytes = maximum_jacobian_bytes
         self.clock = clock.astype(float).copy(); self.seed = seed.astype(float).copy()
         self.caps = model.caps.copy(); self.source = model.source.copy(); self.local = model.local.copy()
+        self.pose_derivative_limit = model.maximum_derivative_controls
         self.placement = tuple(np.array(v, float).copy() for v in model.actor['placement'])
         self.duration = sampler.duration; self.pairs = tuple(map(tuple, active_pairs))
         self.track_ids = np.array([self.nodes.index(n) for _, n in self.pairs])
@@ -121,6 +122,7 @@ class KeyPoseMap:
         if not isinstance(sampler, NativeSupportSampler):
             raise ValueError('Constructor-bound native sampler changed')
         if (tuple(model.nodes) != self.nodes or not np.array_equal(model.caps, self.caps)
+                or model.maximum_derivative_controls != self.pose_derivative_limit
                 or not np.array_equal(model.source, self.source) or not np.array_equal(model.local, self.local)
                 or sampler.duration != self.duration
                 or any(not np.array_equal(a, b) for a, b in zip(model.actor['placement'], self.placement))
@@ -173,12 +175,18 @@ class KeyPoseMap:
 
     def region_rows(self, problem, value):
         if (not isinstance(problem, RegionPoseRows) or problem.model is not self.model
-                or problem.report['time_s'] != self.time_s
-                or not np.array_equal(problem.coordinates, np.arange(self.model.size))):
-            raise ValueError('Same original pose/time with every local control in source order required')
+                or problem.report['time_s'] != self.time_s):
+            raise ValueError('Same original pose/time required')
+        required={3*int(self.track_ids[p])+axis for p in self.dependent for axis in range(3)}
+        if not required.issubset(set(problem.coordinates.tolist())):
+            raise ValueError('Every pose-dependent local coordinate must be present')
         total = problem.report['rows']+len(self.pairs)
         if total > MAXIMUM_ROWS or total*self.size*8 > self.maximum_bytes:
             raise ValueError('Complete composed row/Jacobian budget exhausted; no rows discarded')
-        full, mapping = self.evaluate(value); rows, jac, world, points, full = problem.evaluate(full)
+        full, mapping = self.evaluate(value)
+        fixed=np.ones(self.model.size,bool);fixed[problem.coordinates]=False
+        if not np.array_equal(problem.base[fixed],full[fixed]):
+            raise ValueError('Fixed pose controls must match the original-relative curve seed at this time')
+        rows, jac, world, points, full = problem.evaluate(full[problem.coordinates])
         native, native_jac = self.native_rows(value)
-        return np.r_[rows, native], np.vstack([jac@mapping, native_jac]), world, points, full
+        return np.r_[rows, native], np.vstack([jac@mapping[problem.coordinates], native_jac]), world, points, full

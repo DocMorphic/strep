@@ -1,6 +1,7 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_native_affine_selected_columns.py",
     "tests/test_native_key_pose_map.py",
     "tests/test_native_affine_region_pose.py",
     "tests/test_native_observation_archive.py",
