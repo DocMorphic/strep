@@ -453,8 +453,8 @@ are separate candidate files until independently combined and checked.
 ## Combined subkey-constrained candidate
 
 `high-five-native-contact-sequence-assembly-v3` combines the body-only
-key-64 and key-74 updates with assembly-v2. There are still 15 edited native
-keys relative to the original source; this revision changes only two body
+key-64 and key-74 updates with assembly-v2. There are 15 additional repaired
+keys relative to the already edited tapered-v4 initializer; this revision changes only two body
 keys relative to its assembled initializer. All 120 timestamps, fingers,
 other tracks, root movement, endpoints, contact at 2 s, original binary
 prefix and original animations remain exact.
@@ -595,3 +595,43 @@ The public source and tests are byte-identical to this tested candidate.
 Inventories now declare 556 Python/45 Node suites and a contact subset of
 122/five. These are registration counts; the newly changed complete inventory
 and hosted map checks have not yet established a pass at this point.
+
+The subsequent [focused hosted run](https://github.com/DocMorphic/strep/actions/runs/39002002360)
+at source `2f75132` passes the 46 new cases on both Ubuntu and Windows.
+This does not establish a pass for the newly changed full inventory.
+
+`native-key-pose-map-actual-replay-v1` independently exercises the public API
+against the prior diagnostic map and actual saved character clips. Sixteen
+actor/time cases include original native and subkey times, both actors and
+two independently selected neighboring keys. Original-relative local
+controls and their map Jacobians match the prior implementation exactly.
+All composed pose rows and appended native balls agree. The largest saved
+world-matrix difference is 1.332268e-15 and the largest complete placed-vertex
+difference is 9.139343e-16 m. All 32 independent directional checks pass,
+with maximum absolute normalized-row error 1.487347e-8.
+
+The replay completes in 99.844 s at 241,225,728 peak sampled bytes; all
+100 resource observations and archived bindings replay. It performs no new
+fit/export or collision predicates, and the floating agreement is not used
+as bitwise collision inheritance or animation-quality approval.
+
+## Edit-scope accounting correction
+
+Earlier 15-key totals describe additional repairs to the already edited
+tapered-v4 initializer, not every modification to the original raw source.
+The immutable assembly-v3 field `cumulative_original_source_edited_keys`
+is mislabeled and must not be used as a raw-source edit count. Those
+historical reports and candidate files remain unchanged.
+
+The new assembly-v4 encoding audit computes both scopes directly. For each
+actor, 118 of 120 keys have nonzero original-relative controls and actually
+changed encoded quaternion values compared with the raw source. Sixteen
+keys differ from the tapered-v4 controls: 59 and 61–75. Assembly-v4 itself
+changes body keys 74/75 relative to assembly-v3. The clip endpoints remain
+unchanged, while the authored 2-s contact is preserved from the tapered
+initializer rather than being described as an unchanged raw-source pose.
+
+These counts are recorded separately in `assembly-v4/edit-scope.json`,
+including the complete key lists and their comparison references. They are
+encoding/provenance measurements; the new combined candidate still needs
+its complete sampled motion and expanded-interval geometry checks.
