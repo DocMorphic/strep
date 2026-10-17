@@ -2274,3 +2274,32 @@ production-API recovery checks the durable point under the original problem;
 its outcome is recorded separately and is not inferred from positive search
 rows. No new model inference, training, data license, edit permission, motion
 selection, complete scene implementation or release approval is implied.
+
+The separate production recovery completes in a guard replay of 93.360 s /
+259,678,208 bytes / 94 observations. It replays checkpoint 11's complete rows
+byte for byte, preserves the original problem seed and freshly passes all
+29,480 raw/Float32 rows and all 35,504 raw/Float32 original-pair conditions.
+The supplied starting point is already feasible, so no optimizer runs in the
+recovery and no convergence is claimed. Both exported GLBs are byte-identical
+to the existing checked candidate; every coefficient difference is zero.
+
+A separate identity audit verifies complete GLB bytes, complete coefficient and
+clock NPY-member bytes, animation index, placement, original reference/caps,
+contact/policy fields and unchanged geometry methods. Its guard replays
+30.500 s / 149,004,288 bytes / 32 observations. The existing 232 scene/pose
+samples, including all 120 native keys, therefore apply to identical exports;
+zero fresh geometry queries or visual improvement are counted. The 1,785 other
+policy times and contact-pose self failures A131/B70 remain open.
+
+Actual-character frozen-condition testing retains all 367 reference self pairs
+in three diagnostic directions at 1.2 s / 2 s plus reversed partner contexts.
+Preflight rejects six negative frozen-2-s self contexts without optimization
+and preserves every current coefficient. Guard: 28.453 s / 122,773,504 bytes /
+30 observations. Diagnostic directions are not inferred anatomical intent;
+rejection concerns the current edit domain, not general rig/action feasibility.
+
+Hosted run [39034920107](https://github.com/DocMorphic/strep/actions/runs/39034920107)
+passes all 36 fitter cases on Ubuntu and Windows at source
+`484eafdd48db9912c1ad41804381ccd0dab860f0`. The overall release goal remains
+open. Integrating this API requires composing all original authored contacts,
+rates and scene conditions before switching any Studio correction path.
