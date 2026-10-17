@@ -3942,3 +3942,36 @@ while retaining all failed attempts. Another **1,785 policy times**, inherited
 self-intersections, continuous motion/dynamics, action correctness, imports and
 actual human review remain open. Neither this count nor the approximately 2%
 peak-rate improvement establishes realistic animation or release readiness.
+
+### Continue cumulative corrections without adding permanent locks
+
+`scripts/native_local_warm_start.py` adds
+`localized_native_basis_from_controls(reference, cumulative_controls,
+first_key, peak_key, last_key)`. Supply the **original** `NativeKeyBasis` and
+a provenance-verified cumulative control grid. The helper validates every
+native ball and original frozen coefficient, then creates the next local
+search block without treating the previous search's temporary anchors as
+permanent author locks. The caller keeps the original actor/quaternion source
+and degree/displacement caps when constructing the pose mapper. Loading the
+cumulative grid is not permission to use the corrected GLB as a new source.
+
+Twenty tests pass locally and on Windows/Ubuntu at source `8ff5457` in
+[run 39074096635](https://github.com/DocMorphic/strep/actions/runs/39074096635).
+They cover edits across two windows, cumulative rejection without clipping,
+original locked/signed-zero bytes, stale reference bindings, complete native
+derivatives and exact raw/encoded pose and GLB equivalence. The first local
+test attempt correctly rejected an exceeded cumulative component but failed
+an overly narrow error-message expectation (19 passed / 1 failed). The test
+expectation was corrected; the implementation was unchanged, and the failed
+archive remains immutable. Successful guard: 33.703 s / 119,746,560 bytes /
+35 observations, exit 0.
+
+`reports/native-local-warm-baseline-v1` applies the new path to accepted local
+probe 01. It proves byte identity of all cumulative/native-ball values, all
+**478 single/adjacent endpoint requests**, and both regenerated GLBs. Original
+actors, source frames, clocks, caps and evaluator code are unchanged. All
+**944,562 parent scalar results are reused through exact identity**; this is
+not a new complete constraint replay or another motion correction. Guard:
+50.125 s / 300,523,520 bytes / 51 observations. Fresh derivatives about this
+new incumbent are required before the next proposal; original selection and
+all unresolved release gates remain unchanged.
