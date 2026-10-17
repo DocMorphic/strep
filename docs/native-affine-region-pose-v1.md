@@ -3119,3 +3119,8 @@ Immutable local evidence is in `reports/native-basis-world-relinearization-v1`
 `reports/native-basis-pose-population-actual-v1`. Inventories contain
 576 Python / 45 Node and 142 Python / 5 Node contact paths, not full-suite
 passes. The entire-project goal and all capability approvals remain open.
+
+Hosted run [39056088447](https://github.com/DocMorphic/strep/actions/runs/39056088447)
+passes all 26 population cases on Ubuntu and Windows at source
+`cc3857362de7a8fd10538005ab912fee2c9a89ff`. The source, raw measurement,
+geometry and human acceptance scopes remain distinct.
