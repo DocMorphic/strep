@@ -1159,3 +1159,121 @@ and is equivalent to allowing a separating plane offset to move, instead of
 fixing each actor's vertices to an arbitrary original midpoint. This formulation
 still needs implementation, numerical validation and fresh complete geometry,
 interval, self, dynamics, engine and human checks. No candidate is approved.
+
+The [focused observation-budget run](https://github.com/DocMorphic/strep/actions/runs/39009765717)
+and [certificate run](https://github.com/DocMorphic/strep/actions/runs/39009763561)
+at source `0c0c5d1` pass their 38 and 27 respective cases on both Ubuntu and
+Windows. Both tested modules are pushed. These focused results do not establish
+a full repository pass or validate an animation.
+
+## Coupled relative-gap prototype
+
+`high-five-coupled-relative-gap-fit-v1` implements a new experimental condition
+using all 5,476 pair references and all three vertices on each side. It replaces
+the contradictory fixed global offsets; those heuristic unary requirements are
+not retained as if they were user-authored physical requirements. Original raw
+source bounds, 84 body-only native-key coordinates, frozen poses and the complete
+original-relative proposal-v4 seeds remain. The original collision acceptance
+policy is unchanged. No extra finger motion is included in this comparison.
+
+For each chosen unit pair normal, search uses a conservative smooth support
+gap: soft minimum of B's three projections minus soft maximum of A's three
+projections. Log-sum-exp temperature is 10 micrometres. This lower-bounds the
+exact `min(B) - max(A)` gap rather than sampling a triangle vertex subset.
+The required relative gap is 20 micrometres, equivalent to a freely chosen
+plane offset with 10 micrometres on each side. Raw and Float32 postchecks use
+the exact min/max projections; smooth search feasibility is kept separate.
+
+All original pose rotation and joint/world rows occur at each of six times,
+and every selected native-key ball occurs once, including keys outside the
+queried interpolation bracket. There are 6,698 rows and 84 controls, requiring
+4,501,056 Jacobian bytes. Repeated legacy proxy blocks are replaced explicitly
+by this new condition, not omitted from an unchanged claimed test. Source/input
+bindings and complete seeds are written before fitting, and every fresh proposal
+and full row vector is retained during the solve.
+
+Two initial directional checks pass with maximum normalized errors 7.552e-7
+and 7.744e-7. This validates those directions at the initial point, not all
+motion or solver behavior. The solve subsequently reaches its 32-iteration
+limit (status 9), retaining 532 raw and encoded failed rows. No candidate is
+exported, so no new full-mesh samples are counted as checked. The complete guard
+replays 514.969 s / 214,904,832 sampled bytes / 509 observations. The failed
+solve does not prove the relative-gap condition or actual motion infeasible.
+
+The next explicit comparison, `high-five-coupled-relative-gap-fit-v2`, keeps
+the same pairs, controls, limits, seeds, smooth support method and strict
+postchecks. It replaces independent triangle directions with the existing
+source-derived `meeting_plane.axis_world`, oriented from A's root toward B's
+root at the frozen 2-s pose. Thus it tests a shared palm-contact direction
+without restoring fixed offsets or pruning collision pairs. Until completed,
+it is not counted as a repair or a physical/geometry pass. Whole-interval,
+whole-scene/self, dynamics, engine and human validation remain required.
+
+That comparison completes with solver success after six iterations and zero
+raw or Float32 failed declared rows. Both initial directional checks pass
+(maximum normalized errors 2.500e-7 and 3.218e-7). All six independent full-mesh
+checks still fail, reporting 226/264/397/342/282/254 surface records. Comparing
+the saved per-time triangle identifiers shows none of the original 5,476 pair
+references remains among these records; all 1,765 records are additional pairs.
+This is collision migration, not a successful animation repair. No claim is
+made that the original clip was otherwise collision-free. The guard independently
+replays 214.422 s / 316,698,624 sampled bytes / 213 observations.
+
+`high-five-coupled-relative-gap-fit-v3` explicitly accumulates those 1,765 new
+pair references with the previous 5,476, discarding none. It starts from the
+complete proposal-v2 original-relative seed, retains the original source epoch,
+control caps, frozen poses and shared contact direction, and repeats raw/encoded
+and independent full-mesh checks at the same six times. This tests 7,241 pairs;
+it does not extend checked temporal coverage. Until the complete result is
+recorded, its planned checks are not counted as passed.
+
+Proposal-v3 completes with zero raw/encoded declared failures, but full geometry
+again fails at every selected time (102/178/330/510/250/276 surface records).
+Its complete guard replays 175.672 s / 320,303,104 sampled bytes / 175 observations.
+The iteration therefore remains rejected; clearing a retained witness population
+is insufficient evidence for selecting the resulting animation.
+
+The saved identifier comparison finds no retained pair among proposal-v3's
+1,646 surface records. A further cumulative trial must therefore carry all
+8,887 references (5,476 + 1,765 + 1,646), rather than replace its collision
+population with only the latest failures. It still covers just six times.
+
+## Shared support-gap calculation
+
+`scripts/native_support_gap.py` exposes `triangle_support_gaps(left, right,
+normals, temperature_m=...)` independently of the rig and optimizer. Each batch
+contains complete three-vertex triangles and one explicit unit direction per
+pair, oriented from left to right. It returns the floating extrema projection
+gap, the smooth lower support bound in metres, and both complete vertex-gradient
+arrays. The helper uses a common local origin and shifted exponentials to avoid
+exponentiating large world coordinates. It supports up to 16,384 pairs without
+pruning and rejects invalid shapes, nonnumeric/nonfinite inputs, nonunit normals
+and unbounded coordinates or temperature. Larger workloads must be divided
+explicitly without discarding pairs; optimizer row/workspace budgets remain the
+caller's responsibility.
+
+The smooth bound differs from the extrema gap by at most
+`2 * temperature_m * log(3)` in real arithmetic. This is a search formulation,
+not an exact mesh predicate or a proof from floating-point residuals. A negative
+projection gap can occur for nonintersecting triangles; direction choice is a
+heuristic. Acceptance must independently check encoded motion, complete geometry,
+temporal coverage, self contact, task semantics and human quality. Neither this
+helper nor its derivative tests approves an animation.
+
+All 27 focused fixtures pass in 1.49 s, including every-coordinate central
+differences near support ties, the entropy error bound, rigid transforms,
+side reversal, duplicate vertices, every-vertex extrema and malformed inputs.
+The test guard independently replays 40.657 s / 81,481,728 bytes / 42 observations.
+`native-support-gap-actual-replay-v1` separately reconstructs the saved encoded
+v2/v3 character meshes and compares all 5,476/7,241 retained triangle references
+with the private prototype. Maximum smooth-gap difference is 6.246e-17 m and
+maximum vertex-gradient difference is 5.935e-13. Both retain their declared
+20-micrometre projected gaps; their independent mesh failures remain failures.
+These are numerical equivalence comparisons, not new collision tolerances.
+The replay guard completes in 27.437 s / 155,512,832 bytes / 29 observations.
+
+`high-five-coupled-relative-gap-fit-v4` is prepared to use this public helper
+with all 8,887 accumulated pairs and the complete original-relative v3 seed.
+It retains the original 84 controls, caps, frozen poses, source epoch and mesh
+acceptance policy. Its planned checks are not counted as passed before the
+complete numerical and independent geometry results are recorded.

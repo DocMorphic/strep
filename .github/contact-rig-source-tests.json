@@ -1,6 +1,7 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_native_support_gap.py",
     "tests/test_native_halfspace_certificate.py",
     "tests/test_native_seeded_region_fit.py",
     "tests/test_native_affine_selected_columns.py",
