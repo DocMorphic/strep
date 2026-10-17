@@ -2759,3 +2759,87 @@ passes all 36 integration cases on Ubuntu and Windows at source
 `e4aafcc6ca36f58c8c7a932848a70ff944b47a54`. The complete-pair row failures and
 remaining native/geometry/engine/human requirements are unchanged by this
 cross-platform qualification.
+
+## Bounded world correction proposals and first measured reduction
+
+`scripts/native_world_minimax_step.py` computes a bounded minimax direction
+with an L1 penalty. It retains every supplied model row and column, admits
+the complete dense input and sparse constraint storage before allocation,
+and preserves an existing HiGHS scheduler. Optional vector cuts constrain
+observed regressions. This is proposal guidance: the caller must independently
+check the actual raw and saved motion, original permissions, geometry and
+release conditions. A linear solution, failure or zero direction proves
+neither nonlinear feasibility nor infeasibility.
+
+The prototype and production imports each pass 66 selected cases: 37 proposal
+cases and 29 complete-reducer regressions. Tests include analytic optima,
+tied worst rows, all columns, explicit asymmetric boxes, invalid inputs,
+preallocation rejection, inconsistent cuts and existing one/two-thread
+schedulers. These are focused passes, not an entire repository test run.
+
+Actual studies retain the original source epoch, physical caps and frozen
+keys 0/60/119, all 540 explicit basis variables and 165 smooth world groups.
+Every complete nonlinear trial retains 366,369 raw and 366,369 saved world
+conditions, plus 129,568 native, pose and original directional-pair scalars.
+The immutable zero-latent baseline reproduces the original saved files byte
+for byte and all earlier complete world values. No new inference or training
+is involved.
+
+The first proposal study tests component bounds of 0.0005 and four backoffs.
+All trials introduce one or two world failures and are rejected. Two observed
+regression stencils yield local projected vector cuts: a hand displacement
+row and thumb angular-acceleration row. The cuts use half the smaller original
+raw/saved slack as proposal reserve; original physical tolerances remain
+unchanged. Complete two-direction numerical comparisons retain all 540
+columns. Earlier diagnosis failures and a metadata-defective cut report are
+preserved; corrected v4 metadata reproduces the same numerical matrices.
+
+With both cuts, the full 0.0005 proposal passes every original native, pose,
+directional-pair, displacement and contact check. Raw and saved world
+failures fall from 6,114 to 6,108 with no newly failed rows. A separate
+0.002 trust expansion reduces the count to 6,100 but introduces three
+new failures relative to that verified candidate, so it is rejected. Its
+half-sized 0.001 proposal leaves 6,103 failures in each mode with none newly
+introduced. The physical reference remains the original motion throughout;
+the verified candidate is only the acceptance comparison for regressions.
+
+| Candidate | Raw failures | Saved failures | New failures versus verified comparison | Decision |
+| --- | ---: | ---: | ---: | --- |
+| Original zero-latent baseline | 6,114 | 6,114 | — | Existing reference |
+| Two-cut 0.0005 trial | 6,108 | 6,108 | 0 | Internal improvement |
+| Two-cut 0.002 expansion | 6,100 | 6,100 | 3 | Rejected |
+| Half expansion, 0.001 | 6,103 | 6,103 | 0 | Internal improvement |
+
+The best trial's raw peak violation is 46.20809579870604 and saved peak
+46.208099060147454, versus original 46.209829594544395 and
+46.209828333093526. This is a small numerical reduction, not demonstrated
+visual improvement or repaired action semantics. The original stays selected.
+All 14 capability approvals, full geometry, engine and human review gates
+remain open. Old 232-sample geometry coverage cannot transfer automatically
+to changed animation files; pose identity and fresh queries must establish
+coverage for the new candidate before any promotion.
+
+Immutable local evidence is in `reports/native-world-correction-trial-v1`,
+`v2`, `v3`, `reports/native-world-regression-cuts-v1` through `v4`, and
+`reports/native-world-minimax-step-prototype-tests-v1` /
+`reports/native-world-minimax-step-source-tests-v1`. Generated clips and
+large numerical archives remain excluded from the public repository.
+
+The separate `native-world-correction-receipts-v1` audit reproduces all
+366,369 saved world values byte for byte, checks every archived vector's
+shape/finiteness and every hard scalar, and confirms identical raw/saved
+repair indices with no regressions against either earlier candidate. Both
+actual 540-column LP directions are reproduced exactly by the public API.
+Static rig data, the original binary prefix, unaffected channels and frozen
+coefficient bytes are unchanged. Actor B's full file is byte-identical;
+actor A's is changed. Exact saved hierarchy comparisons preserve 174 old
+geometry poses and identify 58 changed poses. The audit uses no new triangle
+queries: guard 41.594 s / 185,118,720 bytes / 43 observations.
+
+Production focused tests use guard 34.500 s / 176,082,944 bytes / 36
+observations. The inventories now declare 573 Python / 45 Node and
+139 Python / 5 Node contact paths; these counts are not suite passes.
+The fresh geometry driver's first version stops at the exact contact-policy
+digest check before querying triangles. It is retained as failed evidence.
+The separate v2 policy binds the corrected clip specification while retaining
+the original clock, world planes and physical geometry limits.
