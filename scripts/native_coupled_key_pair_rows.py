@@ -74,15 +74,19 @@ class CoupledKeyPairRows:
             grouped=[]
             for gap in gaps:
                 if (not isinstance(gap,dict) or not {'pairs','normal_world','minimum_gap_m'}<=set(gap)
-                        or set(gap)-{'pairs','normal_world','minimum_gap_m','length_scale_m','temperature_m'}):raise ValueError('Complete explicit paired-triangle gap context required')
+                        or set(gap)-{'pairs','normal_world','minimum_gap_m','length_scale_m','temperature_m','actor_sides'}):raise ValueError('Complete explicit paired-triangle gap context required')
+                sides=gap.get('actor_sides',[0,1])
+                if not isinstance(sides,list) or len(sides)!=2 or any(type(side) is not int or side not in (0,1) for side in sides):
+                    raise ValueError('Explicit pair of actor indices0 or1 required')
+                sides=tuple(sides)
                 pairs=np.asarray(gap['pairs'])
                 if (pairs.dtype.kind not in 'iu' or pairs.ndim!=2 or pairs.shape[1:]!=(2,)
                         or not 1<=len(pairs)<=MAXIMUM_PAIR_REFERENCES or np.any(pairs<0)
-                        or any(np.any(pairs[:,side]>=len(faces)) for side,faces in enumerate(topology))):raise ValueError('Complete bounded existing paired triangle references required')
-                item=GroupedPairGapRows(topology[0][pairs[:,0]],topology[1][pairs[:,1]],
-                    len(contexts[0][0].model.skin.nodes),len(contexts[1][0].model.skin.nodes),gap['normal_world'],
+                        or any(np.any(pairs[:,column]>=len(topology[side])) for column,side in enumerate(sides))):raise ValueError('Complete bounded existing paired triangle references required')
+                item=GroupedPairGapRows(topology[sides[0]][pairs[:,0]],topology[sides[1]][pairs[:,1]],
+                    len(contexts[sides[0]][0].model.skin.nodes),len(contexts[sides[1]][0].model.skin.nodes),gap['normal_world'],
                     minimum_gap_m=gap['minimum_gap_m'],length_scale_m=gap.get('length_scale_m',.01),temperature_m=gap.get('temperature_m',1e-5))
-                grouped.append(item);rows=item.report['rows'];self._layout.append(('gap',float(stamp),len(grouped)-1,count,count+rows,not any(m.dependent for m,h in contexts)));count+=rows
+                grouped.append((sides,item));rows=item.report['rows'];self._layout.append(('gap',float(stamp),len(grouped)-1,count,count+rows,not any(contexts[side][0].dependent for side in sides)));count+=rows
             if count*self.size*8>maximum_jacobian_bytes or count>maximum_rows:raise ValueError('Complete coupled row/Jacobian budget exhausted; no observations discarded')
             self._samples.append((float(stamp),tuple(contexts),tuple(grouped)))
         for side,mapper in enumerate(first_mappers):
@@ -91,7 +95,9 @@ class CoupledKeyPairRows:
         self.rows=count;self.initial=np.array(initial);self.initial.setflags(write=False)
         self._report=dict(schema='strep-native-coupled-key-pair-rows-v1',observations=len(self._samples),
             native_controls=self.size,rows=count,jacobian_bytes=count*self.size*8,
-            maximum_jacobian_bytes=maximum_jacobian_bytes,original_pair_references=sum(g.report['pair_references'] for t,c,groups in self._samples for g in groups),
+            maximum_jacobian_bytes=maximum_jacobian_bytes,original_pair_references=sum(g.report['pair_references'] for t,c,groups in self._samples for sides,g in groups),
+            self_gap_contexts=sum(sides[0]==sides[1] for t,c,groups in self._samples for sides,g in groups),
+            partner_gap_contexts=sum(sides[0]!=sides[1] for t,c,groups in self._samples for sides,g in groups),
             quality_approved=False,release_approved=False,
             scope='Selected original-bound native pose and variable-key balls plus explicit paired-triangle contexts only; fixed seed/whole-curve saved geometry/engine/human validation remain caller responsibilities')
 
@@ -131,15 +137,18 @@ class CoupledKeyPairRows:
                 blocks.append(rows)
                 position,rotation=mapper.model.actor['placement'];points=frame[1]@rotation.T+position
                 frames.append((points,np.einsum('ij,vjc->vic',rotation,frame[2]) if jacobian else None,mapping[helper.coordinates] if jacobian else None))
-            for gap in gaps:
-                rows,ja,jb=gap.evaluate(frames[0][0],frames[1][0],left_jacobian=frames[0][1] if jacobian else None,right_jacobian=frames[1][1] if jacobian else None,smooth=smooth)
+            for sides,gap in gaps:
+                left,right=(frames[side] for side in sides)
+                rows,ja,jb=gap.evaluate(left[0],right[0],left_jacobian=left[1] if jacobian else None,right_jacobian=right[1] if jacobian else None,smooth=smooth)
                 blocks.append(rows)
                 if jacobian:
                     matrix=np.zeros((len(rows),self.size))
-                    for side,derivative in enumerate((ja,jb)):matrix[:,slice(*self._offsets[side])]=derivative@frames[side][2]
+                    # A self pair has two geometry chains into the same native
+                    # variables. Accumulate both; assignment would lose one.
+                    for side,derivative in zip(sides,(ja,jb)):matrix[:,slice(*self._offsets[side])]+=derivative@frames[side][2]
                     matrices.append(matrix)
                 if original_pairs:
-                    exact=gap.exact_pairs(frames[0][0],frames[1][0]);info=gap.report
+                    exact=gap.exact_pairs(left[0],right[0]);info=gap.report
                     pairs.append((exact['projected_gaps_m']-info['minimum_gap_m'])/info['length_scale_m'])
         for side,(mapper,helper) in enumerate(self._samples[0][1]):
             first,last=self._offsets[side];local=value[first:last];rows,jac=mapper.native_rows(local)

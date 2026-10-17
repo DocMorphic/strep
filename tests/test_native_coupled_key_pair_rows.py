@@ -131,3 +131,80 @@ def test_bad_complete_proposals_rejected(tmp_path,value):
     left,right,observations,p=setup(tmp_path)
     for operation in [lambda:p.evaluate(value),lambda:p.values(value),lambda:p.postcheck(value)]:
         with pytest.raises(ValueError):operation()
+
+
+@pytest.mark.parametrize('sides',[[0,0],[1,1],[0,1],[1,0]])
+def test_self_and_reversed_partner_chains_match_every_native_column(tmp_path,sides):
+    left,right,observations,_=setup(tmp_path)
+    for observation in observations:observation['gaps'][0]['actor_sides']=sides.copy()
+    p=CoupledKeyPairRows(left,right,observations);value=p.initial+np.linspace(-.012,.019,p.size)
+    rows,jac=p.evaluate(value);np.testing.assert_array_equal(rows,p.values(value))
+    gap_rows=np.concatenate([np.arange(first,last) for kind,t,s,first,last,fixed in p.layout if kind=='gap' and not fixed])
+    assert len(gap_rows) and np.any(abs(jac[gap_rows])>1e-7)
+    for column in range(p.size):
+        delta=np.eye(p.size)[column]*2e-6
+        finite=(p.values(value+delta)-p.values(value-delta))/4e-6
+        np.testing.assert_allclose(jac[:,column],finite,atol=6e-6,rtol=6e-6)
+    if sides[0]==sides[1]:
+        other=slice(6,12) if sides[0]==0 else slice(0,6)
+        assert not np.any(jac[gap_rows,other])
+    assert p.report['self_gap_contexts']==(2 if sides[0]==sides[1] else 0)
+
+
+def test_explicit_default_actor_order_preserves_all_old_rows_and_checks(tmp_path):
+    left,right,observations,old=setup(tmp_path);value=old.initial+.017
+    for observation in observations:observation['gaps'][0]['actor_sides']=[0,1]
+    explicit=CoupledKeyPairRows(left,right,observations)
+    for before,after in zip(old.evaluate(value),explicit.evaluate(value)):assert before.tobytes()==after.tobytes()
+    for name in ['raw_rows','encoded_rows','raw_pair_rows','encoded_pair_rows']:
+        assert old.postcheck(value)[name].tobytes()==explicit.postcheck(value)[name].tobytes()
+    assert old.layout==explicit.layout and old.report==explicit.report
+
+
+def test_self_fixed_support_uses_only_the_referenced_actor(tmp_path):
+    left,right,observations,_=setup(tmp_path)
+    right['active_pairs'].append((1,right['nodes'][0]))
+    for observation in observations:
+        gap=observation['gaps'][0];observation['gaps']=[dict(gap,actor_sides=[0,0]),dict(gap,actor_sides=[1,1])]
+    p=CoupledKeyPairRows(left,right,observations);rows,jac=p.evaluate(p.initial+.011)
+    first_time=observations[0]['time_s'];gaps=[r for r in p.layout if r[0]=='gap' and r[1]==first_time]
+    assert [r[-1] for r in gaps]==[True,False]
+    assert not np.any(jac[gaps[0][3]:gaps[0][4]]) and np.any(jac[gaps[1][3]:gaps[1][4]])
+
+
+@pytest.mark.parametrize('sides',[None,(0,0),[True,0],[0,2],['0',0],[0],[0,0,0],0])
+def test_invalid_actor_pair_contexts_reject_without_dropping_rows(tmp_path,sides):
+    left,right,observations,_=setup(tmp_path);observations[0]['gaps'][0]['actor_sides']=sides
+    with pytest.raises(ValueError,match='actor indices'):CoupledKeyPairRows(left,right,observations)
+
+
+@pytest.mark.parametrize('side',[0,1])
+def test_self_pair_postchecks_match_independent_actual_saved_meshes(tmp_path,side):
+    from native_key_contact_initializer import encode
+    from native_support_clock import NativeSupportSampler
+    from native_scene_geometry import faces_for
+    from rig_asset import RigAsset
+    left,right,observations,_=setup(tmp_path);spec=(left,right)[side];source=spec['actor']
+    for observation in observations:observation['gaps'][0]['actor_sides']=[side,side]
+    p=CoupledKeyPairRows(left,right,observations);value=p.initial+.019
+    channels=[next(c for c in source['sampler'].channels if c[:2]==(node,'rotation')) for node in spec['nodes']]
+    path=tmp_path/'self-encoded.glb';index=encode(source['rig'],source['animation_index'],spec['nodes'],channels,p.controls(side,value),spec['degrees'],path)
+    rig=RigAsset.load(path);reader=NativeSupportSampler(rig.document,rig.binary,index);faces=faces_for(rig)[0]
+    position,rotation=source['placement'];expected=[]
+    for observation in observations:
+        points=rig.vertices(reader.sample(observation['time_s']))@rotation.T+position
+        gap=observation['gaps'][0];normal=np.array(gap['normal_world'])
+        for a,b in gap['pairs']:
+            distance=float((points[faces[b]]@normal).min()-(points[faces[a]]@normal).max())
+            expected.append((distance-gap['minimum_gap_m'])/.01)
+    checked=p.postcheck(value);np.testing.assert_allclose(checked['encoded_pair_rows'],expected,atol=4e-12,rtol=0)
+    assert not checked['declared_conditions_pass'] and not checked['quality_approved']
+
+
+def test_actor_pair_order_is_snapshotted(tmp_path):
+    left,right,observations,_=setup(tmp_path)
+    sides=[0,0]
+    for observation in observations:observation['gaps'][0]['actor_sides']=sides
+    p=CoupledKeyPairRows(left,right,observations);before=p.evaluate(p.initial+.01)
+    sides[:]=[1,1]
+    for a,b in zip(before,p.evaluate(p.initial+.01)):np.testing.assert_array_equal(a,b)

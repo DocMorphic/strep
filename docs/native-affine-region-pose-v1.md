@@ -2130,3 +2130,63 @@ actions/rigs/objects/partners and actual engine/human cleanup requirements
 remain open. Next correction work must distinguish persistent asset geometry
 from deformation and explicitly version any expanded edit domain. Neither
 this diagnostic nor the cleared approach interval approves motion quality.
+
+### Explicit self and reversed-partner pair contexts
+
+`CoupledKeyPairRows` gap contexts now accept optional `actor_sides`: `[0, 0]`
+or `[1, 1]` binds both triangle populations to the same supplied actor;
+`[1, 0]` reverses the partner order. Omitting it preserves `[0, 1]`.
+Triangle IDs are checked against the corresponding actor's full topology.
+The unit world normal retains its declared direction: the measured gap is
+the second population's minimum projection minus the first's maximum.
+No direction, contact intent, anatomical exception or edit permission is
+inferred. For example, a context may contain:
+
+```json
+{
+  "actor_sides": [0, 0],
+  "pairs": [[120, 360]],
+  "normal_world": [1, 0, 0],
+  "minimum_gap_m": 0.00002
+}
+```
+
+The indices above illustrate the schema; callers must supply actual bound
+face references and an appropriate authored separation direction. Directional
+separation is a condition to check, not an automatic collision repair. Shared
+vertices or incompatible directions can make a positive requested gap
+unreachable; no failing pair is silently dropped.
+
+Both geometry derivative chains accumulate into the same native variable
+slice for a self context. Fixed-row classification considers only actors
+referenced by that context, so an unrelated movable actor does not make a
+frozen self condition editable. Raw/Float32 postchecks preserve every original
+pair in its declared order. Seeds, complete pose/native-key rows, source
+bindings and all existing resource limits remain unchanged.
+
+Seventeen new cases cover all four actor orders, every native derivative
+column, actual saved self-pair projections, frozen self support independent
+of the other actor, snapshotting and malformed actor indices. All 164 selected
+new/existing cases pass; the guard replays 75.016 s / 125,759,488 bytes /
+76 observations. Full-character qualification keeps all 367 authored-reference
+self pairs in each of three explicit diagnostic directions at 1.2 s and 2 s,
+plus reversed partner references: 2,204 original pair checks, 1,446 complete
+rows, 276 native scalars and a 3,192,768-byte Jacobian. Both saved clips retain
+all 18,056 vertices / 36,108 faces and original mesh, skin, node and binary
+prefix data. Independent saved-mesh projections differ by at most 6.662e-14
+in normalized row units. Two complete directional comparisons differ by
+3.940e-7 and 3.938e-7 under the existing 2e-5 numerical criterion. All six
+active self contexts have nonzero derivatives; all six frozen 2-s self contexts
+have zero derivatives, as required by their native support. The actual-data
+guard replays 28.375 s / 165,228,544 bytes / 30 observations.
+
+A separate complete compatibility replay retains the original 120 times,
+29,480 rows, 276 native variables and 35,504 pair references. All archived
+smooth/raw/Float32 rows and original-pair postchecks remain bitwise identical;
+both archived analytic direction products match exactly. Fresh finite
+differences give 3.029e-7 / 3.872e-7 under 2e-5. The failed initial point remains
+failed. Its guard replays 134.813 s / 377,913,344 bytes / 135 observations.
+
+The diagnostic separation conditions remain failed. These results qualify
+an evaluator and native export checks, not an optimized self correction,
+new collision-free motion, anatomy, whole-clip realism or release approval.
