@@ -1723,3 +1723,59 @@ mesh and observation receipts for each declared clock index. Four successful
 slices must still pass an independent exact-coverage receipt audit before the
 selected 120-time population can be reported as passing. Prepared or partial
 results do not approve the candidate, and the original stays selected.
+
+The four fresh slices complete with geometry failure counts 0/11/22/0 and
+passing motion bounds throughout. Their guards replay respectively
+199.719 s / 183,660,544 bytes / 198 observations,
+240.656 s / 198,111,232 bytes / 239 observations,
+247.953 s / 212,168,704 bytes / 246 observations, and
+158.594 s / 177,684,480 bytes / 158 observations.
+`high-five-expanded-candidate-receipts-v2` independently verifies exact coverage
+of all 120 indices, source/export/native limits and actual joint/rotation/floor
+rows: 87 geometry passes, 33 failures at 612–644 (1.2041666667–1.2666666667 s),
+4,031 surface records and zero motion-bound failures. The reconstructed pose
+row difference is at most 7.217e-15, separately from physical acceptance. Its
+guard replays 54.969 s / 170,291,200 bytes / 56 observations. This improves on
+43 failed times but does not pass the selected interval. The other 1,897 policy
+times, self/dynamics, semantics, engine and human acceptance remain unverified.
+
+`high-five-region-union-diagnosis-v1` reconstructs all 29,987 previous pair
+references and confirms their exact directional gaps still pass on the exported
+candidate. Every one of the 4,031 current crossings is a new pair, giving 34,018
+retained references. At each of 67 witnessed times, the diagnosis forms complete
+vertex unions from every referenced triangle on each actor. No witness vertex
+is removed. A common-direction gap between these unions is a stronger condition:
+the union's left maximum is at least each triangle's left maximum, and its
+right minimum is at most each triangle's right minimum. Therefore a passing
+union gap implies each covered pair's directional gap in real arithmetic.
+
+The converse is false. The stronger envelope currently fails at 50 times,
+including 17 geometry-clear times, with minimum gap -55.873 mm. It must not be
+used to declare the motion, rig or action infeasible. Maximum union populations
+are 394/1,293 vertices. The same complete pose/native bounds plus 67 region rows
+would allow the already declared arm and five proximal-finger nodes per actor
+at the same six keys: 306 scalars, 24,049 rows and 58,871,952 Jacobian bytes,
+within the existing 64-MiB limit. This is allocation arithmetic and proxy
+diagnosis, not a fitted motion. Its guard replays 40.594 s / 156,782,592 bytes /
+42 observations. All 34,018 pair gaps and fresh full geometry remain mandatory
+postchecks for any trial using the stronger search condition.
+
+The reusable `native_region_support_gap.region_support_gap` now computes complete
+unequal point-set extrema, conservative log-sum-exp gaps and every smooth vertex
+gradient. It validates bounded finite populations, unit directions and positive
+temperature; no centroid, vertex or skin influence is substituted for the full
+declared set. Its real-arithmetic entropy bound is
+`temperature * (log(left_count) + log(right_count))`. It shares the stronger
+envelope's limitation and grants no mesh or animation approval.
+
+Thirty-four new cases plus the existing 27 triangle-gap cases pass in 2.38 s,
+including every-coordinate differences, tied supports, full population limits,
+rigid transforms, implication to covered triangles and a counterexample to the
+converse. The guard replays 32.516 s / 83,189,760 bytes / 34 observations.
+`native-region-support-gap-actual-v1` replays all 67 supplied-character region
+values with maximum difference 1.388e-17 m and composes the complete 306-scalar
+native map with all 24/27 active pose columns and full affine skin derivatives
+at one witnessed time. Two directional comparisons differ by 1.632e-9 m and
+7.630e-10 m. Its guard replays 37.703 s / 180,310,016 bytes / 39 observations.
+These are numerical comparisons, not motion acceptance tolerances. No new
+correction, solver feasibility or human quality is established by this helper.
