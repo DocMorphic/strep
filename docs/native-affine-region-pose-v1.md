@@ -2389,3 +2389,96 @@ Hosted run [39037711339](https://github.com/DocMorphic/strep/actions/runs/390377
 passes all 38 world-condition cases on Ubuntu and Windows at source
 `b44513179b2dda3a462c41cc3645b04e7fa896be`. This qualifies the evaluator;
 the recorded motion-rate failures remain failures.
+
+## Complete scalar reduction and an explicit wider native domain
+
+`native_complete_max_rows.CompleteMaxRows` streams an explicitly declared,
+complete partition of scalar violations. Each group retains the exact maximum,
+original failure count, earliest worst-row index and SHA-256 of every original
+Float64 little-endian value in order. Finalization rejects incomplete groups;
+appending rejects gaps, duplicates, escaping counts and missing derivative
+columns. No source binding or semantic group partition is inferred. Every
+original violation must still be `<= 0`; exact grouped margins are the negative
+maxima, so their pass/fail result is equivalent to all supplied inequalities.
+
+For optimization guidance, the reducer additionally returns unnormalized
+log-sum-exp margins and their complete weighted derivatives. These smooth rows
+are stronger than the exact conditions and may remain negative when every
+physical condition passes. They cannot establish infeasibility or prevent an
+independent exact feasible-stop check. Value-only mode returns no derivative;
+it does not invent zero gradients for the real rigs. Input chunks and grouped
+output Jacobians are separately admitted under the unchanged 64-MiB cap.
+Limits are two million supplied rows, 512 groups, 768 derivative columns and
+16,384 rows per chunk. No times, conditions or columns are sampled away.
+
+Twenty-nine reducer cases plus 34 existing region cases pass all 63 checks.
+They include complete independent log-sum-exp and gradient comparisons across
+chunk schedules, nonlinear finite differences for every derivative column,
+original hashes/counts, exact-pass/smooth-fail behavior, transactional rejection,
+integer-overflow and nonfinite input rejection, and preallocation budgets.
+Guard: 55.750 s / 108,236,800 bytes / 57 observations.
+
+The actual value-only replay processes all 366,369 reference, candidate and
+independently replayed world-condition values using chunk sizes 257, 4,096 and
+16,384. All thirteen exact maxima, original-value hashes, failure counts and
+worst-row indices are preserved. The reference retains two failures; candidate
+and replay retain 6,114 failures across eight groups. Smooth outputs agree
+across chunk schedules within 2e-12 as a numerical comparison only. Guard:
+24.266 s / 57,692,160 bytes / 26 observations. The existing 29,480 native rows
+plus thirteen world rows would require 65,120,544 bytes for 276 dense derivative
+columns, below the unchanged 67,108,864-byte limit. This is an output-size
+qualification; actual rig/world derivatives and full composition are missing.
+The original oversized full Jacobian was never allocated.
+
+`native_key_basis.NativeKeyBasis` declares a separate temporal edit domain for
+a complete source-relative normalized rotation grid. Piecewise-linear hat
+weights follow the actual original native clock, rather than frame-index time.
+All requested nodes and variable knots receive xyz parameters. Endpoints and
+every declared frozen key must be knots; frozen rows keep the original seed
+bytes and exactly zero derivatives. The zero latent vector reproduces the
+current seed. This does not rebase the source reference or original physical
+caps. The caller must explicitly bind those references and validate saved rig
+encoding, world conditions, geometry and the final proposal.
+
+`endpoint_map` returns selected complete native coefficient rows and their
+full-column derivative; `native_chunk` returns each native-ball margin and
+derivative for a consecutive chunk. Full fields are available without creating
+a dense all-key Jacobian. Requests exceeding the complete 768-variable or
+64-MiB derivative budget reject before allocation. Search-box proposals that
+violate a native ball remain failed proposals; export rejects without clipping.
+Forty-nine basis cases pass, including nonuniform-clock independent
+interpolation, every-column endpoint/native finite differences, original frozen
+bytes including negative zero, snapshots, all public-entry input rejection and
+preallocation limits. The accompanying 29 reducer regressions also pass:
+78 passed, zero failed or skipped. Guard: 39.531 s / 106,840,064 bytes /
+41 observations. These are numerical domain checks, not motion acceptance.
+
+The separately versioned actual domain uses all 22 modeled nodes for A and
+23 for B, with original native knots `[0,30,59,60,61,90,119]` and frozen keys
+`[0,60,119]`. Four variable knots give 264 and 276 parameters respectively,
+540 combined under the unchanged 768-variable budget. Original source asset,
+reference epoch, model angles, displacement caps and frozen keys remain bound;
+the old failing edit domain is preserved unchanged. This explicitly widens
+permissions rather than claiming success under the former 43/49 active pairs
+and 8/9 unique active nodes.
+
+Zero latent controls reproduce both complete current coefficient fields and
+all 5,400 native-ball margins exactly. Frozen coefficients retain their bytes
+under nonzero proposals and their endpoint derivatives are exactly zero. All
+6,114 failed rate stencils now have at least one potential basis dependency;
+none remain structurally fixed by the earlier absence of editable endpoints.
+Guard: 46.703 s / 130,592,768 bytes / 48 observations. Potential dependency is
+not a demonstrated nonzero rate derivative, reachability or feasibility:
+rotation effects may cancel in rates, and the remaining bounds still apply.
+There is no new exported candidate, optimizer result, geometry query or
+selection. At 540 columns the previous uncompressed native pose rows also
+need compact streamed composition; the earlier 276-column output-size result
+must not be generalized to this wider domain. All original world, contact,
+pose, geometry and native conditions remain required before Studio integration.
+
+Production source imports pass all 112 selected cases: 29 reducer, 49 basis and
+34 existing region cases, with zero failures or skips. Guard: 32.469 s /
+100,589,568 bytes / 34 observations; pytest 2.79 s. Both new test files are
+declared in the complete and contact source inventories and available through
+focused hosted diagnostics. Inventories now contain 569 Python / 45 Node paths
+and 135 Python / 5 Node contact paths; these counts are not whole-suite passes.

@@ -9,6 +9,8 @@ on:
         type: choice
         default: tests/test_native_motion_orientation.py
         options:
+          - tests/test_native_complete_max_rows.py
+          - tests/test_native_key_basis.py
           - tests/test_native_scene_world_rows.py
           - tests/test_native_coupled_pair_fit.py
           - tests/test_native_coupled_key_pair_rows.py
