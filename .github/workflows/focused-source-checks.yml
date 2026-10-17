@@ -9,6 +9,7 @@ on:
         type: choice
         default: tests/test_native_motion_orientation.py
         options:
+          - tests/test_native_conic_hinge_step.py
           - tests/test_native_basis_pose_population.py
           - tests/test_native_basis_pose_rows.py
           - tests/test_native_world_hinge_step.py
