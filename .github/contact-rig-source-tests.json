@@ -1,6 +1,7 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_native_mesh_prop_pose.py",
     "tests/test_native_mesh_prop_scene.py",
     "tests/test_native_local_warm_start.py",
     "tests/test_native_local_basis.py",
