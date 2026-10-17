@@ -2482,3 +2482,56 @@ Production source imports pass all 112 selected cases: 29 reducer, 49 basis and
 declared in the complete and contact source inventories and available through
 focused hosted diagnostics. Inventories now contain 569 Python / 45 Node paths
 and 135 Python / 5 Node contact paths; these counts are not whole-suite passes.
+
+At pushed source `5dcaab2d47717d3b06a88b37fac2cb9ed4faafa5`, hosted runs
+[39039829529](https://github.com/DocMorphic/strep/actions/runs/39039829529)
+and [39039831698](https://github.com/DocMorphic/strep/actions/runs/39039831698)
+pass all 29 reducer and 49 basis cases respectively on both Ubuntu and Windows.
+The original motion-rate failures remain unapproved.
+
+The actual wider-domain hierarchy-chain study retains every declared latent
+column and all 78 original hierarchy nodes per actor. At each time, obtain
+the real original-clock bracket in Float64, build `KeyPoseMap` with all
+bracket-key/node pairs, and compose its local-control Jacobian with
+`NativeKeyBasis.endpoint_map` and the complete affine hierarchy Jacobian.
+This operates on one pose at a time and does not allocate a full-clip dense
+world derivative tensor. Per-pose complete world matrices use 2,635,776 bytes
+for A's 264 columns and 2,755,584 bytes for B's 276 columns, below 64 MiB.
+
+Six times per actor cover the true start/end, the frozen meeting key,
+an early subkey, a near-key decimal time and a late native key. Two proposals
+per time produce 24 observation/proposal checks, each with two full-hierarchy
+directional comparisons. The nonzero diagnostic is one explicitly admitted
+latent scalar: A column 0 at -0.001, B column 0 at +0.001. No optimization
+or improvement is claimed. All native balls pass before export; rejected
+diagnostic directions are counted and are never clipped. Frozen world
+derivatives are exactly zero. Maximum complete-world directional discrepancy
+is 4.702e-11 against a 2e-6 numerical comparison limit. Independently decoded
+saved Float32 curve poses agree within 1.111e-15 against a 2e-12 numerical
+comparison limit. These limits are not motion-acceptance tolerances. Guard:
+27.375 s / 128,823,296 bytes / 29 observations, independently replayed.
+
+Two earlier chain-study attempts stay failed. The first random latent probe
+violated an original native ball and was rejected before export; guard
+22.360 s / 117,620,736 bytes / 24 observations. The second driver compared a
+Float32 original clock directly against Python decimal times; NumPy's scalar
+conversion treated 1.2 as an exact key, omitting the earlier endpoint needed
+for its nonzero probe. Independent saved-file decoding caught the mismatch;
+guard 22.250 s / 122,093,568 bytes / 24 observations. The corrected study
+preserves original timestamp values while widening them to Float64 before
+bracket comparison, matching the existing `KeyPoseMap` behavior. No public
+model/source method or physical limit changed for these driver repairs.
+
+This qualifies the sampled basis-to-hierarchy derivative chain. It does not
+yet compose skin, contact or source-relative motion-rate derivatives, cover
+every condition time, run a correction optimizer, add geometry queries or
+select any candidate. Full-condition composition remains the next requirement.
+
+A separate Float64 clock replay also rechecks all 6,114 archived failed-rate
+stencils against the original rig clocks, hierarchy and declared basis
+parameters. Every earlier endpoint bracket and every old/new support column
+matches: zero discrepancies. Old-domain counts remain 5,425 fixed / 689
+potential; new-domain count remains 6,114 potential. Thus the near-key error
+was confined to the failed chain-study driver. Guard: 28.390 s /
+126,017,536 bytes / 30 observations. This is dependency replay, not proof of
+feasible rate correction or a motion-quality score.
