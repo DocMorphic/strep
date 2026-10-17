@@ -3998,3 +3998,59 @@ in this local window. Guard: 58.219 s / 343,265,280 bytes / 59 observations.
 This guide preserves the three newly repaired conditions; numerical acceptance
 still requires every raw/saved hard check, followed by independent saved export
 and fresh geometry for any changed candidate.
+
+`reports/native-local-conic-trial-v2` again rejects the full step for one new
+failure of a protected row, despite lower total error. Its immutable results
+remain visible. The **half step, probe 01**, completes all **944,562** raw/saved
+hard checks and meets the strict numerical improvement rule: zero new failed
+world rows, all 28 required witnesses preserved, original/native-key pose,
+native-ball, pair, displacement and contact margins passing.
+
+| Check | First local half step | Second local half step |
+| --- | ---: | ---: |
+| Raw/saved rate failures | 6,094 | 6,093 |
+| Raw peak normalized violation | 45.255020717 | 44.323721410 |
+| Saved peak normalized violation | 45.255023304 | 44.323721769 |
+| Raw squared positive violations | 57,478.929899 | 56,878.825834 |
+| Saved squared positive violations | 57,478.916368 | 56,878.806551 |
+
+Guard: 213.204 s / 275,058,688 bytes / 210 observations, complete with matching
+archived bindings. All 5,400 cumulative native cones and 7,522 extra proposal
+guards are retained; no source/cap/clock/frozen-control changes. These are
+internal numerical results, pending independent export and changed-pose scene
+checks. The 6,093 rate failures remain failures, and human realism/release
+approval remains absent.
+
+`reports/native-local-export-replay-v2` independently matches all **383,617
+saved world values byte for byte**, reconstructs all **5,400 cumulative raw
+native balls** from the verified parent plus an explicit key-65 increment,
+replays 5,400 saved native balls and audits all **177,328 archived nonworld
+hard margins**. Original source/quaternions, caps, frozen controls, clocks,
+static rig and uncontrolled channels remain unchanged. The original
+540-coordinate-plus-first-local reconstruction is inherited from its verified
+parent proof, not freshly rerun. Guard: 63.453 s / 194,523,136 bytes /
+64 observations, complete.
+
+The new repaired row is **276879** in both raw and saved motion; it joins the
+28 previously required witnesses for subsequent corrections. Exact hierarchy
+comparison preserves 231 old geometry poses; native key 65 is again the one
+changed old pose and requires fresh scene/pose queries. Other policy times,
+continuous collision and visual quality remain separate obligations.
+
+`reports/native-local-geometry-v2/cases/all-changed` freshly passes the changed
+pose against both complete meshes, the original world-plane policy and saved
+rotation/joint bands: 32.625 s / 180,809,728 bytes / 34 observations. Independent
+full report/receipt/saved-pose/all-vertex floor replay in
+`reports/native-local-geometry-replay-v2` also passes: 63.516 s / 157,974,528
+bytes / 64 observations. Every recorded parent input binding is freshly
+rehashed, and all 231 inherited hierarchy identities are rechecked.
+
+The latest internal candidate, **local conic v2 / probe 01**, therefore retains
+the complete old **232-sample/all-120-native-key** coverage with **zero sampled
+scene or pose failures**. Its raw/saved source-rate peak is approximately
+**4.08% lower than v5**, across the two accepted local half steps. The **6,093
+remaining rate failures**, **1,785 other policy times**, self/continuous motion,
+dynamics, semantics, engine validation and actual human cleanup/review remain
+open. Original source/caps/frozen permissions, Studio selection and every
+project-wide release requirement are unchanged. The next correction must
+retain all **29** required witnesses, including the newest repaired row 276879.
