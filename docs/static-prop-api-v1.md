@@ -684,3 +684,84 @@ than repeat box-only fitting on this locked scene.
 
 The same **37** cases also pass on Windows (2.47 s) and Ubuntu (1.14 s) at
 `74acc70` in [run 39084446325](https://github.com/DocMorphic/strep/actions/runs/39084446325).
+
+## Coupled moving-grip pose map
+
+`native_coupled_mesh_prop_pose.CoupledGripPose` maps a supplied, caller-authorized
+moving hand point to an edited prop pose. The prop's original permission file,
+source pose, angle/centre-translation caps and authored clearance direction and
+amount remain fixed. It does not replace the original source with the current
+character or prop candidate. A moved target that exceeds the original centre
+translation cap is rejected in the report, never clipped or rebased.
+
+For target `c`, source-local grip `g`, authored direction `d`, clearance amount
+`h` and source-relative rotation `R`, the centre is `c + R*(h*d - g)`. Supplied
+body derivatives occupy every original body column, followed by the original
+three rotation controls and one clearance control. The rotation/point chain is
+analytic and uses the existing SO(3) right Jacobian. Complete point and column
+budgets reject before output allocation instead of truncating. The exact source
+zero pose keeps its original translation/quaternion bytes.
+
+```python
+mapping = CoupledGripPose(original_permission_bound_edit)
+vertices, jacobian, pose = mapping.points(
+    prop_controls, authorized_hand_world_point, complete_prop_local_vertices,
+    target_jacobian=complete_hand_body_jacobian,
+)
+```
+
+The map deliberately reports body/target permissions, saved-motion checks and
+full sampled pose bounds as unverified. Those are caller-owned gates; matching
+a hand point or returning an analytic Jacobian does not approve a body edit,
+grasp, scene or animation. Existing independent prop fitters remain unchanged.
+
+All **21** focused tests pass locally and on Windows/Ubuntu at `88187f8` in
+[run 39084988054](https://github.com/DocMorphic/strep/actions/runs/39084988054).
+They compare complete body/rotation/clearance pose and point derivatives against
+independent finite differences, test the final supported body column and duplicate
+points, source-zero bytes, source hash changes, unchanged original caps, locked
+prop components and incomplete/invalid/budget inputs. Local guard: 27.687 s /
+121,131,008 bytes / 45 observations. Windows: 10.68 s; Ubuntu: 1.29 s.
+
+A separately retained actual-rig experiment composes all **135** original-relative
+local character controls with the four prop controls. Every one of the 113 exact
+crossing pairs supplies all three opposite-triangle vertices: 339 moving-plane
+guidance rows. Two independent perturbation directions in the 138 variable
+proposal columns check the composed 139-column map; clearance stays fixed in
+these actual-rig comparisons and is checked separately in source fixtures.
+Maximum point differences are 3.10e-10 m and 3.32e-10 m, and scaled plane-row
+differences are below 1.90e-8. Original character nodes, caps, cumulative native
+balls, source clocks and frozen keys remain unchanged. The supplied world/skin
+map keeps all native skin influences; a rigid wrist substitute is not used.
+
+The first solve is retained as rejected: its explicitly fixed clearance delta
+drifts outside the exact zero-width proposal box by 2.16e-16. No tolerance is
+enlarged and no output is clipped. A second study eliminates that declared fixed
+search value algebraically, solves the other 138 columns and restores its exact
+zero. This is a local search restriction, not a new permanent author lock. All
+5,400 native character norm constraints, the prop rotation and original centre
+translation norm constraints, and all 199 key-pose rows remain represented.
+The source implementations of the existing conic solver and prop fitters stay
+unchanged. First study guard: 50.218 s / 231,006,208 bytes / 67 observations.
+
+The second proposal passes native and stored-time pose/pair checks, then
+completes **all 944,562 existing raw/saved character-motion scalars**. It is still
+rejected. In both raw and saved modes, five previously failing rows pass but
+one previously repaired row fails again: **20295**, an actor A displacement
+condition. Its raw margin changes from +5.7822e-5 to -0.00169288. Total world
+failures decrease from 6,093 to 6,089, yet peak normalized error increases from
+44.323721 to 44.802310 and squared error also increases. A lower count or local
+collision objective cannot buy a new displacement failure or lose a repair.
+
+A separate read-only audit rehashes trial inputs and compares complete archived
+scalar populations, identifying the same failed/repaired row IDs in both modes.
+All 177,328 other motion scalars pass. It performs no new geometry or motion
+sampling. Trial guard: 146.547 s / 274,694,144 bytes / 161 observations; rejection
+audit: 3.094 s / 50,151,424 bytes / 21 observations. Resource replays match.
+
+No coupled candidate is promoted, no whole-scene collision result is claimed,
+and no release or human score changes. The next solver stage needs refreshed
+full-timeline passing displacement/rate guards (including all 29 prior repair
+witnesses) and motion-error guidance alongside the object-plane rows. A sampled
+key-pose guard is insufficient for between-key motion. The full-project goal,
+broader actions/objects/rigs and engine/human validation remain open.
