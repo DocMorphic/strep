@@ -1895,3 +1895,41 @@ guidance at this point before the next block, including active original
 pose/pair/contact dependencies wherever they occur. Full/self/continuous
 collision, dynamics, semantics, engine imports, broader action/rig/scene
 coverage and developer/animator cleanup evidence remain open requirements.
+
+### Moving into an active pose/pair interval
+
+At the verified 69-witness reference, the complete schedule refresh retains all
+**6,053 failed stencils**, all 117 eligible peaks and **708,201 cells**. Initial
+editing context 65/74/63 covers 2,147 current failures; 3,906 lie outside it.
+The 31-block schedule has zero temporally uncovered failures and selects **35**
+next. Both actors' original-domain bases reproduce every proposed block's
+support without changing frozen keys 0/60/119 or cumulative source controls.
+Coverage is not a repair or spatial feasibility proof. Guard: 47.016 s /
+209,911,808 bytes / 48 observations.
+
+The fresh **[34, 35, 36]** world model reproduces all 383,617 baseline values
+byte for byte, retaining 319 groups and all 135 columns. Both complete
+directional comparisons pass (maximum differences 6.701e-10 / 5.832e-10),
+as does an uncached full perturbation. Critically, the original observation
+inventory now contains **34 active pose observations and five active pair
+observations**. The earlier zero-derivative pose/pair shortcut is not valid
+here. Guard: 326.063 s / 286,269,440 bytes / 320 observations.
+
+`native_triangle_gap_rows.py` composes every supplied triangle pair and shared
+control column with the existing support-gap kernel. Exact extrema margins
+remain separate from conservative smooth guidance; both moving sides' chains
+are added in the same column space, including self-pair cancellation. Normals
+are explicitly fixed. Dynamic normal derivatives, contact inference, full
+intersection tests and saved-file approval are outside this helper's scope.
+Complete input/output/workspace admission rejects oversized populations before
+kernel allocation; no pair, vertex or derivative column is dropped to fit.
+Original physical margin tolerance added: zero.
+
+All **33 standalone fixtures** pass (0.74 s): byte-identical original exact and
+smooth margins, two-body nonlinear column differences near support ties,
+shared-column cancellation, the last pair/vertex/768th column, constant-side
+and value-only modes, immutable arrays, complete-budget rejection and invalid
+geometry/derivative/policy inputs. Resource replay: 31.641 s / 92,082,176 bytes /
+33 observations. A full source-bound active pose/pair guide is a separate study;
+these fixtures and the world model do not approve an optimized clip or imply
+that every original pose/pair/contact dependency is already guarded.
