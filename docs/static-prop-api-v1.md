@@ -2069,3 +2069,62 @@ All 72 repaired rows pass raw and saved checks. Original author caps, frozen key
 All 33 standalone source tests passed, including original tolerance equality, mixed raw/saved failures, final-time/final-joint retention across 512 joints, immutable inputs, missing/changed populations and whole-budget rejection. The actual qualified 72-witness scene was measured afresh on all 477 uniform times and 77 joints per actor. All 292,908 source-rate margins replayed byte for byte; every one of the existing 6,050 failed identities was retained, all nonrate rows remain passing, and all 72 protected repairs still pass. Raw margins are retained observations, not fresh raw physical-rate measurements.
 
 The zero-cap hypothesis is contradicted on this scene: all 6,050 failures have positive source caps. Failure counts by metric are 1,499 linear-speed, 969 linear-acceleration, 2,870 angular-speed and 712 angular-acceleration rows. Actor A has 3,774 and actor B has 2,276. The largest saved physical excesses occur on right-hand/finger joints near the authored mesh-touch time: 2.502848 m/s linear speed, 560.931950 m/s^2 linear acceleration, 16.323406 rad/s angular speed and 2,761.994836 rad/s^2 angular acceleration. These measurements motivate inspecting temporal/ancestor coupling and the body/prop representation rather than treating the failures as zero-limit arithmetic or silently widening caps. This inventory proves neither infeasibility nor realistic motion. No pose, prop, model, checkpoint, threshold, reference or Studio selection changed.
+
+The 33 inventory source cases also passed on hosted Windows and Ubuntu at
+`e94be4dd4186275033405809cf350a63b7a596f7`
+([run 39110151807](https://github.com/DocMorphic/strep/actions/runs/39110151807)).
+The actual inventory completed in 50.016 s with a 222,789,632-byte peak process
+tree RSS; its complete sampled populations, physical rates and all failure
+records remain in the ignored local study, without publishing character assets.
+
+### Finite temporal smoothing diagnostic: both candidates rejected
+
+Two predeclared strengths tested the temporal-coupling hypothesis near the
+authored mesh touch. A single simultaneous `[1/4, 1/2, 1/4]` averaging pass on
+the original cumulative rotation-control grids changed native keys 61–70 only.
+Strengths were 1 and 0.25. Original keys 0/60/119 and all keys outside that
+interval stayed byte-identical. The baseline GLBs were reconstructed byte for
+byte before testing. This is an explicit complete-grid proposal, with no
+optimizer, quaternion rebasing, additional author permission or cap widening.
+
+Each variant completed all **944,562** original raw/saved scalar checks.
+Native bounds, original and native-clock pose bands, triangle-pair constraints,
+joint displacement and declared contacts passed. The dependent prop used its
+original-relative controls and passed the original 2,017 sampled permissions.
+Both variants nevertheless failed world nonregression and protected repairs:
+
+| Measurement, raw / saved modes | Qualified reference | Strength 1 | Strength 0.25 |
+| --- | ---: | ---: | ---: |
+| Failed source-rate rows, each mode | 6,050 | 5,632 | 5,882 |
+| Previously passing rows newly failed, each mode | — | 278 | 31 |
+| Protected repairs reopened, each mode | 0 | 10 | 4 |
+| Worst normalized violation, raw | 43.283007 | 13.350555 | 35.648883 |
+| Worst normalized violation, saved | 43.283008 | 13.350557 | 35.648884 |
+| Squared-violation reduction, raw | — | 38,138.904556 | 15,175.128377 |
+| Squared-violation reduction, saved | — | 38,138.910569 | 15,175.130636 |
+| Eligible for new geometry checks or adoption | — | No | No |
+
+Lower aggregate error cannot override newly failed rows. The complete regression
+ledger retains all new and reopened identities with original joint, metric,
+sample stencil, cap, tolerance and exact raw/saved margins. Every new failure
+in these two proposals is a source-rate row with a positive original cap; no
+displacement or contact regression was observed. The stronger variant repaired
+696 formerly failed rows but introduced 278 failures; the weaker repaired 199
+but introduced 31. Neither provides a feasible clip or evidence of infeasibility.
+
+Both declared trials are complete; this diagnostic does not authorize an open-ended
+strength sweep. The next proposal needs coupled temporal controls **with** guards
+for every previously passing row and all 72 protected repairs, plus original
+native/pose/pair/contact permissions. Rebuild point-dependent guidance at the
+qualified reference; do not reuse derivatives from an earlier candidate. A
+candidate must pass complete raw/saved motion checks before fresh changed-time
+geometry and independent replay. A reduced search representation changes no
+author permissions or release criteria.
+
+Local evidence is in `reports/native-rate-temporal-smoothing-trial-v1` and
+`reports/native-rate-temporal-regression-ledger-v1`. Their recorded resource
+replays passed: respectively 210.797 s / 310,620,160 bytes / 208 observations,
+and 43.890 s / 160,649,216 bytes / 45 observations. No triangle queries were
+spent on motion-rejected variants. Qualified reference and Studio selection
+remain unchanged: 72 protected repairs, 6,050 source-rate failures, two scene
+failures, and the previously disclosed coverage/quality/release gaps remain.
