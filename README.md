@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Full-vector contact bounds](docs/contact-vector-cones-v1.md): 174 checks pass locally and on Windows/Ubuntu. A same-state comparison retains a collision-improving half step while preserving all three point contacts. Independent export replay confirms the local improvement, but floor, overlap and both motion envelopes still fail; the clip remains unapproved.
+
 - [Sequential contact protection](docs/sequential-scene-step-v1.md): 157 checks pass locally and on Windows/Ubuntu. Two retained paired edits bring all three point contacts inside their existing limits; later collision improvements are rejected when they lose contacts. Independent saved-file replay confirms the contact result, but floor, body overlap and some motion limits still fail. No changed clip is adopted.
 
 - [Articulated minimax controls](docs/articulated-minimax-v1.md): 142 checks pass locally and on Windows/Ubuntu. Joint and root edits now have explicit separate temporal permissions, and the local solver retains every supplied physical row and vector budget. A real two-character edit reduces deepest overlap from 13.48 to 10.66 mm, but misses contact and other limits. Independent replay preserves all unselected channels and protected rotation keys exactly; the proposal remains rejected.

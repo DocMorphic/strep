@@ -42,8 +42,71 @@ degenerate scalar fixture. The final fixture tests sideways contact drift
 away from that unrelated degenerate optimum.
 
 Local source evidence: `reports/conic-affine-contact-tests-v3`.
-Both hosted Tensor test groups include the new cases. Hosted results and the
-same-state high-five comparison will be recorded after completion.
+All **174 cases also pass on both hosted Windows and Ubuntu**, run
+`39131624181`, at `a64047788ddf76228ee95174eaf673a9e5ecfdfa`.
+
+## Same-state paired comparison
+
+One fresh proposal starts at the exact retained state from the preceding
+sequential study. The original scalar step at trust 0.25 rejected all three
+fractions. The vector comparison keeps the same trust, source clips, scene,
+contact intervals, five-degree joint/two-centimetre root permissions, twelve
+scalar rows and tighter interior search targets.
+
+The complete scalar Jacobian and baseline are reused only after exact array,
+source, evaluator and permission checks. The earlier conic implementation
+is checked against its archive and public `d306cc2` source. The nine components
+of the three actual generated-partner/world contact vectors are differentiated
+afresh. All twelve scalar and nine vector directional checks pass the
+predeclared 0.1% test. Reusing the old Jacobian at the same state is not a
+second independent generation run.
+An ablation with the current solver and the vector cones disabled reproduces
+the archived scalar direction exactly, isolating the cone change from the
+internal-box output-check fix.
+
+The full step still loses two point contacts in actual nonlinear geometry.
+The half step preserves every previously passing condition and lowers the
+maximum normalized working violation from 1.387311302 to 1.077693631. Only
+that half step is retained. A vector cone for an affine approximation does
+not solve nonlinear articulation by itself.
+
+Independent raw/saved replay again checks four exports and 8,666,880 vertex-
+times using the original complete motion policies and contact intervals.
+
+| Measurement | Previous retained raw | Vector half step raw | Vector half step saved |
+| --- | --- | --- | --- |
+| Palm gap, 30 mm development screen | 29.535 mm | 28.912 mm | 28.912 mm |
+| Frame-60 deepest partner penetration, 5 mm screen | 11.837 mm | 10.289 mm | 10.288 mm |
+| Actor A deepest floor penetration, 5 mm screen | 6.283 mm | 5.870 mm | 5.870 mm |
+| Actor B deepest floor penetration, 5 mm screen | 5.757 mm | 5.607 mm | 5.607 mm |
+
+All three paired point contacts pass in raw and saved representations.
+Floor and partner depth still fail. Both actors fail source physical
+nonregression and now both fail the original native motion ceilings. Thus
+local collision improvement has not produced a usable approved animation.
+The 30 mm point screen is an existing development diagnostic, not a claim
+that a nearly three-centimetre palm gap is visually convincing.
+
+All original buffer bytes, 284 unselected channels and 1,342 protected keys
+remain exact. Saved joint edits stay below 3.247596/1.614228 degrees and root
+shifts below 5.770716/4.461635 mm. Maximum saved skin component discrepancy
+is below 0.000669 mm, within the separate 1e-5 m fidelity check.
+
+Only original frame 60 has complete two-direction partner collision queries;
+the other 119 partner frames and continuous/edge-only/self/force/semantic,
+engine and human checks remain unverified. No output is adopted or selected.
+A first replay launch deferred before starting because the producer still
+held its worker lock; after its terminal result was consumed, an identical
+fresh replay completed. The completed producer used 1,084,125,184 bytes peak
+under its 2 GiB cap; replay used 257,142,784 under 512 MiB. Both retain the
+600 MiB available-memory guard.
+
+Evidence: `reports/contact-vector-scene-probe-v1`,
+`reports/contact-vector-scene-replay-v2` and
+`reports/contact-vector-progress-v1`. Detailed generated files remain local.
+The next proposal needs a fresh relinearization at this improved state;
+the cached previous Jacobian cannot be reused there. Complete motion and
+full-clock partner validation must accompany further correction.
 
 This is exact geometry for an affine approximation. Actual articulated
 motion remains nonlinear, and full mesh, original/raw/saved motion,
