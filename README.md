@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Scene energy during sampling](docs/scene-denoising-guidance-v1.md): an opt-in geometry-gradient hook now runs with the unchanged checkpoint. All 26 focused tests pass locally and on Windows/Ubuntu; actual disabled-hook samples reproduce every ordinary raw array exactly. In one matched development pilot, point-target error improves from 20.41 to 19.20 mm while cube penetration worsens, so the result stays unapproved. Full saved-mesh replay confirms the tradeoff. The default generator, qualified reference and Studio selection stay unchanged.
+
 - [Equivalent affine conditioning](docs/native-constant-affine-factor-v1.md): 97 local regressions and 20 new tests on both hosted systems pass. The same complete scene-aware model now produces a strictly checked local proposal; all 944,562 raw/saved motion conditions are evaluated, preserving 72 prior repairs and adding two with no new rate failures. Full-mesh checks still reject it: box penetration grows from 23.476 to 23.549 mm. The qualified reference and Studio selection remain unchanged; this finite study ends with the physical failure preserved.
 
 - [Geometry rejection and prop drift](docs/objective-null-prop-drift-v1.md): independent full-mesh replay rejects the numerically improved temporal proposal: box penetration grows from 23.5 to 43.1 mm. Removing unnecessary prop movement preserves motion inputs and local bounds but still adds crossing records, so that diagnostic is rejected too. The secondary-proposal helper passes 101 focused tests. All 936 new mesh relations pass derivative checks; the first scene-aware solve fails strict admission. Qualified reference and Studio selection are unchanged.
