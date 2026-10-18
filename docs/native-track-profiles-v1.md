@@ -54,3 +54,53 @@ snapshot are preserved; the added signed-zero regression covers the corrected
 zero-adjustment behavior. Final local resource replay: 47.969 s,
 193,818,624-byte peak process tree RSS and 49 observations. These are model-free
 CPU source checks under the existing memory guard.
+
+The 31 new cases also passed on hosted Ubuntu and Windows at
+`24fd7dbb772b50df146c105acdd0addb842f8b60`
+([run 39112291047](https://github.com/DocMorphic/strep/actions/runs/39112291047)).
+The final local checkpoint includes a version-bound negative control: the old
+archived helper changes a signed-zero byte on zero adjustment, while the current
+helper preserves the exact seed. Earlier successful reports remain immutable
+and retain their own method versions.
+
+## Actual two-character scene
+
+The final implementation was replayed in a fresh bounded study,
+`reports/native-track-profile-actual-v2`. It retains all 22 actor-A and 23 actor-B
+node columns. Four original prop variables would make a 49-column coupled model;
+that model and its hard constraints have **not** been assembled or solved here.
+
+| Observation | Result |
+| --- | --- |
+| Zero-amplitude cumulative controls and saved GLBs | Byte-identical to qualified reference |
+| Unit-amplitude cumulative controls and saved GLBs | Byte-identical to previously rejected full smoothing |
+| Fresh baseline world scalar values | All 383,617 byte-identical |
+| Fresh original pose norms | All 23,880 byte-identical |
+| Complete baseline native balls | All 5,400 byte-identical |
+| Full-vector/world direction checks | 16 passed at four declared times per actor |
+| Maximum vector direction difference | 8.40e-11 |
+| Maximum hierarchy direction difference | 3.81e-11 |
+
+The direction checks include the last profile column, a full random direction,
+frozen native key 60, native key 65 at the mesh touch, and the 65.5/70.5 subkeys.
+They validate these sampled chains, not every-time derivatives or a solved clip.
+Saved-file identity reuses the existing reference/rejected-take evidence; this
+study does not claim to rerun every one of their 944,562 original checks.
+
+The structural census keeps all 2,017 original body-policy times, 589 evaluated
+world times, 120 native keys and 120 original pair contexts. Nonzero temporal
+support may affect **185 body-policy times, 53 evaluated world times and ten
+native keys**. All 35,504 original triangle-pair rows per mode occur where every
+profile direction is exactly zero at both original interpolation endpoints.
+Their controls are therefore invariant throughout this search subspace. This is
+sampled input identity, not proof of new collision clearance. A changed proposal
+still needs complete affected body/scene/prop queries and independent replay;
+an exact zero tangent alone would not justify inheriting those checks.
+
+The final actual study and resource replay completed in 120.750 s with a
+204,820,480-byte peak tree RSS and 120 recorded observations. It invokes no
+optimizer or geometry query. The original source/author epoch, frozen 0/60/119,
+qualified reference and Studio selection are unchanged. All 72 protected repairs
+still pass; the 6,050 source-rate failures, two scene failures and previously
+disclosed coverage/dynamics/engine/human-review gaps remain open. Neither endpoint
+is a new accepted asset, and the unit endpoint remains rejected.
