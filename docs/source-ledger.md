@@ -344,3 +344,15 @@ acceptance remain separate. No book/example implementation is copied. The
 book remains copyrighted by Cambridge University Press; web availability
 does not make its text or example code project assets. Existing NumPy and
 Trimesh are reused; no checkpoint, training data or dependency is acquired.
+
+## 2026-10-18: local vector-norm constraints for sampled rates
+
+Lobo, Vandenberghe, Boyd and Lebret's primary
+[Applications of Second-Order Cone Programming](https://stanford.edu/~boyd/papers/pdf/socp.pdf)
+(1998), section 1.1, equations 1–2, describes Euclidean norms of affine maps
+as cone constraints. This informs the next local rate-vector model after
+measured angular-rate failures pass scalar tangent guards. Any affine
+approximation remains separate from nonlinear rig and Float32 validation;
+the paper does not establish feasibility or correctness for Strep's motion.
+No paper implementation is copied, no solver/dependency is installed and no
+data or checkpoint is acquired. The paper remains copyrighted by Elsevier.

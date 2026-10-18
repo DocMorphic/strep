@@ -1460,3 +1460,69 @@ previous times plus key 74. Props remain fixed, original sampled prop bounds
 and contacts are rechecked, and every prior passing scene identity and the
 supplemental baseline are protected. Proposal or coverage success alone is
 not a repaired animation or a new fitting reference.
+
+All 34 paired-motion fixtures also pass on Windows (0.47 s) and Ubuntu
+(0.19 s) at exact source `05b7c91`,
+[run 39096519682](https://github.com/DocMorphic/strep/actions/runs/39096519682).
+These are focused source checks, not full-product validation.
+
+### Grouped-objective limitation and complete individual rows
+
+The first key-74 run completes all 944,562 motion scalars and preserves all
+41 repairs with no new failures. Its tiny proposal changes raw squared error
+by only 0.019048 and saved error by 0.007433; failure counts and peaks do not
+change. Validation then stops before geometry: the worker mistakenly supplies
+the original-prop bounds checker with the current candidate's scene-bound
+policy. The checker correctly rejects that binding. The **failed** run remains
+immutable: 101.375 s / 278,884,352 bytes / 117 observations. Its completed
+motion checkpoint is not promoted or relabelled as a completed scene study.
+
+A fresh stored-model/scalar diagnosis finds **12 violating grouped terms with
+exactly zero Jacobian entries** in this temporal block. The grouped hinge
+gradient is zero, although 656 individual affected rows fail and their
+Jacobian contains 10,497 nonzero entries. Their hinge-gradient norm is
+6,725.141 and the complete-world squared-error gradient norm is 84,559.757.
+The proposed maximum control component is only 2.324e-7, with exactly zero
+predicted grouped-hinge change. A maximum over worse errors elsewhere can
+hide useful derivatives for this block. These are stored linear-model facts,
+not nonlinear invariance or infeasibility claims. Diagnosis: 17.453 s /
+73,445,376 bytes / 35 observations; fitting and geometry are not rerun.
+
+The next trial retains all original 1,106 groups and appends **every 6,508
+qualified affected/required individual row**: 7,614 objective rows and all 135
+columns. The 6,951 extra proposal rows, 5,400 native cones, 5,852 passing guards,
+41 repairs and original physical limits remain intact. No top-error slice or
+row pruning is used. The prop bounds checker is supplied its original bound
+policy in the fresh worker; neither candidate reaches that stage because
+motion rejects both first.
+
+| Fraction | Raw squared error | Raw improvement | Remaining failures per mode | New failures per mode | Repairs newly passed per mode |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Baseline | 55,891.855644 | — | 6,081 | — | — |
+| 1 | 50,149.450587 | 5,742.405057 | 6,067 | 16 | 30 |
+| 1/2 | 52,630.005096 | 3,261.850547 | 6,085 | 8 | 4 |
+
+Both complete raw/saved checks preserve the 41 required repairs and all
+177,328 other scalars. The global peaks remain unchanged. Nevertheless,
+**both candidates are rejected** for newly failed source-rate rows, regardless
+of improved total error or repaired rows. Geometry is not run; no independent
+candidate replays or new fitting reference are claimed. Trial:
+218.093 s / 335,224,832 bytes / 231 observations.
+
+A second complete archived-value/source diagnosis verifies that every newly
+failed row was present in the original passing guard set, and its linear cut
+was satisfied. The full step breaks 12 angular-speed, three angular-acceleration
+and one linear-acceleration condition; the half-step breaks eight actor-A
+angular-speed conditions. For example, row 133035 starts with margin
++0.007748724 and predicts +0.005811543 at the half-step, but measures
+-0.034047500. Its derivative norm is nonzero (7.334941), so this is not a
+zero-gradient invariance claim. Diagnosis: 8.219 s / 78,761,984 bytes /
+26 observations. Original outputs, caps and rejected decisions are unchanged.
+
+The next constraint model should retain the underlying rate vectors and
+their norms, then repeat the same full raw/saved gates. An affine vector-norm
+cone can retain information lost by a scalar tangent, but does not certify the
+nonlinear rotation, forward kinematics or saved animation. The primary SOCP
+reference is recorded in the source ledger. The verified half-step fitting
+reference, original Studio selection, broad action scope and all release
+requirements remain unchanged.
