@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Coupled mesh-collision gradients](docs/mesh-penetration-gradient-v1.md): a new triangle-mesh term provides gradients to both bodies, with 111 checks passing locally and on Windows/Ubuntu. The real native-skin derivative qualifies after separating the optimization field from unchanged audit measurements. A tiny full-clip proposal lowers average overlap but worsens the deepest overlap and palm gap, so it remains rejected. Next use worst-case collision/contact constraints and articulated controls.
+
 - [Native conditioning with scene guidance](docs/native-scene-envelope-v1.md): six new clips combine the existing pose constraints with scene guidance. Native controls reproduce earlier outputs exactly. Energy guidance brings the palms closer but increases overlap; strict retention rejects every edit. Independent export and actual paired checks confirm the failures. Collision-safe contact poses and partner geometry are the next bottleneck; no changed output is adopted.
 
 - [Explicit motion envelopes](docs/scene-motion-envelope-v1.md): all 87 focused checks pass locally and on Windows/Ubuntu. Authored speed/acceleration limits now remain separate from physical contacts and penetration. A fresh six-clip experiment accepts local high-five edits but fails final physical and motion checks; the box stays unchanged and all intended contacts fail. No changed output is adopted. These results keep faster styles possible without presenting local acceptance as realistic motion.
