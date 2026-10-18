@@ -64,8 +64,13 @@ frame 60 was not the worst collision pose.
 
 Eight frame maxima worsen: 35, 37, 56, 57, 58, 64, 65 and 66. No originally
 passing frame becomes a new depth-screen failure. These counts concern frame
-maxima; individual direction rows remain preserved separately. Fewer failed
-frames does not compensate for worse peak depth or more vertex exceedances.
+maxima; individual direction rows remain preserved separately. Fifteen
+individual direction depths worsen, and one formerly passing direction
+becomes a new failure: A into B at frame 66 increases from 3.659 to 6.298 mm.
+It is hidden by a frame maximum that already failed in the other direction.
+There are 44 failed direction conditions originally and 41 after correction.
+Fewer failed frames or conditions does not compensate for worse peak depth,
+more vertex exceedances or a lost passing condition.
 
 At frame 60, the earlier independent saved replay measured a reduction from
 13.483 to 10.288 mm. This complete clock instead exposes deeper overlaps
@@ -82,9 +87,33 @@ All **36 coverage tests pass locally**, with no failures or skips. Tests
 cover missing final conditions, both directions and all variants/actors,
 strict boundary decisions, complete-but-failed clocks, transactional batches,
 owned inputs/reports, deterministic ties, static/long clocks and invalid data.
-Hosted results and the independent journal/resource replay will be recorded
-after completion. Detailed files remain local under
-`reports/contact-vector-saved-clock-v1`; source clips and failed trials are
+The same **36 tests pass on hosted Windows and Ubuntu** at
+`8def3392d83ff6146899cd8e5ac9f5a1a6847019`
+([focused run](https://github.com/DocMorphic/strep/actions/runs/39133984225)).
+The prior 174 tests retain unchanged source bindings; they were not rerun.
+
+Independent aggregation replays all 30 resource traces and validates every
+worker argument, source/method archive, output hash and logged query depth.
+It feeds all 480 observations through the coverage component and reproduces
+the complete clock and every reported comparison. Total guarded time is
+1,245.935 seconds, including 759.221 seconds of worker execution; the largest
+observed process-tree sample is 386,908,160 bytes under the 512 MiB guard.
+The coverage source was developed separately during the study without
+changing any pinned query implementation.
+
+A separate complete partner constraint block contains all 240 ordered-pair
+identities, original/corrected signed margins and passing masks, plus the
+72 original-relative controls used as a diagnostic warm seed. This is a
+saved-observation block, not a new solver or Jacobian. It cannot substitute
+for remeasuring the raw editor state or the remaining floor, point contact,
+orientation and original motion ceilings. Nothing is rebased or adopted.
+The next correction must address the complete trajectory and protect each
+individual passing condition, with all remaining release gates intact.
+
+Detailed files remain local under `reports/contact-vector-saved-clock-v1`,
+`reports/partner-collision-clock-tests-v1`,
+`reports/partner-clock-constraint-block-v1` and
+`reports/partner-collision-clock-progress-v1`; source clips and failed trials are
 never overwritten. Raw-clock, subframe, edge-only and self-collision checks
 remain outstanding. The qualified partial reference, default selection and
 entire-project release requirements are unchanged.
