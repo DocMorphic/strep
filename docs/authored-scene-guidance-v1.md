@@ -111,4 +111,45 @@ all native scene metric arrays from supplied raw or saved GLB poses. It uses
 the established NumPy skin/primitive libraries, excludes guidance and Torch,
 keeps exact row populations and recomputes actual normal/tangent triangles.
 The source suite now passes **67 cases**, including five additional complete
-observation tests. Larger saved-file replay remains separate evidence.
+observation tests. The same 67 pass on both hosted operating systems at
+`7550aac052a4ed679dced16cbaa0f839ceb93cf3`
+([focused run 39122376511](https://github.com/DocMorphic/strep/actions/runs/39122376511)).
+
+`reports/authored-scene-guidance-replay-v1` independently checks all nine saved
+GLBs and their full original scene/motion metric populations: **22,750,560
+vertex/frame pairs**, original eight weights/indices and all 36,108 faces.
+Maximum skin-component error is 5.740e-7 m. Guidance, decoder, sparse Torch
+skinning and Torch itself are excluded. All three energy-only clips fail
+independent raw and saved nonregression; all three retained clips reproduce
+their ordinary raw arrays **and GLB files byte for byte**. Separate Float32,
+NumPy and serialized observations stay distinct; no physical epsilon is added
+to reconcile numerical differences. Shared baseline geometry libraries do not
+constitute independent physics. The 512 MiB replay completes in 87.937 s with
+117,903,360-byte peak RSS and the unchanged 600 MiB reserve.
+
+## What the rejection means
+
+The preserved rejection ledger identifies every failed metric group in all
+45 fixed ray trials. All 15 box trials worsen floor and contact rows, as well
+as source motion tracks. The 30 high-five trials are locally rejected **only
+by source speed/acceleration preservation**. Their complete finished
+energy-only clips also worsen sampled floor rows after subsequent denoising.
+The average/max contact improvements do not hide these failures.
+
+Speed and acceleration are not universally lower-is-better measures of
+realism. They are complete source-preservation probes in this versioned
+experiment. This strict policy is not a new global ban on faster or more agile
+characters. Next separate physical contact/penetration requirements from
+explicit authored timing/style/motion envelopes, keeping every original trial
+and release criterion intact. Do not relax a failed physical threshold or
+reinterpret rejection as successful animation. Source-relative edit caps also
+remain distinct from physiological strength/fitness calibration.
+
+The completed checkpoint is `reports/authored-scene-guidance-progress-v1`.
+Its streaming audit verifies 6,275 current source, checkpoint, cache, asset,
+data and resource bindings and the prior whole-goal checkpoint receipt. All
+45 rejection rays are rechecked against their complete metric summaries.
+It completes in 51.109 s with 54,390,784-byte peak tree RSS, preserving the
+512 MiB cap and 600 MiB reserve. The audit confirms the fixed release contract
+changes only in goal line 3 and the two permitted progress fields. All 14
+capabilities remain unapproved and the entire-project goal remains active.
