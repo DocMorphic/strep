@@ -30,7 +30,9 @@ exact Float32 inputs, input/output storage admission with platform double and
 long-double types, and invalid values in the final validation chunk. Allocation
 spies ensure rejection occurs before output creation. The wider-dtype case is
 platform-dependent; the local Windows long-double type occupies eight bytes.
-Hosted operating-system results are recorded separately when complete.
+The same **358 cases pass on each Windows/Ubuntu job** in
+[run 39155671332](https://github.com/DocMorphic/strep/actions/runs/39155671332)
+at source commit `1c3191226eeda9b00d9c88f8afb44d21cd4986a9`.
 
 Historical evidence stays tied to its actual implementation. The pre-fix
 source and test are recovered byte-for-byte from public commit
