@@ -765,3 +765,111 @@ full-timeline passing displacement/rate guards (including all 29 prior repair
 witnesses) and motion-error guidance alongside the object-plane rows. A sampled
 key-pose guard is insufficient for between-key motion. The full-project goal,
 broader actions/objects/rigs and engine/human validation remain open.
+
+## Experimental full-timeline guard integration
+
+A fresh local world model is built at the last independently replayed body
+candidate, not at the rejected coupled proposal. All **383,617** registered raw
+world values match that candidate byte for byte. All 319 groups retain their
+135 body columns; two complete directional comparisons have maximum differences
+2.204e-7 and 1.247e-7 with zero failed numerical comparisons. One uncached
+perturbation reproduces every value and group exactly. These derivative checks
+are numerical evidence, not new physical tolerances. Guard: 276.531 s /
+285,593,600 bytes / 288 observations.
+
+The refreshed guard population includes all 29 prior repair witnesses, including
+displacement row 20295, and every temporally affected passing displacement/rate
+row. Selection uses the union of passing raw and saved modes; a row's proposal
+reserve uses the smaller margin among its passing modes. The current incumbent's
+pass masks happen to be identical. Raw derivatives guide the exported mode;
+exported-motion acceptance still requires the complete independent value gates.
+There are **6,425** guards across 7,238 temporally affected scalar conditions.
+Contact and original pose/pair conditions proven independent of this local basis
+stay represented with exact zero derivatives. No small nonzero temporal weight
+is dropped. Both guard-direction checks pass; maximum differences are 3.649e-7
+and 2.245e-7. Guard: 46.188 s / 339,689,472 bytes / 63 observations.
+
+The resulting experimental solve combines 339 object-plane rows with 1,106
+complete motion-guidance groups, 7,722 extra guards and 5,402 source-bound body/
+prop norm constraints in its local model. The fixed clearance delta is substituted exactly as
+before. Original source epochs, caps, clocks and frozen keys stay unchanged.
+
+Its full-step character correction completes all **944,562** raw/saved motion
+checks with no newly failing row and no loss of any prior repair. Six world rows
+are repaired in both modes: failures fall from 6,093 to 6,087. Raw peak normalized
+error falls from 44.323721 to 43.887751 and squared error from 56,878.826 to
+56,818.723; exported results agree in direction. This is a numerical improvement
+within an already failing source-budget study, not a realism or release score.
+
+The combined scene is nevertheless rejected. All 2,017 sampled prop pose bounds
+and declared contacts pass, but fresh full geometry at all nine policy times
+finds a new actor B/box collision. Peak penetration drops from 23.627 mm to
+18.998 mm while surface records increase from 113 to 162 and failed conditions
+from two to three. A smaller peak cannot buy the new failed condition. Trial
+guard: 176.375 s / 456,933,376 bytes / 190 observations.
+
+A separate prop-only line search keeps that motion-qualified body byte-identical
+and tests fractions 1/2, 1/4, 1/8, 1/16 and zero from the old original-relative
+prop controls toward the failed direction. Every candidate receives all nine
+geometry times, contacts and sampled original prop bounds. The first three keep
+the new partner failure; the last two preserve all 97 previously passing geometry
+conditions but still have 115 surface records versus 113. All five remain
+rejected under the declared componentwise comparison. Body motion checks are
+inherited by immutable file identity, not freshly sampled in this search. Guard:
+228.312 s / 372,019,200 bytes / 241 observations. All resource replays match.
+
+A further bounded study scales the **entire** original coupled direction by
+1/8, 1/16 and 1/32, including both character and prop controls. It does not rerun
+the optimizer or use a corrected clip as a new authoring epoch. Each step
+receives all 944,562 raw/saved motion checks, the 29 repair checks, all nine
+geometry times, contacts and original sampled prop bounds. All three preserve
+the prior passing motion rows and improve peak/squared motion error. None passes
+the geometry comparison:
+
+| Joint step | Surface records | Peak penetration | New failed geometry conditions |
+| --- | ---: | ---: | ---: |
+| Previous numerical reference | 113 | 23.627 mm | — |
+| 1/8 | 123 | 23.035 mm | 1, actor B/box |
+| 1/16 | 115 | 23.330 mm | 0 |
+| 1/32 | 115 | 23.479 mm | 0 |
+
+The last two preserve all 97 previously passing geometry identities but retain
+two additional crossings. Keep them as tradeoff evidence rather than changing
+the declared metric rule. All three raw/exported motion populations complete;
+there is no successful combined-scene selection. Guard: 494.657 s /
+522,768,384 bytes / 495 observations, below the unchanged 512 MiB process cap.
+The original Studio selection and release declarations remain unchanged.
+
+This separates two demonstrated needs: full-timeline motion guards prevent the
+earlier displacement regression, while the next coupled scene guide must also
+represent the second character and newly discovered surface pairs. Repeating
+smaller steps of the same local direction is not a substitute for that missing
+scene information. Existing source-rate failures, other geometry policy times,
+self/continuous/dynamic checks, engine validation and human review remain open.
+
+Independent export replay confirms the **motion-only** full-step result without
+importing the local basis/context helper. It reconstructs the cumulative native65
+insertion from the already verified parent under the original authoring domain,
+freshly reproduces all 383,617 saved world values byte for byte, independently
+checks 5,400 raw and 5,400 saved native rotation balls, and verifies all 177,328
+other archived motion scalars. Static assets, uncontrolled channels, clocks and
+original frozen keys are unchanged. Both modes repair the same six rows:
+56647, 56716, 93134, 93211, 93288 and 276878, with no new failed row. Guard:
+47.203 s / 194,859,008 bytes / 64 observations.
+
+Only one pose changes within the previously verified 232-pose body-geometry
+population. A separate body-only replay checks its complete 36,108-face meshes
+per character, partner intersections, all-vertex floor depths and original
+rotation/joint-displacement limits afresh. The other 231 poses inherit their
+previous results only through exact full-hierarchy byte identity and the same
+physical geometry policy. This closes a 232-sample/all-120-native-key body
+composite with zero geometry or pose-budget failures. Guard: 60.594 s /
+190,275,584 bytes / 77 observations. All bindings and resource replays match.
+
+The body result still has 6,087 source-rate failures and 1,785 other geometry
+policy times unverified. It does not approve mesh-prop interactions, self or
+continuous collision, dynamics, semantics, engine import or human cleanup time.
+Future fitting from this body must protect the union of the 29 previous repairs
+and these six new repairs while retaining the original authoring epoch. The
+combined scene and all rejected steps remain separate; no Studio selection or
+release capability is promoted.
