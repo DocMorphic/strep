@@ -2015,3 +2015,10 @@ A sparse complete-row representation must be evaluated under unchanged storage,
 process-RAM and physical acceptance limits before any optimizer is invoked.
 No new correction, geometry approval for changed candidates, engine import or
 human quality approval follows from these models; the whole release goal stays open.
+
+
+### Complete sparse contact hard rows
+
+Two additional proposal helpers retain the full contact population without adding support variables. `native_triangle_relation_rows.py` maps every one of the nine directed vertex comparisons per original triangle pair to a relation within its original time, fixed normal and gap context. Repeated directed edges use the smallest original-arithmetic anchor; the occurrence map and unchanged original pair margins remain explicit. Shared control columns accumulate both skin chains. All 18 standalone source cases passed, including finite differences, cancellation, final-column retention and budget rejection. This representation does not certify nonlinear or saved geometry.
+
+`native_sparse_conic_step.py` accepts complete CSR/CSC hard-row populations up to 65,536 rows while preserving the existing 768 control-column, 64 MiB input/assembled-matrix and process-memory bounds. Dense hard inputs retain their previous 8,192-row bound. Constant conflicting rows are retained, duplicate coefficients accumulate, and caller inputs remain unchanged. All 77 standalone source cases passed, including 9,001 hard rows using the 768th control column. Original norm radii, physical gates and separate raw/saved checks are unchanged. Exceeding any storage or process bound must reject the whole model; no row pruning or quality approval is implied.

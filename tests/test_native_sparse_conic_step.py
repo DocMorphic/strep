@@ -1,0 +1,255 @@
+from pathlib import Path
+import sys
+import numpy as np
+import pytest
+from scipy import sparse
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
+import native_sparse_conic_step as module
+
+
+def args():
+    return dict(margins=np.array([-.2]), jacobian=np.array([[0., 1.]]),
+        lower_delta=np.array([-.2, -.2]), upper_delta=np.array([.2, .2]),
+        native_vectors=np.array([[.99, 0., 0.]]),
+        native_matrix=sparse.csr_matrix([[1., 0.], [0., 1.], [0., 0.]]),
+        native_radii=np.ones(1), l1_penalty=.1)
+
+
+def test_exact_curvature_requires_inward_step():
+    kw = args(); delta, report = module.conic_hinge_step(**kw)
+    assert delta is not None, report
+    assert abs(delta[1] - .2) < 1e-7
+    assert abs(delta[0] - (np.sqrt(.96) - .99)) < 1e-7
+    assert np.linalg.norm(kw['native_vectors'] + (kw['native_matrix'] @ delta).reshape(-1, 3)) <= 1 + 1e-8
+    assert report['predicted_sum_model_violation'] < 1e-7
+    assert report['native_cones'] == 1 and report['omitted_native_cones'] == 0
+    assert report['sparse_matrix_bytes'] <= report['estimated_sparse_matrix_bytes']
+    assert report['original_selected'] and not report['quality_approved'] and not report['release_approved']
+
+
+def test_fixed_cones_are_retained_and_report_conflict():
+    kw = args(); kw['native_matrix'] = sparse.csr_matrix((3, 2)); kw['native_vectors'] = np.array([[1.01, 0., 0.]])
+    delta, report = module.conic_hinge_step(**kw)
+    assert delta is None and report['native_cones'] == report['fixed_native_cones'] == 1
+    assert report['solver_status'] in ('PrimalInfeasible', 'AlmostPrimalInfeasible')
+
+
+def test_last_column_extra_row_and_peak_ceiling():
+    kw = args(); kw.update(extra_matrix=np.array([[0., 1.]]), extra_upper=np.array([.1]), maximum_model_violation=.100001)
+    delta, report = module.conic_hinge_step(**kw)
+    assert delta is not None, report
+    assert abs(delta[-1] - .1) < 1e-7
+    assert report['extra_proposal_rows'] == 1 and report['complete_columns'] == 2
+    assert .099999 <= report['predicted_sum_model_violation'] <= .100001
+
+
+def test_all_model_rows_and_fixed_passing_cones_survive():
+    kw = args(); kw.update(margins=np.array([-.2, -.1]), jacobian=np.array([[0., 1.], [0., -1.]]),
+        native_vectors=np.array([[.99, 0., 0.], [1., 0., 0.]]), native_radii=np.ones(2),
+        native_matrix=sparse.vstack([kw['native_matrix'], sparse.csr_matrix((3, 2))], format='csc'))
+    delta, report = module.conic_hinge_step(**kw)
+    assert delta is not None, report
+    assert report['model_rows'] == report['native_cones'] == 2 and report['fixed_native_cones'] == 1
+    assert report['predicted_sum_model_violation'] >= .3 - 1e-8
+
+
+@pytest.mark.parametrize('field,value', [
+    ('margins', [float('nan')]), ('margins', [1e7]), ('margins', [1, 2]),
+    ('jacobian', [[float('inf'), 0]]), ('jacobian', np.empty((0, 2))),
+    ('lower_delta', [.1, -.2]), ('upper_delta', [.2, -.1]),
+    ('lower_delta', [-3., -.2]), ('upper_delta', [.2]),
+    ('native_vectors', [[0., 1.]]), ('native_vectors', [[float('nan'), 0., 0.]]),
+    ('native_matrix', np.zeros((3, 2))), ('native_matrix', sparse.csr_matrix((6, 2))),
+    ('native_matrix', sparse.csr_matrix([[float('inf'), 0], [0, 0], [0, 0]])),
+    ('native_radii', [0.]), ('native_radii', [-1.]), ('native_radii', [1, 1]),
+    ('extra_matrix', [[0., 1.]]), ('extra_upper', [1.]),
+    ('l1_penalty', 0.), ('l1_penalty', True), ('maximum_model_violation', -1.),
+    ('maximum_matrix_bytes', True), ('maximum_matrix_bytes', 64 * 1024**2 + 1),
+    ('time_limit_seconds', 0.), ('maximum_iterations', 0),
+    ('solver_box_reserve', -1.), ('solver_box_reserve', 1e-4),
+    ('solver_box_reserve', True), ('solver_box_reserve', float('nan')),
+])
+def test_invalid_complete_inputs(field, value):
+    kw = args(); kw[field] = value
+    with pytest.raises(ValueError): module.conic_hinge_step(**kw)
+
+
+def test_budget_refuses_before_sparse_assembly(monkeypatch):
+    kw = args(); kw['maximum_matrix_bytes'] = 1
+    monkeypatch.setattr(module.sparse, 'hstack', lambda *a, **k: pytest.fail('allocated before budget check'))
+    with pytest.raises(ValueError, match='budget'): module.conic_hinge_step(**kw)
+
+
+def test_sparse_estimate_refuses_before_assembly(monkeypatch):
+    kw = args(); kw['maximum_matrix_bytes'] = 260
+    monkeypatch.setattr(module.sparse, 'hstack', lambda *a, **k: pytest.fail('allocated before sparse estimate'))
+    with pytest.raises(ValueError, match='budget'): module.conic_hinge_step(**kw)
+
+
+def test_inputs_not_mutated_or_clipped():
+    kw = args(); original = {k: v.copy() for k, v in kw.items() if isinstance(v, np.ndarray)}
+    native_before = kw['native_matrix'].copy()
+    delta, report = module.conic_hinge_step(**kw)
+    assert delta is not None, report
+    for key, before in original.items(): np.testing.assert_array_equal(kw[key], before)
+    assert (native_before != kw['native_matrix']).nnz == 0
+    assert np.all(delta >= kw['lower_delta']) and np.all(delta <= kw['upper_delta'])
+
+
+def test_interior_box_is_explicit_search_restriction():
+    kw = args(); kw['solver_box_reserve'] = 1e-5
+    delta, report = module.conic_hinge_step(**kw)
+    assert delta is not None, report
+    assert abs(delta[-1] - (.2 - 1e-5)) < 1e-8
+    assert report['solver_box_reserve'] == 1e-5
+    assert report['maximum_box_excess'] < -1e-6
+
+
+@pytest.mark.parametrize('value',[0.,-1e-12,1e-8,1.01e-10,1e-15,float('nan'),float('inf'),True,'1e-12'])
+def test_feasibility_target_never_relaxes_previous_solver_target(value):
+    kw=args();kw['solver_feasibility_tolerance']=value
+    with pytest.raises(ValueError,match='Feasibility target'):module.conic_hinge_step(**kw)
+
+
+def test_tighter_solver_setting_preserves_model_and_admission(monkeypatch):
+    actual=module.solver_module();records=[]
+    from types import SimpleNamespace
+    def observed(*args):
+        records.append(args[-1].tol_feas)
+        return actual.DefaultSolver(*args)
+    proxy=SimpleNamespace(__version__=actual.__version__,DefaultSettings=actual.DefaultSettings,NonnegativeConeT=actual.NonnegativeConeT,SecondOrderConeT=actual.SecondOrderConeT,DefaultSolver=observed)
+    monkeypatch.setattr(module,'solver_module',lambda:proxy)
+    for value in [1e-10,1e-12]:
+        kw=args();kw['solver_feasibility_tolerance']=value
+        direction,report=module.conic_hinge_step(**kw)
+        assert direction is not None,report
+        assert report['solver_feasibility_tolerance']==value and report['norms_exceeding_admission']==0 and report['worst_norm_row']==0
+        assert np.linalg.norm(kw['native_vectors']+(kw['native_matrix']@direction).reshape(-1,3))<=1+1e-8
+    assert records==[1e-10,1e-12]
+
+
+def test_solver_solved_status_does_not_override_norm_admission(monkeypatch):
+    from types import SimpleNamespace
+    actual=module.solver_module()
+    point=np.array([.01+2e-8,0.,.01+2e-8,0.,.2])
+    class RejectedSolver:
+        def __init__(self,*args):pass
+        def solve(self):return SimpleNamespace(x=point,status='Solved',iterations=1)
+    proxy=SimpleNamespace(__version__=actual.__version__,DefaultSettings=actual.DefaultSettings,NonnegativeConeT=actual.NonnegativeConeT,SecondOrderConeT=actual.SecondOrderConeT,DefaultSolver=RejectedSolver)
+    monkeypatch.setattr(module,'solver_module',lambda:proxy)
+    direction,report=module.conic_hinge_step(**args())
+    assert direction is None and not report['usable_direction'] and report['norms_exceeding_admission']==1 and report['worst_norm_row']==0
+    assert report['maximum_native_norm_excess']>1e-8
+
+
+def test_all_norm_identities_survive_duplicate_fixed_boundary_cones():
+    kw=args();count=257
+    kw['native_vectors']=np.vstack([kw['native_vectors'],np.tile([1.,0.,0.],(count,1))]);kw['native_radii']=np.ones(count+1)
+    kw['native_matrix']=sparse.vstack([kw['native_matrix'],sparse.csr_matrix((3*count,2))],format='csr')
+    direction,report=module.conic_hinge_step(**kw)
+    assert direction is not None,report
+    assert report['native_cones']==258 and report['fixed_native_cones']==257 and report['omitted_native_cones']==0
+    assert report['norms_exceeding_admission']==0 and report['worst_norm_row'] in range(258)
+
+
+@pytest.mark.parametrize('fractions',[(),(.5,),[1.,1.],(1.,.5,.75),(1.,0.),(1.,float('nan')),(1.,True),(1.,1e-7),(1.,1.1),'full',(1.,.9,.8,.7,.6,.5,.4,.3,.2)])
+def test_invalid_ray_fractions_reject_before_solve(fractions):
+    kw=args();kw['proposal_fractions']=fractions
+    with pytest.raises(ValueError,match='proposal fractions'):module.conic_hinge_step(**kw)
+
+
+def raw_ray_solver(monkeypatch,y=.1):
+    from types import SimpleNamespace
+    actual=module.solver_module();x=np.sqrt(1-y*y)-.99+2e-8
+    point=np.array([x,y,abs(x),abs(y),max(.2-y,0.)])
+    class RawSolver:
+        def __init__(self,*args):pass
+        def solve(self):return SimpleNamespace(x=point,status='Solved',iterations=1)
+    proxy=SimpleNamespace(__version__=actual.__version__,DefaultSettings=actual.DefaultSettings,NonnegativeConeT=actual.NonnegativeConeT,SecondOrderConeT=actual.SecondOrderConeT,DefaultSolver=RawSolver)
+    monkeypatch.setattr(module,'solver_module',lambda:proxy)
+    return point[:2]
+
+
+def test_ray_is_new_strictly_feasible_proposal_not_relaxed_raw_point(monkeypatch):
+    raw=raw_ray_solver(monkeypatch);kw=args();kw['proposal_fractions']=(1.,.5,.25)
+    direction,report=module.conic_hinge_step(**kw)
+    assert direction is not None and np.array_equal(direction,.5*raw)
+    assert not report['raw_solver_admission_pass'] and report['raw_solver_native_norm_excess']>1e-8
+    assert report['selected_fraction']==.5 and report['maximum_native_norm_excess']<=0
+    assert report['proposal_trials'][1]['strict_norm_and_hard_rows'] and report['proposal_trials'][1]['maximum_extra_residual']<=0
+    assert np.linalg.norm(kw['native_vectors']+(kw['native_matrix']@direction).reshape(-1,3))<=1.
+
+
+def test_ray_checks_every_hard_row_without_assuming_zero_feasible(monkeypatch):
+    raw_ray_solver(monkeypatch,y=.2);kw=args();kw.update(proposal_fractions=(1.,.5,.25),extra_matrix=np.array([[0.,-1.]]),extra_upper=np.array([-.15]))
+    direction,report=module.conic_hinge_step(**kw)
+    assert direction is None and len(report['proposal_trials'])==3
+    assert all(t['maximum_extra_residual']>0 for t in report['proposal_trials'][1:])
+
+
+def test_ray_rejects_feasible_but_worse_model_direction(monkeypatch):
+    raw_ray_solver(monkeypatch,y=-.1);kw=args();kw['proposal_fractions']=(1.,.5)
+    direction,report=module.conic_hinge_step(**kw)
+    assert direction is None and report['proposal_trials'][1]['maximum_norm_excess']<0
+    assert report['proposal_trials'][1]['predicted_sum_model_violation']>report['baseline_sum_model_violation']
+
+
+@pytest.mark.parametrize('value',[-1e-9,True,float('nan'),1e-4])
+def test_invalid_solver_cut_reserve_rejects(value):
+    kw=args();kw['solver_cut_reserve']=value
+    with pytest.raises(ValueError,match='cut reserve'):module.conic_hinge_step(**kw)
+
+
+def test_solver_cut_reserve_moves_search_inside_unchanged_original_cut():
+    kw=args();kw.update(native_vectors=np.zeros((1,3)),native_matrix=sparse.csr_matrix((3,2)),extra_matrix=np.array([[1.,0.]]),extra_upper=np.array([0.]),solver_cut_reserve=1e-5)
+    old=kw['extra_upper'].copy();direction,report=module.conic_hinge_step(**kw)
+    assert direction is not None,report
+    assert -1.001e-5<=direction[0]<=-.999e-5
+    assert np.all(kw['extra_matrix']@direction<=kw['extra_upper']) and np.array_equal(old,kw['extra_upper'])
+    assert report['solver_cut_reserve']==1e-5 and report['extra_proposal_rows']==1 and report['native_cones']==1
+
+
+
+def test_large_sparse_population_keeps_last_row_and_768th_column():
+    columns=768;rows=9001;kw=args();jac=np.zeros((1,columns));jac[0,-1]=1
+    kw.update(jacobian=jac,lower_delta=np.full(columns,-.2),upper_delta=np.full(columns,.2),native_matrix=sparse.csr_matrix(([1.,1.],([0,1],[0,columns-1])),shape=(3,columns)),
+        extra_matrix=sparse.csr_matrix(([1.],([rows-1],[columns-1])),shape=(rows,columns)),extra_upper=np.r_[np.ones(rows-1),.1])
+    direction,report=module.conic_hinge_step(**kw)
+    assert direction is not None,report
+    assert abs(direction[-1]-.1)<1e-7 and report['complete_columns']==768 and report['extra_proposal_rows']==9001
+    assert report['hard_row_storage']=='csr' and report['omitted_native_cones']==0 and report['maximum_sparse_hard_rows']==65536
+
+
+def test_large_dense_population_refuses_before_assembly(monkeypatch):
+    kw=args();kw.update(extra_matrix=np.zeros((8193,2)),extra_upper=np.ones(8193))
+    monkeypatch.setattr(module.sparse,'hstack',lambda *a,**k:pytest.fail('dense expansion'))
+    with pytest.raises(ValueError,match='dense budget'):module.conic_hinge_step(**kw)
+
+
+def test_sparse_row_budget_refuses_whole_population(monkeypatch):
+    kw=args();kw.update(extra_matrix=sparse.csr_matrix((65537,2)),extra_upper=np.ones(65537))
+    monkeypatch.setattr(module.sparse,'hstack',lambda *a,**k:pytest.fail('assembly before row check'))
+    with pytest.raises(ValueError,match='65536'):module.conic_hinge_step(**kw)
+
+
+@pytest.mark.parametrize('kind',['csc','csr-duplicates'])
+def test_sparse_hard_inputs_are_immutable_and_duplicates_accumulate(kind):
+    kw=args();matrix=sparse.csr_matrix((np.array([.5,.5]),np.array([1,1]),np.array([0,2])),shape=(1,2))
+    if kind=='csc':matrix=matrix.tocsc()
+    before=(matrix.data.copy(),matrix.indices.copy(),matrix.indptr.copy());kw.update(extra_matrix=matrix,extra_upper=np.array([.1]))
+    direction,report=module.conic_hinge_step(**kw)
+    assert direction is not None,report
+    assert abs(direction[-1]-.1)<1e-7 and report['extra_proposal_rows']==1
+    for a,b in zip((matrix.data,matrix.indices,matrix.indptr),before):np.testing.assert_array_equal(a,b)
+
+
+def test_constant_conflicting_sparse_row_is_retained():
+    kw=args();kw.update(extra_matrix=sparse.csr_matrix((1,2)),extra_upper=np.array([-.1]))
+    direction,report=module.conic_hinge_step(**kw)
+    assert direction is None and report['extra_proposal_rows']==1 and report['solver_status'] in ('PrimalInfeasible','AlmostPrimalInfeasible')
+
+
+@pytest.mark.parametrize('value',[float('nan'),float('inf')])
+def test_nonfinite_sparse_coefficients_reject(value):
+    kw=args();kw.update(extra_matrix=sparse.csr_matrix([[0.,value]]),extra_upper=np.array([.1]))
+    with pytest.raises(ValueError):module.conic_hinge_step(**kw)
