@@ -16,6 +16,7 @@ on:
           - tests/test_authored_scene_observations.py
           - tests/test_scene_motion_envelope.py
           - tests/test_mesh_penetration_gradient.py
+          - tests/test_partner_collision_clock.py
           - tests/test_native_triangle_pair_projection.py
           - tests/test_native_projection_guard_conflicts.py
           - tests/test_native_inverse_rigid_frame.py
