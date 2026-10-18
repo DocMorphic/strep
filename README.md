@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Explicit motion envelopes](docs/scene-motion-envelope-v1.md): all 87 focused checks pass locally and on Windows/Ubuntu. Authored speed/acceleration limits now remain separate from physical contacts and penetration. A fresh six-clip experiment accepts local high-five edits but fails final physical and motion checks; the box stays unchanged and all intended contacts fail. No changed output is adopted. These results keep faster styles possible without presenting local acceptance as realistic motion.
+
 - [Authored scene guidance and retention](docs/authored-scene-guidance-v1.md): real moving-box and both high-five actor plans now feed sampling with complete contact intervals, orientations and placements. All 67 focused checks pass locally and on Windows/Ubuntu. Nine actual samples and full independent saved-file replay confirm the strict retention policy rejects all proposed changes and preserves the baselines exactly. Interactions remain unsolved. The rejection ledger separates physical failures from source-motion preservation; future timing/style bounds must be explicitly authored.
 
 - [Scene energy during sampling](docs/scene-denoising-guidance-v1.md): an opt-in geometry-gradient hook now runs with the unchanged checkpoint. All 26 focused tests pass locally and on Windows/Ubuntu; actual disabled-hook samples reproduce every ordinary raw array exactly. In one matched development pilot, point-target error improves from 20.41 to 19.20 mm while cube penetration worsens, so the result stays unapproved. Full saved-mesh replay confirms the tradeoff. The default generator, qualified reference and Studio selection stay unchanged.
