@@ -150,3 +150,45 @@ def test_all_norm_identities_survive_duplicate_fixed_boundary_cones():
     assert direction is not None,report
     assert report['native_cones']==258 and report['fixed_native_cones']==257 and report['omitted_native_cones']==0
     assert report['norms_exceeding_admission']==0 and report['worst_norm_row'] in range(258)
+
+
+@pytest.mark.parametrize('fractions',[(),(.5,),[1.,1.],(1.,.5,.75),(1.,0.),(1.,float('nan')),(1.,True),(1.,1e-7),(1.,1.1),'full',(1.,.9,.8,.7,.6,.5,.4,.3,.2)])
+def test_invalid_ray_fractions_reject_before_solve(fractions):
+    kw=args();kw['proposal_fractions']=fractions
+    with pytest.raises(ValueError,match='proposal fractions'):module.conic_hinge_step(**kw)
+
+
+def raw_ray_solver(monkeypatch,y=.1):
+    from types import SimpleNamespace
+    actual=module.solver_module();x=np.sqrt(1-y*y)-.99+2e-8
+    point=np.array([x,y,abs(x),abs(y),max(.2-y,0.)])
+    class RawSolver:
+        def __init__(self,*args):pass
+        def solve(self):return SimpleNamespace(x=point,status='Solved',iterations=1)
+    proxy=SimpleNamespace(__version__=actual.__version__,DefaultSettings=actual.DefaultSettings,NonnegativeConeT=actual.NonnegativeConeT,SecondOrderConeT=actual.SecondOrderConeT,DefaultSolver=RawSolver)
+    monkeypatch.setattr(module,'solver_module',lambda:proxy)
+    return point[:2]
+
+
+def test_ray_is_new_strictly_feasible_proposal_not_relaxed_raw_point(monkeypatch):
+    raw=raw_ray_solver(monkeypatch);kw=args();kw['proposal_fractions']=(1.,.5,.25)
+    direction,report=module.conic_hinge_step(**kw)
+    assert direction is not None and np.array_equal(direction,.5*raw)
+    assert not report['raw_solver_admission_pass'] and report['raw_solver_native_norm_excess']>1e-8
+    assert report['selected_fraction']==.5 and report['maximum_native_norm_excess']<=0
+    assert report['proposal_trials'][1]['strict_norm_and_hard_rows'] and report['proposal_trials'][1]['maximum_extra_residual']<=0
+    assert np.linalg.norm(kw['native_vectors']+(kw['native_matrix']@direction).reshape(-1,3))<=1.
+
+
+def test_ray_checks_every_hard_row_without_assuming_zero_feasible(monkeypatch):
+    raw_ray_solver(monkeypatch,y=.2);kw=args();kw.update(proposal_fractions=(1.,.5,.25),extra_matrix=np.array([[0.,-1.]]),extra_upper=np.array([-.15]))
+    direction,report=module.conic_hinge_step(**kw)
+    assert direction is None and len(report['proposal_trials'])==3
+    assert all(t['maximum_extra_residual']>0 for t in report['proposal_trials'][1:])
+
+
+def test_ray_rejects_feasible_but_worse_model_direction(monkeypatch):
+    raw_ray_solver(monkeypatch,y=-.1);kw=args();kw['proposal_fractions']=(1.,.5)
+    direction,report=module.conic_hinge_step(**kw)
+    assert direction is None and report['proposal_trials'][1]['maximum_norm_excess']<0
+    assert report['proposal_trials'][1]['predicted_sum_model_violation']>report['baseline_sum_model_violation']

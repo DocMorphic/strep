@@ -18,8 +18,13 @@ def conic_hinge_step(margins, jacobian, lower_delta, upper_delta, native_vectors
                      maximum_model_violation=None,
                      solver_box_reserve=1e-9,
                      solver_feasibility_tolerance=1e-12,
+                     proposal_fractions=(1.,),
                      maximum_matrix_bytes=MAXIMUM_BYTES,
                      time_limit_seconds=30., maximum_iterations=200):
+    if (not isinstance(proposal_fractions, (tuple, list)) or not 1 <= len(proposal_fractions) <= 8
+            or any(type(v) not in (int, float) or not np.isfinite(v) or not 1e-6 <= v <= 1 for v in proposal_fractions)
+            or proposal_fractions[0] != 1 or any(a <= b for a, b in zip(proposal_fractions, proposal_fractions[1:]))):
+        raise ValueError('Explicit descending bounded proposal fractions starting at1 required')
     if (type(solver_feasibility_tolerance) not in (int, float) or not np.isfinite(solver_feasibility_tolerance)
             or not 1e-14 <= solver_feasibility_tolerance <= 1e-10):
         raise ValueError('Feasibility target must tighten the earlier1e-10 target, never a physical tolerance')
@@ -120,6 +125,7 @@ def conic_hinge_step(margins, jacobian, lower_delta, upper_delta, native_vectors
     objective = np.r_[np.zeros(columns), np.full(columns, l1_penalty), np.ones(rows)]
     solution = solver.DefaultSolver(zero((variables, variables)), objective, matrix, bound, cones, settings).solve()
     direction = None; linear_residual = None; native_excess = None; box_excess = None; worst_norm = None; failed_norms = None
+    trial_reports=[];chosen_fraction=None;raw_admission=None;raw_native_excess=None
     if str(solution.status) in ('Solved', 'AlmostSolved'):
         point = np.asarray(solution.x, float)
         if point.shape == (variables,) and np.isfinite(point).all():
@@ -129,8 +135,28 @@ def conic_hinge_step(margins, jacobian, lower_delta, upper_delta, native_vectors
             worst_norm = int(np.argmax(norm_excesses)); native_excess = float(norm_excesses[worst_norm])
             failed_norms = int(np.count_nonzero(norm_excesses > 1e-8))
             box_excess = float(max(np.max(lo - candidate), np.max(candidate - hi)))
-            if box_excess <= 0 and linear_residual <= 1e-7 and native_excess <= 1e-8:
-                direction = candidate.copy()
+            raw_admission=bool(box_excess <= 0 and linear_residual <= 1e-7 and native_excess <= 1e-8)
+            raw_native_excess=native_excess
+            trial_reports.append(dict(fraction=1.,accepted=raw_admission,maximum_norm_excess=native_excess,maximum_linear_residual=linear_residual,maximum_box_excess=box_excess))
+            if raw_admission:direction=candidate.copy();chosen_fraction=1.
+            else:
+                baseline_cost=float(np.maximum(-margin,0).sum())
+                for fraction in proposal_fractions[1:]:
+                    # A separately checked ray proposal, never coordinate clipping.
+                    trial=float(fraction)*candidate;predicted_trial=margin+jac@trial
+                    primal=np.r_[trial,np.abs(trial),np.maximum(-predicted_trial,0)]
+                    trial_linear=float(np.max(matrix[:linear_rows]@primal-bound[:linear_rows]))
+                    trial_norms=np.linalg.norm(vectors+(transform@trial).reshape(-1,3),axis=1)-radii
+                    trial_native=float(np.max(trial_norms));trial_box=float(max(np.max(lo-trial),np.max(trial-hi)))
+                    hard=float(np.max(cuts@trial-upper)) if len(cuts) else 0.
+                    peak=float(np.max(-predicted_trial)-maximum_model_violation) if maximum_model_violation is not None else 0.
+                    cost=float(np.maximum(-predicted_trial,0).sum())
+                    accepted=bool(trial_box<=0 and trial_linear<=1e-7 and trial_native<=0 and hard<=0 and peak<=0 and cost<baseline_cost)
+                    trial_reports.append(dict(fraction=float(fraction),accepted=accepted,maximum_norm_excess=trial_native,maximum_linear_residual=trial_linear,maximum_box_excess=trial_box,
+                        maximum_extra_residual=hard,maximum_peak_residual=peak,predicted_sum_model_violation=cost,strict_norm_and_hard_rows=True))
+                    if accepted:
+                        direction=trial.copy();chosen_fraction=float(fraction);linear_residual=trial_linear;native_excess=trial_native;box_excess=trial_box
+                        worst_norm=int(np.argmax(trial_norms));failed_norms=int(np.count_nonzero(trial_norms>1e-8));break
     predicted = None if direction is None else margin + jac @ direction
     report = dict(schema='strep-native-precise-conic-hinge-step-v1', solver_version=solver.__version__,
         solver_status=str(solution.status), iterations=solution.iterations,
@@ -141,6 +167,8 @@ def conic_hinge_step(margins, jacobian, lower_delta, upper_delta, native_vectors
         estimated_sparse_matrix_bytes=estimated_bytes, input_bytes=input_bytes,
         solver_box_reserve=float(solver_box_reserve),
         solver_feasibility_tolerance=float(solver_feasibility_tolerance),
+        proposal_fractions=[float(v) for v in proposal_fractions],selected_fraction=chosen_fraction,proposal_trials=trial_reports,
+        raw_solver_admission_pass=raw_admission,raw_solver_native_norm_excess=raw_native_excess,
         worst_norm_row=worst_norm, norms_exceeding_admission=failed_norms,
         usable_direction=direction is not None, maximum_linear_constraint_residual=linear_residual,
         maximum_native_norm_excess=native_excess, maximum_box_excess=box_excess,
@@ -148,5 +176,5 @@ def conic_hinge_step(margins, jacobian, lower_delta, upper_delta, native_vectors
         predicted_sum_model_violation=None if predicted is None else float(np.maximum(-predicted, 0).sum()),
         maximum_model_violation=maximum_model_violation,
         original_selected=True, quality_approved=False, release_approved=False,
-        scope='All supplied signed rows, columns and affine norm cones retained, including fixed cones. No clipping. Diagnostic solver tolerances never replace strict raw/saved motion acceptance; neither solver status proves nonlinear feasibility or infeasibility.')
+        scope='Optional predeclared ray fractions are separately checked with strict affine norm/extra/peak bounds and lower model cost; default full proposal only. No coordinate clipping. All supplied signed rows, columns and affine norm cones retained, including fixed cones. No clipping. Diagnostic solver tolerances never replace strict raw/saved motion acceptance; neither solver status proves nonlinear feasibility or infeasibility.')
     return direction, report

@@ -1782,3 +1782,25 @@ harness expected 52 cases after all 50 passed; that failed harness is retained.
 A fresh corrected harness records 50 pass / zero fail / zero skip with cleared
 PYTHONPATH and independent resource replay: 33.657 s / 174,743,552 bytes /
 35 observations. This is source evidence; a full motion trial is separate.
+
+Tighter tolerance alone is insufficient on the actual complete model: the first
+precise trial returns `AlmostSolved` after 130 iterations, with the same cone
+8263 failing (2.205335403e-8 excess). The original rejection is preserved; no
+clip is exported. Guard: 65.391 s / 315,506,688 bytes / 66 observations.
+
+The precise kernel now optionally accepts an explicit descending list of ray
+fractions, starting at one (the default remains full proposal only). If the
+raw solver point fails admission, each smaller fraction is a **new proposal**.
+All original affine norms must pass with zero excess; every extra hard row,
+peak bound and box must pass, and the complete modeled hinge cost must decrease.
+The full linear-system admission is also retained. No coordinates are clipped,
+constraints omitted or physical tolerances changed. Raw rejection, attempted
+fractions and the selected fraction are reported separately. Full nonlinear
+and Float32 checks remain mandatory, irrespective of this local-model result.
+
+All **64 source fixtures** pass in a fresh interpreter (1.37 s), including
+rejection of malformed fraction lists, a distinct half-step passing strict
+norms after the raw point fails, a negative-upper hard row that rejects every
+smaller step, and rejection of a feasible but worse modeled direction. The
+resource replay passes: 32.594 s / 153,272,320 bytes / 34 observations. These
+fixtures do not establish that an actual corrected animation is acceptable.
