@@ -30,11 +30,13 @@ All **237 focused source cases pass locally**, including the previous 221
 and sixteen new cases. The new cases exercise rejected and numerically passing
 exploration, original masks and progress targets, chained moves within fixed
 author balls, caller mutation, owned reports and invalid complete observations.
-Hosted results will be recorded when complete.
+The same **237 cases pass on Windows and Ubuntu** at
+`50be0616137628f5c59544f9efb4a2ecca8dfcf1`
+([hosted run](https://github.com/DocMorphic/strep/actions/runs/39142781951)).
 
 The real scene experiment refreshes all 120 original frames and complete
 surface/motion queries around a previously rejected pose, keeping the original
-final gate. Detailed results will be recorded when the assembled model and
-proposal checks finish. Local source evidence:
-`reports/exploratory-branch-tests-v1`. The broad project goal and release matrix
-remain unchanged.
+final gate. See the [complete experiment](exploratory-scene-refresh-v1.md) for
+its retained partial correction and remaining physical failures. Local source
+evidence: `reports/exploratory-branch-tests-v1`. The broad project goal and
+release matrix remain unchanged.
