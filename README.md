@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Separate joint and root search steps](docs/conic-group-trust-v1.md): 221 source checks pass locally and on Windows/Ubuntu. Independent step sizes preserve the lift needed for floor repair while limiting joint changes inside original edit budgets. A real proposal preserves required global conditions but fails a 5 mm body-overlap limit at frame 54; actor A's previously failing palm orientation also remains unresolved. Full-surface replay identifies nonlinear error at an already bundled point. Larger search margins are locally infeasible. No animation is accepted.
+
 - [Competing surface-vertex constraints](docs/competing-vertex-bundle-v1.md): 202 source checks pass locally and on Windows/Ubuntu. All 49 positive-depth points in mandatory partner conditions now enter the local model, with qualified derivatives and complete original surfaces. Extra search targets caused an affine-model conflict; fixed interior targets solve it, but three actual nonlinear trials still fail contact/orientation or floor checks. No animation is approved.
 
 - [Full-clock scene proposals and required repairs](docs/full-clock-scene-step-v1.md): 181 source checks pass locally and on Windows/Ubuntu. A complete 496-row model now includes every floor/partner frame plus contacts, orientations and native motion ceilings. Streamed motion evaluation matches the dense reference exactly. Six nonlinear trials remain rejected; two counterexamples show why competing surface-vertex constraints must be retained. No new animation is approved.
