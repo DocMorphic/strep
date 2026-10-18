@@ -1386,3 +1386,47 @@ blocks must preserve all 41 repairs, the original author/cap epoch and every
 raw/saved/contact/mesh gate. Newly changed poses need geometry checks beyond
 the previous nine scene times. The verified partial fitting reference and
 original Studio selection remain unchanged.
+
+The initial hosted suite run at `6c6dcd4` fails collection on both platforms
+because the new test omitted its standalone scripts-folder import path; its
+local wrapper had provided that path. The failed hosted logs remain archived.
+Only that test setup is corrected in `2defbd9`; the planner module is unchanged.
+All **55** fixtures now pass on Windows (0.39 s) and Ubuntu (0.34 s),
+[run 39095673022](https://github.com/DocMorphic/strep/actions/runs/39095673022).
+A fresh local interpreter with empty `PYTHONPATH` independently passes all 55
+in 0.78 s. Guard: 15.375 s / 106,541,056 bytes / 33 observations. The previous
+55-case local snapshot is historical and retains its original test binding.
+
+The first scheduled new block, **[73, 74, 75]**, now has a qualified complete
+world model about the unchanged half-step reference: all 383,617 values match
+byte for byte, with 319 groups and 135 columns. Both complete directional
+comparisons pass (maximum differences 7.485e-10 and 8.451e-10), including one
+complete uncached perturbation replay. There are five complete value
+perturbations. Guard: 283.844 s / 286,343,168 bytes / 295 observations.
+
+Its complete 1,106-group guide retains all 448,401 world/native/original-pose/
+pair scalars, all **41 repaired witnesses** and **5,852 passing motion guards**.
+Both directional checks cover every 6,508 affected/required derivative row;
+maximum difference is 3.283e-7. The complete-world squared-error derivative
+also passes its declared numerical comparisons. Authored contacts and all 120
+original pose/pair observations are temporally invariant for this block; those
+conditions remain represented. Original cumulative bounds, source curves,
+clocks and frozen keys are unchanged. Guard: 50.219 s / 348,782,592 bytes /
+67 observations. No solver, new saved clip or geometry approval follows from
+these model checks.
+
+A supplemental full-scene baseline at native key **74** (2.4666666984558105 s)
+now freshly checks both complete 36,108-face characters, partner/floor geometry
+and all five actor/prop/prop pairs. The selected pose passes, with **zero
+mesh-pair crossing records and zero measured containment depth**. Guard:
+25.672 s / 146,509,824 bytes / 43 observations. This is a baseline to preserve
+during fitting, not a repaired clip or continuous scene approval. The original
+nine-time scene policy and its remaining key-65 failures are unchanged.
+
+The first supplemental query correctly stops before geometry because its
+one-time explicit clock omits required clip endpoints: 6.156 s / 121,921,536
+bytes / 24 observations. That rejected run remains immutable. A fresh run
+retains both endpoints in its declared clock and explicitly queries only the
+middle native-key-74 index, with identical source assets and physical limits.
+Its complete observation archive and receipt verify; the endpoint requirement
+and original scene policy are not relaxed.
