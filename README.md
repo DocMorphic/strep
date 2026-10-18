@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Articulated minimax controls](docs/articulated-minimax-v1.md): 142 checks pass locally and on Windows/Ubuntu. Joint and root edits now have explicit separate temporal permissions, and the local solver retains every supplied physical row and vector budget. A real two-character edit reduces deepest overlap from 13.48 to 10.66 mm, but misses contact and other limits. Independent replay preserves all unselected channels and protected rotation keys exactly; the proposal remains rejected.
+
 - [Coupled mesh-collision gradients](docs/mesh-penetration-gradient-v1.md): a new triangle-mesh term provides gradients to both bodies, with 111 checks passing locally and on Windows/Ubuntu. The real native-skin derivative qualifies after separating the optimization field from unchanged audit measurements. A tiny full-clip proposal lowers average overlap but worsens the deepest overlap and palm gap, so it remains rejected. Next use worst-case collision/contact constraints and articulated controls.
 
 - [Native conditioning with scene guidance](docs/native-scene-envelope-v1.md): six new clips combine the existing pose constraints with scene guidance. Native controls reproduce earlier outputs exactly. Energy guidance brings the palms closer but increases overlap; strict retention rejects every edit. Independent export and actual paired checks confirm the failures. Collision-safe contact poses and partner geometry are the next bottleneck; no changed output is adopted.
