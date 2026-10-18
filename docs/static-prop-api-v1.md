@@ -2039,3 +2039,24 @@ Nine serial baseline batches freshly measured all 34 additional scene times, wit
 The first complete sparse solve reached AlmostSolved. Its full-size point failed the strict original box check and was rejected. The separately checked half-ray passed every local norm/hard/box bound in original units. The first exported trial then completed all 944,562 original raw/saved checks: all nonrate hard gates and full comparison rules passed, three source-rate rows were repaired in both modes, all 69 protected repairs remained passing, no new failures appeared, and squared violations decreased by about 36.640314 raw / 36.640258 saved. Rate failures remain at 6,050 and global peaks are unchanged. This is a provisional motion improvement only: expanded scene and independent export/body/scene replay remain required before changing the qualified reference or Studio selection.
 
 An independent replay reconstructed the native-35 update from the original author controls and verified all 383,617 saved world values byte for byte, 5,400 raw and 5,400 saved native bounds, and 177,328 archived hard scalars. Static content, uncontrolled channels, clocks and frozen keys remain unchanged. Exactly 34 of the 232 prior body poses changed; 198 complete hierarchies are byte-identical. Only those 198 may inherit old body geometry. Fresh candidate geometry at the 34 changed times and independent scene replay remain pending; the qualified partial reference and Studio selection are unchanged.
+
+
+### Contact-active candidate: independent scene qualification
+
+The three provisional native-35 repairs now have complete changed-time scene/body replay evidence. Nine producer batches evaluated all 34 declared changed times with complete character meshes and 170 prop mesh comparisons. Nine independent processes recomputed every body/partner/floor sample under the original 2,017-time body policy, every prop comparison and world array, and all 6,766 original source rotation/joint bands at those changed times. Producer/fitting/new solver modules were excluded from replay; the underlying interpolation/skinning/collision libraries remain shared. All new samples pass, all 482 previously passing condition identities survive, and no collision measurement worsens.
+
+| Measurement | Previous partial reference | Newly qualified partial reference |
+| --- | ---: | ---: |
+| Protected repaired world rows | 69 | 72 |
+| Source-rate failures in each raw/saved mode | 6,053 | 6,050 |
+| Declared combined-scene times | 10 | 44 |
+| Body geometry composite poses | 232 | 232 |
+| Remaining crossing records | 113 | 113 |
+| Remaining failed scene conditions | 2 | 2 |
+| Maximum scene depth | 23.475561 mm | 23.475561 mm |
+
+The composites are explicit: body 232 = 34 fresh independent samples + 198 exact full-hierarchy identities; scene 44 = 34 fresh independently replayed samples + 10 old scene samples with exact full hierarchy/all-vertex and unchanged-prop identity. All 120 native poses remain covered. An independent prop/contact audit reconstructs the original-relative prop key, verifies all 2,017 original permission samples and matches every base/mesh touch-contact array. Its first script incorrectly expected a mode named point; that failed audit is preserved and the corrected version uses the existing touch schema. No permission, contact target, physical tolerance or frozen key changed. Contact orientation and outward-normal validity remain unapproved.
+
+The new fitting subject is assembled in a fresh immutable bundle: saved GLBs, cumulative author-relative controls, clocks and scalar observations are exact copies. Only scene paths and binding hashes are relocated. A complete 44-time observation archive reindexes all 176 world arrays with per-array source provenance, retaining every numeric value and dtype. Every array is freshly byte-compared against the relocated subject; no extra triangle queries are claimed by this transport stage. Completed raw reports are unchanged. The resource-qualified publication is `reports/native-contact-qualified-reference-v1/reference.json`, pointing to `reports/native-contact-verified-bundle-v1/candidate`. These generated artifacts remain local/ignored.
+
+All 72 repaired rows pass raw and saved checks. Original author caps, frozen keys 0/60/119, prop controls and Studio selection are unchanged. The 6,050 rate failures, two scene failures, 1,785 other body-policy times, self/continuous collision, dynamics, semantics, engine and human cleanup acceptance remain open. All release capabilities remain unapproved. Further proposals require fresh guidance and all-72 repair guards at the new point; earlier 69-point derivatives are stale.
