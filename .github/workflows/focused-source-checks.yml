@@ -9,6 +9,7 @@ on:
         type: choice
         default: tests/test_native_motion_orientation.py
         options:
+          - tests/test_native_coupled_mesh_prop_pose.py
           - tests/test_fixed_grip_box_obstruction.py
           - tests/test_native_mesh_prop_crossing_witness.py
           - tests/test_native_mesh_prop_scene_fit_v2.py
