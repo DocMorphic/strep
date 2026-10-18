@@ -16,7 +16,9 @@ class FrameTemporalControls:
                 or blocks*groups*3*w.shape[1]>384):raise ValueError('Complete bounded three-vector control blocks required')
         if (not isinstance(constant_groups,(list,tuple)) or any(type(g) is not int or not 0<=g<groups for g in constant_groups)
                 or len(set(constant_groups))!=len(constant_groups)):raise ValueError('Distinct explicit constant groups in each block required')
-        self._weights=np.array(w,dtype=float,copy=True);self._blocks=blocks;self._groups=groups;self._constant=tuple(constant_groups)
+        owned=np.array(w,dtype=float,copy=True)
+        if np.any(owned.sum(1)!=1):raise ValueError('Owned Float64 temporal partition must remain exactly one; no normalization')
+        self._weights=owned;self._blocks=blocks;self._groups=groups;self._constant=tuple(constant_groups)
 
     @property
     def source_columns(self):return self._blocks*self._groups*3
@@ -32,7 +34,9 @@ class FrameTemporalControls:
         if (x.shape!=(size,) or x.dtype.kind not in 'fiu' or not np.isfinite(x).all()
                 or np.any(np.linalg.norm(x.reshape(-1,3),axis=1)>1)):
             raise ValueError('Every finite original bounded control-vector ball required')
-        return np.array(x,dtype=float,copy=True)
+        owned=np.array(x,dtype=float,copy=True)
+        if np.any(np.linalg.norm(owned.reshape(-1,3),axis=1)>1):raise ValueError('Owned Float64 control ball exceeds the original bound; no normalization')
+        return owned
 
     def embed(self,controls):
         """Duplicate source knots, ordered block/knot/group/component."""
@@ -56,12 +60,19 @@ class FrameTemporalControls:
     def lift(self,jacobian,frames,*,chunk_rows=128,maximum_bytes=64*1024**2):
         """Return every row and expanded column; never use for interval rows."""
         j=np.asarray(jacobian);ids=self._frames(frames)
-        if (j.shape!=(len(ids),self.source_columns) or j.dtype.kind not in 'fiu' or not np.isfinite(j).all() or np.any(abs(j)>1e6)):
+        if j.shape!=(len(ids),self.source_columns) or j.dtype.kind not in 'fiu':
             raise ValueError('Complete finite frame-local rows and source columns required')
         if type(chunk_rows) is not int or not 1<=chunk_rows<=4096 or type(maximum_bytes) is not int or not 1<=maximum_bytes<=64*1024**2:
             raise ValueError('Explicit bounded complete allocation policy required')
-        estimate=(j.size+len(j)*self.expanded_columns+2*min(chunk_rows,len(j))*self.source_columns+self._weights.size)*8+ids.nbytes
+        chunk=min(chunk_rows,len(j));work_itemsize=np.result_type(j.dtype,np.float64).itemsize
+        # Retain the previous conservative Float64 allowance, while accounting
+        # for wider input/product arrays and bounded validation temporaries.
+        scratch=max(2*chunk*self.source_columns*8,chunk*self.source_columns*(work_itemsize+1)+chunk*(self._groups+1)*8)
+        estimate=max(j.nbytes,j.size*8)+len(j)*self.expanded_columns*8+self._weights.nbytes+ids.nbytes+scratch
         if estimate>maximum_bytes:raise ValueError('Complete temporal lift allocation budget exceeded; no rows or columns truncated')
+        for first in range(0,len(j),chunk_rows):
+            block=j[first:min(first+chunk_rows,len(j))]
+            if not np.isfinite(block).all() or np.any(np.abs(block)>1e6):raise ValueError('Complete finite bounded frame-local rows required')
         result=np.empty((len(j),self.expanded_columns));view=result.reshape(len(j),self._blocks,self._weights.shape[1],self._groups,3);source=j.reshape(len(j),self._blocks,self._groups,3)
         for first in range(0,len(j),chunk_rows):
             last=min(first+chunk_rows,len(j));frames_at=ids[first:last]

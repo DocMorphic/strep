@@ -75,3 +75,34 @@ def test_incomplete_or_unbounded_queries_reject(case):
         with pytest.raises(ValueError):m.at_frames(np.ones(18),frames)
         return
     with pytest.raises(ValueError):m.lift(j,frames,**kwargs)
+
+
+def test_float32_partition_must_still_be_unity_in_owned_coordinates():
+    weights=np.tile(np.array([.1,.2,.7],dtype=np.float32),(3,1));assert np.all(weights.sum(1)==1) and np.any(weights.astype(float).sum(1)!=1)
+    with pytest.raises(ValueError):FrameTemporalControls(weights,blocks=1,groups=1)
+
+
+@pytest.mark.parametrize('operation',['embed','at_frames'])
+def test_float32_boundary_must_still_fit_owned_control_ball(operation):
+    x=np.array([.8,.6,0],dtype=np.float32);assert np.linalg.norm(x)==1 and np.linalg.norm(x.astype(float))>1;m=FrameTemporalControls(np.ones((3,1)),blocks=1,groups=1)
+    with pytest.raises(ValueError):m.embed(x) if operation=='embed' else m.at_frames(x,[0,1,2])
+
+
+def test_exact_float32_coordinates_remain_supported():
+    m=FrameTemporalControls(np.tile(np.array([.25,.5,.25],dtype=np.float32),(3,1)),blocks=1,groups=1);x=np.array([.5,.5,0],dtype=np.float32);np.testing.assert_array_equal(m.at_frames(m.embed(x),[0,1,2]),np.tile(x.astype(float),(3,1)))
+
+
+@pytest.mark.parametrize('dtype',[np.float64,np.longdouble],ids=['double','platform-long-double'])
+def test_complete_input_storage_is_counted_before_output_allocation(dtype,monkeypatch):
+    m=FrameTemporalControls(np.ones((3,1)),blocks=1,groups=1);rows=1024;j=np.zeros((rows,3),dtype=dtype);frames=np.zeros(rows,dtype=int);minimum_live_bytes=j.nbytes+rows*3*8+m.weights.nbytes+frames.nbytes
+    def forbidden(*args,**kwargs):raise AssertionError('Output allocated before rejecting an undersized complete budget')
+    monkeypatch.setattr('frame_temporal_controls.np.empty',forbidden)
+    with pytest.raises(ValueError):m.lift(j,frames,chunk_rows=1,maximum_bytes=minimum_live_bytes-1)
+
+
+@pytest.mark.parametrize('bad',[np.nan,np.inf,1e7])
+def test_chunk_validation_reaches_last_row_before_output_allocation(bad,monkeypatch):
+    m=FrameTemporalControls(np.ones((3,1)),blocks=1,groups=1);j=np.zeros((17,3));j[-1,-1]=bad
+    def forbidden(*args,**kwargs):raise AssertionError('Invalid tail omitted before output allocation')
+    monkeypatch.setattr('frame_temporal_controls.np.empty',forbidden)
+    with pytest.raises(ValueError):m.lift(j,np.arange(17)%3,chunk_rows=2)
