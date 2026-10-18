@@ -546,3 +546,88 @@ as well as the current proposal. It does not cover complete 2,017-time geometry,
 continuous collision, self-collision, dynamics, action correctness, engine
 imports or human review/cleanup. The actor A/box collision still fails, and the
 full-project release criteria remain open.
+
+## Exact crossing diagnosis and a fixed-scene obstruction
+
+`scripts/native_mesh_prop_crossing_witness.py` connects completed fitter probes
+to the existing `exact_triangle_crossing_witness.py` rational construction. The
+plane/intersection-interval approach is described in
+[Möller's original paper](https://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/pubs/tritri.pdf);
+the repository's rational implementation is independent code, not copied C.
+
+```powershell
+python scripts/native_mesh_prop_crossing_witness.py pose-permissions.json reports/my-guarded-fit/fit/probe-007 reports/my-crossing-witnesses
+```
+
+The collector verifies the original producer permission/input hashes, archived
+implementation, completed history/decision, exact cumulative scene manifest,
+complete geometry condition populations and every ordered policy time. It
+reconstructs all complete actor/prop world-vertex arrays from the source and
+checks them byte for byte against the transport archive before using triangle
+IDs. Every selected-prop surface record is retained; exceeding its explicit
+budget rejects collection instead of truncating it. Each record's floating
+classification is replayed, then the represented binary-float triangles receive
+an exact rational interior witness when possible. Boundary, coplanar and other
+unproved outcomes stay unresolved. Float barycentric approximations are exported
+for later fitting, with their reconstruction error reported separately.
+
+All **24** focused tests pass locally and on Windows/Ubuntu at `66ec672` in
+[run 39082774483](https://github.com/DocMorphic/strep/actions/runs/39082774483).
+They cover strict rational witnesses, unresolved outcomes, altered triangle IDs
+and classifications, complete generated producers, original permission epochs,
+missing pairs/times, changed source snapshots, no record truncation, and altered
+world arrays even when given a new internally valid archive receipt. Local guard:
+35.922 s / 123,240,448 bytes / 53 observations. These are source/fixture tests.
+
+For the retained v2 probe 7, **all 113 recorded actor A/box crossings receive
+exact strict-interior proofs**, with no unresolved record. All nine-time world
+arrays reproduce. This proves intersections of the represented triangles after
+skinning/transform rounding; it does not certify earlier arithmetic, continuous
+motion or whole-scene clearance. Collection guard: 3.094 s / 152,588,288 bytes /
+21 observations. No correction is applied.
+
+A local diagnostic uses all 113 pairs on both sides (226 moving-plane rows), two
+finite-difference steps and four angular trust boxes. Its eight affine solves
+find no common positive separating margin. Those numerical local models alone
+are **not** a nonlinear or global infeasibility proof.
+
+A separate, locally retained obstruction study then finds a stronger geometric
+witness for this particular locked scene:
+
+- The source prop is verified to be an eight-corner, twelve-triangle box whose
+  triangles exactly cover its six faces. Its selected face grip admits an inward
+  half-ball of radius 99.000004 mm, independent of the box's rigid orientation.
+- Four fixed source vertices, three from actor A and one from actor B, surround
+  the required contact point. Exact rational barycentric and face-plane checks
+  verify that their tetrahedron contains a ball of radius at least 0.173408 mm
+  centred at that point. The original grip position tolerance is 0.001 mm.
+- Each of those vertices is close enough to the grip that any box orientation
+  contains at least one of them strictly inside its inward half-ball. Its mesh
+  component also contains a vertex outside every permitted rigid box placement.
+  Verified source edge paths connect each inside candidate to its outside
+  witness, so a character surface must intersect the box boundary.
+
+An independent verifier reconstructs the source inputs and checks exact box
+face coverage, positive tetrahedron weights, **squared** plane-distance bounds,
+near-vertex bounds and four explicit mesh paths. It uses no hull, triangulation
+or LP construction solver. The builder uses Qhull only to find candidate source
+vertices; acceptance depends on exact rational checks. Builder guard: 2.063 s /
+123,084,800 bytes / 20 observations. Independent verifier: 2.063 s /
+151,367,680 bytes / 20 observations.
+
+This is a sufficient obstruction for the **fixed represented geometry and ideal
+rigid-grip model at the mandatory contact time**, including arbitrary rigid
+orientations and grip displacement within the original positional tolerance.
+It does not rule out solutions that edit a character pose or change authored
+grip/asset constraints, and it does not certify earlier skinning or all floating
+rigid-transform errors. The source decoder is shared; rational geometry and
+connectivity checks are independently composed. This diagnostic is not yet an
+automatic fitter preflight.
+
+Further box-only rotation tuning on this exact locked fixture cannot produce a
+collision-free result under that model. Keep the original constraints and failed
+outputs; do not enlarge tolerances to call it solved. Next work is an explicit
+obstruction preflight and body-aware scene fitting under the original body/prop
+permissions, alongside broader action/object/rig evaluation. This is a limitation
+of one constrained fixture, not evidence that the full animation objective is
+unachievable. The full-project goal and all release requirements remain active.
