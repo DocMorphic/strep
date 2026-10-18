@@ -34,7 +34,14 @@ behavior, embedding and ownership, and reject missing/invalid/out-of-budget
 inputs. Both source workflows include the new suite. Evidence:
 `reports/frame-temporal-controls-tests-v2`; the earlier passing v1 remains
 preserved before the test gained its own standalone import-path setup.
-Hosted results are separate and will be recorded when available.
+The first hosted dispatch,
+[run 39154259698](https://github.com/DocMorphic/strep/actions/runs/39154259698),
+passes 26 existing guidance/skin cases on each OS. It does not cover the new
+timing-map suite. The corrected full-group dispatch,
+[run 39154504770](https://github.com/DocMorphic/strep/actions/runs/39154504770),
+passes **349 cases on each Windows/Ubuntu job** at source commit
+`ea2bea4825bef00ebdaa609abd5b453052462fd2`. Both dispatches' logs and receipts
+remain retained and their scopes stay separate.
 
 ## What the real-clip diagnostics establish
 
@@ -49,8 +56,11 @@ conditions and mandatory point cuts remain hard. Requiring every scalar
 condition, all failing partner conditions, or either failing partner direction
 separately returns `PrimalInfeasible`. Repairing the failed normal alone has a
 usable local direction. This distinguishes an unresolved local body constraint
-problem from a failure caused solely by tighter search margins. No direction
-from this diagnostic is selected as an animation.
+problem from a failure caused solely by the caller's extra search targets. The
+existing solver still uses its 1e-8 numerical interior reserve. Infeasible
+statuses are not independently verified dual certificates or proof about exact
+boundary feasibility. No direction from this diagnostic is selected as an
+animation.
 
 The three-knot experiment retains the same 11 selected joints per actor,
 five-degree rotation caps, two-centimetre constant root offsets, edit envelope
