@@ -29,6 +29,15 @@ contacts, geometry, import and human quality.
 All **264 focused source cases pass locally**: the previous 237, 25 new export
 cases and two existing GLB checks. The new cases cover exact zero/protected
 values, shared-sampler isolation, mixed rotation/root edits, source ownership,
-strict stored rounding failure and invalid/incomplete declarations. Hosted
-results and the retained diagnostic's real export will be recorded when
-complete. Source evidence: `reports/stored-track-deltas-tests-v1`.
+strict stored rounding failure and invalid/incomplete declarations. The same
+**264 cases pass on Windows and Ubuntu** at
+`559d7da03abb1f19573880d03423780ad0e10380`
+([hosted run](https://github.com/DocMorphic/strep/actions/runs/39144245348)).
+
+The [retained diagnostic export](exploratory-export-replay-v1.md) independently
+preserves 35,894 zero/unpermitted saved keys across both characters, all
+protected/unselected local channels, original binary payloads and strict
+rotation/root limits. Its numerical partial improvement survives raw and
+saved replay, but 41 physical failures keep the animation unapproved.
+Source evidence: `reports/stored-track-deltas-tests-v1` and
+`reports/exploratory-export-progress-v1`.

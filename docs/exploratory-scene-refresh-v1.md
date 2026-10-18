@@ -127,3 +127,7 @@ continuous/edge/self-collision or forces, planted contacts, engine behavior,
 realistic semantics or human cleanup time. Broad held-out actions, rigs,
 objects and partners remain required. Model weights, training data and model
 inference are unchanged; the entire-project goal remains active.
+
+The subsequent [native/saved replay](exploratory-export-replay-v1.md) now
+confirms the partial numerical retention in the actual files. It preserves
+this study's original result and keeps all 41 physical failures visible.
