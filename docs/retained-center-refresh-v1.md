@@ -83,3 +83,80 @@ directional checks pass at both declared step sizes. Baseline auditor margins
 agree with the saved retained pose to 8.3711e-14 in normalized units, with
 identical strict pass masks. This is a successful derivative-model rebuild;
 it does not turn the retained animation's existing physical failures into passes.
+
+## Global constraints and finite-difference diagnosis
+
+The global model refreshes all 16 scalar rows and 33 vector components through
+216 temporal controls. Full original joint and skin motion populations are
+scanned. The first attempt stops on duplicate thread-runtime initialization;
+the next version reuses the original loaded tracks for its separate dense
+reference. Baseline scalar and vector values, selected motion-peak identities
+and strict masks then match that reference exactly.
+
+All 16 scalar derivative checks pass at 1e-6 and 1e-7. One acceleration-vector
+component fails at 1e-6 and two fail at 1e-7. Those failures remain recorded in
+`reports/retained-center-temporal-model-v2`; its overall derivative flag is
+still false. It is not rewritten as a passing run.
+
+A separate six-step diagnostic finds all scalar and vector components passing
+the same 0.001 relative threshold at both predeclared qualification steps,
+3e-5 and 1e-5. All original motion-peak identities remain unchanged. Independent
+forward-mode pose derivatives and a separate skin chain compare every one of
+the 216 columns for both problematic cones. Maximum component differences are
+2.99e-16 and 3.17e-16, with exact primal vectors. Together with worsening
+finite-difference errors as the step shrinks, this supports numerical
+cancellation rather than a changed peak or an incorrect analytic derivative.
+
+This qualification retains every row and vector component. It changes neither
+the derivative threshold nor physical criteria. The first diagnostic admission
+defers without starting a worker; a fresh version uses a longer admission
+window with the same 1,536 MiB expectation and enforced limits. Evidence is
+`reports/retained-center-global-diagnosis-v2`. A solver proposal still needs
+actual complete-clock motion validation before any step can be retained.
+
+## Complete refreshed proposal
+
+The complete model has 7,389 rows, 216 controls, 517 mandatory cuts and 155
+norm cones. The peak formulation still uses 433 variables. Its complete
+assembly estimate is 59,034,576 bytes within the existing 64 MiB allowance;
+sampled process tree peak is 229,834,752 bytes under 512 MiB.
+
+At normalized joint step radius 0.03125, Clarabel reports **AlmostSolved**.
+The raw direction independently satisfies every original box, author ball,
+step ball, physical affine norm and mandatory linear cut strictly. No
+optimality certificate is claimed. Within this refreshed model, peak deficit
+decreases from 5.261024 to 5.218507 and summed positive deficits from
+7,250.925037 to 7,084.818332. Those sums use the same new point population;
+they are not compared with a differently populated older model as a quality
+improvement. The proposed macro working peak also decreases. These normalized
+linear predictions are not physical contact approval or measured motion.
+
+The proposal is saved in `reports/retained-center-peak-v1`. The existing
+accepted diagnostic motion remains unchanged until actual validation passes.
+
+## Actual validation outcome
+
+The full step fails actual hand-to-hand contact and is rejected before geometry
+evaluation. The half-step then completes all 120 frames and all 496 conditions.
+Fresh replay of both the current and original benchmark guards accepts it:
+all 449 explicitly required conditions and all 456 previously passing conditions
+remain valid. Two existing failures are repaired, reducing failed conditions
+from 40 to 38. The working peak decreases from 5.281024 to 5.260118.
+
+This remains a small **raw diagnostic improvement**. Worst partner depth changes
+from 31.305121 mm to 31.200592 mm and still fails the unchanged 5 mm screen.
+The palm gap is 29.991889 mm against the development 30 mm screen; this is not
+physical touch, and the small margin needs fresh serialization/import checks.
+No new candidate has been exported, selected in Studio, made a clean training
+target or approved for quality or release. Original references and native
+assets remain unchanged.
+
+The separate stored-model audit replays all point identities, complete column
+mapping and resource bindings. Frame-local lifting has zero component
+difference, and all global derivative arrays are preserved byte for byte.
+A further outcome reader recomputes the complete 496-row decisions from stored
+raw arrays and replays both guards. These readers do not rerun all geometry or
+substitute for visual review. Records are `reports/retained-center-model-audit-v1`,
+`reports/retained-center-validation-v1` and `reports/retained-center-outcome-v1`.
+Next export the retained 216-control motion and check original-clock native,
+saved and actual engine behavior before promoting any asset.
