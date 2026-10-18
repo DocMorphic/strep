@@ -34,6 +34,7 @@
     "tests/test_native_track_profiles.py",
     "tests/test_native_constant_norm_factor.py",
     "tests/test_native_objective_null_reset.py",
+    "tests/test_native_constant_affine_factor.py",
     "tests/test_native_world_hinge_step.py",
     "tests/test_native_world_minimax_step.py",
     "tests/test_native_scene_world_derivatives.py",
