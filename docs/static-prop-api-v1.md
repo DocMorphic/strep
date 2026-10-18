@@ -445,3 +445,104 @@ they are not an independent nine-time replay. Guard: 44.219 s / 223,707,136 byte
 engine imports, action semantics and human cleanup/review remain open. The
 original Studio scene remains selected. Next: make the experimental guard a
 supported, tested fitting option before broader scene/action/rig evaluation.
+
+## Supported guarded fitting, version 2
+
+`scripts/native_mesh_prop_scene_fit_v2.py` is the supported guarded entry point.
+It reuses the unchanged v1 geometry/guidance code, preserving the exact source
+used by earlier studies. It accepts the same original pose permissions, scene
+policy and permission-bound cumulative starting controls:
+
+```powershell
+python scripts/native_mesh_prop_scene_fit_v2.py pose-permissions.json mesh-policy.json warm-start.json reports/my-guarded-fit --maximum-evaluations 128 --maximum-iterations 20 --backtrack-steps 8
+```
+
+The original and starting candidate receive complete policy pose/contact/mesh
+checks **before** optimization. A starting candidate qualifies for preservation
+only if it satisfies the original pose budgets, all point contacts, original
+passing conditions and non-worsening source collision metrics. The fitter then
+protects the union of original passes and that qualified candidate's passes
+across every measured time. A previously repaired condition cannot be traded
+away to repair a different source failure. An unqualified starting proposal
+does not become an authoring reference or gain new permissions.
+
+If the edited key is absent from an explicit geometry clock, v2 adds it while
+retaining every requested time. The requested/effective clocks and effective
+policy are saved separately; the supplied policy file and physical thresholds
+remain unchanged. Exceeding the existing sample budget is an error rather than
+an excuse to drop times. This prevents an endpoint-only clock from hiding a
+known bad edited pose.
+
+At the edited key, passing mesh pairs from the original and qualified starting
+candidate supply signed surface-probe constraints. Both query directions and
+complete target volumes are used, with conservative box bounds outside the
+query region. Provably disjoint entities remain explicitly recorded. These
+constraints guide proposals; they do not certify complete triangles, contacts,
+other times or continuous motion. Primitives, ground, all mesh pairs and all
+declared contacts still receive the full original postchecks.
+
+Optimizer requests and unique measured controls have separate counts. Every
+unique evaluation and its guard margins are retained. The budget stop and a
+failure to find any guard-feasible proposal are explicit; a fallback is not
+labelled feasible. Eight line fractions, from full to 1/128 by default, remain
+controls relative to the original source. Frozen keys, geometry and character
+motion are unchanged; neither optimizer output nor export success grants
+selection or release approval.
+
+All **27** focused tests pass locally and on Windows/Ubuntu at `3d501bc` in
+[run 39081465684](https://github.com/DocMorphic/strep/actions/runs/39081465684).
+They exercise conservative signed bounds, invalid/duplicate pair selection,
+guarded versus colliding poses, cached evaluation limits, an explicit infeasible
+fallback, actual objective reduction, complete generated-fixture export checks,
+preserving qualified repairs, rejection of an injected repair-breaking proposal,
+and adding a missing edited key without dropping supplied times. Local guard:
+26.719 s / 136,466,432 bytes / 44 observations. These are source/fixture checks,
+not whole-system, real-action or human quality acceptance.
+
+The supported v2 real-scene run starts from the independently checked
+24.266305 mm candidate, bound to the **original** permissions. Its policy covers
+all nine nearby times from the outset. Both earlier repaired conditions at key
+64 are protected: 95 original passing identities become a 97-identity protected
+union. All ten candidates receive complete nine-time policy checks, including
+450 actor/prop and prop/prop pair evaluations in total, plus actor-scene and
+ground conditions. All declared contacts and 2,017 sampled pose-budget times are
+checked for each candidate.
+
+The search retains 128 unique measured controls from 278 requests and stops at
+its explicit evaluation limit, without claiming convergence. A full step with
+16.099732 mm peak penetration introduces a new partner collision and is rejected.
+Several smaller steps preserve all prior passing conditions but have more
+crossing records than the starting candidate, so they do not replace it.
+Probe 7, a 1/32 step, improves every required comparison without a new failure:
+
+| Nine-time measurement | Starting candidate | Supported v2 probe 7 |
+| --- | ---: | ---: |
+| Failed geometry times | 1 | 1 |
+| Failed conditions | 2 | 2 |
+| Surface crossing records | 113 | 113 |
+| Peak vertex penetration | 24.266305 mm | 23.627057 mm |
+| Earlier repaired identities retained | 2 | 2 |
+
+The approximately 2.6% reduction is numerical progress, not a collision-free
+grasp. The producer completes under its unchanged guard at 486.422 s /
+401,629,184 bytes / 492 observations; the resource trace independently replays.
+Character clips, original prop source, frozen endpoints, author limits and
+physical thresholds remain unchanged. Nothing is promoted into Studio.
+
+Two separate independent replays reconstruct the complete starting reference
+and the selected v2 proposal. Each freshly recomputes all 45 complete mesh pairs
+at all nine declared times and reproduces every world-vertex array and all
+2,017 pose-budget samples. The second inherits the first's verified reference
+bindings, reconstructs the original/qualified-initial condition union and checks
+exact original-relative line provenance and componentwise improvement. Neither
+imports any new mesh/pose/fitting backend; existing collision/interpolation
+libraries are reused, so these remain independent composition/transport replays,
+not separate geometric algorithms. Reference guard: 42.016 s / 299,122,688 bytes
+/ 59 observations; selected-proposal guard: 41.062 s / 303,878,144 bytes /
+58 observations.
+
+This closes the missing independent nine-time replay for the starting reference
+as well as the current proposal. It does not cover complete 2,017-time geometry,
+continuous collision, self-collision, dynamics, action correctness, engine
+imports or human review/cleanup. The actor A/box collision still fails, and the
+full-project release criteria remain open.
