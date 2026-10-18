@@ -24,8 +24,19 @@ protected/unselected values, violations outside the requested subset, invalid
 selections and source ownership. Numerical pose/Jacobian comparisons are
 technical checks; they do not add a physical acceptance tolerance.
 
-Source evidence: `reports/sampled-articulated-track-tests-v1`. Hosted results
-and the real positive-vertex bundle comparison will be recorded when complete.
+The same **202 cases pass on hosted Windows and Ubuntu** at
+`6a91e243fd2ad716ebbe8e7f5ed5b5fb43834f90`
+([focused run](https://github.com/DocMorphic/strep/actions/runs/39139808709)).
+In the real paired-character diagnostic, sampled world poses and complete
+depth arrays match the full-clock reference exactly at four original frames.
+All 49 retained positive-vertex directional derivative checks pass the
+predeclared 0.1% technical threshold; complete depth pass masks also match.
+All original surface vertices and triangles remain in those queries.
+
+Source evidence: `reports/sampled-articulated-track-tests-v1` and
+`reports/full-clock-positive-bundle-v1`. See the
+[competing-vertex experiment](competing-vertex-bundle-v1.md) for the resulting
+solver and nonlinear failures.
 Sampling only reduces local derivative work. All original mesh vertices,
 frames, motion limits, exported-file checks and remaining release obligations
 still have to be evaluated before accepting an animation.
