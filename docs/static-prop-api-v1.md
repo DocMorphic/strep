@@ -1105,3 +1105,92 @@ composition, immutable strided inputs and incomplete/invalid/non-rigid/budget
 rejection. Local guard: 16.422 s / 104,902,656 bytes / 34 observations. The
 coordinate convention is documented in the primary-source ledger; the array
 implementation and product-rule composition are independent code.
+
+Both new helpers now pass their focused Windows/Ubuntu workflows at the tested
+source revisions: guard conflicts **34 per OS** at `250b431`
+([run 39090873333](https://github.com/DocMorphic/strep/actions/runs/39090873333)),
+and inverse rigid frames **31 per OS** at `63d860a`
+([run 39091231807](https://github.com/DocMorphic/strep/actions/runs/39091231807)).
+Windows/Ubuntu durations are 0.36/0.28 s and 0.56/0.42 s respectively. These
+focused source passes do not imply a complete repository or release pass.
+
+### Refreshed guide around the verified partial incumbent
+
+The new world model reconstructs all 383,617 current conditions byte for byte,
+checks two full directions in its 319-group/135-column representation, and
+repeats one perturbation without the invariant-pose cache. The original source
+epoch, cumulative controls, clocks and frozen keys remain authoritative. Guard:
+271.516 s / 288,546,816 bytes / 283 matched observations.
+
+The refreshed timeline model verifies all 7,262 affected/required derivative
+rows, retains **6,436 passing guards and all 40 repairs**, and checks its total
+world squared-error gradient against complete-world perturbations. Invariant
+original contacts, pose/pair observations and all native coefficient bounds
+remain represented. Guard: 50.265 s / 341,393,408 bytes / 67 observations.
+
+The named geometry ledger now covers 16 reports/1,933 crossing occurrences,
+still 269 unique pairs (A 228 / B 41). The prop-local composition evaluates
+all 2,421 vertex-combination rows and all 139 columns. Two actual directions
+check 627 world and 627 local scalar point rows plus every projection row;
+the fixed source clearance is held constant in those perturbations. Maximum
+point error is 3.021e-10 m and scaled projection error 1.702e-8. Complete prop
+self-frame reconstruction agrees with local geometry within 2.776e-17 m, and
+its full 139-column derivative cancels within 2.221e-16. Projection values
+agree with transported world directions within 1.066e-14 scaled. Guard:
+46.156 s / 227,012,608 bytes / 63 observations. This qualifies the coordinate
+guide, not a saved clip, full scene or animation quality.
+
+The complete prop-local trial uses all 269 pairs/2,421 projection rows in its
+3,527-row objective, 6,436 passing motion guards, 40 repaired witnesses, 156
+protected triangle pairs and 5,402 norm cones. Every declared step completes
+all 944,562 raw/saved motion checks, preserves every repair and passing row,
+improves peak/total motion error, and repairs row 56719 in both modes. Every
+step also completes nine-time mesh queries, all 2,017 sampled prop bounds and
+contacts, retaining the 97 previously passing geometry identities.
+
+However, **all four candidates are rejected** against the current incumbent's
+113 crossing records and 23.531278-mm maximum depth:
+
+| Joint fraction | Raw normalized motion peak | Crossing records | Maximum depth (mm) |
+| --- | ---: | ---: | ---: |
+| 1 | 43.033387 | 115 | 23.626764 |
+| 1/2 | 43.283110 | 115 | 23.578343 |
+| 1/4 | 43.408062 | 115 | 23.554635 |
+| 1/8 | 43.470560 | 115 | 23.542923 |
+
+The underlying run fails **only during final report writing**, referencing
+undefined inherited-direction metadata after all four checkpoints and source
+checks. That raw failure remains unchanged: 584.547 s / 522,432,512 bytes /
+589 observations, under the unchanged 512 MiB cap. A fresh recovery rechecks
+every archived scalar, repair witness, geometry condition/metric table,
+observation receipt and source binding without rerunning the solver, motion
+or geometry. Recovery: 24.641 s / 119,574,528 bytes / 42 observations. It
+qualifies the completed rejected checkpoints; it does not relabel the original
+failed run as successful. No new incumbent is selected, row 56719 is not added
+to the selected 40-repair reference, and the conditional independent candidate
+export replays are not run.
+
+### Interior-depth coverage diagnosis
+
+A fresh depth study evaluates **all 18,056 actor-A vertices** against the
+complete 12-face represented convex box for the incumbent and all four saved
+candidates: **90,280 vertex queries**. It verifies saved world-array identity,
+convex/closed-wound preconditions, and every triangle signed distance against
+independent facet-slack depth. Values agree within 2.568e-16 m; all depth and
+missing-vertex ID arrays are archived. Guard: 11.266 s / 132,612,096 bytes /
+29 matched observations. The original 5-mm penetration tolerance is unchanged.
+
+The crossing-derived guide directly observes only **177 actor-A vertices**.
+In the incumbent, 373 vertices exceed the existing penetration limit, of which
+**324 are outside that direct point population**. The deepest vertex, **12006**
+(`0/0/12006`), is absent from that population in all five cases. Trial counts
+are 373–375 vertices over tolerance, with 324–325 outside the direct guide.
+The full-mesh acceptance check correctly catches these failures; successful
+coordinate derivatives cannot compensate for missing metric observations.
+
+The next guide must add complete streamed interior-depth observations and
+gradients while preserving the original source/clock/contact/cap and full-mesh
+gates. This particular value agreement is for the verified convex box; it does
+not extend a facet model to arbitrary concave props or approve an animation.
+The original Studio selection, entire project scope and all release criteria
+remain unchanged.
