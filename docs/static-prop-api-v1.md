@@ -1681,3 +1681,73 @@ row budget. Random feasible local directions verify equality with the
 unreduced hinge objective when every returned passing-row hard constraint is
 retained. This is a local linear-model equivalence, not nonlinear motion
 approval. Guard: 16.406 s / 99,745,792 bytes / 34 observations.
+
+### Complete key-63 guards and rejected numerical proposals
+
+The 43 objective-partition fixtures also pass on both Windows and Ubuntu at
+`ae9d9b6` ([focused run 39099756189](https://github.com/DocMorphic/strep/actions/runs/39099756189)):
+0.55 s and 0.33 s, respectively. No engine or motion approval follows from
+these source tests.
+
+The fresh **[62, 63, 64]** composed guide retains all 1,106 groups, 135 columns
+and **8,069 affected/required scalar rows**: 8,008 temporally affected rows plus
+61 additional repair witnesses. Every required witness remains present. The
+passing raw/saved masks agree; all **7,152 passing rows** receive hard guards,
+while all **917 failing rows** receive objective terms. Thus the objective has
+**2,023 terms**, without selecting a top-error subset. Every original group
+remains, including constant groups. Native, scalar-guard and full squared-error
+directional checks pass. Original contacts and the 120 pose/pair observations
+are invariant for this block. Guard: 71.688 s / 354,705,408 bytes / 72 observations.
+
+The complete vector model retains **7,152 world norms, 21,456 components and
+135 columns**. Its canonical anchors match the scalar guide byte for byte;
+maximum scalar projection difference is 4.719e-15. Both full nonlinear vector
+directional comparisons pass, with maximum differences 7.872e-7 and 5.396e-7.
+The complete vector Jacobian uses 23,172,480 bytes and the bounded pose cache
+peaks at 27,605,760 bytes. Guard: 95.250 s / 261,980,160 bytes / 95 observations.
+These local models remain guidance for mandatory nonlinear and saved-file gates.
+
+The actual proposal retains all **5,400 native plus 7,152 world norm constraints
+= 12,552 norms**. All 8,251 original scalar cuts are archived. Exactly 6,352
+have every stored coefficient equal to zero and a nonnegative upper bound:
+their affine inequalities are explicit tautologies. The other 1,899 scalar
+cuts enter the solver. This uses exact equality, never a small-coefficient
+threshold. A zero scalar gradient does **not** establish physical invariance;
+every corresponding vector norm is retained, including its transverse motion.
+The complete row-role and scalar-cut partitions are recorded for replay.
+
+One initial worker fails before solving because two report dictionaries supply
+the same `scope` keyword. Its raw exception and resource trace are preserved;
+a fresh worker corrects only that report construction. The subsequent three
+numerical proposals all fail the existing **1e-8** norm-residual admission:
+
+| Fresh proposal | Trust bound | Maximum norm excess | Outcome |
+| --- | ---: | ---: | --- |
+| Original norm scaling | 0.02 | 5.510121e-8 | Rejected despite `Solved` |
+| Positive per-cone unit-radius scaling | 0.02 | 5.981269e-8 | Rejected despite `AlmostSolved` |
+| Same scaling, quarter trust bound | 0.005 | 2.031963e-8 | Rejected despite `Solved` |
+
+The positive scaling is algebraically equivalent in exact arithmetic. It
+retains every cone, records all positive scales and checks two complete
+reconstructions (maximum differences below 4.45e-16). The original-unit residual
+gate is retained as an additional check; neither normalization nor a smaller
+search box changes physical caps, tolerances or saved-file acceptance.
+The solver's status alone is insufficient. No direction is admitted, no new
+clip is exported, and conditional full motion/geometry/independent replays and
+reference registration are **not executed**. These numerical admission failures
+are not proofs that the action or rig is infeasible.
+
+The three completed proposal guards use 313,450,496 / 315,920,384 / 316,112,896
+peak bytes and finish in 65.469 / 65.437 / 60.344 seconds. The initial report
+failure uses 221,343,744 bytes and finishes in 36.765 seconds. All resource/source
+bindings replay under unchanged 512-MiB tree RSS and 600-MiB free-RAM policies.
+The memory retry therefore permits this work; it does not certify motion quality.
+
+The verified fitting reference remains **64 repaired witnesses, 6,058 source-rate
+failures, 113 crossing records, two failed scene conditions and 23.475561-mm
+maximum depth**. Studio selection and all original release requirements remain
+unchanged. Next diagnose the norm conditions responsible for numerical admission
+failure and improve feasibility handling without relaxing the gates, then run
+all mandatory motion, contact, prop, mesh and independent saved-file checks on
+any admitted candidate. Broader action/rig/scene coverage and developer/animator
+cleanup evidence remain requirements of the same entire-project goal.
