@@ -17,8 +17,8 @@ population. Explicit size bounds reject oversized comparisons.
 `kimodo_scene_retention.py` wraps the existing energy proposal. Its three
 predeclared rays (1, 1/2, 1/4) must each lower energy and preserve every supplied
 metric relative to that call's original clean prediction. Every rejection and
-inner energy proposal remains recorded. No retained ray returns the original
-prediction object. Disabled/out-of-schedule calls preserve the existing exact
+inner energy proposal remains recorded. If no ray passes, it returns the
+original prediction object. Disabled/out-of-schedule calls preserve the existing exact
 passthrough behavior without calling metric or energy evaluators.
 
 This local guard is separate from comparing the finished sampled clip against
@@ -69,5 +69,46 @@ targets or clean training data. Local evidence is under
 
 Actual matched checkpoint sampling and independent saved-file validation are
 the next evidence. Report zero retained proposals as a failed correction
-attempt, not a solved interaction. Full primitive triangle/partner checks,+semantic and action breadth, retargeting, style/stat calibration, transitions,
+attempt, not a solved interaction. Full primitive triangle/partner checks,
+semantic and action breadth, retargeting, style/stat calibration, transitions,
 engine import and real review/cleanup stay part of the same entire-project goal.
+
+## Actual authored-scene trial
+
+`reports/authored-scene-guidance-pilot-v1` completes nine fresh unchanged-
+checkpoint samples: ordinary, energy-only and metric-retained modes for the
+moving-box actor and both high-five actors. The prompts are the original
+development descriptions, seeds 77 / 77 / 88 respectively, 180 / 120 / 120
+frames, 100 steps, CFG [2,2], no postprocessing, and the same five late mapped
+base timesteps [0,10,20,30,40]. Existing validated v0 cached text features and
+the established CUDA transport are retained. This is a functional study on
+known development scenes, not a quality comparison against the best prior
+pose-guided baseline or held-out release evaluation.
+
+| Actor | Ordinary maximum contact error | Energy-only maximum contact error | Retained changes |
+| --- | ---: | ---: | ---: |
+| Moving box A | 824.015 mm | 822.931 mm | 0 |
+| High-five A | 991.971 mm | 981.104 mm | 0 |
+| High-five B | 932.516 mm | 928.321 mm | 0 |
+
+All three energy-only final clips fail complete raw-metric nonregression.
+Per-call guards reject all 15 inner energy steps and all 45 fixed metric-ray
+trials. Each retained-mode sample has **every raw array byte-identical to its
+ordinary baseline**. Finished raw metric arrays are also compared separately:
+1,916 scalars for the box actor and 840 for each high-five actor. Baseline
+errors remain failed errors. **Zero accepted edits is a failed correction
+attempt, not a successful interaction or motion-quality pass.** No clip is
+adopted. Complete object tracks, all original contact IDs/intervals and
+orientation targets remain bound; partner targets remain fixed source motion.
+
+The model study completes in 154.532 s with 1,749,499,904-byte peak tree RSS,
+within the predeclared 2 GiB expected / 3 GiB maximum policy and unchanged
+600 MiB reserve. No weights, data, encoder, default generator or release gates
+are changed.
+
+`authored_scene_observations.py` adds an independent model-free observer of
+all native scene metric arrays from supplied raw or saved GLB poses. It uses
+the established NumPy skin/primitive libraries, excludes guidance and Torch,
+keeps exact row populations and recomputes actual normal/tangent triangles.
+The source suite now passes **67 cases**, including five additional complete
+observation tests. Larger saved-file replay remains separate evidence.

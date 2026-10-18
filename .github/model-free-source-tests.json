@@ -37,6 +37,7 @@
     "tests/test_native_constant_affine_factor.py",
     "tests/test_scene_metric_retention.py",
     "tests/test_compile_scene_guidance.py",
+    "tests/test_authored_scene_observations.py",
     "tests/test_native_world_hinge_step.py",
     "tests/test_native_world_minimax_step.py",
     "tests/test_native_scene_world_derivatives.py",

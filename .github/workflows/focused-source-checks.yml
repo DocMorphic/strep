@@ -13,6 +13,7 @@ on:
           - tests/test_kimodo_scene_retention.py
           - tests/test_scene_metric_retention.py
           - tests/test_compile_scene_guidance.py
+          - tests/test_authored_scene_observations.py
           - tests/test_native_triangle_pair_projection.py
           - tests/test_native_projection_guard_conflicts.py
           - tests/test_native_inverse_rigid_frame.py
@@ -168,4 +169,4 @@ jobs:
       - name: Verify authored scene wiring and strict metric retention
         if: ${{ inputs.test_file == 'tests/test_kimodo_scene_retention.py' }}
         run: >-
-          python -m pytest -q -s --showlocals tests/test_kimodo_scene_retention.py tests/test_scene_metric_retention.py tests/test_compile_scene_guidance.py tests/test_authored_skin_scene_energy.py tests/test_kimodo_scene_guidance.py tests/test_linear_skin_operator.py
+          python -m pytest -q -s --showlocals tests/test_kimodo_scene_retention.py tests/test_scene_metric_retention.py tests/test_compile_scene_guidance.py tests/test_authored_skin_scene_energy.py tests/test_kimodo_scene_guidance.py tests/test_linear_skin_operator.py tests/test_authored_scene_observations.py
