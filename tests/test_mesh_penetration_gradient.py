@@ -25,8 +25,9 @@ def test_complete_depths_match_existing_triangle_query_and_outside_zero():
     record=operator.records[0];assert record['source_vertices']==3 and record['all_source_vertices_considered'] and record['original_triangle_mesh_queried']
 
 
-def test_finite_difference_gradcheck_moves_both_bodies():
-    mesh,source,target=fixture();operator=MeshPenetration(mesh.faces,maximum_records=512)
+@pytest.mark.parametrize('mode',['auditor','minimum'])
+def test_finite_difference_gradcheck_moves_both_bodies(mode):
+    mesh,source,target=fixture();operator=MeshPenetration(mesh.faces,maximum_records=512,distance_mode=mode)
     assert torch.autograd.gradcheck(operator,(source,target),eps=1e-6,atol=1e-5,rtol=1e-4)
 
 
@@ -108,3 +109,25 @@ def test_second_derivative_is_not_silently_invented():
     mesh,source,target=fixture();depth=MeshPenetration(mesh.faces)(source,target)
     first=torch.autograd.grad(depth.sum(),source,create_graph=True)[0]
     assert not first.requires_grad
+
+
+def test_minimum_mode_matches_complete_small_mesh_brute_force():
+    mesh,source,target=fixture();source=source.detach().clone();source[0]=torch.tensor([.80000001,.13,.8])
+    operator=MeshPenetration(mesh.faces,distance_mode='minimum');depth=operator(source,target)
+    _,distance,_=trimesh.proximity.closest_point_naive(mesh,source.numpy())
+    auditor=np.maximum(trimesh.proximity.signed_distance(mesh,source.numpy()),0.)
+    np.testing.assert_allclose(depth.detach().numpy(),np.where(auditor>0,distance,0.),atol=1e-14,rtol=0)
+    np.testing.assert_array_equal(operator.last_auditor_depths,auditor)
+    assert operator.records[0]['distance_mode']=='minimum'
+
+
+def test_original_auditor_observation_is_owned_and_distinct_from_objective():
+    mesh,source,target=fixture();operator=MeshPenetration(mesh.faces,distance_mode='minimum');operator(source,target)
+    original=operator.last_auditor_depths;original[:]=99
+    assert operator.last_auditor_depths.max()<99
+    assert 'auditor_depths_sha256' in operator.records[0] and 'optimization_depths_sha256' in operator.records[0]
+
+
+def test_implicit_distance_policy_rejects():
+    mesh,_,_=fixture()
+    with pytest.raises(ValueError):MeshPenetration(mesh.faces,distance_mode='automatic')

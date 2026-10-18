@@ -33,7 +33,7 @@ saves input versions so an in-place edit before backward rejects stale
 derivatives. Second derivatives are explicitly unsupported. There is no new
 gradient of triangle topology, checkpoint weights or training data.
 
-Calls accept 1–32,768 source vertices, 4–32,768 target vertices and
+Calls accept coordinates within ±10,000 m, 1–32,768 source vertices, 4–32,768 target vertices and
 4–65,536 target faces. Target meshes must be closed, consistently wound,
 outward oriented and nondegenerate; malformed geometry is rejected without
 repair or a convex replacement. Queries contain at most 32 points at once.
@@ -47,7 +47,7 @@ The operator has no rig-name or action-name whitelist and works on caller
 supplied world-space geometry. It neither authors a valid skeletal pose nor
 chooses which frames or body controls may change.
 
-Twenty new source tests plus the existing 87 pass locally: **107 cases, zero
+Twenty-four new source cases plus the existing 87 pass locally: **111 cases, zero
 failures or skips**. They include finite-difference checks for both complete
 input Jacobians, coupled descent followed by fresh geometry measurement,
 translation balance, rigid-transform invariance, chunk equivalence, a nonconvex
@@ -55,12 +55,43 @@ mesh hole, stale-input detection, owned topology/receipts, invalid geometry and
 explicit unsupported second derivatives. The original scene, skin, conditioning
 hook, retention and motion-envelope regressions remain included.
 
-Local evidence: `reports/mesh-penetration-gradient-tests-v1`. A collapsed-mesh
+Local evidence: `reports/mesh-penetration-gradient-tests-v1` and
+`reports/mesh-penetration-gradient-tests-v2`. A collapsed-mesh
 rejection triggers a Trimesh zero-volume warning; the previous tensor-scalar
 test warning also remains. Neither is a passing motion-quality claim.
 
-Next verify this derivative through native skinning on the recorded high-five
-overlap, then connect it to permitted scene controls and full output validation.
+## Distinguishing the optimization distance from the auditor
+
+The first real full-skin root-direction probe fails its predeclared 0.1%
+derivative check: the discrepancy is 0.821%. It completes without creating a
+motion proposal and remains preserved in
+`reports/mesh-penetration-gradient-probe-v1`.
+
+Inspection of the pinned
+[Trimesh 5.1.0 proximity implementation](https://github.com/mikedh/trimesh/blob/5.1.0/trimesh/proximity.py)
+shows that its nearest query can choose between the two best candidates using
+normal alignment when their squared distances fall within its tie tolerance.
+That returned distance is useful as the existing auditor's observation but
+cannot be assumed to form a smooth minimum-distance optimization field.
+
+The default `distance_mode="auditor"` remains unchanged. A separately explicit
+`distance_mode="minimum"` now reduces the complete spatial candidate lists to
+their minimum Euclidean triangle distances in chunks of at most 4,096 triangles
+per point. It uses the original auditor's sign classification; it does not
+replace the physical auditor or fix self-intersection ambiguity. Closest
+features still switch nonsmoothly, so derivative checks and fresh measurements
+remain mandatory. Full auditor depth arrays remain available separately as
+owned `last_auditor_depths`; receipts hash both observation arrays and identify
+the selected policy. No automatic policy fallback is introduced.
+
+Additional tests check the explicit minimum field against a complete small-mesh
+brute-force query, its two-body Jacobians, preserved auditor observations and
+policy rejection. The new real-body probe keeps the same finite-difference
+step and 0.1% technical check. Earlier failed trials and every physical/motion
+requirement remain unchanged.
+
+Next qualify the explicit optimization field through native skinning on the
+recorded overlap, then connect it to permitted controls and full output validation.
 Vertex tests at selected discrete frames do not cover edge-only triangle
 intersections, continuous-time motion, self collision, forces, semantic quality,
 engine behavior or human cleanup. The whole-project goal and every original
