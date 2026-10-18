@@ -8,16 +8,19 @@ from scipy import sparse
 from native_scene_conic import solver_module
 
 
-def minimax_step(margins,jacobian,controls,*,trust=.25,l1_penalty=1e-5,maximum_bytes=64*1024**2):
+def minimax_step(margins,jacobian,controls,*,trust=.25,l1_penalty=1e-5,maximum_bytes=64*1024**2,protected_rows=None):
     raw=[np.asarray(v) for v in [margins,jacobian,controls]]
     if any(v.dtype.kind not in 'fiu' or not np.isfinite(v).all() or np.any(abs(v)>1e6) for v in raw):raise ValueError('Complete finite real model inputs required')
     m,j,x=[np.array(v,dtype=float,copy=True) for v in raw]
     if j.ndim!=2 or not 1<=len(j)<=8192 or not 3<=j.shape[1]<=384 or j.shape[1]%3 or m.shape!=(len(j),) or x.shape!=(j.shape[1],):
         raise ValueError('Every model row and complete grouped three-vector controls required')
     if np.any(np.linalg.norm(x.reshape(-1,3),axis=1)>1):raise ValueError('Initial control vectors already exceed declared budgets')
+    protected=np.zeros(len(m),dtype=bool) if protected_rows is None else np.asarray(protected_rows)
+    if protected.dtype!=np.bool_ or protected.shape!=m.shape:raise ValueError('Complete Boolean protected-row mask required')
+    protected=protected.copy()
     if type(trust) not in (int,float) or not np.isfinite(trust) or not 0<trust<=1 or type(l1_penalty) not in (int,float) or not 1e-12<=l1_penalty<=1:
         raise ValueError('Explicit bounded trust and positive finite movement penalty required')
-    if type(maximum_bytes) is not int or not 1<=maximum_bytes<=64*1024**2 or sum(v.nbytes for v in [m,j,x])*12>maximum_bytes:
+    if type(maximum_bytes) is not int or not 1<=maximum_bytes<=64*1024**2 or (sum(v.nbytes for v in [m,j,x])+j[protected].nbytes)*12>maximum_bytes:
         raise ValueError('Complete preallocation model budget exceeded; no truncation')
     columns=len(x);rows=len(m);variables=2*columns+1;identity=sparse.eye(columns,format='csc');zero=sparse.csc_matrix
     lower=np.maximum(-trust,-1-x);upper=np.minimum(trust,1-x)
@@ -28,6 +31,9 @@ def minimax_step(margins,jacobian,controls,*,trust=.25,l1_penalty=1e-5,maximum_b
         sparse.hstack([identity,zero((columns,columns+1))]),sparse.hstack([-identity,zero((columns,columns+1))]),
         sparse.csc_matrix(([ -1.],([0],[variables-1])),shape=(1,variables))]
     rhs=[m,np.zeros(2*columns),upper,-lower,np.zeros(1)];linear_rows=rows+4*columns+1
+    if protected.any():
+        blocks.append(sparse.hstack([-sparse.csc_matrix(j[protected]),zero((int(protected.sum()),columns+1))]))
+        rhs.append(m[protected]-1e-8);linear_rows+=int(protected.sum())
     solver=solver_module();cones=[solver.NonnegativeConeT(linear_rows)]
     for group in range(columns//3):
         index=np.arange(3*group,3*group+3);matrix=sparse.csc_matrix((-np.ones(3),(np.arange(1,4),index)),shape=(4,variables))
@@ -41,11 +47,12 @@ def minimax_step(margins,jacobian,controls,*,trust=.25,l1_penalty=1e-5,maximum_b
     solution=np.asarray(fit.x,dtype=float);direction=None;residual=None;norm_excess=None
     if str(fit.status)=='Solved' and solution.shape==(variables,) and np.isfinite(solution).all():
         delta=solution[:columns];residual=float(np.max(matrix[:linear_rows]@solution-bound[:linear_rows]));norm_excess=float(np.max(np.linalg.norm((x+delta).reshape(-1,3),axis=1)-1))
-        if np.all(delta>=lower) and np.all(delta<=upper) and norm_excess<=0 and residual<=1e-8:direction=delta.copy()
+        if np.all(delta>=lower) and np.all(delta<=upper) and norm_excess<=0 and residual<=1e-8 and np.all(m[protected]+j[protected]@delta>=0):direction=delta.copy()
     after=None if direction is None else m+j@direction
     report=dict(schema='strep-conic-pose-minimax-v1',solver_status=str(fit.status),solver_version=solver.__version__,model_rows=rows,complete_columns=columns,control_vector_balls=columns//3,
         omitted_rows=0,omitted_control_balls=0,sparse_bytes=storage,usable_direction=direction is not None,maximum_linear_model_residual=residual,maximum_actual_control_norm_excess=norm_excess,
         baseline_maximum_model_violation=float(np.maximum(-m,0).max()),predicted_maximum_model_violation=None if after is None else float(np.maximum(-after,0).max()),
         search_only_interior_reserve=1e-8,added_physical_tolerance=0.,quality_approved=False,release_approved=False,
+        protected_row_indices=np.flatnonzero(protected).tolist(),protected_model_solver_reserve=1e-8 if protected.any() else 0.,
         scope='Complete supplied signed row minimax plus L1 movement cost and every exact normalized three-vector ball. Strict output checks required; linear status is not nonlinear feasibility or motion approval. No clipping or omitted rows.')
     return direction,report
