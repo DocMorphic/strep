@@ -15,7 +15,7 @@ def _vector(value,length):
 
 
 class SceneStepGuard:
-    def __init__(self,names,margins,controls,search_reserves):
+    def __init__(self,names,margins,controls,search_reserves,*,required_rows=None):
         if (not isinstance(names,(list,tuple)) or not 1<=len(names)<=8192 or len(set(names))!=len(names)
                 or any(not isinstance(n,str) or not n or len(n)>160 for n in names)):
             raise ValueError('Complete distinct original row identities required')
@@ -25,10 +25,16 @@ class SceneStepGuard:
         self._controls=_vector(controls,len(raw))
         if np.any(self._reserves<0) or np.any(self._reserves>1) or np.any(np.linalg.norm(self._controls.reshape(-1,3),axis=1)>1):
             raise ValueError('Nonnegative bounded search reserves and valid original control balls required')
-        self._protected=self._margins>=0;self.steps=0
+        self._explicit_required=required_rows is not None
+        required=np.zeros(len(names),dtype=bool) if required_rows is None else np.asarray(required_rows)
+        if required.dtype!=np.bool_ or required.shape!=(len(names),):raise ValueError('Complete Boolean required-row mask required')
+        self._required=required.copy();self._protected=self._margins>=0;self.steps=0
 
     @property
     def protected_rows(self):return self._protected.copy()
+
+    @property
+    def required_rows(self):return self._required.copy()
 
     @property
     def controls(self):return self._controls.copy()
@@ -43,13 +49,16 @@ class SceneStepGuard:
         if tuple(names)!=self.names:raise ValueError('Original complete row identities and order must remain unchanged')
         after=_vector(margins,len(self.names));point=_vector(controls,len(self._controls))
         before_peak=float(np.maximum(self._reserves-self._margins,0).max());after_peak=float(np.maximum(self._reserves-after,0).max())
-        lost=np.flatnonzero(self._protected&(after<0));bounds=bool(np.all(np.linalg.norm(point.reshape(-1,3),axis=1)<=1))
-        return dict(schema='strep-sequential-scene-step-v1',accepted=bool(bounds and not len(lost) and after_peak<before_peak),
+        lost=np.flatnonzero(self._protected&(after<0));failed_required=np.flatnonzero(self._required&(after<0));bounds=bool(np.all(np.linalg.norm(point.reshape(-1,3),axis=1)<=1))
+        report=dict(schema='strep-sequential-scene-step-v1',accepted=bool(bounds and not len(lost) and not len(failed_required) and after_peak<before_peak),
             original_row_names=list(self.names),complete_rows=len(self.names),protected_row_indices=np.flatnonzero(self._protected).tolist(),lost_protected_row_indices=lost.tolist(),
             baseline_maximum_working_violation=before_peak,candidate_maximum_working_violation=after_peak,all_original_control_balls_pass=bounds,
             failed_original_row_indices=np.flatnonzero(after<0).tolist(),all_original_numeric_rows_pass=bool(np.all(after>=0)),all_search_targets_pass=bool(np.all(after>=self._reserves)),
             added_physical_tolerance=0.,quality_approved=False,release_approved=False,
             scope='Exact complete caller-bound signed row comparison at original zero boundary, strictly decreasing peak toward tighter declared search targets. Every previously passing row stays nonnegative. Not source binding, geometry, motion, full clock, exported-asset or release approval.')
+        if self._explicit_required:
+            report.update(required_row_indices=np.flatnonzero(self._required).tolist(),failed_required_row_indices=failed_required.tolist(),all_explicit_required_rows_pass=not len(failed_required))
+        return report
 
     def advance(self,names,margins,controls):
         report=self.assess(names,margins,controls)

@@ -72,3 +72,36 @@ def test_invalid_state_rejects(fault):
     elif fault=='reserve':args[3]=[-.01,.01]
     else:args[2]=np.ones(3)
     with pytest.raises(ValueError):SceneStepGuard(*args)
+
+
+def test_failed_required_condition_must_be_repaired_despite_better_peak():
+    state=SceneStepGuard(['worst','lost-direction'],[-2.,-.2],np.zeros(3),[.02,.02],required_rows=np.array([False,True]))
+    report=state.assess(state.names,[-1.,-1e-15],np.zeros(3))
+    assert not report['accepted'] and report['failed_required_row_indices']==[1]
+    with pytest.raises(ValueError):state.advance(state.names,[-1.,-1e-15],np.zeros(3))
+    assert state.margins.tolist()==[-2.,-.2] and state.steps==0
+    assert state.advance(state.names,[-1.,0.],np.zeros(3))['accepted']
+
+
+def test_required_repairs_do_not_replace_protection_of_other_passing_rows():
+    state=SceneStepGuard(['floor','contact','collision'],[-.2,.1,-2.],np.zeros(3),[.02,.01,.02],required_rows=np.array([True,False,False]))
+    r=state.assess(state.names,[0.,-1e-15,-1.],np.zeros(3))
+    assert not r['accepted'] and r['all_explicit_required_rows_pass'] and r['lost_protected_row_indices']==[1]
+
+
+def test_required_masks_are_owned_and_remain_required_across_steps():
+    mask=np.array([False,True]);state=SceneStepGuard(['a','b'],[-2.,-.2],np.zeros(3),[.02,.02],required_rows=mask)
+    mask[:]=False;state.required_rows[:]=False
+    state.advance(state.names,[-1.,.01],np.zeros(3))
+    assert state.required_rows.tolist()==[False,True]
+    assert not state.assess(state.names,[-.5,-1e-15],np.zeros(3))['accepted']
+
+
+@pytest.mark.parametrize('value',[[1,0],[True],np.array([1.,0.])])
+def test_invalid_required_mask_rejects(value):
+    with pytest.raises(ValueError):SceneStepGuard(['a','b'],[-1.,.1],np.zeros(3),[.02,.02],required_rows=value)
+
+
+def test_omitted_required_mask_preserves_the_previous_report_contract():
+    state=guard();report=state.assess(state.names,[-.2,.1,-.1],np.zeros(3))
+    assert report['accepted'] and not any(k.startswith('required_') or 'explicit_required' in k for k in report)
