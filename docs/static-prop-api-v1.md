@@ -1220,3 +1220,109 @@ streamed chunk equivalence, smoothing ties/bounds and invalid target/budget
 rejection. Guard: 31.953 s / 120,528,896 bytes / 49 observations. Source
 fixtures do not approve character motion or a scene. The primary mathematical
 reference and independent-implementation notes are in the source ledger.
+
+The exact published source `096b56e` also passes all 30 focused fixtures on
+Windows and Ubuntu ([run 39092990783](https://github.com/DocMorphic/strep/actions/runs/39092990783));
+test times are 0.70 and 0.89 seconds respectively. This is focused source
+validation, not a full-product test result.
+
+### Complete interior-depth composition and coupled trials
+
+The actual original-rig study composes native skinning, the moving prop frame
+and the depth field for **all 36,112 vertices**, 12 facets and 139 control
+columns, in 512-point chunks. Both actors retain all 18,056 vertices, including
+deepest vertex 12006 and every previously missing deep vertex. Two independent
+directional comparisons cover every point and both conservative complete-max
+groups. Maximum point derivative error is 1.957e-8 m/control and grouped
+normalized error is 7.434e-7/control. The fixed source clearance column is held
+constant in those perturbations; all 139 composition columns are retained.
+The real-arithmetic point-plus-group approximation budget is below 0.328
+micrometres, without changing the physical penetration limit. Maximum estimated
+chunk-array workspace is 10,377,504 bytes. Guard: 46.172 s / 268,152,832 bytes /
+63 observations. No motion or geometry approval follows from derivative checks.
+
+The first coupled trial uses the 269 known triangle pairs plus both complete
+interior-depth groups: 3,529 objective rows, 8,042 extra rows, 5,402 native
+norm cones, 6,436 passing motion guards and all 40 repaired witnesses. Every
+declared fraction completes all 944,562 raw/saved motion scalars, nine-time
+full scene geometry, 2,017 sampled prop bounds and declared contacts. There
+are no new motion failures or lost repairs, and all 97 prior geometry passes
+remain intact. Nevertheless, **every candidate is rejected**:
+
+| Joint fraction | Raw normalized motion peak | Crossing records | Maximum depth (mm) |
+| --- | ---: | ---: | ---: |
+| Original comparison | 43.533073 | 113 | 23.531278 |
+| 1 | 43.033387 | 115 | 23.453963 |
+| 1/2 | 43.283110 | 115 | 23.491909 |
+| 1/4 | 43.408062 | 115 | 23.511410 |
+| 1/8 | 43.470560 | 115 | 23.521309 |
+
+Depth improves but crossing count regresses. Guard: 580.125 s / 522,145,792
+bytes / 584 observations, under the unchanged 512 MiB cap. The failed
+comparisons remain archived; they are not animation-quality successes.
+
+Discovery across 24 named completed reports retains 2,853 crossing occurrences
+as **273 unique pairs** (A 232 / B 41), preserving all previous identities.
+Four newly observed A/box-face-0 pairs use actor triangles 26588, 26589, 26778
+and 26779. The expanded guide checks all 2,457 projection rows, all 139 columns
+and 636 world/local scalar point rows in two directions. All 269 old pair
+values/Jacobians, full prop-world values/derivatives, body basis and grip frame
+match exactly, permitting reuse of the complete depth model at the same
+control point. Guard: 36.859 s / 226,344,960 bytes / 54 observations. The
+observed-pair ledger is not exhaustive future or continuous collision coverage.
+
+The expanded full step retains 3,565 objective rows, 8,078 extra rows and
+5,402 norm cones. Its complete raw/saved motion checks reject it before
+geometry: actor A's linear-acceleration row 93696 loses a protected repair in
+both representations. Its raw margin changes from +0.035049838 to -0.000190245;
+the saved margin changes from +0.035052858 to -0.000188688. Lower overall error
+does not waive this failure. Trial guard: 197.563 s / 318,488,576 bytes / 210
+observations. A separate complete archived-scalar/source diagnosis verifies
+the identity without rerunning motion or fitting: 4.125 s / 50,151,424 bytes /
+22 observations.
+
+One explicitly declared half-step reuses that recorded direction, with no
+solver rerun, clipping or changed permissions. All 944,562 motion scalars
+complete with zero new failures and all 40 repairs intact; raw normalized peak
+43.533073 → 43.283007 and squared error 56,297.638 → 55,891.856. Nine full scene
+times, all 2,017 sampled prop bounds, contacts and 97 prior geometry passes
+remain intact. Crossing count stays 113 while maximum depth improves to
+23.475561 mm. This qualifies a **partial numerical comparison only**: two
+scene conditions still fail at one sampled time. Guard: 213.031 s / 441,720,832
+bytes / 226 observations. Independent export, changed-pose body and combined
+scene replays are required before adopting this as the next fitting reference.
+The original Studio selection and release declarations remain unchanged.
+
+The three independent replays now qualify this half-step as the next
+**experimental fitting reference**, relative to the original author epoch:
+
+- Export/body replay reconstructs cumulative native controls without the local
+  fitting context, reproduces all 383,617 saved world values byte-identically,
+  checks 5,400 raw and 5,400 saved native bounds plus 177,328 other archived
+  scalars, and verifies unchanged static channels, clocks and frozen keys.
+  Both representations confirm an additional repaired linear-speed row,
+  **56719**: 6,082 → 6,081 remaining source-rate failures, with no new failures.
+  Future fits must protect **41** repaired witnesses. Guard: 40.000 s /
+  194,273,280 bytes / 57 observations.
+- Changed-pose body geometry freshly checks the sole changed native pose at
+  key 65, including both complete 36,108-face actors, partner geometry and all
+  floor vertices. Together with 231 exact full-hierarchy pose identities from
+  the previous verified reference, this closes the 232-sample body composite
+  and all 120 native keys with zero body geometry/motion failures. Another
+  1,785 policy times remain open. Guard: 35.890 s / 186,564,608 bytes /
+  53 observations.
+- Combined-scene replay independently reconstructs the original-relative body,
+  grip and prop line, freshly reproduces all 45 mesh-pair queries and every
+  world-array byte at nine declared times, and verifies the 97 prior passes,
+  2,017 sampled prop bounds and contacts. It imports no fitting, inverse-frame
+  or convex-depth backend. Existing geometry libraries are shared, rather than
+  independent collision algorithms. Guard: 82.047 s / 266,977,280 bytes /
+  98 observations.
+
+Every source/archive/resource binding matches. This reference still has
+**113 crossing records, two failed scene conditions and 23.475561-mm maximum
+penetration** at one sampled time. It is neither collision-free nor approved
+for realism or release. Continuous collision, self-collision, dynamics,
+semantics, engine import and human cleanup requirements remain open. The
+original Studio selection, broader action scope and fixed release requirements
+remain unchanged; rejected trials are preserved locally.
