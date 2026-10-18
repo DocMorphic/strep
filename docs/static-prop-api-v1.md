@@ -1553,3 +1553,91 @@ unchanged inputs, zero caps/tolerance, exact budget boundaries and invalid/
 ambiguous-branch rejection. Guard: 33.078 s / 157,159,424 bytes / 50 observations.
 This adds no dependency, inference, training, asset or data acquisition and
 does not approve a new clip.
+
+The exact published source `62203aa` also passes all 63 fixtures on Windows
+(0.65 s) and Ubuntu (0.80 s),
+[run 39097928396](https://github.com/DocMorphic/strep/actions/runs/39097928396).
+
+### Complete passing-row norm composition
+
+The actual rig pair now has a local vector-norm model for **all 5,852 passing
+world guards**, including all 41 repaired witnesses, with all 135 columns.
+The population contains 1,081 uniform displacement rows, 155 additional-time
+displacement rows, 1,036 linear-speed, 1,241 linear-acceleration, 1,099 angular-
+speed and 1,240 angular-acceleration rows. Every original guard identity and
+column is retained; constant constraints remain explicitly represented.
+
+All canonical anchors match the previous scalar guide byte for byte. Projecting
+the vector derivatives onto the rate direction reproduces its complete scalar
+Jacobian within 9.632e-15. Two independent nonlinear directions check all
+17,556 vector components, with maximum normalized derivative differences
+3.604e-7 and 7.093e-7. The complete vector Jacobian uses 18,960,480 bytes;
+maximum pose-cache storage is 22,134,528 bytes under its 64 MiB bound.
+Guard: 68.640 s / 248,061,952 bytes / 85 observations.
+
+For the previously rejected full and half proposals, these norm constraints
+predict **all 16 and all eight newly failed rows**, respectively, which the
+scalar tangent guards missed. This checks stored proposals at the measured
+linearization; it is not a guarantee about future nonlinear motion. The
+unchanged baseline lies inside every represented norm bound, with maximum
+initial norm excess -7.118e-8 in normalized units.
+
+The next proposal retains the complete 7,614-row objective and 6,951 scalar
+cuts and stacks **5,400 original native rotation cones plus all 5,852 world
+norm cones**: 11,252 total. Its world proposal radii retain half of the available
+local norm slack, a search restriction only. Original physical cap/tolerance
+arrays, strict raw/saved gates and output values are unchanged; no clipping
+is introduced.
+
+The full step completes all 944,562 raw/saved conditions with **zero newly
+failed rows and all 41 prior repairs intact**. Both modes repair the same 23
+additional rows: 6,081 → 6,058 source-rate failures. Raw squared violation
+55,891.855644 → 50,237.206349; saved 55,891.848214 → 50,237.208111. The global
+peaks remain unchanged because their worst rows are outside this block.
+
+Fresh complete geometry at all **ten** scene times retains **108** passing
+condition identities, passes native-key-74 geometry, rechecks all 2,017 sampled
+original prop bounds and declared contacts, and changes no collision metric.
+The source-bound prop-policy path that stopped the earlier run is now exercised
+successfully. The scene still has 113 crossing records, two failed conditions
+and 23.475561-mm maximum depth at the earlier time. Trial:
+194.891 s / 451,338,240 bytes / 208 observations, below the unchanged 512 MiB
+tree-RSS cap. This qualifies a partial numerical comparison; independent
+export/body/combined-scene replays remain required before adopting it as a new
+fitting reference. No realism, engine, continuous/self/dynamics or release
+approval follows from these results.
+
+The independent replays now qualify this candidate as a new **partial fitting
+reference**, relative to the same original source epoch:
+
+- Export/body replay reconstructs the native-key-74 insertion directly into
+  the independently verified cumulative parent controls, without the fitting
+  context. It reproduces all 383,617 saved world values byte for byte, checks
+  5,400 raw and 5,400 saved native bounds, and verifies all 177,328 other archived
+  scalars plus static assets, source caps, clocks and frozen keys. Both modes
+  confirm the same **23** repaired rows and zero new failures: future fits must
+  protect **64 total repaired witnesses**. Guard: 41.047 s / 218,812,416 bytes /
+  58 observations.
+- Changed-pose body geometry freshly checks key 74 with complete 36,108-face
+  actor meshes, partner queries and all floor vertices under the unchanged
+  policy. Together with 231 exact full-hierarchy pose identities, it closes the
+  232-sample body composite and all 120 native keys with zero body failures.
+  Another 1,785 policy times remain open. Guard: 30.766 s / 168,816,640 bytes /
+  48 observations.
+- Combined-scene replay freshly reproduces all **50** mesh-pair queries and
+  every complete world-array byte at all **ten** times. It independently checks
+  original-relative fixed prop controls, contact targets, 108 prior passing
+  identities and all 2,017 sampled original prop bounds, without importing
+  rate-vector, motion-progress, solver or high-level mesh-prop backends.
+  Existing interpolation/skinning/collision libraries remain shared, not
+  independent physical algorithms. Guard: 79.937 s / 275,484,672 bytes /
+  96 observations.
+
+All source/archive/resource bindings match. The new experimental reference
+still has **6,058 source-rate failures, 113 crossing records, two failed scene
+conditions and 23.475561-mm maximum depth**. No collision-free, realism,
+continuous/self/dynamics, semantic, engine or human-cleanup approval is implied.
+The original Studio selection and every fixed full-project release requirement
+remain unchanged. Future blocks must regenerate their derivatives around the
+current cumulative controls and retain all 64 repairs; old-point models are
+not current-point evidence.
