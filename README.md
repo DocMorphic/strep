@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Constrained temporal correction](docs/native-constant-norm-factor-v1.md): the complete 49-control model retains all 68,900 original local bounds within the existing solver budget. The exported proposal repairs ten source-rate rows with no new raw/saved failures; independent export/contact replay passes. It still has 6,040 rate failures and requires fresh geometry checks before adoption. All 97 focused local checks and 20 new cases on each hosted OS pass.
+
 - [Constrained temporal track controls](docs/native-track-profiles-v1.md): each declared joint can scale its supplied temporal correction independently while retaining the complete original clock, frozen keys and source-relative controls. All 137 focused source checks pass. This provides a compact search representation; it does not yet produce an accepted correction or new Studio character-stat controls.
 
 - [Captured scene audit completion](docs/native-scene-engine-completion-v1.md): a complete imported geometry journal now feeds existing full-skin/contact replay, original-rig fidelity and explicit root/event exports. All 120 regressions, the final moving-prop case and 18 new checks on each OS pass. The real high-five study has verified 976 of 2,017 samples; existing overlap witnesses map to right-hand/finger regions. Full validation continues, with failures preserved.
