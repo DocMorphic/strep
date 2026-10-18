@@ -332,3 +332,15 @@ coordinate-map building block; source permissions, scene feasibility and
 nonlinear motion/contact validation remain separate. The study tests whether
 prop-relative projection directions avoid restrictions introduced by freezing
 directions in world space. It adds no model, training data or runtime dependency.
+
+## 2026-10-18: smooth complete interior-depth guidance
+
+Boyd and Vandenberghe's primary [Convex Optimization](https://web.stanford.edu/~boyd/cvxbook/bv_cvxbook.pdf),
+section 3.1.5 (printed page 72), bounds log-sum-exp relative to the largest
+input. Strep independently composes a corrected soft minimum of all convex
+facet slacks with softplus to obtain smooth interior-depth guidance. Its
+real-arithmetic error budget is explicit; floating geometry and motion
+acceptance remain separate. No book/example implementation is copied. The
+book remains copyrighted by Cambridge University Press; web availability
+does not make its text or example code project assets. Existing NumPy and
+Trimesh are reused; no checkpoint, training data or dependency is acquired.

@@ -1194,3 +1194,29 @@ gates. This particular value agreement is for the verified convex box; it does
 not extend a facet model to arbitrary concave props or approve an animation.
 The original Studio selection, entire project scope and all release criteria
 remain unchanged.
+
+### Complete convex interior-depth field
+
+`scripts/native_convex_depth_field.py` provides `ConvexDepthField` for a supplied
+closed, outward-wound convex triangle mesh. It rejects unsupported/open/inward/
+concave geometry, retains every supplied facet, validates every vertex against
+the supporting planes and never repairs the mesh or substitutes its hull.
+Construction and evaluation use explicit complete array/comparison budgets.
+This is an opt-in convex-target guide, not a replacement for arbitrary-mesh
+collision queries.
+
+For each supplied point it returns positive interior plane depth (zero
+outside), a smooth upper approximation, its point gradient and every supplied
+point-Jacobian column. The approximation uses corrected soft-min and softplus;
+the real-arithmetic error is at most `temperature * log(2 * facet_count)`.
+No claim of a floating-point collision certificate follows. Points, facets
+and derivative columns are never removed to fit memory; a budget failure
+rejects the call. Existing author/contact/mesh acceptance limits stay fixed.
+
+All **30** focused fixtures pass locally, including independent box and
+non-box convex triangle-distance values, every supplied derivative column,
+the 768th column, rigid re-expression, reordered facets, duplicate points,
+streamed chunk equivalence, smoothing ties/bounds and invalid target/budget
+rejection. Guard: 31.953 s / 120,528,896 bytes / 49 observations. Source
+fixtures do not approve character motion or a scene. The primary mathematical
+reference and independent-implementation notes are in the source ledger.
