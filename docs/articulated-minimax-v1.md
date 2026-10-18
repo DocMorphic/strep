@@ -50,3 +50,22 @@ Malformed or over-budget inputs reject before solving.
 Local evidence: `reports/articulated-minimax-tests-v1`. These checks are
 engineering evidence; the next study must use the original real clips and
 retain all failed constraints, exported artifacts and independent observations.
+
+## Separate root and joint support
+
+The original native high-five references exceed the existing 5 mm floor
+diagnostic at every one of their 120 frames. Freezing the clip boundaries while
+only editing the contact window cannot correct that full-clip failure. This is
+a limitation of those permissions, not proof that the interaction is impossible.
+
+Root edits can now have an explicit `root_basis` and `root_fixed_frames`, on the
+same complete clock and temporal-column count. This permits a bounded whole-clip
+root-height correction while keeping joint rotations protected outside a local
+edit window. Omitting them preserves the shared-basis behavior. Changed root
+support never implicitly overrides its protected-frame policy, and disabled
+root controls reject unused permissions.
+
+The complete suite now passes **142 cases** with the additional independent
+support, no implicit permission override and unused-permission checks.
+Local evidence: `reports/articulated-minimax-tests-v2`. No physical/motion
+threshold, authored scene target or original release requirement is changed.

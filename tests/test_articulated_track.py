@@ -76,3 +76,19 @@ def test_nonfinite_or_partial_controls_reject():
     track,_=setup()
     for value in [torch.zeros(track.size-1,dtype=torch.float64),torch.full((track.size,),float('nan'),dtype=torch.float64)]:
         with pytest.raises(ValueError):track(value)
+
+
+def test_root_support_can_span_full_clock_while_local_rotations_stay_protected():
+    basis=torch.ones((5,1),dtype=torch.float64);fixed=torch.zeros(5,dtype=torch.bool)
+    track,args=setup(root_basis=basis,root_fixed_frames=fixed);control=torch.zeros(track.size,dtype=torch.float64);control[4]=.5
+    local,root=track(control)
+    assert torch.equal(local,args['local_rotations']) and torch.all(root[:,1]==.01)
+    assert track.assess(control)['protected_frames']==2 and track.assess(control)['root_protected_frames']==0
+
+
+def test_root_support_does_not_implicitly_override_frozen_frames():
+    with pytest.raises(ValueError,match='protected'):setup(root_basis=torch.ones((5,1),dtype=torch.float64))
+
+
+def test_unused_root_permission_rejects_instead_of_silently_discarding_it():
+    with pytest.raises(ValueError,match='Disabled'):setup(maximum_root_translation_m=0,root_basis=torch.ones((5,1),dtype=torch.float64))
