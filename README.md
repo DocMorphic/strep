@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Equivalent affine conditioning](docs/native-constant-affine-factor-v1.md): 97 local regressions and 20 new tests on both hosted systems pass. The same complete scene-aware model now produces a strictly checked local proposal; all 944,562 raw/saved motion conditions are evaluated, preserving 72 prior repairs and adding two with no new rate failures. Full-mesh checks still reject it: box penetration grows from 23.476 to 23.549 mm. The qualified reference and Studio selection remain unchanged; this finite study ends with the physical failure preserved.
+
 - [Geometry rejection and prop drift](docs/objective-null-prop-drift-v1.md): independent full-mesh replay rejects the numerically improved temporal proposal: box penetration grows from 23.5 to 43.1 mm. Removing unnecessary prop movement preserves motion inputs and local bounds but still adds crossing records, so that diagnostic is rejected too. The secondary-proposal helper passes 101 focused tests. All 936 new mesh relations pass derivative checks; the first scene-aware solve fails strict admission. Qualified reference and Studio selection are unchanged.
 
 - [Constrained temporal track controls](docs/native-track-profiles-v1.md): each declared joint can scale its supplied temporal correction independently while retaining the complete original clock, frozen keys and source-relative controls. All 137 focused source checks pass. This provides a compact search representation; it does not yet produce an accepted correction or new Studio character-stat controls.
