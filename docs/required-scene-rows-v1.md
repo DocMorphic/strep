@@ -24,8 +24,13 @@ invalid masks and the unchanged default report. This is a numeric retention
 rule, not source binding, geometry coverage, motion approval or a feasibility
 certificate. Evidence: `reports/required-scene-rows-tests-v1`.
 
-The next full-clock trial will require original passing partner conditions,
-every floor screen and all original motion ceilings. It will retain all
-per-frame partner/floor rows, original-relative joint/root permissions and
-actual paired point-contact cones. Saved observations are not substituted
-for the raw editor's linearization. No clip, capability or release is approved.
+The same **181 cases pass on hosted Windows and Ubuntu** at
+`0e390dfbb099e044848cb5db2d899ba92841c4c9`.
+
+The [full-clock trial](full-clock-scene-step-v1.md) requires original passing
+partner conditions, every floor screen and all original motion ceilings.
+It retains every per-frame partner/floor row, original-relative joint/root
+permissions and actual paired point-contact cones. Saved observations are not
+substituted for the raw editor's linearization. All six tested fractions are
+rejected at concrete mandatory conditions; no clip, capability or release is
+approved.

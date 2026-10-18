@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Full-clock scene proposals and required repairs](docs/full-clock-scene-step-v1.md): 181 source checks pass locally and on Windows/Ubuntu. A complete 496-row model now includes every floor/partner frame plus contacts, orientations and native motion ceilings. Streamed motion evaluation matches the dense reference exactly. Six nonlinear trials remain rejected; two counterexamples show why competing surface-vertex constraints must be retained. No new animation is approved.
+
 - [Complete partner collision clocks](docs/partner-collision-clock-v1.md): 36 new checks pass locally and on Windows/Ubuntu. All 120 exported frames are now audited in both directions for the original and corrected pair. The correction lowers the failed-frame count but worsens peak overlap (32.27 to 32.45 mm) and loses one passing direction. A complete 240-condition block is prepared for the next solve; no clip is approved.
 
 - [Full-vector contact bounds](docs/contact-vector-cones-v1.md): 174 checks pass locally and on Windows/Ubuntu. A same-state comparison retains a collision-improving half step while preserving all three point contacts. Independent export replay confirms the local improvement, but floor, overlap and both motion envelopes still fail; the clip remains unapproved.
