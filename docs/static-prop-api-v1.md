@@ -1933,3 +1933,37 @@ geometry/derivative/policy inputs. Resource replay: 31.641 s / 92,082,176 bytes 
 33 observations. A full source-bound active pose/pair guide is a separate study;
 these fixtures and the world model do not approve an optimized clip or imply
 that every original pose/pair/contact dependency is already guarded.
+
+The complete active native/pose/pair study now qualifies at the unchanged
+69-witness reference. It retains **64,784 original rows**: 5,400 native balls,
+23,880 pose bands and 35,504 exact pair margins, streamed into 787 groups with
+all **135 columns**. Baseline physical values match the existing reference
+**byte for byte**. The 34 active pose and five active pair observations carry
+full local derivatives; only exact endpoint-zero dependence allows unchanged
+scalar values to be reused at other observations.
+
+Physical pair positions retain the original `RigAsset.vertices` arithmetic.
+Selected skin-map positions used to compose derivatives differ by at most
+6.662e-16 m; they never replace the canonical positions or unsmoothed acceptance
+margins. Conservative smooth support rows supply solver guidance separately.
+Both complete **per-row** and grouped directional comparisons pass: maximum
+row differences 5.026e-8 / 5.517e-8, grouped 3.750e-8 / 1.720e-8. This is two
+full directions, not a per-axis proof. Guard: 107.390 s / 235,466,752 bytes /
+107 observations.
+
+Composition with the qualified world model retains the full **448,401-row /
+1,106-group** guide. The 33 helper fixtures also pass on hosted Windows and
+Ubuntu at `1b6ee6d` ([run 39102991559](https://github.com/DocMorphic/strep/actions/runs/39102991559)),
+0.32 / 0.26 s. No optimizer, export or fresh combined-scene collision audit
+is run here; engine and human approval also remain open. Next build all passing-world/69-repair guards and all active
+pose/pair hard constraints, including complete vector information, before
+proposing a change. Any genuinely active authored contact endpoints must also
+be retained; the previous block's invariance assumptions cannot be inherited.
+Full 944,562 raw/saved gates and subsequent geometry/independent replays stay
+mandatory. The internal 69-witness reference, 6,053 rate failures, 113 crossing
+records and all fourteen unapproved release capabilities remain unchanged.
+
+Native key 35 is absent from the ten current combined-scene sample times.
+Measure its baseline actor/prop mesh geometry under the original physical
+limits, then include it in candidate comparisons before any correction.
+The existing all-native-key body composite does not establish prop clearance.
