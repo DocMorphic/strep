@@ -1641,3 +1641,43 @@ The original Studio selection and every fixed full-project release requirement
 remain unchanged. Future blocks must regenerate their derivatives around the
 current cumulative controls and retain all 64 repairs; old-point models are
 not current-point evidence.
+
+### Refreshing the correction schedule and objective roles
+
+A complete schedule refresh at the independently verified 64-repair reference
+retains all **6,058 failed stencils**, all 117 eligible native peaks and
+**708,786 dependency cells**. With peaks 65 and 74 recorded as initial editing
+context, 1,458 failures have temporal support there and 4,600 lie outside both.
+The 31-block coverage schedule still has zero uncovered stencils and selects
+**63** next. Every candidate is replayed against both original-domain cumulative
+bases; no frozen key, source curve or physical cap changes. Coverage is not a
+repair or a spatial feasibility proof. Guard: 28.766 s / 208,670,720 bytes /
+46 observations.
+
+The new **[62, 63, 64]** world model reproduces all 383,617 current baseline
+values byte for byte, retains 319 groups and 135 columns, and passes both full
+directional checks plus an uncached perturbation. Maximum directional
+differences are 3.035e-8 and 5.384e-8. Exact native timestamps are retained,
+including small nonzero interpolation weights near uniform-sample boundaries.
+Original 120 pose/pair observations remain invariant for this block. Guard:
+297.672 s / 289,144,832 bytes / 308 observations. No new clip is generated.
+
+`scripts/native_world_objective_partition.py` keeps every original group and
+every supplied affected/required row. Rows failing either raw or saved mode
+receive objective terms using the lower baseline margin. Rows passing either
+mode are returned as hard constraints, with their smallest passing baseline
+margin. A mixed-mode row receives both roles; every required repaired witness
+must be present and already pass both modes. Passing rows are not discarded
+to meet the soft-objective budget, and original groups are never truncated.
+The caller must enforce every returned hard row and retain native/world norms
+and full raw/saved/geometry postchecks. A shared raw Jacobian is guidance for
+both modes, not a derivative of Float32 quantization.
+
+All **43 fixtures** pass locally in a fresh standalone interpreter (0.76 s):
+complete role/order preservation, mixed raw/saved rows, repaired witnesses,
+exact zero margins, 768th-column retention, complete-budget rejection and a
+case where 8,072 affected rows remain represented despite a smaller objective
+row budget. Random feasible local directions verify equality with the
+unreduced hinge objective when every returned passing-row hard constraint is
+retained. This is a local linear-model equivalence, not nonlinear motion
+approval. Guard: 16.406 s / 99,745,792 bytes / 34 observations.
