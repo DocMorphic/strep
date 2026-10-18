@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Sequential contact protection](docs/sequential-scene-step-v1.md): 157 checks pass locally and on Windows/Ubuntu. Two retained paired edits bring all three point contacts inside their existing limits; later collision improvements are rejected when they lose contacts. Independent saved-file replay confirms the contact result, but floor, body overlap and some motion limits still fail. No changed clip is adopted.
+
 - [Articulated minimax controls](docs/articulated-minimax-v1.md): 142 checks pass locally and on Windows/Ubuntu. Joint and root edits now have explicit separate temporal permissions, and the local solver retains every supplied physical row and vector budget. A real two-character edit reduces deepest overlap from 13.48 to 10.66 mm, but misses contact and other limits. Independent replay preserves all unselected channels and protected rotation keys exactly; the proposal remains rejected.
 
 - [Coupled mesh-collision gradients](docs/mesh-penetration-gradient-v1.md): a new triangle-mesh term provides gradients to both bodies, with 111 checks passing locally and on Windows/Ubuntu. The real native-skin derivative qualifies after separating the optimization field from unchanged audit measurements. A tiny full-clip proposal lowers average overlap but worsens the deepest overlap and palm gap, so it remains rejected. Next use worst-case collision/contact constraints and articulated controls.
