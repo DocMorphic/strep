@@ -1828,3 +1828,70 @@ array remains unchanged. Resource replay: 33.656 s / 167,669,760 bytes /
 35 observations. Earlier 64-case source at `95b2062` also passes both hosted
 [Windows and Ubuntu](https://github.com/DocMorphic/strep/actions/runs/39101172951)
 (0.96 / 0.39 s); current-source hosted validation is tracked separately.
+
+### Strict half-ray correction and independent replay
+
+Current source `a6204b4` passes all **69 fixtures** on hosted Windows and Ubuntu
+([run 39101504771](https://github.com/DocMorphic/strep/actions/runs/39101504771)),
+0.96 / 1.10 seconds. Earlier source versions remain explicitly archived; their
+50/64-case tests are historical evidence, not claims about the current file.
+
+The fresh actual trial retains all **2,023 objective terms, 1,899 nonconstant
+scalar cuts, 135 columns and 12,552 affine norms**. The raw solver point is
+still rejected (1.253193926e-8 norm excess). The separately checked **half ray**
+passes strict scaled and original-unit norm bounds (maximum original excess
+-3.558929162e-8), every original hard row (maximum residual -4.723184275e-13),
+boxes and peak ceiling, with modeled hinge cost 2,641.540740 -> 2,586.601071.
+The 1e-6 solver cut reserve affects search only. No output clipping or physical
+margin relaxation occurs. The outer full trial uses this already-halved
+proposal; provenance records both fractions explicitly.
+
+All **944,562 raw/saved motion scalars are examined**. Native, pose/pair,
+displacement and contact hard margins pass. The full sampled-world comparison
+in **both** modes repairs exactly **five** additional failures, with no newly
+failed row and all 64 previous repairs preserved: **6,058 -> 6,053** remaining
+source-rate failures. Raw squared violation falls 50,237.206349 -> 49,577.660970;
+saved falls 50,237.208111 -> 49,577.665064. The global peak remains unchanged
+outside this temporal block. The five repaired world IDs are 165668, 239054,
+239131, 239300 and 348856; future fits protect the union of **69 witnesses**.
+
+Fresh full ten-time scene checks preserve all **108** prior passing identities,
+all **2,017** original sampled prop permissions and declared contacts. The
+113 crossing records, two failed conditions, one failing time and
+23.475561-mm maximum depth remain unchanged. This is partial numerical
+progress, not a collision-free scene or realism approval.
+
+Independent replay reconstructs native key **63** directly into the verified
+original-relative parent controls, without importing the fitting context. It
+reproduces all **383,617 saved world values byte for byte**, checks 5,400 raw
+and 5,400 saved native bounds and 177,328 archived other scalars, and preserves
+original static content, clocks, frozen keys and caps. A fresh complete-mesh
+body/partner/floor query at the changed native pose plus 231 exact hierarchy
+identities closes the existing **232-sample / all-120-native-key** body composite.
+The other **1,785 body policy times** remain unverified.
+
+An independent combined-scene replay recomputes **50 mesh-pair queries** and
+all world-array bytes at every one of the ten declared times. Original-relative
+fixed props, every sampled bound/contact and previous passing identity hold.
+It imports neither the new precise solver/objective helper nor the fitting
+mesh-prop backends. Existing interpolation, skinning and collision libraries
+are shared, so this is not independent physics or a second collision algorithm.
+
+All jobs remain serial under the unchanged 512-MiB tree RSS / 600-MiB free-RAM
+policy; recorded source/archive/resource bindings replay successfully:
+
+| Study | Elapsed seconds | Peak tree bytes | Resource observations |
+| --- | ---: | ---: | ---: |
+| native-temporal-precise-block-trial-v3 | 199.859 | 466518016 | 197 |
+| native-precise-block-body-replay-v1 | 58.266 | 194191360 | 59 |
+| native-precise-block-body-geometry-v1 | 49.125 | 170307584 | 50 |
+| native-precise-block-scene-replay-v1 | 96.125 | 249729024 | 96 |
+
+The new internal partial fitting reference is
+`native-temporal-precise-block-trial-v3/probe-00`, with 69 protected witnesses.
+Studio selection and all fourteen release capabilities/thresholds remain
+unchanged and unapproved. Refresh the full failure schedule and source-bound
+guidance at this point before the next block, including active original
+pose/pair/contact dependencies wherever they occur. Full/self/continuous
+collision, dynamics, semantics, engine imports, broader action/rig/scene
+coverage and developer/animator cleanup evidence remain open requirements.
