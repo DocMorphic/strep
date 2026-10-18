@@ -8,7 +8,7 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
-- [Geometry rejection and prop drift](docs/objective-null-prop-drift-v1.md): independent full-mesh replay rejects the numerically improved temporal proposal: box penetration grows from 23.5 to 43.1 mm. Removing unnecessary prop movement preserves all motion inputs and local bounds but still adds crossing records, so that diagnostic is rejected too. A checked secondary-proposal helper passes 101 focused tests; mesh-aware guidance remains necessary. Qualified reference and Studio selection are unchanged.
+- [Geometry rejection and prop drift](docs/objective-null-prop-drift-v1.md): independent full-mesh replay rejects the numerically improved temporal proposal: box penetration grows from 23.5 to 43.1 mm. Removing unnecessary prop movement preserves motion inputs and local bounds but still adds crossing records, so that diagnostic is rejected too. The secondary-proposal helper passes 101 focused tests. All 936 new mesh relations pass derivative checks; the first scene-aware solve fails strict admission. Qualified reference and Studio selection are unchanged.
 
 - [Constrained temporal track controls](docs/native-track-profiles-v1.md): each declared joint can scale its supplied temporal correction independently while retaining the complete original clock, frozen keys and source-relative controls. All 137 focused source checks pass. This provides a compact search representation; it does not yet produce an accepted correction or new Studio character-stat controls.
 

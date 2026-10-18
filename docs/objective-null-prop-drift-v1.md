@@ -81,3 +81,73 @@ being retained for that purpose. Qualified reference and Studio selection stay
 unchanged: 72 protected repairs, 6,050 rate failures, two scene failures and all
 previously disclosed body/dynamics/engine/human-review gaps. All release
 capabilities remain unapproved under the same full-project goal.
+
+## Completed replay and scene guidance
+
+Both rejected geometry variants have independent four-time replay: all full
+world arrays, 20 mesh pairs, planes and original source pose bands match their
+producer results. All base body/partner/floor samples pass. The actual box-touch
+failure remains, with unchanged source limits and topology. The first independent
+script retained a producer-folder path assumption; that setup failure is
+preserved, and the corrected process uses the actual scene's bound actor path.
+No motion or physical condition changed to make the replay complete.
+
+All **123 + 117 = 240** surface records were then reclassified from their bound
+world triangles and verified using exact rational witnesses. Every record proves
+a strict interior crossing for those represented binary-float triangles; none
+is unresolved. This does not certify the upstream skinning arithmetic or
+independent physics. All added and removed face identities remain in the ledger.
+Across the two variants, **104 face pairs** cross that were clear in the reference.
+All 104 have positive floating baseline separating-axis guidance; those axes are
+local search data, not exact clearance certificates.
+
+The public reset helper reproduces the actual diagnostic point exactly, with
+unchanged primary values, lower L1 and all 68,900 norm and 33,594 hard conditions
+strictly rechecked. It remains a **geometry-rejected** point. The 24 new helper
+cases also pass hosted Windows and Ubuntu at
+`a5b0bbe1755a92300f604b7d0a13d831d84e0b45`
+([run 39116131774](https://github.com/DocMorphic/strep/actions/runs/39116131774)).
+
+The new scene guide retains all **104 contexts / 936 directed vertex relations**
+and all 49 body/prop columns at the unchanged qualified 72-witness source point.
+It uses the original `1e-8` surface tolerance. Two full derivative checks and a
+separate boundary-clearance check pass; the complete-direction maximum errors
+are 2.293e-8 and 2.665e-8. Saved baseline values anchor raw skin/prop derivatives
+explicitly; this is not differentiation through Float32 serialization. An initial
+launcher-name typo is preserved as a failed setup; the corrected fresh study
+changes no limits. Both old rejected points violate this new guidance.
+
+All 936 relations are added to the complete model, retaining every original
+norm, objective, control bound and world row: **34,530 total hard rows**, 49
+columns and 7,308,156 stored array bytes. The unchanged 68,900 original norm
+witnesses are copied byte for byte. Rejected clips are diagnostic data, not new
+incumbents; the qualified reference remains at 72 repairs, and all 6,050 original
+failed rate rows remain objectives and mandatory postchecks.
+
+The first solve reaches `AlmostSolved` but returns **no admissible direction**.
+The full point fails original admissions; the predeclared half and quarter rays
+still violate hard rows, with maximum residuals 6.6413e-5 and 3.2734e-5. Neither
+is exported or repaired by clipping. This shows a failed numerical attempt, not
+infeasibility of the nonlinear request or a reason to relax geometry. The next
+work is equivalent conditioning/model reduction with complete original-unit
+rechecks. The 104-witness guide also does not replace all-triangle or full-time
+post-validation.
+
+Local evidence is under `reports/native-track-scene-prior-batch00-v1`,
+`reports/native-track-scene-independent-batch00-v2`,
+`reports/native-track-prop-drift-diagnosis-v1`,
+`reports/native-track-prop-drift-scene-batch00-v1`,
+`reports/native-track-prop-drift-independent-batch00-v1`,
+`reports/native-objective-null-reset-actual-v1`,
+`reports/native-track-scene-witness-guide-v2`, and the v2 assembly/solve folders.
+Recorded resource replays pass for the completed jobs; no job bypasses the
+512 MiB tree-RSS or 600 MiB free-RAM guard. The qualified reference, Studio
+selection and full-project release criteria are unchanged.
+
+The completed checkpoint is `reports/native-track-scene-rejection-progress-v1`.
+It rechecks 16,194 current source/archive/data bindings, the recorded resource
+receipts and all 240 exact proof objects, while retaining the previous full-goal
+checkpoint receipt. It confirms that only goal line 3 and the two release-matrix
+progress fields changed; every release criterion remains fixed. Audit resource
+replay: 129.156 s / 82,968,576 bytes / 128 observations. No unrelated historical
+numerical study was rerun or claimed revalidated by this metadata update.
