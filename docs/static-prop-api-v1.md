@@ -1804,3 +1804,27 @@ norms after the raw point fails, a negative-upper hard row that rejects every
 smaller step, and rejection of a feasible but worse modeled direction. The
 resource replay passes: 32.594 s / 153,272,320 bytes / 34 observations. These
 fixtures do not establish that an actual corrected animation is acceptable.
+
+The first ray trial rejects both smaller fractions correctly: vector norms pass,
+but one original scalar cut is positive by 1.015882883e-14 at the half step.
+A separate complete-model replay identifies active cut 14 / archived full cut
+128 / world group g132 (a 477-row displacement group). Its upper bound is zero
+and row norm 9.507700308e-7. Every one of 1,899 cuts is examined; this tiny
+nonzero row is not thresholded away. Guard: 32.640 s / 147,263,488 bytes /
+34 observations. The rejected trial remains unchanged and unexported.
+
+An optional **solver-only cut reserve** now shifts each solver upper bound
+inward by `reserve * row_norm`, with reserve restricted to [0, 1e-5] and zero
+by default. Original unbuffered upper bounds remain in admission, including
+strict hard-row checks for smaller ray proposals. This is a search restriction,
+not a physical or postcheck tolerance; it can make a proposed model harder to
+solve, and failure does not establish rig/action infeasibility. Complete reserve
+and original admission arrays are included in pre-allocation budget checks.
+The measured next trial declares reserve 1e-6 in control coordinates.
+
+All **69 standalone fixtures** pass (1.48 s), adding invalid-reserve rejection
+and a real solver check that a zero-upper cut moves inward while its original
+array remains unchanged. Resource replay: 33.656 s / 167,669,760 bytes /
+35 observations. Earlier 64-case source at `95b2062` also passes both hosted
+[Windows and Ubuntu](https://github.com/DocMorphic/strep/actions/runs/39101172951)
+(0.96 / 0.39 s); current-source hosted validation is tracked separately.

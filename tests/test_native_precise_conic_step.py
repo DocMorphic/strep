@@ -192,3 +192,18 @@ def test_ray_rejects_feasible_but_worse_model_direction(monkeypatch):
     direction,report=module.conic_hinge_step(**kw)
     assert direction is None and report['proposal_trials'][1]['maximum_norm_excess']<0
     assert report['proposal_trials'][1]['predicted_sum_model_violation']>report['baseline_sum_model_violation']
+
+
+@pytest.mark.parametrize('value',[-1e-9,True,float('nan'),1e-4])
+def test_invalid_solver_cut_reserve_rejects(value):
+    kw=args();kw['solver_cut_reserve']=value
+    with pytest.raises(ValueError,match='cut reserve'):module.conic_hinge_step(**kw)
+
+
+def test_solver_cut_reserve_moves_search_inside_unchanged_original_cut():
+    kw=args();kw.update(native_vectors=np.zeros((1,3)),native_matrix=sparse.csr_matrix((3,2)),extra_matrix=np.array([[1.,0.]]),extra_upper=np.array([0.]),solver_cut_reserve=1e-5)
+    old=kw['extra_upper'].copy();direction,report=module.conic_hinge_step(**kw)
+    assert direction is not None,report
+    assert -1.001e-5<=direction[0]<=-.999e-5
+    assert np.all(kw['extra_matrix']@direction<=kw['extra_upper']) and np.array_equal(old,kw['extra_upper'])
+    assert report['solver_cut_reserve']==1e-5 and report['extra_proposal_rows']==1 and report['native_cones']==1

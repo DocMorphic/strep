@@ -17,10 +17,13 @@ def conic_hinge_step(margins, jacobian, lower_delta, upper_delta, native_vectors
                      extra_upper=None, l1_penalty=1e-5,
                      maximum_model_violation=None,
                      solver_box_reserve=1e-9,
+                     solver_cut_reserve=0.,
                      solver_feasibility_tolerance=1e-12,
                      proposal_fractions=(1.,),
                      maximum_matrix_bytes=MAXIMUM_BYTES,
                      time_limit_seconds=30., maximum_iterations=200):
+    if type(solver_cut_reserve) not in (int,float) or not np.isfinite(solver_cut_reserve) or not 0 <= solver_cut_reserve <= 1e-5:
+        raise ValueError('Explicit finite bounded solver cut reserve required')
     if (not isinstance(proposal_fractions, (tuple, list)) or not 1 <= len(proposal_fractions) <= 8
             or any(type(v) not in (int, float) or not np.isfinite(v) or not 1e-6 <= v <= 1 for v in proposal_fractions)
             or proposal_fractions[0] != 1 or any(a <= b for a, b in zip(proposal_fractions, proposal_fractions[1:]))):
@@ -83,12 +86,15 @@ def conic_hinge_step(margins, jacobian, lower_delta, upper_delta, native_vectors
         nonzeros += int(np.count_nonzero(jac)); linear_rows += rows
     variables = 2 * columns + rows
     estimated_bytes = 12 * nonzeros + 4 * (variables + 1)
+    if input_bytes + 8*(linear_rows+len(cuts)) > maximum_matrix_bytes:
+        raise ValueError('Complete model and cut-reserve array budget exceeded')
     if estimated_bytes > maximum_matrix_bytes:
         raise ValueError('Complete sparse constraint matrix exceeds budget before allocation')
     transform = sparse.csr_matrix(native_matrix, dtype=float, copy=True)
     transform.sum_duplicates(); transform.eliminate_zeros()
     if not np.isfinite(transform.data).all():
         raise ValueError('Finite summed native matrix required')
+    solve_upper=upper-float(solver_cut_reserve)*np.linalg.norm(cuts,axis=1)
     identity = sparse.eye(columns, format='csc'); zero = sparse.csc_matrix
     block = lambda a, b, c: sparse.hstack([a, b, c], format='csc')
     zcr = zero((columns, rows)); zrc = zero((rows, columns))
@@ -101,7 +107,7 @@ def conic_hinge_step(margins, jacobian, lower_delta, upper_delta, native_vectors
         block(zero((rows, columns)), zrc, -sparse.eye(rows, format='csc')),
         sparse.hstack([sparse.csc_matrix(cuts), zero((len(cuts), columns + rows))], format='csc')]
     rhs = [margin, np.zeros(2 * columns), solve_hi, -solve_lo, np.zeros(columns),
-           np.maximum(-solve_lo, solve_hi), np.zeros(rows), upper]
+           np.maximum(-solve_lo, solve_hi), np.zeros(rows), solve_upper]
     if maximum_model_violation is not None:
         matrices.append(block(-sparse.csc_matrix(jac), zrc, zero((rows, rows))))
         rhs.append(margin + maximum_model_violation)
@@ -115,6 +121,8 @@ def conic_hinge_step(margins, jacobian, lower_delta, upper_delta, native_vectors
     if actual_bytes > maximum_matrix_bytes:
         raise ValueError('Complete sparse constraint matrix exceeds budget')
     assert matrix.shape == (linear_rows + 4 * balls, variables)
+    linear_bound=bound[:linear_rows].copy();extra_first=2*rows+6*columns
+    linear_bound[extra_first:extra_first+len(cuts)]=upper
     solver = solver_module(); settings = solver.DefaultSettings()
     settings.verbose = False; settings.max_iter = maximum_iterations
     settings.time_limit = float(time_limit_seconds)
@@ -130,7 +138,7 @@ def conic_hinge_step(margins, jacobian, lower_delta, upper_delta, native_vectors
         point = np.asarray(solution.x, float)
         if point.shape == (variables,) and np.isfinite(point).all():
             candidate = point[:columns]
-            linear_residual = float(np.max(matrix[:linear_rows] @ point - bound[:linear_rows]))
+            linear_residual = float(np.max(matrix[:linear_rows] @ point - linear_bound))
             norm_excesses = np.linalg.norm(vectors + (transform @ candidate).reshape(-1, 3), axis=1) - radii
             worst_norm = int(np.argmax(norm_excesses)); native_excess = float(norm_excesses[worst_norm])
             failed_norms = int(np.count_nonzero(norm_excesses > 1e-8))
@@ -145,7 +153,7 @@ def conic_hinge_step(margins, jacobian, lower_delta, upper_delta, native_vectors
                     # A separately checked ray proposal, never coordinate clipping.
                     trial=float(fraction)*candidate;predicted_trial=margin+jac@trial
                     primal=np.r_[trial,np.abs(trial),np.maximum(-predicted_trial,0)]
-                    trial_linear=float(np.max(matrix[:linear_rows]@primal-bound[:linear_rows]))
+                    trial_linear=float(np.max(matrix[:linear_rows]@primal-linear_bound))
                     trial_norms=np.linalg.norm(vectors+(transform@trial).reshape(-1,3),axis=1)-radii
                     trial_native=float(np.max(trial_norms));trial_box=float(max(np.max(lo-trial),np.max(trial-hi)))
                     hard=float(np.max(cuts@trial-upper)) if len(cuts) else 0.
@@ -165,7 +173,7 @@ def conic_hinge_step(margins, jacobian, lower_delta, upper_delta, native_vectors
         fixed_native_cones=int(np.count_nonzero(np.diff(transform.indptr).reshape(-1, 3).sum(axis=1) == 0)),
         linear_constraint_rows=linear_rows, sparse_matrix_bytes=actual_bytes,
         estimated_sparse_matrix_bytes=estimated_bytes, input_bytes=input_bytes,
-        solver_box_reserve=float(solver_box_reserve),
+        solver_box_reserve=float(solver_box_reserve),solver_cut_reserve=float(solver_cut_reserve),
         solver_feasibility_tolerance=float(solver_feasibility_tolerance),
         proposal_fractions=[float(v) for v in proposal_fractions],selected_fraction=chosen_fraction,proposal_trials=trial_reports,
         raw_solver_admission_pass=raw_admission,raw_solver_native_norm_excess=raw_native_excess,
@@ -176,5 +184,5 @@ def conic_hinge_step(margins, jacobian, lower_delta, upper_delta, native_vectors
         predicted_sum_model_violation=None if predicted is None else float(np.maximum(-predicted, 0).sum()),
         maximum_model_violation=maximum_model_violation,
         original_selected=True, quality_approved=False, release_approved=False,
-        scope='Optional predeclared ray fractions are separately checked with strict affine norm/extra/peak bounds and lower model cost; default full proposal only. No coordinate clipping. All supplied signed rows, columns and affine norm cones retained, including fixed cones. No clipping. Diagnostic solver tolerances never replace strict raw/saved motion acceptance; neither solver status proves nonlinear feasibility or infeasibility.')
+        scope='Solver-only cut reserve subtracts reserve*row-norm from solver upper bounds; original unbuffered cuts remain mandatory in admission. Optional predeclared ray fractions are separately checked with strict affine norm/extra/peak bounds and lower model cost; default full proposal only. No coordinate clipping. All supplied signed rows, columns and affine norm cones retained, including fixed cones. No clipping. Diagnostic solver tolerances never replace strict raw/saved motion acceptance; neither solver status proves nonlinear feasibility or infeasibility.')
     return direction, report
