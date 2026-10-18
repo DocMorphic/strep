@@ -181,3 +181,11 @@ The source/resource-qualified checkpoint is
 changed body-policy times. This is a plan, with zero geometry queries performed
 by the checkpoint. Every prior scene condition and collision metric must be
 compared, changed prop geometry queried afresh, and results independently replayed.
+
+Follow-up: the first four critical geometry samples have now been checked.
+Independent replay confirms increased box penetration and crossing records, so
+the provisional proposal is **rejected**. The remaining 218 geometry times are
+unqueried after that failure. A same-body/original-prop-control diagnostic still
+fails crossing-count nonregression. See [geometry rejection and prop drift](objective-null-prop-drift-v1.md)
+for the complete measurements and limits; numerical motion progress does not
+override the physical rejection.
