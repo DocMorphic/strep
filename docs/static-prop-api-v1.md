@@ -873,3 +873,172 @@ Future fitting from this body must protect the union of the 29 previous repairs
 and these six new repairs while retaining the original authoring epoch. The
 combined scene and all rejected steps remain separate; no Studio selection or
 release capability is promoted.
+
+## Complete triangle-pair projection rows
+
+`native_triangle_pair_projection.py` provides a general coupled guidance kernel
+for supplied triangle pairs, independent of an action label or character rig.
+`choose_directions(left, right)` proposes unit directions using projection
+intervals, face/cross-edge axes and in-plane edge axes for coplanar triangles.
+The projection method is described in
+[Eberly's primary note](https://www.geometrictools.com/Documentation/MethodOfSeparatingAxes.pdf).
+The implementation is independent code, not copied pseudocode.
+
+Freeze those directions, then call `projection_rows(left, right, directions,
+left_jacobian=..., right_jacobian=...)`. Each pair retains all **nine** signed
+vertex-combination rows, in pair/left-vertex/right-vertex order. Both sides'
+complete derivative columns participate. A fixed side needs an explicit zero
+Jacobian; a missing side is rejected. There is no entropy correction that would
+turn a tiny positive source gap into a negative smooth constraint. Positive
+projections imply separation in real arithmetic only; floating input/rounding,
+other pairs, mesh containment and continuous motion still need separate checks.
+Negative projection gaps do not prove intersection or general infeasibility.
+
+Complete pairs, points and derivative columns must fit the declared 64 MiB
+budgets. Evaluation projects each side before forming the nine differences,
+avoiding an additional pair/left/right/xyz/column workspace. No pair or vertex is
+discarded to fit the budget. Source hashes, topology IDs, clocks and edit
+permissions remain caller-owned.
+
+All **27** focused source tests pass locally and on Windows/Ubuntu at `193701a`
+in [run 39087765112](https://github.com/DocMorphic/strep/actions/runs/39087765112).
+They cover all nine rows, duplicate points, parallel/coplanar separation,
+crossing/touching outcomes, complete analytic derivatives against independent
+perturbations, shared-motion cancellation, the final supported column,
+transform/side-reversal consistency and invalid/incomplete/budget inputs. Local
+guard: 25.672 s / 82,333,696 bytes / 43 observations. Windows: 0.54 s; Ubuntu:
+0.37 s. These are source fixtures, not motion or scene approval.
+
+### Complete pair guide trial (2026-10-18)
+
+The next experimental guide retains all 1,245 crossing occurrences in ten
+named prior geometry reports as **267 distinct pairs: 226 for actor A and 41
+for actor B**. It produces 2,403 projection rows without dropping duplicate
+vertex combinations. The unchanged original author epoch, native clocks,
+frozen keys, 5400 body norm bounds and prop permissions remain in force.
+
+A fresh model reproduces all 383,617 incumbent world conditions byte for byte.
+Two independent directions check its derivatives. Fresh timeline guards cover
+6,431 passing conditions, including **35 previous repairs**; every one of the
+7,262 affected/required derivative rows is checked. A total squared-error
+directional guard is verified against complete-world finite differences.
+The coupled 139-column map passes two point/projection perturbation checks.
+The solve retains all 41 second-character pairs as projection guards.
+
+Four declared joint steps (1, 1/2, 1/4, 1/8) each complete all **944,562**
+raw/exported motion checks, with zero newly failing world rows and no lost
+repair. This means nonregression, not that all conditions pass: pre-existing
+source-rate failures remain. The full step lowers raw normalized peak error
+43.887751 to 43.473433 and squared error 56,818.723 to 56,141.241.
+
+Each step also receives the full nine-time mesh query, all 2,017 sampled prop
+permission checks and declared contact checks. All 97 previously passing
+geometry conditions remain passing, including the second character. However,
+**every step retains 115 crossing records against the previous best 113**;
+none is selected. Full-step maximum penetration is 23.262 mm versus 23.627 mm.
+Better depth or motion error cannot waive the crossing-count criterion.
+The trial finishes in 584.703 s, peaks at 519,151,616 bytes under the unchanged
+512 MiB cap, and its resource replay matches all 588 observations.
+
+The ledger covers its named prior reports, not unseen pairs, and fixed source
+directions need full nonlinear mesh postchecks. Continuous contact, self
+collision, dynamics, broader rigs/actions/objects, engine behavior and human
+ratings remain separate open release requirements. Original Studio selection
+and all release declarations remain unchanged.
+
+The subsequent representation check identifies a shared actor vertex, 11639,
+in four recurring actor-A/box-face-0 pairs; the authored grip uses vertex
+17039. Full-mesh and support-skin paths agree within 9e-16 m. Raw versus saved
+full-mesh positions differ by less than 2.8e-8 m. The source projected gap is
+already -1.34521e-7 m and the original proposal still predicts a negative gap.
+Thus these four crossings cannot be attributed solely to export rounding.
+The corrected diagnostic finishes in 22.562 s / 248,016,896 bytes; its earlier
+incorrect six-pair precondition stops without conclusions and is retained.
+
+The expanded ledger includes the four completed proposals: 14 named reports,
+1,705 occurrences, 269 pairs (A 228 / B 41). A fresh bounded subproblem adds
+all 36 vertex-combination rows of the four recurring pairs as hard repair
+targets. Its requested 1 micrometre extra directional separation is a stronger
+**proposal target**, not a changed geometry/contact tolerance. With all 35
+motion repairs, 6,431 passing motion guards, 154 protected pairs and original
+norm bounds retained, the solver returns `PrimalInfeasible`; no direction or
+candidate is accepted. The 48.219 s / 317,038,592-byte run and 65-observation
+resource replay finish normally. This status does not establish infeasibility
+of nonlinear motion, a larger permitted search region or the action itself.
+
+A repair-focused follow-up targets those 36 rows in its objective, retaining
+the same passing-motion/35-repair guards, all 154 protected triangle pairs,
+original norm bounds and total-world squared-error directional cut. All 2,421
+pair derivatives are still observed, but 111 other known pairs with overlapping
+source projections are outside this focused objective. Full raw/saved peak,
+sum-squared and failure-count gates remain unchanged. The solver returns a
+usable step and all 944,562 motion checks complete without regression. Full
+nine-time geometry still gives 115 records, all 97 prior passes preserved;
+the candidate is rejected. The 207.219 s / 447,164,416-byte run has 220 matched
+resource observations. This limited step motivates inspecting proposal
+constraint conflicts rather than repeating smaller line steps or relaxing
+physical tolerances.
+
+The full labeled solver witness identifies actor-A triangles 28752 and 28753
+against prop face 0 as the strongest conflicting proposal guards. The first
+labeling worker stops after the completed solve because 106 grouped world
+descriptors were mistaken for 6,431 scalar labels. A fresh recovery expands
+every group, verifies the original model/proposal byte identities and archives
+all 8,053 extra-row labels without rerunning the solver. Its floating dual is a
+diagnostic, not an exact infeasibility certificate.
+
+An independent row comparison then finds **exactly opposite stored normals
+and all 139 stored Jacobian columns** between each of those two guard rows
+and the repair row for triangle 28404. Their margin-sum identity differs by
+1.28e-21. Keeping half of either positive guard margin limits the repair's
+predicted geometric gap to **at most -72.2604 nm**. Thus these fixed source
+directions prohibit even clearing that repair in this local model. This is a
+conflict between proposal restrictions, not proof of a physical impossibility.
+Recovery: 15.391 s / 85,737,472 bytes / 33 resource observations. Row comparison:
+9.250 s / 55,341,056 bytes / 27 observations. Both resource audits match.
+
+An explicit direction branch can test alternatives for those two pairs while
+retaining their complete 18 value/derivative rows in the full objective. It
+must still retain all original motion, author, prop and full-mesh postchecks,
+including the 97 passing geometry identities and crossing-count/depth limits.
+Changing a conflicting projection restriction cannot itself approve a clip.
+
+The explicit two-direction branch completes the same full 3,527-row objective
+with all 269 pairs, 2,421 projection rows, 6,431 motion guards/35 repairs, 5,402
+norm cones and 36 hard repair targets. It completes all 944,562 raw/saved motion
+checks with no new failed rows or lost repairs. Raw peak decreases 43.887751
+to 43.533073 and squared error 56,818.723 to 56,297.638. All nine scene times,
+2,017 prop-bound samples, contacts and 97 previously passing geometry identities
+are checked. Crossing count returns to **113**, equal to the previous best;
+maximum depth decreases 23.627057 to **23.531278 mm**. Therefore the unchanged
+componentwise numerical comparison accepts this partial improvement. This is
+**not collision-free motion**: the two failing geometry conditions/one failing
+sample remain. Original Studio selection, quality and release flags stay
+unchanged. Trial: 191.578 s / 437,751,808 bytes / 205 matched resource
+observations. Independent export/body/scene replay is required before treating
+it as a verified fitting incumbent.
+
+Those independent replays now complete under the same resource/source guards:
+
+| Replay | Fresh verification | Time / peak RSS / observations |
+| --- | --- | --- |
+| Body export | All 383,617 saved world rows byte-identical; 5,400 raw and 5,400 saved native bounds; 177,328 other archived scalars passing; original cumulative source/caps/static content/frozen keys/clocks retained | 37.969 s / 195,616,768 bytes / 55 |
+| Changed body pose | One fresh complete mesh/partner/all-vertex-floor query; 231 exact full-hierarchy pose identities inherit the prior policy, closing 232 samples and all 120 native keys with zero body failures | 35.859 s / 187,277,312 bytes / 53 |
+| Combined scene | All 45 mesh-pair queries and full world-array bytes at nine times, 97 prior geometry passes, all 2,017 prop bounds and contacts; no new mesh-prop/coupled backends imported | 83.047 s / 223,850,496 bytes / 99 |
+
+Both raw and saved motion audits identify exactly five additional repaired
+world rows: 93688, 93691, 93696, 240146 and 276877. Existing failures decrease
+6,087 to **6,082**, with no new failing row. Together with the earlier 35,
+**40 repair witnesses** must be protected in future warm fits. The original
+actor/quaternion source and permission epoch remain authoritative. Existing
+geometry/skinning/collision libraries are shared by the replays; these are
+independent composition and artifact checks, not independent algorithms.
+
+The new fitting reference remains a **partial experimental improvement**:
+113 crossings, two failing scene conditions and one failing scene sample,
+6,082 source-rate failures, 1,785 unclosed body geometry times, self collision,
+continuous motion, dynamics, semantics, broader rigs/actions/objects, engines
+and human cleanup evidence remain open. It does not replace the Studio's
+selected clip or approve any release capability. The next fit must refresh
+the complete timeline/scene guide around this reference, include discovered
+pairs and preserve all 40 repairs without relocking temporary search anchors.

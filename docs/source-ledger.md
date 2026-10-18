@@ -302,3 +302,21 @@ failures. A feasible seed, supported trajectory interface, native derivative
 composition and Windows memory/runtime behavior all require evidence before
 adoption. Current sampled mesh checks and strict source-relative bounds remain
 the acceptance rules for the present trials.
+
+## 2026-10-18: triangle-pair projection guidance
+
+David Eberly's primary [Intersection of Convex Objects: The Method of Separating
+Axes](https://www.geometrictools.com/Documentation/MethodOfSeparatingAxes.pdf),
+sections 2, 5 and 9, explains separation through projected vertex intervals and
+the additional in-plane edge directions needed for coplanar triangles. The
+document lists CC BY 4.0. Strep's implementation is independent code; no listed
+pseudocode or external collision implementation is copied or installed.
+
+The native editor uses these ideas to propose a fixed direction for each
+explicitly bound triangle pair. It retains all nine left/right vertex
+combinations and composes both sides' supplied derivatives. The direction is
+frozen during differentiation. These floating directional rows are guides:
+failure does not establish collision or infeasibility, and success is not an
+exact whole-mesh or continuous-time certificate. Independent full-mesh and
+saved-motion checks still govern comparison. This adds no model checkpoint,
+training data or runtime dependency, and changes no model/data license terms.
