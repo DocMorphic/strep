@@ -356,3 +356,17 @@ approximation remains separate from nonlinear rig and Float32 validation;
 the paper does not establish feasibility or correctness for Strep's motion.
 No paper implementation is copied, no solver/dependency is installed and no
 data or checkpoint is acquired. The paper remains copyrighted by Elsevier.
+
+## 2026-10-18: solver accuracy versus original-unit norm admission
+
+Clarabel's primary [solver settings](https://clarabel.org/stable/api_settings/)
+distinguish full and reduced feasibility targets. Its version-pinned
+[0.11.1 convergence code](https://github.com/oxfordcontrol/Clarabel.rs/blob/v0.11.1/src/solver/implementations/default/info.rs#L149-L153)
+normalizes primal residuals by problem/variable norms. Thus a solver status
+and its relative residual target do not replace Strep's per-cone admission
+or nonlinear raw/saved gates. The measured key-63 failure motivates a stricter
+solver target, not a relaxed physical bound. Strep's existing earlier kernel
+stays replayable; a versioned precise kernel permits targets from 1e-14 through
+1e-10, defaulting to 1e-12, and keeps the previous admission limits unchanged.
+No upstream implementation is copied; the existing installed Clarabel 0.11.1
+solver is reused with its own terms. No dependency, checkpoint or data is acquired.

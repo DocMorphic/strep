@@ -23,6 +23,7 @@
     "tests/test_native_evaluated_world_rows.py",
     "tests/test_open_file_bindings.py",
     "tests/test_native_conic_hinge_step.py",
+    "tests/test_native_precise_conic_step.py",
     "tests/test_native_basis_pose_population.py",
     "tests/test_native_basis_pose_rows.py",
     "tests/test_native_world_hinge_step.py",

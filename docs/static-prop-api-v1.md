@@ -1751,3 +1751,34 @@ failure and improve feasibility handling without relaxing the gates, then run
 all mandatory motion, contact, prop, mesh and independent saved-file checks on
 any admitted candidate. Broader action/rig/scene coverage and developer/animator
 cleanup evidence remain requirements of the same entire-project goal.
+
+### Diagnosing relative solver feasibility
+
+An observer around the unchanged earlier solver reproduces the quarter-trust
+rejection exactly: **one of all 12,552 norms** exceeds admission, with zero
+failed native or fixed norms. The worst row is actor A angular acceleration,
+world row **165677**, joint 50, stencil 2.058333333 / 2.066666667 / 2.075 seconds.
+Its normalized excess is **2.031962509e-8** (1.712854525e-8 in the original
+model units), despite a positive baseline proposal margin of 0.157044298.
+The observer changes no solver setting and records every cone residual,
+identity and complete model input. Its raw point is diagnostic only and never
+admitted or exported. Guard: 64.468 s / 316,559,360 bytes / 65 observations.
+
+The version-pinned Clarabel convergence source uses a relative primal residual;
+this explains why its status is not Strep's per-cone certificate. See the primary
+references in `docs/source-ledger.md`. New `native_precise_conic_step.py` preserves
+the earlier replayable kernel and changes the solver feasibility target to
+**1e-12**, permitting only values between 1e-14 and the earlier 1e-10 target.
+Every model row, derivative column, scalar cut and fixed/active norm remains.
+Box, linear and norm admissions and all downstream raw/saved/geometry gates
+remain unchanged. The report identifies the worst norm and number failing
+admission; it does not expose a rejected direction as accepted output.
+
+All **50 standalone source fixtures** pass (1.39 s), including unchanged
+curvature, fixed-cone conflict, complete-model/budget/input checks, tighter
+settings passed to the real solver, rejection despite `Solved`, and 257
+additional fixed boundary cones with every identity retained. An initial
+harness expected 52 cases after all 50 passed; that failed harness is retained.
+A fresh corrected harness records 50 pass / zero fail / zero skip with cleared
+PYTHONPATH and independent resource replay: 33.657 s / 174,743,552 bytes /
+35 observations. This is source evidence; a full motion trial is separate.
