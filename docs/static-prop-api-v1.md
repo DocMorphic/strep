@@ -1079,3 +1079,29 @@ the earlier independent diagnosis. All identities are archived; no character
 candidate or automatic guard removal is performed. Replay: 9.265 s /
 57,835,520 bytes / 27 matched resource observations. These are source and
 linear-guide checks, not animation-quality or release approval.
+
+### Moving-frame point map
+
+`scripts/native_inverse_rigid_frame.py` exposes `inverse_rigid_frame_points`.
+For a rotation mapping local coordinates into world coordinates, it computes
+row-vector local points as `(world - position) @ rotation`. Its full Jacobian
+includes derivatives of the points, frame translation and frame rotation;
+fixed sides need explicit zero arrays. A non-rigid/reflected frame or
+inconsistent rotation derivative is rejected rather than repaired. All supplied
+points and columns remain; complete array budgets reject without truncation.
+Caller assets and interpreter/process memory need their own resource guard.
+
+This supports evaluating triangle projection guidance in a prop frame while
+the prop rotates. It changes the proposal's coordinate formulation and
+derivatives, not physical edit permissions or collision/contact tolerances.
+The imported prop geometry remains fixed in that frame. A full scene trial
+must still verify the supplied rig motion, saved files, all required clocks,
+contacts and meshes; a coordinate-map fixture cannot approve an animation.
+
+All **31** focused fixtures pass locally: independent homogeneous inversion
+and rigid finite perturbations in every supplied column, common rigid motion
+cancellation, the 768th column, global rigid re-expression, projection
+composition, immutable strided inputs and incomplete/invalid/non-rigid/budget
+rejection. Local guard: 16.422 s / 104,902,656 bytes / 34 observations. The
+coordinate convention is documented in the primary-source ledger; the array
+implementation and product-rule composition are independent code.

@@ -320,3 +320,15 @@ failure does not establish collision or infeasibility, and success is not an
 exact whole-mesh or continuous-time certificate. Independent full-mesh and
 saved-motion checks still govern comparison. This adds no model checkpoint,
 training data or runtime dependency, and changes no model/data license terms.
+
+## 2026-10-18: moving rigid coordinate frames
+
+Russ Tedrake's primary MIT [Robotic Manipulation, Basic Pick and Place](https://manipulation.mit.edu/pick.html)
+describes composing and inverting rigid frames and expressing points relative
+to them. Strep independently applies the product rule to the inverse point
+transform, including supplied point, frame-position and frame-rotation
+derivatives. No Drake implementation is copied or installed. This is a
+coordinate-map building block; source permissions, scene feasibility and
+nonlinear motion/contact validation remain separate. The study tests whether
+prop-relative projection directions avoid restrictions introduced by freezing
+directions in world space. It adds no model, training data or runtime dependency.
