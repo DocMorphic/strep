@@ -1526,3 +1526,30 @@ nonlinear rotation, forward kinematics or saved animation. The primary SOCP
 reference is recorded in the source ledger. The verified half-step fitting
 reference, original Studio selection, broad action scope and all release
 requirements remain unchanged.
+
+### Complete sampled rate vectors
+
+`scripts/native_motion_rate_vectors.py` retains all three components of linear
+and angular speed/acceleration, their complete supplied world-to-rate Jacobian,
+the caller's original caps/tolerance and the unchanged validator's scalar
+values. Its vector norms must match canonical rate arithmetic byte for byte.
+Angular acceleration preserves the validator's divide/difference order;
+angular derivatives use the existing matrix decoder in bounded 16-column
+batches. No source rotation, clock or cap is reconstructed or replaced.
+
+The local constraint is `norm(v + J delta) <= original_cap + original_tolerance`.
+It retains transverse components and nonzero vector derivatives at zero speed.
+It is an affine local model, not a certificate for nonlinear rig motion or
+saved Float32 files. Canonical scalar arithmetic and all subsequent physical
+checks remain authoritative. Complete input-plus-output Jacobian budgets are
+checked before copying; no supplied joint or column is dropped to fit memory.
+
+All **63 fixtures** pass in a fresh standalone local interpreter (4.03 s),
+including every column of independent nonlinear pose fields, exact legacy
+scalar/norm agreement, known-axis rates, zero-speed vector derivatives, a
+transverse angular change missed by a scalar tangent, 768th-column retention,
+batch equivalence, near-orthogonal decoder behavior, rigid re-expression,
+unchanged inputs, zero caps/tolerance, exact budget boundaries and invalid/
+ambiguous-branch rejection. Guard: 33.078 s / 157,159,424 bytes / 50 observations.
+This adds no dependency, inference, training, asset or data acquisition and
+does not approve a new clip.

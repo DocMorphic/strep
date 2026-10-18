@@ -15,6 +15,7 @@ on:
           - tests/test_native_convex_depth_field.py
           - tests/test_native_temporal_failure_coverage.py
           - tests/test_native_motion_progress.py
+          - tests/test_native_motion_rate_vectors.py
           - tests/test_native_coupled_mesh_prop_pose.py
           - tests/test_fixed_grip_box_obstruction.py
           - tests/test_native_mesh_prop_crossing_witness.py
