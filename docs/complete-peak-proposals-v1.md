@@ -27,6 +27,9 @@ The focused source suite passes **405 local cases, zero skipped**: the previous
 Coverage includes analytic repair, complete last-row/column handling, sparse
 duplicate ownership, fake solver success rejected by strict original bounds,
 assembly refusal and signed integer overflow boundaries.
+The same 405 cases also pass on Windows and Ubuntu at source commit
+`369d9e136caa5bd13d9baccdfe564af264b61d3e` in
+[hosted run 39159162922](https://github.com/DocMorphic/strep/actions/runs/39159162922).
 
 ## Full model experiment
 
