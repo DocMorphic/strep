@@ -1967,3 +1967,51 @@ Native key 35 is absent from the ten current combined-scene sample times.
 Measure its baseline actor/prop mesh geometry under the original physical
 limits, then include it in candidate comparisons before any correction.
 The existing all-native-key body composite does not establish prop clearance.
+
+### Original-radius hard pose vectors and the full pair population
+
+The unchanged 69-witness reference is now measured at native key **35** in a
+fresh full actor/partner/floor/prop baseline. Every base condition and all five
+mesh pairs pass with zero recorded crossings/vertex depth. The supplemental
+query keeps true clip endpoints in its declared clock and leaves the original
+ten-time policy untouched. Guard: 41.859 s / 148,549,632 bytes / 43 observations.
+
+The refreshed world model retains all **8,077 affected/required scalar rows**:
+8,008 temporally affected rows and 69 repair witnesses. All **7,515** rows
+passing either raw or saved mode receive guards with their smaller passing
+margin. Both per-row directions and the complete world squared-error gradient
+pass; original authored contacts are proved invariant for this particular
+block. Active pose/pair guidance is inherited from its qualified full model,
+not replaced with zero derivatives. Guard: 78.735 s / 282,439,680 bytes /
+79 observations. Active pose/pair hard constraints are still separately required.
+
+`native_basis_pose_norm_rows.py` adds complete vector constraints on top of the
+bound original pose adapter. Rotation vectors retain normalized control units
+and radius one. Joint displacement vectors retain metres and original metre
+radii, avoiding a change to the legacy squared-margin operation order.
+Canonical margins match the existing evaluator byte for byte; every derivative
+column, including transverse components invisible to scalar gradients, remains.
+Encoded mode is value-only interpolation, never independent saved-file approval.
+All **12 standalone fixtures** pass (5.39 s), including native/subkey/frozen
+poses, full vector directions/last column, zero-scalar-gradient information,
+encoded modes, ownership and pre-allocation workspace rejection. Resource replay:
+37.750 s / 186,589,184 bytes / 39 observations.
+
+The actual model retains all **23,880 original pose norms / 71,640 components**
+in a **135-column sparse matrix** using 1,438,216 bytes. There are 6,766
+potentially affected pose rows and 17,114 rows with exact endpoint-zero support.
+An additional count of 20,548 zero affine Jacobians does not prove nonlinear
+invariance. All canonical baseline values match, original radii are unchanged,
+and both full vector directions pass (maximum differences 7.954e-10 / 8.298e-10).
+Guard: 114.625 s / 208,556,032 bytes / 114 observations.
+
+The exact pair-cover census retains every **9,971 active original triangle
+reference** in five separate time contexts and all **29,506 distinct vertex
+comparisons**. The existing bipartite factorization needs 1,542 support variables
+and 31,017 side inequalities: 1,677 total columns would exceed the existing
+768-column solver budget, and the side inequalities exceed the dense hard-row
+budget. This census does not discard any group or imply action infeasibility.
+A sparse complete-row representation must be evaluated under unchanged storage,
+process-RAM and physical acceptance limits before any optimizer is invoked.
+No new correction, geometry approval for changed candidates, engine import or
+human quality approval follows from these models; the whole release goal stays open.
