@@ -631,3 +631,56 @@ obstruction preflight and body-aware scene fitting under the original body/prop
 permissions, alongside broader action/object/rig evaluation. This is a limitation
 of one constrained fixture, not evidence that the full animation objective is
 unachievable. The full-project goal and all release requirements remain active.
+
+## Supported sufficient preflight for fixed box/grip scenes
+
+Run the standalone preflight before attempting box-only fitting:
+
+```powershell
+python scripts/native_mesh_prop_obstruction_preflight.py pose-permissions.json reports/my-box-preflight
+```
+
+It uses the existing permission-bound original scene, prop grip and edited key.
+The key must lie inside the authored required contact interval. Character world
+geometry is fixed for this diagnostic; its conclusion never blocks a domain
+that permits character edits. Neither existing fitter implementation changes.
+
+`fixed_grip_box_obstruction.py` recognizes exact axis-box corner/face coverage
+and strictly interior face grips on all six faces. Floating Delaunay proposes
+tetrahedra from original actor vertices. Acceptance requires exact positive
+barycentric coordinates, a contained ball larger than the original grip
+tolerance, strict half-ball reach, and explicit original mesh-edge paths to
+vertices outside every ideal rigid box placement. The direct verifier uses
+squared rational face distances and validates paths without calling Delaunay.
+Construction and verification share elementary rational helpers and source
+decoders; this is not a separate geometry library or arithmetic pipeline.
+
+The default search permits 10,000 nearby candidates and 128 tetrahedron checks;
+explicit caps cannot exceed 10,000 and 512. Exceeding the vertex budget returns
+unknown without truncation. Unsupported boxes/grips, keys outside the contact
+interval, unavailable triangulation and absent verified witnesses also return
+**unknown**, never clearance or feasibility. The search omits vertices within
+twice the grip tolerance of the contact centre: a vertex exactly at that centre
+makes incident discovery tetrahedra have zero barycentric weights. This is only
+candidate screening; exact acceptance conditions remain unchanged.
+
+The initial actual-scene attempt retained an unknown result after 128 checks
+because that exact contact vertex poisoned discovery. Its raw output is retained.
+The corrected search sees 3,105 candidate vertices and proves the same previously
+independently checked four-vertex obstruction on its first tetrahedron. The
+contained radius remains 0.173408 mm against the original 0.001 mm grip tolerance.
+Source bindings and author permissions remain unchanged. Guard: 3.094 s /
+126,812,160 bytes / 21 observations; resource replay matches archived bindings.
+
+All **37** focused cases pass locally: exact construction/direct verification,
+all six grip faces, altered weights/ball/source references/geometry/connectivity,
+invalid box coverage/winding, missing outside paths, discovery budgets and
+unknown outcomes, exact-contact-vertex screening, and source-bound CLI backend
+fixtures. Local guard: 17.453 s / 122,183,680 bytes / 35 observations. These are
+source fixtures plus the separately recorded actual-scene diagnostic, not
+animation quality, movable-body feasibility, continuous/physics or engine and
+human approval. Next correction work must include permitted body motion rather
+than repeat box-only fitting on this locked scene.
+
+The same **37** cases also pass on Windows (2.47 s) and Ubuntu (1.14 s) at
+`74acc70` in [run 39084446325](https://github.com/DocMorphic/strep/actions/runs/39084446325).
