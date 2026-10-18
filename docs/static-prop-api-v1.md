@@ -1430,3 +1430,33 @@ retains both endpoints in its declared clock and explicitly queries only the
 middle native-key-74 index, with identical source assets and physical limits.
 Its complete observation archive and receipt verify; the endpoint requirement
 and original scene policy are not relaxed.
+
+### Paired motion progress across temporal blocks
+
+`scripts/native_motion_progress.py` compares every supplied raw/saved signed
+world margin with the same caller-bound row population and original caps.
+Both representations must strictly reduce total squared violation beyond a
+declared progress threshold, with no increase in peak or failure count, no
+newly failed row and no lost required repair. An unchanged global worst row
+outside the edited block is allowed. Nonnegative margins pass exactly; the
+helper adds **zero physical acceptance tolerance**. Native bounds, other
+pose/pair rows, source/static content, contacts, geometry and release acceptance
+remain separate mandatory checks.
+
+All **34 focused fixtures** pass in a fresh standalone local interpreter
+(0.65 s), including improvement with a fixed worst row, rejection of new
+failures despite lower total error, lost zero-margin repairs, a worse peak,
+one representation failing to improve, exact repair identities, signed zero,
+strict progress thresholds, complete input budgets and invalid populations.
+Guard: 14.359 s / 104,448,000 bytes / 32 observations. No source cap or past
+failed study is reinterpreted by this helper.
+
+The predeclared first key-74 trial uses the complete 1,106-group guide, all
+5,400 cumulative native cones, 5,852 passing motion guards and 41 repaired
+witnesses. It permits two fractions, 1 and 1/2, of one bounded proposal.
+Each attempted candidate must finish all 944,562 original raw/saved checks;
+motion-qualified candidates then receive fresh full scene queries at all nine
+previous times plus key 74. Props remain fixed, original sampled prop bounds
+and contacts are rechecked, and every prior passing scene identity and the
+supplemental baseline are protected. Proposal or coverage success alone is
+not a repaired animation or a new fitting reference.
