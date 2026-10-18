@@ -31,8 +31,8 @@ All **307 focused source cases pass locally**, including the previous 264 and
 sparse skinning/autograd paths across influence counts and chunks, source and
 target motion, arbitrary/shared column maps, ownership, receipt budgets and
 invalid/incomplete inputs. Technical derivative comparisons add no physical
-tolerance. Hosted and real full-surface probe results will be recorded when
-complete.
+tolerance. The same **307 cases pass on Windows and Ubuntu** in hosted run
+`39147629208` at source commit `b64c60ff603399fc02ba097deaec0b73a3014fb8`.
 
 A local capability probe computes all 924 pose components against all 36
 controls per actor at frame 37 and checks projected reverse derivatives.
@@ -40,3 +40,10 @@ Forward and batched reverse differentiation are both supported on this
 installation. Those timings are a single development probe, not a general
 performance guarantee. Evidence: `reports/pose-jacobian-probe-v1` and
 `reports/complete-surface-jacobian-tests-v1`.
+
+The complete original surfaces at frame 37 agree with the previous sparse
+skinning path to below 9e-16 metres. Both directed mesh derivatives agree
+with the previous backward path to below 3e-15 in the checked projections.
+All 189 selected violating points pass the 0.001 relative directional-error
+check. These are local numerical checks, not motion realism or collision
+clearance. Evidence: `reports/dense-surface-jacobian-probe-v1`.
