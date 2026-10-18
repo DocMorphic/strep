@@ -10,6 +10,7 @@ on:
         default: tests/test_native_motion_orientation.py
         options:
           - tests/test_native_triangle_pair_projection.py
+          - tests/test_native_projection_guard_conflicts.py
           - tests/test_native_coupled_mesh_prop_pose.py
           - tests/test_fixed_grip_box_obstruction.py
           - tests/test_native_mesh_prop_crossing_witness.py

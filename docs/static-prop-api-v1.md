@@ -1042,3 +1042,40 @@ and human cleanup evidence remain open. It does not replace the Studio's
 selected clip or approve any release capability. The next fit must refresh
 the complete timeline/scene guide around this reference, include discovered
 pairs and preserve all 40 repairs without relocking temporary search anchors.
+
+### Reusable projection-guard conflict check
+
+`scripts/native_projection_guard_conflicts.py` exposes
+`find_equal_row_conflicts(guard_matrix, guard_upper, repair_matrix, repair_lower)`.
+It compares the supplied inequalities `A x <= upper` and `B x >= lower`.
+Exactly equal stored coefficient rows with `lower > upper` have contradictory
+bounds in that linear proposal. Every supplied column and duplicate row
+identity participates. Signed zero compares equal; near-equal or proportional
+rows are outside this detector. An empty result says nothing about general
+feasibility. The helper reports conflicts; it never removes guards or changes
+author/contact/geometry permissions.
+
+Inputs are explicit finite real NumPy arrays with coefficients/bounds within
+1e12 in magnitude. Complete row/column, comparison,
+output and workspace admission occurs before the owned copies and comparison
+blocks. A budget failure rejects the call instead of truncating rows, columns
+or matching identities. Default limits are 1,048,576 row-pair comparisons,
+16,384 conflicts and 64 MiB estimated array workspace, with up to 768 columns.
+The process/interpreter and caller-owned assets need separate resource guards.
+Results
+retain row IDs in repair-row/guard-row order and positive bound gaps. Caller
+labels, source binding and all nonlinear raw/exported/mesh postchecks remain
+necessary; this is not a scene-infeasibility certificate.
+
+All **34** focused fixtures pass locally, covering duplicate and empty
+populations, strict/touching/one-ULP bounds, signed zeros, mixed numeric types,
+strided immutable inputs, all 768 columns, exact scaling/permutation,
+near-equal/proportional exclusions, invalid values and complete budget
+rejections. Local guard: 16.421 s / 79,343,616 bytes / 34 observations.
+The supplied-guide replay checks **all 49,896 combinations** of 1,386 guards
+and 36 repair rows in all 139 columns. Its **24 contradictory row pairs**
+identify exactly actor-A triangles 28752 and 28753 against prop face 0, matching
+the earlier independent diagnosis. All identities are archived; no character
+candidate or automatic guard removal is performed. Replay: 9.265 s /
+57,835,520 bytes / 27 matched resource observations. These are source and
+linear-guide checks, not animation-quality or release approval.
