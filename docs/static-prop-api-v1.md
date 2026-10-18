@@ -1326,3 +1326,63 @@ for realism or release. Continuous collision, self-collision, dynamics,
 semantics, engine import and human cleanup requirements remain open. The
 original Studio selection, broader action scope and fixed release requirements
 remain unchanged; rejected trials are preserved locally.
+
+### Complete temporal failure coverage
+
+Continuing only the key-65 correction cannot finish this clip. A source-bound
+classification covers all **383,617** raw/saved world rows in the independently
+verified half-step reference. Only 7,238 rows are possibly affected by that
+block's exact native endpoint support; **376,379 are temporally invariant**.
+Of the 6,081 remaining failures in each representation, **825 are possibly
+affected and 5,256 are invariant**. The invariant raw normalized peak is
+16.322134 and its squared-error floor is 21,123.972. These are obstructions
+for this declared temporal block, not infeasibility claims about the rig or
+action. Nonzero temporal support is a conservative superset, not evidence of
+spatial controllability or a nonzero derivative.
+
+All invariant raw/saved values match the previous reference byte for byte;
+four archived complete directional perturbations also preserve every invariant
+raw value. Authored contact endpoints remain outside the block, and all 41
+repaired witnesses still pass. Guard: 18.500 s / 217,669,632 bytes / 36
+observations. The first diagnostic run incorrectly compared a joint-refined
+319-group partition directly with the 15-block oracle layout and stopped at
+that assertion. That failure remains unchanged: 12.281 s / 185,573,376 bytes /
+30 observations. The fresh run validates the complete refinement, including
+every boundary and row label; no fitting or motion checks are repeated.
+
+`scripts/native_temporal_failure_coverage.py` supplies a bounded, complete
+planner for explicit sampled failure stencils. Each candidate changes one
+existing native key, anchoring its neighbours while retaining original frozen
+keys. Stored LINEAR interpolation weights determine temporal dependence; exact
+keys and adjacent representable timestamps are not rounded. The returned
+matrix retains every supplied candidate and row, including unselected blocks.
+Oversized populations are rejected without pruning. Weighted greedy scheduling
+uses complete marginal sums with a deterministic key-order tie rule. Explicit
+initial peaks describe scheduling context, not successful repairs.
+
+All **55 focused fixtures** pass locally: independent scalar-impulse
+interpolation on irregular clocks, one/three-sample stencils, original frozen
+keys, exact and adjacent representable times, weighted/tied/initial scheduling,
+unselected candidates, unchanged inputs and invalid/complete-budget rejection.
+Source guard: 15.406 s / 82,247,680 bytes / 33 observations. No new dependency,
+model inference, training or data acquisition is involved.
+
+Actual-rig composition retains all **6,081 failed sampled-rate stencils** and
+all **117 eligible native peaks**, yielding **711,477 dependency cells**.
+Raw/saved failure masks agree; weights use the squared maximum normalized
+violation between representations, without changing any physical cap. Every
+candidate is independently constructed against both original-domain cumulative
+native bases and checked through scalar interpolation. All 234 block/basis
+constructions preserve the zero control grid and original frozen keys 0, 60
+and 119; every candidate/stencil dependency agrees. Guard: 28.703 s /
+204,779,520 bytes / 46 observations.
+
+With key 65 explicitly retained as initial context, the greedy schedule has
+**31 blocks and zero temporally uncovered failure stencils**. The first new
+peak, **74**, covers 656 failures outside the initial block. This is neither
+an optimal schedule nor 6,081 repaired conditions: no new clip is generated,
+and temporal coverage does not prove a spatially feasible correction. Future
+blocks must preserve all 41 repairs, the original author/cap epoch and every
+raw/saved/contact/mesh gate. Newly changed poses need geometry checks beyond
+the previous nine scene times. The verified partial fitting reference and
+original Studio selection remain unchanged.
