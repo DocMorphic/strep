@@ -46,6 +46,7 @@ export function createMeshSceneEditor({document=globalThis.document,api,post,get
    status(`Point-contact checks: ${r.all_declared_point_contacts_pass?'pass':'fail'}. Character motion is unchanged. Collision, grasp realism and engine validation have not run.`);
    for(const row of r.contacts){const p=document.createElement('p');p.textContent=`${row.id}: ${(row.maximum_position_error_m*1000).toFixed(2)} mm peak gap at ${row.peak_time_s.toFixed(3)} s; ${row.passed?'passes':'fails'} declared contact limits.`;el('Results').append(p);}
    for(const entry of r.downloads){if(![`/files/mesh-scene-jobs/${id}/scene-package.zip`,`/files/mesh-scene-jobs/${id}/contact-report.json`].includes(entry.url))throw Error('Unexpected scene download.');const a=document.createElement('a');a.href=entry.url;a.download='';a.className='btn';a.textContent=entry.label;el('Results').append(a);}
+   if(r.preview_url){if(!new RegExp(`^/mesh-scene-viewer\\.html\\?job=${id}&result=[a-f0-9]{64}$`).test(r.preview_url))throw Error('Unexpected scene preview.');const a=document.createElement('a');a.href=r.preview_url;a.target='_blank';a.rel='noopener';a.className='btn';a.textContent='View character and object together';el('Results').append(a);}
   }else status(`${r.status}: ${r.error||'waiting for the guarded measurement'}`);
  });
  draw();return {snapshot};

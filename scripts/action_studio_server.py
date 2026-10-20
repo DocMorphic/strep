@@ -35,6 +35,10 @@ def allowed_file(url_path):
     if path in ['/','/studio']:return ROOT/'scripts/action-studio.html'
     if path in ('/prop-grip-editor.mjs','/prop-grip-viewer.mjs'):return ROOT/'scripts'/path[1:]
     if path=='/mesh-scene-editor.mjs':return ROOT/'scripts/mesh-scene-editor.mjs'
+    if path in ('/mesh-scene-viewer.html','/mesh-scene-viewer.mjs','/mesh-scene-playback.mjs','/native-source-skin.mjs'):return ROOT/'scripts'/path[1:]
+    if path.startswith('/files/mesh-scene-previews/'):
+        from studio_mesh_scene_preview import served_file
+        return served_file(path)
     if path.startswith('/files/mesh-scene-jobs/'):
         from studio_mesh_scene_job import served_file
         return served_file(path)

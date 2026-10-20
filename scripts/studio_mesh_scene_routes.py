@@ -23,9 +23,17 @@ def dispatch_post(handler):
 def dispatch_get(handler):
     if not handler.path.startswith('/api/mesh-scene-jobs/'):return False
     if handler.headers.get('Host') not in handler.server.allowed_hosts:return _reply(handler,403,dict(error='Loopback host required'))
-    match=re.fullmatch('/api/mesh-scene-jobs/([a-f0-9]{32})',handler.path)
+    match=re.fullmatch('/api/mesh-scene-jobs/([a-f0-9]{32})(?:/preview/([a-f0-9]{64}))?',handler.path)
     if not match:return _reply(handler,400,dict(error='Choose an exact scene job'))
     try:
-        from studio_mesh_scene_job import review
-        return _reply(handler,200,review(match[1]))
+        from studio_mesh_scene_job import review,folder_for
+        from strep import sha256
+        if match[2]:
+            from studio_mesh_scene_preview import descriptor
+            return _reply(handler,200,descriptor(match[1],match[2]))
+        result=review(match[1])
+        if result['status']=='complete':
+            digest=sha256(folder_for(match[1])/'package/result.json')
+            result['preview_url']=f'/mesh-scene-viewer.html?job={match[1]}&result={digest}'
+        return _reply(handler,200,result)
     except (ValueError,TypeError,KeyError,OSError) as error:return _reply(handler,400,dict(error=str(error)))

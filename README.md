@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Saved character and object preview](docs/mesh-scene-preview-v1.md): view exact saved clips and object paths together, inspect timed contact gaps, and jump to the worst measured gap. All 214 related Python checks, three Node suites, browser contact replay, full humanoid skin replay and graphics readback pass. Preview skinning follows the existing measurement convention; source files and motion-quality decisions are unchanged. Bounded correction and complete geometry/export validation remain next.
+
 - [Timed character contacts with imported objects](docs/mesh-grip-authoring-v1.md): connect saved object grips to selected character patches, touch/hold intervals and explicit object placement or movement. A guarded worker preserves complete scene packages and reports missed contacts. All 206 related Python checks, two editor suites and browser-to-worker integration pass on generated fixtures; character correction and full geometry/engine validation remain next.
 
 - [Object grip authoring in Studio](docs/prop-grip-studio-v1.md): import a static GLB, click its surface, save named grip points and reopen them. All 182 related Python checks and the editor interaction suite pass; a real browser panel test verifies import, picking, download and reopening. Connecting those points to timed character contacts and correction remains next; no grasp or animation approval is inferred.
