@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Character correction against moving mesh grips](docs/mesh-character-correction-v1.md): a guarded command-line backend edits only permitted character tracks, preserves prop paths, and checks saved clips against complete contacts and mesh geometry. All 85 focused checks pass. A full-clock generated fixture meets its contact limit without added floor penetration; a retained three-metre miss remains a failure. Studio controls, real-rig motion-quality trials and engine validation remain next.
+
 - [Saved character and object preview](docs/mesh-scene-preview-v1.md): view exact saved clips and object paths together, inspect timed contact gaps, and jump to the worst measured gap. All 214 related Python checks, three Node suites, browser contact replay, full humanoid skin replay and graphics readback pass. Preview skinning follows the existing measurement convention; source files and motion-quality decisions are unchanged. Bounded correction and complete geometry/export validation remain next.
 
 - [Timed character contacts with imported objects](docs/mesh-grip-authoring-v1.md): connect saved object grips to selected character patches, touch/hold intervals and explicit object placement or movement. A guarded worker preserves complete scene packages and reports missed contacts. All 206 related Python checks, two editor suites and browser-to-worker integration pass on generated fixtures; character correction and full geometry/engine validation remain next.
