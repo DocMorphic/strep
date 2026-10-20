@@ -29,6 +29,13 @@ CORRECTION_STUDIES = ['contact-authoring-v2', 'support-contact-v1', 'body-contac
 
 def allowed_file(url_path):
     path=unquote(urlsplit(url_path).path)
+    if path in ('/mesh-character-editor.mjs','/mesh-character-viewer.html','/mesh-character-viewer.mjs'):return ROOT/'scripts'/path[1:]
+    if path.startswith('/files/mesh-character-jobs/'):
+        from studio_mesh_character_job import served_file
+        return served_file(path)
+    if path.startswith('/files/mesh-character-previews/'):
+        from studio_mesh_character_preview import served_file
+        return served_file(path)
     if path.startswith('/files/prop-assets/'):
         from studio_props import served_file
         return served_file(path)

@@ -1,0 +1,10 @@
+<details id="meshCharacterPanel"><summary>Correct character contacts with objects</summary>
+<p>Save and measure the object-contact scene above. In Character correction, choose <b>Contact adjustment</b>, load scene joints and save bounds for each character to edit. Then run the correction here using those same bounds.</p>
+<p>Joint turning-speed limits, clearance mode and continuation are not supported by this path yet. Unsupported choices stop the request; they are never silently removed.</p>
+<label><input id="meshCharacterStart" type="checkbox"> Allow the start pose to change for all selected characters</label>
+<label><input id="meshCharacterEnd" type="checkbox"> Allow the end pose to change for all selected characters</label>
+<label><input id="meshCharacterAck" type="checkbox"> I will review starts, ends and transitions if I allow clip-edge edits</label>
+<button id="meshCharacterBuild" type="button" class="btn primary">Correct saved object contacts</button>
+<label>Correction job <input id="meshCharacterJob" maxlength="32"></label>
+<button id="meshCharacterReview" type="button" class="btn">Refresh correction</button>
+<p id="meshCharacterStatus" role="status" aria-live="polite">Original clips remain selected. Every attempt is retained for review.</p><div id="meshCharacterResults"></div></details>

@@ -5,6 +5,8 @@ from studio_prop_routes import _body,_object,_constant,_reply
 
 
 def dispatch_post(handler):
+    from studio_mesh_character_routes import dispatch_post as correction_post
+    if correction_post(handler):return True
     if handler.path!='/api/mesh-scene-jobs':return False
     host=handler.headers.get('Host')
     if host not in handler.server.allowed_hosts or handler.headers.get('Origin')!=f'http://{host}':return _reply(handler,403,dict(error='Submit from the local Studio page'))
@@ -21,6 +23,8 @@ def dispatch_post(handler):
 
 
 def dispatch_get(handler):
+    from studio_mesh_character_routes import dispatch_get as correction_get
+    if correction_get(handler):return True
     if not handler.path.startswith('/api/mesh-scene-jobs/'):return False
     if handler.headers.get('Host') not in handler.server.allowed_hosts:return _reply(handler,403,dict(error='Loopback host required'))
     match=re.fullmatch('/api/mesh-scene-jobs/([a-f0-9]{32})(?:/preview/([a-f0-9]{64}))?',handler.path)

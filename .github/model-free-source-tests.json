@@ -616,7 +616,8 @@
     "tests/test_prop_grip_preview.py",
     "tests/test_studio_mesh_scene.py",
     "tests/test_mesh_scene_preview.py",
-    "tests/test_native_mesh_character_fit.py"
+    "tests/test_native_mesh_character_fit.py",
+    "tests/test_studio_mesh_character.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",
@@ -666,6 +667,7 @@
     "tests/test_review_native_selection.mjs",
     "tests/test_prop_grip_editor.mjs",
     "tests/test_mesh_scene_editor.mjs",
-    "tests/test_mesh_scene_playback.mjs"
+    "tests/test_mesh_scene_playback.mjs",
+    "tests/test_mesh_character_editor.mjs"
   ]
 }

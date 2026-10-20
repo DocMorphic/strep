@@ -49,5 +49,5 @@ export function createMeshSceneEditor({document=globalThis.document,api,post,get
    if(r.preview_url){if(!new RegExp(`^/mesh-scene-viewer\\.html\\?job=${id}&result=[a-f0-9]{64}$`).test(r.preview_url))throw Error('Unexpected scene preview.');const a=document.createElement('a');a.href=r.preview_url;a.target='_blank';a.rel='noopener';a.className='btn';a.textContent='View character and object together';el('Results').append(a);}
   }else status(`${r.status}: ${r.error||'waiting for the guarded measurement'}`);
  });
- draw();return {snapshot};
+ draw();return {snapshot,selection:()=>({job:el('Job').value,request:snapshot()})};
 }

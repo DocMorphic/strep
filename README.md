@@ -8,7 +8,9 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
-- [Character correction against moving mesh grips](docs/mesh-character-correction-v1.md): a guarded command-line backend edits only permitted character tracks, preserves prop paths, and checks saved clips against complete contacts and mesh geometry. All 85 focused checks pass. A full-clock generated fixture meets its contact limit without added floor penetration; a retained three-metre miss remains a failure. Studio controls, real-rig motion-quality trials and engine validation remain next.
+- [Studio object-contact correction and comparison](docs/studio-mesh-character-correction-v1.md): run bounded corrections from saved object-contact scenes and compare original/candidate motion at the same time and camera angle. Exact scene bindings, explicit clip-edge choices and retained failures preserve the original intent. All 66 focused Python tests and three editor/playback suites pass; real humanoid quality, broader interaction coverage and engine validation remain unfinished.
+
+- [Character correction against moving mesh grips](docs/mesh-character-correction-v1.md): a guarded backend edits only permitted character tracks, preserves prop paths, and checks saved clips against complete contacts and mesh geometry. Its 85 focused checks pass. A full-clock generated fixture meets its contact limit without added floor penetration; a retained three-metre miss remains a failure. Studio now exposes the correction path above; real-rig motion-quality trials and engine validation remain next.
 
 - [Saved character and object preview](docs/mesh-scene-preview-v1.md): view exact saved clips and object paths together, inspect timed contact gaps, and jump to the worst measured gap. All 214 related Python checks, three Node suites, browser contact replay, full humanoid skin replay and graphics readback pass. Preview skinning follows the existing measurement convention; source files and motion-quality decisions are unchanged. Bounded correction and complete geometry/export validation remain next.
 

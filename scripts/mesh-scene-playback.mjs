@@ -10,7 +10,9 @@ export function setPose(THREE,object,keys,time){
 }
 
 export async function createScenePlayback({THREE,loader,data,readAsset}){
- if(data.schema!=='strep-mesh-scene-preview-v1'||data.skin_weight_policy!=='native-all-influence-unit-sum'||!(data.duration_s>0)||data.motion_fitted!==false||data.geometry_evaluated!==false||data.quality_approved!==false||data.release_approved!==false)throw Error('Saved original scene with an explicit native skin policy required.');
+ const original=data.schema==='strep-mesh-scene-preview-v1'&&data.motion_fitted===false&&data.geometry_evaluated===false;
+ const comparison=data.schema==='strep-mesh-scene-preview-v2'&&['original','candidate'].includes(data.role)&&data.original_selected===true&&data.motion_fitted===(data.role==='candidate')&&data.geometry_evaluated===true&&typeof data.sampled_geometry_pass==='boolean';
+ if((!original&&!comparison)||data.skin_weight_policy!=='native-all-influence-unit-sum'||!(data.duration_s>0)||data.quality_approved!==false||data.release_approved!==false)throw Error('Saved scene with an explicit native skin policy and measurement scope required.');
  const root=new THREE.Group(),actors=new Map(),objects=new Map();let time=0,totalBytes=0;
  const dispose=()=>{for(const a of actors.values()){a.mixer.stopAllAction();a.mixer.uncacheRoot(a.model);}root.traverse(n=>{n.geometry?.dispose();if(n.material)for(const m of Array.isArray(n.material)?n.material:[n.material])m.dispose();});root.clear();};
  try{

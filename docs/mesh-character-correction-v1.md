@@ -1,6 +1,6 @@
 # Character correction against moving mesh grips
 
-The native correction backend can now move explicitly permitted character tracks toward grips on imported static meshes, including objects with animated rigid placement. It consumes the saved scene packages produced by the Studio mesh-contact editor. This is currently a guarded command-line path; the Studio correction button and candidate comparison are not connected yet.
+The native correction backend can now move explicitly permitted character tracks toward grips on imported static meshes, including objects with animated rigid placement. It consumes the saved scene packages produced by the Studio mesh-contact editor. The initial guarded command-line path described here is now also connected to [Studio correction and candidate comparison](studio-mesh-character-correction-v1.md).
 
 This follows the saved-scene preview, not a new generation checkpoint. It applies to supplied clips and rigs rather than an action whitelist. It does not reposition the props, alter contact targets, change timing, or grant additional joint permissions to make a request pass.
 

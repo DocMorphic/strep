@@ -1,0 +1,34 @@
+# Studio object-contact correction and comparison
+
+Studio now connects its saved imported-object scenes to the bounded character correction backend. This is deterministic editing of existing rigged clips, not a new generation checkpoint. Original character tracks, object paths and contact intent remain available alongside every attempted correction.
+
+## Use
+
+1. Add the supplied characters to the native scene. In **Character contacts with imported objects**, bind that scene, place imported objects, choose saved grips and character patches, and save the contact measurement. Wait for it to complete.
+2. In **Character correction**, choose **Contact adjustment**, load the current scene joints, choose existing tracks and their maximum changes, set the edit window, protected times and control times, then save bounds for each character. Choose the correction iteration count there too.
+3. Open **Correct character contacts with objects**. Both clip ends stay preserved by default. If the intended edit needs the start or end to change, explicitly enable that edge and acknowledge reviewing the affected starts, ends and transitions. These edge choices apply to all selected characters; the API stores a separate explicit list for each.
+4. Choose **Correct saved object contacts**, then **Refresh correction**. A memory guard admits the worker; other local jobs must finish first. Changing the scene after measuring it requires saving a fresh scene. Changing bounds while the request is being checked stops that request.
+5. Open **Compare original and candidate**. Scrub, play, select a contact, or jump to its largest saved gap. Switching between original and candidate keeps the same time and camera. The page shows both live gaps and the selected version's saved contact/geometry decisions. When no edit is accepted, the original remains available and the candidate option is disabled.
+6. Download the correction archive to inspect every attempt. It contains the original package, permission request, implementation hashes, decoded constraints, complete contact observations, all executed geometry measurements, decisions and portable original/candidate preview scenes. The solver's diagnostic manifests retain local paths; the `preview/` scene packages use relative asset paths.
+
+This path currently accepts fresh ordinary contact-adjustment permissions. Continuation, clearance/export repair and explicit turning-speed settings are rejected, including speed limits inherited from a scene; they are never dropped to produce a seemingly successful run. Existing eligibility, control-count, protected-time, displacement and source-rate limits still apply. The unchanged backend uses its default 0.02 trust fraction and eight backtracks. An iteration limit can leave a partial candidate; acceptance of a step is not the same as passing every requested condition.
+
+## Saved evidence and selection
+
+The request binds the exact measured scene result and the complete object/contact draft. Bounds must refer to the same native scene. The guarded worker verifies the original receipt, snapshots the scene, and checks source and implementation bindings again after work. Read-only APIs verify the correction receipt and every recorded artifact before serving measurements or preview assets. Geometry and model modules do not load in the request that queues the job.
+
+Each accepted candidate is independently decoded and measured by the existing backend. The comparison packages copy the exact actor bytes and unchanged props/grips, then remeasure contacts with the new file bindings. Every observation must equal the original saved observation array; only file-location provenance changes. The viewer uses the same normalized all-influence skin convention as the existing native measurement viewer.
+
+Originals remain selected even when the candidate passes every declared sampled condition. This UI does not grant engine, animation-quality or release approval and does not infer grasp physics. The grid remains a visual reference; only authored planes are collision constraints. Object collision search directions, joint object/character optimization, turning-speed integration, broader real-rig trials, engine validation and human cleanup evidence remain unfinished.
+
+## Validation
+
+Local results are retained under `reports/studio-mesh-character-*`. Tests exercise real saved-scene assembly, correction, portable scene reopening, source preservation, receipt tampering, stale scene bindings, unsupported settings, explicit edge acknowledgment, missing candidates, restricted asset serving and actual local route dispatch. Browser integration uses Chromium/WebGL with requests passed to the real Python dispatcher; it starts no listening server. Generated closed-mesh fixtures validate plumbing and numerical agreement, not human animation quality.
+
+All 66 focused Python checks and three Node editor/playback suites pass. The production guarded Studio correction accepts five of nine proposals on the reachable fixture, reducing its 3-mm gap to 1.956002 mm against the unchanged 2-mm limit. All 969 declared geometry times pass with zero measured maximum penetration. The retained roughly three-metre missed hold accepts none of eight proposals and remains failed. Both jobs preserve original selection and false engine/quality/release approval.
+
+The final browser run passes original and candidate contact-position comparisons at all 969 geometry times per version, plus playback, backward/end scrubbing, version switching, framing, a canvas click, result links and keyboard exclusion of a missing candidate. No browser errors were recorded. Production numerical jobs remain in the original integration study; the final browser replay reuses their exact saved results.
+
+The first test run retained a comparison-report provenance mismatch: copied measurements still named their pre-copy inputs. The correction remeasures each portable preview and requires identical contact arrays before saving its updated file bindings. The initial test-run failure and implementation epoch remain archived. A separate syntax error in the new UI test was fixed without changing product behavior.
+
+The first browser run and its diagnostic repeat also remain archived: Playwright's disabled-state query followed the option's enclosing label to the enabled select, reporting the wrong element for this assertion. Direct DOM inspection confirmed the candidate option was already disabled. The corrected browser test checks the native option property and keyboard behavior; the saved numerical jobs are reused unchanged.
