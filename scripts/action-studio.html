@@ -147,7 +147,25 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
 <div class="bar"><label>Placement name<input id="scenePlacementLabel" maxlength="100" value="Authored placement"></label><button class="btn" id="scenePlacementCheck" disabled>Check anchor reach</button><button class="btn" id="scenePlacementSave" disabled>Save placement as new scene</button></div>
 <p class="small">Reach screening uses the selected saved animation, current placements, original anchor tolerances and a 22 cm joint-edit budget. It can rule out conflicting anchors; it cannot prove a feasible grasp or safe geometry. It does not change the contact fitter’s options.</p>
 <ul id="scenePlacementResults" class="small"></ul><p id="scenePlacementStatus" class="small" role="status">Load a saved scene to inspect or save its placement.</p>
-<p class="small">Placement changes are local until saved as a new scene or exported. Exported scenes reference the original project motion files.</p></details><details id="scenePlanPanel"><summary>Plan new character motions</summary>
+<p class="small">Placement changes are local until saved as a new scene or exported. Exported scenes reference the original project motion files.</p></details><details id="propGripPanel">
+<summary>Object grip points</summary>
+<p>Import a static GLB object, then click its surface to mark a hand grip. Saved points describe your intent; they do not create or verify a grasp animation.</p>
+<label>Object file <input id="propGripFile" type="file" accept=".glb"></label>
+<label>Source or license note <input id="propGripLicense" type="text" maxlength="2000" placeholder="Where this object came from"></label>
+<button type="button" class="btn" id="propGripImport">Import object</button>
+<label>Reopen saved object <input id="propGripAsset" type="text" maxlength="64" placeholder="Paste its saved object ID"></label>
+<button type="button" class="btn" id="propGripOpen">Open object</button>
+<p id="propGripInfo"></p>
+<div style="height:300px;position:relative;background:#222936;border-radius:12px;overflow:hidden"><canvas id="propGripCanvas" style="width:100%;height:100%;display:block" aria-label="Object grip preview: drag to orbit, scroll to zoom, enable Pick grip then click the surface"></canvas></div>
+<div class="transport"><button type="button" class="btn" id="propGripPick" disabled>Pick grip</button><button type="button" class="btn" id="propGripHome" disabled>Frame object</button></div>
+<label>Grip name <input id="propGripLabel" type="text" maxlength="120" value="Left hand"></label>
+<button type="button" class="btn primary" id="propGripSave" disabled>Save grip point</button>
+<label>Saved grip <select id="propGripSaved" disabled></select></label>
+<button type="button" class="btn" id="propGripShow" disabled>Show saved grip</button>
+<p id="propGripStatus" role="status" aria-live="polite">Choose a self-contained static GLB up to 32 MiB.</p>
+<div id="propGripDownloads"></div>
+</details>
+<details id="scenePlanPanel"><summary>Plan new character motions</summary>
 <p class="small">Describe each character's actions on this scene's shared clock. Each character can have a different movement profile.</p>
 <label>Character<select id="scenePlanActor"></select></label>
 <div id="scenePlanSegments"></div><button class="btn" id="scenePlanAdd" type="button">Add action</button>
@@ -2147,4 +2165,6 @@ void (async function correctionReview(){
  function tick(time){const dt=Math.min((time-last)/1000,.1);last=time;const visible=renderer&&panel.open&&!panel.closest('.window').hidden;if(visible){if(playing&&mixer){const next=clock+dt;seek(Math.floor(next*selected.fps));clock=next;if(frame===selected.frames-1)stop();}const width=canvas.clientWidth,height=canvas.clientHeight;if(width&&height){const size=renderer.getSize(new THREE.Vector2());if(size.x!==width||size.y!==height){renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();}controls.update();renderer.render(scene,camera);}}requestAnimationFrame(tick);}
  requestAnimationFrame(tick);
 })();
+
+import("/prop-grip-viewer.mjs").then(({mountPropGripEditor})=>mountPropGripEditor()).catch(error=>{document.getElementById("propGripStatus").textContent=error.message;});
 </script></html>

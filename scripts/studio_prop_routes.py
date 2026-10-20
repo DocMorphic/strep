@@ -65,12 +65,12 @@ def dispatch_get(handler):
     if handler.headers.get('Host') not in handler.server.allowed_hosts:
         return _reply(handler,403,dict(error='Loopback host required'))
     if parsed.query or parsed.fragment:return _reply(handler,400,dict(error='Exact prop or grip selection required'))
-    match=re.fullmatch('/api/props/([a-f0-9]{64})(?:/grips/([a-f0-9]{64}))?',parsed.path)
+    match=re.fullmatch('/api/props/([a-f0-9]{64})(?:/grips/([a-f0-9]{64})|/(geometry))?',parsed.path)
     if not match:return _reply(handler,400,dict(error='Exact prop or grip selection required'))
     try:
         import studio_props as props
-        asset_id,grip_id=match.groups()
-        value=props.grip(asset_id,grip_id) if grip_id else props.details(asset_id)
+        asset_id,grip_id,geometry=match.groups()
+        value=props.preview_geometry(asset_id) if geometry else props.grip(asset_id,grip_id) if grip_id else props.details(asset_id)
         return _reply(handler,200,value)
     except (ValueError,TypeError,KeyError,OSError) as error:
         return _reply(handler,400,dict(error=str(error)))

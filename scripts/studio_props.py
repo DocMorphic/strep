@@ -94,6 +94,17 @@ def surface_preview(payload):
     return prop.surface_point(payload['face'],payload['barycentric'])
 
 
+def preview_geometry(asset_id):
+    """Complete bounded canonical triangles for picking, without a second GLB decoder.
+
+    Keep default hierarchy transforms and face order identical to saved grips.
+    No collision, outward-normal or grasp approval is implied by this preview.
+    """
+    prop,_=loaded(asset_id)
+    return dict(asset_id=asset_id,geometry_sha256=prop.geometry_sha256,
+        vertices_m=prop.vertices_m.tolist(),faces=prop.faces.tolist())
+
+
 def save_grip(payload):
     if not isinstance(payload,dict) or set(payload)!={'asset_id','geometry_sha256','face','barycentric','label'}:
         raise ValueError('Explicit labeled prop surface selection required')
@@ -139,7 +150,7 @@ def grip(asset_id,grip_id):
 
 def served_file(url):
     if not isinstance(url,str):return None
-    match=re.fullmatch('/files/prop-assets/([a-f0-9]{64})/(prop.glb|grips/([a-f0-9]{64})\\.json)',url)
+    match=re.fullmatch(r'/files/prop-assets/([a-f0-9]{64})/(prop\.glb|grips/([a-f0-9]{64})\.json)',url)
     if not match:return None
     asset_id,member,grip_id=match.groups()
     if grip_id:grip(asset_id,grip_id)

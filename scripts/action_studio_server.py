@@ -33,6 +33,7 @@ def allowed_file(url_path):
         from studio_props import served_file
         return served_file(path)
     if path in ['/','/studio']:return ROOT/'scripts/action-studio.html'
+    if path in ('/prop-grip-editor.mjs','/prop-grip-viewer.mjs'):return ROOT/'scripts'/path[1:]
     if path=='/motion-profile-editor.js':return ROOT/'scripts/motion-profile-editor.js'
     if path=='/generation-job-status.mjs':return ROOT/'scripts/generation-job-status.mjs'
     if path=='/selected-joint-guides.mjs':return ROOT/'scripts/selected-joint-guides.mjs'

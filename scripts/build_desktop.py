@@ -3,6 +3,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 def render():
     scripts=ROOT/'scripts';html=(scripts/'desktop-shell.html').read_text(encoding='utf8')
+    html=html.replace('<details id="sceneTrimPanel">',(scripts/'prop-grip-editor.html').read_text(encoding='utf8')+'<details id="sceneTrimPanel">')
     html=html.replace('__SCENE_PLACEMENT_EDITOR__',(scripts/'scene-placement-editor.html').read_text(encoding='utf8'))
     html=html.replace('__CONTROL_CENTER__',(scripts/'control-center.html').read_text(encoding='utf8'))
     html=html.replace('<details id="sceneTrimPanel">',(scripts/'scene-generation-plan.html').read_text(encoding='utf8')+'<details id="sceneTrimPanel">')
@@ -47,6 +48,7 @@ def render():
             source='import {createMotionProfileEditor} from "/motion-profile-editor.js";\n'+(scripts/'contact-editor.js').read_text(encoding='utf8')+'\n'+"import {createPoseGuideEditor} from '/pose-guide-editor.js';\nimport {createRigJointEditor} from '/rig-joint-editor.js';\nimport {createRigPostureEditor} from '/rig-posture-editor.js';\n"+source+'\n'+(scripts/'scene-viewer.js').read_text(encoding='utf8')+'\n'+(scripts/'character-contacts.js').read_text(encoding='utf8')+'\n'+(scripts/'character-clip-edit.js').read_text(encoding='utf8')+'\n'+(scripts/'character-transition.js').read_text(encoding='utf8')+'\n'+(scripts/'character-loop.js').read_text(encoding='utf8')+'\n'+(scripts/'character-events.js').read_text(encoding='utf8')+'\n'+(scripts/'generation-history.js').read_text(encoding='utf8')+'\n'+(scripts/'rig-result-selection.js').read_text(encoding='utf8')+'\n'+(scripts/'character-studio.js').read_text(encoding='utf8')
         if name=='action-studio-engine.js':
             source+='\n'+(scripts/'scene-feedback.js').read_text(encoding='utf8')+'\n'+(scripts/'developer-feedback.js').read_text(encoding='utf8')+'\n'+(scripts/'correction-review.js').read_text(encoding='utf8')
+            source+='\nimport("/prop-grip-viewer.mjs").then(({mountPropGripEditor})=>mountPropGripEditor()).catch(error=>{document.getElementById("propGripStatus").textContent=error.message;});\n'
         if name=='desktop-shell.css':
             source+='\n'+(scripts/'desktop-interactions.css').read_text(encoding='utf8')
             source+='\n'+(scripts/'control-center.css').read_text(encoding='utf8')
