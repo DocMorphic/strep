@@ -23,6 +23,8 @@ void (async function characterStudio(){
  let nativeSceneEditor=null,nativeSceneGameEditor=null,nativeTransitionFitEditor=null;
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneEditor}=await import('/native-scene-editor.mjs');
   nativeSceneEditor=createNativeSceneEditor({api,post,getContext:()=>({job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),getPatch:()=>contactEditor.nativePatch()});},C('nativeSceneStatus'),'Scene editor');
+ await initializeOptionalRigEditor(async()=>{const {createMeshSceneEditor}=await import('/mesh-scene-editor.mjs');
+  if(!nativeSceneEditor)throw Error('Scene editor is required');createMeshSceneEditor({api,post,getDraft:()=>nativeSceneEditor.snapshot(),getPatch:()=>contactEditor.nativePatch(),getGrip:()=>({asset_id:C('propGripAsset').value.trim(),grip_id:C('propGripSaved').value})});},C('meshSceneStatus'),'Object contact editor');
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneTransferEditor}=await import('/native-scene-transfer-editor.mjs');
   if(!nativeSceneEditor)throw Error('Scene editor is required');createNativeSceneTransferEditor({api,post,getDraft:()=>nativeSceneEditor.snapshot(),setDraft:value=>nativeSceneEditor.bind(value),getPatch:()=>contactEditor.nativePatch()});},C('nativeSceneTransferStatus'),'Scene transfer editor');
  await initializeOptionalRigEditor(async()=>{const {createKeyContinuationEditor}=await import('/key-continuation-editor.mjs');createKeyContinuationEditor({api,post});},C('keyContinuationStatus'),'Saved correction continuation');

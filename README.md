@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Timed character contacts with imported objects](docs/mesh-grip-authoring-v1.md): connect saved object grips to selected character patches, touch/hold intervals and explicit object placement or movement. A guarded worker preserves complete scene packages and reports missed contacts. All 206 related Python checks, two editor suites and browser-to-worker integration pass on generated fixtures; character correction and full geometry/engine validation remain next.
+
 - [Object grip authoring in Studio](docs/prop-grip-studio-v1.md): import a static GLB, click its surface, save named grip points and reopen them. All 182 related Python checks and the editor interaction suite pass; a real browser panel test verifies import, picking, download and reopening. Connecting those points to timed character contacts and correction remains next; no grasp or animation approval is inferred.
 
 - [Independent native and saved correction replay](docs/exploratory-export-replay-v1.md): 264 source checks pass locally and on Windows/Ubuntu. Exact zero/protected keys, edit limits, floor and motion screens survive export. All 720 full-frame partner queries and three complete final comparisons preserve the partial numerical retention, but 41 physical failures and roughly 32.1 mm deepest overlap keep the clip unapproved.

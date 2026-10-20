@@ -1,0 +1,25 @@
+<details id="meshScenePanel">
+<summary>Character contacts with imported objects</summary>
+<p>Add characters to the native scene above. In the Scene window, import an object and save its grip points. Then bind this scene, place the object and select the character's contact patch in the character preview.</p>
+<button type="button" class="btn" id="meshSceneBind">Use current native scene</button><p id="meshSceneSummary"></p>
+<label>Object name <input id="meshSceneObject" maxlength="64" value="crate"></label>
+<label>Start position, metres <input id="meshScenePosition" value="0, 0, 0"></label>
+<label>Start rotation XYZ, degrees <input id="meshSceneRotation" value="0, 0, 0"></label>
+<label><input id="meshSceneMoving" type="checkbox"> Animate object from start to end</label>
+<label>End position, metres <input id="meshSceneEndPosition" value="0, 0, 0"></label>
+<label>End rotation XYZ, degrees <input id="meshSceneEndRotation" value="0, 0, 0"></label>
+<button type="button" class="btn" id="meshSceneAddObject">Add object from selected grip</button>
+<div id="meshSceneObjects"></div>
+<label>Character <select id="meshSceneActor"></select></label><label>Object <select id="meshSceneTarget"></select></label>
+<label>Contact name <input id="meshSceneContact" value="right-hand-grasp" maxlength="64"></label>
+<label>Contact <select id="meshSceneMode"><option value="touch">Touch at one time</option><option value="hold">Hold through an interval</option></select></label>
+<label>Start, seconds <input id="meshSceneStart" type="number" min="0" step="any" value="0"></label>
+<label>End, seconds <input id="meshSceneEnd" type="number" min="0" step="any" value="1"></label>
+<label>Allowed gap, mm <input id="meshSceneGap" type="number" min="0" step="any" value="5"></label>
+<label>Allowed relative speed, m/s <input id="meshSceneSpeed" type="number" min="0" step="any" value="0.02"></label>
+<button type="button" class="btn" id="meshSceneAddContact">Use selected character patch and object grip</button>
+<div id="meshSceneContacts"></div>
+<button type="button" class="btn primary" id="meshSceneBuild">Save scene and measure contacts</button>
+<label>Saved scene job <input id="meshSceneJob" maxlength="32"></label><button type="button" class="btn" id="meshSceneReview">Refresh measurements</button>
+<p id="meshSceneStatus" role="status" aria-live="polite">These controls author contact intent. They do not move the character or approve a grasp.</p><div id="meshSceneResults"></div>
+</details>

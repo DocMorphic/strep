@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createMeshSceneEditor,meshContact,xyzQuaternion,triple} from '../scripts/mesh-scene-editor.mjs';
+class Element{constructor(){this.value='';this.checked=false;this.children=[];}replaceChildren(...a){this.children=a;this.value=a[0]?.value??'';}append(...a){this.children.push(...a);}}
+const html=await readFile(new URL('../scripts/mesh-scene-editor.html',import.meta.url),'utf8'),nodes=new Map();
+for(const [,id] of html.matchAll(/id="(meshScene[^"]+)"/g)){assert(!nodes.has(id));nodes.set(id,new Element());}
+const el=s=>nodes.get('meshScene'+s),document={getElementById:id=>nodes.get(id),createElement:()=>new Element()};
+for(const [s,v] of Object.entries({Object:'crate',Position:'0, 1, 0',Rotation:'0, 0, 0',EndPosition:'1, 1, 0',EndRotation:'0, 90, 0',Contact:'right-hand',Mode:'hold',Start:'0.3',End:'1.7',Gap:'5',Speed:'0.02'}))el(s).value=v;
+const a='a'.repeat(64),b='b'.repeat(64),c='c'.repeat(64),d='d'.repeat(64),job='f'.repeat(32);
+let draft={schema:'strep-studio-native-scene-v1',scene:{duration_s:2,actors:{A:{sha256:a}},objects:{},contacts:[]},object_edit:null};
+let grip={asset_id:b,grip_id:c},patch={glb_sha256:a,vertices:[[6,0,1],[6,0,2]]},wait=null,posted=[];
+const asset={id:b,geometry_sha256:d,grip_ids:[c]};
+let report={id:job,status:'complete',quality_approved:false,release_approved:false,all_declared_point_contacts_pass:false,motion_fitted:false,geometry_evaluated:false,original_selected:true,contacts:[{id:'right-hand',maximum_position_error_m:.03,peak_time_s:1,passed:false}],downloads:[{label:'Scene package',url:`/files/mesh-scene-jobs/${job}/scene-package.zip`}]};
+const api=async url=>url.startsWith('/api/props/')?(wait||structuredClone(asset)):structuredClone(report);
+const editor=createMeshSceneEditor({document,api,post:async(url,payload)=>{posted.push({url,payload});return {id:job};},getDraft:()=>structuredClone(draft),getGrip:()=>structuredClone(grip),getPatch:()=>structuredClone(patch)});
+assert.throws(()=>editor.snapshot(),/native scene/);await el('Bind').onclick();el('Moving').checked=true;await el('AddObject').onclick();
+await el('AddContact').onclick();let snapshot=editor.snapshot();assert.equal(snapshot.contacts[0].reduction,'centroid');assert.equal(snapshot.contacts[0].limits.position_m,.005);assert.equal(snapshot.props.crate.keyframes.length,2);assert.equal(snapshot.props.crate.keyframes[1].time_s,2);
+assert(Math.abs(snapshot.props.crate.keyframes[1].rotation_xyzw[1]-Math.SQRT1_2)<1e-15);
+await el('Build').onclick();assert.equal(posted[0].url,'/api/mesh-scene-jobs');assert.deepEqual(posted[0].payload,snapshot);assert.equal(el('Job').value,job);
+await el('Review').onclick();assert.match(el('Status').textContent,/checks: fail/);assert.match(el('Status').textContent,/unchanged/);assert.match(el('Results').children[0].textContent,/30.00 mm/);
+report.quality_approved=true;await el('Review').onclick();assert.match(el('Status').textContent,/Invalid/);report.quality_approved=false;
+draft.scene.duration_s=3;assert.throws(()=>editor.snapshot(),/changed/);draft.scene.duration_s=2;
+patch.glb_sha256='0'.repeat(64);await el('AddContact').onclick();assert.match(el('Status').textContent,/exact character/);patch.glb_sha256=a;
+grip.asset_id='0'.repeat(64);await el('AddContact').onclick();assert.match(el('Status').textContent,/saved grip/);grip.asset_id=b;
+el('Contact').value='second';el('Start').value='2';el('End').value='1';await el('AddContact').onclick();assert.match(el('Status').textContent,/in-clip/);
+await el('Bind').onclick();el('Object').value='second';let resolve;wait=new Promise(r=>resolve=r);const add=el('AddObject').onclick();el('Position').value='1, 0, 0';resolve(asset);await add;assert.match(el('Status').textContent,/placement changed/);assert.throws(()=>editor.snapshot(),/object and a contact/);wait=null;
+assert.throws(()=>triple(''),/three/);assert.throws(()=>triple('0,NaN,0'),/three/);
+assert.deepEqual(xyzQuaternion([0,0,0]),[0,0,0,1]);assert(Math.abs(xyzQuaternion([90,0,0])[0]-Math.SQRT1_2)<1e-15);
+const settings={id:'touch',actor:'A',prop:'crate',mode:'touch',start:1,end:1,gap:.005,speed:0};
+const props={crate:{asset_id:b}};assert.deepEqual(meshContact(draft,props,patch,grip,settings).interval_s,[1,1]);
+assert.throws(()=>meshContact(draft,props,{...patch,vertices:[[6,0,1],[6,0,1]]},grip,settings),/distinct/);
+assert.throws(()=>meshContact(draft,props,patch,grip,{...settings,start:3}),/in-clip/);
+console.log('Mesh scene editor: exact patch/grip binding, explicit timing/placement, moving object keys, guarded queue, failed measurements, stale selection and source changes pass.');

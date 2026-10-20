@@ -613,7 +613,8 @@
     "tests/test_surface_separation_planes.py",
     "tests/test_native_pose_plane_vertices.py",
     "tests/test_native_pose_reference.py",
-    "tests/test_prop_grip_preview.py"
+    "tests/test_prop_grip_preview.py",
+    "tests/test_studio_mesh_scene.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",
@@ -661,6 +662,7 @@
     "tests/test_cleanup_timer.mjs",
     "tests/test_selected_joint_guides.mjs",
     "tests/test_review_native_selection.mjs",
-    "tests/test_prop_grip_editor.mjs"
+    "tests/test_prop_grip_editor.mjs",
+    "tests/test_mesh_scene_editor.mjs"
   ]
 }
