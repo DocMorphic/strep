@@ -1,6 +1,7 @@
 # Export the retained temporal correction
 
-Development evidence, 2026-10-18. This exports the exact 216-control half-step
+Study begun 2026-10-18, with sealed-capture replay continued on 2026-10-20.
+This exports the exact 216-control half-step
 retained by the [refreshed contact study](retained-center-refresh-v1.md).
 The original source animations and author permissions remain the reference;
 the saved asset is not treated as a new baseline with looser limits.
@@ -43,3 +44,78 @@ Local evidence: `reports/retained-center-export-v1` and
 `reports/retained-center-export-replay-v1`. Complete partner-clock re-query and
 actual engine import remain separate required checks before any promotion.
 The whole-project goal remains active, with all release capabilities unapproved.
+
+The separate partner-clock study completes all 720 directed queries: both
+character directions at all 120 frames in each raw/grid/key representation.
+Every query uses all 18,056 source vertices and 36,108 target faces. The complete
+496-row guards are reconstructed separately for all three representations.
+Each preserves all explicitly required, previously passing and retained-raw
+passing conditions, with the same 38 physical failures. Working peaks are
+5.260144 for raw and 5.260046 for both saved clocks, still below the pre-step
+5.281024. No physical threshold is changed. These are preserved diagnostic
+improvements, not all-condition passes.
+
+Evidence is `reports/retained-center-export-partner-clock-v1` and
+`reports/retained-center-export-gates-v1`. Actual engine checks remain separate.
+
+## Actual engine transport
+
+Both original GLBs are imported in the pinned Godot 4.7.2 engine at all 120
+native keys. Pose agreement, floor and motion checks pass, but original imported
+skin fails the unchanged 0.1 mm fidelity screen: peaks are 0.151919 mm and
+0.151722 mm, with 61 and 59 failing times. The actual hand gap becomes
+30.028064 mm and fails the original 30 mm condition. This failed engine result
+is preserved.
+
+A separate opt-in Godot copy changes only paired weight/joint payloads using
+the existing adapter. All animation worlds and unrelated bytes are exact;
+the original exports remain unchanged. Complete-clock comparison against the
+original skin gives 2.018 and 1.870 micrometre peak differences.
+
+Fresh actual import of those copies is compared against the original,
+non-adapted exports. Both pose and skin tests pass, at 2.058 and 1.896 micrometre
+peak skin error. Floor, motion and all point-contact tests pass; palm gap is
+29.992129 mm. This is explicit target-specific skin encoding, not a claim that
+the original weight coefficients were preserved.
+
+A separate reader excludes the producer and weight writer. It replays both
+sealed captures, matching all 120 pose/skin/floor observations per actor and
+all point contacts exactly. Evidence is
+`reports/retained-center-engine-fidelity-v1`,
+`reports/retained-center-godot-weights-v1`,
+`reports/retained-center-engine-fidelity-v2` and
+`reports/retained-center-engine-replay-v1`.
+
+GPU skinning, physics, gameplay-event playback and semantic quality remain
+unverified. Full partner geometry from the actual capture is a separate check;
+the passing partial engine observations do not grant scene or release approval.
+
+The additional actual-capture body study completes all 240 directed queries at
+the 120 native keys. It reconstructs raw imported CPU skin in source order,
+requires complete skin-function and triangle-population correspondence, and
+uses the declared source winding for canonical geometry. Every source vertex
+and equivalent target triangle remains present; imported weights are not
+renormalized for measurement. Peak partner depth is 31.200179 mm, still failing
+the unchanged five-millimetre screen. This is actual engine-capture geometry
+evidence, not a GPU-rendering or physics claim. Records are in
+`reports/retained-center-engine-partner-clock-v1`.
+
+The final engine decision reconstructs all 496 rows from those fresh body
+queries and captured floor/global observations. Both current and original
+benchmark guards pass, and every raw-passing and saved-passing row is preserved.
+There are still exactly 38 physical failures, including partner penetration
+and the existing A-hand normal failure. The engine working peak is 5.260036.
+
+Actual engine orientations and root shifts are also checked directly against
+the original native files at all 120 keys. Largest selected-joint edits are
+4.298645 and 3.462650 degrees; root shifts are 12.983311 and 12.269924 mm.
+Both stay inside the unchanged five-degree/twenty-millimetre limits, without
+an added allowance. Stored-track preservation and engine pose fidelity remain
+separate checks. Evidence is `reports/retained-center-engine-gates-v1`.
+
+The diagnostic improvement survives serialization and the tested engine path.
+It does not make the clip game-ready: 31.200 mm body penetration still exceeds
+the five-millimetre screen. Studio selection, original references and training
+admission remain unchanged. Broader actions/rigs, scene correction, support,
+semantic/style evaluation and genuine human review remain required by the
+single whole-project goal.
