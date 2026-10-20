@@ -116,16 +116,24 @@ def audit(left_vertices, left_faces, right_vertices, right_faces, tolerance_m=1e
     properties = index.Property()
     properties.dimension = 3
     tree = index.Index(((i, (*low, *high), None) for i, (low, high) in enumerate(zip(lo, hi))), properties=properties)
+    # Every right-face box lies inside this envelope. Use exactly the same
+    # expanded left bounds as the index query; a strict separation cannot
+    # produce an intersection. Keep boundary equality and all degenerate
+    # faces, and never allocate a left-by-right candidate matrix.
+    left_lo = left.min(axis=1)-tolerance_m
+    left_hi = left.max(axis=1)+tolerance_m
+    possible = np.all(left_hi >= lo.min(axis=0), axis=1) & np.all(left_lo <= hi.max(axis=0), axis=1)
     counts, records, pairs = Counter(), [], 0
     try:
         for i, triangle in enumerate(left):
-            bounds = (*(triangle.min(axis=0)-tolerance_m), *(triangle.max(axis=0)+tolerance_m))
-            for j in sorted(tree.intersection(bounds)):
-                value = classify(triangle, right[j], tolerance_m)
-                counts[value['kind']] += 1
-                pairs += 1
-                if value['kind'] != 'disjoint':
-                    records.append(dict(left_triangle=i, right_triangle=int(j), **value))
+            if possible[i]:
+                bounds = (*left_lo[i], *left_hi[i])
+                for j in sorted(tree.intersection(bounds)):
+                    value = classify(triangle, right[j], tolerance_m)
+                    counts[value['kind']] += 1
+                    pairs += 1
+                    if value['kind'] != 'disjoint':
+                        records.append(dict(left_triangle=i, right_triangle=int(j), **value))
             if progress and (i+1) % 2000 == 0:
                 progress(dict(left_faces_processed=i+1, left_faces_total=len(left), candidate_pairs=pairs))
     finally:
