@@ -37,6 +37,23 @@ this change.
 All twelve job logs, terminal metadata, timeout annotations and source inventory
 are retained with file hashes under `reports/full-source-ci-d83f474-v1`.
 
+## Focused contact and rig verification (2026-10-21)
+
+[Run 39623896274](https://github.com/DocMorphic/strep/actions/runs/39623896274)
+at `08477e0` completed successfully in all eight Windows/Linux jobs. On each
+operating system, the two contact-rig shards report 2,165 and 2,056 passing
+tests, with 33 passing subtests across them. The separate lineage job reports
+35 passing tests and the game-package job reports 32. Every job also passes
+the offline correction-editor request and staging check.
+
+All eight complete job logs and metadata are retained with SHA-256 receipts
+under `reports/contact-rig-ci-08477e0-v1`. These results cover the declared
+focused source regressions; overlapping suites are not added to the broader
+workflow's totals. The full-source workflow at this revision still has two
+running jobs at this observation. Neither this focused success nor the
+partial full-source result establishes inference, actual-engine playback,
+realistic motion, human review or release approval.
+
 ## Earlier completed source runs
 
 The complete [workflow at `8d07889`](https://github.com/DocMorphic/strep/actions/runs/38183110002)
