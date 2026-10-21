@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {correctionRequest,createMeshCharacterEditor} from '../scripts/mesh-character-editor.mjs';
+import {correctionRequest,createMeshCharacterEditor,diagnosticLines} from '../scripts/mesh-character-editor.mjs';
 const job='a'.repeat(32),digest='b'.repeat(64),fit='c'.repeat(32);
 let scene={job,request:{schema:'strep-studio-mesh-scene-v1',draft:{scene:{actors:{A:{sha256:'d'.repeat(64)}}}}}};
 let bounds={schema:'strep-studio-native-scene-fit-v1',draft:structuredClone(scene.request.draft),actors:{A:{tracks:[{node:0,path:'translation',maximum_change:.02}]}},options:{iterations:4},resume_from:null};
@@ -24,6 +24,17 @@ assert.equal(posted[0].payload.max_runtime_seconds,3600);assert.match(el('Status
 el('Start').checked=true;await el('Build').onclick();assert.match(el('Status').textContent,/Acknowledge/);assert.equal(posted.length,1);
 el('Ack').checked=true;await el('Build').onclick();assert.deepEqual(posted[1].payload.editable_clip_boundaries,{A:['start']});
 await el('Review').onclick();assert.match(el('Status').textContent,/still fails/);assert.equal(el('Results').children.length,2);
+const diagnostic={schema:'strep-studio-mesh-diagnostics-v1',available:true,attempts:2,accepted:1,quality_approved:false,release_approved:false,
+ checks:Array.from({length:10},(_,i)=>({key:`check-${i}`,label:i===9?'Avoiding worse body self-intersections':`Check ${i}`,passed:0,failed:1,not_checked:1,not_recorded:0}))};
+report.diagnostics=structuredClone(diagnostic);await el('Review').onclick();assert.equal(el('Results').children.length,3);
+const detail=el('Results').children[2];assert.equal(detail.children[0].textContent,'View attempt checks');
+assert.match(detail.children[1].textContent,/including rejected proposals/);
+assert.match(detail.children[2].children[9].textContent,/1 failed, 1 not checked, 0 not recorded/);
+for(const mutate of [s=>s.checks[0].passed++,s=>s.checks[0].failed=true,s=>s.checks[1].key=s.checks[0].key,s=>s.attempts++,s=>s.quality_approved=true,s=>s.checks.pop()]){
+ const invalid=structuredClone(diagnostic);mutate(invalid);assert.throws(()=>diagnosticLines(invalid,report.result));}
+report.diagnostics={schema:diagnostic.schema,available:false,quality_approved:false,release_approved:false};
+await el('Review').onclick();assert.match(el('Results').children[2].children[2].children[0].textContent,/not included/);
+delete report.diagnostics;
 report.result.candidate=null;await el('Review').onclick();assert.match(el('Status').textContent,/No improved candidate/);
 report.result.sampled_candidate_pass=true;report.result.candidate='probe-001';await el('Review').onclick();assert.match(el('Status').textContent,/passes declared sampled/);
 report.comparison_url='https://elsewhere.test';await el('Review').onclick();assert.match(el('Status').textContent,/Unexpected/);

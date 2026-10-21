@@ -286,7 +286,7 @@ def review(folder):
         require(completion['publication_sha256']==sha256(folder/'publication.json')
             and completion['request_sha256']==prepared['request_sha256'],'Completed attempt binding changed')
         _,result,receipt=publication(folder)
-        response.update(result=result,result_sha256=receipt['result_sha256'],
+        response.update(result=result,diagnostics=jobs.diagnostics(folder,result),result_sha256=receipt['result_sha256'],
             comparison_url=f'/mesh-character-viewer.html?job={folder.name}&result={receipt["result_sha256"]}',
             download_url=f'/files/mesh-character-jobs/{folder.name}/correction-package.zip')
     elif pipeline['status'] in ('failed','deferred'):

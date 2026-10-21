@@ -179,6 +179,25 @@ def launch(folder):
         save(folder / 'startup.json', dict(status='failed', reason=str(error))); raise OSError(str(error)) from error
 
 
+def diagnostics(folder, result):
+    from studio_mesh_diagnostics import SCHEMA, summarize
+    # Only read the exact attempt log included in the verified publication.
+    directory = result['fit_directory'] if result.get('recoverable') else 'fit'
+    if not isinstance(directory, str) or not directory:
+        raise ValueError('Invalid correction attempt directory')
+    name = directory + '/probes.json'
+    path = absolute(folder / name)
+    if not path.is_relative_to(absolute(folder)):
+        raise ValueError('Correction attempts escape their job')
+    digest = result['files_sha256'].get(name)
+    if digest is None:
+        return dict(schema=SCHEMA, available=False, reason='Detailed attempt checks were not included in this saved result.',
+                    quality_approved=False, release_approved=False)
+    if sha256(path) != digest:
+        raise ValueError('Saved correction attempts changed')
+    return summarize(read(path), result['probes'], result['accepted_steps'])
+
+
 def review(job):
     folder = folder_for(job); prepared = read(folder / 'prepared.json')
     if sha256(folder / 'request.json') != prepared['request_sha256']: raise ValueError('Saved correction request changed')
@@ -203,7 +222,7 @@ def review(job):
         for name, digest in result['files_sha256'].items():
             path = (folder / name).resolve()
             if not path.is_relative_to(folder) or sha256(path) != digest: raise ValueError('Saved correction artifact changed')
-        response.update(result=result, result_sha256=receipt['result_sha256'],
+        response.update(result=result, diagnostics=diagnostics(folder, result), result_sha256=receipt['result_sha256'],
             comparison_url=f'/mesh-character-viewer.html?job={job}&result={receipt["result_sha256"]}',
             download_url=f'/files/{NAMESPACE}/{job}/correction-package.zip')
     elif pipeline['status'] in ('failed', 'deferred'):
