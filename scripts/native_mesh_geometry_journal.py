@@ -120,7 +120,7 @@ def frame(folder,entry,request):
     return report,directory/'observations.npz'
 
 
-def chain(folder,checkpoint,expected_sha256,request):
+def chain(folder,checkpoint,expected_sha256,request,*,consume=None):
     path=local(folder,checkpoint);rows=[];seen=set();binding=sha256(folder/'request.json');total=len(request['times_s'])
     while True:
         require(path not in seen and sha256(path)==expected_sha256,'Pinned mesh checkpoint changed or cyclic chain')
@@ -140,10 +140,11 @@ def chain(folder,checkpoint,expected_sha256,request):
     passed=True;first_header=None
     for i,row in enumerate(rows[1:]):
         require(row['next_sample']==i+1 and row['frame']['index']==i,'Complete ordered mesh prefix required')
-        report,_=frame(folder,row['frame'],request);digest=header_digest(report)
+        report,archive=frame(folder,row['frame'],request);digest=header_digest(report)
         if first_header is None:first_header=digest
         passed &= report['sampled_conditions_pass']
         require(row['header_sha256']==digest==first_header and row['checked_prefix_pass'] is passed,'Mesh checkpoint reduction differs')
+        if consume is not None:consume(row['frame'],report,archive)
     return rows[-1]
 
 
@@ -205,24 +206,30 @@ def finalize(folder,checkpoint,expected_sha256,output,*,materialize_observations
     require(not output.exists() and not folder.is_relative_to(output),'Fresh separate mesh geometry output required')
     with worker_lock(),threadpool_limits(limits=1):
         anchor(folder,checkpoint,expected_sha256)
-        request,_,_,times=context(folder);last=chain(folder,checkpoint,expected_sha256,request)
-        require(last['next_sample']==len(times),'Full original mesh population required before finalization')
-        entries=ordered_entries(folder,last);first,_=frame(folder,entries[0],request);output.mkdir(parents=True)
-        metadata=header(first)
-        metadata.update(times_s=times.tolist(),complete_clock_s=times.tolist(),sample_indices=list(range(len(times))),
-                        all_policy_samples_evaluated=True,sampled_conditions_pass=last['checked_prefix_pass'])
+        request,_,_,times=context(folder)
+        # This early check only rejects partial work. The complete chain and
+        # every frame are still verified before a final result can publish.
+        require(read(local(folder,checkpoint))['next_sample']==len(times),'Full original mesh population required before finalization')
+        output.mkdir(parents=True);entries=[];metadata={}
         transport=ObservationArchive(output/'observations.npz') if materialize_observations else nullcontext(None)
         with (output/'geometry.json').open('x',encoding='utf8',newline='\n') as stream,transport as sink:
             stream.write('{"samples":[')
             if sink is not None:sink['times_s']=times
-            for i,entry in enumerate(entries):
-                report,archive=frame(folder,entry,request)
-                if i:stream.write(',')
+            def consume(entry,report,archive):
+                # Stream the report just validated by the chain instead of
+                # decompressing and validating that frame a second time.
+                if entries:stream.write(',')
+                else:metadata.update(header(report))
                 json.dump(report['samples'][0],stream,allow_nan=False)
                 if sink is not None:
                     with np.load(archive,allow_pickle=False) as arrays:
                         for name in arrays.files:
                             if name!='times_s':sink[name]=arrays[name]
+                entries.append(entry)
+            last=chain(folder,checkpoint,expected_sha256,request,consume=consume)
+            require(last['next_sample']==len(times) and len(entries)==len(times),'Full verified mesh population required')
+            metadata.update(times_s=times.tolist(),complete_clock_s=times.tolist(),sample_indices=list(range(len(times))),
+                            all_policy_samples_evaluated=True,sampled_conditions_pass=last['checked_prefix_pass'])
             stream.write('],');stream.write(json.dumps(metadata,allow_nan=False)[1:]);stream.write('\n')
         check_bindings(request)
         anchor(folder,checkpoint,expected_sha256)

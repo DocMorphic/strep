@@ -118,7 +118,8 @@ The character fitter accepts an opt-in `checkpoint_geometry=True` API
 argument or `--checkpoint-geometry` worker flag. It checkpoints both original
 and eligible proposal audits, retaining the existing complete geometry report
 interface and decoded acceptance rules. Array observations use the indexed
-transport. The default fitter and Studio still use the existing archive mode.
+transport. The default fitter and legacy Studio requests use archive mode;
+new recoverable Studio requests use the separate optimizer recovery API.
 The source request binds the transport choice and journal implementation.
 Neither path can restart an existing optimizer output directory.
 
@@ -142,7 +143,7 @@ checkpoints produced by the new implementation. Retargeting, broad action
 coverage, scene/partner workflows, style controls and the full release matrix
 remain part of the project-wide goal.
 
-## Optimizer recovery and remaining integration
+## Optimizer and Studio recovery
 
 The separate [optimizer recovery worker](native-mesh-optimizer-recovery-v1.md)
 now commits a pinned request and original bounds,
@@ -158,5 +159,54 @@ bytes with uninterrupted execution, reject changed evidence and verify
 fresh-process recovery after hard exits during original/proposal geometry.
 The original remains selected. The existing `fit` entry point remains a
 fresh-output API; the new recovery API is separate. Studio lifecycle and package
-recovery, full humanoid optimizer measurements and collision guidance remain
-unfinished. Neither recovery component satisfies the full release contract.
+recovery are now connected and tested on generated fixtures; see
+[Studio recovery](studio-mesh-character-recovery-v1.md). Full humanoid optimizer
+measurements and collision guidance remain unfinished. Neither recovery
+component satisfies the full release contract.
+
+## Single-pass finalization
+
+Finalization now streams each report as the checkpoint chain verifies it.
+Previously, the chain verified every frame archive, then final assembly
+verified the first archive again for its metadata and every archive again for
+its sample. The new path verifies every frame once, without re-querying geometry
+or caching the full observation population. Chain ordering, request/method and
+source bindings, archive shapes/dtypes/logical bytes, header consistency and
+prefix decisions remain checked. Partial coverage rejects before assembly;
+late corruption or a changed source cannot publish a final result. Failed
+assembly directories remain separate from fresh retries.
+
+The new tests compare complete report values and every array's shape, dtype
+and bytes with direct geometry queries, for passing and intersecting scenes,
+using both indexed and materialized output. They also inject final-frame array
+corruption, a false final prefix reduction and a source change during streaming.
+All 48 new and existing imported-mesh journal tests pass under the resource guard.
+
+A paired microbenchmark uses a fresh, explicitly authored 64-time scene with
+two generated actors, two mesh props and a primitive obstacle, including
+overlapping geometry. It extracts the pre-change `finalize` traversal from
+commit `693005e` and compares it with the new traversal on the same current
+producer journal and verification helpers. This isolates assembly overhead;
+it is not an old-producer compatibility or full-optimizer benchmark. Execution
+order is baseline, stream, stream, baseline. Baseline durations are 3.286 and
+4.257 seconds; streamed durations are 2.147 and 2.372 seconds. The mean assembly
+time falls about 40% in this small experiment. Frame-archive validations fall
+from 129 to 64; every frame remains validated. Geometry JSON and observation
+indexes are byte-identical across all four outputs, and journal files remain
+unchanged. Local evidence is retained under
+`reports/mesh-finalize-stream-tests-v1` and
+`reports/mesh-finalize-stream-study-v1`.
+
+This does not establish a full-character speedup or complete the earlier
+969-time stress job. Source/method pins still require a fresh job after an
+implementation change; old evidence is not silently rebound to new code.
+Collision guidance, broader motion quality and the original release gates
+remain separate work.
+
+A further seven optimizer/Studio regressions pass, covering accepted and
+rejected decision sequences, candidate GLB bytes, sealed-file tampering, hard
+process exits during original and proposal geometry, and resumed preview/ZIP
+assembly. Two explicit full-clock stress cases remain skipped. Across both
+guarded runs, 131 and 357 resource observations replay; peak process trees
+are 192,536,576 and 207,093,760 bytes under the unchanged 512 MiB cap.
+These results do not change motion-quality or release approval.
