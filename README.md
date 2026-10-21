@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Explicit correction processing budgets](docs/mesh-character-runtime-v1.md): choose a 15-, 30- or 60-minute processing limit for object-contact corrections. Saved budgets reach the supervisor with unchanged memory and accuracy guards; 89 Python checks and the final editor suite pass. Two humanoid trials retained identical source measurements and first proposals but timed out before a complete collision decision. A 60-minute trial preserves the animation request and remains a separate, unapproved experiment.
+
 - [Studio worker thread configuration](docs/mesh-worker-thread-configuration-v1.md): fresh-process regressions exposed numerical libraries loading after the requested thread limit. Both mesh workers now load their backend under the job lock before applying the limit; all 72 focused checks pass. The first humanoid correction timed out after preserving its complete original audit and attempted clip. A retry retains the exact request and acceptance limits; realistic contact and floor repair remain unresolved.
 
 - [Real humanoid mesh-contact trial](docs/humanoid-mesh-contact-v1.md): a fixed-panel touch exposes simultaneous hand/panel and floor failures in an existing humanoid clip. An exact collision-query optimization passes 102 focused checks and preserves every report and observation in a nine-pose old/new comparison, running about 1.82 times faster on that workload. Full correction remains subject to the original complete-clock and motion constraints; no animation-quality approval follows from the speedup.

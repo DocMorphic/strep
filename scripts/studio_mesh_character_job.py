@@ -26,8 +26,11 @@ def folder_for(job):
 def validate(payload):
     required = {'schema', 'scene_job', 'scene_result_sha256', 'mesh_request', 'correction',
                 'editable_clip_boundaries', 'acknowledge_changed_boundary_compatibility'}
-    if not isinstance(payload, dict) or set(payload) != required or payload['schema'] != 'strep-studio-mesh-character-v1':
+    if not isinstance(payload, dict) or not required <= set(payload) or set(payload)-required-{'max_runtime_seconds'} or payload['schema'] != 'strep-studio-mesh-character-v1':
         raise ValueError('Explicit saved-scene correction required')
+    seconds = payload.get('max_runtime_seconds', 900)
+    if type(seconds) is not int or seconds not in (900, 1800, 3600):
+        raise ValueError('Choose a processing time limit of 15, 30 or 60 minutes')
     if not isinstance(payload['scene_job'], str) or not re.fullmatch('[a-f0-9]{32}', payload['scene_job']):
         raise ValueError('Choose a saved scene job')
     if not isinstance(payload['scene_result_sha256'], str) or not re.fullmatch('[a-f0-9]{64}', payload['scene_result_sha256']):
@@ -162,7 +165,8 @@ def review(job):
         try: live = psutil.Process(owner['pid']).create_time() == owner['created_at']
         except psutil.NoSuchProcess: live = False
         if not live: pipeline = dict(status='failed', reason='Correction supervisor stopped; submit a fresh request')
-    response = dict(id=job, status=pipeline['status'], original_selected=True, quality_approved=False, release_approved=False)
+    response = dict(id=job, status=pipeline['status'], original_selected=True, quality_approved=False, release_approved=False,
+                    max_runtime_seconds=read(folder / 'request.json').get('max_runtime_seconds', 900))
     if pipeline['status'] == 'complete':
         receipt = read(folder / 'receipt.json')
         if receipt['request_sha256'] != prepared['request_sha256'] or sha256(folder / 'result.json') != receipt['result_sha256'] or sha256(folder / 'correction-package.zip') != receipt['zip_sha256']:
@@ -205,8 +209,10 @@ def main():
         from resource_admission import ResourcePolicy
         from run_guarded_job import run
         from audit_guarded_job import audit
+        payload = verify_prepared(folder)
         result = run(Path(__file__), folder / 'guard', ResourcePolicy(expected_rss_bytes=512*1024**2,
-            max_tree_rss_bytes=512*1024**2, stable_seconds=15, admission_seconds=600, max_seconds=900), worker_args=[str(folder), '--worker'])
+            max_tree_rss_bytes=512*1024**2, stable_seconds=15, admission_seconds=600,
+            max_seconds=payload.get('max_runtime_seconds', 900)), worker_args=[str(folder), '--worker'])
         save(folder / 'resource-replay.json', audit(folder / 'guard'))
         return {'complete': 0, 'failed': 1, 'deferred': 2}[result['status']]
     return 0
