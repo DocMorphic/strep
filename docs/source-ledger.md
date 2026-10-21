@@ -370,3 +370,29 @@ stays replayable; a versioned precise kernel permits targets from 1e-14 through
 1e-10, defaulting to 1e-12, and keeps the previous admission limits unchanged.
 No upstream implementation is copied; the existing installed Clarabel 0.11.1
 solver is reused with its own terms. No dependency, checkpoint or data is acquired.
+
+## 2026-10-21: diagnosing containment signs near moving surfaces
+
+The primary [Trimesh proximity documentation](https://trimesh.org/trimesh.proximity.html)
+describes nearest-surface and signed-distance queries. Its current web docs are
+5.1.1; the local diagnostic remains on the existing pinned 5.1.0 dependency and
+records the installed implementation hashes. Strep's existing volume record
+explicitly states that self-intersections have not been checked; a positive
+volume/topology check alone is not a geometric self-intersection certificate.
+
+Jacobson, Kavan and Sorkine-Hornung's primary
+[generalized winding-number project](https://users.cs.utah.edu/~ladislav/jacobson13robust/jacobson13robust.html)
+(SIGGRAPH 2013) informs an independent solid-angle diagnostic alongside the
+existing signed-distance and ray-containment queries. The diagnostic compares
+these measurements on unchanged meshes and checks inside/outside box controls,
+reversed orientation and translation. It does not replace production acceptance,
+choose a new inside/outside policy for intersecting shells or certify the full
+animation. No paper implementation, asset or training data is copied, and no
+new dependency or model is installed.
+
+The version-pinned [Trimesh 5.1.0 proximity implementation](https://github.com/mikedh/trimesh/blob/5.1.0/trimesh/proximity.py)
+uses the nearest triangle's normal when the query projects within that triangle
+and ray containment otherwise. This branch distinction informs the next
+investigation after signed-distance results disagree with ray and winding
+measurements on saved poses. It does not establish mesh validity or justify
+switching production semantics without new tests and baseline evaluation.

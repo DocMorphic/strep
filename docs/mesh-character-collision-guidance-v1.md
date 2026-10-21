@@ -1280,10 +1280,117 @@ protocol; verification completes within 512 MiB. This does not approve the
 complete animation or any release gate.
 
 The remaining regressions expose 27 deepest-vertex identities absent from the
-138-row bank. The planned next bank retains all 138 and adds those 27, for 165
-identities. Nearest points and directions must be rebuilt at the verified full
-step, retaining the original source's per-query allowances. No 165-row fit has
-yet been executed or verified.
+138-row bank. This motivates retaining all 138 and adding those 27, for 165
+identities, with nearest points and directions rebuilt at the verified full
+step and the original source's per-query allowances retained. The following
+section records that continuation.
+
+### Retained 165-point model and explicit starting margins
+
+`reports/humanoid-containment-witnesses-v4` rebuilds all 165 identities at the
+verified v3 full step. Its 165-by-84 derivative has 4,980 nonzeros, no
+unresponsive rows or near-surface fallback rows, and a maximum origin
+reconstruction discrepancy of 3.58e-16 m. All 138 earlier identities and
+original-source query allowances remain present.
+
+`reports/humanoid-containment-restoration-v4` retains trust 0.0125, the same
+291,837 hard rows, all 165 soft containment rows and the 0.999999 normalized
+edit proposal cap. The complete proposal has 292,002 norm rows. Its starting
+contact-plane gap of 44.152547 micrometers falls 5.847453 micrometers short of
+the 50-micrometer proposal reserve; its 4.902598-mm contact error exceeds the
+4.9-mm proposal radius by 0.002598 mm. These are saved explicitly in
+`origin-proposal-reserves.json`.
+
+The origin must retain positive contact-plane separation, passing actual
+contact-time mesh geometry and all actual native/contact checks. The earlier
+incidental requirement that an origin already satisfy the tighter proposal
+clearance is removed. Both proposal margins remain unchanged in the solve,
+and original serialized edit, contact and geometry acceptance caps remain
+unchanged. Starting below a proposal reserve does not permit a failed actual
+constraint or rebase the original depth allowance.
+
+The four decoded proposals show why the tighter model still needs actual
+acceptance checks:
+
+| Step fraction | Failed native rows | Local depth regressions | Worst depth increase |
+| --- | ---: | ---: | ---: |
+| 1 | 1 | 47 | 2.789343 mm |
+| 0.5 | 0 | 48 | 2.080371 mm |
+| 0.25 | 0 | 46 | 1.896794 mm |
+| 0.125 | 0 | 47 | 0.435373 mm |
+
+All strict edit and contact checks pass, but the first three steps worsen the
+worst original-relative depth. The full step additionally fails one native row.
+Only the eighth step improves the current lexicographic depth score: its worst
+increase drops from 0.446596 to 0.435373 mm and its squared-increase sum drops
+from 8.677674e-7 to 8.407400e-7 square meters. The number of failed depth
+comparisons increases from 43 to 47. This count is retained explicitly; the
+score orders maximum increase before squared increase, and does not promise
+monotonic failure counts. This is research progress under that score, not a
+collision-free or release-ready result.
+
+The eighth step has 4.894875-mm contact error and a 44.730327-micrometer minimum
+contact-plane gap. Actual contact-time mesh geometry and previously passing
+focused conditions remain passing. Its 47 local depth regressions still prevent
+full-clock acceptance and adoption. The original animation remains selected.
+
+`reports/humanoid-containment-restoration-verification-v4` independently
+reopens all four exports, reproduces all 2,017-time native/edit/contact checks
+and all 264 focused geometry queries and observation arrays, reconstructs the
+depth comparisons and confirms the eighth-step selection. It also reconstructs
+the recorded origin shortfalls, proposal caps, affine origins, lifts and steps.
+Saved derivatives remain bound and structurally checked, not independently
+re-differentiated. The fitting and verification resource traces complete and
+replay under their respective 2-GiB and 512-MiB protocols.
+
+The eighth-step failures identify 24 deepest vertices absent from the 165-row
+bank, giving 189 retained identities if combined. These remain recorded research
+inputs; another fit is deferred until the sign discrepancy below is understood
+and the original baseline has been validated under consistent query semantics.
+
+### Containment-sign disagreement changes the next step
+
+The larger steps' reverse-containment jumps include a point already retained
+in the model, so they cannot be explained solely by omitted vertex identities.
+`reports/humanoid-containment-sign-diagnostic-v1` checks panel vertex 0 at four
+affected times on the v3 seed and all four v4 exports: 20 point/pose records.
+It freshly compares nearest distance, the installed signed-distance query, ray
+containment, an independently implemented solid-angle winding sum and maximum
+vertex movement from the seed. Analytic box inside/outside controls, reversed
+orientation and translated coordinates pass. All installed Trimesh Python
+sources, original inputs and the diagnostic worker are hash-bound.
+
+There are nine disagreements between signed distance and ray containment, and
+the same nine between signed distance and the winding sum. Ray containment is
+inside and the winding sum is approximately +1 for all 20 records. Four sign
+flips occur even when maximum vertex displacement is smaller than the seed's
+nearest-surface distance. For example, at 2.1375 s the seed query reports
+outside at 1.715451 mm, while the quarter-step query reports inside at
+1.896794 mm despite a maximum vertex displacement of only 0.511537 mm. Both
+ray and winding tests classify both poses as inside. This comparison concerns
+a straight interpolation of the two saved vertex sets; it is not a continuous
+audit of the animation's temporal path.
+
+The frozen-feature guidance can likewise report positive clearance while the
+fresh query reports containment. At 2.135416667 s on the full step, its retained
+point's frozen gap is +3.218455 mm while signed distance reports 2.789343-mm
+penetration. The discrepancy is preserved, not filtered out of the score.
+
+These findings make the existing reverse-containment scores and guidance
+provisional as geometric evidence, even though their stored numerical results
+reproduce. They do not by themselves establish whether the cause is intersecting
+or locally folded mesh geometry, the query's nearest-face sign rule, or both.
+Trimesh's version-pinned signed-distance implementation uses a nearest-triangle
+normal for points projecting onto that triangle, and ray containment otherwise;
+see the [5.1.0 source](https://github.com/mikedh/trimesh/blob/5.1.0/trimesh/proximity.py).
+Strep's volume record explicitly leaves self-intersection checking unset.
+
+The next work is to reproduce this disagreement on the untouched original and
+inspect the closest faces and mesh validity, then validate a consistent,
+explicit inside/outside policy before further fitting. Any changed geometry
+query needs versioned original-baseline recomputation and regression tests;
+old depth allowances must not be silently rebased. The diagnostic does not
+replace the production query, certify geometry or make any candidate usable.
 
 ### Remaining integration and evaluation
 
@@ -1315,9 +1422,11 @@ The export diagnostic and combined experiment above resolve the demonstrated
 source-rounding barrier on one generated case. Both obstacle placements and the
 real humanoid now expose additional local-search limits. Joint pose and timing
 now pass the native limits on one declared seven-track candidate, whose complete
-geometry evaluation rejects 67 local containment-depth regressions. Next extend
-the focused restoration, which reduces this to 43 regressions while retaining
-native and strict edit limits: retain all 138 existing witness identities and
+geometry evaluation rejects 67 local containment-depth regressions. First resolve
+the measured containment-sign disagreement and validate the untouched baseline.
+The focused restoration's current score-selected iterate has 47 regressions
+with lower worst depth, while the preceding iterate has 43 regressions.
+Retain native and strict edit limits, all 165 existing witness identities and
 add newly exposed deepest vertices, preserve
 contact-time separation and native caps, and re-evaluate the complete clock
 after a correction clears the focused screen. Preserve the separate four-track
