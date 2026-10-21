@@ -119,7 +119,7 @@ were not weakened. Continue in a fresh study from the saved second checkpoint;
 the next window begins at key 34. Do not rerun an existing report directory or
 overwrite its accepted or rejected outputs.
 
-## Scope
+## Third continuation
 
 The third fitting run uses the metadata-integrity guard and freshly runs all 13
 exporter tests. It independently rechecks the previous 36-pose prefix, accepts
@@ -147,6 +147,40 @@ Broader hosted tests on `89f6d29` exposed six clock-consistency failures in
 timed rotation sampling, scene-edit interpolation and vertical-root interpolation.
 Those failures are separate from this independently decoded prefix result and
 must be repaired; this study does not claim full-suite success.
+
+## Fourth continuation and unresolved contact transition
+
+`reports/kaykit-getup-rolling-v4` resumes the third checkpoint with the same
+geometry, contact phases, correction limits and memory policy. It allows 1,200
+seconds between-window work before checkpointing, with a 1,500-second hard
+guard. All 13 exporter tests pass. Of 29 attempted windows, 28 pass; the window
+covering keys 76–78 remains unresolved after three refinement attempts.
+
+The accepted result finalizes keys 0–76 and validates key 77 as lookahead:
+78 of 180 poses. All 3,061 required prefix samples pass. Maximum floor depth
+is 4.740287 mm, contact error 19.756263 mm, root correction step 24.997139 mm,
+and rotation correction step 4.999863 degrees. The accepted clip SHA-256 is
+`d82f9c419be71035950842d666b5e89527f970ce2e4fc1465a93b064ed17ea99`.
+
+The rejected window's final pre-export check measures 26.444266 mm contact
+error, a 25.065058 mm root correction step and a 5.263341-degree rotation
+correction step. Its candidate and decoded audit remain separate from the
+accepted state. This is a bounded local search failure, not a proof that the
+contact transition is impossible. A next experiment should explicitly reopen
+earlier keys and test a longer joint planning window, retaining all limits and
+rechecking the changed intervals; simply replaying the same failed window is
+not evidence of progress.
+
+`reports/kaykit-getup-rolling-engine-v4` independently reconstructs the full
+prefix clock and checks eight Godot batches: 3,076 observations including batch
+endpoints. All prefix floor/contact and engine pose/skin checks pass. Maximum
+skin disagreement is 0.028418 mm. These two runs replay 1,404 resource
+observations, with peak worker-tree memory 317,792,256 bytes. Neither run stops
+for insufficient memory. The engine result SHA-256 is
+`fbb0855e73050e281f3887f81dee1a4cc6c6719265c3854b4b630c1e56091f46`.
+The receipt is `reports/kaykit-getup-rolling-publication-v3/summary.json`.
+
+## Scope
 
 These checks cover sampled floor/contact geometry, correction bounds,
 correction step bounds, serialization and engine agreement. They do not prove

@@ -134,3 +134,16 @@ unchanged scalar decoders, and unchanged test sources are independently checked
 in `reports/native-clock-batch-publication-v1`. The final follow-up test XML
 SHA-256 is
 `b94f7a23de07bb08b31921f4a68278a04395da9699db77c5bbf2caaab608c9ef`.
+
+An additional four-module follow-up on unchanged `f16b59b` covers scene-pair
+angular constraints, export rounding, control refinement and coupled actor
+motion. All 27 executable cases pass; two fixture-dependent cases are explicitly
+skipped because the isolated source copy does not contain the separately pinned
+conic-solver receipt or historical immutable paired-edit request. Those skips
+are not counted as passes. All four previously failing scene cases pass without
+further source or tolerance changes. Evidence is retained in
+`reports/native-clock-scene-followup-v1`, including its isolated source copy,
+test XML and 79 replayed resource observations. The XML SHA-256 is
+`5e8e3e1e4c53a0e54ac0a1d29d52dffcf56b7b3cdb04fd2075939dc01f811f3b`.
+Full hosted regression remains pending; this follow-up does not establish
+motion realism or release readiness.
