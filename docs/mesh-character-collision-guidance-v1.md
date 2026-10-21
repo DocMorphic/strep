@@ -546,6 +546,88 @@ proposal model or search over alternative geometry directions while retaining
 the complete decoded geometry, original permissions and final acceptance rules.
 More memory alone does not resolve the demonstrated contact failure.
 
+### Alternative direction and penalty proposals (2026-10-21)
+
+Two research-only experiments probe the frozen-direction barrier. The
+[TrajOpt initialization notes](https://rll.berkeley.edu/trajopt/doc/sphinx_build/html/tips.html)
+motivate changing initialization before imposing collision costs; the
+[original paper](https://rll.berkeley.edu/trajopt/ijrr/2013-IJRR-TRAJOPT.pdf)
+describes increasing collision penalties. These experiments implement neither
+TrajOpt nor its continuous-time collision formulation. Full decoded acceptance
+remains the existing sampled-clock audit, with all original conditions retained.
+
+First, a bounded contact-improving preview selects projection directions while
+keeping the original pose as the cap and derivative anchor. All 42,666 observed
+triangle/time pairs, their nine vertex comparisons, all 36 controls and all
+569,384 model rows remain. The preview changes 25,046 directions. Thirty-four
+prototype checks pass, including independently recomputed derivatives and
+invalid-preview rejection. However, the full solve reaches its 30-second limit
+after 54 iterations. A separately declared 60-second attempt reaches the
+unchanged 100-iteration limit. Neither produces a direction or candidate.
+Their sampled process-tree peaks are 1,376,141,312 and 1,357,516,800 bytes under
+the separately admitted 2 GiB protocol. The helper and its tests are archived
+in `reports/surface-preview-prototype-v1`; production source is restored.
+Passing those prototype tests is not evidence of a useful full-model solve.
+
+Second, `reports/humanoid-surface-penalty-v1` retains the original directions
+and all rows, but treats the 383,994 surface-worsening rows as weighted proposal
+costs. The 185,389 native/contact/floor rows stay hard. Predeclared weights are
+1, 10 and 100, with the original control box, 0.02 trust fraction, 100-iteration
+limit and 30-second per-solve limit. This is a weighted maximum objective,
+not TrajOpt's summed hinge objective. Relaxing a proposal constraint does not
+relax final whole-mesh acceptance.
+
+Weight 1 produces a primary solution after 40 iterations; both secondary
+minimum-norm solves time out. All eight exported backoffs pass decoded native
+constraints, strict authoring edit limits and contact nonregression. The largest
+step reduces actual point-contact error from 30 mm to 25.350371 mm, still failing
+the original 5 mm requirement. The approximate primary step exceeds the nominal
+local trust fraction by about 5.8e-15; strict authoring bounds pass, but exact
+local-box membership is not claimed. Weights 10 and 100 reach their solve-time
+limits without a direction. None of these exports is byte-identical to an older
+proposal, so previous geometry audits cannot be reused. The study completes at
+a sampled 1,424,543,744-byte peak. All outputs remain diagnostic and the original
+animation stays selected; the complete geometry check below rejects the best
+contact-improving proposal.
+
+`reports/humanoid-penalty-geometry-v1` independently decodes the best exported
+proposal and starts the unchanged 2,017-time geometry audit under 512 MiB,
+with the original 600 MiB free reserve. Its 900-second execution guard stops
+after 1,715 completed samples; all 902 resource observations replay and the
+stop is a time limit, not insufficient RAM. The explicit continuation in
+`humanoid-penalty-geometry-resume-v1` pins that checkpoint and its SHA-256,
+verifies the completed prefix, and resumes the same journal under the same
+resource limits. Neither incomplete evidence nor an interrupted attempt is
+reported as a geometry pass.
+
+The continuation checks the remaining 302 poses and assembles all 2,017 original
+sample times in 353.235 seconds of observed execution. Original and continuation sampled peaks are 254,435,328
+and 246,239,232 bytes. The final comparison is:
+
+| Geometry metric | Original | Weight-1 full step |
+| --- | ---: | ---: |
+| Failed conditions | 4,282 | 4,281 |
+| Failed sampled poses | 2,017 | 2,017 |
+| Surface records | 42,666 | 53,064 |
+| Maximum depth | 10.436307 mm | 10.436307 mm |
+
+No previously passing condition becomes failed, but the surface-record count
+worsens by 10,398. These records include the query's separate crossing,
+boundary, near and coplanar classifications; the count is not a penetration
+depth or a count of unique physical contacts. The unchanged requirement that
+no geometry metric worsen therefore rejects the diagnostic step. A reduction
+of one failed condition cannot compensate for another metric becoming worse.
+The point contact also still fails 5 mm. This is a measured negative result,
+not a corrected animation, and the seven smaller exported backoffs have not
+received complete geometry audits.
+
+The independent verifier in `reports/surface-proposal-publication-v1` checks
+the complete frame journal, observation-index and report hashes, original
+sample-clock equality, reduced conditions/metrics, source bindings, archived
+prototype test inputs and every study's resource trace. Prototype failures and
+the first geometry attempt's time stop remain visible. No production solver,
+default resource budget or release gate is changed by these experiments.
+
 ### Remaining integration and evaluation
 
 Keep the exact original source, editing limits, frozen tracks and complete
