@@ -82,7 +82,10 @@ at the same source passes all 25 tests on Windows (1,498.27 s) and Ubuntu
 are retained under `reports/deterministic-containment-v2-publication-v1/hosted`.
 The separate
 [direct correction run](https://github.com/DocMorphic/strep/actions/runs/39603353868)
-is still in progress, not claimed successful. These suites can be
+at `33aaacc` also passes all 22 tests on Ubuntu (2,764.81 s) and Windows
+(3,067.73 s). All three focused runs are complete and successful, totaling
+81 source tests per operating system. Their metadata and full job logs are
+retained in the same local evidence folder. These suites can be
 selected in focused both-OS CI with a 60-minute limit because the retained
 setup alone took over 14 minutes locally and later tests replay full clips.
 Other focused CI jobs retain 15 minutes. Local numerical studies retain the
