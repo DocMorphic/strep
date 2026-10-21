@@ -488,3 +488,15 @@ engine job ran for this screen. This adds a distinct source package and mesh
 layout to development intake; rig-family independence and generalization remain
 unproven. Existing frozen held-out reservations and release gates are unchanged.
 Raw asset payloads and bundled animations are excluded from the public repo.
+
+The follow-up `reports/kaykit-rig-intake-v1/` is prepared and its metadata-only
+waiter is live. It depends on verified completion of the queued reference-surface
+diagnostic. Its worker will run the unchanged strict rig importer and profile
+resolver, retain the original GLB byte-for-byte, calculate the complete default
+skin and catalog all 95 original clips through the existing animation parser.
+Rejected clips retain their reasons; successful parsing will not imply sampled
+motion, transfer, engine or quality approval. Preparation passes syntax and ten
+prerequisite-decision cases without importing NumPy. The numerical intake has
+not run yet. Missing/failed prerequisite evidence, changed inputs/methods or
+resource admission failure stops this job without silently retrying. It keeps
+the existing exclusive worker lock and 512-MiB/600-MiB/900-second resource policy.
