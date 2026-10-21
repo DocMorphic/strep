@@ -227,6 +227,32 @@ values only in the new candidate; original checkpoints and failed studies stay
 unchanged. The remaining clip, human review and broader release gates are still
 unfinished.
 
+## Fifth continuation
+
+`reports/kaykit-getup-rolling-v5` starts from the repaired 79-pose checkpoint.
+All 13 exporter tests pass. Fifteen of sixteen attempted windows pass, finalizing
+keys 0–92 with key 93 as validated lookahead: 94 of 180 poses. The next window,
+keys 92–94, is rejected with floor/contact and step failures; its candidate stays
+separate from the saved state. All 3,699 prefix samples pass, with maximum floor
+depth 4.740287 mm, contact error 19.867673 mm, root correction step 24.997139 mm
+and rotation correction step 4.999863 degrees. Accepted clip SHA-256:
+`d7c3465e050c24b57286b0939c4e6f3c1d859f1590b8a37f4b0f722ef2d6159d`.
+
+`reports/kaykit-getup-rolling-engine-v5` independently reconstructs this clock
+and verifies ten actual Godot batches, totaling 3,718 observations. Every prefix
+floor/contact and engine pose/skin check passes; maximum skin disagreement is
+0.032340 mm. Engine result SHA-256:
+`bf2542ccfecb81bcd5617109bd1bee2f07880ea9bb1b278e61ee355d0ab1933a`.
+
+A separate [correction-step projection study](surface-step-projection-v1.md)
+validates a reusable proposal helper on an earlier failed window. It does not
+replace this continuation. Across the fifth fitting run, its engine check and
+the separate projection/native-engine comparison, all 1,038 resource observations
+replay, with peak worker-tree memory 324,255,744 bytes. The receipt is
+`reports/surface-step-projection-publication-v1/summary.json`. The next study
+reopens the approach to the new contact failure, rather than treating small
+step projection as sufficient for its larger geometry errors.
+
 ## Scope
 
 These checks cover sampled floor/contact geometry, correction bounds,
