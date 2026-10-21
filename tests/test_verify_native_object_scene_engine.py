@@ -11,7 +11,7 @@ import pytest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from strep import read, save, sha256
 from native_object_scene_engine import run as combine
-from verify_native_object_scene_engine import run, geometry_reductions
+from verify_native_object_scene_engine import run, geometry_reductions, self_surface_reductions, containment_state, partner_containment_reduction
 from test_native_object_scene_engine import producers
 from test_native_scene_geometry import closed_fixture, policy, evaluate
 from native_scene_contacts import SceneContacts
@@ -93,6 +93,76 @@ def test_complete_partner_and_plane_reductions_include_all_populations(tmp_path)
     with np.load(path) as saved:result=geometry_reductions(scene,p,digest,times,report,saved)
     assert result['passed'] and result['actor_object_observations']==6
     assert not result['geometry_queries_rerun']
+
+
+def test_self_surface_reduction_keeps_an_observed_failure_unapproved(tmp_path):
+    _,policy,_,_,report,_=geometry_bundle(tmp_path)
+    sample=copy.deepcopy(report['samples'][0]);audit=sample['self_surfaces']['A']
+    assert self_surface_reductions(sample,report['topology'],policy['limits']['surface_tolerance_m'])
+    # Synthetic retained observation isolates the reducer, not geometry queries.
+    prior=next(kind for kind,count in audit['counts'].items() if count)
+    audit['counts'][prior]-=1;audit['counts']['proper_crossing']=1
+    audit['records']=[dict(left_triangle=0,right_triangle=1,kind='proper_crossing',overlap_length_m=.001)]
+    audit['has_observed_transverse_crossings']=True
+    sample['volumes']['A'].update(containment_blocked_by_self_geometry=True,containment_available=False)
+    assert not self_surface_reductions(sample,report['topology'],policy['limits']['surface_tolerance_m'])
+    audit['has_observed_transverse_crossings']=False
+    with pytest.raises(ValueError,match='reductions differ'):
+        self_surface_reductions(sample,report['topology'],policy['limits']['surface_tolerance_m'])
+
+
+@pytest.mark.parametrize('fault',['missing','topology','method','counts','containment','degenerate','approval'])
+def test_self_surface_reduction_rejects_missing_or_inconsistent_evidence(tmp_path,fault):
+    _,policy,_,_,report,_=geometry_bundle(tmp_path)
+    sample=report['samples'][0];audit=sample['self_surfaces']['A']
+    if fault=='missing':sample['self_surfaces'].pop('A')
+    elif fault=='topology':audit['faces_sha256']='0'*64
+    elif fault=='method':audit['method']='unversioned'
+    elif fault=='counts':audit['candidate_pairs']+=1
+    elif fault=='containment':sample['volumes']['A']['containment_blocked_by_self_geometry']=True
+    elif fault=='degenerate':audit['degenerate_faces']=[0]
+    else:audit['quality_approved']=True
+    with pytest.raises(ValueError):
+        self_surface_reductions(sample,report['topology'],policy['limits']['surface_tolerance_m'])
+
+
+@pytest.mark.parametrize('distance,ray,winding,expected',[
+    (-.01,False,0.,'outside'),(.01,True,1.,'inside'),(-.01,True,1.,'unresolved'),
+    (.01,False,0.,'unresolved'),(-.01,False,1.,'unresolved'),(1e-9,False,0.,'near-surface'),
+    (0.,False,0.,'near-surface-or-unresolved')])
+def test_center_containment_requires_consensus(distance,ray,winding,expected):
+    assert containment_state(distance,ray,winding,1e-8)==expected
+
+
+def test_zero_signed_partner_distance_does_not_replace_unsigned_observation():
+    assert containment_state(0.,False,0.,1e-8,unsigned=.01)=='unresolved'
+    assert containment_state(0.,False,0.,1e-8,unsigned=0.)=='near-surface'
+
+
+def unresolved_partner():
+    from native_containment_crosscheck import METHOD
+    return dict(source='A',target='B',available=False,containment_method=METHOD,count_tolerance_m=.005,
+        vertices_checked=8,queried_vertices=1,unresolved_vertices=[dict(vertex=3,state='unresolved',
+            signed_distance_m=-.01,unsigned_distance_m=.01,ray_inside=True,winding=1.)])
+
+
+def test_partner_can_be_unresolved_despite_eligible_target():
+    row=unresolved_partner();partner_containment_reduction(row,True,8,.005,1e-8)
+    with pytest.raises(ValueError):partner_containment_reduction(row,False,8,.005,1e-8)
+    partner_containment_reduction(dict(source='A',target='B',available=False),False,8,.005,1e-8)
+
+
+@pytest.mark.parametrize('fault',['available','depth','resolved','duplicate','missing','method','vertex'])
+def test_unresolved_partner_evidence_cannot_be_relabelled_as_clear(fault):
+    row=unresolved_partner()
+    if fault=='available':row['available']=True
+    elif fault=='depth':row['max_depth_m']=0.
+    elif fault=='resolved':row['unresolved_vertices'][0]['ray_inside']=False;row['unresolved_vertices'][0]['winding']=0.
+    elif fault=='duplicate':row['queried_vertices']=2;row['unresolved_vertices']*=2
+    elif fault=='missing':row['unresolved_vertices']=[]
+    elif fault=='method':row['containment_method']='signed-only'
+    else:row['unresolved_vertices'][0]['vertex']=8
+    with pytest.raises(ValueError):partner_containment_reduction(row,True,8,.005,1e-8)
 
 
 def test_explicit_geometry_clock_is_preserved_with_additional_engine_times(tmp_path):

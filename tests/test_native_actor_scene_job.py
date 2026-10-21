@@ -102,6 +102,20 @@ def test_actor_replay_rejects_changed_or_incomplete_evidence(tmp_path, monkeypat
     assert not (tmp_path/'replay/result.json').exists()
 
 
+def test_actor_replay_binds_shared_geometry_reducer(tmp_path,monkeypatch):
+    _,contacts,policy,engine=fixture(tmp_path,monkeypatch)
+    produced=tmp_path/'producer';actor_run(contacts,produced,geometry_policy=policy,engine=engine,playback_mode='native-authoring')
+    output=tmp_path/'replay';original=replay.geometry_reductions
+    def changed(*args,**kwargs):
+        result=original(*args,**kwargs)
+        (output/'geometry-reducer.py').write_text('# altered archived reducer',encoding='utf8')
+        return result
+    monkeypatch.setattr(replay,'geometry_reductions',changed)
+    with pytest.raises(ValueError,match='geometry reducer changed'):
+        replay.run(contacts,policy,produced,output)
+    assert not (output/'result.json').exists()
+
+
 def test_actor_only_studio_job_package_and_game_source(tmp_path, monkeypatch):
     inputs=tmp_path/'reports/rig-jobs/input';inputs.mkdir(parents=True)
     source, contacts, pp, engine=fixture(inputs,monkeypatch)

@@ -36,6 +36,29 @@ fewer times than the engine contact clock; its original times are preserved and
 must all occur in the engine observations. Common-clock preparation includes
 all original and stored-key times in the geometry policy itself.
 
+The current reducer also requires the versioned, complete self-surface reports
+for every actor. It checks topology, pair counts, retained proper/ambiguous
+records, degeneracy and containment eligibility. Recorded self-surface failures
+remain failed samples even when all object, partner and plane checks pass.
+A verified failure is valid evidence, not a successful animation.
+
+Center containment uses the retained signed-distance, ray and winding consensus.
+A zero signed distance can erase the unsigned magnitude in the pinned
+nearest-normal implementation; center records do not retain that separate
+observation. Such records may therefore remain near-surface or unresolved, but
+cannot establish inside/outside status or pass clearance. Partner records retain
+the unsigned observation. An eligible target can still have unresolved query
+points; their identities and diagnostic states must agree, and the unavailable
+query cannot publish a depth reduction. These checks do not repeat geometry
+queries or turn an uncertain measurement into a pass.
+
+The actor-only verifier now archives and binds this shared reducer alongside its
+own implementation. The general scene verifier already freezes this dependency.
+The facing-only integration fixture moves its unused stationary triangle away
+from the animated square's end pose; production collision policies are unchanged.
+
+All 127 focused tests and 10 subtests pass in 659.99 seconds under the 512 MiB worker cap; all 677 resource observations replay. Coverage includes combined, actor-only and general scene replay, retained self-surface failures, malformed evidence, containment consensus and uncertainty, shared-reducer mutation, the facing-only integration job, Studio diagnostic reporting and source-suite partitioning. Engine execution is mocked in these fixtures; this is not rendered, physical, animator or release approval. The same correction policies remain in force.
+
 These are saved geometry reductions, not independent reruns of depth queries,
 containment distances, partner crossings or plane measurements. Matching files
 and replay are not cryptographic proof against coordinated fabrication of all

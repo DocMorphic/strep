@@ -28,6 +28,11 @@ def authored(tmp_path_factory):
     # Use a synthetic nondegenerate surface so the facing gate is isolated
     # from the deliberately degenerate material-selection test fixture.
     rig.document['meshes'][0]['primitives'][0]['indices']=unsigned(rig.document,binary,[0,1,2,0,2,3],'SCALAR')
+    # The stationary second primitive at z=1 otherwise touches the animated
+    # square at its end pose. Keep this facing-only fixture self-disjoint.
+    stationary=rig.primitives[1]
+    rig.document['meshes'][0]['primitives'][1]['attributes']['POSITION']=append_accessor(
+        rig.document,binary,(stationary['positions']+[0.,0.,2.]).tolist(),'VEC3')
     # A rigid one-bone fixture isolates the facing decision from quantized
     # multi-influence deficits, which are covered by the imported-skin suite.
     for primitive in (rig.primitives[0],rig.primitives[2]):

@@ -99,6 +99,8 @@ def run(contacts, policy_path, actor_dir, output):
     with worker_lock(), threadpool_limits(limits=1):
         scene, policy, actor, times, bindings = load(contacts, policy_path, actor_dir)
         result = read(actor_dir/'result.json'); output.mkdir(parents=True); shutil.copyfile(__file__, output/'verifier.py')
+        reducer = Path(__file__).with_name('verify_native_object_scene_engine.py')
+        reducer_digest = sha256(reducer); shutil.copyfile(reducer, output/'geometry-reducer.py')
         save(output/'pipeline.json', dict(status='processing', original_selected=True))
         try:
             native, arrays = scene.evaluate(); skin = {}; plane_observations = 0
@@ -148,12 +150,13 @@ def run(contacts, policy_path, actor_dir, output):
                     and result['samples'] == len(times), 'Actor sampled decision differs')
             load(contacts, policy_path, actor_dir); scene.check_inputs()
             require(all(sha256(p) == h for p,h in bindings.items()) and sha256(__file__) == sha256(output/'verifier.py'), 'Actor replay input/method changed')
+            require(sha256(reducer) == sha256(output/'geometry-reducer.py') == reducer_digest, 'Actor geometry reducer changed')
             verified = dict(schema='strep-native-actor-scene-replay-v1', at=now(), status='complete', samples=len(times),
                 all_replayed_observations_exact=True, recorded_sampled_conditions_pass=passed,
                 geometry_reductions=geometry, geometry_transport=transport, source_bindings_sha256=bindings,
                 world_plane_observations_replayed=plane_observations, posed_triangle_degeneracy_replayed=True,
                 producer_files_sha256=bindings, producer_implementation_sha256=result['implementation_sha256'],
-                verifier_sha256=sha256(__file__), original_selected=True, quality_approved=False,
+                verifier_sha256=sha256(__file__), geometry_reducer_sha256=reducer_digest, original_selected=True, quality_approved=False,
                 training_admitted=False, release_approved=False,
                 scope='Complete actor-only imported skin/contact replay, raw-skin world-plane/degeneracy replay and saved partner geometry reductions. No independent partner-surface/containment requery, rendering, physics, human quality or release approval.')
             save(output/'result.json', verified); save(output/'pipeline.json', dict(status='complete', original_selected=True)); return verified

@@ -15,12 +15,105 @@ from strep import ROOT, read, save, sha256, now
 from native_object_scene_engine import load, method_bindings, require, METHODS
 from native_scene_engine import SKIN_POSITION_TOLERANCE
 from native_object_asset import POSITION_LIMIT_M, BASIS_LIMIT
-from native_scene_geometry import faces_for, policy_for
+from native_scene_geometry import faces_for, policy_for, SELF_METHOD, CONTAINMENT_METHOD
 from engine_contact_sampling import contract_sha256
 from native_observation_archive import verify as verify_transport
 
 FILES = ('default-import-contacts.json', 'native-authoring-contacts.json',
          'geometry.json', 'geometry-observations.npz', 'geometry-observations.npz.receipt.json', 'observations.npz')
+
+
+def self_surface_reductions(sample, topology, tolerance):
+    """Reduce retained self-surface evidence; do not claim to repeat queries."""
+    audits = sample.get('self_surfaces')
+    require(isinstance(audits, dict) and set(audits) == set(topology), 'Complete self-surface actor population required')
+    eligible = True
+    for name, audit in audits.items():
+        shape = topology[name]
+        require(audit['schema'] == 'strep-native-self-surface-v1' and audit['status'] == 'complete'
+            and audit['method'] == SELF_METHOD and audit['complete_triangle_population'] is True
+            and audit['vertices'] == shape['vertices'] and audit['triangles'] == shape['faces']
+            and audit['faces_sha256'] == shape['faces_sha256'] and audit['tolerance_m'] == tolerance,
+            'Matching complete self-surface topology and method required')
+        counts = audit['counts']; pairs = audit['candidate_pairs']
+        require(type(pairs) is int and 0 <= pairs <= audit['maximum_pairs']
+            and all(type(n) is int and n >= 0 for n in counts.values()) and sum(counts.values()) == pairs,
+            'Complete self-surface pair counts required')
+        records = audit['records']; seen = set(); proper = 0; ambiguous = False
+        require(isinstance(records, list) and len(records) <= audit['maximum_records'], 'Complete self-surface records required')
+        for row in records:
+            left, right = row['left_triangle'], row['right_triangle']
+            require(type(left) is int and type(right) is int and 0 <= left < right < shape['faces']
+                and (left, right) not in seen, 'Distinct original self-surface pairs required')
+            seen.add((left, right)); kind = row['kind']
+            require(kind in ('proper_crossing', 'coplanar_or_near_parallel_overlap', 'boundary_or_near_contact'),
+                'Explicit self-surface relation required')
+            if kind == 'proper_crossing':
+                length = row['overlap_length_m']
+                require(type(length) in (int, float) and np.isfinite(length) and length > 0, 'Positive self-crossing interval required')
+                proper += 1
+            else:
+                ambiguous = True
+        require(proper == counts.get('proper_crossing', 0)
+            and audit['has_observed_transverse_crossings'] is bool(proper)
+            and audit['has_ambiguous_surface_records'] is ambiguous, 'Self-surface reductions differ')
+        require(audit['degenerate_faces'] == sample['degenerate_faces'][name], 'Self-surface degenerate population differs')
+        clean = not records and not audit['degenerate_faces']
+        state = sample['volumes'][name]
+        available = bool(state['watertight'] and state['winding_consistent'] and state['outward_positive_volume'] and clean)
+        require(state['self_intersection_checked'] is True and state['self_surface_method'] == SELF_METHOD
+            and state['containment_blocked_by_self_geometry'] is (not clean)
+            and state['containment_available'] is available, 'Self-surface containment eligibility differs')
+        require(audit['self_collision_free_certified'] is False and audit['quality_approved'] is False,
+            'Self-surface evidence cannot certify motion')
+        eligible &= clean
+    return eligible
+
+
+def containment_state(distance, ray, winding, tolerance, *, unsigned=None):
+    require(type(distance) in (int, float) and np.isfinite(distance) and type(ray) is bool
+        and type(winding) in (int, float) and np.isfinite(winding), 'Complete finite containment consensus observations required')
+    # A zero sign in the pinned nearest-normal implementation can erase the
+    # unsigned magnitude. Older center records cannot distinguish that from
+    # an actual surface point. Both possible outcomes remain non-passing.
+    if unsigned is None and distance == 0: return 'near-surface-or-unresolved'
+    unsigned = abs(distance) if unsigned is None else unsigned
+    require(type(unsigned) in (int, float) and np.isfinite(unsigned) and unsigned >= 0, 'Finite nearest distance required')
+    if unsigned <= tolerance: return 'near-surface'
+    if distance > tolerance and ray and abs(winding - 1) <= 1e-5: return 'inside'
+    if distance < -tolerance and not ray and abs(winding) <= 1e-5: return 'outside'
+    return 'unresolved'
+
+
+def partner_containment_reduction(row, target_available, source_vertices, limit, tolerance):
+    require(type(row['available']) is bool, 'Explicit partner availability required')
+    if not target_available:
+        require(row['available'] is False and set(row) == {'source', 'target', 'available'},
+            'Ineligible partner target cannot have depth observations')
+        return
+    require(row['containment_method'] == CONTAINMENT_METHOD and row['count_tolerance_m'] == max(limit, 1e-12)
+        and row['vertices_checked'] == source_vertices, 'Complete versioned partner query required')
+    queried = row['queried_vertices']; unresolved = row['unresolved_vertices']
+    require(type(queried) is int and 0 <= queried <= source_vertices and isinstance(unresolved, list)
+        and len(unresolved) <= queried, 'Bounded unresolved partner population required')
+    seen = set()
+    for observation in unresolved:
+        vertex = observation['vertex']
+        require(type(vertex) is int and 0 <= vertex < source_vertices and vertex not in seen, 'Distinct unresolved source vertices required')
+        seen.add(vertex)
+        status = containment_state(observation['signed_distance_m'], observation['ray_inside'], observation['winding'],
+            tolerance, unsigned=observation['unsigned_distance_m'])
+        require(status in ('near-surface', 'unresolved') and observation['state'] == status, 'Unresolved partner observation differs')
+    require(row['available'] is (not unresolved), 'Partner availability differs from consensus evidence')
+    if unresolved:
+        require(not any(key in row for key in ('max_depth_m', 'vertices_over_tolerance', 'deepest_vertex')),
+            'Unresolved partner query cannot report a depth reduction')
+    else:
+        depth = row['max_depth_m']; count = row['vertices_over_tolerance']; vertex = row['deepest_vertex']
+        require(type(depth) in (int, float) and np.isfinite(depth) and depth >= 0
+            and type(count) is int and 0 <= count <= queried, 'Invalid partner depth')
+        require((depth == 0 and vertex is None) or (depth > 0 and type(vertex) is int and 0 <= vertex < source_vertices),
+            'Invalid deepest partner vertex')
 
 
 def geometry_reductions(scene, policy, digest, times, report, saved):
@@ -33,6 +126,8 @@ def geometry_reductions(scene, policy, digest, times, report, saved):
     require(np.isin(required, times).all(), 'Geometry clock missing from engine observations')
     times = required  # Explicit policies may declare fewer times than contact sampling.
     require(report['schema'] == 'strep-native-scene-geometry-result-v1' and report['status'] == 'complete', 'Complete geometry required')
+    require(report.get('self_surface_method') == SELF_METHOD, 'Versioned self-surface evidence required')
+    require(report.get('containment_method') == CONTAINMENT_METHOD, 'Versioned containment evidence required')
     require(report['times_s'] == times.tolist() and len(report['samples']) == len(times), 'Complete geometry samples required')
     require(report['limits'] == policy['limits'] and report['declared_planes'] == list(policy['planes']), 'Geometry policy differs')
     require(report['clock_mode'] == policy['clock']['mode'] and report['frame_contract_sha256'] == contract_sha256(), 'Geometry frame contract differs')
@@ -60,6 +155,7 @@ def geometry_reductions(scene, policy, digest, times, report, saved):
         for name, indices in sample['degenerate_faces'].items():
             require(isinstance(indices, list) and all(type(j) is int and 0 <= j < len(faces[name]) for j in indices)
                     and len(indices) == len(set(indices)), 'Invalid degenerate face population')
+        self_clean = self_surface_reductions(sample, report['topology'], tolerance)
         for row in sample['actor_objects']:
             prefix = f'frame_{i}_{row["actor"]}_{row["object"]}'
             names = [prefix + suffix for suffix in ('_depth_lower_m', '_depth_upper_m', '_witness_world_m')]
@@ -76,8 +172,11 @@ def geometry_reductions(scene, policy, digest, times, report, saved):
                     and np.isfinite(row['floating_reserve_m']) and row['floating_reserve_m'] >= 0, 'Invalid query summary')
             containment = row['containment']; distance = containment['signed_center_distance_m']
             if sample['volumes'][row['actor']]['containment_available']:
-                require(distance is not None and np.isfinite(distance), 'Missing containment observation')
-                status = 'inside' if distance > tolerance else ('outside' if distance < -tolerance else 'near-surface')
+                require(containment['containment_method'] == CONTAINMENT_METHOD, 'Versioned center containment required')
+                status = containment_state(distance, containment['ray_inside'], containment['winding'], tolerance)
+                if status == 'near-surface-or-unresolved':
+                    require(containment['status'] in ('near-surface', 'unresolved'), 'Zero signed center distance cannot establish containment')
+                    status = containment['status']
             else:
                 require(distance is None, 'Unavailable containment has a distance'); status = 'unavailable'
             require(containment['status'] == status, 'Containment reduction differs')
@@ -88,9 +187,8 @@ def geometry_reductions(scene, policy, digest, times, report, saved):
             left, right = row['actors']; depths = row['vertex_containment']
             require([(d['source'], d['target']) for d in depths] == [(left, right), (right, left)], 'Complete partner containment required')
             for d in depths:
-                require(d['available'] is sample['volumes'][d['target']]['containment_available'], 'Partner availability differs')
-                if d['available']:
-                    require(d['count_tolerance_m'] == max(limit, 1e-12) and np.isfinite(d['max_depth_m']) and d['max_depth_m'] >= 0, 'Invalid partner depth')
+                partner_containment_reduction(d, sample['volumes'][d['target']]['containment_available'],
+                    report['topology'][d['source']]['vertices'], limit, tolerance)
             passed = bool(not row['surface']['records'] and not sample['degenerate_faces'][left]
                 and not sample['degenerate_faces'][right] and all(d['available'] and d['max_depth_m'] <= limit for d in depths))
             require(row['passed'] is passed, 'Partner decision differs')
@@ -99,7 +197,7 @@ def geometry_reductions(scene, policy, digest, times, report, saved):
                     and type(row['peak_vertex']) is int and row['peak_vertex'] in faces[row['actor']], 'Invalid plane reduction')
             require(row['passed'] is bool(row['maximum_depth_m'] <= limit and not sample['degenerate_faces'][row['actor']]), 'Plane decision differs')
         conditions = sample['actor_objects'] + sample['actor_pairs'] + sample['world_planes']
-        passed = bool(conditions and all(r['passed'] for r in conditions) and not any(sample['degenerate_faces'].values()))
+        passed = bool(conditions and all(r['passed'] for r in conditions) and not any(sample['degenerate_faces'].values()) and self_clean)
         require(sample['conditions_available'] is bool(conditions) and sample['passed'] is passed, 'Sample decision differs')
         overall &= passed
     require(set(saved.files) == expected, 'Saved geometry population differs')
