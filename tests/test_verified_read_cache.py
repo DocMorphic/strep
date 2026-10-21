@@ -86,6 +86,39 @@ def test_missing_explicit_dependency_does_not_return_an_old_result(evidence):
     with pytest.raises(FileNotFoundError): cache.read('job', reader, deps)
 
 
+@pytest.mark.parametrize('child_first',[False,True])
+def test_nested_complete_trees_walk_once_without_losing_bytes_or_empty_directories(tmp_path,monkeypatch,child_first):
+    outer=tmp_path/'job';child=outer/'candidate';empty=child/'empty';empty.mkdir(parents=True)
+    clip=child/'clip.bin';clip.write_bytes(b'original')
+    trees=(child,outer) if child_first else (outer,child)
+    deps=ReadDependencies((clip,),trees,(tmp_path,));walks=[];rglob=Path.rglob
+    def observed(path,pattern):
+        walks.append(path);return rglob(path,pattern)
+    monkeypatch.setattr(Path,'rglob',observed)
+    cache=VerifiedReadCache();signature=cache._snapshot(deps)
+    assert walks==[outer]
+    assert {Path(name) for name,_ in signature[1]}=={outer,child,empty,clip}
+    assert dict(signature[1])[str(clip)][2]==hashlib.sha256(b'original').hexdigest()
+    clip.write_bytes(b'edited!!');assert cache._snapshot(deps)!=signature
+    clip.write_bytes(b'original');empty.rmdir();assert cache._snapshot(deps)!=signature
+
+
+def test_missing_declared_child_tree_still_prevents_caching(tmp_path):
+    outer=tmp_path/'job';outer.mkdir()
+    deps=ReadDependencies((),(outer,outer/'missing'),(tmp_path,))
+    assert VerifiedReadCache()._snapshot(deps) is None
+
+
+def test_parent_components_do_not_hide_a_declared_tree_outside_its_lexical_parent(tmp_path):
+    outer=tmp_path/'job';child=outer/'candidate';child.mkdir(parents=True)
+    other=outer/'other';other.mkdir();clip=other/'clip.bin';clip.write_bytes(b'original')
+    alias=child/'..'/'other'
+    deps=ReadDependencies((),(child,alias),(tmp_path,))
+    cache=VerifiedReadCache();before=cache._snapshot(deps)
+    assert before is not None and str(alias/'clip.bin') in dict(before[1])
+    clip.write_bytes(b'edited!!');assert cache._snapshot(deps)!=before
+
+
 def test_mutation_during_verification_neither_returns_nor_caches(evidence):
     _, _, data, _, deps = evidence; calls = []
     def reader(key):

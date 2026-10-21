@@ -118,9 +118,19 @@ class VerifiedReadCache:
 
             for path in dependencies.files:
                 capture(path)
-            for tree in dependencies.trees:
-                tree = Path(tree).absolute()
+            trees = tuple(Path(tree).absolute() for tree in dependencies.trees)
+            # Check every declared directory, even when another tree covers it.
+            # Missing children and links must still make the graph uncacheable.
+            for tree in trees:
                 capture(tree, directory=True)
+            canonical = {str(tree) for tree in trees
+                         if str(tree) == entries[str(tree)][1]}
+            for tree in trees:
+                # Only canonical paths can be covered lexically. A declaration
+                # containing '..' or an alias may reach a different subtree.
+                if str(tree) in canonical and any(str(parent) in canonical
+                                                 for parent in tree.parents):
+                    continue
                 for path in tree.rglob('*'):
                     capture(path, directory=path.is_dir())
             for path, digest in dependencies.discovery_sha256:
