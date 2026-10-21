@@ -735,6 +735,151 @@ This guard improves acceptance evidence; it does not generate better motion,
 resolve the retained hand-contact failures, or certify whole-mesh, self-collision,
 continuous-time, dynamics, game-engine or human-quality requirements.
 
+### Separating temporal and spatial failures on the retained humanoid
+
+`reports/humanoid-rate-blocker-v1` attributes the saved weight-10 full and half
+steps without changing their clips, source caps or decisions. It freshly
+decodes both exports and independently reconstructs all 183,371 native residual
+rows exactly. The full step has one failed row: angular acceleration of
+RightHandThumbEnd over 1.991667, 2.0 and 2.008333 seconds. Its measured value is
+124.633565469 rad/s² against the original bin cap of 124.623880090 rad/s² and
+the unchanged 0.00001 tolerance. Excess is 0.009675379 rad/s². No zero-cap row
+causes this rejection. The half step passes every native row but retains its
+previously measured geometry failures. This evidence does not justify loosening
+the temporal caps to address collision failures.
+
+The diagnostic explicitly records the two changed producer modules introduced
+by the local-depth guard. It verifies the decoder problem class against the
+archived original class and retains the other original implementation bindings;
+it does not rebase an old producer onto new acceptance code. All 78 resource
+observations replay, with a sampled peak of 188,645,376 bytes and 61.843 seconds
+of execution under the existing 512 MiB protocol.
+
+`reports/humanoid-pose-seed-v1` then isolates the spatial problem at the existing
+2-second contact. Twelve components on the four original tracks' middle knot
+are optimized using SLSQP, with at most 160 iterations and ftol 1e-12. The
+20-degree rotation and 0.15-m displacement bounds remain. A point-only objective
+is compared with point error plus a squared opposed-winding-normal term weighted
+by (0.02 m)²; both include a 1e-10 control regularizer. These are pose proposals,
+not a replacement for full motion acceptance. Each is exported through the
+existing native edit path, freshly decoded on the complete clock, and checked
+against every original temporal cap. Geometry checks at the original contact
+sample retain all imported triangles and both containment directions; they do
+not claim full-clip coverage.
+
+The original contact point lies 30 mm along the selected panel face's winding
+normal, and the incident palm winding normal already opposes it (dot product
+−1). The panel passes the existing closed, consistently wound, positive-volume
+screen; self-intersection and contact suitability are not certified. The point
+trial converges in 16 iterations to 0.000361 mm error, while the orientation
+trial converges in 41 iterations to 0.000092 mm error. Both preserve strict edit
+bounds but fail 102 and 271 native rows respectively. At the contact sample,
+surface records rise from 103 to 470 and 457, and the original 9.781777-mm
+maximum measured depth rises to 9.974399 and 9.984755 mm. Both proposals are
+rejected. Accurate point placement and palm orientation alone do not solve
+this interaction. All 84 resource observations replay; neither trial changes
+the original selected animation or any quality/release gate.
+
+`reports/humanoid-pose-depth-seed-v1` adds an interior-depth objective for this
+specific convex panel. Every imported face plane is retained, and every panel
+vertex is checked against every outward face halfspace. For actor vertices
+inside this closed convex surface, the minimum face-plane distance supplies
+the proposal depth. This is derived from the actual panel triangles, not an
+inserted box or hull proxy. Every actor vertex contributes to the squared depth
+sum, weighted by 10 alongside squared contact error. This one-direction proposal
+objective does not replace triangle crossings or reverse containment checks.
+
+Starting from the original controls and from the point-only seed converges in
+126 and 93 iterations. Both reduce contact-time surface records from 103 to 46
+and maximum measured depth from 9.781777 to 8.591902 mm. However, their contact
+errors are 10.643164 and 10.645598 mm, outside the unchanged 5-mm limit; they
+fail 1,503 and 1,509 native rows. Neither passes the strict continuous proposal
+constraint comparison, and the second also fails the final strict edit-cap
+comparison. Solver success is not treated as satisfaction of these checks.
+Both remain rejected; the original remains selected. This weighted tradeoff
+motivates a hard contact constraint in the next pose proposal, followed by
+unchanged native/geometry evaluation rather than adopting the weighted result.
+
+`reports/humanoid-pose-seed-verification-v1` independently replays all three
+studies' resource traces, verifies retained input/implementation hashes,
+recomputes native failure counts from saved complete-clock arrays, and checks
+contact errors, edit decisions and single-time geometry reductions. It does
+not repeat the optimizations or claim full-clip geometry coverage.
+
+`reports/humanoid-pose-hard-contact-v1` makes the proposal's contact radius a
+hard 4.9-mm constraint while minimizing the squared interior-depth sum. Actual
+contact acceptance remains 5 mm. A 1e-6 normalized reserve tightens the proposal
+rotation bound; it does not loosen the original 20-degree edit limit. The two
+initializations are the previous depth-guided and point-only seeds. The original
+four tracks, middle knot, displacement bound and temporal caps remain unchanged.
+
+Both solves report success, after 110 and 128 iterations. Fresh exports have
+4.899991-mm point error and pass strict edit bounds. However, neither passes
+the strict continuous proposal constraint comparison, and their native failure
+counts are 1,498 and 1,510. Contact-time surface records increase from 103 to
+240 and 151. Although maximum measured depth decreases to 8.591902 and
+9.600001 mm, this does not outweigh the crossing failures. Neither candidate
+is accepted, and neither receives a full-clip geometry evaluation. The second
+also fails the existing full residual merit-improvement test despite improved
+point error. These results isolate a spatial collision problem as well as the
+temporal fitting problem; reaching a point within tolerance does not solve
+the interaction.
+
+The independent hard-contact verifier checks saved arrays, decisions and source
+bindings, replays the resource trace, and recomputes all 18,056 actor vertices'
+interior depths against the original panel face planes at 2 seconds. The maximum
+depths match the complete triangle-based containment measurements within 1e-12 m,
+and counts over 5 mm match exactly. Dominant skin weights attribute the original
+71 over-limit vertices to RightHandPinky3/4. The depth-seeded hard-contact result
+has 16: nine on RightHandThumb1, six on RightHand and one on RightHandPinky1.
+The point-seeded result has 35, concentrated on the pinky base, ring base and
+palm. These are region attributions, not proof that a particular joint edit
+will resolve the collision.
+
+This motivates a separate, explicitly declared seven-track experiment adding
+RightHandThumb1, RightHandRing1 and RightHandPinky1 rotation controls, each bounded
+by 20 degrees. It retains the source clip, original four arm tracks, edit window,
+knot clock, displacement bound, source temporal caps, target and geometry policy.
+The original four-track permissions and all their failed outputs stay intact.
+This tests the role of finger articulation; it is not a claim that the original
+fixed-finger task was solved or that the added angular budgets are anatomical
+calibration.
+
+The seven-track experiment, `reports/humanoid-finger-contact-v1`, preserves both
+starting-point outcomes. Starting from the original stops at the 160-iteration
+limit: contact error is 4.900006 mm, strict edit bounds fail, 1,213 native rows
+fail and surface records increase to 150. Starting from the prior hard-contact
+arm seed converges in 58 iterations. It passes the continuous proposal and
+strict serialized edit bounds, reaches 4.899999 mm, and reduces surface records
+to eight, all classified as boundary-or-near-contact rather than proper
+crossings. Actor-to-panel vertex depth is 8.425e-9 m with no vertices over 5 mm;
+reverse containment is zero. The unchanged geometry policy still rejects the
+eight surface records. The complete exported motion fails 1,060 native rows.
+This is an improved spatial seed, not an accepted animation or a solution to
+the original four-track task.
+
+`reports/humanoid-finger-contact-verification-v1` independently confirms that
+only the three declared tracks were added, reconstructs the native row count
+for the larger permission set, and checks saved complete-clock residuals,
+contact observations, edit bounds, single-time triangle metrics and resource
+traces. A follow-up uses the successful seed with a declared 0.1-mm outward
+face-plane margin in its proposal penalty; actual geometry retains the original
+triangles and tolerances. This aims to avoid the numerical boundary contacts
+before attempting temporal fitting.
+
+`reports/humanoid-finger-clearance-v1` completes that follow-up in 33 SLSQP
+iterations. Its 0.1-mm margin only changes the proposal objective; the original
+geometry policy is evaluated unchanged. The freshly exported pose passes the
+continuous proposal and strict edit bounds, reaches 4.899997 mm point error,
+and has zero panel surface records at 2 seconds. The scene's maximum measured
+depth is still 8.591902 mm because the existing floor failure remains; two
+conditions still fail at that sample. The complete clip fails 1,047 native rows,
+so this is retained solely as a spatial seed for temporal fitting. No full-clip
+geometry, continuous collision, motion-quality or release approval follows.
+The clearance verifier confirms unchanged seven-track permissions, source and
+implementation bindings, complete-clock residual counts, contact observations,
+strict edit decisions, single-time geometry metrics and resource replay.
+
 ### Remaining integration and evaluation
 
 Keep the exact original source, editing limits, frozen tracks and complete
@@ -754,7 +899,7 @@ budget, report the unsupported population instead of silently dropping rows.
 Compare unchanged proposals, deterministic guidance and full decoded acceptance
 on moving props, multiple obstacles, thin surfaces, rotated placements, partner
 contacts and different rigs/actions. Include failures away from the requested
-touch time, as demonstrated here. The current arm-only diagnostic still has
+touch time, as demonstrated here. Both the arm-only and finger-enabled diagnostics retain
 ground failures; correcting support is a separate required part of producing
 a usable clip, not something this hand-contact experiment establishes.
 
@@ -763,9 +908,11 @@ Frame and optimizer journals are implemented and independently tested; see
 banks integrated into that optimizer protocol before larger resumable fits.
 The export diagnostic and combined experiment above resolve the demonstrated
 source-rounding barrier on one generated case. Both obstacle placements and the
-real humanoid now expose additional local-search limits. Next revise the frozen
-surface-guidance proposal using these retained failures, preserving every
-original source/edit/contact and geometry limit, then integrate validated proposal state with recovery and
+real humanoid now expose additional local-search limits. Next fit temporal controls
+around the retained clearance pose under its explicitly declared seven-track
+permissions and original source-rate caps. Preserve the separate four-track
+baseline and all failed trials. Complete-clock geometry, support and every
+other acceptance requirement remain mandatory. Then integrate validated proposal state with recovery and
 continue different rigs/actions, partner, engine and human-review evaluation.
 These are steps toward the existing complete animation-authoring goal; neither
 proposal improvement nor resumable evaluation satisfies its release gates.
