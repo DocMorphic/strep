@@ -6,8 +6,10 @@ all declared sampled conditions pass. No prop movement is authorized here.
 """
 import argparse
 import copy
+import os
 from pathlib import Path
 import shutil
+import uuid
 import numpy as np
 from native_mesh_prop_scene import MeshPropScene, _json, _path, guarded_output, METHODS as MESH_METHODS
 from native_scene_contacts import fields
@@ -99,16 +101,62 @@ class MeshCharacterProblem(SceneProblem):
         return MeshPropScene(folder/'mesh-scene.json'), residual, worlds, audits
 
 
-def audit_geometry(scene, policy, folder):
+def _finish_geometry_journal(folder,receipt):
+    from native_mesh_geometry_journal import advance,finalize
+    folder=Path(folder).resolve();journal=folder/'geometry-journal'
+    if (folder/'geometry.json').exists():raise ValueError('Geometry is already published; do not overwrite its evidence')
+    while not receipt['population_complete']:
+        receipt=advance(journal,receipt['checkpoint'],receipt['sha256'],maximum_samples=4096)
+    complete=folder/'geometry-complete'
+    if complete.exists():complete=folder/('geometry-complete-'+uuid.uuid4().hex)
+    result=finalize(journal,receipt['checkpoint'],receipt['sha256'],complete,materialize_observations=False)
+    # A prior interrupted finalization stays in its original directory. Publish
+    # the pointer before an atomic fresh link, so a killed copy cannot leave a
+    # partial JSON at the fitter's complete-report path.
+    save(folder/'geometry-journal-result.json',dict(directory=complete.name,
+        result_sha256=sha256(complete/'result.json'),geometry_sha256=result['geometry_sha256'],
+        optimizer_completed=False,quality_approved=False,release_approved=False))
+    os.link(complete/'geometry.json',folder/'geometry.json')
+    if sha256(folder/'geometry.json')!=result['geometry_sha256']:raise ValueError('Completed geometry report changed')
+    return read(folder/'geometry.json')
+
+
+def resume_geometry(scene,policy,folder,checkpoint,checkpoint_sha256):
+    """Finish only a pinned interrupted audit; never reconstruct fit completion."""
+    from native_mesh_geometry_journal import verify as verify_journal
+    folder=Path(folder).resolve();journal=folder/'geometry-journal'
+    if (folder/'geometry.json').exists():raise ValueError('Geometry is already published; do not overwrite its evidence')
+    derived=copy.deepcopy(policy);derived['mesh_scene_sha256']=scene._manifest_sha256
+    request=read(journal/'request.json')
+    if (read(folder/'geometry-policy.json')!=derived
+            or request['mesh_scene']!=str(scene._manifest_path.resolve())
+            or request['policy']!=str(folder/'geometry-policy.json')):
+        raise ValueError('Geometry recovery must retain the exact original scene and policy')
+    checked=verify_journal(journal,checkpoint,checkpoint_sha256)
+    receipt=dict(checkpoint=checkpoint,sha256=checkpoint_sha256,population_complete=checked['population_complete'])
+    return _finish_geometry_journal(folder,receipt)
+
+
+def audit_geometry(scene, policy, folder, *, checkpoint_geometry=False):
+    if type(checkpoint_geometry) is not bool:raise ValueError('Explicit geometry checkpoint choice required')
+    folder=Path(folder).resolve()
+    if checkpoint_geometry and any((folder/name).exists() for name in ('geometry-policy.json','geometry-journal','geometry.json')):
+        raise ValueError('Fresh checkpointed audit required; resume with its explicit checkpoint')
     derived = copy.deepcopy(policy); derived['mesh_scene_sha256'] = scene._manifest_sha256
     save(folder/'geometry-policy.json', derived)
+    if checkpoint_geometry:
+        from native_mesh_geometry_journal import prepare
+        journal=folder/'geometry-journal'
+        receipt=prepare(scene._manifest_path,folder/'geometry-policy.json',journal)
+        return _finish_geometry_journal(folder,receipt)
     with ObservationArchive(folder/'geometry-observations.npz') as sink:
         report, _ = scene.geometry(derived, observation_sink=sink)
     verify(folder/'geometry-observations.npz'); save(folder/'geometry.json', report)
     return report
 
 
-def fit(permissions_path, policy_path, output, *, iterations=4, trust=.02, backtracks=8):
+def fit(permissions_path, policy_path, output, *, iterations=4, trust=.02, backtracks=8, checkpoint_geometry=False):
+    if type(checkpoint_geometry) is not bool:raise ValueError('Explicit geometry checkpoint choice required')
     if type(iterations) is not int or not 1 <= iterations <= 16 or type(backtracks) is not int or not 1 <= backtracks <= 12:
         raise ValueError('Choose 1-16 iterations and 1-12 backtracks')
     if type(trust) not in (int, float) or not np.isfinite(trust) or not 0 < trust <= .25:
@@ -123,18 +171,23 @@ def fit(permissions_path, policy_path, output, *, iterations=4, trust=.02, backt
     output = Path(output).resolve()
     if output.exists(): raise ValueError('Fresh character fitting output required')
     output.mkdir(parents=True); archive = output/'implementation'; archive.mkdir()
-    methods = {name: sha256(Path(__file__).parent/name) for name in METHODS}
+    method_names=METHODS
+    if checkpoint_geometry:
+        from native_mesh_geometry_journal import METHODS as JOURNAL_METHODS
+        method_names=tuple(sorted(set(METHODS)|set(JOURNAL_METHODS)))
+    methods = {name: sha256(Path(__file__).parent/name) for name in method_names}
     for name in methods: shutil.copyfile(Path(__file__).parent/name, archive/name)
     bindings = {**problem.inputs, str(policy_path): policy_digest}
     save(output/'input.json', dict(schema='strep-native-mesh-character-fit-v1', inputs_sha256=bindings,
          implementation_sha256=methods, solver=solver_identity(), iterations=iterations, trust=trust, backtracks=backtracks,
+         checkpoint_geometry=checkpoint_geometry,
          source_rows=problem.protected_rows, contact_clock_s=problem.times.tolist(), geometry_clock_s=geometry_times.tolist(),
          props_editable=False, source_rebased=False, original_selected=True, quality_approved=False))
     value = problem.initial.copy(); history = []; probes = []
     source_folder = output/'original'; source_folder.mkdir()
     source_contacts, arrays = problem.mesh.contact_audit(); save(source_folder/'contacts.json', source_contacts)
     np.savez_compressed(source_folder/'contact-observations.npz', **arrays)
-    geometry = audit_geometry(problem.mesh, policy, source_folder)
+    geometry = audit_geometry(problem.mesh, policy, source_folder,checkpoint_geometry=checkpoint_geometry)
     original_conditions = conditions(geometry); current_conditions = original_conditions.copy()
     current_metrics = metrics(geometry)
     current = problem.model(value); worlds = problem.source_world
@@ -168,7 +221,7 @@ def fit(permissions_path, policy_path, output, *, iterations=4, trust=.02, backt
             save(folder/'contacts.json', contact); np.savez_compressed(folder/'contact-observations.npz', **observations)
             row['all_declared_point_contacts_pass'] = contact['all_declared_point_contacts_pass']
             if source_pass and edit_pass and contact_protected and improved:
-                checked = audit_geometry(candidate, policy, folder); flags = conditions(checked); measure = metrics(checked)
+                checked = audit_geometry(candidate, policy, folder,checkpoint_geometry=checkpoint_geometry); flags = conditions(checked); measure = metrics(checked)
                 if flags.keys() != original_conditions.keys(): raise ValueError('Geometry condition population changed')
                 no_new = not any(current_conditions[k] and not flags[k] for k in flags)
                 no_worse = all(measure[k] <= current_metrics[k] for k in measure)
@@ -195,7 +248,7 @@ def fit(permissions_path, policy_path, output, *, iterations=4, trust=.02, backt
                   sampled_geometry_pass=geometry['sampled_conditions_pass'],
                   sampled_candidate_pass=bool(selected is not None and np.all(current<=0) and geometry['sampled_conditions_pass']
                       and read(output/selected/'contacts.json')['all_declared_point_contacts_pass']),
-                  source_rebased=False, props_changed=False, original_selected=True,
+                  source_rebased=False, props_changed=False, original_selected=True,checkpoint_geometry=checkpoint_geometry,
                   engine_verified=False, quality_approved=False, release_approved=False,
                   scope='Existing authorized character tracks only; fixed original bounds and source rates, all authored point contacts, every declared geometry time and original mesh triangles. Rebuilt worst-vertex floor witnesses guide the step; complete decoded geometry decides acceptance. Nonregressing accepted steps remain diagnostic candidates. No mesh-collision-directed search, prop fitting, continuous collision, dynamics, semantic or animator approval.')
     save(output/'result.json', result); return result
@@ -207,16 +260,18 @@ if __name__ == '__main__':
     parser.add_argument('--iterations', type=int, default=4)
     parser.add_argument('--trust', type=float, default=.02)
     parser.add_argument('--backtracks', type=int, default=8)
+    parser.add_argument('--checkpoint-geometry',action='store_true',
+        help='Retain complete geometry frames with indexed observations. Does not resume optimizer state.')
     parser.add_argument('--worker', action='store_true'); args=parser.parse_args()
     if args.worker:
         from action_worker_lock import worker_lock
         from threadpoolctl import threadpool_limits
-        with worker_lock(), threadpool_limits(limits=1): print(fit(args.permissions, args.policy, args.output, iterations=args.iterations, trust=args.trust, backtracks=args.backtracks))
+        with worker_lock(), threadpool_limits(limits=1): print(fit(args.permissions, args.policy, args.output, iterations=args.iterations, trust=args.trust, backtracks=args.backtracks,checkpoint_geometry=args.checkpoint_geometry))
     else:
         from resource_admission import ResourcePolicy
         from run_guarded_job import run
         from audit_guarded_job import audit
         output=guarded_output(args.output)
         result=run(Path(__file__),output/'guard',ResourcePolicy(expected_rss_bytes=512*1024**2,max_tree_rss_bytes=512*1024**2,
-            stable_seconds=15,admission_seconds=600,max_seconds=900),worker_args=[str(args.permissions.resolve()),str(args.policy.resolve()),str(output/'fit'),'--iterations',str(args.iterations),'--trust',str(args.trust),'--backtracks',str(args.backtracks),'--worker'])
+            stable_seconds=15,admission_seconds=600,max_seconds=900),worker_args=[str(args.permissions.resolve()),str(args.policy.resolve()),str(output/'fit'),'--iterations',str(args.iterations),'--trust',str(args.trust),'--backtracks',str(args.backtracks),'--worker']+(['--checkpoint-geometry'] if args.checkpoint_geometry else []))
         save(output/'resource-replay.json',audit(output/'guard'));raise SystemExit({'complete':0,'failed':1,'deferred':2}[result['status']])

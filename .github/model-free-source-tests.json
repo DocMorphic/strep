@@ -620,6 +620,8 @@
     "tests/test_studio_mesh_scene.py",
     "tests/test_mesh_scene_preview.py",
     "tests/test_native_mesh_character_fit.py",
+    "tests/test_native_mesh_geometry_journal.py",
+    "tests/test_native_mesh_character_journal.py",
     "tests/test_studio_mesh_character.py"
   ],
   "node_tests": [
