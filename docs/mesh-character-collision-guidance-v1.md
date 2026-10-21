@@ -986,6 +986,60 @@ triangles. This establishes a feasible starting assignment for the next local
 model, not a fitted animation, whole-scene certificate or continuous collision
 guarantee. Actual triangle/containment checks remain authoritative.
 
+### Joint contact pose and timing
+
+`reports/humanoid-joint-contact-timing-v1` releases the experimental lock on
+the 21 middle-knot components. All 84 components of the declared seven-track,
+six-knot variant can move within the original cumulative edit bounds. Source
+animation keys, protected spans, motion caps, contact target and geometry
+policy remain unchanged. The original four-track baseline is still separate.
+
+Every original actor triangle contributes three vertex/plane constraints at
+the contact time, using the previously verified assignment to actual convex
+panel faces. The 108,324 scalar gaps are lifted into exact affine norm rows
+within the declared trust box, with 0.05-mm proposal clearance. The combined
+model contains 291,837 norm rows: 37,058 edit/displacement rows, one contact
+row and 108,324 triangle guards form the hard prefix; all 146,454 source-rate
+rows remain in the minimax objective. The actual exported clip must pass the
+unchanged source-rate limits. No small derivatives or original triangle rows
+are dropped. All 63 side-column contact/geometry derivatives are verified
+exactly zero; the 21 middle components can change the pose.
+
+Each step exports four fractions and independently decodes all 2,017 native
+times. Research progress requires strict serialized edit bounds, hard native
+edit/displacement and actual contact limits, plus a fresh full-scene geometry
+query at 2 seconds. That single-time query includes original triangles,
+bidirectional containment and floor checks. Previously passing conditions
+must remain passing, the actor/panel pair must pass, and no measured local
+depth may increase relative to the retained contact pose. These are explicitly
+partial geometry reports, never presented as complete-clock certificates.
+
+| Study | Proposal trust | Selected fraction | Native failures | Worst normalized excess | Hand error |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Joint v1 | 0.1 | 0.5 | 69 | 0.032164314 | 4.982072 mm |
+| Joint v2 | 0.05 | 1 | 4 | 0.001152387 | 4.945804 mm |
+| Joint v3 | 0.025 | 1 | 0 | 0 | 4.835319 mm |
+
+The first step's full fraction reaches 21 native failures but misses the
+contact limit at 5.186218 mm and is rejected. The next two steps halve the
+trust box and use a stricter 4.9-mm proposal contact radius to leave room for
+nonlinearity and serialization; the authored acceptance radius remains 5 mm.
+All three solves retain the existing solver time and iteration limits and
+the explicit 2-GiB process-tree budget with a 1-GiB available-memory reserve.
+The third step's full, half and quarter fractions pass every native row and
+the contact-time geometry requirements. The one-eighth fraction still fails
+three native rows. All outputs and rejected decisions are retained.
+
+`reports/humanoid-joint-contact-verification-v1` freshly decodes all 12 exports
+and recomputes their native/edit/contact decisions, contact observations and
+single-time full-scene geometry, including saved observation arrays. It
+reconstructs original cap arrays, actual panel planes, affine origins, scalar
+gap lifting and the saved solver-step residuals. Saved derivatives are bound
+by provenance and structurally checked; they are not independently
+re-differentiated. The selected full-step candidate is eligible for complete
+geometry evaluation, not animation adoption or quality approval. The original
+floor failure of 8.591902 mm remains at the contact time.
+
 ### Remaining integration and evaluation
 
 Keep the exact original source, editing limits, frozen tracks and complete
@@ -1014,9 +1068,10 @@ Frame and optimizer journals are implemented and independently tested; see
 banks integrated into that optimizer protocol before larger resumable fits.
 The export diagnostic and combined experiment above resolve the demonstrated
 source-rounding barrier on one generated case. Both obstacle placements and the
-real humanoid now expose additional local-search limits. Next fit pose and timing
-jointly using the contact-time triangle guards, explicitly declared seven-track
-permissions and original source-rate caps. Preserve the separate four-track
+real humanoid now expose additional local-search limits. Joint pose and timing
+now pass the native limits on one declared seven-track candidate. Next evaluate
+its complete geometry clock against the original source, then extend guidance
+to any newly demonstrated failures. Preserve the separate four-track
 baseline and all failed trials. Complete-clock geometry, support and every
 other acceptance requirement remain mandatory. Then integrate validated proposal state with recovery and
 continue different rigs/actions, partner, engine and human-review evaluation.
