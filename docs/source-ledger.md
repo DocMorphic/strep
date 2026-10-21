@@ -500,3 +500,16 @@ prerequisite-decision cases without importing NumPy. The numerical intake has
 not run yet. Missing/failed prerequisite evidence, changed inputs/methods or
 resource admission failure stops this job without silently retrying. It keeps
 the existing exclusive worker lock and 512-MiB/600-MiB/900-second resource policy.
+
+Local Khronos glTF Validator `2.0.0-dev.3.10` reports zero errors, nine warnings,
+one informational issue and 54 hints for the unchanged Minion GLB; its issue
+list is not truncated. All nine warnings are `NODE_SKINNED_MESH_NON_ROOT` at
+nodes 41–49. Retain the warning about mesh-parent transform semantics for skin
+and engine verification; do not reparent or normalize the original to hide it.
+A second run with pinned asset, validator and runner hashes reproduces the
+complete report except its validation timestamp. Node `v24.13.1` used the
+already installed validator, with a 128-MiB JavaScript heap setting; that setting
+is not a measured process-RSS cap. No model, NumPy or numerical motion worker
+was loaded. Evidence is `gltf-validation.json`, `gltf-validation-replay.json`
+and `format-replay.json` in the same acquisition folder. This validates file
+structure/accessors, not skin deformation, Strep intake, motion or engine quality.
