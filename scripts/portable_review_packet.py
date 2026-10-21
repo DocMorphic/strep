@@ -40,15 +40,19 @@ def package(packet,archive):
     if '../../' in html:raise ValueError('Viewer still references workspace files')
     (packet/'viewer.html').write_text(html,encoding='utf-8')
     shutil.copyfile(ROOT/'scripts/serve_review_packet.py',packet/'serve.py')
+    shutil.copyfile(ROOT/'scripts/start_review.cmd',packet/'Start Review.cmd')
     (packet/'README.txt').write_text('''Strep independent animation review
 
 This packet contains clips and local viewer files. No motion model, account, network download or Strep workspace is needed. A browser with WebGL and Python 3 are required.
 
-Extract the complete ZIP to a folder. From that folder, run:
+On Windows, extract the complete ZIP and double-click Start Review.cmd inside the extracted folder. It opens your default browser. Keep the command window open while reviewing; Ctrl+C stops the server. If Python 3 is missing, the launcher will explain that it must be installed.
+
+You can also open a terminal in the extracted folder and run:
   python serve.py
 On Windows with the Python launcher you can use:
   py -3 serve.py
 Then open http://127.0.0.1:8771/viewer.html . Use --port NUMBER if that port is occupied. Do not open viewer.html as a file:// URL. Ctrl+C stops the local server.
+Return using the same browser profile and port to find saved reviews. A different port has separate browser storage. Export your JSON before changing ports.
 
 Use a separate browser profile for each reviewer. Enter your own ratings only. Save each reviewed clip and export the JSON before clearing browser data. Send the JSON to the organizer using a separately agreed channel; this page does not upload it.
 

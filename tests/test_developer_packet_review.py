@@ -67,7 +67,7 @@ def test_missing_context_and_actual_cleanup_rules_are_shared():
 
 def source_packet(tmp_path,monkeypatch):
     root=tmp_path/'project';scripts=root/'scripts';scripts.mkdir(parents=True)
-    for name in ['soma-preview-skin.js','serve_review_packet.py','review-identity.js']:
+    for name in ['soma-preview-skin.js','serve_review_packet.py','start_review.cmd','review-identity.js']:
         (scripts/name).write_text('synthetic runtime fixture')
     (scripts/'human-review.html').write_text('../../assets/viewer/node_modules/three/build/three.module.js ../../scripts/soma-preview-skin.js ../../scripts/review-identity.js')
     three=root/'assets/viewer/node_modules/three'
@@ -111,6 +111,15 @@ def test_new_packet_preserves_every_clip_and_context_without_source_mutation(tmp
     with pytest.raises(ValueError):developer.import_reviews(packet,response,imported)
     (packet/'clips/clip-001.glb').write_bytes(b'changed')
     with pytest.raises(ValueError,match='clip changed'):developer.import_reviews(packet,response,tmp_path/'bad-import')
+
+
+def test_source_packet_with_inventoried_launcher_remains_accepted(tmp_path,monkeypatch):
+    source=source_packet(tmp_path,monkeypatch)
+    launcher=source/'Start Review.cmd';launcher.write_text('synthetic launcher')
+    inventory=read(source/'package-integrity.json')
+    inventory['files'][launcher.name]=sha256(launcher);save(source/'package-integrity.json',inventory)
+    result=developer.prepare(source,tmp_path/'developer',tmp_path/'developer.zip')
+    assert result['source_files_sha256'][launcher.name]==sha256(launcher)
 
 
 @pytest.mark.parametrize('failure',['changed_clip','changed_manifest','extra_key','inventoried_key','escaping_clip','duplicate_id','existing_output'])

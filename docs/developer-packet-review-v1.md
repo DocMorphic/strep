@@ -12,6 +12,23 @@ Extract the complete ZIP, run `python serve.py` (or `py -3 serve.py` on Windows)
 
 ## Windows walkthrough for the crawl comparison
 
+The launcher edition is in
+`C:\wassup\strep\reports\crawl-native-developer-review-launcher-v1\crawl-developer-review.zip`.
+Right-click the ZIP, choose **Extract All**, then open the extracted folder and
+double-click **Start Review.cmd**. It starts the local viewer and opens your
+default browser. Leave its command window open while reviewing; Ctrl+C stops it.
+Python 3 and a browser with WebGL are still required. The launcher reports a
+missing Python installation or occupied port. If the browser does not open,
+copy the printed address into it.
+
+This edition retains the exact original manifest, both clips, viewer and runtime.
+Use the same browser profile and port as before to find saved ratings; changing
+ports creates a separate browser-storage location. Export existing reviews before
+switching. It supplies no new scores or animation-quality approval. All 520 ZIP
+members were checked against their file hashes; the original packet is unchanged.
+
+The manual steps below also work with the earlier packet:
+
 1. In File Explorer, open `C:\wassup\strep\reports\crawl-native-developer-review-v2`.
 2. Right-click `crawl-developer-review.zip`, choose **Extract All**, and extract
    the complete archive to a new folder. Open the extracted folder containing
@@ -56,3 +73,13 @@ The focused suite has 47 passing Python tests across the existing independent va
 Full viewer rendering and browser interaction have not been revalidated in this change. No GPU renderer or live Studio is used. Preparing packets is not action-quality evidence, and the raw study is development data rather than a held-out release comparison. Human ratings and actual cleanup measurements are still absent.
 
 The complete six-round developer set is prepared under `reports/developer-breadth-review-v1`. Every round retains 65 actor clips and all 12 families. All 390 clips, source packet inventories, original archive bindings, case contexts and 3,480 ZIP members were verified without running an HTTP server, browser or GPU renderer. The 200 flat-floor-eligible and 190 missing-context clips retain their original restrictions. All original independent packets and ZIPs remain unchanged. Human reviews and cleanup measurements collected remain zero. The local organizer index is `reports/developer-breadth-review-v1/README.md`; evidence is `completion.json`, `request.json` and per-round `checks`. The packet builder exited successfully and was consumed.
+
+## Launcher validation (2026-10-21)
+
+All **70 tests** across portable packaging, developer review, independent review and native-asset review pass in the guarded integration run. The source hashes remain unchanged and the complete resource trace replays. The 13 portable/launcher checks are included in that total, not an additional population. The Windows command launcher was executed from a directory containing spaces and an ampersand using a recording-only Python child; it passed the expected arguments and used the packet directory. Server/browser calls were replaced with test doubles to check successful loopback binding, occupied ports, invalid ports, missing packet manifests, manual startup, browser-launch failures and closing after interruption. No HTTP server, browser or motion model was launched by these checks.
+
+The developer importer accepts the new inventoried launcher while retaining compatibility with old packets. Existing role separation, rating validation, missing-context rules, immutable imports and original clip preservation remain tested. The earlier local test failure came from quoting the command path in the test harness; its raw output is retained. No launcher success was claimed from that failed run.
+
+The first broader integration had 68 passing checks and two missing-runtime setup failures. The detached checkout lacked Three.js; the existing local installation was copied unchanged, its complete file hashes were pinned, and the full suite was rerun. No production or test assertions were changed to resolve those setup failures.
+
+Local evidence: `reports/review-launcher-v3`, `reports/review-launcher-integration-v2` and `reports/review-launcher-v2/packet-result.json`. The fresh crawl archive has two exact original clips and 520 verified members. The original packet and review identity are unchanged. Live browser rendering, actual human ratings, timed cleanup and release approval remain unverified.

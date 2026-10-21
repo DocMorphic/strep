@@ -37,7 +37,7 @@ def _inventory(packet):
         raise ValueError('Distinct complete packet cases required')
     files = read(packet/'package-integrity.json')['files']
     actual = {p.relative_to(packet).as_posix() for p in packet.rglob('*') if p.is_file()}
-    allowed = {'manifest.json', 'viewer.html', 'LICENSE.txt', 'serve.py', 'README.txt'} | {c['path'] for c in cases}
+    allowed = {'manifest.json', 'viewer.html', 'LICENSE.txt', 'serve.py', 'README.txt', 'Start Review.cmd'} | {c['path'] for c in cases}
     if actual != set(files) | {'package-integrity.json'} or any(n not in allowed and not n.startswith('runtime/') for n in files):
         raise ValueError('Unexpected packet files; exclude organizer data')
     for name, digest in files.items():
