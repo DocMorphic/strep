@@ -448,17 +448,78 @@ An independent replay in `reports/kaykit-anchor-replay-v1/` applies the saved
 rotations as world-space pivot transforms, instead of the proposal's local-FK
 assembly. It reproduces the left failure and the right selected-pose geometry
 result and verifies that unrelated local transforms and every local translation
-stay fixed. It also tests a translation-only pelvis correction: both selected
-sole patches are wholly influenced by descendants of the mapped pelvis, so any
-common translation cancels out of their left-minus-right centroid difference.
-If each foot stays within 3 mm of any fixed anchor, that difference track can
-have diameter at most 12 mm. The source's measured diameter is 87.418328 mm,
-witnessed at 1.5333333015441895 and 3.5999999046325684 seconds. Therefore a common
-translation alone cannot meet these fixed-foot targets, even with unrestricted
-translation magnitude. This does not rule out a combined pelvis-and-leg edit,
-root rotation or a different contact intent; it is not a formal interval proof.
+stay fixed. It also measures the left-minus-right sole-centroid track diameter:
+87.418328 mm, witnessed at 1.5333333015441895 and 3.5999999046325684 seconds.
+The original interpretation assumed exact cancellation of a common root shift.
+The stored floating-point skin responses differ slightly, so the claim about
+unrestricted translation is superseded by the bounded calculation below. This
+does not rule out a combined pelvis-and-leg edit, root rotation or different
+contact intent; it is not a formal interval proof.
 
 Next work should compare a separately declared pelvis-and-leg edit under
 explicit root-track permissions, with full mesh, contact and rate validation.
 The original frozen-root requests and rejected candidates must remain intact;
 an expanded authoring policy must not be reported as passing the old policy.
+
+## Pelvis-and-leg authoring variant
+
+This separately versioned experiment permits mapped pelvis node 21 translation
+and the same six leg rotation tracks, including endpoint keys. All other tracks,
+clocks, geometry and weights remain unchanged. It adds an explicit 30 mm root
+movement limit and retains the previous 30 mm mesh/joint, 25 mm ankle,
+15-degree rotation, 1–5 mm support height and 3 mm horizontal-target limits.
+It is not a successful result under the original frozen-root permission.
+
+The first attempt (`reports/kaykit-wave-pelvis-legs-v1/`) stops before producing
+a clip because its assumed unit upper bound on non-leg skin response is too
+strict. Float32 weight normalization can leave a small stored residual. The
+second attempt uses `translation_coefficients` from the existing root-contact
+implementation, including each inverse-bind homogeneous response. The largest
+non-leg coefficient is 1.0000000894069672. Its search root radius is tightened
+to 29.899997326732 mm, retaining the 0.1 mm internal displacement margin rather
+than widening any authored limit. Every proposal checks the actual displacement
+of every non-leg vertex against the predicted response; all leg influences
+remain explicit in the constrained solve.
+
+`reports/kaykit-wave-pelvis-legs-v2/` solves all 120 native keys and exports a
+complete clip. Independent replay covers 701 times, reproduces the floor track
+exactly and verifies the permitted track changes and original asset payload.
+There is no sampled floor penetration. Maximum mesh movement is 28.938021 mm,
+joint movement 25.175523 mm, ankle movement 18.939291 mm, pelvis movement
+10.603836 mm and local rotation change 2.322080 degrees. Horizontal target errors
+reach 2.904033 mm left and 2.902264 mm right. Four right-foot samples around
+1.10–1.13333 s exceed the 5 mm maximum gap by about 11–12 nanometres after export;
+the strict upper limit is retained, so the geometry gate remains failed.
+
+Both motion-rate comparisons also fail. The largest peak increases are
+0.021079 m/s positional speed, 6.080876 m/s² positional acceleration,
+0.128342 rad/s angular speed and 12.743592 rad/s² angular acceleration. Fixed
+source near-sole vertices have smaller excursions (6.014005/4.955827 mm left/right)
+than the source, but this does not establish planted-foot naturalness. The
+candidate stays unselected and has no new engine or human approval. Proposal
+and replay resource traces contain 105/31 observations; proposal peak RSS is
+146,333,696 bytes. The earlier failed setup has 24 observations.
+
+Fifteen root-contact tests now include two regressions for stored weight
+residuals: a response exceeding one, and unequal responses for two centroids
+within the same root subtree. Six independent actual-rig translation checks
+match the response model within 5.47e-16 m. The measured sole centroid responses
+are 1.000000011175871 left and 1.0000000018626451 right. For root offsets bounded
+by 30 mm, their difference can add at most 5.58794e-10 m to the allowed
+two-time relative motion. The corrected diameter allowance is therefore
+0.012000000558793545 m, still far below the measured 0.08741832819400956 m.
+Translation alone remains ruled out within this explicit budget. The old
+unrestricted-translation claim is not retained. Corrected evidence and the
+unchanged source witnesses are in `reports/root-response-verification-v1/`;
+26 resource observations replay. Earlier evidence is preserved as historical.
+
+A full-clip temporal follow-up is running in
+`reports/kaykit-wave-pelvis-temporal-v1/`. It uses three Bernstein controls per
+permitted rotation vector and root translation component, evaluated through
+native-key interpolation, with the unchanged rate gates included in the solve.
+The upper support-gap search limit is tightened by 0.1 mm to leave export room.
+Per-joint/metric minimum reductions retain all 155,964 original sampled rate
+inequalities in 328 equivalent constraints, including the original time-varying
+four-bin caps. A nonnegative restoration slack is a search device only; final
+acceptance requires independent exported-file checks without slack. No result
+or quality approval is inferred from launch or intermediate solver progress.

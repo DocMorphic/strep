@@ -70,3 +70,42 @@ def test_actual_subtree_translation_matches_complete_skin_response(tmp_path):
     np.testing.assert_allclose(delta[:,1],.03*coefficient,atol=2e-15,rtol=0)
     np.testing.assert_allclose(delta[:,[0,2]],0,atol=2e-15,rtol=0)
     assert not np.array_equal(coefficient,np.full(len(coefficient),.7))
+
+
+def test_float32_weight_residue_can_exceed_unit_translation_response(tmp_path):
+    from test_native_scene_geometry import closed_fixture
+    from rig_asset import RigAsset
+    from native_support_clock import NativeSupportSampler
+    source,_,_=closed_fixture(tmp_path);rig=RigAsset.load(source);p=rig.primitives[0]
+    # Valid stored float32 weights can sum to 1 in float32 but exceed it in
+    # the decoded Float64 skin evaluation. Never clamp the exact response.
+    p['weights']=np.tile(np.array([.1,.2,.3,.4],dtype=np.float32),(len(p['positions']),1))
+    p['joints'][:]=[3,3,3,3]
+    coefficients,affected=translation_coefficients(rig,rig.joints[3])
+    assert np.all(coefficients>1.)
+    world=NativeSupportSampler(rig.document,rig.binary,0).sample(.7);delta=np.array([.02,.03,-.01]);changed=world.copy();changed[affected,:3,3]+=delta
+    actual=rig.vertices(changed)-rig.vertices(world)
+    np.testing.assert_allclose(actual,coefficients[:,None]*delta,atol=2e-15,rtol=0)
+    assert np.linalg.norm(actual,axis=1).max()>np.linalg.norm(delta)+1e-10
+    budget=.03;bounded=delta/np.linalg.norm(delta)*budget/np.abs(coefficients).max()
+    changed=world.copy();changed[affected,:3,3]+=bounded
+    assert np.linalg.norm(rig.vertices(changed)-rig.vertices(world),axis=1).max()<=budget+2e-15
+
+
+def test_two_root_bound_centroids_need_not_have_identical_stored_response(tmp_path):
+    from test_native_scene_geometry import closed_fixture
+    from rig_asset import RigAsset
+    from native_support_clock import NativeSupportSampler
+    source,_,_=closed_fixture(tmp_path);rig=RigAsset.load(source);p=rig.primitives[0];split=len(p['positions'])//2
+    assert 0<split<len(p['positions'])
+    p['weights']=np.tile(np.array([.25,.25,.25,.25],dtype=np.float32),(len(p['positions']),1))
+    p['weights'][:split]=[.1,.2,.3,.4];p['joints'][:]=[3,3,3,3]
+    coefficients,affected=translation_coefficients(rig,rig.joints[3]);difference=coefficients[:split].mean()-coefficients[split:].mean()
+    assert difference>0
+    world=NativeSupportSampler(rig.document,rig.binary,0).sample(.7);delta=np.array([.02,.03,-.01]);changed=world.copy();changed[affected,:3,3]+=delta
+    before,after=rig.vertices(world),rig.vertices(changed)
+    pair_change=(after[:split].mean(0)-after[split:].mean(0))-(before[:split].mean(0)-before[split:].mean(0))
+    np.testing.assert_allclose(pair_change,difference*delta,atol=2e-15,rtol=0)
+    # Across two times, a bounded common translation changes a relative
+    # centroid vector by at most 2 * root_budget * abs(response_difference).
+    assert np.linalg.norm(pair_change)<=2*.03*abs(difference)+2e-15
