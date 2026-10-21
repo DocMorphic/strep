@@ -128,7 +128,8 @@ def test_new_floor_vertices_survive_rejection_without_changing_depth_caps(tmp_pa
 
 
 @pytest.mark.parametrize('blocked',[False,True])
-def test_opt_in_fit_retains_baseline_and_all_decoded_acceptance_rules(tmp_path,blocked):
+@pytest.mark.parametrize('compact',[False,True])
+def test_opt_in_fit_retains_baseline_and_all_decoded_acceptance_rules(tmp_path,blocked,compact):
     path,permission,policy=prepared(tmp_path)
     if blocked:
         spec=read(path);problem=MeshCharacterProblem(permission)
@@ -140,7 +141,8 @@ def test_opt_in_fit_retains_baseline_and_all_decoded_acceptance_rules(tmp_path,b
             value=read(p);value['mesh_scene_sha256']=sha256(path);save(p,value)
     sources={p:sha256(p) for p in MeshCharacterProblem(permission).inputs}
     baseline=fit(permission,policy,tmp_path/'baseline',iterations=4,trust=.25,backtracks=4)
-    guided=fit(permission,policy,tmp_path/'guided',iterations=4,trust=.25,backtracks=4,surface_guidance=True)
+    guided=fit(permission,policy,tmp_path/'guided',iterations=4,trust=.25,backtracks=4,surface_guidance=True,linear_axis_rows=compact)
+    assert read(tmp_path/'guided/input.json')['linear_axis_rows']==compact
     assert guided['surface_guidance'] and guided['original_selected'] and not guided['props_changed']
     assert not guided['quality_approved'] and not guided['release_approved']
     assert all(sha256(p)==h for p,h in sources.items())
@@ -150,6 +152,7 @@ def test_opt_in_fit_retains_baseline_and_all_decoded_acceptance_rules(tmp_path,b
     else:
         assert not baseline['sampled_candidate_pass'] and not guided['sampled_candidate_pass']
         history=read(tmp_path/'guided/history.json');assert any(h['surface_protection']['pairs']>0 for h in history)
+        assert any('axis_linear_representation' in h['solver'] for h in history)==compact
         assert any(p['surface_guidance_observation']['new_triangle_time_pairs']>0 for p in read(tmp_path/'guided/probes.json') if p['geometry_evaluated'])
     for row in read(tmp_path/'guided/probes.json'):
         if row['accepted']:

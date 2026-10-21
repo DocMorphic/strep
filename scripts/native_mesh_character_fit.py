@@ -158,10 +158,12 @@ def audit_geometry(scene, policy, folder, *, checkpoint_geometry=False):
     return report
 
 
-def fit(permissions_path, policy_path, output, *, iterations=4, trust=.02, backtracks=8, checkpoint_geometry=False, surface_guidance=False, refine_storage=False):
+def fit(permissions_path, policy_path, output, *, iterations=4, trust=.02, backtracks=8, checkpoint_geometry=False, surface_guidance=False, refine_storage=False, linear_axis_rows=False):
     if type(checkpoint_geometry) is not bool:raise ValueError('Explicit geometry checkpoint choice required')
     if type(surface_guidance) is not bool:raise ValueError('Explicit surface guidance choice required')
     if type(refine_storage) is not bool:raise ValueError('Explicit storage refinement choice required')
+    if type(linear_axis_rows) is not bool:raise ValueError('Explicit axis-linear representation choice required')
+    if linear_axis_rows and not surface_guidance:raise ValueError('Axis-linear character proposals require surface guidance')
     if type(iterations) is not int or not 1 <= iterations <= 16 or type(backtracks) is not int or not 1 <= backtracks <= 12:
         raise ValueError('Choose 1-16 iterations and 1-12 backtracks')
     if type(trust) not in (int, float) or not np.isfinite(trust) or not 0 < trust <= .25:
@@ -186,6 +188,7 @@ def fit(permissions_path, policy_path, output, *, iterations=4, trust=.02, backt
     save(output/'input.json', dict(schema='strep-native-mesh-character-fit-v1', inputs_sha256=bindings,
          implementation_sha256=methods, solver=solver_identity(), iterations=iterations, trust=trust, backtracks=backtracks,
          checkpoint_geometry=checkpoint_geometry,surface_guidance=surface_guidance,refine_storage=refine_storage,
+         linear_axis_rows=linear_axis_rows,
          source_rows=problem.protected_rows, contact_clock_s=problem.times.tolist(), geometry_clock_s=geometry_times.tolist(),
          props_editable=False, source_rebased=False, original_selected=True, quality_approved=False))
     value = problem.initial.copy(); history = []; probes = []
@@ -216,7 +219,7 @@ def fit(permissions_path, policy_path, output, *, iterations=4, trust=.02, backt
         previous_surface_count=len(surface_bank)+len(floor_bank)
         if surface_guidance:
             guarded,derivative,hard,surface=add_surface_guards(problem,value,worlds,surface_bank,guarded,derivative,hard,trust)
-        delta, solver = direction(guarded, derivative, value, problem.lower, problem.upper, trust, hard_rows=hard)
+        delta, solver = direction(guarded, derivative, value, problem.lower, problem.upper, trust, hard_rows=hard,linear_axis_rows=bool(linear_axis_rows and surface_bank))
         record = dict(iteration=iteration, differences=differences, solver=solver, contact_protection=guard, floor_protection=floor, accepted_probe=None)
         if surface_guidance:record['surface_protection']=surface
         if delta is None:
@@ -282,6 +285,7 @@ def fit(permissions_path, policy_path, output, *, iterations=4, trust=.02, backt
         result.update(surface_guidance=True,surface_triangle_time_pairs=len(surface_bank),retained_floor_vertex_time_pairs=len(floor_bank),
             scope='Bounded character proposals with rebuilt actor/mesh-prop triangle directions and floor vertices from complete current and rejected geometry reports. All original source/edit/contact protections and complete decoded geometry acceptance remain. No prop edits, partner/containment-directed search, continuous collision, dynamics, semantic or animator approval.')
     if refine_storage:result.update(refine_storage=True,storage_refinement_scope='Nearby existing translation knot controls only; full independent decoded acceptance unchanged.')
+    if linear_axis_rows:result['linear_axis_rows']=True
     save(output/'result.json', result); return result
 
 
@@ -295,16 +299,17 @@ if __name__ == '__main__':
         help='Retain complete geometry frames with indexed observations. Does not resume optimizer state.')
     parser.add_argument('--surface-guidance',action='store_true',help='Guide character proposals with retained actor/prop triangle pairs; decoded geometry still decides acceptance.')
     parser.add_argument('--refine-storage',action='store_true',help='Try nearby authorized translation controls after source checks fail; all decoded acceptance checks remain required.')
+    parser.add_argument('--linear-axis-rows',action='store_true',help='Experimental compact scalar constraints with surface guidance; may change the local search outcome. Default remains the original norm solver.')
     parser.add_argument('--worker', action='store_true'); args=parser.parse_args()
     if args.worker:
         from action_worker_lock import worker_lock
         from threadpoolctl import threadpool_limits
-        with worker_lock(), threadpool_limits(limits=1): print(fit(args.permissions, args.policy, args.output, iterations=args.iterations, trust=args.trust, backtracks=args.backtracks,checkpoint_geometry=args.checkpoint_geometry,surface_guidance=args.surface_guidance,refine_storage=args.refine_storage))
+        with worker_lock(), threadpool_limits(limits=1): print(fit(args.permissions, args.policy, args.output, iterations=args.iterations, trust=args.trust, backtracks=args.backtracks,checkpoint_geometry=args.checkpoint_geometry,surface_guidance=args.surface_guidance,refine_storage=args.refine_storage,linear_axis_rows=args.linear_axis_rows))
     else:
         from resource_admission import ResourcePolicy
         from run_guarded_job import run
         from audit_guarded_job import audit
         output=guarded_output(args.output)
         result=run(Path(__file__),output/'guard',ResourcePolicy(expected_rss_bytes=512*1024**2,max_tree_rss_bytes=512*1024**2,
-            stable_seconds=15,admission_seconds=600,max_seconds=900),worker_args=[str(args.permissions.resolve()),str(args.policy.resolve()),str(output/'fit'),'--iterations',str(args.iterations),'--trust',str(args.trust),'--backtracks',str(args.backtracks),'--worker']+(['--checkpoint-geometry'] if args.checkpoint_geometry else [])+(['--surface-guidance'] if args.surface_guidance else [])+(['--refine-storage'] if args.refine_storage else []))
+            stable_seconds=15,admission_seconds=600,max_seconds=900),worker_args=[str(args.permissions.resolve()),str(args.policy.resolve()),str(output/'fit'),'--iterations',str(args.iterations),'--trust',str(args.trust),'--backtracks',str(args.backtracks),'--worker']+(['--checkpoint-geometry'] if args.checkpoint_geometry else [])+(['--surface-guidance'] if args.surface_guidance else [])+(['--refine-storage'] if args.refine_storage else [])+(['--linear-axis-rows'] if args.linear_axis_rows else []))
         save(output/'resource-replay.json',audit(output/'guard'));raise SystemExit({'complete':0,'failed':1,'deferred':2}[result['status']])

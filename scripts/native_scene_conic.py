@@ -24,7 +24,8 @@ def solver_identity():
     return dict(version=module.__version__,files_sha256={p.relative_to(folder).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in files})
 
 
-def direction(system, jacobian, value, lower, upper, trust, *, hard_rows=0):
+def direction(system, jacobian, value, lower, upper, trust, *, hard_rows=0, linear_axis_rows=False):
+    if type(linear_axis_rows) is not bool:raise ValueError('Explicit axis-linear representation choice required')
     value,lower,upper = [np.asarray(a,float) for a in (value,lower,upper)]
     if value.ndim!=1:raise ValueError('One-dimensional vector controls required')
     n = len(value)
@@ -49,7 +50,14 @@ def direction(system, jacobian, value, lower, upper, trust, *, hard_rows=0):
     jacobian.eliminate_zeros()
     counts = np.diff(jacobian.indptr).reshape(-1,3).sum(axis=1)
     maximum_step = np.maximum(abs(lo),abs(hi))*trust
-    radius = np.asarray(abs(jacobian)@maximum_step).reshape(system.vectors.shape)
+    if linear_axis_rows:
+        # Bound every row while limiting temporary sparse copies.
+        radius=np.empty(jacobian.shape[0])
+        for start in range(0,len(radius),16384):
+            radius[start:start+16384]=abs(jacobian[start:start+16384])@maximum_step
+        radius=radius.reshape(system.vectors.shape)
+    else:
+        radius = np.asarray(abs(jacobian)@maximum_step).reshape(system.vectors.shape)
     upper_norm = np.linalg.norm(abs(system.vectors)+radius,axis=1)
     reserve = 64*(n+4)*np.finfo(float).eps*np.maximum.reduce([upper_norm,abs(system.caps),np.ones(len(system.caps))])
     # Omit a variable cone only when every affine vector in the entire trust
@@ -61,15 +69,44 @@ def direction(system, jacobian, value, lower, upper, trust, *, hard_rows=0):
         return None,dict(status='FixedProtectedConflict',protected_norm_rows=hard_rows,
             scope='Fixed failed protected affine row; no decoded feasibility claim.')
     omitted = int((fixed_residual<=0).sum())
-    if len(active):
-        selected_rows = (3*active[:,None]+np.arange(3)).ravel()
-        derivative = jacobian[selected_rows].multiply((-trust/np.repeat(system.scales[active],3))[:,None]).tocoo()
+    vector_active=active;axis_info=None
+    if linear_axis_rows:
+        support=(system.vectors!=0)|(np.diff(jacobian.indptr).reshape(-1,3)>0)
+        scalar_mask=np.sum(support[active],axis=1)==1
+        scalar_ids=active[scalar_mask];vector_active=active[~scalar_mask]
+        axes=np.argmax(support[scalar_ids],axis=1)
+        anchored=system.vectors[scalar_ids,axes]
+        # A sign is removed only when the entire original trust box stays on
+        # the other sign, with the same conservative arithmetic reserve used
+        # above. Otherwise retain both sides of |v + J delta| <= cap + slack.
+        certified=np.abs(anchored)-radius[scalar_ids,axes]>=reserve[scalar_ids]
+        ids=np.r_[scalar_ids,scalar_ids[~certified]]
+        selected_axes=np.r_[axes,axes[~certified]]
+        signs=np.r_[np.where(certified,np.where(anchored>=0,1.,-1.),1.),-np.ones(np.sum(~certified))]
+        if len(ids):
+            derivative=jacobian[3*ids+selected_axes]
+            factors=signs*trust/system.scales[ids]
+            for start in range(0,len(ids),16384):
+                stop=min(start+16384,len(ids));a,b=derivative.indptr[[start,stop]]
+                derivative.data[a:b]*=np.repeat(factors[start:stop],np.diff(derivative.indptr[start:stop+1]))
+            auxiliary=sparse.csr_matrix(-(ids>=hard_rows).astype(float)[:,None])
+            mats.append(sparse.hstack([derivative,auxiliary],format='csr'))
+            del derivative,auxiliary,factors
+            rhs.append((system.caps[ids]-signs*system.vectors[ids,selected_axes])/system.scales[ids])
+            cones.append(solver.NonnegativeConeT(len(ids)))
+        axis_info=dict(scalar_norm_rows=len(scalar_ids),linear_inequalities=len(ids),
+            trust_box_sign_certified_rows=int(certified.sum()),two_sided_rows=int((~certified).sum()),
+            original_row_axis_sha256=hashlib.sha256(np.c_[scalar_ids,axes].astype('<i8').tobytes()).hexdigest(),
+            scope='Exact one-axis affine norms use signed linear bounds; both signs retained unless the unchanged trust box certifies one. Every original affine norm is still evaluated after solving.')
+    if len(vector_active):
+        selected_rows = (3*vector_active[:,None]+np.arange(3)).ravel()
+        derivative = jacobian[selected_rows].multiply((-trust/np.repeat(system.scales[vector_active],3))[:,None]).tocoo()
         mapped_rows = 4*(derivative.row//3)+1+derivative.row%3
-        matrix = sparse.csc_matrix((np.r_[derivative.data,-(active>=hard_rows).astype(float)],
-            (np.r_[mapped_rows,4*np.arange(len(active))],np.r_[derivative.col,np.full(len(active),n)])),shape=(4*len(active),n+1))
+        matrix = sparse.csc_matrix((np.r_[derivative.data,-(vector_active>=hard_rows).astype(float)],
+            (np.r_[mapped_rows,4*np.arange(len(vector_active))],np.r_[derivative.col,np.full(len(vector_active),n)])),shape=(4*len(vector_active),n+1))
         # Each consecutive four-row group is one full, unsimplified norm cone.
-        bound = np.c_[system.caps[active],system.vectors[active]]/system.scales[active,None]
-        mats.append(matrix); rhs.append(bound.ravel()); cones.extend(solver.SecondOrderConeT(4) for _ in active)
+        bound = np.c_[system.caps[vector_active],system.vectors[vector_active]]/system.scales[vector_active,None]
+        mats.append(matrix); rhs.append(bound.ravel()); cones.extend(solver.SecondOrderConeT(4) for _ in vector_active)
     # Fixed soft failures remain in full merit and decoded acceptance, but a
     # larger failure at another joint/time must not flatten this window's
     # objective. Minimizing responsive excess also minimizes max(fixed, excess),
@@ -81,14 +118,19 @@ def direction(system, jacobian, value, lower, upper, trust, *, hard_rows=0):
         return float(max(0.,residual[responsive_soft].max())) if len(responsive_soft) else 0.
     def global_soft_excess(residual):
         return float(max(0.,residual[hard_rows:].max())) if hard_rows<len(residual) else 0.
-    matrix = sparse.vstack(mats,format='csc'); bound = np.concatenate(rhs)
+    if linear_axis_rows:
+        matrix=sparse.vstack(mats,format='csr');mats.clear()
+        matrix=matrix.tocsc()
+    else:
+        matrix = sparse.vstack(mats,format='csc')
+    bound = np.concatenate(rhs)
     settings = solver.DefaultSettings(); settings.verbose=False; settings.max_iter=100; settings.time_limit=30.
     settings.tol_gap_abs=settings.tol_gap_rel=settings.tol_feas=1e-9
     if hasattr(settings,'max_threads'):settings.max_threads=1
     objective = np.r_[np.zeros(n),1.]
     first = solver.DefaultSolver(sparse.csc_matrix((n+1,n+1)),objective,matrix,bound,cones,settings).solve()
     info = dict(status=str(first.status),iterations=first.iterations,trust_control_fraction=float(trust),
-        solver_version=solver.__version__,norm_rows=len(system.vectors),active_cones=len(active),
+        solver_version=solver.__version__,norm_rows=len(system.vectors),active_cones=len(vector_active),
         protected_norm_rows=hard_rows,
         fixed_failed_rows=len(fixed),omitted_fixed_passing_rows=omitted,
         fixed_soft_excess=fixed_soft_excess,responsive_soft_rows=len(responsive_soft),
@@ -96,6 +138,7 @@ def direction(system, jacobian, value, lower, upper, trust, *, hard_rows=0):
         omitted_affine_box_passing_rows=int(box_passing.sum()),
         affine_box_bound='norm(abs(vector) + abs(J) @ maximum_absolute_step) plus arithmetic reserve',
         scope='Affine vector-norm proposal only; decoded constraints still decide acceptance.')
+    if axis_info is not None:info['axis_linear_representation']=axis_info
     if str(first.status) not in ('Solved','AlmostSolved'):return None,info
     point = np.asarray(first.x)
     if not np.isfinite(point).all():return None,dict(info,invalid_solution=True)
@@ -108,6 +151,7 @@ def direction(system, jacobian, value, lower, upper, trust, *, hard_rows=0):
     refinement_bound=max(optimum,primary_soft)+1e-9
     # Remove gratuitous controls while retaining the measured primary merit.
     second_matrix = sparse.vstack([matrix,sparse.csc_matrix(np.r_[np.zeros(n),1.][None])],format='csc')
+    if linear_axis_rows:del matrix
     second_bound = np.r_[bound,refinement_bound]
     second = solver.DefaultSolver(sparse.diags(np.r_[np.ones(n),0.],format='csc'),np.zeros(n+1),
         second_matrix,second_bound,cones+[solver.NonnegativeConeT(1)],settings).solve()
