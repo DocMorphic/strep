@@ -628,3 +628,61 @@ remain unchanged and must pass a separate exported-file replay. A 0.01-degree
 internal rotation margin provides export room without widening the 15-degree
 authored limit. No feasibility, convergence, engine or quality result is
 inferred from preparing or launching this experiment.
+
+### Hard-budget checkpoint result
+
+The 17-control follow-up reaches its 900-second execution guard after six
+completed callback iterations. It preserves iteration 4 as the best saved
+hard-feasible iterate; iterations 1, 2 and 6 fail internal edit-budget rows and
+are not selected for export. The initial fit already satisfies those rows,
+without shrinking. A direct partition check confirms that all 2,947 hard rows
+are unchanged when restoration slack changes; only the 5,235 contact/rate rows
+receive that search slack. The failed run retains 898 resource observations
+and a 356,200,448-byte peak process-tree RSS.
+
+`reports/kaykit-wave-pelvis-hard-checkpoint-v1/` exports the saved best controls
+and independently replays all 701 times. All authored edit budgets pass:
+maximum mesh/joint/ankle/pelvis displacement is
+29.347632/25.924743/20.383238/10.727363 mm and maximum local rotation change is
+2.726027 degrees. No sampled floor penetration remains. Contact still fails:
+left/right horizontal errors reach 4.026356/3.545980 mm, with 126 horizontal
+and 116 support-height failures. Both rate comparisons fail. Largest peak
+increases are 0.006339 m/s positional speed, 0.119698 m/s² positional
+acceleration and 0.015386 rad/s angular speed; angular acceleration has no
+regressing joints. Export/replay resource traces have 34/37 observations.
+The candidate remains unselected, without convergence, engine, human-review
+or quality approval. Hard-budget selection now survives actual file readback;
+the remaining contact/rate problem is unresolved.
+
+### Ankle limits are not mesh-point limits
+
+Studio's native-support draft limits ankle movement, while
+`native_support_preflight` requires a bound on every selected mesh point.
+Using the ankle number as that mesh bound would incorrectly reject requests:
+rotation can move a foot point farther than the ankle. The existing Studio
+adapter is therefore not silently connected to that preflight.
+
+`scripts/rigid_support_point_bounds.py` supplies a conditional bound for the
+compatible case. If a point transforms as
+`p' = Q (p - c a) + c a'`, the pivot moves at most `D`, and the world rotation
+angle of `Q` is at most `theta`, then its movement is bounded by
+`abs(c) D + 2 norm(p - c a) sin(theta / 2)`. Here `c` is the actual homogeneous
+skin response, which may differ slightly from one. The helper includes a
+numerical reserve and explicitly does not claim a formal interval certificate
+or establish its own applicability.
+
+The caller must establish a rigid pivot, unchanged relative child transforms,
+and that every positive influence belongs to the affected subtree. All changed
+ancestors, including the pivot, must be included in a composed angle limit.
+Local-key limits cannot be applied to interpolated times without an additional
+bound. Partial outside influences, scale/shear and arbitrary interpolation are
+not covered by this helper. It is not yet a Studio precheck or solver change.
+
+Ten unit tests cover tight rotation/translation alignment, signed and nonunit
+responses, coordinate shifts, malformed limits, a false rejection from reusing
+the ankle budget, and 200 fixed-seed rigid transforms. Actual-rig verification
+in `reports/native-ankle-preflight-bound-v1/` checks 96 transformed poses across
+107 left-foot and 105 right-foot vertices: all 10,176 point observations stay
+inside the conditional bound. The rigid skin identity matches decoded points
+within 3.34e-16 m. This validates the stated fully owned vertex case, not all
+possible rigs, an animation correction or the missing Studio integration.

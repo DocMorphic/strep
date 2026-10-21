@@ -1,6 +1,7 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_rigid_support_point_bounds.py",
     "tests/test_support_centroid_bounds.py",
     "tests/test_native_support_preflight.py",
     "tests/test_studio_mesh_diagnostics.py",
