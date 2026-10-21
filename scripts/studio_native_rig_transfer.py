@@ -13,6 +13,7 @@ import native_rig_transfer as bridge
 import studio_characters as characters
 from native_support_clock import NativeSupportSampler
 from rig_asset import RigAsset
+from retarget_rig import mapping_skin_coverage
 from strep import ROOT,read,save,sha256,now
 
 NAMESPACE='native-transfer-jobs'
@@ -211,6 +212,10 @@ def manifest(job):
     data.update(**{k:r[k] for k in ('source_skin_joints','target_skin_joints','duration_s','output_animation_index','samples','transfer_fidelity','sampled_runtime_conditions_pass','contact_verified','original_selected')},result_sha256=sha256(folder/'result.json'))
     data['downloads']=[dict(label=n,url=f'/files/{NAMESPACE}/{job}/{n}',sha256=sha256(folder/n)) for n in DOWNLOADS]
     source=RigAsset.load(folder/'input/source.glb');target=RigAsset.load(folder/'transfer/character.glb')
+    # Recompute from the verified artifact and bound profile, including older
+    # jobs whose archived reports predate influence-coverage diagnostics.
+    mapping,_=bridge.resolve_profile(target,read(folder/'input/target-profile.json'))
+    data['skin_mapping_coverage']=mapping_skin_coverage(target,mapping)
     data['previews']=[dict(id='source',label='Original source clip',preview_url=f'/files/character-assets/{payload["source_asset_id"]}/character.glb',preview_sha256=payload['source_asset_id'],animation_index=payload['animation_index'],animation_count=len(source.document['animations'])),
         dict(id='candidate',label='Transferred candidate',preview_url=f'/files/{NAMESPACE}/{job}/transfer/character.glb',preview_sha256=sha256(folder/'transfer/character.glb'),animation_index=r['output_animation_index'],animation_count=len(target.document['animations']))]
     for v in data['previews']:v.update(kind='native_rig_transfer',preview_start_s=0.,preview_end_s=r['duration_s'])

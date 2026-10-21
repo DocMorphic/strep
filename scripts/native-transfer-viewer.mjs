@@ -1,8 +1,9 @@
 import {createNativeReferencePlayer} from '/native-reference-player.mjs';
+import {mappingCoverageMessage} from '/native-transfer-editor.mjs';
 const el=n=>document.getElementById(n);let review,time=0,epoch=0;
 const player=createNativeReferencePlayer({canvas:el('preview'),onTime:t=>{time=t;el('time').value=t;el('clock').textContent=`${t.toPrecision(9)} s`;}});
 async function load(){player.pause();const token=++epoch,chosen=review?.previews.find(v=>v.id===el('version').value);for(const n of ['play','time','fit'])el(n).disabled=true;
- try{if(!chosen)throw Error('Choose a bound transfer version');const old=time;await player.load(chosen);if(token!==epoch)return;player.seek(old);el('time').max=chosen.preview_end_s;for(const n of ['play','time','fit'])el(n).disabled=false;el('status').textContent=chosen.label+'. Contacts and animation quality remain unverified.';}catch(e){if(token===epoch)el('status').textContent='Preview unavailable: '+e.message;}
+ try{if(!chosen)throw Error('Choose a bound transfer version');const coverage=chosen.id==='candidate'?mappingCoverageMessage(review.skin_mapping_coverage):'';const old=time;await player.load(chosen);if(token!==epoch)return;player.seek(old);el('time').max=chosen.preview_end_s;for(const n of ['play','time','fit'])el(n).disabled=false;el('status').textContent=chosen.label+'. '+coverage+' Contacts and animation quality remain unverified.';}catch(e){if(token===epoch)el('status').textContent='Preview unavailable: '+e.message;}
 }
 el('version').onchange=load;el('time').oninput=()=>{player.pause();player.seek(Number(el('time').value));};el('fit').onclick=()=>player.fit();el('play').onclick=()=>player.toggle();
 window.addEventListener('message',e=>{if(e.origin===location.origin&&e.source===parent&&e.data==='strep-native-pause')player.pause();});

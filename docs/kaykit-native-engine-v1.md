@@ -254,6 +254,36 @@ original native-key interpolation. It also declares fixed horizontal support
 targets: each foot's first-pose near-sole vertex centroid is anchored to its
 mean source position over the audit clock, with 3 mm horizontal tolerance.
 The request retains all previous movement and rate limits. A search-only
-restoration slack helps explore infeasible seeds; final acceptance must check
-the original inequalities without slack. Results of this trial are pending,
-and this description does not establish a repaired clip or a production default.
+restoration slack explores infeasible seeds; final acceptance checks the original
+inequalities without slack. After 50 iterations the solver remains infeasible,
+with restoration slack 1.644403. The stored candidate is retained as a failure,
+not offered as a passing correction.
+
+Independent scalar replay checks all 701 sample times, exact floor reproduction,
+input/track preservation and the support targets recomputed from source geometry.
+It reports 7.222016 mm floor penetration, 25.980763 degrees maximum local rotation
+change, 62.607836 mm maximum joint displacement and 54.911538 mm ankle movement,
+exceeding the unchanged bounds. Horizontal target error reaches 7.933220 mm left
+and 7.933390 mm right, above the declared 3 mm. Both rate comparisons also fail.
+There is no accepted candidate or feasibility certificate. Proposal and replay
+resource traces contain 677 and 31 observations; peak proposal tree RSS is
+286,027,776 bytes under the 512-MiB cap. No model training or engine rerun was
+needed to reject this already-invalid candidate.
+
+## Studio mapping feedback
+
+Studio's verified native-transfer review now recomputes influence coverage from
+the transferred character and its bound target profile, including records whose
+stored reports predate the diagnostic. The editor and candidate preview display
+affected mesh-point counts and request a mapping/deformation review. Missing
+coverage is explicitly unknown; a contradictory or malformed coverage payload
+cannot be presented as a valid review. A clean influence check still does not
+approve anatomical mapping, contact or motion quality. The existing explicit
+candidate-import action and original selection policy remain unchanged.
+
+Seven guarded Python checks cover fixture transfer/verified review/import and
+influence accounting. Both offline transfer-editor interaction suites pass,
+including the warning, unknown and inconsistent-payload cases, and viewer
+syntax checks pass. Evidence is `reports/studio-rig-coverage-v1/`. These are
+software checks with an engine double, not a live-browser visual review or
+additional actual-engine evidence.

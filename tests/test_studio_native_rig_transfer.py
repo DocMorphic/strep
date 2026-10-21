@@ -81,6 +81,9 @@ def test_complete_native_clock_preserved_and_explicit_import_rebinds_profile(tmp
     folder,request=complete(tmp_path,monkeypatch)
     inputs={p:sha256(p) for side in ('source','target') for p in chars.asset_folder(request[side+'_asset_id']).rglob('*') if p.is_file()}
     m=studio.manifest('job');assert len(m['downloads'])==8 and m['sampled_runtime_conditions_pass'] and not m['contact_verified']
+    coverage=m['skin_mapping_coverage']
+    assert coverage['vertices']>0 and coverage['outside_mapped_hierarchy_vertices']==0
+    assert coverage['unskinned_vertices']==0 and coverage['inspection_required'] is False
     assert m['output_animation_index']==1 and m['previews'][1]['animation_count']==2 and m['previews'][0]['animation_index']==0
     assert len(chars.list_assets())==2
     imported=studio.import_candidate(dict(job='job',result_sha256=m['result_sha256']))

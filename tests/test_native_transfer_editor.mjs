@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {createNativeTransferEditor} from '../scripts/native-transfer-editor.mjs';
+import {createNativeTransferEditor,mappingCoverageMessage} from '../scripts/native-transfer-editor.mjs';
+assert.match(mappingCoverageMessage(undefined),/not been checked/);
+assert.match(mappingCoverageMessage({vertices:5,outside_mapped_hierarchy_vertices:0,unskinned_vertices:0,inspection_required:false}),/Anatomical mapping still needs review/);
+const coverage={vertices:4858,outside_mapped_hierarchy_vertices:467,unskinned_vertices:0,inspection_required:true};
+assert.match(mappingCoverageMessage(coverage),/467 mesh points/);
+assert.match(mappingCoverageMessage({...coverage,outside_mapped_hierarchy_vertices:0,unskinned_vertices:2}),/2 mesh points have no skin binding/);
+for(const bad of [{...coverage,inspection_required:false},{...coverage,outside_mapped_hierarchy_vertices:-1},{...coverage,vertices:1},{...coverage,unskinned_vertices:.5},{...coverage,outside_mapped_hierarchy_vertices:'467'}])assert.throws(()=>mappingCoverageMessage(bad),/Invalid/);
 class Element{constructor(){this.value='';this.disabled=false;this.children=[];this.hidden=true;this.src='';this.textContent='';}replaceChildren(...a){this.children=a;this.value=a[0]?.value??'';}append(...a){this.children.push(...a);}}
 const html=await readFile(new URL('../scripts/native-transfer-editor.html',import.meta.url),'utf8'),nodes=new Map();
 for(const m of html.matchAll(/<[^>]*id="(nativeTransfer[^"]+)"[^>]*>/g)){assert(!nodes.has(m[1]));nodes.set(m[1],new Element());}
@@ -25,7 +31,10 @@ const editor=createNativeTransferEditor({document,api,post,onImported:async id=>
 assert.throws(()=>editor.snapshot(),/Bind/);await editor.characters();assert.equal(el('Source').value,a);assert.equal(el('Target').value,b);
 await el('Bind').onclick();assert.equal(el('Clip').children.length,1);assert.deepEqual(editor.snapshot(),{source_asset_id:a,source_profile_id:pa,target_asset_id:b,target_profile_id:pb,animation_index:0,rate:120});
 await el('Build').onclick();assert.equal(opened.length,0);assert.equal(el('Source').value,a);assert.equal(el('Jobs').value,'job');
-await el('Review').onclick();assert.equal(el('Import').disabled,false);assert.equal(el('Preview').src,review.preview_url);assert.equal(el('Results').children.length,9);
+await el('Review').onclick();assert.equal(el('Import').disabled,false);assert.equal(el('Preview').src,review.preview_url);assert.equal(el('Results').children.length,9);assert.match(el('Status').textContent,/not been checked/);
+review.skin_mapping_coverage=coverage;await el('Review').onclick();assert.match(el('Status').textContent,/467 mesh points/);assert.equal(el('Import').disabled,false);
+review.skin_mapping_coverage={...coverage,inspection_required:false};await el('Review').onclick();assert.match(el('Status').textContent,/Invalid skin mapping/);assert.equal(el('Import').disabled,true);
+review.skin_mapping_coverage=coverage;await el('Review').onclick();
 await el('Import').onclick();assert.deepEqual(posted.at(-1),{url:'/api/native-transfer-import',payload:{job:'job',result_sha256:digest}});assert.equal(opened.length,1);
 for(const field of ['quality_approved','release_approved','contact_verified','original_selected']){const old=review[field];review[field]=!old;await el('Review').onclick();assert.match(el('Status').textContent,/Invalid/);assert.equal(el('Import').disabled,true);review[field]=old;}
 review.sampled_runtime_conditions_pass='false';await el('Review').onclick();assert.match(el('Status').textContent,/Invalid/);

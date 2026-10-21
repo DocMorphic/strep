@@ -1,3 +1,14 @@
+export function mappingCoverageMessage(coverage){
+ if(coverage===undefined||coverage===null)return 'Skin influence coverage has not been checked.';
+ const {vertices,outside_mapped_hierarchy_vertices:outside,unskinned_vertices:unskinned,inspection_required:inspect}=coverage;
+ if(![vertices,outside,unskinned].every(n=>Number.isSafeInteger(n)&&n>=0)||outside+unskinned>vertices||typeof inspect!=='boolean'||inspect!==(outside>0||unskinned>0))throw Error('Invalid skin mapping coverage.');
+ if(!inspect)return 'Skin influence check: no outside influences found. Anatomical mapping still needs review.';
+ const issues=[];
+ if(outside)issues.push(`${outside} mesh points are partly controlled by bones outside the mapped body`);
+ if(unskinned)issues.push(`${unskinned} mesh points have no skin binding`);
+ return `Rig mapping review needed: ${issues.join('; ')}. Check how those parts move before use.`;
+}
+
 export function createNativeTransferEditor({document=globalThis.document,api,post,onImported=async()=>{}}={}){
  const el=n=>document.getElementById('nativeTransfer'+n),status=t=>{el('Status').textContent=t;},guard=f=>async()=>{try{await f();}catch(e){status(e.message);}};
  const option=(v,t)=>{const n=document.createElement('option');n.value=String(v);n.textContent=t;return n;};
@@ -29,7 +40,7 @@ export function createNativeTransferEditor({document=globalThis.document,api,pos
   if(r.status!=='complete'){p.textContent=`${r.status}: ${r.error||r.stage||'waiting'}`;el('Results').append(p);status(p.textContent);return;}
   const labels=['candidate.zip','transfer/character.glb','edit-profile.json','transfer/root-motion.json','transfer/report.json','audit/animation.res','audit/result.json','result.json'];
   if(r.quality_approved!==false||r.release_approved!==false||r.contact_verified!==false||r.original_selected!==true||r.transfer_fidelity?.passed!==true||typeof r.sampled_runtime_conditions_pass!=='boolean'||!/^[a-f0-9]{64}$/.test(r.result_sha256)||r.preview_url!==`/native-transfer-viewer.html?id=${id}&result=${r.result_sha256}`||!Array.isArray(r.downloads)||r.downloads.length!==labels.length||new Set(r.downloads.map(d=>d.label)).size!==labels.length||r.downloads.some(d=>!labels.includes(d.label)||d.url!==`/files/native-transfer-jobs/${id}/${d.label}`))throw Error('Invalid source-bound transfer result.');
-  p.textContent=`${r.source_skin_joints} → ${r.target_skin_joints} bones. Transfer interpolation: pass. Saved-resource/root playback: ${r.sampled_runtime_conditions_pass?'pass':'fail'}. Contacts and motion quality remain unverified.`;el('Results').append(p);
+  p.textContent=`${r.source_skin_joints} → ${r.target_skin_joints} bones. Transfer interpolation: pass. Saved-resource/root playback: ${r.sampled_runtime_conditions_pass?'pass':'fail'}. ${mappingCoverageMessage(r.skin_mapping_coverage)} Contacts and motion quality remain unverified.`;el('Results').append(p);
   for(const d of r.downloads){const a=document.createElement('a');a.href=d.url;a.download='';a.className='btn';a.textContent=d.label;el('Results').append(a);}
   el('Preview').src=r.preview_url;el('Preview').hidden=false;reviewed=r.sampled_runtime_conditions_pass?{job:id,result_sha256:r.result_sha256}:null;el('Import').disabled=!reviewed;status(p.textContent);
  });
