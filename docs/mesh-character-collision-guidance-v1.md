@@ -1092,7 +1092,58 @@ become invalid after a pose change; new deepest vertices can appear. The next
 fit must retain original native/contact limits and contact-time separation,
 re-query actual meshes over the affected times, keep new witnesses, and require
 the full original geometry clock before any acceptance decision. No corrected
-export has yet been produced from these new witnesses.
+export was produced by that preflight alone.
+
+### Restoring local containment with native limits held hard
+
+`reports/humanoid-containment-restoration-v1` uses the native-passing joint
+candidate as the research seed, retaining the original source as the acceptance
+reference. Its 291,904-row affine model places all 183,513 native/contact rows
+and 108,324 contact-time triangle guards in a 291,837-row hard prefix. The 67
+containment witnesses form the soft minimax objective. Proposal settings are a
+0.025 normalized trust box, a 4.9-mm contact radius, 0.05-mm contact-pose face
+clearance and 0.01-mm witness clearance beyond each original depth allowance.
+The actual source-rate, edit, 5-mm contact and local-depth limits are unchanged.
+All 84 control columns and all witness rows are retained.
+
+The solve converges in 38 iterations. Each of four fractions is exported and
+freshly decoded on all 2,017 native times. Geometry is then re-queried on all
+65 affected original times plus the 2-second contact sample. These 66-time
+reports are explicitly partial. Research progress additionally requires no
+new failed condition relative to the source or seed on that population, a
+passing contact-time actor/panel pair, and improvement in the maximum positive
+original-relative depth increase followed by its sum of squares.
+
+| Step fraction | Failed native rows | Focused depth regressions | Worst depth increase |
+| --- | ---: | ---: | ---: |
+| Seed | 0 | 67 | 2.118027 mm |
+| 1 | 6 | 54 | 0.437478 mm |
+| 0.5 | 0 | 57 | 1.410501 mm |
+| 0.25 | 0 | 59 | 1.899108 mm |
+| 0.125 | 0 | 61 | 1.882413 mm |
+
+The full step improves geometry most but fails six actual native rows and is
+rejected. The half step is the best research iterate preserving all native,
+strict edit and contact checks. Its contact error is 4.794404 mm and its minimum
+contact-time proposal-plane gap is 0.074424 mm; actual contact-time geometry
+also passes. It still has 57 depth regressions, so it is not eligible for a
+new full-clock acceptance audit or animation adoption. Counts and worst depth
+are not monotonic in step size, reinforcing the need to measure each export.
+
+`reports/humanoid-containment-restoration-verification-v1` independently
+reopens all four exports, reconstructs every native/edit/contact decision and
+affine origin/lift/step, and freshly re-queries all 66 selected geometry times
+per export. Saved reports, observation arrays, original-relative comparisons
+and the best-iterate selection must match. Saved derivatives are bound and
+structurally checked, not independently re-differentiated. The study uses the
+explicit 2-GiB fitting protocol; verification uses the 512-MiB protocol.
+
+The best research iterate's measured deepest-vertex identities include 34
+identities absent from the initial 67 witnesses. The next working set must
+retain those earlier identities and add the 34 new ones, for 101 total,
+rebuilding nearest points and directions at the updated pose. This is a
+planned continuation, not an implemented or validated new fit. Full-clock
+geometry, support, engine and human-quality requirements remain open.
 
 ### Remaining integration and evaluation
 
@@ -1125,9 +1176,10 @@ source-rounding barrier on one generated case. Both obstacle placements and the
 real humanoid now expose additional local-search limits. Joint pose and timing
 now pass the native limits on one declared seven-track candidate, whose complete
 geometry evaluation rejects 67 local containment-depth regressions. Next extend
-guidance to those approach/withdrawal witnesses in both containment directions,
-retain contact-time separation and native caps, and re-evaluate the complete
-clock after any promising correction. Preserve the separate four-track
+the focused restoration, which reduces this to 57 regressions while retaining
+native limits: rebuild the 101 retained/new witness identities, preserve
+contact-time separation and native caps, and re-evaluate the complete clock
+after a correction clears the focused screen. Preserve the separate four-track
 baseline and all failed trials. Complete-clock geometry, support and every
 other acceptance requirement remain mandatory. Then integrate validated proposal state with recovery and
 continue different rigs/actions, partner, engine and human-review evaluation.
