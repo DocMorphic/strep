@@ -628,6 +628,51 @@ prototype test inputs and every study's resource trace. Prototype failures and
 the first geometry attempt's time stop remain visible. No production solver,
 default resource budget or release gate is changed by these experiments.
 
+### Stronger penalties and failure localization (2026-10-21)
+
+`reports/humanoid-surface-penalty-60s-v1` retries only the previously timed-out
+weights 10 and 100. Each solve has an explicitly declared 60-second budget;
+the 100-iteration ceiling, solver tolerances, original 569,384 rows, 185,389
+native/contact/floor hard rows, 36 controls and 0.02 trust fraction remain.
+The original 30-second attempts are preserved. The process completes under
+the same 2 GiB admission policy, with a 1,438,789,632-byte sampled peak and
+2,497 replayed resource observations.
+
+Weight 10 reaches `Solved` after 59 primary iterations; both minimum-norm
+attempts time out. Its full exported step fails a decoded native constraint,
+despite passing the affine native/contact/floor checks. Seven smaller backoffs
+pass the native, strict edit and contact-nonregression checks. The best is the
+half step, with 28.633975 mm actual hand error against the unchanged 5 mm target.
+Weight 100 stops with `InsufficientProgress` after 54 iterations; more solve
+time does not establish feasibility or provide a candidate for that weight.
+All eight weight-10 exports are independently decoded and their saved
+constraints, contacts and contact arrays reproduced in
+`reports/surface-penalty-60s-verification-v1`. Geometry acceptance remains
+separate; passing these checks does not make the seven candidates usable.
+
+`reports/surface-penalty-diagnosis-v1` localizes the earlier rejected weight-1
+proposal using its complete retained geometry, without rerunning or relaxing
+the queries. All 42,666 original and 53,064 candidate surface records are
+classified as proper crossings. Across 248 changed actor/prop sample times
+from 1.697916667 to 2.183333333 seconds, 34,978 original triangle/time crossings
+disappear and 45,376 new ones appear. The aggregate increase is therefore not
+caused by ambiguous near-contact classifications.
+
+Containment depth also increases in 174 time/direction measurements. The
+largest increase is 3.438311 mm at 1.785416667 seconds, in the panel-to-actor
+query, from an original zero. The global maximum remains 10.436307 mm because
+another existing failure dominates it. This demonstrates why a whole-clip
+maximum alone cannot establish local depth nonregression. The candidate was
+already rejected by the existing surface-record metric; this analysis does
+not retroactively change its decision or prove an accepted candidate unsafe.
+
+The next full-clock audit, `reports/humanoid-weight10-geometry-v1`, targets the
+best eligible weight-10 half step. It retains the original acceptance checks
+and additionally records per-time/per-direction containment increases, with
+any such increase disqualifying this research candidate. This stricter
+diagnostic has not changed production acceptance policy. Its complete geometry
+result is still pending; the original animation remains selected.
+
 ### Remaining integration and evaluation
 
 Keep the exact original source, editing limits, frozen tracks and complete
