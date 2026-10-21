@@ -76,9 +76,13 @@ not motion acceptance. The old candidate and old observations remain intact.
 The [focused containment run](https://github.com/DocMorphic/strep/actions/runs/39603350403)
 at `33aaacc` passes 34 tests on Ubuntu (0.87 s) and Windows
 (1.22 s). The
-[direct correction](https://github.com/DocMorphic/strep/actions/runs/39603353868)
-and [Studio correction](https://github.com/DocMorphic/strep/actions/runs/39603357934)
-workflows are still in progress, not claimed successful. They can be
+[Studio correction run](https://github.com/DocMorphic/strep/actions/runs/39603357934)
+at the same source passes all 25 tests on Windows (1,498.27 s) and Ubuntu
+(2,113.12 s). Both job conclusions are successful; exact metadata and logs
+are retained under `reports/deterministic-containment-v2-publication-v1/hosted`.
+The separate
+[direct correction run](https://github.com/DocMorphic/strep/actions/runs/39603353868)
+is still in progress, not claimed successful. These suites can be
 selected in focused both-OS CI with a 60-minute limit because the retained
 setup alone took over 14 minutes locally and later tests replay full clips.
 Other focused CI jobs retain 15 minutes. Local numerical studies retain the
