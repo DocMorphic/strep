@@ -515,3 +515,10 @@ is not a measured process-RSS cap. No model, NumPy or numerical motion worker
 was loaded. Evidence is `gltf-validation.json`, `gltf-validation-replay.json`
 and `format-replay.json` in the same acquisition folder. This validates file
 structure/accessors, not skin deformation, Strep intake, motion or engine quality.
+
+The subsequent [nine-capture engine study](kaykit-native-engine-v1.md) verifies
+pose and complete skin/triangle correspondence on eight existing source clips
+at all original keys and adjacent midpoints, with a separate numerical replay.
+Four of the eight clips still fail the declared floor screen. This new evidence
+is limited to the observed source animations and engine version; it does not
+approve generated motion, object/partner interaction or rig generalization.
