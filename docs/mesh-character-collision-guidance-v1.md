@@ -1040,6 +1040,60 @@ re-differentiated. The selected full-step candidate is eligible for complete
 geometry evaluation, not animation adoption or quality approval. The original
 floor failure of 8.591902 mm remains at the contact time.
 
+### Complete-clock check of the joint candidate
+
+`reports/humanoid-joint-full-geometry-v1` evaluates the selected native-passing
+candidate on all 2,017 original geometry times. Its 900-second execution guard
+stops at 900.578 seconds with 1,670 complete samples saved. The separate
+`reports/humanoid-joint-full-geometry-resume-v1` pins and verifies that exact
+checkpoint, adds the remaining 347 samples and finalizes the report. Both use
+the existing 512-MiB process-tree budget and 600-MiB available-memory reserve.
+The interrupted attempt and its resource trace remain intact.
+
+| Complete-clock metric | Original source | Joint candidate |
+| --- | ---: | ---: |
+| Failed conditions | 4,282 | 4,254 |
+| Failed sampled times | 2,017 | 2,017 |
+| Proper-crossing records | 42,666 | 34,575 |
+| Global maximum depth | 10.436307 mm | 10.436307 mm |
+
+Despite the aggregate improvement and preservation of previously passing
+conditions, **the candidate fails local depth nonregression and is rejected**.
+Of 8,068 per-time/query depth comparisons, 67 worsen: 57 actor-into-panel and
+ten panel-into-actor comparisons, between 1.777083 and 2.1625 seconds. None of
+the comparisons is unavailable. The worst increase is 2.118027 mm at 2.1375
+seconds, where panel vertices penetrate the actor despite zero original
+reverse-containment depth. This does not contradict the successful 2-second
+contact-pose check; it demonstrates why that single pose cannot validate the
+approach and withdrawal. Existing floor failures also remain.
+
+`reports/humanoid-joint-geometry-verification-v1` verifies the complete pinned
+journal, frame archives, report and observation-index hashes, then freshly
+recomputes condition, aggregate and local-depth comparisons against the
+original source. It reproduces the rejection and replays both resource traces.
+This is an integrity and comparison verification of all saved frames, not an
+independent geometric re-query of every frame. The original clip remains
+selected; there is no full-clip, human-quality or release approval.
+
+`reports/humanoid-containment-witnesses-v1` retains every one of those 67
+regressions across 65 distinct times. For actor vertices inside the convex
+panel, it records the actual deepest vertex and nearest supporting face. For
+panel vertices inside the actor, it records the actual deepest prop vertex,
+nearest original actor triangle, barycentric closest point and frozen outward
+direction. Each local gap is offset by that original source query's depth,
+so its deficit represents the measured regression rather than a relaxed new
+limit. The gaps reconstruct all recorded depth increases to within
+3.32e-16 m. Central/recorded one-sided differences retain all 84 control
+columns; the 67-by-84 derivative has 2,046 nonzeros and no unresponsive row.
+
+This preflight supplies local proposal guidance, not a containment certificate
+or proof of simultaneous feasibility. Frozen closest points and directions can
+become invalid after a pose change; new deepest vertices can appear. The next
+fit must retain original native/contact limits and contact-time separation,
+re-query actual meshes over the affected times, keep new witnesses, and require
+the full original geometry clock before any acceptance decision. No corrected
+export has yet been produced from these new witnesses.
+
 ### Remaining integration and evaluation
 
 Keep the exact original source, editing limits, frozen tracks and complete
@@ -1069,9 +1123,11 @@ banks integrated into that optimizer protocol before larger resumable fits.
 The export diagnostic and combined experiment above resolve the demonstrated
 source-rounding barrier on one generated case. Both obstacle placements and the
 real humanoid now expose additional local-search limits. Joint pose and timing
-now pass the native limits on one declared seven-track candidate. Next evaluate
-its complete geometry clock against the original source, then extend guidance
-to any newly demonstrated failures. Preserve the separate four-track
+now pass the native limits on one declared seven-track candidate, whose complete
+geometry evaluation rejects 67 local containment-depth regressions. Next extend
+guidance to those approach/withdrawal witnesses in both containment directions,
+retain contact-time separation and native caps, and re-evaluate the complete
+clock after any promising correction. Preserve the separate four-track
 baseline and all failed trials. Complete-clock geometry, support and every
 other acceptance requirement remain mandatory. Then integrate validated proposal state with recovery and
 continue different rigs/actions, partner, engine and human-review evaluation.
