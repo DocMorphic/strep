@@ -4,10 +4,40 @@ The Python shard runner now prints each test name with unbuffered output and
 reports the twenty slowest durations after pytest finishes. This makes retained
 CI logs more useful when a long geometry check reaches its job limit. Test
 selection, sharding, assertions, skip policy and time limits are unchanged; the
-extra logging does not establish a speed improvement or a passing run. All nine
-existing runner checks pass, covering complete shard selection, list-only mode,
+extra logging does not establish a speed improvement or a passing run. All ten
+runner checks pass, covering complete shard selection, list-only mode,
 invalid inventories and propagation of a child failure. This focused check
 imports neither NumPy nor Torch and does not rerun the numerical suites.
+
+## Full-source timeout and eight-shard follow-up (2026-10-21)
+
+[Run 39609660747](https://github.com/DocMorphic/strep/actions/runs/39609660747)
+at `d83f474` completed with **eleven successful jobs and one Windows timeout**.
+All four Linux core shards passed: 12,849 tests, ten skips and 70 passing
+subtests. The Linux shard with the longest pytest runtime took 5,069.48 seconds
+(84 minutes 29 seconds). Adapter, material-package and Node checks also passed
+on both systems; their coverage is not added to the core Python total.
+
+Windows shard 2 was interrupted by the 90-minute job limit after reporting
+2,559 passing tests in 5,356.92 seconds. The other three Windows core shards
+passed. GitHub's retained annotation explicitly identifies the execution-time
+limit. This is an incomplete Windows run and an incomplete full workflow,
+not a passing result or proof that the remaining tests would pass.
+
+The workflow now partitions the same 630 declared Python modules into eight
+shards per operating system, with 78 or 79 modules each. It retains the
+90-minute limit, all assertions, both operating systems, and all 49 Node suites
+(run once per system). The new regression reads the workflow's actual shard
+indices and dispatch count and verifies every declared module appears exactly
+once. It passes with the other nine runner checks. The complete new hosted run
+still requires its own outcome; a module-count split is not a measured runtime
+balance. No geometry, inference, engine or human-quality approval follows from
+this change.
+
+All twelve job logs, terminal metadata, timeout annotations and source inventory
+are retained with file hashes under `reports/full-source-ci-d83f474-v1`.
+
+## Earlier completed source runs
 
 The complete [workflow at `8d07889`](https://github.com/DocMorphic/strep/actions/runs/38183110002)
 passes all twelve Windows/Linux jobs with its **468-Python-module/42-Node-suite**

@@ -1,5 +1,6 @@
 """Explicit focused inventory selection and complete portable shard dispatch."""
-import json,sys,subprocess
+import json,sys,subprocess,re
+from collections import Counter
 from pathlib import Path
 from types import SimpleNamespace
 import pytest
@@ -25,6 +26,19 @@ def test_focused_list_does_not_execute_tests(capsys,monkeypatch):
 def test_default_still_selects_whole_inventory(capsys):
     assert runner.run('python',0,4,list_only=True)==0
     data=json.loads(capsys.readouterr().out);assert data['tests']==runner.inventory()['python_tests'][0::4]
+
+
+def test_public_workflow_covers_each_declared_module_once():
+    workflow=(runner.ROOT/'.github/workflows/source-checks.yml').read_text()
+    job=workflow.split('\n  source-checks:\n',1)[1]
+    indices=json.loads(re.search(r'^\s+shard: (\[[^\n]+\])$',job,re.M).group(1))
+    counts=re.findall(r'--shard-count (\d+)',job)
+    assert len(counts)==1
+    count=int(counts[0]);assert indices==list(range(count))
+    names=runner.inventory()['python_tests']
+    shards=[runner.partition(names,i,count) for i in indices]
+    assert all(shards)
+    assert Counter(name for shard in shards for name in shard)==Counter(names)
 
 
 def test_execution_uses_only_selected_shard_and_propagates_failure(monkeypatch):

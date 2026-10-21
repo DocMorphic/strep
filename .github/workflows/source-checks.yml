@@ -86,7 +86,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        shard: [0, 1, 2, 3]
+        # Four shards exceeded 90 minutes on Windows at d83f474.
+        # Keep every declared module while reducing each shard's workload.
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     env:
@@ -118,7 +120,7 @@ jobs:
         run: npm ci --ignore-scripts --prefix assets/viewer
       - name: Verify geometry, contact certificates and Studio build
         run: >-
-          python scripts/run_source_checks.py --shard-index ${{ matrix.shard }} --shard-count 4
+          python scripts/run_source_checks.py --shard-index ${{ matrix.shard }} --shard-count 8
       - name: Verify contact editor workflows without a browser
         if: matrix.shard == 0
         run: python scripts/run_source_checks.py --mode node
