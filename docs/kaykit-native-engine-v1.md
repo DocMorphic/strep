@@ -230,3 +230,30 @@ constraints, then repeat serialized and engine checks. Keep this geometrically
 passing but temporally rejected candidate as evidence, not as a new default.
 This study does not approve self-collision, balance, continuous-time geometry,
 anatomical motion, an auxiliary-root fix, animator cleanup or release readiness.
+
+## Temporal follow-up
+
+The first temporal trial uses one constant source-relative local rotation offset
+for each of the six edited joints: 18 parameters shared across the whole wave
+clip. It includes the original movement/support bounds and both original-bin and
+absolute peak rate inequalities in the search. Full-weight skin evaluation is
+batched by influencing joint and checked against scalar decoded geometry; no
+vertices or positive influences are dropped to reduce memory.
+
+The optimizer terminates without a feasible result. The retained candidate has
+1.749524 mm sampled floor penetration and fails the support/edit conditions and
+both rate comparisons. Independent scalar replay covers all 701 times, matches
+the stored floor track exactly, and records every violation. The candidate stays
+unselected. This is a failed local search, not proof that no correction exists
+within the original bounds. Evidence is `reports/kaykit-wave-temporal-v1/`;
+proposal and replay resource traces contain 78 and 31 observations.
+
+The next, separately versioned trial in `reports/kaykit-wave-temporal-v2/`
+uses three Bernstein rotation-vector controls per joint, evaluated through the
+original native-key interpolation. It also declares fixed horizontal support
+targets: each foot's first-pose near-sole vertex centroid is anchored to its
+mean source position over the audit clock, with 3 mm horizontal tolerance.
+The request retains all previous movement and rate limits. A search-only
+restoration slack helps explore infeasible seeds; final acceptance must check
+the original inequalities without slack. Results of this trial are pending,
+and this description does not establish a repaired clip or a production default.

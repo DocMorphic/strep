@@ -60,6 +60,15 @@ workflow's totals. The full-source workflow at this revision subsequently
 completed as reported above. Neither workflow establishes inference, actual-engine playback,
 realistic motion, human review or release approval.
 
+The subsequent [run 39635539173](https://github.com/DocMorphic/strep/actions/runs/39635539173)
+at `2b7f77e` also completes all eight focused jobs. Each operating system reports
+2,165 and 2,128 contact-rig passes, with 33 passing subtests, plus the separate
+35 lineage and 32 game-package passes. Complete logs and exact run/source
+metadata are retained with SHA-256 receipts in
+`reports/contact-rig-ci-2b7f77e-v1/`. This result covers that revision, not later
+mapping-diagnostic changes. The separate full-source run at `2b7f77e` still
+requires its own terminal outcome; these focused totals do not replace it.
+
 ## Early rejection of invalid transition claims
 
 The completed Linux core logs at `08477e0` report 12,850 passing tests,
