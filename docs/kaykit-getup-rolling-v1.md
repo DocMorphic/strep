@@ -180,6 +180,53 @@ for insufficient memory. The engine result SHA-256 is
 `fbb0855e73050e281f3887f81dee1a4cc6c6719265c3854b4b630c1e56091f46`.
 The receipt is `reports/kaykit-getup-rolling-publication-v3/summary.json`.
 
+## Reopening the approach resolves the next contact
+
+The next experiment explicitly reopens keys 74–77 and jointly solves keys
+73–78. Key 73 stays fixed, and serialization preserves every unselected key,
+including the entire earlier prefix. All original contact phases, targets,
+correction budgets and step limits remain unchanged. This is a development
+study; automatic backtracking is not yet integrated into the Studio workflow.
+
+The first six-key run, `reports/kaykit-getup-backtrack-v1`, is rejected after
+three 40-iteration passes. Its decoded floor/contact samples pass, but root
+and rotation correction steps still exceed the limits. Its candidate is kept
+as failed evidence. A separate run,
+`reports/kaykit-getup-backtrack-warm-v1`, compares that failed candidate against
+the original, hold and velocity seeds. It selects the failed candidate only as
+an initialization, then refines it with the unchanged acceptance checks. The
+result passes: local maximum floor depth 4.376569 mm, contact error 19.019899 mm,
+root correction step 24.991299 mm and rotation correction step 4.999759 degrees.
+The prepared deterministic step-projection fallback was not run or needed.
+
+The new saved state finalizes keys 0–77 and validates key 78 as lookahead:
+79 of 180 poses. All 3,101 full-prefix samples pass; the prefix's worst values
+remain 4.740287 mm floor depth, 19.756263 mm contact error, 24.997139 mm root
+correction step and 4.999863 degrees rotation correction step. Candidate SHA-256:
+`4d5ed66dfc35ea42add4de4f3995a1a4b865f953543efd20d95f65c2f502a5b5`.
+
+`reports/kaykit-getup-backtrack-warm-engine-v1` reconstructs the prefix clock
+independently and verifies all 3,101 samples in eight Godot batches, totaling
+3,116 observations with the required batch endpoints. Floor/contact checks and
+pose/skin agreement all pass; maximum skin disagreement is 0.029540 mm. Engine
+result SHA-256:
+`80476b230b897c39ff499cae68916d29d9666a699df46c42a0613234abf2d6da`.
+
+Forty existing exporter, coupled-window and interpolation tests pass in each
+fitting run. Three new regressions check three-, six- and eight-pose windows
+against independently interpolated native skin positions and derivatives in
+every pose's parameter block; incorrect later-interval endpoint bindings must
+reject. Those tests pass and are included in both CI inventories (647 full and
+196 focused Python files). Across the two fitting runs, engine verification and
+new test run, 967 resource observations replay, with peak worker-tree memory
+346,902,528 bytes. Publication checks are retained in
+`reports/kaykit-getup-backtrack-publication-v1/summary.json`.
+
+Continue from the warm run's state at key 77. Reopened keys supersede their old
+values only in the new candidate; original checkpoints and failed studies stay
+unchanged. The remaining clip, human review and broader release gates are still
+unfinished.
+
 ## Scope
 
 These checks cover sampled floor/contact geometry, correction bounds,

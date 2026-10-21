@@ -1,6 +1,7 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_surface_pose_long_window.py",
     "tests/test_surface_pose_key_export.py",
     "tests/test_surface_pose_interpolation.py",
     "tests/test_surface_pose_window.py",
