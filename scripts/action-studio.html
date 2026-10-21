@@ -679,6 +679,8 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
 <label><input id="meshCharacterStart" type="checkbox"> Allow the start pose to change for all selected characters</label>
 <label><input id="meshCharacterEnd" type="checkbox"> Allow the end pose to change for all selected characters</label>
 <label><input id="meshCharacterAck" type="checkbox"> I will review starts, ends and transitions if I allow clip-edge edits</label>
+<label>Processing time limit <select id="meshCharacterTimeLimit"><option value="900">15 minutes</option><option value="1800">30 minutes</option><option value="3600" selected>60 minutes</option></select></label>
+<p>Detailed character and object checks can take longer on a CPU. This is a maximum, not an estimate. Longer time keeps the same memory guard, accuracy checks and edit bounds; it does not guarantee a usable correction.</p>
 <button id="meshCharacterBuild" type="button" class="btn primary">Correct saved object contacts</button>
 <label>Correction job <input id="meshCharacterJob" maxlength="32"></label>
 <button id="meshCharacterReview" type="button" class="btn">Refresh correction</button>
