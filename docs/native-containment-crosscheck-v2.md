@@ -50,7 +50,7 @@ with new observations. Preserve it as historical evidence; fresh v2 validation
 must establish its own complete population. Older archived v1 outputs remain
 available with their original implementation snapshots and recorded failures.
 
-## Completed source checks and pending complete-clock study
+## Completed source and complete-clock checks
 
 The initial guarded source run passes 126 tests in 261.22 seconds; all 286
 resource observations replay. The retained failing frame is byte-identical
@@ -66,9 +66,19 @@ journal recovery. The 12,426-byte generated witness is retained in
 character data. Existing first-run test functions and production sources
 remain unchanged; the later run additionally covers that permanent witness.
 
-A separate study is running two fresh evaluations of every one of the saved
-transition candidate's 1,673 declared times. Its complete report and archive
-comparison is still pending. Direct and Studio transition workflows can be
+Two fresh evaluations of all 1,673 declared times of the saved transition
+candidate completed in 216.18 and 217.34 seconds. Their complete JSON reports
+and observation archives are byte-identical, with random generation forbidden
+and original inputs unchanged. All 470 resource observations replay. Both
+evaluations retain failed sampled geometry; this establishes reproducibility,
+not motion acceptance. The old candidate and old observations remain intact.
+
+The [focused containment run](https://github.com/DocMorphic/strep/actions/runs/39603350403)
+at `33aaacc` passes 34 tests on Ubuntu (0.87 s) and Windows
+(1.22 s). The
+[direct correction](https://github.com/DocMorphic/strep/actions/runs/39603353868)
+and [Studio correction](https://github.com/DocMorphic/strep/actions/runs/39603357934)
+workflows are still in progress, not claimed successful. They can be
 selected in focused both-OS CI with a 60-minute limit because the retained
 setup alone took over 14 minutes locally and later tests replay full clips.
 Other focused CI jobs retain 15 minutes. Local numerical studies retain the
