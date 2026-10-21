@@ -18,6 +18,7 @@ from native_scene_fit import SceneProblem, METHODS as FIT_METHODS
 from native_scene_norms import linearize
 from native_surface_model import include_times
 from native_mesh_floor_guard import add_floor_guards
+from native_mesh_character_surface import collect as collect_surface, add_guards as add_surface_guards
 from native_scene_conic import direction, solver_identity
 from native_contact_norms import protect_rows, row_regression
 from native_mesh_prop_pose import conditions, metrics
@@ -27,7 +28,8 @@ from engine_contact_sampling import frame_populations
 from strep import read, save, sha256
 
 METHODS = tuple(sorted(set(MESH_METHODS) | set(FIT_METHODS) |
-                       {'native_mesh_character_fit.py', 'native_mesh_prop_pose.py', 'native_mesh_floor_guard.py'}))
+                       {'native_mesh_character_fit.py', 'native_mesh_prop_pose.py', 'native_mesh_floor_guard.py',
+                        'native_mesh_character_surface.py','native_triangle_pair_projection.py','native_surface_lift.py'}))
 
 
 class MeshCharacterProblem(SceneProblem):
@@ -155,8 +157,9 @@ def audit_geometry(scene, policy, folder, *, checkpoint_geometry=False):
     return report
 
 
-def fit(permissions_path, policy_path, output, *, iterations=4, trust=.02, backtracks=8, checkpoint_geometry=False):
+def fit(permissions_path, policy_path, output, *, iterations=4, trust=.02, backtracks=8, checkpoint_geometry=False, surface_guidance=False):
     if type(checkpoint_geometry) is not bool:raise ValueError('Explicit geometry checkpoint choice required')
+    if type(surface_guidance) is not bool:raise ValueError('Explicit surface guidance choice required')
     if type(iterations) is not int or not 1 <= iterations <= 16 or type(backtracks) is not int or not 1 <= backtracks <= 12:
         raise ValueError('Choose 1-16 iterations and 1-12 backtracks')
     if type(trust) not in (int, float) or not np.isfinite(trust) or not 0 < trust <= .25:
@@ -180,7 +183,7 @@ def fit(permissions_path, policy_path, output, *, iterations=4, trust=.02, backt
     bindings = {**problem.inputs, str(policy_path): policy_digest}
     save(output/'input.json', dict(schema='strep-native-mesh-character-fit-v1', inputs_sha256=bindings,
          implementation_sha256=methods, solver=solver_identity(), iterations=iterations, trust=trust, backtracks=backtracks,
-         checkpoint_geometry=checkpoint_geometry,
+         checkpoint_geometry=checkpoint_geometry,surface_guidance=surface_guidance,
          source_rows=problem.protected_rows, contact_clock_s=problem.times.tolist(), geometry_clock_s=geometry_times.tolist(),
          props_editable=False, source_rebased=False, original_selected=True, quality_approved=False))
     value = problem.initial.copy(); history = []; probes = []
@@ -188,6 +191,11 @@ def fit(permissions_path, policy_path, output, *, iterations=4, trust=.02, backt
     source_contacts, arrays = problem.mesh.contact_audit(); save(source_folder/'contacts.json', source_contacts)
     np.savez_compressed(source_folder/'contact-observations.npz', **arrays)
     geometry = audit_geometry(problem.mesh, policy, source_folder,checkpoint_geometry=checkpoint_geometry)
+    surface_bank={};floor_bank={}
+    if surface_guidance:
+        collect_surface(problem.mesh,policy,geometry,surface_bank,floor_bank=floor_bank)
+        save(output/'surface-witnesses.json',list(surface_bank.values()))
+        save(output/'floor-witnesses.json',list(floor_bank.values()))
     original_conditions = conditions(geometry); current_conditions = original_conditions.copy()
     current_metrics = metrics(geometry)
     current = problem.model(value); worlds = problem.source_world
@@ -201,9 +209,14 @@ def fit(permissions_path, policy_path, output, *, iterations=4, trust=.02, backt
             difference_source='continuous', base_worlds=worlds, difference_scheme='central')
         np.testing.assert_allclose(system.residual(), current, atol=1e-9, rtol=1e-12)
         guarded, derivative, guard = protect_rows(system, jacobian, problem.protected_rows, current[problem.protected_rows:])
-        guarded,derivative,hard,floor=add_floor_guards(problem,value,worlds,policy,geometry,guarded,derivative,guard['hard_rows'],trust)
+        guarded,derivative,hard,floor=add_floor_guards(problem,value,worlds,policy,geometry,guarded,derivative,guard['hard_rows'],trust,
+            additional_witnesses=list(floor_bank.values()))
+        previous_surface_count=len(surface_bank)+len(floor_bank)
+        if surface_guidance:
+            guarded,derivative,hard,surface=add_surface_guards(problem,value,worlds,surface_bank,guarded,derivative,hard,trust)
         delta, solver = direction(guarded, derivative, value, problem.lower, problem.upper, trust, hard_rows=hard)
         record = dict(iteration=iteration, differences=differences, solver=solver, contact_protection=guard, floor_protection=floor, accepted_probe=None)
+        if surface_guidance:record['surface_protection']=surface
         if delta is None:
             history.append(record); stop = 'no_guarded_direction'; break
         for backoff in range(backtracks):
@@ -222,6 +235,10 @@ def fit(permissions_path, policy_path, output, *, iterations=4, trust=.02, backt
             row['all_declared_point_contacts_pass'] = contact['all_declared_point_contacts_pass']
             if source_pass and edit_pass and contact_protected and improved:
                 checked = audit_geometry(candidate, policy, folder,checkpoint_geometry=checkpoint_geometry); flags = conditions(checked); measure = metrics(checked)
+                if surface_guidance:
+                    row['surface_guidance_observation']=collect_surface(candidate,policy,checked,surface_bank,floor_bank=floor_bank)
+                    save(output/'surface-witnesses.json',list(surface_bank.values()))
+                    save(output/'floor-witnesses.json',list(floor_bank.values()))
                 if flags.keys() != original_conditions.keys(): raise ValueError('Geometry condition population changed')
                 no_new = not any(current_conditions[k] and not flags[k] for k in flags)
                 no_worse = all(measure[k] <= current_metrics[k] for k in measure)
@@ -236,6 +253,8 @@ def fit(permissions_path, policy_path, output, *, iterations=4, trust=.02, backt
             if row['accepted']: break
         history.append(record); save(output/'history.json', history)
         if record['accepted_probe'] is None:
+            if surface_guidance and len(surface_bank)+len(floor_bank)>previous_surface_count:
+                stop='surface_guidance_iteration_limit';continue
             stop = 'no_decoded_nonregressing_step'; break
     save(output/'history.json', history)
     if np.all(current <= 0):
@@ -251,6 +270,9 @@ def fit(permissions_path, policy_path, output, *, iterations=4, trust=.02, backt
                   source_rebased=False, props_changed=False, original_selected=True,checkpoint_geometry=checkpoint_geometry,
                   engine_verified=False, quality_approved=False, release_approved=False,
                   scope='Existing authorized character tracks only; fixed original bounds and source rates, all authored point contacts, every declared geometry time and original mesh triangles. Rebuilt worst-vertex floor witnesses guide the step; complete decoded geometry decides acceptance. Nonregressing accepted steps remain diagnostic candidates. No mesh-collision-directed search, prop fitting, continuous collision, dynamics, semantic or animator approval.')
+    if surface_guidance:
+        result.update(surface_guidance=True,surface_triangle_time_pairs=len(surface_bank),retained_floor_vertex_time_pairs=len(floor_bank),
+            scope='Bounded character proposals with rebuilt actor/mesh-prop triangle directions and floor vertices from complete current and rejected geometry reports. All original source/edit/contact protections and complete decoded geometry acceptance remain. No prop edits, partner/containment-directed search, continuous collision, dynamics, semantic or animator approval.')
     save(output/'result.json', result); return result
 
 
@@ -262,16 +284,17 @@ if __name__ == '__main__':
     parser.add_argument('--backtracks', type=int, default=8)
     parser.add_argument('--checkpoint-geometry',action='store_true',
         help='Retain complete geometry frames with indexed observations. Does not resume optimizer state.')
+    parser.add_argument('--surface-guidance',action='store_true',help='Guide character proposals with retained actor/prop triangle pairs; decoded geometry still decides acceptance.')
     parser.add_argument('--worker', action='store_true'); args=parser.parse_args()
     if args.worker:
         from action_worker_lock import worker_lock
         from threadpoolctl import threadpool_limits
-        with worker_lock(), threadpool_limits(limits=1): print(fit(args.permissions, args.policy, args.output, iterations=args.iterations, trust=args.trust, backtracks=args.backtracks,checkpoint_geometry=args.checkpoint_geometry))
+        with worker_lock(), threadpool_limits(limits=1): print(fit(args.permissions, args.policy, args.output, iterations=args.iterations, trust=args.trust, backtracks=args.backtracks,checkpoint_geometry=args.checkpoint_geometry,surface_guidance=args.surface_guidance))
     else:
         from resource_admission import ResourcePolicy
         from run_guarded_job import run
         from audit_guarded_job import audit
         output=guarded_output(args.output)
         result=run(Path(__file__),output/'guard',ResourcePolicy(expected_rss_bytes=512*1024**2,max_tree_rss_bytes=512*1024**2,
-            stable_seconds=15,admission_seconds=600,max_seconds=900),worker_args=[str(args.permissions.resolve()),str(args.policy.resolve()),str(output/'fit'),'--iterations',str(args.iterations),'--trust',str(args.trust),'--backtracks',str(args.backtracks),'--worker']+(['--checkpoint-geometry'] if args.checkpoint_geometry else []))
+            stable_seconds=15,admission_seconds=600,max_seconds=900),worker_args=[str(args.permissions.resolve()),str(args.policy.resolve()),str(output/'fit'),'--iterations',str(args.iterations),'--trust',str(args.trust),'--backtracks',str(args.backtracks),'--worker']+(['--checkpoint-geometry'] if args.checkpoint_geometry else [])+(['--surface-guidance'] if args.surface_guidance else []))
         save(output/'resource-replay.json',audit(output/'guard'));raise SystemExit({'complete':0,'failed':1,'deferred':2}[result['status']])

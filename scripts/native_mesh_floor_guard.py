@@ -9,12 +9,19 @@ from native_scene_norms import NormRows
 from native_surface_lift import lift
 
 
-def add_floor_guards(problem, value, worlds, policy, geometry, system, jacobian, hard_rows, trust):
+def add_floor_guards(problem, value, worlds, policy, geometry, system, jacobian, hard_rows, trust, *, additional_witnesses=()):
     records=[];caps={}
     for sample in geometry['samples']:
         for row in sample['base_scene']['world_planes']:
             key=(row['actor'],row['plane']);caps[key]=max(caps.get(key,0.),row['maximum_depth_m'])
             records.append((row['actor'],row['plane'],sample['time_s'],row['peak_vertex']))
+    population={(a,p,t) for a,p,t,_ in records};seen=set(records)
+    for row in additional_witnesses:
+        record=(row['actor'],row['plane'],row['time_s'],row['vertex']);actor,plane,time,vertex=record
+        if ((actor,plane,time) not in population or type(vertex) is not int
+            or not 0<=vertex<sum(len(p['positions']) for p in problem.scene.actors[actor]['rig'].primitives)):
+            raise ValueError('Retained floor witness must belong to the original actor/plane/time population')
+        if record not in seen:records.append(record);seen.add(record)
     if not records:
         return system,jacobian,hard_rows,dict(rows=0,complete_declared_geometry_clock=True)
     if len(records)>100000 or len(records)*problem.size>16_000_000:
