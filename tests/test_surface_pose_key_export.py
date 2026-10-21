@@ -6,7 +6,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from surface_pose_key_export import replace_keys
 from rig_asset import RigAsset
 from native_support_clock import NativeSupportSampler
-from gltf_tools import write_glb
+from gltf_tools import append_accessor,write_glb
 from test_native_support import fixture
 
 
@@ -53,3 +53,20 @@ def test_existing_output_and_nonfinite_controls_rejected(tmp_path):
     with pytest.raises(FileExistsError):edit(source,source,out,{1:np.zeros(12)},0)
     assert out.read_bytes()==b'keep'
     with pytest.raises(ValueError):edit(source,source,tmp_path/'bad.glb',{1:np.full(12,np.nan)},0)
+
+
+@pytest.mark.parametrize('table',['accessors','bufferViews'])
+def test_original_bind_data_cannot_be_redirected_into_appended_bytes(tmp_path,table):
+    _,source,_,_=fixture(tmp_path);doc=copy.deepcopy(source.document);binary=bytearray(source.binary)
+    inverse=source.inverse.copy();inverse[:,0,3]+=.05
+    added=append_accessor(doc,binary,inverse.transpose(0,2,1).reshape(-1,16),'MAT4')
+    original=doc['skins'][0]['inverseBindMatrices'];replacement=doc['accessors'][added]['bufferView']
+    if table=='accessors':doc['accessors'][original]['bufferView']=replacement
+    else:doc['bufferViews'][doc['accessors'][original]['bufferView']]=copy.deepcopy(doc['bufferViews'][replacement])
+    altered=tmp_path/'redirected.glb';write_glb(altered,doc,binary);current=RigAsset.load(altered)
+    assert current.binary[:len(source.binary)]==source.binary
+    assert not np.allclose(current.vertices(current.reference),source.vertices(source.reference))
+    out=tmp_path/'bad.glb'
+    with pytest.raises(ValueError,match='Original accessor and buffer-view'):
+        edit(source,current,out,{2:np.zeros(12)},0)
+    assert not out.exists()

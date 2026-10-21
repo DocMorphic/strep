@@ -21,10 +21,14 @@ def replace_keys(source,current,*,root,rotations,edits,preserve_through,output,a
     if (type(animation_index) is not int or animation_index<0 or not isinstance(edits,dict) or not edits
             or any(type(f) is not int for f in edits) or type(preserve_through) is not int):
         raise ValueError('Explicit selected animation, native key edits and prefix index required')
-    before=NativeSupportSampler(source.document,source.binary,animation_index)
-    previous=NativeSupportSampler(current.document,current.binary,animation_index)
     if current.binary[:len(source.binary)]!=source.binary:
         raise ValueError('Current asset must preserve the original binary prefix')
+    for table in ('accessors','bufferViews'):
+        original=source.document.get(table,[])
+        if current.document.get(table,[])[:len(original)]!=original:
+            raise ValueError('Original accessor and buffer-view definitions must remain unchanged')
+    before=NativeSupportSampler(source.document,source.binary,animation_index)
+    previous=NativeSupportSampler(current.document,current.binary,animation_index)
     allowed={'buffers','bufferViews','accessors','animations','extras'}
     if {k:v for k,v in source.document.items() if k not in allowed}!={k:v for k,v in current.document.items() if k not in allowed}:
         raise ValueError('Original asset geometry, scene and node definitions must remain unchanged')

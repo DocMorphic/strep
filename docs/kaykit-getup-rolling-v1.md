@@ -11,16 +11,26 @@ cleanup evidence remain outstanding.
 `scripts/surface_pose_key_export.py` writes explicit native key edits after a
 declared preserved prefix. It checks the original binary prefix, asset and
 channel layout, common clocks, LINEAR interpolation, complete finite controls,
-and all unchanged key values after serialization. Rotation channels that share
+and all unchanged key values after serialization. Original accessor and
+buffer-view definitions must also be retained; appended animation data can use
+new definitions. Rotation channels that share
 a sampler are split when edited. Each output rebases on the immutable source
 while retaining current values outside the selected keys, so repeated exports
 do not continually append old correction buffers. The whole mesh at each
 changed key must agree with the requested pose within 10 micrometres.
 
-The 11 focused tests cover prefix pose preservation, shared samplers, repeated
+The initial 11 focused tests cover prefix pose preservation, shared samplers, repeated
 buffer size, incompatible assets and clocks, invalid key indices, existing
 outputs and nonfinite edits. They passed. The two CI inventories include the
 test file; the full CI suites were not rerun for this change.
+
+Two later regression cases close a metadata-redirection gap: preserving the
+original bytes alone did not prevent a current file from redirecting an original
+inverse-bind accessor or buffer view into newly appended data. Both fixtures
+retain the original byte prefix while moving the bound mesh by 50 mm. The
+exporter now rejects either redirection before creating an output. All 13
+focused tests pass. Existing valid append-only exports remain supported; the
+saved development checkpoint is rechecked before continuing with this version.
 
 ## Rolling protocol
 
@@ -110,6 +120,33 @@ the next window begins at key 34. Do not rerun an existing report directory or
 overwrite its accepted or rejected outputs.
 
 ## Scope
+
+The third fitting run uses the metadata-integrity guard and freshly runs all 13
+exporter tests. It independently rechecks the previous 36-pose prefix, accepts
+all 14 attempted new windows, and checkpoints after 647.532 seconds. Keys 0–48
+are finalized, with key 49 validated as lookahead: 50 of 180 poses. The prefix
+includes the first hand-contact boundary and passes all 1,946 required sampled
+checks. Maximum floor/contact errors remain 4.740287/19.756263 mm; maximum root
+and rotation correction steps are 24.995616 mm and 4.999697 degrees.
+
+`reports/kaykit-getup-rolling-engine-v3` independently reconstructs the clock
+and verifies all prefix observations in Godot: five batches, 1,955 engine
+observations, passing floor/contact and pose/skin agreement, with maximum skin
+disagreement 0.024898 mm. These two new resource traces replay across 721
+observations, with peak worker-tree memory 305,926,144 bytes. Historical studies
+retain their original source versions; their receipts are not rewritten.
+
+The third fitted result SHA-256 is
+`4c4bb0fca28f979785080a1903abac35d17659716dd84ca5f973be26b4c73587`;
+the engine result SHA-256 is
+`c40dcb6773046a4cc766f23f1267cfaea8c4b9343656a68ba9aceb6df59d3a78`.
+Resume in a fresh report from `reports/kaykit-getup-rolling-v3/state.json`,
+starting at key 48. The rest of the animation remains unapproved.
+
+Broader hosted tests on `89f6d29` exposed six clock-consistency failures in
+timed rotation sampling, scene-edit interpolation and vertical-root interpolation.
+Those failures are separate from this independently decoded prefix result and
+must be repaired; this study does not claim full-suite success.
 
 These checks cover sampled floor/contact geometry, correction bounds,
 correction step bounds, serialization and engine agreement. They do not prove
