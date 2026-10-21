@@ -12,43 +12,26 @@ Extract the complete ZIP, run `python serve.py` (or `py -3 serve.py` on Windows)
 
 ## Windows walkthrough for the crawl comparison
 
-The latest edition, including the saved-timer validation fix, is
-`C:\wassup\strep\reports\crawl-native-developer-review-timer-v1\crawl-developer-review.zip`.
-Extract it completely and double-click **Start Review.cmd**. It preserves the
-same two clips and review identity. The older launcher edition below remains
-available; both use the same startup steps. See
-[timer validation evidence](cleanup-timing-v1.md#restored-timer-validation-2026-10-21).
+Use the latest local packet, which includes the saved-timer validation fix.
+Python 3 and a browser with WebGL are required. These files are generated local
+outputs, not included in a fresh GitHub clone.
 
-The launcher edition is in
-`C:\wassup\strep\reports\crawl-native-developer-review-launcher-v1\crawl-developer-review.zip`.
-Right-click the ZIP, choose **Extract All**, then open the extracted folder and
-double-click **Start Review.cmd**. It starts the local viewer and opens your
-default browser. Leave its command window open while reviewing; Ctrl+C stops it.
-Python 3 and a browser with WebGL are still required. The launcher reports a
-missing Python installation or occupied port. If the browser does not open,
-copy the printed address into it.
-
-This edition retains the exact original manifest, both clips, viewer and runtime.
-Use the same browser profile and port as before to find saved ratings; changing
-ports creates a separate browser-storage location. Export existing reviews before
-switching. It supplies no new scores or animation-quality approval. All 520 ZIP
-members were checked against their file hashes; the original packet is unchanged.
-
-The manual steps below also work with the earlier packet:
-
-1. In File Explorer, open `C:\wassup\strep\reports\crawl-native-developer-review-v2`.
+1. Press **Windows+E** to open File Explorer. Paste
+   `C:\wassup\strep\reports\crawl-native-developer-review-timer-v1`
+   into its address bar and press Enter.
 2. Right-click `crawl-developer-review.zip`, choose **Extract All**, and extract
    the complete archive to a new folder. Open the extracted folder containing
-   `serve.py`, `viewer.html`, `manifest.json`, `clips` and `runtime`.
-3. Click File Explorer's address bar, type `powershell`, and press Enter.
-   In that window, enter `py -3 serve.py`. Leave the window open during review.
-4. Open `http://127.0.0.1:8771/viewer.html` in your browser. Opening the HTML
-   file by double-clicking does not start the viewer correctly. If the server
-   reports an occupied port, run `py -3 serve.py --port 8772` and open
-   `http://127.0.0.1:8772/viewer.html` instead.
+   `Start Review.cmd`, `serve.py`, `viewer.html`, `clips` and `runtime`.
+3. Double-click **Start Review.cmd**. Leave its command window open while
+   reviewing; it serves the files locally and opens your default browser.
+4. If the browser does not open, copy the printed address into it. The default is
+   `http://127.0.0.1:8771/viewer.html`. This address works only while the launcher
+   is running. Do not double-click `viewer.html` to launch the review.
 5. Enter a reviewer identifier and check the human developer-review attestation.
    Select a clip and watch its complete motion at normal speed before scoring.
    Use **Play**, **Restart** and the timeline; drag to orbit and scroll to zoom.
+   Click **Fit clip** if the character moves out of view. Use **Front** and
+   **Side** to compare viewpoints and keep **Ground grid** visible for contact.
    Inspect the crawl's floor contact, supporting hands and knees, torso movement,
    limb intersections and any sudden changes. Compare each labeled condition
    independently; a correction is allowed to look worse.
@@ -57,9 +40,24 @@ The manual steps below also work with the earlier packet:
    Leave cleanup **Not performed** unless you actually edit the downloaded clip.
    Click **Save this review**, then select the next clip and repeat.
 7. Click **Export saved reviews**. Keep the downloaded JSON file and return it
-   to the organizer for import. The viewer does not upload it. A partial export
-   is allowed; its saved-review count shows what remains. Press Ctrl+C in the
-   PowerShell window after finishing.
+   to the organizer for import. The viewer does not upload it.
+   A partial export is allowed; its saved-review
+   count shows what remains. Press Ctrl+C in the launcher's command window after
+   finishing.
+
+If the launcher reports an occupied port, first close the earlier review server
+with Ctrl+C. Alternatively, open PowerShell in the extracted folder by typing
+`powershell` in File Explorer's address bar, then run
+`py -3 serve.py --port 8772 --open`. Use the same browser profile and port when
+returning to saved ratings; changing either can make those ratings unavailable
+in the current page. Export existing reviews before switching.
+
+The earlier `crawl-native-developer-review-v2` and
+`crawl-native-developer-review-launcher-v1` folders remain preserved. The latest
+packet retains their original two clips, manifest and review identity; only the
+timer module and integrity record differ from the launcher edition. All 520 ZIP
+members were verified. See
+[timer validation evidence](cleanup-timing-v1.md#restored-timer-validation-2026-10-21).
 
 These steps use the existing local crawl packet. They do not start the Studio
 server, run the motion model or convert developer feedback into independent
