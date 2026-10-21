@@ -450,3 +450,41 @@ Kimodo, preserving raw, corrected and retargeted results and failures. Keep
 held-out release prompts reserved and apply the existing contact, geometry,
 transition, engine-import and human-review requirements. No model switch,
 training admission, quality approval or release-gate change follows this screen.
+
+## 2026-10-21: KayKit Skeleton Minion development rig acquisition
+
+The [creator's Skeletons page](https://kaylousberg.itch.io/kaykit-skeletons)
+and the repository's pinned
+[license](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0/blob/15b62b9bad122f72926c10fb14d622c73819fa54/LICENSE.txt)
+identify Kay Lousberg as creator/distributor and specify CC0. Acquired only the
+original Skeleton Minion GLB, license and README from repository revision
+`15b62b9bad122f72926c10fb14d622c73819fa54`. Each download matches its pinned Git
+blob identity and has a separate SHA-256 receipt. No third-party code was run.
+
+The unchanged 4,814,296-byte GLB has SHA-256
+`6ffc003f895bed0b074791e0e490846210a2e2f8fc7da300aba53cc185f95968`.
+Container/JSON metadata reports 51 nodes, one 41-joint skin, nine triangle mesh
+instances, 4,858 instance vertices and 5,288 indexed triangles. All buffers and
+images are embedded. No morph targets, sparse accessors or declared extensions
+appear in the inspected metadata. It contains 95 existing animations, with
+10,807 LINEAR samplers and translation, rotation and scale channels. Their
+numerical values and compatibility have not been evaluated. Preserve these
+animations in subsequent target-rig work; acquisition is not motion generation.
+
+A development profile proposes 18 existing humanoid roles with zero world
+offset. Names are unique, each role is a skin joint and mapped parent chains
+match Strep's current role contract. The two wrist helpers remain intermediate
+nodes; the optional neck role is absent. This metadata check does not establish
+anatomical axes, positive bone lengths, numerical intake or correct skinning.
+Default-node scales contain small deviations from one; actual rigid-transform
+intake, rather than metadata rounding or silent normalization, must decide
+compatibility. The profile and original asset remain unmodified development
+inputs for that next check.
+
+Evidence is retained locally under `reports/kaykit-skeletons-source-v1/`:
+`acquisition.json`, `metadata.json`, `nodes.json`, `development-profile.json`
+and `profile-check.json`. No numerical worker, model, training, transfer or
+engine job ran for this screen. This adds a distinct source package and mesh
+layout to development intake; rig-family independence and generalization remain
+unproven. Existing frozen held-out reservations and release gates are unchanged.
+Raw asset payloads and bundled animations are excluded from the public repo.
