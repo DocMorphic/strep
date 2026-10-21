@@ -195,6 +195,10 @@ def test_observation_identity_and_complete_clock_population_required(tmp_path,fa
 @pytest.mark.parametrize('mode',['import','native-authoring'])
 def test_complete_engine_job_records_provenance_and_retains_originals(tmp_path,monkeypatch,mode):
     import native_scene_engine as engine
+    import action_worker_lock
+    # This mocked engine exercises job ownership in an isolated fixture. A
+    # real outer validation worker may already own the shared machine lock.
+    monkeypatch.setattr(action_worker_lock,'ROOT',tmp_path/'fixture-lock')
     from strep import save,read,sha256
     from rig_asset import RigAsset
     from native_support_clock import NativeSupportSampler

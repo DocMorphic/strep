@@ -49,6 +49,9 @@ class AnimationSampler:
 
     @staticmethod
     def value(path,times,values,mode,time):
+        # Stored key values are exact after promotion; keep fractional queries
+        # distinct from Float32 bounds and subtract key times in Float64.
+        times=np.asarray(times,dtype=np.float64);time=float(time)
         cubic=mode=='CUBICSPLINE';keys=values[1::3] if cubic else values
         if time<=times[0]:result=keys[0].copy()
         elif time>=times[-1]:result=keys[-1].copy()

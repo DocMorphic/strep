@@ -5,8 +5,6 @@ import numpy as np
 from rig_asset import RigAsset
 from gltf_tools import sample_animation
 from target_rig_contact import regions,SoleDraftUnsupported
-from correct_stance import load_motion
-from inspect_motion import validate_motion
 from strep import read,save,sha256,now
 
 

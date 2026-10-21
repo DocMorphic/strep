@@ -1,6 +1,8 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_native_support_clock_precision.py",
+    "tests/test_native_import_clock_diagnostic.py",
     "tests/test_native_plant_preflight.py",
     "tests/test_rigid_support_point_bounds.py",
     "tests/test_support_centroid_bounds.py",

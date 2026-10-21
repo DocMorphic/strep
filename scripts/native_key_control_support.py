@@ -21,8 +21,8 @@ def effective_basis(clock, editable_keys, key_weights, time):
             or isinstance(time, (bool, np.bool_)) or not isinstance(time, (int, float, np.integer, np.floating))
             or not np.isfinite(time) or time < 0):
         raise ValueError('Complete increasing native clock, ordered editable key basis and finite nonnegative scalar time required')
-    # Preserve native clock dtype and incoming scalar time. In particular, do
-    # not turn Float32 key subtraction or endpoint comparisons into Float64.
+    # Keep stored clock data intact and use the same authoring sampler as the
+    # actual motion. It promotes time arithmetic without retiming native keys.
     values = np.zeros((len(clock), weights.shape[1]), dtype=float)
     values[ids] = weights
     result = NativeSupportSampler.value('translation', clock, values, 'LINEAR', time)
