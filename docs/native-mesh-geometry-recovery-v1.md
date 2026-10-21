@@ -1,8 +1,9 @@
 # Recovering imported-mesh geometry checks
 
 The initial 47 recovery tests and 184 existing-pipeline regression checks pass.
-An actual humanoid transport comparison is in progress; complete optimizer
-recovery is still pending. No motion or release approval follows from this work.
+The actual humanoid transport comparison also passes after a real execution-limit
+interruption and fresh-process resume. No motion or release approval follows
+from this work.
 
 The full humanoid correction trial stopped twice at its 900-second execution
 limit while writing the first proposal's geometry observations. Its subsequent
@@ -86,6 +87,30 @@ it does not yet pin that fallback generator's state. Fixture equality must not
 be generalized into bit-identical fresh reruns of ambiguous containment cases.
 The geometry checks also do not certify continuous or self collision, physics,
 engine playback, semantic correctness or animator quality.
+
+## Actual humanoid interruption and comparison
+
+The experiment re-evaluates the original fixed-panel humanoid diagnostic with
+the exact existing scene, full 2,017-time policy and geometry implementation.
+The first process saves four complete samples; a fresh process resumes. That
+attempt reaches its unchanged 900-second execution guard after sample 1,740.
+Its incomplete frame remains separate. Another fresh process verifies the saved
+prefix and completes all 2,017 samples. No sample or tolerance is removed.
+
+A separately admitted comparison assembles indexed observations and checks the
+entire report against the previously completed original audit. All report fields
+match, and all 4,035 numeric arrays have the same names, shapes, dtypes and bytes.
+The original source/report/archive bindings remain unchanged. The earlier audit
+contains 4,282 failed condition identities and 42,666 surface records; recovery
+retains those failures and does not approve the motion.
+
+Evidence is under `reports/humanoid-mesh-journal-v1` in the recovery checkout:
+`comparison.json`, the original reference digests, pinned checkpoints, abandoned
+frame, per-attempt guards and independent resource replays. The four attempts
+replay 23, 903, 243 and 277 resource observations respectively. This proves
+transport and recovery for this original humanoid audit, not a completed
+humanoid correction, general deterministic containment, engine success or
+animator quality. This study makes no whole-job speed claim.
 
 ## Integration still required
 
