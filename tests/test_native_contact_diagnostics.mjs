@@ -32,3 +32,8 @@ for(const value of [NaN,Infinity,-.1,'0.005',undefined])assert.match(formatNativ
 assert.doesNotMatch(formatNativePlanting({selected_audit:{contacts:[{...contact,maximum_patch_speed_m_s:NaN}],passed:true}}),/All configured.*gates pass/);
 assert.doesNotMatch(format({selected_planting_audit:{passed:true},selected_contact_diagnostics:metric(.0005,.004)}),/Planted contact remains unverified/);
 console.log('Explicit source-anchor/speed limits, precision, unavailable data and separate full acceptance pass in offline formatting fixtures.');
+const planting={selected_audit:{contacts:[contact],passed:false}};
+assert.match(formatNativePlanting({...planting,preflight:{status:'not_ruled_out',native_keys_checked:3,complete_native_key_coverage:true}}),/No conflict found at 3 stance keyframes\. This precheck does not establish feasibility or check between keyframes/);
+assert.match(formatNativePlanting({...planting,preflight:{status:'not_ruled_out',native_keys_checked:3,complete_native_key_coverage:false}}),/partial coverage/);
+assert.match(formatNativePlanting({...planting,preflight:{status:'not_applicable'}}),/could not assess this rig.*Ordinary fitting/);
+assert.doesNotMatch(formatNativePlanting({...planting,preflight:{status:'not_ruled_out',native_keys_checked:-1}}),/No conflict found/);

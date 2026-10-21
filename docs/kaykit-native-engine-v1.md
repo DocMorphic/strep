@@ -676,7 +676,8 @@ and that every positive influence belongs to the affected subtree. All changed
 ancestors, including the pivot, must be included in a composed angle limit.
 Local-key limits cannot be applied to interpolated times without an additional
 bound. Partial outside influences, scale/shear and arbitrary interpolation are
-not covered by this helper. It is not yet a Studio precheck or solver change.
+not covered by this helper. Studio revision 3 now uses it in a separate
+native-key necessary precheck; see [native-plant-preflight-v1.md](native-plant-preflight-v1.md).
 
 Ten unit tests cover tight rotation/translation alignment, signed and nonunit
 responses, coordinate shifts, malformed limits, a false rejection from reusing
@@ -685,4 +686,5 @@ in `reports/native-ankle-preflight-bound-v1/` checks 96 transformed poses across
 107 left-foot and 105 right-foot vertices: all 10,176 point observations stay
 inside the conditional bound. The rigid skin identity matches decoded points
 within 3.34e-16 m. This validates the stated fully owned vertex case, not all
-possible rigs, an animation correction or the missing Studio integration.
+possible rigs or an animation correction. The subsequent Studio integration
+and its separate evidence are documented in the linked precheck report.

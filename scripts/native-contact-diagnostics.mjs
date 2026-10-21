@@ -29,5 +29,9 @@ export function formatNativePlanting(planting){
   return `${row.id||'Foot'}: ${pass?'contact gates pass':'contact gates fail'}; source-anchor error ${mm(row.maximum_patch_anchor_error_m)} / ${mm(row.maximum_anchor_error_m)} mm; patch speed ${mm(row.maximum_patch_speed_m_s)} / ${mm(row.maximum_speed_m_s)} mm/s.`;
  });
  rows.push(audit.passed===true&&allContactsPass?'All configured sampled planting, support and rate gates pass. Animation quality remains unapproved.':'Full planting acceptance has not passed; contact precision alone cannot approve this clip.');
+ const preflight=planting.preflight;
+ if(preflight?.status==='not_ruled_out'&&Number.isInteger(preflight.native_keys_checked)&&preflight.native_keys_checked>0){
+  rows.push(`No conflict found at ${preflight.native_keys_checked} stance keyframes${preflight.complete_native_key_coverage===true?'':' (partial coverage)'}. This precheck does not establish feasibility or check between keyframes; full motion checks still apply.`);
+ }else if(preflight?.status==='not_applicable')rows.push('The early contact precheck could not assess this rig. Ordinary fitting and full motion checks still apply.');
  return rows.join(' ');
 }

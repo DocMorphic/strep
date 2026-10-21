@@ -41,8 +41,10 @@ def complete(tmp_path,monkeypatch,*,moving=False,legacy=False,zero_speed=False):
     body=dict(source_job='parent',variant='transfer',spec=spec,planting=choice)
     folder=studio.folder_for('plant-toy');studio.prepare(body,folder)
     if legacy:
-        request=read(folder/'request.json');request.pop('planting_revision')
-        request['planting_methods']={n:d for n,d in request['planting_methods'].items() if n in methods(1)}
+        request=read(folder/'request.json')
+        if legacy==2:request['planting_revision']=2
+        else:request.pop('planting_revision')
+        request['planting_methods']={n:d for n,d in request['planting_methods'].items() if n in methods(2 if legacy==2 else 1)}
         save(folder/'request.json',request)
         prepared=read(folder/'prepared.json');prepared['request_sha256']=sha256(folder/'request.json');save(folder/'prepared.json',prepared)
     studio.run(folder)
@@ -60,7 +62,10 @@ def test_satisfactory_toy_retains_exact_source_and_exposes_bound_contact_audit(t
     assert manifest['planting']['selected_audit']['contacts'][0]['maximum_patch_anchor_error_m']==0
     assert manifest['planting']['selected_audit']['authored_clearance_pass']
     assert not manifest['quality_approved']
-    assert read(data.folder/'request.json')['planting_revision']==2
+    assert read(data.folder/'request.json')['planting_revision']==3
+    assert manifest['planting']['preflight']['status']=='not_ruled_out'
+    assert not manifest['planting']['preflight']['interpolated_times_checked']
+    assert studio.served_file(manifest['planting']['preflight']['evidence_url'].removeprefix('/files/'))==data.output/'plant-preflight.json'
     assert read(data.output/'plant-policy.json')['supports'][0]['maximum_patch_speed_m_s']==.0001
     assert read(data.output/'proposal-policy.json')['supports'][0]['maximum_patch_speed_m_s']==pytest.approx(.0000998)
     assert manifest['planting']['selected_audit']['contacts'][0]['maximum_speed_m_s']==.0001
@@ -104,6 +109,25 @@ def test_legacy_completed_method_package_still_serves(tmp_path,monkeypatch):
     assert not (data.output/'proposal-policy.json').exists()
     assert sha256(data.output/'candidate.glb')==sha256(data.source)
     assert 'native_plant_headroom.py' not in read(data.folder/'request.json')['planting_methods']
+
+
+def test_revision_two_headroom_package_still_serves_without_preflight(tmp_path,monkeypatch):
+    data=complete(tmp_path,monkeypatch,legacy=2)
+    manifest=studio.manifest('plant-toy')
+    assert manifest['output_planting_samples_pass'] and manifest['retained_input']
+    assert manifest['planting']['preflight'] is None
+    assert (data.output/'proposal-policy.json').exists()
+    assert not (data.output/'plant-preflight.json').exists()
+
+
+def test_preflight_tampering_is_rejected_after_outer_hash_rebinding(tmp_path,monkeypatch):
+    data=complete(tmp_path,monkeypatch)
+    path=data.output/'plant-preflight.json';early=read(path);early['source_sha256']='0'*64;save(path,early)
+    result=read(data.output/'result.json');result['outputs'][path.name]=sha256(path)
+    result['planting']['preflight_sha256']=sha256(path);save(data.output/'result.json',result)
+    completion=read(data.folder/'completion.json');completion['result_sha256']=sha256(data.output/'result.json');save(data.folder/'completion.json',completion)
+    with pytest.raises(ValueError,match='preflight binding'):studio.manifest('plant-toy')
+    assert studio.served_file('native-support-jobs/plant-toy/candidate.glb') is None
 
 
 def test_zero_speed_keeps_exact_requirement_without_manufactured_reserve(tmp_path,monkeypatch):

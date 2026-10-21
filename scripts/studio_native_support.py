@@ -107,8 +107,8 @@ def prepare(payload, folder):
         save(folder/'plant-policy.json',policy(folder/'source.glb',folder/'draft.json',request['planting']))
         request['plant_policy_sha256']=sha256(folder/'plant-policy.json')
         request['planting_iterations']=8
-        request['planting_revision']=2
-        request['planting_methods']={name:sha256(Path(__file__).parent/name) for name in methods(2)}
+        request['planting_revision']=3
+        request['planting_methods']={name:sha256(Path(__file__).parent/name) for name in methods(3)}
     if payload['variant']=='native_review':
         from native_review_support import method_names
         _,native,_,_,_=source(payload['source_job'],payload['variant'])
@@ -143,7 +143,7 @@ def frozen(folder):
         if sha256(folder/'plant-policy.json')!=request.get('plant_policy_sha256') or read(folder/'plant-policy.json')!=policy(folder/'source.glb',folder/'draft.json',request['planting']):
             raise ValueError('Changed source-bound planting policy')
         revision=request.get('planting_revision',1)
-        if type(revision) is not int or revision not in (1,2):raise ValueError('Changed planting revision')
+        if type(revision) is not int or revision not in (1,2,3):raise ValueError('Changed planting revision')
         if set(request.get('planting_methods',{}))!=set(methods(revision)):raise ValueError('Planting method binding required')
         for name,digest in request['planting_methods'].items():
             if sha256(folder/'implementation'/name)!=digest:raise ValueError('Changed planting method archive')
@@ -231,7 +231,8 @@ def run(folder):
                 options=dict(joint_rates=True,joint_evaluations=160,joint_swivel=True,joint_foot_orientation=True)
             if 'planting' in request:
                 from native_studio_plant import run as planted_fit
-                planted_fit(source,draft,output,request['planting'],headroom=request.get('planting_revision',1)==2)
+                revision=request.get('planting_revision',1)
+                planted_fit(source,draft,output,request['planting'],headroom=revision>=2,**({'preflight':True} if revision==3 else {}))
             else:fit(source,draft,output,**options)
         if request['variant']=='native_review':
             from native_review_support import convert
@@ -287,7 +288,7 @@ def manifest(job):
         revision=request.get('planting_revision',1)
         fit_revision=fit_request.get('planting_revision',1)
         if type(fit_revision) is not int or fit_revision!=revision:raise ValueError('Changed fitting planting revision')
-        if revision==2:
+        if revision>=2:
             from native_studio_plant import speed_reserve
             from native_plant_headroom import reserve_policy
             reserve=speed_reserve(planting)
@@ -297,6 +298,20 @@ def manifest(job):
                     or type(result['planting'].get('proposal_speed_reserve_m_s')) not in (int,float)
                     or result['planting'].get('proposal_speed_reserve_m_s')!=reserve):
                 raise ValueError('Changed stricter proposal target')
+        if revision==3:
+            from native_plant_preflight import SCHEMA
+            early=read(output/'plant-preflight.json')
+            expected_limits={s['id']:dict(anchor=planting['maximum_patch_anchor_error_m'],speed=planting['maximum_patch_speed_m_s']) for s in spec['supports']}
+            if (fit_request.get('planting_preflight') is not True or early.get('schema')!=SCHEMA
+                    or early.get('source_sha256')!=sha256(source) or early.get('draft_sha256')!=sha256(draft)
+                    or early.get('policy_sha256')!=sha256(output/'plant-policy.json') or early.get('limits')!=expected_limits
+                    or early.get('status') not in ('not_ruled_out','not_applicable') or early.get('incompatible_points')!=0
+                    or early.get('quality_approved') is not False or early.get('feasibility_proven') is not False
+                    or early.get('interpolated_times_checked') is not False
+                    or result['planting'].get('preflight_sha256')!=sha256(output/'plant-preflight.json')):
+                raise ValueError('Changed necessary planting preflight binding')
+        elif fit_request.get('planting_preflight',False) is not False:
+            raise ValueError('Unexpected planting preflight revision')
     for name,digest in fit_request['implementation'].items():
         if Path(name).name!=name or '/' in name or '\\' in name or sha256(output/'implementation'/name)!=digest:raise ValueError('Changed fitting method archive')
     def asset(name, label, **extra):
@@ -317,7 +332,7 @@ def manifest(job):
             evidence=trial['planting'];index=trial['trial'];audit=f'trial-{index}-planting.json';control=f'trial-{index}.controls.json'
             if evidence['audit_file']!=audit or evidence['controls_file']!=control:raise ValueError('Changed planting audit binding')
             detailed=read(output/audit)
-            proposal_audit=detailed['public_proposal_audit'] if request.get('planting_revision',1)==2 else detailed['proposal']
+            proposal_audit=detailed['public_proposal_audit'] if request.get('planting_revision',1)>=2 else detailed['proposal']
             if detailed['proposal_sha256']!=result['outputs'][f'trial-{index}.glb'] or proposal_audit['contacts']!=evidence['contacts'] or proposal_audit['contact_samples_pass']!=evidence['contact_samples_pass'] or detailed['quality_approved'] is not False:
                 raise ValueError('Changed planted proposal evidence')
             if read(output/control)['schema']!='strep-native-joint-plant-controls-v1':raise ValueError('Changed planting controls')
@@ -373,7 +388,10 @@ def manifest(job):
     return dict(id=job, duration_s=spec['duration_s'], supports=spec['supports'], versions=versions,preparation=preparation,
         planting=dict(limits=planting,selected_audit=selected_planting,maximum_iterations_per_phase=8,
             proposal_speed_reserve_m_s=result['planting'].get('proposal_speed_reserve_m_s',0.),
-            proposal_policy_url=base+'proposal-policy.json' if request.get('planting_revision',1)==2 else None,
+            proposal_policy_url=base+'proposal-policy.json' if request.get('planting_revision',1)>=2 else None,
+            preflight=dict(status=early['status'],native_keys_checked=early['native_keys_checked'],point_observations=early['point_observations'],
+                complete_native_key_coverage=early['complete_native_key_coverage'],interpolated_times_checked=False,
+                evidence_url=base+'plant-preflight.json') if request.get('planting_revision',1)==3 else None,
             engine_error_bound_certified=False) if planting is not None else None,
         output_planting_samples_pass=selected_planting['passed'] if selected_planting is not None else None,
         native_review_candidate=native_candidate,

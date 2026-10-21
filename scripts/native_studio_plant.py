@@ -35,11 +35,12 @@ def policy(source,draft,choice):
 
 
 def methods(revision=1):
-    if type(revision) is not int or revision not in (1,2):raise ValueError('Known planting revision required')
+    if type(revision) is not int or revision not in (1,2,3):raise ValueError('Known planting revision required')
     names=set(method_names())|{'native_studio_plant.py','native_joint_plant.py','native_joint_plant_job.py',
         'native_foot_plant.py','native_support_rates.py','native_support_feasibility.py','native_support_roundtrip.py',
         'native_support_orientation.py','native_support_swivel.py','native_support_path.py','native_support_coordinates.py'}
-    if revision==2:names.add('native_plant_headroom.py')
+    if revision>=2:names.add('native_plant_headroom.py')
+    if revision==3:names.update({'native_plant_preflight.py','rigid_support_point_bounds.py','support_centroid_bounds.py','root_plane_contact_bounds.py'})
     return sorted(names)
 
 
@@ -48,30 +49,42 @@ def speed_reserve(choice):
     return min(MAXIMUM_SPEED_RESERVE,choice['maximum_patch_speed_m_s']*SPEED_RESERVE_FRACTION)
 
 
-def run(source,draft,output,choice,*,headroom=False):
+def run(source,draft,output,choice,*,headroom=False,preflight=False):
     """Produce the existing Studio manifest contract while preserving phase jobs."""
     if type(headroom) is not bool:raise ValueError('Explicit headroom mode required')
+    if type(preflight) is not bool or preflight and not headroom:raise ValueError('Preflight requires the current headroom mode')
     source,draft,output=map(lambda p:Path(p).resolve(),(source,draft,output));choice=settings(choice)
     if output.exists():raise ValueError('Fresh planted-support output required')
+    inputs={str(p):sha256(p) for p in (source,draft)}
     spec=read(draft);rig=RigAsset.load(source);reader=NativeSupportSampler(rig.document,rig.binary,0)
-    _,rows=validate(spec,rig,reader,sha256(source))
+    _,rows=validate(spec,rig,reader,inputs[str(source)])
+    if any(sha256(p)!=h for p,h in inputs.items()):raise ValueError('Planting source changed during loading')
     binding=policy(source,draft,choice);limits=policy_rows(binding,source,source,draft,rows)
-    revision=2 if headroom else 1;reserve=speed_reserve(choice) if headroom else 0.
+    revision=3 if preflight else 2 if headroom else 1;reserve=speed_reserve(choice) if headroom else 0.
     target=reserve_policy(binding,reserve) if headroom else binding
-    inputs={str(p):sha256(p) for p in (source,draft)};directory=Path(__file__).resolve().parent
+    directory=Path(__file__).resolve().parent
     hashes={name:sha256(directory/name) for name in methods(revision)}
     output.mkdir();archive=output/'implementation';archive.mkdir()
     for name in hashes:shutil.copyfile(directory/name,archive/name)
     shutil.copyfile(source,output/'input.glb');save(output/'plant-policy.json',binding)
+    if sha256(output/'input.glb')!=inputs[str(source)]:raise ValueError('Planting source changed during snapshot')
     if headroom:save(output/'proposal-policy.json',target)
     target_path=output/('proposal-policy.json' if headroom else 'plant-policy.json')
     save(output/'request.json',dict(at=now(),inputs=inputs,spec=spec,implementation=hashes,
         proposal_method='joint_native_plant_search',sampled_support_iterations=None,planting=choice,
         planting_iterations=ITERATIONS,planting_trust_radians=TRUST,planting_coordinate_trust_radians=COORDINATE_TRUST,
         planting_revision=revision,proposal_speed_reserve_m_s=reserve,
-        native_roundtrip=True,quality_approved=False))
+        native_roundtrip=True,quality_approved=False,**({'planting_preflight':True} if preflight else {})))
     save(output/'pipeline.json',dict(status='processing'))
     try:
+        if preflight:
+            from native_plant_preflight import analyze,conflict_message
+            early=analyze(rig,reader,rows,limits)
+            if any(sha256(p)!=h for p,h in inputs.items()) or any(sha256(directory/n)!=h for n,h in hashes.items()):
+                raise ValueError('Planting source or implementation changed during preflight')
+            early.update(source_sha256=inputs[str(source)],draft_sha256=inputs[str(draft)],policy_sha256=sha256(output/'plant-policy.json'))
+            save(output/'plant-preflight.json',early)
+            if early['status']=='incompatible_support_target':raise ValueError(conflict_message(early))
         seed=output/'plant-seed.glb'
         try:
             centering=propose(rig,reader,rig,reader,rows,seed)
@@ -128,6 +141,7 @@ def run(source,draft,output,choice,*,headroom=False):
             output_support_samples_pass=bool(selected['support_screens']['support_samples_pass'] and selected['authored_clearance_pass']),
             quality_approved=False,training_admitted=False,release_approved=False,continuous_collision_certified=False,
             self_collision_checked=False,engine_import_verified=False,human_review_submitted=False)
+        if preflight:result['planting']['preflight_sha256']=sha256(output/'plant-preflight.json')
         result['outputs']={p.name:sha256(p) for p in output.iterdir() if p.is_file() and p.name!='pipeline.json'}
         save(output/'result.json',result);save(output/'pipeline.json',dict(status='complete'));return result
     except Exception as exc:
