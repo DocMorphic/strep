@@ -481,6 +481,71 @@ verifier finishes with 47 observations and a 150,380,544-byte sampled peak.
 Neither the old stopped attempt nor its pinned implementation is modified or
 silently resumed with new methods.
 
+### Full humanoid solve with separately admitted headroom (2026-10-21)
+
+The laptop reports 15.3 GiB physical RAM and about 5.3 GiB available before this
+trial. The repository-wide resource ceiling is 7 GiB, with a minimum 600 MiB
+free reserve; 512 MiB was the earlier study/CLI budget. A separate solve-only
+consumer therefore declares a 2 GiB estimate and maximum, a stricter 1 GiB free
+reserve, 15 seconds of stable admission, a 900-second execution limit and 0.1 s
+resource sampling. It requires 3 GiB available before starting. This does not
+change earlier protocols, default CLI budgets or numerical acceptance limits,
+and does not establish support for this full model under 512 MiB.
+
+`reports/humanoid-axis-direction-2g-v2` consumes the identical saved model and
+solver implementation from the preceding 512 MiB attempt: all 569,384 norm rows,
+569,383 hard rows, 10,574,466 derivative nonzeros, 36 controls and the original
+0.02 trust fraction. Saved producer hashes remain pinned separately from the
+new consumer. The decoder class and input-reading/hashing functions match the
+producer; only the declared orchestration and already-verified streamed writer
+changes are allowed. No derivative, pair, time or control is regenerated or
+silently omitted to meet the new budget.
+
+The full solve reaches `Solved` after 31 primary iterations at a sampled
+1,374,687,232-byte process-tree peak. Existing fixed/whole-box certificates omit
+already-satisfied rows from solver storage; 370,502 scalar inequalities and 848
+vector cones remain active. The maximum returned control movement is only
+1.7801652352340958e-12. Predicted target excess stays approximately 5, and strict
+full affine reevaluation still has a maximum hard excess of 3.1086244689504383e-13.
+Neither the initial nor retried minimum-norm solution passes the existing
+selection checks. No tolerance is enlarged to call this a successful correction.
+
+The saved computational result is complete, but this experiment's runner exits
+with an error in its final status message: duplicate approval-field keywords
+after `result.json` and the direction arrays were saved. Its failed status is
+preserved, along with an earlier Windows path-key setup failure in
+`humanoid-axis-direction-2g-v1`. Neither is reported as a clean worker completion.
+All 663 resource observations for v2 replay; the stop is not a memory guard.
+
+### Independent verification and surface-row diagnostic
+
+`reports/humanoid-surface-blocker-v1` verifies the saved full solve, source hashes,
+solver identity and failed-run resource record independently. It recreates the
+original bounds and complete native clock, exports only the full-model step as
+an unaccepted diagnostic, and checks its decoded source/contact rows and edit
+caps. Source rows, strict edits and contact nonregression pass, but merit does
+not improve. The hand remains 30 mm from its target, failing the unchanged
+5 mm requirement. No candidate geometry audit or animation-quality approval is
+claimed. The complete saved affine residual array is reproduced exactly.
+
+To isolate the local search barrier, a separate diagnostic solve removes only
+the 383,994 frozen surface-guidance rows while retaining all 183,371 native rows,
+one contact-protection row, 2,017 floor rows, the original target and control box.
+The resulting step reaches the unchanged 0.02 trust bound and reduces predicted
+target excess from approximately 5 to 4.050486. Reevaluation against the **full**
+original model finds zero native/contact/floor failures but 167,080 surface-row
+violations, with a maximum normalized excess of 2.307416. This ablated step is
+never exported or accepted. Its predicted improvement is not actual collision
+or contact success, and the failed directional bounds do not prove whole-mesh
+infeasibility.
+
+The diagnostic worker completes under 512 MiB with a 336,535,552-byte peak and
+47 replayed resource observations. This evidence identifies frozen surface
+guidance as a local barrier on this model. Further work should revise the
+proposal model or search over alternative geometry directions while retaining
+the complete decoded geometry, original permissions and final acceptance rules.
+More memory alone does not resolve the demonstrated contact failure.
+
 ### Remaining integration and evaluation
 
 Keep the exact original source, editing limits, frozen tracks and complete
@@ -508,9 +573,10 @@ Frame and optimizer journals are implemented and independently tested; see
 `native-mesh-geometry-recovery-v1.md`. This new guidance still needs its witness
 banks integrated into that optimizer protocol before larger resumable fits.
 The export diagnostic and combined experiment above resolve the demonstrated
-source-rounding barrier on one generated case. Next test the other obstacle
-placement and real humanoid, preserving every original source/edit/contact and
-geometry limit, then integrate validated proposal state with recovery and
+source-rounding barrier on one generated case. Both obstacle placements and the
+real humanoid now expose additional local-search limits. Next revise the frozen
+surface-guidance proposal using these retained failures, preserving every
+original source/edit/contact and geometry limit, then integrate validated proposal state with recovery and
 continue different rigs/actions, partner, engine and human-review evaluation.
 These are steps toward the existing complete animation-authoring goal; neither
 proposal improvement nor resumable evaluation satisfies its release gates.
