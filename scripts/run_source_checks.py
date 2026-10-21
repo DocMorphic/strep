@@ -39,7 +39,7 @@ def run(mode, index, count, *, list_only=False, manifest=None):
     data = inventory() if manifest is None else inventory(manifest)
     if mode == 'python':
         names = partition(data['python_tests'], index, count)
-        commands = [[sys.executable, '-m', 'pytest', '-q', *names]]
+        commands = [[sys.executable, '-u', '-m', 'pytest', '-vv', '--durations=20', *names]]
     elif mode == 'node':
         if index != 0 or count != 1:
             raise ValueError('Node coverage runs once per operating system without sharding')

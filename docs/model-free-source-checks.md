@@ -1,5 +1,14 @@
 # Public source checks
 
+The Python shard runner now prints each test name with unbuffered output and
+reports the twenty slowest durations after pytest finishes. This makes retained
+CI logs more useful when a long geometry check reaches its job limit. Test
+selection, sharding, assertions, skip policy and time limits are unchanged; the
+extra logging does not establish a speed improvement or a passing run. All nine
+existing runner checks pass, covering complete shard selection, list-only mode,
+invalid inventories and propagation of a child failure. This focused check
+imports neither NumPy nor Torch and does not rerun the numerical suites.
+
 The complete [workflow at `8d07889`](https://github.com/DocMorphic/strep/actions/runs/38183110002)
 passes all twelve Windows/Linux jobs with its **468-Python-module/42-Node-suite**
 inventory. Each OS's four core Python shards reports **9,088 passed, seven

@@ -32,7 +32,7 @@ def test_execution_uses_only_selected_shard_and_propagates_failure(monkeypatch):
     def execute(command,**kwargs):calls.append((command,kwargs));return SimpleNamespace(returncode=7)
     monkeypatch.setattr(runner.subprocess,'run',execute)
     assert runner.run('python',0,2,manifest=manifest)==7
-    assert calls==[([sys.executable,'-m','pytest','-q',*runner.inventory(manifest)['python_tests'][0::2]],dict(cwd=runner.ROOT))]
+    assert calls==[([sys.executable,'-u','-m','pytest','-vv','--durations=20',*runner.inventory(manifest)['python_tests'][0::2]],dict(cwd=runner.ROOT))]
 
 
 @pytest.mark.parametrize('fault',['duplicate','missing','escape','schema'])
