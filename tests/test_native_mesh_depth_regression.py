@@ -61,6 +61,14 @@ def test_unavailable_containment_cannot_claim_local_nonregression(side):
     assert not result['passed'] and len(result['unavailable'])==1 and not result['regressions']
 
 
+def test_new_containment_results_cannot_be_compared_to_legacy_baseline():
+    original=report();candidate=copy.deepcopy(original)
+    candidate['containment_method']='strep-containment-consensus-v1'
+    with pytest.raises(ValueError,match='Containment methods differ'):compare_depths(original,candidate)
+    original['containment_method']=candidate['containment_method']
+    assert compare_depths(original,candidate)['passed']
+
+
 @pytest.mark.parametrize('value',[float('nan'),float('inf'),-.001,True,'0',None])
 def test_invalid_depths_fail_closed(value):
     original=report();candidate=copy.deepcopy(original);row,key=target(candidate,'actor-prop');row[key]=value

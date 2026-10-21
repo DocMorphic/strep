@@ -19,7 +19,7 @@ is not a blanket sign-convention reversal. The exact cause of the first
 disagreement remains unresolved. Closed topology, consistent winding and
 positive total volume do not establish a non-self-intersecting solid.
 
-## Separate diagnostic
+## Diagnostic and native scene integration
 
 `scripts/native_containment_crosscheck.py` reports unsigned distance, the
 unchanged Trimesh signed-distance observation, ray parity and complete
@@ -88,3 +88,56 @@ additional self-crossings in the rejected edited mesh. All 1,457 reported
 source/edited pairs have exact represented-triangle interior witnesses. This
 strengthens the rejection; it does not retroactively alter legacy metrics or
 prove the exact cause of the local sign/winding disagreement.
+
+## Native scene consensus method (2026-10-21)
+
+New native scene and imported-mesh scene audits use
+`strep-containment-consensus-v1` for point containment. The existing signed
+distance, ray parity and complete solid-angle winding diagnostic now supplies
+actor/actor, actor/prop and prop/prop vertex queries and primitive-center queries.
+Convex-hull rejection remains a conservative broadphase; it does not fill the
+hull or replace the target triangles. Each retained batch has at most 32 points.
+The original depth limits and query populations are unchanged.
+
+Away from the declared surface tolerance, inside requires positive signed
+distance, inside ray parity and winding approximately one. Outside requires
+negative signed distance, outside parity and winding approximately zero.
+The winding tolerance remains 1e-5. Near-surface points and disagreements are
+unresolved. A vertex population with any unresolved query returns
+`available=false`, preserves the vertex identity and all diagnostic values,
+and omits maximum-depth/count fields. Native scene conditions fail and the
+character fitter's local depth guard cannot accept an unavailable comparison.
+Primitive-center containment also fails on unresolved results.
+
+This method does not infer union semantics for overlapping shells. Nested
+positive shells with winding two remain unresolved. Reversed, open or
+numerically degenerate target geometry cannot supply a passing containment
+measurement. Agreement at a query point is **not** evidence that the whole
+mesh is free of self-intersections. Complete self-geometry eligibility and
+nonregression enforcement remain unfinished; fitting the retained humanoid
+case remains deferred.
+
+Reports carry the method identifier, and native scene, fitting and journal
+producer bindings include the diagnostic implementation. The local depth
+comparator rejects mixed legacy/consensus reports. Older reports, their original
+allowances and archived implementations stay intact. Both original and candidate
+must be evaluated afresh under the same method before a new comparison. Legacy
+standalone signed-distance research scripts have not been rewritten and are
+not evidence of passing the new native method.
+
+Validation: all 217 checks in the containment, native scene, imported-mesh
+scene, local-depth comparison and both geometry-journal suites pass. They
+cover complete resumed/direct report equivalence, source pinning, corruption,
+surface ambiguity, the measured overlapping-box case, isolated analytic
+controls, translations, batching and preservation of the full declared
+near-surface tolerance band. The final guarded run and two earlier passing
+epochs remain under ignored `reports/containment-consensus-*`; earlier source
+snapshots match their recorded hashes and remain distinct from the final fix.
+
+The final run also replays panel vertex zero at 2.1375 s against two saved
+humanoid surfaces. The original query is excluded by the expanded convex hull.
+For the edited seed, signed distance is -1.715451 mm, ray parity is inside and
+winding is approximately one; the new method returns unavailable and no depth.
+This checks one point per pose, not the full clip or surface population. No
+animation is adopted, no original allowance changes, and no release gate is
+approved by these tests.

@@ -22,11 +22,11 @@ from native_scene_contacts import SceneContacts, fields, scalar, vector, METHODS
 from engine_contact_sampling import frame_populations, contract_sha256
 from triangle_primitive_depth import query
 from triangle_crossing import audit as crossings
-from convex_partner_surface import penetration
+from native_containment_crosscheck import penetration, crosscheck, METHOD as CONTAINMENT_METHOD
 from native_observation_archive import ObservationArchive
 
 METHODS = tuple(dict.fromkeys(CONTACT_METHODS + ('native_scene_geometry.py', 'triangle_primitive_depth.py',
-    'triangle_crossing.py', 'convex_partner_surface.py', 'action_worker_lock.py', 'native_observation_archive.py')))
+    'triangle_crossing.py', 'convex_partner_surface.py', 'native_containment_crosscheck.py', 'action_worker_lock.py', 'native_observation_archive.py')))
 
 
 def faces_for(rig):
@@ -91,7 +91,8 @@ def volume_state(vertices, faces):
     valid = bool(mesh.is_volume)
     return mesh, dict(watertight=bool(mesh.is_watertight), winding_consistent=bool(mesh.is_winding_consistent),
         outward_positive_volume=valid, topology_modified=False,
-        self_intersection_checked=False, containment_available=valid)
+        self_intersection_checked=False, containment_available=valid,
+        containment_scope='Topology eligibility only; each point still requires diagnostic consensus. Self intersections unchecked.')
 
 
 def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, object_poses=None, observation_sink=None,
@@ -135,10 +136,12 @@ def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, objec
                 depth = query(vertices[name][faces[name]], obj['geometry'], p, r, resolution_m=resolution)
                 i = int(depth['lower_m'].argmax()); hi = float(depth['upper_m'].max()); lo = float(depth['lower_m'].max())
                 containment = dict(status='unavailable', signed_center_distance_m=None)
-                if states[name]['containment_available']:
-                    value = float(trimesh.proximity.signed_distance(meshes[name], p[None])[0])
-                    containment = dict(status='inside' if value > tol else ('outside' if value < -tol else 'near-surface'),
-                        signed_center_distance_m=value)
+                if states[name]['containment_available'] and not degenerate[name]:
+                    check = crosscheck(vertices[name], faces[name], p[None], surface_tolerance_m=tol)
+                    containment = dict(status=check['states'][0],
+                        signed_center_distance_m=float(check['signed_distance_m'][0]),
+                        ray_inside=bool(check['ray_inside'][0]), winding=float(check['winding'][0]),
+                        containment_method=CONTAINMENT_METHOD)
                 ok = bool(hi <= limit and not degenerate[name] and not len(depth['degenerate_faces']) and containment['status'] == 'outside')
                 objects.append(dict(actor=name, object=other, maximum_depth_lower_m=lo, maximum_depth_upper_m=hi,
                     primitive_bounding_radius_m=obj['geometry'].bounding_radius(),
@@ -158,10 +161,10 @@ def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, objec
             surface = crossings(vertices[left], faces[left], vertices[right], faces[right], tolerance_m=tol)
             depths = []
             for a, b in ((left, right), (right, left)):
-                if states[b]['containment_available']:
+                if states[b]['containment_available'] and not degenerate[b]:
                     measure = penetration(vertices[a], vertices[b], faces[b], tolerance_m=max(limit, 1e-12),
-                        query_batch_size=partner_query_batch_size)
-                    depths.append(dict(source=a, target=b, available=True, count_tolerance_m=max(limit, 1e-12), **measure))
+                        query_batch_size=partner_query_batch_size, surface_tolerance_m=tol)
+                    depths.append(dict(source=a, target=b, count_tolerance_m=max(limit, 1e-12), **measure))
                 else: depths.append(dict(source=a, target=b, available=False))
             ok = bool(not surface['records'] and not any(surface['degenerate_faces']) and
                 all(d['available'] and d['max_depth_m'] <= limit for d in depths))
@@ -178,13 +181,14 @@ def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, objec
         frame_populations=[dict(id=p['id'], rate_hz=p['rate_hz'], phase_offset_frames=p['phase_offset_frames'],
             times_s=p['times_s'].tolist()) for p in populations], frame_contract_sha256=contract_sha256(),
         limits=policy['limits'], declared_planes=list(policy['planes']),
-        partner_query_batch_size=partner_query_batch_size,
+        partner_query_batch_size=partner_query_batch_size, containment_method=CONTAINMENT_METHOD,
         original_selected=True, collision_verified=False, continuous_collision_certified=False,
         self_collision_verified=False, engine_playback_verified=False, quality_approved=False,
         training_admitted=False, release_approved=False,
         scope='All loaded actor triangles and declared scene pairs at declared sample times only. '
             'Depth brackets are floating-point diagnostics. Actor/object center containment requires an '
-            'unmodified closed outward-volume mesh; unavailable/near-surface results fail the sampled conditions. '
+            'unmodified closed outward-volume mesh and signed/ray/winding consensus; unavailable, unresolved '
+            'or near-surface results fail the sampled conditions. Consensus is not a valid-solid certificate. '
             'Partner crossings and vertex containment are separate; near/coplanar outcomes remain unresolved. '
             'No object/object, self-collision, continuous-time, exact-arithmetic, engine or quality certification.')
     if sample_indices is not None:

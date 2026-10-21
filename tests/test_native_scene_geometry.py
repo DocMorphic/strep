@@ -100,10 +100,11 @@ def test_partner_surface_overlap_is_visible_when_vertex_depth_is_zero(tmp_path):
     assert not result['sampled_conditions_pass']
     for sample in result['samples']:
         pair = sample['actor_pairs'][0]
-        assert pair['surface']['records'] and all(d['available'] for d in pair['vertex_containment'])
+        assert pair['surface']['records'] and not any(d['available'] for d in pair['vertex_containment'])
         # Cube vertices lie on the other cube's coplanar side boundaries:
         # vertex penetration alone would miss this solid overlap.
-        assert max(d['max_depth_m'] for d in pair['vertex_containment']) == 0
+        assert all('max_depth_m' not in d for d in pair['vertex_containment'])
+        assert all(d['unresolved_vertices'] for d in pair['vertex_containment'])
 
 
 def test_nested_closed_partners_fail_without_surface_crossings(tmp_path):

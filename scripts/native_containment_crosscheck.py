@@ -6,6 +6,8 @@ Disagreement never silently replaces a saved signed-distance measurement.
 import numpy as np
 import trimesh
 
+METHOD = 'strep-containment-consensus-v1'
+
 
 def crosscheck(vertices,faces,points,*,surface_tolerance_m=1e-7,winding_tolerance=1e-5):
     vertices=np.asarray(vertices);faces=np.asarray(faces);points=np.asarray(points)
@@ -22,6 +24,8 @@ def crosscheck(vertices,faces,points,*,surface_tolerance_m=1e-7,winding_toleranc
     vertices=vertices.astype(float);points=points.astype(float)
     mesh=trimesh.Trimesh(vertices,faces,process=False)
     if not mesh.is_volume:raise ValueError('Closed consistently wound positive-volume topology required; self intersections remain unchecked')
+    if np.any(mesh.area_faces<=surface_tolerance_m**2/2):
+        raise ValueError('Nondegenerate target triangles required for containment')
     closest,distance,triangle=trimesh.proximity.closest_point(mesh,points)
     signed=trimesh.proximity.signed_distance(mesh,points);ray=mesh.contains(points)
     winding=np.zeros(len(points));compensation=np.zeros(len(points))
@@ -48,3 +52,51 @@ def crosscheck(vertices,faces,points,*,surface_tolerance_m=1e-7,winding_toleranc
         complete_query_points=len(points),complete_target_faces=len(faces),surface_tolerance_m=surface_tolerance_m,
         winding_tolerance=winding_tolerance,self_intersection_checked=False,collision_free_certified=False,quality_approved=False,
         scope='Agreement of three floating-point diagnostics only. Near-surface/disagreement is unresolved for acceptance; no complete source population, self-collision, exact arithmetic, motion, engine or quality certification.')
+
+
+def penetration(source_vertices,target_vertices,target_faces,tolerance_m=.005,*,query_batch_size=32,
+        surface_tolerance_m=1e-7):
+    """Bounded native-scene query; never return a depth for unresolved points.
+
+    Overlapping/nested shells have no inferred union semantics. Only winding
+    zero/outside or one/inside agreeing with parity and signed distance resolve.
+    Agreement remains a diagnostic, not proof of valid self geometry.
+    """
+    from convex_partner_surface import candidates
+    if type(query_batch_size) is not int or not 1<=query_batch_size<=32:
+        raise ValueError('Integer query batch size between 1 and 32 required')
+    if type(tolerance_m) not in (int,float) or not np.isfinite(tolerance_m) or tolerance_m<=0:
+        raise ValueError('Positive finite depth tolerance required')
+    if (type(surface_tolerance_m) not in (int,float) or not np.isfinite(surface_tolerance_m)
+            or not 1e-10<=surface_tolerance_m<=1e-3):
+        raise ValueError('Explicit small surface tolerance required')
+    source=np.asarray(source_vertices,dtype=float);target=np.asarray(target_vertices,dtype=float)
+    # Keep the whole near-surface band, even when the policy tolerance is
+    # larger than the broadphase's minimum numerical expansion.
+    selected,broadphase=candidates(source,target,padding=max(1e-7,surface_tolerance_m))
+    # Validate target and tolerance even when broadphase excludes every point.
+    # A far point is a complete bounded validation query, not a sampled surface.
+    probe=target.max(axis=0)+np.maximum(np.ptp(target,axis=0),1.)
+    crosscheck(target,target_faces,probe[None],surface_tolerance_m=surface_tolerance_m)
+    result=dict(available=True,containment_method=METHOD,vertices_checked=len(source),
+        broadphase_candidates=broadphase['aabb_candidates'],convex_broadphase=broadphase,
+        queried_vertices=len(selected),unresolved_vertices=[],self_intersection_checked=False)
+    maximum=0.;count=0;deepest=None
+    for start in range(0,len(selected),query_batch_size):
+        ids=selected[start:start+query_batch_size]
+        checked=crosscheck(target,target_faces,source[ids],surface_tolerance_m=surface_tolerance_m)
+        for offset,state in enumerate(checked['states']):
+            vertex=int(ids[offset])
+            if state not in ('inside','outside'):
+                result['unresolved_vertices'].append(dict(vertex=vertex,state=state,
+                    signed_distance_m=float(checked['signed_distance_m'][offset]),
+                    unsigned_distance_m=float(checked['unsigned_distance_m'][offset]),
+                    ray_inside=bool(checked['ray_inside'][offset]),winding=float(checked['winding'][offset])))
+                continue
+            depth=float(checked['signed_distance_m'][offset]) if state=='inside' else 0.
+            count+=int(depth>tolerance_m)
+            if depth>maximum:maximum=depth;deepest=vertex
+    result['available']=not result['unresolved_vertices']
+    if result['available']:
+        result.update(max_depth_m=maximum,vertices_over_tolerance=count,deepest_vertex=deepest)
+    return result

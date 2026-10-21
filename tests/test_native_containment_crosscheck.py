@@ -6,6 +6,7 @@ import trimesh
 from scipy.spatial.transform import Rotation
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from native_containment_crosscheck import crosscheck
+from native_containment_crosscheck import penetration, METHOD
 
 
 @pytest.mark.parametrize('transformed',[False,True])
@@ -54,3 +55,58 @@ def test_invalid_or_unbounded_requests_reject(fault):
     elif fault=='bool-tolerance':kwargs['surface_tolerance_m']=True
     else:kwargs['winding_tolerance']=float('nan')
     with pytest.raises(ValueError):crosscheck(m.vertices,faces,points,**kwargs)
+
+
+@pytest.mark.parametrize('batch',[1,7,32])
+@pytest.mark.parametrize('shift',[[0.,0.,0.],[100.,-50.,30.]])
+def test_measured_false_outside_cannot_be_counted_as_zero_penetration(batch,shift):
+    a=trimesh.creation.box(extents=[2,2,2]);b=a.copy();b.apply_translation([.75,.25,.2])
+    mesh=trimesh.util.concatenate([a,b]);mesh.apply_translation(shift)
+    point=np.array([[-.26,.1,.2]])+shift
+    # Analytically inside A and outside B, but the nearest face belongs to B.
+    assert mesh.is_volume
+    assert trimesh.proximity.signed_distance(mesh,point)[0]==pytest.approx(-.01)
+    assert mesh.contains(point)[0]
+    result=penetration(np.vstack([point,point+[10,0,0]]),mesh.vertices,mesh.faces,query_batch_size=batch)
+    assert result['containment_method']==METHOD and not result['available']
+    assert result['vertices_checked']==2 and result['queried_vertices']==1
+    assert 'max_depth_m' not in result and 'vertices_over_tolerance' not in result
+    assert result['unresolved_vertices'][0]['vertex']==0
+    assert result['unresolved_vertices'][0]['state']=='unresolved'
+    assert result['unresolved_vertices'][0]['winding']==pytest.approx(1.)
+
+
+def test_isolated_boxes_keep_analytic_depths_and_nested_shells_are_unresolved():
+    a=trimesh.creation.box(extents=[2,2,2]);b=a.copy();b.apply_translation([.75,.25,.2])
+    point=[[-.26,.1,.2]]
+    inside=penetration(point,a.vertices,a.faces);outside=penetration(point,b.vertices,b.faces)
+    assert inside['available'] and inside['max_depth_m']==pytest.approx(.74)
+    assert outside['available'] and outside['max_depth_m']==0.
+    nested=trimesh.util.concatenate([a,trimesh.creation.box()])
+    result=penetration([[.1,.1,.1]],nested.vertices,nested.faces)
+    assert not result['available'] and result['unresolved_vertices'][0]['winding']==pytest.approx(2.)
+
+
+def test_surface_contact_is_unavailable_and_no_query_point_is_silently_removed():
+    m=trimesh.creation.box(extents=[2,2,2])
+    result=penetration([[0,0,0],[1,0,0],[1,1,1],[20,20,20]],m.vertices,m.faces,query_batch_size=1)
+    assert result['vertices_checked']==4 and result['queried_vertices']==3
+    assert not result['available'] and 'max_depth_m' not in result
+    assert [(r['vertex'],r['state']) for r in result['unresolved_vertices']]==[(1,'near-surface'),(2,'near-surface')]
+
+
+def test_broadphase_retains_the_whole_declared_near_surface_band():
+    m=trimesh.creation.box(extents=[2,2,2])
+    result=penetration([[1+5e-5,0,0]],m.vertices,m.faces,surface_tolerance_m=1e-4)
+    assert result['queried_vertices']==1 and not result['available']
+    assert result['unresolved_vertices'][0]['state']=='near-surface'
+
+
+@pytest.mark.parametrize('fault',['reversed','open','degenerate','invalid-batch'])
+def test_invalid_mesh_or_query_cannot_pass_even_when_all_points_are_far(fault):
+    m=trimesh.creation.box();kwargs={}
+    if fault=='reversed':m.invert()
+    elif fault=='open':m.update_faces(np.arange(len(m.faces)-1))
+    elif fault=='degenerate':m.vertices[0]=m.vertices[1]
+    else:kwargs['query_batch_size']=True
+    with pytest.raises(ValueError):penetration([[50,50,50]],m.vertices,m.faces,**kwargs)

@@ -22,7 +22,7 @@ from native_scene_contacts import SceneContacts, fields, scalar, vector, pose, r
 from native_scene_contacts import METHODS as CONTACT_METHODS
 from native_scene_geometry import faces_for, policy_for, volume_state, evaluate as base_geometry
 from triangle_crossing import audit as crossings
-from convex_partner_surface import penetration
+from native_containment_crosscheck import penetration, crosscheck, METHOD as CONTAINMENT_METHOD
 from triangle_primitive_depth import query as primitive_depth
 from engine_contact_sampling import frame_populations, contract_sha256
 from native_observation_archive import ObservationArchive, verify
@@ -33,7 +33,7 @@ MAX_PROP_BYTES=64*1024**2
 MAX_SAMPLES=10000
 MAX_ARRAY_BYTES=64*1024**2
 METHODS=tuple(sorted(set(CONTACT_METHODS)|{'native_mesh_prop_scene.py','static_prop_asset.py',
-    'native_scene_geometry.py','triangle_crossing.py','convex_partner_surface.py',
+    'native_scene_geometry.py','triangle_crossing.py','convex_partner_surface.py','native_containment_crosscheck.py',
     'triangle_primitive_depth.py','native_observation_archive.py'}))
 
 
@@ -228,9 +228,9 @@ class MeshPropScene:
             def pair(left,right):
                 surface=crossings(meshes[left],faces[left],meshes[right],faces[right],tolerance_m=tolerance);depths=[]
                 for a,b in [(left,right),(right,left)]:
-                    if states[b]['containment_available']:
-                        measure=penetration(meshes[a],meshes[b],faces[b],tolerance_m=max(limit,1e-12),query_batch_size=query_batch_size)
-                        depths.append(dict(source=list(a),target=list(b),available=True,**measure))
+                    if states[b]['containment_available'] and not degenerate[b]:
+                        measure=penetration(meshes[a],meshes[b],faces[b],tolerance_m=max(limit,1e-12),query_batch_size=query_batch_size,surface_tolerance_m=tolerance)
+                        depths.append(dict(source=list(a),target=list(b),**measure))
                     else:depths.append(dict(source=list(a),target=list(b),available=False))
                 passed=bool(not surface['records'] and not any(surface['degenerate_faces']) and all(item['available'] and item['max_depth_m']<=limit for item in depths))
                 return dict(left=list(left),right=list(right),surface=surface,vertex_containment=depths,passed=passed)
@@ -242,8 +242,9 @@ class MeshPropScene:
                 for other,obj in self._scene.objects.items():
                     p,r=primitive_poses[other];depth=primitive_depth(vertices[faces[key]],obj['geometry'],p[ordinal],r[ordinal],resolution_m=policy['limits']['depth_resolution_m'])
                     containment='unavailable'
-                    if states[key]['containment_available']:
-                        signed=float(trimesh.proximity.signed_distance(mesh,p[ordinal][None])[0]);containment='outside' if signed < -tolerance else 'inside-or-near-surface'
+                    if states[key]['containment_available'] and not degenerate[key]:
+                        check=crosscheck(vertices,faces[key],p[ordinal][None],surface_tolerance_m=tolerance)
+                        containment=check['states'][0]
                     hi=float(depth['upper_m'].max());passed=bool(hi<=limit and not degenerate[key] and not len(depth['degenerate_faces']) and containment=='outside')
                     primitive_pairs.append(dict(prop=name,object=other,maximum_depth_lower_m=float(depth['lower_m'].max()),maximum_depth_upper_m=hi,containment=containment,total_faces=len(faces[key]),passed=passed))
                     prefix=f'mesh_frame_{index}_prop{len(name)}_{name}_object{len(other)}_{other}'
@@ -256,6 +257,8 @@ class MeshPropScene:
             rows.append(dict(index=index,time_s=stamp,base_scene=previous,mesh_pairs=pairs,mesh_primitive_pairs=primitive_pairs,mesh_world_planes=planes,volumes=[dict(kind=key[0],name=key[1],**value) for key,value in states.items()],passed=passed))
         self.check_inputs()
         report=dict(schema='strep-native-mesh-prop-geometry-result-v1',samples=rows,inputs_sha256=self.inputs,limits=policy['limits'],clock_mode=policy['clock']['mode'],complete_clock_s=times.tolist(),sample_indices=selected.tolist(),times_s=times[selected].tolist(),frame_populations=[dict(id=p['id'],times_s=p['times_s'].tolist()) for p in populations],all_policy_samples_evaluated=len(selected)==len(times),sampled_conditions_pass=all(row['passed'] for row in rows),actor_faces={name:len(value) for name,value in actor_faces.items()},prop_faces={name:len(prop['asset'].faces) for name,prop in self._props.items()},query_batch_size=query_batch_size,topology_modified=False,collision_verified=False,continuous_collision_certified=False,self_collision_verified=False,motion_fitted=False,physics_verified=False,quality_approved=False,release_approved=False,scope='Complete imported actor/prop triangles at declared selected times. Includes legacy actor/primitive/plane/partner checks, all actor/mesh-prop pairs, mesh-prop/mesh-prop pairs, mesh-prop/legacy-primitive pairs and prop/world planes. Crossing/boundary/near outcomes and unavailable outward-volume containment fail sampled conditions. Original primitive/primitive and all self/continuous/dynamics/engine/semantic checks remain separate. No geometry proxy, topology repair, fit or release approval.')
+        report['containment_method']=CONTAINMENT_METHOD
+        report['scope']+=' Containment requires signed/ray/winding consensus; disagreement and near-surface queries are unavailable. Consensus does not verify self geometry.'
         return report,arrays
 
 

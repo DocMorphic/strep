@@ -67,6 +67,8 @@ def _compare_depths(original,candidate):
                     'Ordered complete geometry samples required')
     for key in ('complete_clock_s','limits','clock_mode','actor_faces','prop_faces'):
         require(original[key]==candidate[key],'Geometry clock, limits and participant topology counts must remain unchanged')
+    require(original.get('containment_method','legacy-signed-distance')==candidate.get('containment_method','legacy-signed-distance'),
+            'Containment methods differ; reevaluate both original and candidate under one version')
     regressions=[];unavailable=[];observations=0
     for before,after in zip(original['samples'],candidate['samples']):
         previous,current=_depths(before),_depths(after)
