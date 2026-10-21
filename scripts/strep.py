@@ -24,7 +24,11 @@ def save(path, data):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_suffix(path.suffix + '.tmp')
-    temp.write_text(json.dumps(data, indent=2, allow_nan=False) + '\n', encoding='utf-8')
+    # Stream large histories into the pending file instead of holding their
+    # encoded text and intermediate JSON chunks in memory together.
+    with temp.open('w', encoding='utf-8') as stream:
+        json.dump(data, stream, indent=2, allow_nan=False)
+        stream.write('\n')
     # Windows readers/virus scanners can briefly deny rename while holding a
     # handle. Preserve atomic replacement and the old valid JSON throughout.
     for attempt in range(6):

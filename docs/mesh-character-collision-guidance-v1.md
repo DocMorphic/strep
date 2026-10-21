@@ -427,6 +427,60 @@ lead from the traced full-humanoid backend allocation failure. Investigate
 streamed atomic JSON serialization and bounded history retention without
 discarding evidence, then continue solving the full-model memory problem.
 
+### Streaming atomic history reports (2026-10-21)
+
+`strep.save` now writes JSON incrementally to its existing temporary file before
+the same atomic replacement and bounded Windows sharing-violation retries.
+It no longer builds the entire encoded document and intermediate string list
+in memory. Indentation, strict finite-number handling, escaping, newline behavior
+and published bytes remain unchanged. An encoding or disk-write failure leaves
+the previous published report intact; a later successful write replaces the
+partial temporary file completely.
+
+All 42 targeted tests pass in `reports/stream-json-tests-v1`, including 14 atomic
+writer cases and the 28 existing compact-constraint/character/storage cases.
+New cases compare old-format bytes across nested data, Unicode and floating-point
+values, reject invalid values without publishing partial JSON, and simulate a
+mid-write disk error. Existing Windows retry and permanent-denial checks remain.
+
+One paired measurement rewrites the actual 72,075,888-byte retained flank history
+in fresh guarded workers. The legacy writer is loaded from the pinned `cadf2b4`
+source. Both copies exactly match the original file hash, without changing it.
+
+| Writer | Sampled process-tree peak | Write time |
+| --- | ---: | ---: |
+| Previous whole-document writer | 328,728,576 bytes | 2.149 s |
+| Streaming writer | 153,509,888 bytes | 2.696 s |
+
+Evidence: `reports/legacy-json-memory-v1` and `reports/stream-json-memory-v1`.
+Both retain the same 512 MiB maximum, 600 MiB free-memory reserve and 900-second
+execution limit. This is a measured memory reduction for report writing, with a
+small time cost; it is not a full-humanoid solver-memory or animation-quality claim.
+
+The fresh full-clock run in `reports/character-flank-stream-json-v1` keeps all
+original permissions, 969 geometry times, 16-iteration/four-backtrack limits and
+the explicit experimental representation. It completes in 257.109 seconds at
+a 370,212,864-byte sampled process-tree peak, under the same 512 MiB cap that
+stopped the previous attempt at 558,735,360 bytes. It retains eight accepted
+steps among 39 exports and stops with `no_decoded_nonregressing_step`. The last
+accepted candidate remains `probe-034`: 4.050580 mm contact error, failing the
+2 mm target, with zero failed geometry conditions/samples/surface records and
+zero measured penetration across all 969 times. Successful completion here
+means the bounded search finished and recorded its failure; it is not a passing
+animation, a global infeasibility proof or permission to replace the original.
+
+All four selected recovery regressions also pass: abrupt process exit during
+geometry, original/proposal optimizer recovery in fresh processes, and an
+interrupted export retaining its orphan while retrying the same direction.
+The verifier in `reports/stream-json-publication-v1` confirms all 35 earlier
+GLBs, native arrays and decisions exactly match the preserved interrupted run.
+It verifies every completed geometry receipt and full-clock metric reduction,
+then independently reproduces the final GLB constraints, strict edit bounds,
+contact report and contact arrays. All five study resource traces replay; the
+verifier finishes with 47 observations and a 150,380,544-byte sampled peak.
+Neither the old stopped attempt nor its pinned implementation is modified or
+silently resumed with new methods.
+
 ### Remaining integration and evaluation
 
 Keep the exact original source, editing limits, frozen tracks and complete
