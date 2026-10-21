@@ -97,3 +97,7 @@ Root-only isolation is now tested rather than assumed; a larger body/contact
 correction still needs explicit constraints, edit limits, between-key checks,
 engine validation and human review. No clip, quality gate or release capability
 is approved by this study. The project-wide goal remains active.
+
+The subsequent [full-body get-up trial](kaykit-getup-body-fit-v1.md) measures the
+raw source body separately and obtains one bounded static target pose that
+meets its declared geometric limits. It does not yet provide a corrected clip.
