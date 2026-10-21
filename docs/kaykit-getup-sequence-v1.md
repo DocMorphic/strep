@@ -105,6 +105,10 @@ targets or phases rather than silently removing difficult contacts. Then solve
 coupled neighboring keys with all pair constraints active together; repeat the
 complete decoded and engine checks before considering a candidate for review.
 
+The [contact boundary feasibility study](kaykit-getup-boundary-feasibility-v1.md)
+now records this work: all 11 selected static poses pass, while between-key
+geometry still rejects two of four locally corrected hand-contact windows.
+
 Self-collision, anatomical support, balance, semantic correctness and animator
 cleanup remain separate requirements. The project-wide release goal remains
 active across all action families.
