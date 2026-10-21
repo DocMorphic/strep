@@ -90,6 +90,9 @@ The fitted result SHA-256 is
 The actual engine result SHA-256 is
 `04aac670e42fe688263f16d3d1098f08dc506e116a85c8231f2abbc912c54eeb`.
 
+The [rolling correction study](kaykit-getup-rolling-v1.md) extends this work
+with serialized prefix preservation and independent engine checks.
+
 Next, extend correction across the full clip while preserving already validated
 incoming intervals. A local solve must include its changed boundary geometry;
 independently successful windows cannot simply be stitched together and called
