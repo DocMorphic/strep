@@ -1,6 +1,8 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_support_centroid_bounds.py",
+    "tests/test_native_support_preflight.py",
     "tests/test_native_triangle_pair_projection.py",
     "tests/test_native_projection_guard_conflicts.py",
     "tests/test_native_inverse_rigid_frame.py",

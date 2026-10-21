@@ -320,3 +320,84 @@ reserve. It changes no animation, weights or acceptance thresholds. Next work
 is to isolate support feasibility from rate feasibility and evaluate temporally
 coupled corrections; no accepted correction or release approval follows from
 these measurements.
+
+## Fixed-target conflict and reusable preflight
+
+The geometry-only follow-up (`reports/kaykit-wave-contact-feasibility-v1/`)
+retains the temporal trial's fixed targets and all movement limits while
+excluding rates from proposal search. It tries up to three deterministic starts
+per pose/leg: previous solution, the retained floor candidate, and source pose.
+Of 240 native-key leg solves, 24 remain unresolved. The serialized derivative
+also fails the 701-time geometry and rate replay and remains unselected. The
+proposal/replay resource traces contain 149/31 observations. These solver
+failures alone do not prove infeasibility.
+
+A separate necessary bound does identify a target conflict. When every selected
+vertex may move at most D, their arithmetic centroid may move at most D by the
+triangle inequality. The centroid must reach both the planar target disk and
+the clearance half-space. Its distance to that intersection is therefore a
+necessary movement bound, even if all skeleton, joint-angle and temporal
+constraints are relaxed. Individual selected vertices must also reach the
+clearance half-space; the larger of these bounds is retained.
+
+On the existing target definitions, the left-foot condition conflicts at 41 of
+701 audit times. At 3.566666603088379 seconds, its four selected vertices require
+at least 32.687260 mm maximum movement, versus the authored 30 mm limit. The
+tangential and normal components of the centroid bound are 31.219244 mm and
+9.685853 mm. No right-foot conflict is established by this relaxation. There
+may still be joint, geometry or temporal conflicts there; absence of a witness
+is not a feasibility result. The bound uses a conservative floating comparison
+reserve and is not a formal interval-arithmetic certificate.
+
+`scripts/native_support_preflight.py` exposes this check as a read-only command:
+
+```powershell
+python scripts/native_support_preflight.py character.glb support-preflight.json reports/support-preflight-new
+```
+
+The output directory must be fresh. This command takes the shared numerical
+worker lock; scheduled work should still use the resource-guard launcher. It
+does not run an optimizer, alter an asset, change a target, or select a candidate.
+It is currently a CLI/API preflight, not integrated into Studio's controls.
+
+The input has this exact structure; replace the hash, vertex indices, interval
+and target with values bound to the actual single-animation GLB:
+
+```json
+{
+  "schema": "strep-native-support-preflight-v1",
+  "glb_sha256": "ACTUAL_SHA256",
+  "animation_index": 0,
+  "supports": [{
+    "id": "left-foot",
+    "vertex_ids": [12, 13, 14],
+    "interval_s": [0.0, 1.0],
+    "target_xyz_m": [0.2, 0.0, 0.03],
+    "plane": {"normal_xyz": [0.0, 1.0, 0.0], "offset_m": 0.0},
+    "clearance_m": 0.001,
+    "horizontal_tolerance_m": 0.003,
+    "maximum_vertex_displacement_m": 0.03
+  }]
+}
+```
+
+Vertex IDs index the complete decoded mesh population in primitive order. Every
+selected vertex is required to clear the plane; the arithmetic centroid's
+tangential projection must reach the target within the stated radius. The
+target's normal coordinate does not add a height constraint. The plane is
+`dot(unit_normal, point) = offset_m`, with clearance on its positive side.
+The command supports finite single clips up to 30 seconds, one to 64 intervals,
+at most 20,000 distinct vertices per support and at most 20,000 audit times. It
+includes exact interval boundaries, every native key/midpoint and a 120-Hz grid;
+it rejects oversized populations instead of truncating them.
+
+Thirty-one checks cover combined bounds, a constructive relaxed-bound witness,
+individual clearance, rotated/translated planes, equality/roundoff, malformed
+inputs, complete populations, exact fractional intervals and source binding.
+The actual KayKit preflight independently reproduces all 1,402 contact/time
+bounds within 1.39e-17 m and all 41 decisions, and recomputes target identities
+and anchors from the source. Evidence is `reports/support-preflight-v1/`;
+35 resource observations replay, peak RSS 117,673,984 bytes. No motion quality
+or release gate is approved. Next: propose a different, explicit anchor under
+the unchanged edit limits, retain this impossible request, and only then test
+articulated and temporal feasibility.
