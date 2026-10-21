@@ -1392,6 +1392,60 @@ query needs versioned original-baseline recomputation and regression tests;
 old depth allowances must not be silently rebased. The diagnostic does not
 replace the production query, certify geometry or make any candidate usable.
 
+### Untouched-source, self-surface and procedural checks
+
+`reports/humanoid-containment-origin-diagnostic-v1` inspects all four affected
+point/time queries on the untouched original and replays the 20 retained edited
+pose records. The original classifies all four points outside using signed
+distance, ray containment and solid-angle winding. Its distances range from
+9.763364 to 14.889451 mm. The nine edited-pose disagreements all take the
+nearest-triangle-normal sign branch, whose arithmetic is independently
+reconstructed. All poses have one connected component with consistent winding
+and positive volume. No proper crossings are found against the selected nearest
+triangles' overlapping boxes; this local absence does not establish whole-mesh
+validity.
+
+`reports/humanoid-containment-self-diagnostic-v1` therefore checks the complete
+36,108-triangle populations at 2.1375 s for the original and the v3 full-step
+research seed. The original has 114 proper self-crossing pairs; the edited pose
+has 275. All 114 original pairs remain and 161 new pairs appear. Twenty
+representative pairs per pose have exact rational interior-crossing witnesses,
+replayed against the saved binary-float triangles at publication. The selected
+edited pairs include a triangle 4.316369 mm from the query point; this is the
+distance to that triangle, not a penetration depth or the intersection-witness
+distance. The represented triangles are already the result of floating-point
+animation and skinning; exact witnesses do not certify those prior operations.
+
+Exhaustive point-to-triangle distances over all 36,108 triangles match the
+accelerated nearest distance in both poses. The original has tied nearest
+triangle identities; the edited pose selects the same face by both methods.
+This comparison does not support a nearest-distance lookup error. The new
+self-crossings establish a separate defect in the research seed and an
+unsupported assumption behind treating its local normal as a solid-boundary
+sign. They do not establish a unique cause for every sign discrepancy or
+certify the original as free of self-collision.
+
+`reports/containment-overlap-counterexample-v1` provides an asset-free analytic
+regression candidate. Two 2-by-2-by-2 boxes are centered at (0, 0, 0) and
+(0.75, 0.25, 0.2). The point (-0.26, 0.1, 0.2) is strictly inside the first
+and outside the second. On their concatenated surfaces, the installed query
+returns -0.01 m (outside), while ray containment is inside and the winding sum
+is approximately +1. Each box separately gives the analytically correct sign.
+The combined mesh passes the library's volume check, showing why that check
+does not establish the assumptions needed for a nearest-normal sign rule on
+overlapping surfaces. This is a procedural diagnostic, not a changed solid
+policy or production fix.
+
+The next implementation must keep disagreement and self-intersection evidence
+unresolved rather than use an optimistic depth value. It needs analytic
+regressions, validated boundary/overlap semantics and checks that reject new
+self-crossings before retaining a correction as progress. Any changed query
+requires versioned reevaluation of original and candidate evidence; preserving
+the old zero depth allowances without reevaluation would be misleading.
+Full-clock self geometry, support, other interactions and human quality remain
+separate requirements. The current production query and original animation
+remain unchanged.
+
 ### Remaining integration and evaluation
 
 Keep the exact original source, editing limits, frozen tracks and complete
