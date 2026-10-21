@@ -880,6 +880,112 @@ The clearance verifier confirms unchanged seven-track permissions, source and
 implementation bindings, complete-clock residual counts, contact observations,
 strict edit decisions, single-time geometry metrics and resource replay.
 
+### Timing the retained finger contact pose
+
+`reports/humanoid-finger-timing-v1` keeps the seven-track permission set and
+middle-knot controls unchanged, varying only the two existing side knots. All
+five profiles decode to exactly the same world matrices at 2 seconds. The study
+freshly reconstructs every one of the 183,512 native residual rows, including
+all original speed/acceleration caps; no failed row has a zero source cap.
+All profiles pass strict edit bounds, but none passes all native conditions.
+
+| Side/middle/side multipliers | Failed native rows | Worst normalized native excess |
+| --- | ---: | ---: |
+| Retained: 0, 1, 0 | 1,047 | 2.963387 |
+| Broad triangle: 0.5, 1, 0.5 | 639 | 1.423411 |
+| Plateau: 1, 1, 1 | 151 | 1.423280 |
+| Early: 1, 1, 0.5 | 636 | 0.690336 |
+| Late: 0.5, 1, 1 | 153 | 1.423280 |
+
+Failure count alone would choose the plateau even though its worst overrun is
+larger. The next proposal starts from the early profile, selected by minimum
+worst normalized residual, with failure count as a tie-breaker. The temporal
+search keeps all 21 middle-knot components fixed and adjusts the 42 side-knot
+components. Its 183,513 norm rows retain all native constraints and the point
+contact. The 37,058 edit/displacement rows are hard in the affine solve; the
+146,454 source-rate residuals guide a minimax research step. Actual decoded
+rate caps remain unchanged and mandatory. A partially improved research iterate
+is never treated as an accepted animation.
+
+The two recorded steps use a 0.1 normalized trust box, 0.001 central-difference
+stencils where both sides fit the control box, and recorded one-sided stencils
+otherwise. The contact derivative with respect to all free columns is exactly
+zero. Each step saves its complete affine rows and sparse derivative, solves
+with the existing 30-second/100-iteration settings, and exports four step sizes.
+Every export is freshly decoded on all 2,017 times, its strict edit bounds are
+checked, and its contact-time world matrices must exactly equal the seed's.
+
+`reports/humanoid-finger-temporal-direction-v1` converges in 29 solver iterations;
+the best full step has 426 native failures, with residual merit changing from
+(0.690335928, 7.838403026) to (0.104154324, 0.910499895). Merit is the maximum
+positive normalized residual followed by the sum of squared positive residuals.
+The second step, `reports/humanoid-finger-temporal-direction-v2`, converges in
+26 iterations and reduces this to 173 failures and (0.099466045, 0.419727286).
+Both preserve the exact contact pose and pass hard edit/displacement and strict
+serialized edit checks. Neither is eligible for full geometry evaluation.
+
+The timing comparison uses the existing 512 MiB protocol. The affine fitting
+steps explicitly use a 2 GiB process-tree budget with a 1 GiB available-memory
+reserve and 0.1-second resource polling. Their observed memory use does not
+establish support under the smaller protocol. Source-rate caps, edit bounds,
+clock coverage and the geometry policy are unchanged throughout.
+
+`reports/humanoid-finger-temporal-verification-v1` independently decodes all
+13 retained profile/probe exports, reconstructs the saved affine origins, cap
+arrays and steps, verifies edit/contact observations and replays resource
+traces. Its physical-row diagnosis locates the largest remaining positional
+speed excess on RightArm over 2.125–2.133333 seconds: 0.206788731 m/s against
+the source cap of 0.188071958 m/s plus the unchanged 1e-5 tolerance. Other
+near-active failures include shoulder angular speed immediately after contact
+and arm/finger acceleration at the 2.8-second exit. This is evidence about
+this local search, not global infeasibility.
+
+`reports/humanoid-finger-timing-refinement-v1` declares an additional control
+knot at 2.2 seconds, increasing the control representation from 63 to 84
+components while holding the 21 contact components fixed. The original
+seven-track permissions are preserved separately. Only the control basis is
+refined: source animation key times, editable window, protected spans,
+rotation/displacement limits, target, source-rate cap arrays and geometry policy
+remain unchanged. Interpolating the previous controls into the new basis
+preserves every stored native key and produces a byte-identical seed GLB.
+Residual bookkeeping is not claimed byte-identical: edit-control arithmetic
+can differ, while the native motion itself remains identical.
+
+The first 63-free-component step converges in 25 solver iterations. Its best
+export retains the contact pose, passes hard and strict edit checks, and has
+124 native failures with merit (0.065940496, 0.158173057). The actual improvement
+is 98.903643% of the affine prediction. A separately recorded continuation,
+`reports/humanoid-finger-timing-refinement-v2`, therefore doubles the proposal
+trust box from 0.1 to 0.2; authored cumulative limits remain unchanged. Its best
+export has 116 failures and merit (0.064892500, 0.157293684). Neither step is an
+accepted animation or eligible for full-clip geometry evaluation.
+
+The diminishing improvement motivates joint pose-and-timing restoration under
+the actual contact and collision requirements. Exact preservation of the chosen
+spatial seed was an experimental restriction, not a requirement to freeze that
+particular arm/finger pose forever. Any joint search must still retain the
+declared source-rate and edit limits, test the supplied rig and actual prop
+triangles, and undergo complete-clock geometry and the remaining release checks.
+
+`reports/humanoid-finger-refinement-verification-v1` independently decodes all
+eight refined-step exports, reconstructs their affine origins and steps, and
+confirms that original native cap/scale arrays are unchanged. The basis-transfer
+seed GLB is byte-identical to its predecessor; every non-edit residual is also
+identical. The best remaining failures comprise 25 positional-speed, four
+positional-acceleration, 77 angular-speed and ten angular-acceleration rows,
+with no zero-cap failures. This verifier and the preceding 13-export verifier
+retain their source bindings and resource replays.
+
+Before a joint search, `reports/humanoid-contact-pose-halfspaces-v1` checks all
+36,108 original actor triangles against all 12 original convex panel face
+planes at the retained contact pose. Every actor triangle has a panel face
+plane placing all three vertices outside with at least the declared 0.05-mm
+proposal clearance; the smallest measured gap is 0.099998402 mm. Thus 108,324
+scalar vertex/plane rows can guard this pose proposal without dropping actor
+triangles. This establishes a feasible starting assignment for the next local
+model, not a fitted animation, whole-scene certificate or continuous collision
+guarantee. Actual triangle/containment checks remain authoritative.
+
 ### Remaining integration and evaluation
 
 Keep the exact original source, editing limits, frozen tracks and complete
@@ -908,8 +1014,8 @@ Frame and optimizer journals are implemented and independently tested; see
 banks integrated into that optimizer protocol before larger resumable fits.
 The export diagnostic and combined experiment above resolve the demonstrated
 source-rounding barrier on one generated case. Both obstacle placements and the
-real humanoid now expose additional local-search limits. Next fit temporal controls
-around the retained clearance pose under its explicitly declared seven-track
+real humanoid now expose additional local-search limits. Next fit pose and timing
+jointly using the contact-time triangle guards, explicitly declared seven-track
 permissions and original source-rate caps. Preserve the separate four-track
 baseline and all failed trials. Complete-clock geometry, support and every
 other acceptance requirement remain mandatory. Then integrate validated proposal state with recovery and
