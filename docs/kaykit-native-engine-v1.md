@@ -688,3 +688,11 @@ inside the conditional bound. The rigid skin identity matches decoded points
 within 3.34e-16 m. This validates the stated fully owned vertex case, not all
 possible rigs or an animation correction. The subsequent Studio integration
 and its separate evidence are documented in the linked precheck report.
+
+The subsequent [auxiliary-root isolation study](kaykit-auxiliary-root-v1.md)
+checks all seven generated transfers and the original `Lie_StandUp` clip at
+2,174 key and midpoint samples. Moving only the root's skin contribution while
+preserving all other node worlds leaves each maximum floor depth unchanged;
+independently replayed zero-weight witnesses bound this restricted edit class.
+The next work is full-body proportions/contact placement, not automatic adoption
+of that root probe. No motion or release approval follows.
