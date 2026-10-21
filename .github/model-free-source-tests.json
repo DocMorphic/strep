@@ -623,6 +623,7 @@
     "tests/test_mesh_scene_preview.py",
     "tests/test_native_mesh_character_fit.py",
     "tests/test_native_mesh_character_surface.py",
+    "tests/test_native_control_neighborhood.py",
     "tests/test_native_mesh_geometry_journal.py",
     "tests/test_native_mesh_character_journal.py",
     "tests/test_native_mesh_character_recovery.py",

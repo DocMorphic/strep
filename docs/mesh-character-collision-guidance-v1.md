@@ -195,6 +195,110 @@ proof that the authoring problem is globally infeasible. Comparing continuous
 and serialized proposals is the next diagnostic; this study does not yet
 attribute the discrepancy to quantization or justify changing source limits.
 
+### Export rounding diagnostic
+
+`reports/character-storage-diagnostic-v1` compares each of those ten proposals
+with continuous values, the normal Float32-key preview and an independently
+decoded GLB. **All ten continuous proposals pass every native source row.**
+Rounding to Float32 introduces the same 6–24 positional-acceleration failures
+seen in the GLBs. Preview versus decode differs by at most 6.395e-9 in normalized
+residual; the source failures are already present in the stored-key preview.
+No key times, permissions or acceptance limits change in this diagnostic.
+
+An initial finite translation-grid experiment rounds only the existing knot
+controls to nearby power-of-two increments, leaving rotations unchanged.
+Twelve distinct candidates survive the original control/trust box checks; all
+twelve fail decoded source checks. The rejected prototype and every candidate
+are archived in `reports/character-translation-grid-study-v1`, rather than
+enabled in the fitter. Aligning knot offsets does not guarantee rate-preserving
+serialized keys after interpolation and changes of floating-point exponent.
+
+### Nearby authorized control refinement
+
+The next diagnostic varies a single existing translation control, or one axis
+of all editable knots on an existing track, by small fractions of the track's
+Float32 spacing. Its complete first stage records 120 exported candidates.
+Some pass all original source checks, but their complete geometry audits still
+show about 0.423 mm of new floor depth. They remain rejected. The second stage
+was explicitly stopped after its native-only objective had already reached
+zero; its completed 136 probes and an unfinished audit are retained under
+`reports/character-control-neighborhood-v1`, with an operator-stop record and
+the guard's failed exit. This is not a completed fitting success.
+
+`native_control_neighborhood.py` implements a single finite pass of that search
+as an optional proposal step. `native_mesh_character_fit.py --refine-storage`
+uses it after an otherwise useful exported proposal fails source checks. Every
+evaluated preview preserves its controls and full residual array. The first
+preview that passes the original source/contact checks is exported through the
+normal writer and independently checked again. Full decoded geometry can still
+reject it, and surface guidance can learn new floor/triangle witnesses from it.
+
+The original bounds, trust box, editable tracks, knot basis, frozen keys, native
+key times, source rates and contacts remain in force. The search uses ten signed
+step multipliers per control direction and rejects populations above 1,536
+probes rather than silently dropping directions. This is not an exhaustive
+search. It changes no individual stored key outside the existing control basis
+and does not enable a new storage-adjustment permission. Both experimental
+flags remain off by default and are not yet part of Studio optimizer recovery.
+
+All 26 targeted checks pass: the retained rounding regression now passes after
+independent export, frozen keys and control/trust boxes remain intact, invalid
+option values are rejected, and existing native/surface protections and both
+default recoverable-optimizer equivalence cases still pass. The final test run
+uses unchanged source throughout, peaks at 138,493,952 bytes and replays all 264
+resource observations. The test artifact is
+`reports/character-control-refinement-tests-v1`; the original limits and release
+gates remain unchanged.
+
+### Completed combined full-clock experiment
+
+On the **same original blocked-rotation fixture and permissions** as the failed
+full-clock comparison above, enabling both `--surface-guidance` and
+`--refine-storage` completes with a sampled admissible candidate. The run keeps
+the 16-iteration limit, four backtracks, 0.25 trust fraction and all 969 native/
+frame geometry times. Five steps are accepted among 24 exported proposals.
+
+| Method | Final contact error | Accepted steps | Full-clock candidate passes |
+| --- | ---: | ---: | --- |
+| Unchanged baseline | 10.000000 mm | 0 | No |
+| Surface/floor guidance only | 10.000000 mm | 0 | No |
+| Guidance plus nearby control refinement | 1.999557 mm | 5 | Yes, sampled checks only |
+
+The final candidate passes all original native source/contact rows and strict
+exported edit bounds. Its complete geometry report has zero failed conditions,
+zero failed times, zero surface records and zero maximum measured penetration.
+The 2 mm contact threshold is unchanged. The solver retains 9,690 triangle/time
+witnesses and 2,907 floor vertex/time witnesses. The original remains selected;
+neither human quality nor engine/release approval is inferred.
+
+The run completes in 283.703 seconds including admission, peaks at 463,126,528
+bytes and replays all 281 resource observations under the original 512 MiB cap.
+Evidence is in `reports/character-control-refinement-fit-v1`. This establishes a
+successful correction on one generated fixture, not humanoid scalability,
+natural animation, continuous collision freedom, a solved interaction or broad
+action coverage. The flank fixture and real humanoid remain separate pending
+validation.
+
+The separate verifier in `reports/character-control-refinement-publication-v1`
+reloads the final GLB and reproduces the archived constraint residual array
+exactly, rechecks every strict track bound, and independently reproduces the
+point-contact report and observation arrays. It verifies the complete geometry
+observation receipt, all 969 condition identities, source/permission equality
+with the previous comparison and the five accepted-step decisions. It reduces
+the saved geometry report without rerunning triangle queries. All 31 verifier
+resource observations replay; quality and release approval remain false.
+
+To reconstruct the generated fixture, use `prepared` from
+`tests/test_native_mesh_character_fit.py`, author the explicit root rotation
+channel with `rotation_source` from `tests/test_native_mesh_character_surface.py`,
+and permit its existing 3-degree root rotation in addition to the original
+20 mm translation/displacement limits. Add a copy of the existing cube prop
+whose center is the original actor vertex 2 at 1 s plus
+`[-0.105, -0.2, 0.2]` metres, retaining the original contact/grip target. Bind
+the resulting source hashes before either method runs. Set the geometry clock
+to `native-and-frame-populations`, retaining explicit times `[0, 1, 2]` and all
+original limits/planes. The comparison changes proposal methods only.
+
 ### Validation
 
 The final guarded test run passes all 21 cases: complete pair/time collection,
@@ -233,8 +337,10 @@ a usable clip, not something this hand-contact experiment establishes.
 Frame and optimizer journals are implemented and independently tested; see
 `native-mesh-geometry-recovery-v1.md`. This new guidance still needs its witness
 banks integrated into that optimizer protocol before larger resumable fits.
-Complete-clock auditing and fitting above retain the failures. Next compare the
-remaining acceleration failures before and after serialization, then validate
-any correction under unchanged limits and test different rigs and actions.
+The export diagnostic and combined experiment above resolve the demonstrated
+source-rounding barrier on one generated case. Next test the other obstacle
+placement and real humanoid, preserving every original source/edit/contact and
+geometry limit, then integrate validated proposal state with recovery and
+continue different rigs/actions, partner, engine and human-review evaluation.
 These are steps toward the existing complete animation-authoring goal; neither
 proposal improvement nor resumable evaluation satisfies its release gates.
