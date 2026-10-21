@@ -29,10 +29,17 @@ shards per operating system, with 78 or 79 modules each. It retains the
 90-minute limit, all assertions, both operating systems, and all 49 Node suites
 (run once per system). The new regression reads the workflow's actual shard
 indices and dispatch count and verifies every declared module appears exactly
-once. It passes with the other nine runner checks. The complete new hosted run
-still requires its own outcome; a module-count split is not a measured runtime
-balance. No geometry, inference, engine or human-quality approval follows from
-this change.
+once. It passes with the other nine runner checks. The complete new hosted
+[run 39623896238](https://github.com/DocMorphic/strep/actions/runs/39623896238)
+passes all twenty jobs at `08477e0`: Linux reports 12,850 core Python passes,
+ten skips and 70 passing subtests; Windows reports 12,851 passes, nine skips
+and 70 passing subtests. All 49 Node suites and separate adapter/material jobs
+pass on both systems; overlapping job coverage is not added to core totals.
+All twenty complete logs and source inventory are hash-verified under
+`reports/full-source-ci-08477e0-v1`. Windows shard 6 still takes 5,119.09 seconds
+in pytest, so the split does not establish balanced runtimes. Newer source
+requires its own CI outcome. No geometry, inference, engine or human-quality
+approval follows from this change.
 
 All twelve job logs, terminal metadata, timeout annotations and source inventory
 are retained with file hashes under `reports/full-source-ci-d83f474-v1`.
@@ -49,16 +56,14 @@ the offline correction-editor request and staging check.
 All eight complete job logs and metadata are retained with SHA-256 receipts
 under `reports/contact-rig-ci-08477e0-v1`. These results cover the declared
 focused source regressions; overlapping suites are not added to the broader
-workflow's totals. The full-source workflow at this revision still has two
-running jobs at this observation. Neither this focused success nor the
-partial full-source result establishes inference, actual-engine playback,
+workflow's totals. The full-source workflow at this revision subsequently
+completed as reported above. Neither workflow establishes inference, actual-engine playback,
 realistic motion, human review or release approval.
 
 ## Early rejection of invalid transition claims
 
 The completed Linux core logs at `08477e0` report 12,850 passing tests,
-ten skips and 70 passing subtests. One Windows core job remains pending at
-this observation. A single transition correction/replay test accounts for
+ten skips and 70 passing subtests. A single transition correction/replay test accounts for
 2,321.41 seconds of the Linux runtime. It includes complete fitting and
 verification plus deliberately corrupted results, so this duration cannot be
 attributed to any one operation.
@@ -74,8 +79,12 @@ The helper itself is included in the archived method bindings.
 All 72 pure header-policy checks and ten inventory/dispatch checks pass locally
 without importing NumPy or Torch. Four integration cases additionally require
 early rejection in the actual verifier and ensure that a valid header alone
-cannot verify a missing package; their numerical-module run and the complete
-transition regression remain pending. No speed improvement is measured yet.
+cannot verify a missing package. All four pass in a guarded local run. Three
+retained-prior-verifier comparisons confirm that the old implementation tries
+to read further package inputs for those malformed claims, while the new one
+rejects the header without modifying the result. All 30 resource observations
+replay. The complete transition regression on the changed source remains
+pending; no end-to-end speed improvement is measured yet.
 The new test module makes the current inventory **631 Python modules and
 49 Node suites**, with 180 modules in the focused contact-rig inventory.
 

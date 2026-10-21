@@ -489,17 +489,19 @@ layout to development intake; rig-family independence and generalization remain
 unproven. Existing frozen held-out reservations and release gates are unchanged.
 Raw asset payloads and bundled animations are excluded from the public repo.
 
-The follow-up `reports/kaykit-rig-intake-v1/` is prepared and its metadata-only
-waiter is live. It depends on verified completion of the queued reference-surface
-diagnostic. Its worker will run the unchanged strict rig importer and profile
-resolver, retain the original GLB byte-for-byte, calculate the complete default
-skin and catalog all 95 original clips through the existing animation parser.
-Rejected clips retain their reasons; successful parsing will not imply sampled
-motion, transfer, engine or quality approval. Preparation passes syntax and ten
-prerequisite-decision cases without importing NumPy. The numerical intake has
-not run yet. Missing/failed prerequisite evidence, changed inputs/methods or
-resource admission failure stops this job without silently retrying. It keeps
-the existing exclusive worker lock and 512-MiB/600-MiB/900-second resource policy.
+The follow-up `reports/kaykit-rig-intake-v1/` completed after verified completion
+of the reference-surface diagnostic. The unchanged strict importer accepts the
+original rig and all 18 proposed role mappings. All 4,858 default skin vertices
+are finite and retained, with nine mesh primitives and original GLB bytes.
+Of 95 original clips, the parser accepts 83. Ten zero-duration pose clips reject
+under the positive-duration rule; `Spawn_Air` and `Spawn_Ground` reject because
+contact editing does not support their animated non-unit scale. No scale track
+is dropped or normalized to obtain acceptance. The complete catalog and reasons
+are saved, and all 20 resource observations replay under the existing exclusive
+worker lock and 512-MiB/600-MiB/900-second policy. Preparation separately passed
+syntax and ten prerequisite-decision cases without NumPy. This establishes
+intake, mapping and default-vertex calculation, not dynamic skin agreement,
+generated motion, rig transfer, engine behavior or animation quality.
 
 Local Khronos glTF Validator `2.0.0-dev.3.10` reports zero errors, nine warnings,
 one informational issue and 54 hints for the unchanged Minion GLB; its issue

@@ -2,6 +2,46 @@
 
 This development trial takes Studio's imported-object contact correction beyond the generated closed-mesh fixtures. It uses an existing native Kimodo humanoid clip, unchanged character bytes, a self-created panel, and the production saved-scene and correction workers. It is a fixed-panel touch diagnostic, not a successful high-five or a new motion-generation experiment. No training or new inference is involved.
 
+## Completed deterministic-containment baseline and reference diagnostic (2026-10-21)
+
+The fresh fixed-ray baseline completed all **2,017** declared times with the
+original source, query batch size one, permissions and geometry limits. Every
+sample fails the floor check. Peak penetration is **10.436307 mm** at
+0.820833333 seconds, at vertex 2147. Every sampled actor surface contains proper
+crossings, ranging from 96 to 222 pairs per time. Actor/panel surface crossings
+occur at 248 times, with 42,666 proper-crossing records across those times.
+
+The complete actor/panel decision fails at all 2,017 times: containment into
+the actor is unavailable throughout because its own surface screen fails.
+Containment into the panel is also unavailable at one time. Unavailable
+containment remains a failed condition, not zero penetration or a clearance
+claim. These counts differ in scope from the older audit's 248 failed
+actor/panel times described below.
+
+The separate default-node-transform diagnostic retains original inverse binds
+and all 18,056 vertices / 36,108 triangles. It finds **61 proper-crossing pairs**
+and no degenerate faces. Sixty of the 214 pairs from the earlier 270-sample
+prefix also occur in this reference; 56 of the 93 persistent prefix pairs occur
+there. One reference pair was absent from that prefix. This establishes
+overlapping witnesses in the evaluated reference representation, not that all
+motion crossings originate in the asset, that the reference is an anatomical
+neutral/bind pose, or that mesh repair is solved. Its minimum Y is -2.627560 mm;
+that descriptive value introduces no new floor policy.
+
+The final baseline, reference diagnostic and following rig-intake resource
+traces replay 772, 25 and 20 observations respectively. Completed geometry,
+observation-index, reference-array, surface-report and comparison hashes are
+verified in `reports/humanoid-completed-diagnostics-v1/result.json`. The full
+baseline is retained under
+`reports/humanoid-fixed-ray-full-original-continuations-v1/attempt-010`.
+Original outputs remain selected and unapproved. Preparation and earlier
+partial observations below retain their historical scopes.
+
+The next correction must separate asset/reference defects and protected
+leg/root failures from hand-to-panel contact. Broader edit permissions or asset
+repair require a fresh versioned request and comparison to this failed baseline.
+No intersecting faces, floor failures or motion phases are exempted.
+
 ## Fixed request
 
 The source is the existing `native-scene-envelope-pilot-v1/high-five-A` clip: 77 joints, 18,056 vertices, 36,108 triangles, up to eight skin influences, 120 source keys and approximately 3.967 seconds. Its GLB SHA256 is `fe1920f9b93c17bd76984cf379a69902c14c27575a8fda660eeec390f4781eca`.
@@ -84,7 +124,7 @@ The metadata-only run imported no NumPy and changed no numerical worker source,
 model, animation, permission or acceptance policy. This is incomplete-prefix
 diagnostic evidence, not a complete motion or release result.
 
-### Queued reference-surface diagnostic
+### Reference-surface diagnostic preparation
 
 `reports/humanoid-reference-surface-v1/` contains a prepared diagnostic of all
 18,056 vertices and 36,108 triangles using the asset's default node transforms
@@ -105,9 +145,8 @@ reserve, 15-second stable admission and 900-second execution limit. Source or
 input changes reject the queued job, and the original exclusive worker lock
 still applies. There is no automatic retry after diagnostic failure.
 
-Preparation verifies syntax and nine predecessor-decision cases without loading
-NumPy. The waiting process was observed live, but **reference geometry has not
-yet been evaluated**. These are queue/admission checks, not completed numerical
-tests or asset-quality evidence. No source asset, clip, permission, tolerance
-or running numerical implementation was changed. Inspect this study's terminal
-state and saved results before making any reference-shape claim.
+Preparation verified syntax and nine predecessor-decision cases without loading
+NumPy. Those queue/admission checks preceded the completed numerical result
+reported above. No source asset, clip, permission, tolerance or running numerical
+implementation was changed. The completed diagnostic is not asset-quality or
+motion approval.
