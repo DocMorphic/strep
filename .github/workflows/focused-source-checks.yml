@@ -1,4 +1,5 @@
 name: Focused source diagnostics
+run-name: Focused source diagnostics — ${{ inputs.test_file }}
 
 on:
   workflow_dispatch:
@@ -9,6 +10,10 @@ on:
         type: choice
         default: tests/test_native_motion_orientation.py
         options:
+          - tests/test_verify_native_object_scene_engine.py
+          - tests/test_native_actor_scene_job.py
+          - tests/test_material_scene_surface_job.py
+          - tests/test_verify_native_scene_engine.py
           - tests/test_kimodo_scene_guidance.py
           - tests/test_kimodo_scene_retention.py
           - tests/test_scene_metric_retention.py
