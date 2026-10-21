@@ -583,3 +583,48 @@ To review on Windows:
 
 No review server was started by the packaging job. The existing crawl packet
 remains available separately; this wave comparison does not replace it.
+
+### Temporal representation diagnostic
+
+`reports/kaykit-wave-basis-density-v1/` compares least-squares fits to the same
+per-key pelvis/leg candidate. The variants use three quadratic Bernstein
+controls, 5/9/17/33 uniformly spaced clamped cubic B-spline controls, or an
+identity basis over all 120 native keys. All six retain the original key clock
+and native interpolation. Each is exported and read back independently at 701
+times with unchanged contact, edit and rate gates. This is approximation of
+one rejected candidate, not a constrained solve or an infeasibility proof.
+
+| Controls per component | Maximum rotation fit error (degrees) | Maximum pelvis fit error (mm) | Left/right contact error (mm) | Failed sampled conditions |
+| --- | ---: | ---: | --- | ---: |
+| 3 | 1.520559 | 1.693842 | 19.062408 / 10.050232 | 1,280 |
+| 5 | 0.850151 | 1.567751 | 11.858052 / 9.226300 | 1,050 |
+| 9 | 0.497866 | 1.172429 | 8.185409 / 9.062760 | 963 |
+| 17 | 0.312899 | 0.799139 | 5.121410 / 6.493307 | 926 |
+| 33 | 0.231200 | 0.332439 | 3.561380 / 3.452718 | 393 |
+| 120 (native-key identity) | 0 | 0 | 2.904033 / 2.902264 | 4 |
+
+Every variant fails both rate comparisons. The identity fit retains the four
+strict support-gap failures of the per-key candidate. The three-control fit
+also exceeds the mesh displacement budget at 17 samples; the other fits' listed
+geometry failures concern support height and horizontal contact. More controls
+improve approximation here, but neither a denser fit nor a smaller fitting
+residual establishes realistic motion or solves the rate/contact tradeoff.
+
+Independent verification reconstructs the source/reference offsets and every
+basis, checks the least-squares normal residuals below 1e-12, and replays all
+12 completed resource traces (435 observations). Its own guarded run has 46
+observations. The identity export differs from the per-key reference's maximum
+mesh-displacement observations by at most 5.95e-9 m; floor, pelvis-displacement
+and angle observations are identical. The release acceptance contract remains
+unchanged.
+
+A separate follow-up in `reports/kaykit-wave-pelvis-temporal-hard-v1/` uses 17
+controls per component (357 parameters) as an intermediate-cost experiment.
+It leaves root, mesh, joint, ankle and rotation budgets outside the restoration
+slack. Initial controls are reduced toward zero if needed to satisfy those
+hard budgets. The solver may still evaluate infeasible trial points; only a
+saved hard-feasible iterate is eligible for export. Contact and rate limits
+remain unchanged and must pass a separate exported-file replay. A 0.01-degree
+internal rotation margin provides export room without widening the 15-degree
+authored limit. No feasibility, convergence, engine or quality result is
+inferred from preparing or launching this experiment.
