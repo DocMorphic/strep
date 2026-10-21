@@ -131,3 +131,36 @@ def test_character_correction_requires_local_depth_pass_even_when_other_geometry
         assert all(state['files'][p.relative_to(folder).as_posix()]==sha256(p) for p in reports)
     result=read(folder/'result.json');assert result['accepted_steps']==0 and result['candidate'] is None
     assert result['original_selected'] and not result['quality_approved'] and not result['release_approved']
+
+
+@pytest.mark.parametrize('recoverable',[False,True])
+def test_character_correction_cannot_ignore_a_failed_self_guard(tmp_path,monkeypatch,recoverable):
+    import action_worker_lock
+    import native_mesh_character_fit as fitting
+    import native_mesh_character_recovery as recovery
+    from strep import read,sha256
+    from test_native_mesh_character_fit import prepared
+    from test_native_mesh_character_recovery import until
+    monkeypatch.setattr(action_worker_lock,'ROOT',tmp_path/'locks')
+    _,permissions,policy=prepared(tmp_path);real=fitting.compare_self_surfaces;calls=[]
+    def reject(before,after):
+        result=real(before,after);assert result['passed'];calls.append(True)
+        result.update(passed=False,regressions=[dict(time_s=1.,kind='actor',name='A',triangles=[0,1],reason='new-crossing')])
+        return result
+    monkeypatch.setattr(fitting,'compare_self_surfaces',reject);folder=tmp_path/'fit'
+    if recoverable:
+        receipt=recovery.prepare(permissions,policy,folder,iterations=1,trust=.25,backtracks=4)
+        receipt=until(folder,receipt,'decision')
+        final=recovery.finish(folder,receipt['checkpoint'],receipt['sha256'])
+        assert recovery.verify(folder,final['checkpoint'],final['sha256'])['optimizer_completed']
+    else:fitting.fit(permissions,policy,folder,iterations=1,trust=.25,backtracks=4)
+    assert calls
+    checked=[r for r in read(folder/'probes.json') if r['geometry_evaluated']]
+    assert checked and all(r['geometry_local_depths_pass'] and not r['self_surface_nonregression_pass'] and not r['accepted'] for r in checked)
+    reports=list(folder.rglob('self-surface-regression.json'))
+    assert len(reports)==len(checked) and all(not read(p)['passed'] for p in reports)
+    if recoverable:
+        state=read(folder/final['checkpoint'])
+        assert all(state['files'][p.relative_to(folder).as_posix()]==sha256(p) for p in reports)
+    result=read(folder/'result.json')
+    assert result['accepted_steps']==0 and result['candidate'] is None and result['original_selected']

@@ -7,6 +7,9 @@ from scipy.spatial.transform import Rotation
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from native_self_surface import audit
 from triangle_crossing import classify
+from native_mesh_self_regression import compare_self_surfaces
+from native_self_surface import METHOD
+import copy
 
 A=np.array([[-2.,-1.,0.],[2.,-1.,0.],[0.,2.,0.]])
 B=np.array([[0.,0.,-1.],[0.,0.,1.],[0.,1.,0.]])
@@ -72,3 +75,54 @@ def test_invalid_inputs_reject(fault):
     elif fault=='bad-pairs':kwargs['maximum_pairs']=0
     else:kwargs['maximum_records']=True
     with pytest.raises(ValueError):audit(v,f,**kwargs)
+
+
+def comparison_report(vertices,faces):
+    own=audit(vertices,faces)
+    return dict(schema='strep-native-mesh-prop-geometry-result-v1',all_policy_samples_evaluated=True,
+        self_surface_method=METHOD,complete_clock_s=[0.],times_s=[0.],sample_indices=[0],
+        actor_faces={'A':len(faces)},prop_faces={},samples=[dict(index=0,time_s=0.,
+            self_surfaces=[dict(kind='actor',name='A',audit=own)])])
+
+
+def test_same_crossing_count_cannot_hide_a_new_intersecting_triangle_pair():
+    faces=np.arange(9).reshape(-1,3)
+    original=comparison_report(np.vstack([A,B,B+[5,0,0]]),faces)
+    changed=comparison_report(np.vstack([A,B+[5,0,0],B]),faces)
+    result=compare_self_surfaces(original,changed)
+    assert not result['passed'] and len(result['regressions'])==1
+    assert result['regressions'][0]['triangles']==[0,2]
+    assert result['regressions'][0]['reason']=='new-crossing'
+
+
+def test_retained_crossing_interval_cannot_grow_and_removal_is_not_release_approval():
+    faces=np.arange(6).reshape(-1,3);original=comparison_report(np.vstack([A,B]),faces)
+    bigger=B.copy();bigger[2,1]=1.5
+    result=compare_self_surfaces(original,comparison_report(np.vstack([A,bigger]),faces))
+    assert not result['passed'] and result['regressions'][0]['reason']=='crossing-interval-increased'
+    cleared=compare_self_surfaces(original,comparison_report(np.vstack([A,B+[5,0,0]]),faces))
+    assert cleared['passed'] and not cleared['self_collision_free_certified'] and not cleared['release_approved']
+    assert compare_self_surfaces(original,original)['passed']
+
+
+@pytest.mark.parametrize('fault',['coplanar','degenerate'])
+def test_unresolved_self_geometry_never_passes_even_when_unchanged(fault):
+    vertices=np.vstack([A,A*.5 if fault=='coplanar' else np.zeros((3,3))])
+    original=comparison_report(vertices,np.arange(6).reshape(-1,3))
+    result=compare_self_surfaces(original,original)
+    assert not result['passed'] and result['unavailable']
+
+
+@pytest.mark.parametrize('fault',['missing-method','partial','missing-entity','topology','tolerance','missing-crossing','duplicate-crossing','clock'])
+def test_incomplete_changed_or_unversioned_self_evidence_rejects(fault):
+    original=comparison_report(np.vstack([A,B]),np.arange(6).reshape(-1,3));changed=copy.deepcopy(original)
+    own=changed['samples'][0]['self_surfaces'][0]['audit']
+    if fault=='missing-method':changed.pop('self_surface_method')
+    elif fault=='partial':changed['all_policy_samples_evaluated']=False
+    elif fault=='missing-entity':changed['samples'][0]['self_surfaces']=[]
+    elif fault=='topology':own['faces_sha256']='0'*64
+    elif fault=='tolerance':own['tolerance_m']=1e-8
+    elif fault=='missing-crossing':own['records']=[]
+    elif fault=='duplicate-crossing':own['records']*=2
+    else:changed['sample_indices']=[1]
+    with pytest.raises(ValueError):compare_self_surfaces(original,changed)

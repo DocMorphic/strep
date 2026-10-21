@@ -5,9 +5,12 @@ Shared vertices never suppress a proper crossing. This is not a solid-volume,
 exact-arithmetic, continuous-time or collision-free certificate.
 """
 from collections import Counter
+import hashlib
 import numpy as np
 from rtree import index
 from triangle_crossing import classify
+
+METHOD = 'strep-native-self-surface-screen-v1'
 
 
 def audit(vertices,faces,*,tolerance_m=1e-7,maximum_pairs=2000000,maximum_records=50000,progress=None):
@@ -41,6 +44,7 @@ def audit(vertices,faces,*,tolerance_m=1e-7,maximum_pairs=2000000,maximum_record
                 progress(dict(faces_completed=i+1,total_faces=len(triangles),candidate_pairs=pairs,records=len(records)))
     finally:tree.close()
     return dict(schema='strep-native-self-surface-v1',status='complete',vertices=len(vertices),triangles=len(faces),
+        method=METHOD,faces_sha256=hashlib.sha256(faces.astype('<i8').tobytes()).hexdigest(),
         candidate_pairs=pairs,maximum_pairs=maximum_pairs,maximum_records=maximum_records,tolerance_m=tolerance_m,
         counts=dict(counts),shared_vertex_counts=dict(shared_counts),records=records,degenerate_faces=degenerate.tolist(),
         has_observed_transverse_crossings=bool(counts['proper_crossing']),

@@ -318,13 +318,18 @@ def advance(folder,checkpoint,expected_sha256):
                 no_new=not any(old_flags[key] and not flags[key] for key in flags)
                 no_worse=all(measure[key]<=old_metrics[key] for key in measure)
                 depth_check=fit.compare_depths(current,checked)
+                self_check=fit.compare_self_surfaces(current,checked)
+                self_path=local(folder,pending['directory'])/'self-surface-regression.json'
+                immutable_json(self_path,self_check);pin(folder,state,self_path)
                 depth_path=local(folder,pending['directory'])/'local-depth-regression.json'
                 immutable_json(depth_path,depth_check);pin(folder,state,depth_path)
                 row.update(geometry_evaluated=True,geometry_conditions_pass=checked['sampled_conditions_pass'],
                     geometry_conditions_no_regression=no_new,geometry_metrics_no_worse=no_worse,geometry_metrics=measure,
                     geometry_local_depths_pass=depth_check['passed'],local_depth_regressions=len(depth_check['regressions']),
                     local_depth_unavailable=len(depth_check['unavailable']),maximum_local_depth_increase_m=depth_check['maximum_increase_m'],
-                    accepted=bool(no_new and no_worse and depth_check['passed']))
+                    self_surface_nonregression_pass=self_check['passed'],self_surface_regressions=len(self_check['regressions']),
+                    self_surface_unavailable=len(self_check['unavailable']),
+                    accepted=bool(no_new and no_worse and depth_check['passed'] and self_check['passed']))
             directory=local(folder,pending['directory']);immutable_json(directory/'decision.json',row);pin(folder,state,directory/'decision.json')
             state['probes'].append(row)
             if row['accepted']:

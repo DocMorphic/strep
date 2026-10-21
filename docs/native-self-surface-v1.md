@@ -147,3 +147,59 @@ finger directions in an explicitly declared palm plane, clips every rotation
 against the unchanged source-relative cap, and measures actual skin again.
 This is an unreviewed geometric posture, not inferred anatomical limits or a
 promise of collision-free contact. No clip, engine or quality is promoted.
+
+## Native scene and character acceptance (2026-10-21)
+
+Native scene audits now screen the complete actor triangle population for self
+geometry at every declared sample. Imported-mesh audits reuse those actor
+observations and additionally screen every prop. Crossings, stored ambiguous
+surface relations and degenerate faces fail sampled scene acceptance and make
+that target's containment unavailable, even when the other entity is far away.
+Normal shared-vertex boundary contacts retain the existing treatment in the
+self-surface diagnostic; shared topology never hides proper crossings.
+
+The reports include triangle-index digests, the self-surface method version and
+the complete per-sample observations. The existing geometry journal commits
+these with each complete frame. Exhausted pair/record budgets produce no
+complete report; interrupted frames cannot supply missing evidence to a fit.
+Sampled eligibility is not a proof of a valid solid, absence of nested shells,
+or continuous collision freedom. The release and self-collision certification
+flags remain false.
+
+Both direct and recoverable character fitting additionally compare self-surface
+observations before accepting a step. The comparison requires identical complete
+clocks, entity populations, triangle-index digests and tolerances. A new proper
+crossing cannot hide behind an unchanged or lower total crossing count. A
+retained pair's measured intersection interval cannot increase; this interval
+is not penetration depth. Ambiguous or degenerate comparisons remain
+unavailable. Existing crossings still fail whole-scene eligibility even when
+this supplemental comparison finds no regression.
+
+Each evaluated candidate retains `self-surface-regression.json`; recoverable
+fitting pins it in the decision checkpoint. Existing source limits and depth
+checks remain mandatory. Old source-bound jobs are not resumed under changed
+implementations, and old geometry reports lack the new required self evidence.
+Original and candidate audits must be regenerated together under the new
+method. This does not change or relax the original motion permissions.
+
+Validation: 139 focused integration checks and 84 geometry-journal checks pass.
+They cover same-count crossing substitution, growth of an existing crossing
+interval, ambiguous/degenerate cases, missing or changed evidence, self-invalid
+props far from other entities, and mandatory rejection in both character
+fitting paths. Recovery retains the new decision evidence. An initial Python
+3.10 syntax failure is preserved separately with its original source snapshot;
+the passing epochs use the repaired source.
+
+The actual original humanoid and retained v3 research seed were each audited
+under a separate explicit diagnostic clock at 0, 2.1375 and 3.9666666984558105 s.
+The original policy, limits, planes, character assets and permissions were not
+overwritten. At 2.1375 s the original has 114 proper self-crossing pairs and the
+edit has 275, with 161 added pairs. The new comparison reports those 161
+regressions and rejects the edit. Both three-frame geometry journals are kept
+under ignored `reports/humanoid-self-guard-replay-v1`.
+
+This diagnostic is not a replacement for the original 2,017-time evaluation.
+The original itself remains unsuitable for claiming collision-free geometry.
+No correction search was resumed and no animation, model or release gate is
+approved. Next is to speed up the complete screen while retaining equivalence
+evidence, then run a versioned full-clock comparison with recoverable execution.

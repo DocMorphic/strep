@@ -24,6 +24,7 @@ from native_scene_conic import direction, solver_identity
 from native_contact_norms import protect_rows, row_regression
 from native_mesh_prop_pose import conditions, metrics
 from native_mesh_depth_regression import compare_depths
+from native_mesh_self_regression import compare_self_surfaces
 from native_observation_archive import ObservationArchive, verify
 from native_support_feasibility import merit
 from engine_contact_sampling import frame_populations
@@ -31,7 +32,7 @@ from strep import read, save, sha256
 
 METHODS = tuple(sorted(set(MESH_METHODS) | set(FIT_METHODS) |
                        {'native_mesh_character_fit.py', 'native_mesh_prop_pose.py', 'native_mesh_floor_guard.py',
-                        'native_mesh_character_surface.py','native_triangle_pair_projection.py','native_surface_lift.py','native_control_neighborhood.py','native_mesh_depth_regression.py'}))
+                        'native_mesh_character_surface.py','native_triangle_pair_projection.py','native_surface_lift.py','native_control_neighborhood.py','native_mesh_depth_regression.py','native_mesh_self_regression.py'}))
 
 
 class MeshCharacterProblem(SceneProblem):
@@ -252,11 +253,15 @@ def fit(permissions_path, policy_path, output, *, iterations=4, trust=.02, backt
                 no_worse = all(measure[k] <= current_metrics[k] for k in measure)
                 depth_check = compare_depths(geometry, checked)
                 save(folder/'local-depth-regression.json', depth_check)
+                self_check = compare_self_surfaces(geometry, checked)
+                save(folder/'self-surface-regression.json', self_check)
                 row.update(geometry_evaluated=True, geometry_conditions_pass=checked['sampled_conditions_pass'],
                            geometry_conditions_no_regression=no_new, geometry_metrics_no_worse=no_worse, geometry_metrics=measure,
                            geometry_local_depths_pass=depth_check['passed'], local_depth_regressions=len(depth_check['regressions']),
                            local_depth_unavailable=len(depth_check['unavailable']), maximum_local_depth_increase_m=depth_check['maximum_increase_m'])
-                row['accepted'] = bool(no_new and no_worse and depth_check['passed'])
+                row.update(self_surface_nonregression_pass=self_check['passed'],
+                    self_surface_regressions=len(self_check['regressions']),self_surface_unavailable=len(self_check['unavailable']))
+                row['accepted'] = bool(no_new and no_worse and depth_check['passed'] and self_check['passed'])
                 if row['accepted']:
                     value, current, worlds = proposed, residual, decoded_worlds
                     current_conditions, current_metrics, geometry = flags, measure, checked

@@ -23,6 +23,7 @@ from native_scene_contacts import METHODS as CONTACT_METHODS
 from native_scene_geometry import faces_for, policy_for, volume_state, evaluate as base_geometry
 from triangle_crossing import audit as crossings
 from native_containment_crosscheck import penetration, crosscheck, METHOD as CONTAINMENT_METHOD
+from native_self_surface import audit as self_surface, METHOD as SELF_METHOD
 from triangle_primitive_depth import query as primitive_depth
 from engine_contact_sampling import frame_populations, contract_sha256
 from native_observation_archive import ObservationArchive, verify
@@ -33,7 +34,7 @@ MAX_PROP_BYTES=64*1024**2
 MAX_SAMPLES=10000
 MAX_ARRAY_BYTES=64*1024**2
 METHODS=tuple(sorted(set(CONTACT_METHODS)|{'native_mesh_prop_scene.py','static_prop_asset.py',
-    'native_scene_geometry.py','triangle_crossing.py','convex_partner_surface.py','native_containment_crosscheck.py',
+    'native_scene_geometry.py','triangle_crossing.py','convex_partner_surface.py','native_containment_crosscheck.py','native_self_surface.py',
     'triangle_primitive_depth.py','native_observation_archive.py'}))
 
 
@@ -215,7 +216,7 @@ class MeshPropScene:
         prop_poses={name:self.prop_poses(name,times[selected]) for name in self._props};primitive_poses={name:self._scene.object_poses(name,times[selected]) for name in self._scene.objects}
         limit=policy['limits']['penetration_m'];tolerance=policy['limits']['surface_tolerance_m'];rows=[]
         for ordinal,index in enumerate(selected):
-            index=int(index);stamp=float(times[index]);actor_vertices={};prop_vertices={};faces={};states={};degenerate={}
+            index=int(index);stamp=float(times[index]);actor_vertices={};prop_vertices={};faces={};states={};degenerate={};self_surfaces={}
             for name,actor in self._scene.actors.items():
                 p,r=actor['placement'];actor_vertices[name]=actor['rig'].vertices(actor['sampler'].sample(stamp))@r.T+p
                 faces[('actor',name)]=actor_faces[name]
@@ -224,6 +225,13 @@ class MeshPropScene:
             meshes={('actor',name):v for name,v in actor_vertices.items()}|{('prop',name):v for name,v in prop_vertices.items()}
             for key,v in meshes.items():
                 _,states[key]=volume_state(v,faces[key]);tri=v[faces[key]];degenerate[key]=np.flatnonzero(np.linalg.norm(np.cross(tri[:,1]-tri[:,0],tri[:,2]-tri[:,0]),axis=1)<=tolerance**2).tolist()
+                own=(original['samples'][ordinal]['self_surfaces'][key[1]] if key[0]=='actor'
+                    else self_surface(v,faces[key],tolerance_m=tolerance))
+                self_surfaces[key]=own;eligible=not own['records'] and not own['degenerate_faces']
+                states[key].update(self_intersection_checked=True,self_surface_method=SELF_METHOD,
+                    containment_blocked_by_self_geometry=not eligible,
+                    containment_available=bool(states[key]['containment_available'] and eligible),
+                    containment_scope='Topology and sampled self-surface eligibility only; point consensus remains required. No solid certificate.')
                 arrays[f'mesh_frame_{index}_{key[0]}_{key[1]}_world_m']=v
             def pair(left,right):
                 surface=crossings(meshes[left],faces[left],meshes[right],faces[right],tolerance_m=tolerance);depths=[]
@@ -253,12 +261,16 @@ class MeshPropScene:
                     used=np.unique(faces[key]);distances=vertices@np.array(plane['normal_world'])-plane['offset_m'];peak=int(used[distances[used].argmin()]);depth=max(0.,-float(distances[peak]))
                     planes.append(dict(prop=name,plane=plane_name,maximum_depth_m=depth,peak_vertex=peak,passed=bool(depth<=limit and not degenerate[key])))
             previous=original['samples'][ordinal];conditions=previous['actor_objects']+previous['actor_pairs']+previous['world_planes']+pairs+primitive_pairs+planes
-            passed=bool(conditions and all(item['passed'] for item in conditions) and not any(degenerate.values()))
-            rows.append(dict(index=index,time_s=stamp,base_scene=previous,mesh_pairs=pairs,mesh_primitive_pairs=primitive_pairs,mesh_world_planes=planes,volumes=[dict(kind=key[0],name=key[1],**value) for key,value in states.items()],passed=passed))
+            passed=bool(previous['passed'] or not previous['conditions_available']) and bool(conditions and all(item['passed'] for item in conditions) and not any(degenerate.values())
+                and all(not s['records'] and not s['degenerate_faces'] for s in self_surfaces.values()))
+            rows.append(dict(index=index,time_s=stamp,base_scene=previous,mesh_pairs=pairs,mesh_primitive_pairs=primitive_pairs,mesh_world_planes=planes,
+                self_surfaces=[dict(kind=key[0],name=key[1],audit=value) for key,value in self_surfaces.items()],
+                volumes=[dict(kind=key[0],name=key[1],**value) for key,value in states.items()],passed=passed))
         self.check_inputs()
-        report=dict(schema='strep-native-mesh-prop-geometry-result-v1',samples=rows,inputs_sha256=self.inputs,limits=policy['limits'],clock_mode=policy['clock']['mode'],complete_clock_s=times.tolist(),sample_indices=selected.tolist(),times_s=times[selected].tolist(),frame_populations=[dict(id=p['id'],times_s=p['times_s'].tolist()) for p in populations],all_policy_samples_evaluated=len(selected)==len(times),sampled_conditions_pass=all(row['passed'] for row in rows),actor_faces={name:len(value) for name,value in actor_faces.items()},prop_faces={name:len(prop['asset'].faces) for name,prop in self._props.items()},query_batch_size=query_batch_size,topology_modified=False,collision_verified=False,continuous_collision_certified=False,self_collision_verified=False,motion_fitted=False,physics_verified=False,quality_approved=False,release_approved=False,scope='Complete imported actor/prop triangles at declared selected times. Includes legacy actor/primitive/plane/partner checks, all actor/mesh-prop pairs, mesh-prop/mesh-prop pairs, mesh-prop/legacy-primitive pairs and prop/world planes. Crossing/boundary/near outcomes and unavailable outward-volume containment fail sampled conditions. Original primitive/primitive and all self/continuous/dynamics/engine/semantic checks remain separate. No geometry proxy, topology repair, fit or release approval.')
+        report=dict(schema='strep-native-mesh-prop-geometry-result-v1',samples=rows,inputs_sha256=self.inputs,limits=policy['limits'],clock_mode=policy['clock']['mode'],complete_clock_s=times.tolist(),sample_indices=selected.tolist(),times_s=times[selected].tolist(),frame_populations=[dict(id=p['id'],times_s=p['times_s'].tolist()) for p in populations],all_policy_samples_evaluated=len(selected)==len(times),sampled_conditions_pass=all(row['passed'] for row in rows),actor_faces={name:len(value) for name,value in actor_faces.items()},prop_faces={name:len(prop['asset'].faces) for name,prop in self._props.items()},query_batch_size=query_batch_size,topology_modified=False,collision_verified=False,continuous_collision_certified=False,self_collision_verified=False,motion_fitted=False,physics_verified=False,quality_approved=False,release_approved=False,scope='Complete imported actor/prop triangles at declared selected times. Includes legacy actor/primitive/plane/partner checks, all actor/mesh-prop pairs, mesh-prop/mesh-prop pairs, mesh-prop/legacy-primitive pairs and prop/world planes. Crossing/boundary/near outcomes and unavailable outward-volume containment fail sampled conditions. Original primitive/primitive, continuous-time, dynamics, engine and semantic checks remain separate. No geometry proxy, topology repair, fit or release approval.')
         report['containment_method']=CONTAINMENT_METHOD
-        report['scope']+=' Containment requires signed/ray/winding consensus; disagreement and near-surface queries are unavailable. Consensus does not verify self geometry.'
+        report['self_surface_method']=SELF_METHOD
+        report['scope']+=' Every actor/prop receives a complete sampled self-surface screen; crossings, ambiguous records and degeneracy block containment and sampled acceptance. Containment also requires signed/ray/winding consensus. No valid-solid or continuous self-collision certificate.'
         return report,arrays
 
 

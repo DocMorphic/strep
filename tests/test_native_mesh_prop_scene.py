@@ -27,8 +27,9 @@ from test_native_scene_contacts import setup
 from test_static_prop_asset import fixture as triangle_fixture
 
 
-def cube(path,extents=(.2,.2,.2),offset=(0,0,0)):
-    mesh=trimesh.creation.box(extents=extents);document=dict(asset=dict(version='2.0'),nodes=[dict(mesh=0)],scene=0,scenes=[dict(nodes=[0])],buffers=[{}],bufferViews=[],accessors=[])
+def cube(path,extents=(.2,.2,.2),offset=(0,0,0),*,mesh=None):
+    mesh=trimesh.creation.box(extents=extents) if mesh is None else mesh
+    document=dict(asset=dict(version='2.0'),nodes=[dict(mesh=0)],scene=0,scenes=[dict(nodes=[0])],buffers=[{}],bufferViews=[],accessors=[])
     binary=bytearray();position=append_accessor(document,binary,mesh.vertices+offset,'VEC3');indices=np.asarray(mesh.faces.reshape(-1),dtype='<u2')
     while len(binary)%4:binary.append(0)
     document['bufferViews'].append(dict(buffer=0,byteOffset=len(binary),byteLength=indices.nbytes));binary.extend(indices.tobytes())
@@ -61,6 +62,23 @@ def rewrite(path,spec,policy):
 
 def contact(grip_path):
     return dict(id='mesh-touch',actor='A',vertices=[[6,0,0]],reduction='individual',prop='crate',grip=grip_path.name,grip_sha256=sha256(grip_path),mode='touch',interval_s=[1.,1.],limits=dict(position_m=1e-6))
+
+
+def test_self_intersecting_prop_fails_even_when_other_entities_are_far(tmp_path):
+    path,spec,policy,_,_=fixture(tmp_path)
+    a=trimesh.creation.box();b=a.copy();b.apply_translation([.3,.2,.1])
+    combined=trimesh.util.concatenate([a,b]);assert combined.is_volume
+    prop=cube(tmp_path/'crossing.glb',mesh=combined)
+    spec['props']['crate'].update(glb='crossing.glb',sha256=prop.source_sha256,geometry_sha256=prop.geometry_sha256)
+    scene=rewrite(path,spec,policy);report,_=scene.geometry(policy)
+    assert not report['sampled_conditions_pass']
+    for sample in report['samples']:
+        own=next(row['audit'] for row in sample['self_surfaces'] if row['kind']=='prop')
+        assert own['complete_triangle_population'] and own['counts']['proper_crossing']>0
+        pair=sample['mesh_pairs'][0]
+        assert not pair['vertex_containment'][0]['available'] and not pair['passed']
+        state=next(row for row in sample['volumes'] if row['kind']=='prop')
+        assert state['containment_blocked_by_self_geometry'] and state['self_intersection_checked']
 
 
 def test_import_store_grip_to_moving_contact_uses_original_triangle_and_clock(tmp_path,monkeypatch):

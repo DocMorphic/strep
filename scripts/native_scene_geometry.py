@@ -23,10 +23,11 @@ from engine_contact_sampling import frame_populations, contract_sha256
 from triangle_primitive_depth import query
 from triangle_crossing import audit as crossings
 from native_containment_crosscheck import penetration, crosscheck, METHOD as CONTAINMENT_METHOD
+from native_self_surface import audit as self_surface, METHOD as SELF_METHOD
 from native_observation_archive import ObservationArchive
 
 METHODS = tuple(dict.fromkeys(CONTACT_METHODS + ('native_scene_geometry.py', 'triangle_primitive_depth.py',
-    'triangle_crossing.py', 'convex_partner_surface.py', 'native_containment_crosscheck.py', 'action_worker_lock.py', 'native_observation_archive.py')))
+    'triangle_crossing.py', 'convex_partner_surface.py', 'native_containment_crosscheck.py', 'native_self_surface.py', 'action_worker_lock.py', 'native_observation_archive.py')))
 
 
 def faces_for(rig):
@@ -119,7 +120,7 @@ def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, objec
     arrays['times_s'] = times[selected]
     for frame in selected:
         frame = int(frame); time = times[frame]
-        vertices = {}; meshes = {}; states = {}; degenerate = {}
+        vertices = {}; meshes = {}; states = {}; degenerate = {}; self_surfaces = {}
         for name, actor in scene.actors.items():
             p, r = actor['placement']
             vertices[name] = (actor['rig'].vertices(actor['sampler'].sample(float(time))) @ r.T + p
@@ -129,6 +130,13 @@ def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, objec
             meshes[name], states[name] = volume_state(vertices[name], faces[name])
             tri = vertices[name][faces[name]]
             degenerate[name] = np.flatnonzero(np.linalg.norm(np.cross(tri[:, 1]-tri[:, 0], tri[:, 2]-tri[:, 0]), axis=1) <= tol**2).tolist()
+            own = self_surface(vertices[name], faces[name], tolerance_m=tol)
+            self_surfaces[name] = own
+            eligible = not own['records'] and not own['degenerate_faces']
+            states[name].update(self_intersection_checked=True, self_surface_method=SELF_METHOD,
+                containment_blocked_by_self_geometry=not eligible,
+                containment_available=bool(states[name]['containment_available'] and eligible),
+                containment_scope='Topology and sampled self-surface eligibility only; diagnostic consensus is still required. No solid or continuous-time certificate.')
         objects = []; pairs = []; planes = []
         for name in scene.actors:
             for other, obj in scene.objects.items():
@@ -171,17 +179,19 @@ def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, objec
             pairs.append(dict(actors=[left, right], surface=surface, vertex_containment=depths, passed=ok))
         conditions = objects + pairs + planes
         available = bool(conditions)
-        ok = bool(available and all(c['passed'] for c in conditions) and not any(degenerate.values()))
+        ok = bool(available and all(c['passed'] for c in conditions) and not any(degenerate.values())
+            and all(not s['records'] and not s['degenerate_faces'] for s in self_surfaces.values()))
         passed &= ok
         samples.append(dict(time_s=float(time), volumes=states, degenerate_faces=degenerate,
-            actor_objects=objects, actor_pairs=pairs, world_planes=planes, conditions_available=available, passed=ok))
+            actor_objects=objects, actor_pairs=pairs, world_planes=planes, self_surfaces=self_surfaces,
+            conditions_available=available, passed=ok))
         if progress: progress(dict(status='processing', completed_samples=frame+1, total_samples=len(times), time_s=float(time)))
     result = dict(schema='strep-native-scene-geometry-result-v1', status='complete', samples=samples,
         sampled_conditions_pass=bool(passed), topology=topology, clock_mode=policy['clock']['mode'], times_s=times[selected].tolist(),
         frame_populations=[dict(id=p['id'], rate_hz=p['rate_hz'], phase_offset_frames=p['phase_offset_frames'],
             times_s=p['times_s'].tolist()) for p in populations], frame_contract_sha256=contract_sha256(),
         limits=policy['limits'], declared_planes=list(policy['planes']),
-        partner_query_batch_size=partner_query_batch_size, containment_method=CONTAINMENT_METHOD,
+        partner_query_batch_size=partner_query_batch_size, containment_method=CONTAINMENT_METHOD, self_surface_method=SELF_METHOD,
         original_selected=True, collision_verified=False, continuous_collision_certified=False,
         self_collision_verified=False, engine_playback_verified=False, quality_approved=False,
         training_admitted=False, release_approved=False,
@@ -190,7 +200,8 @@ def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, objec
             'unmodified closed outward-volume mesh and signed/ray/winding consensus; unavailable, unresolved '
             'or near-surface results fail the sampled conditions. Consensus is not a valid-solid certificate. '
             'Partner crossings and vertex containment are separate; near/coplanar outcomes remain unresolved. '
-            'No object/object, self-collision, continuous-time, exact-arithmetic, engine or quality certification.')
+            'Sampled self-surface crossings, ambiguous records or degeneracy block containment and sampled acceptance. '
+            'No object/object, valid-solid, continuous-time, exact-arithmetic, engine or quality certification.')
     if sample_indices is not None:
         # A completed slice is never a completed full-clock audit, even when
         # every condition in that slice happens to pass.
