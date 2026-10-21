@@ -103,3 +103,65 @@ and `reports/kaykit-generated-transfer-v2/` (completed exports and publication
 check). Resource traces replay 70 and 61 observations. The CPU transfer worker
 uses the installed Torch runtime, a 2-GiB process-tree cap, 600-MiB free-RAM
 reserve and 900-second time limit. No motion or release approval follows.
+
+## Floor attribution and mapped skin coverage
+
+A follow-up decodes all 1,020 exported keys without editing them. At each key,
+it records the lowest target vertex, primitive, positive skin influences and
+nearest mapped ancestors. Its height is decomposed into the weighted scaled
+source ancestor height, target-versus-source ancestor displacement, and target
+surface offset from those ancestors. These terms identify where to investigate;
+they are an algebraic decomposition, not independent causal experiments.
+
+| Action | Keys deeper than 5 mm | Worst key | Dominant mapped influence | Depth (mm) |
+| --- | ---: | ---: | --- | ---: |
+| Jump/land | 109 / 120 | 57 | Right foot | 54.077449 |
+| Crawl | 120 / 120 | 1 | Left hand | 327.115974 |
+| Dance | 62 / 150 | 128 | Left toes | 32.728972 |
+| Wave | 120 / 120 | 0 | Left foot | 8.907740 |
+| Kick | 37 / 120 | 22 | Left foot | 149.179829 |
+| Get-up | 180 / 180 | 40 | Head | 633.661003 |
+| Run/roll/stand | 89 / 210 | 93 | Head | 1129.485888 |
+
+For crawl's worst vertex, the scaled source hand anchor is -0.824 mm, target
+ancestor displacement is -198.236 mm, and surface offset is -128.056 mm. The
+roll's worst vertex has corresponding terms +97.198, -477.884 and -748.800 mm.
+This supports investigating proportion-aware body/contact fitting, rather than
+assuming a successful rotation transfer preserves surface contact. Raw source
+joint centers also dip below the floor in six clips; wave's joint centers remain
+above it while its target mesh fails. Joint centers are not a source body mesh,
+so these observations do not measure source surface penetration or prove that
+the remaining source motion is realistic.
+
+The check also finds **467 body vertices with positive weights on joint 40,
+`root`, outside every mapped joint subtree**. That joint is a parent of the
+mapped pelvis and retains its reference transform in these transfers. Its
+per-vertex contribution ranges from 0.000089796 to 0.165500432. The affected
+vertices have other moving influences; they are not entirely frozen. Do not
+discard or renormalize these weights, or assume that unmapped helpers beneath
+mapped bones have the same problem.
+
+Transfer calibration now includes `target_skin_mapping_coverage`: affected
+vertex counts, primitive/joint identities, maximum outside weight, unskinned
+vertex counts and an inspection flag. The diagnostic preserves motion, mapping,
+weights and assets. An unmapped descendant inherits its mapped ancestor's motion;
+an outside node may still move through explicitly retained animation context.
+The flag is a request to inspect influence coverage, not a quality verdict.
+
+Evidence is retained under `reports/kaykit-floor-attribution-v1/` (the initial
+diagnostic stopped on an unaccounted outside influence), `-v2/` (complete
+attribution), and `reports/rig-mapping-coverage-v1/` (production diagnostic check).
+A separate native-time sampler reproduces all 1,020 minimum heights to within
+8.89e-16 m and checks decomposition sums and failure counts. Successful capture
+and replay resource traces contain 51 and 27 observations; both use a 512-MiB
+tree cap, 600-MiB reserve and 900-second limit. Six focused tests cover helper
+inheritance, parent/sibling weights, all eight influence slots, repeated mesh
+instances, unskinned geometry, zero weights, immutability and same-rig transfer.
+The production diagnostic independently reproduces the 467-vertex finding.
+
+Next, author explicit support and auxiliary-root behavior for separate candidate
+assets, beginning with the small standing foot error. Ground actions require
+full-body support and proportion handling; lifting the entire animation until
+it clears the floor would not establish planted hands/feet or plausible motion.
+Recheck every candidate in the engine and retain source failures. No new motion
+generation, training, correction, human review or release approval occurred here.

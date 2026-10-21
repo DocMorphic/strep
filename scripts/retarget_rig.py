@@ -86,6 +86,50 @@ def resolve_profile(rig, profile):
     return resolved, offset
 
 
+def mapping_skin_coverage(rig, mapping):
+    """Report skin influence outside mapped chains without changing the asset.
+
+    An unmapped helper below a mapped joint inherits its motion. A weighted
+    ancestor or separate branch does not inherit mapped motion; retained source
+    context may still animate it, so this diagnostic does not claim it is frozen.
+    """
+    mapped = set(mapping.values())
+    outside = []
+    for node in rig.joints:
+        ancestor = node
+        while ancestor >= 0 and ancestor not in mapped:
+            ancestor = rig.parents[ancestor]
+        if ancestor < 0:
+            outside.append(node)
+    rows = []
+    affected = unskinned = total = 0
+    maximum = 0.
+    for primitive in rig.primitives:
+        total += len(primitive['positions'])
+        if primitive['joints'] is None:
+            unskinned += len(primitive['positions'])
+            continue
+        nodes = np.asarray(rig.joints)[primitive['joints']]
+        weights = primitive['weights']
+        contribution = np.sum(weights * np.isin(nodes, outside), axis=1, dtype=float)
+        affected += int(np.count_nonzero(contribution > 0))
+        if len(contribution):
+            maximum = max(maximum, float(contribution.max()))
+        for node in outside:
+            weight = np.sum(weights * (nodes == node), axis=1, dtype=float)
+            positive = weight[weight > 0]
+            if len(positive):
+                rows.append(dict(mesh_node=primitive['node'], primitive=primitive['primitive'],
+                    joint=node, joint_name=rig.document['nodes'][node].get('name'),
+                    affected_vertices=len(positive), maximum_vertex_weight=float(positive.max())))
+    return dict(vertices=total, outside_mapped_hierarchy_vertices=affected,
+        maximum_outside_vertex_weight=maximum, unskinned_vertices=unskinned,
+        outside_influences=rows, inspection_required=bool(affected or unskinned),
+        scope='Positive evaluated skin weights outside every mapped joint subtree. '
+              'Mapped ancestors drive unmapped descendants; retained context may drive other nodes. '
+              'This checks influence coverage only, not anatomical mapping, deformation or motion quality.')
+
+
 def calibration(rig, mapping, skeleton, overrides=None):
     names, neutral = skeleton.bone_order_names, np.asarray(skeleton.neutral_joints)
     bind = rig.reference  # Authored reference, never reconstructed from inverse binds.
@@ -125,6 +169,7 @@ def calibration(rig, mapping, skeleton, overrides=None):
         source_length = sum(np.linalg.norm(neutral[names.index(b)] - neutral[names.index(a)]) for a, b in zip(chain, chain[1:]))
         ratios.append(float(target_length / source_length))
     return corrections, float(np.mean(ratios)), dict(leg_length_ratios=ratios, pelvis_landmark_alignment_residual=float(residual),
+        target_skin_mapping_coverage=mapping_skin_coverage(rig, mapping),
         axis_alignment_xyzw=overrides or {}, axis_alignment_space='Target reference world axes to SOMA neutral world axes; premultiplied onto target reference joint rotation')
 
 
