@@ -30,6 +30,13 @@ Fourteen coverage GLBs validate with zero errors/warnings. All fourteen ZIPs, ha
 
 ## Run and reproduce
 
+On an already provisioned Windows workspace, double-click **Start Studio.cmd**
+in the project root. Keep its window open and open the local address printed
+after the server starts. Ctrl+C stops the server. The launcher uses the existing
+`.venv\Scripts\python.exe`; missing source or environment files produce a visible
+setup message. It does not install dependencies or models. Close an older Studio
+server before starting another on the same port.
+
 From `C:\wassup\strep`:
 
 ```powershell
