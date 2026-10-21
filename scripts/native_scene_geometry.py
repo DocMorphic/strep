@@ -148,7 +148,9 @@ def evaluate(scene, policy, digest, progress=None, *, actor_vertices=None, objec
                     check = crosscheck(vertices[name], faces[name], p[None], surface_tolerance_m=tol)
                     containment = dict(status=check['states'][0],
                         signed_center_distance_m=float(check['signed_distance_m'][0]),
+                        unsigned_center_distance_m=float(check['unsigned_distance_m'][0]),
                         ray_inside=bool(check['ray_inside'][0]), winding=float(check['winding'][0]),
+                        ray_resolved=bool(check['ray_resolved'][0]),ray_hit_counts=check['ray_hit_counts'][0].tolist(),
                         containment_method=CONTAINMENT_METHOD)
                 ok = bool(hi <= limit and not degenerate[name] and not len(depth['degenerate_faces']) and containment['status'] == 'outside')
                 objects.append(dict(actor=name, object=other, maximum_depth_lower_m=lo, maximum_depth_upper_m=hi,

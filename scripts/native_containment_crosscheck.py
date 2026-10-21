@@ -5,8 +5,29 @@ Disagreement never silently replaces a saved signed-distance measurement.
 """
 import numpy as np
 import trimesh
+from trimesh.ray.ray_triangle import RayMeshIntersector
 
-METHOD = 'strep-containment-consensus-v1'
+METHOD = 'strep-containment-consensus-v2'
+
+# Fixed, non-axis-aligned directions. Each is tested in BOTH directions;
+# agreement is required across all six parities, never a majority vote.
+RAY_DIRECTIONS = ((.4395064455,.617598629942,.652231566745),
+                  (-.723,.413,.554),(.311,-.827,.469))
+
+
+def _ray_consensus(intersector,points):
+    counts=np.zeros((len(points),len(RAY_DIRECTIONS),2),dtype=np.int64)
+    if not len(points):return np.zeros(0,dtype=bool),np.zeros(0,dtype=bool),counts
+    origins=np.vstack((points,points))
+    # One direction pair at a time keeps the existing 64-ray query bound.
+    for column,direction in enumerate(RAY_DIRECTIONS):
+        direction=np.asarray(direction,float);direction/=np.linalg.norm(direction)
+        directions=np.tile(direction,(len(points),1))
+        _,indices,_=intersector.intersects_location(origins,np.vstack((directions,-directions)),multiple_hits=True)
+        counts[:,column,:]=np.bincount(indices,minlength=2*len(points)).reshape(2,-1).T
+    parity=counts%2==1
+    resolved=np.all(parity==parity[:,0,0,None,None],axis=(1,2))
+    return resolved & parity[:,0,0],resolved,counts
 
 
 def crosscheck(vertices,faces,points,*,surface_tolerance_m=1e-7,winding_tolerance=1e-5):
@@ -27,7 +48,14 @@ def crosscheck(vertices,faces,points,*,surface_tolerance_m=1e-7,winding_toleranc
     if np.any(mesh.area_faces<=surface_tolerance_m**2/2):
         raise ValueError('Nondegenerate target triangles required for containment')
     closest,distance,triangle=trimesh.proximity.closest_point(mesh,points)
-    signed=trimesh.proximity.signed_distance(mesh,points);ray=mesh.contains(points)
+    # Bind only this mesh's ray intersector. The nearest-normal calculation
+    # stays unchanged; its off-triangle ray branch must also be deterministic.
+    # False is a placeholder for unresolved rays, NOT an outside decision:
+    # the independently retained resolved mask gates every final state below.
+    mesh.ray=RayMeshIntersector(mesh)
+    mesh.ray.contains_points=lambda values:_ray_consensus(mesh.ray,values)[0]
+    ray,ray_resolved,ray_counts=_ray_consensus(mesh.ray,points)
+    signed=trimesh.proximity.signed_distance(mesh,points)
     winding=np.zeros(len(points));compensation=np.zeros(len(points))
     # Stream complete faces per point. No point/face population is sampled away.
     for point_id,point in enumerate(points):
@@ -41,17 +69,19 @@ def crosscheck(vertices,faces,points,*,surface_tolerance_m=1e-7,winding_toleranc
     if not all(np.isfinite(v).all() for v in (closest,distance,signed,winding)):
         raise ValueError('Nonfinite containment observation')
     states=[]
-    for d,s,r,w in zip(distance,signed,ray,winding):
+    for d,s,r,w,resolved in zip(distance,signed,ray,winding,ray_resolved):
         if d<=surface_tolerance_m:state='near-surface'
+        elif not resolved:state='unresolved'
         elif s>surface_tolerance_m and r and abs(w-1)<=winding_tolerance:state='inside'
         elif s< -surface_tolerance_m and not r and abs(w)<=winding_tolerance:state='outside'
         else:state='unresolved'
         states.append(state)
     return dict(states=states,unsigned_distance_m=distance,signed_distance_m=signed,ray_inside=ray,winding=winding,
+        ray_resolved=ray_resolved,ray_hit_counts=ray_counts,
         nearest_points_m=closest,nearest_triangles=triangle,all_resolved=all(s in ('inside','outside') for s in states),
         complete_query_points=len(points),complete_target_faces=len(faces),surface_tolerance_m=surface_tolerance_m,
         winding_tolerance=winding_tolerance,self_intersection_checked=False,collision_free_certified=False,quality_approved=False,
-        scope='Agreement of three floating-point diagnostics only. Near-surface/disagreement is unresolved for acceptance; no complete source population, self-collision, exact arithmetic, motion, engine or quality certification.')
+        scope='Agreement of nearest-normal/fixed-ray signed distance, six fixed ray parities and winding only. Any ray parity disagreement is unresolved; no random retry. Near-surface/disagreement is unresolved for acceptance; no complete source population, self-collision, exact arithmetic, motion, engine or quality certification.')
 
 
 def penetration(source_vertices,target_vertices,target_faces,tolerance_m=.005,*,query_batch_size=32,
@@ -91,7 +121,8 @@ def penetration(source_vertices,target_vertices,target_faces,tolerance_m=.005,*,
                 result['unresolved_vertices'].append(dict(vertex=vertex,state=state,
                     signed_distance_m=float(checked['signed_distance_m'][offset]),
                     unsigned_distance_m=float(checked['unsigned_distance_m'][offset]),
-                    ray_inside=bool(checked['ray_inside'][offset]),winding=float(checked['winding'][offset])))
+                    ray_inside=bool(checked['ray_inside'][offset]),ray_resolved=bool(checked['ray_resolved'][offset]),
+                    ray_hit_counts=checked['ray_hit_counts'][offset].tolist(),winding=float(checked['winding'][offset])))
                 continue
             depth=float(checked['signed_distance_m'][offset]) if state=='inside' else 0.
             count+=int(depth>tolerance_m)

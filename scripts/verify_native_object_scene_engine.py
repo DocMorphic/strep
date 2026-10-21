@@ -70,7 +70,16 @@ def self_surface_reductions(sample, topology, tolerance):
     return eligible
 
 
-def containment_state(distance, ray, winding, tolerance, *, unsigned=None):
+def ray_consensus_reduction(ray,resolved,counts):
+    require(type(ray) is bool and type(resolved) is bool and isinstance(counts,list) and len(counts)==3
+        and all(isinstance(pair,list) and len(pair)==2
+            and all(type(n) is int and n>=0 for n in pair) for pair in counts), 'Six explicit nonnegative ray hit counts required')
+    parity=[n%2 for pair in counts for n in pair]
+    agrees=all(p==parity[0] for p in parity)
+    require(resolved is agrees and ray is (agrees and parity[0]==1), 'Ray consensus reduction differs')
+
+
+def containment_state(distance, ray, winding, tolerance, *, unsigned=None, ray_resolved=True):
     require(type(distance) in (int, float) and np.isfinite(distance) and type(ray) is bool
         and type(winding) in (int, float) and np.isfinite(winding), 'Complete finite containment consensus observations required')
     # A zero sign in the pinned nearest-normal implementation can erase the
@@ -80,6 +89,8 @@ def containment_state(distance, ray, winding, tolerance, *, unsigned=None):
     unsigned = abs(distance) if unsigned is None else unsigned
     require(type(unsigned) in (int, float) and np.isfinite(unsigned) and unsigned >= 0, 'Finite nearest distance required')
     if unsigned <= tolerance: return 'near-surface'
+    require(type(ray_resolved) is bool,'Explicit ray consensus resolution required')
+    if not ray_resolved:return 'unresolved'
     if distance > tolerance and ray and abs(winding - 1) <= 1e-5: return 'inside'
     if distance < -tolerance and not ray and abs(winding) <= 1e-5: return 'outside'
     return 'unresolved'
@@ -101,8 +112,9 @@ def partner_containment_reduction(row, target_available, source_vertices, limit,
         vertex = observation['vertex']
         require(type(vertex) is int and 0 <= vertex < source_vertices and vertex not in seen, 'Distinct unresolved source vertices required')
         seen.add(vertex)
+        ray_consensus_reduction(observation['ray_inside'],observation['ray_resolved'],observation['ray_hit_counts'])
         status = containment_state(observation['signed_distance_m'], observation['ray_inside'], observation['winding'],
-            tolerance, unsigned=observation['unsigned_distance_m'])
+            tolerance, unsigned=observation['unsigned_distance_m'],ray_resolved=observation['ray_resolved'])
         require(status in ('near-surface', 'unresolved') and observation['state'] == status, 'Unresolved partner observation differs')
     require(row['available'] is (not unresolved), 'Partner availability differs from consensus evidence')
     if unresolved:
@@ -173,7 +185,9 @@ def geometry_reductions(scene, policy, digest, times, report, saved):
             containment = row['containment']; distance = containment['signed_center_distance_m']
             if sample['volumes'][row['actor']]['containment_available']:
                 require(containment['containment_method'] == CONTAINMENT_METHOD, 'Versioned center containment required')
-                status = containment_state(distance, containment['ray_inside'], containment['winding'], tolerance)
+                ray_consensus_reduction(containment['ray_inside'],containment['ray_resolved'],containment['ray_hit_counts'])
+                status = containment_state(distance, containment['ray_inside'], containment['winding'], tolerance,
+                    unsigned=containment['unsigned_center_distance_m'],ray_resolved=containment['ray_resolved'])
                 if status == 'near-surface-or-unresolved':
                     require(containment['status'] in ('near-surface', 'unresolved'), 'Zero signed center distance cannot establish containment')
                     status = containment['status']

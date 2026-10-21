@@ -1,5 +1,10 @@
 # Cross-checking native mesh containment
 
+The evidence below records the v1 diagnostic. The current
+[v2 measurement](native-containment-crosscheck-v2.md) removes random ray retries
+and retains explicit parity-disagreement evidence; old observations are not
+silently upgraded or combined with the new method.
+
 The 30-degree finger-edit high-five pose is rejected. Its legacy partner
 evaluator reports a 7.803029-mm maximum signed depth at actor A vertex 17307,
 dominated by RightHandIndex2. A fresh query on the exact saved meshes reproduces

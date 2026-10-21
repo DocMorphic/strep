@@ -143,7 +143,23 @@ def unresolved_partner():
     from native_containment_crosscheck import METHOD
     return dict(source='A',target='B',available=False,containment_method=METHOD,count_tolerance_m=.005,
         vertices_checked=8,queried_vertices=1,unresolved_vertices=[dict(vertex=3,state='unresolved',
-            signed_distance_m=-.01,unsigned_distance_m=.01,ray_inside=True,winding=1.)])
+            signed_distance_m=-.01,unsigned_distance_m=.01,ray_inside=True,ray_resolved=True,
+            ray_hit_counts=[[1,1],[3,1],[1,3]],winding=1.)])
+
+
+@pytest.mark.parametrize('fault',[None,'ray','resolution','count','short','bool-count'])
+def test_ambiguous_ray_evidence_stays_unavailable_and_cannot_be_relabelled(fault):
+    row=unresolved_partner();point=row['unresolved_vertices'][0]
+    point.update(signed_distance_m=-.01,winding=0.,ray_inside=False,ray_resolved=False,
+        ray_hit_counts=[[0,1],[0,0],[2,2]])
+    if fault=='ray':point['ray_inside']=True
+    elif fault=='resolution':point['ray_resolved']=True
+    elif fault=='count':point['ray_hit_counts'][0][1]=0
+    elif fault=='short':point['ray_hit_counts'].pop()
+    elif fault=='bool-count':point['ray_hit_counts'][0][0]=False
+    if fault is None:partner_containment_reduction(row,True,8,.005,1e-8)
+    else:
+        with pytest.raises(ValueError):partner_containment_reduction(row,True,8,.005,1e-8)
 
 
 def test_partner_can_be_unresolved_despite_eligible_target():
