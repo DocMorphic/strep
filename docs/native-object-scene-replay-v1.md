@@ -91,3 +91,16 @@ Hosted CI for the preceding combined-engine commit passes all four Windows and
 Linux jobs. Its Windows source job took 13 minutes 50 seconds; the source-check
 budget is extended to 30 minutes to include replay coverage without dropping
 checks. The adapter job's budget is unchanged.
+
+## Hosted regression confirmation
+
+At source `f10d0f9`, all four focused suites pass on both Ubuntu and Windows: **112 tests per OS**.
+
+| Suite | Tests per OS | Ubuntu pytest time | Windows pytest time |
+| --- | ---: | ---: | ---: |
+| [test_verify_native_object_scene_engine.py](https://github.com/DocMorphic/strep/actions/runs/39594051184) | 53 | 154.34 s | 184.00 s |
+| [test_native_actor_scene_job.py](https://github.com/DocMorphic/strep/actions/runs/39594056099) | 19 | 176.02 s | 220.98 s |
+| [test_material_scene_surface_job.py](https://github.com/DocMorphic/strep/actions/runs/39594060421) | 14 | 11.34 s | 421.91 s |
+| [test_verify_native_scene_engine.py](https://github.com/DocMorphic/strep/actions/runs/39594064209) | 26 | 18.42 s | 64.58 s |
+
+Raw logs and run metadata are retained under ignored `reports/engine-geometry-replay-v1/hosted/`. These are four selected source suites, not the entire repository inventory. Engine execution uses test doubles; this does not establish actual engine rendering, physical correctness, animator acceptance or release readiness. The full original animation audit remains separate and incomplete.
