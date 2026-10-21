@@ -24,7 +24,7 @@ passed. GitHub's retained annotation explicitly identifies the execution-time
 limit. This is an incomplete Windows run and an incomplete full workflow,
 not a passing result or proof that the remaining tests would pass.
 
-The workflow now partitions the same 630 declared Python modules into eight
+At `08477e0`, the workflow partitions the same 630 declared Python modules into eight
 shards per operating system, with 78 or 79 modules each. It retains the
 90-minute limit, all assertions, both operating systems, and all 49 Node suites
 (run once per system). The new regression reads the workflow's actual shard
@@ -53,6 +53,31 @@ workflow's totals. The full-source workflow at this revision still has two
 running jobs at this observation. Neither this focused success nor the
 partial full-source result establishes inference, actual-engine playback,
 realistic motion, human review or release approval.
+
+## Early rejection of invalid transition claims
+
+The completed Linux core logs at `08477e0` report 12,850 passing tests,
+ten skips and 70 passing subtests. One Windows core job remains pending at
+this observation. A single transition correction/replay test accounts for
+2,321.41 seconds of the Linux runtime. It includes complete fitting and
+verification plus deliberately corrupted results, so this duration cannot be
+attributed to any one operation.
+
+Transition verification now rejects malformed schema/status and impossible or
+incorrectly typed constant scope flags before constructing the scene. For
+example, `quality_approved: true` and integer `1` in place of the native-only
+boolean reject immediately. Passing this preliminary check grants no approval:
+all existing implementation/source bindings, contact and geometry replay,
+native tracks, complete artifact checks and final decision comparison remain.
+The helper itself is included in the archived method bindings.
+
+All 72 pure header-policy checks and ten inventory/dispatch checks pass locally
+without importing NumPy or Torch. Four integration cases additionally require
+early rejection in the actual verifier and ensure that a valid header alone
+cannot verify a missing package; their numerical-module run and the complete
+transition regression remain pending. No speed improvement is measured yet.
+The new test module makes the current inventory **631 Python modules and
+49 Node suites**, with 180 modules in the focused contact-rig inventory.
 
 ## Earlier completed source runs
 

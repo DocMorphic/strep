@@ -12,13 +12,14 @@ from native_scene_geometry import policy_for,evaluate_to_archive
 from native_scene_game_tracks import event_plan
 from native_support_clock import NativeSupportSampler
 from native_transition_curve import localize
+from native_transition_result_header import validate_header
 from gltf_tools import write_glb
 from rig_asset import RigAsset
 from strep import read,save,sha256,now
 
 SCHEMA='strep-native-transition-scene-fit-v1'
 SCRIPT_ROOT=Path(__file__).resolve().parent
-METHODS=tuple(dict.fromkeys(tuple(fitting.METHODS)+assembly.METHODS+('native_scene_game_tracks.py','native_transition_scene_fit.py')))
+METHODS=tuple(dict.fromkeys(tuple(fitting.METHODS)+assembly.METHODS+('native_scene_game_tracks.py','native_transition_scene_fit.py','native_transition_result_header.py')))
 require=assembly.require
 equal=assembly.transition.equal
 
@@ -229,7 +230,8 @@ def run(recipe_path,output,*,resume_from=None):
 
 
 def verify(output):
-    output=Path(output).resolve();p=read(output/'prepared.json');require(p['schema']==SCHEMA and set(p['implementation_sha256'])==set(METHODS),'Complete bridge correction methods required')
+    output=Path(output).resolve();validate_header(read(output/'result.json'),SCHEMA)
+    p=read(output/'prepared.json');require(p['schema']==SCHEMA and set(p['implementation_sha256'])==set(METHODS),'Complete bridge correction methods required')
     for n,h in p['implementation_sha256'].items():require(sha256(SCRIPT_ROOT/n)==sha256(output/'implementation'/n)==h,'Bridge correction implementation changed')
     require(sha256(p['recipe_original'])==sha256(output/'recipe.json')==p['recipe_sha256'],'Bridge correction recipe changed')
     problem=Problem(read(output/'recipe.json'),p['recipe_base'])

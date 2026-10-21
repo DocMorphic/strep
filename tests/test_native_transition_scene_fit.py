@@ -18,6 +18,21 @@ from strep import read,save,sha256
 from test_native_rig_transfer import fixture as rig_fixture
 from test_native_transfer_surface_calibration import closed_skin
 from test_native_scene_transition import fixture as scene_fixture
+from test_native_transition_result_header import valid_header
+
+
+@pytest.mark.parametrize('field,value',[('quality_approved',True),('root_observations_are_native_only',1),('engine_playback_verified',True)])
+def test_malformed_result_header_rejects_before_loading_scene(tmp_path,monkeypatch,field,value):
+    result=valid_header();result[field]=value;save(tmp_path/'result.json',result)
+    def forbidden(*args,**kwargs):pytest.fail('Invalid header reached scene construction')
+    monkeypatch.setattr(correction,'Problem',forbidden)
+    # No prepared record, geometry or rig is needed to reject these claims.
+    with pytest.raises(ValueError,match=field):correction.verify(tmp_path)
+
+
+def test_valid_result_header_still_requires_verification_inputs(tmp_path):
+    save(tmp_path/'result.json',valid_header())
+    with pytest.raises(FileNotFoundError):correction.verify(tmp_path)
 
 
 def fixture(root,*,floor=None,meeting=True):
