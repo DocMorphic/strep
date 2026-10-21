@@ -513,7 +513,7 @@ unrestricted-translation claim is not retained. Corrected evidence and the
 unchanged source witnesses are in `reports/root-response-verification-v1/`;
 26 resource observations replay. Earlier evidence is preserved as historical.
 
-A full-clip temporal follow-up is running in
+A full-clip temporal follow-up was launched in
 `reports/kaykit-wave-pelvis-temporal-v1/`. It uses three Bernstein controls per
 permitted rotation vector and root translation component, evaluated through
 native-key interpolation, with the unchanged rate gates included in the solve.
@@ -523,3 +523,63 @@ inequalities in 328 equivalent constraints, including the original time-varying
 four-bin caps. A nonnegative restoration slack is a search device only; final
 acceptance requires independent exported-file checks without slack. No result
 or quality approval is inferred from launch or intermediate solver progress.
+
+### Temporal checkpoint replay and developer comparison
+
+The temporal follow-up stopped at its 900-second execution guard, after 49
+completed callback iterations and 3,200 evaluations. Its 903 recorded resource
+observations replay successfully; peak process-tree RSS was 245,895,168 bytes.
+This is an interrupted search, not optimizer convergence or a proof that the
+contact problem is infeasible. The original checkpoint and failed run remain
+unchanged.
+
+`reports/kaykit-wave-pelvis-checkpoint-v1/` reconstructs that checkpoint's 63
+controls into a separate GLB without restarting the optimizer. A separate
+readback checks all 701 audit times, preserved asset payload and unchanged
+tracks. The candidate fails the geometry and both motion-rate gates: maximum
+mesh/joint/ankle/pelvis changes are 64.755936/51.692780/44.839737/42.487755 mm,
+and maximum local rotation change is 25.980762 degrees. Horizontal support
+errors reach 6.265735/6.265280 mm. There are 5,884 failed sampled conditions;
+every sampled pose exceeds the mesh, joint, root and angle budgets. Maximum
+sampled floor penetration is 4.701968 mm. Export and replay each have 34
+resource observations, with every floor observation reproduced exactly.
+
+The search's restoration slack allowed violations while searching; it does
+not relax the final limits. Although positional/angular acceleration peak
+increases are smaller than the per-key candidate's, increases remain
+0.180693 m/s² and 1.848711 rad/s², respectively. Positional/angular speed peak
+increases are 0.024084 m/s and 0.247389 rad/s. No correction is selected. A
+useful next experiment must keep authored edit budgets hard during search and
+measure whether the temporal basis can represent the needed correction before
+spending another full solve on the same representation.
+
+The non-blind developer packet in `reports/kaykit-wave-developer-review-v1/`
+contains the prepared original wave, the per-key candidate and this interrupted
+temporal candidate. It retains native GLB bytes and labels both correction
+failures. It includes local viewer dependencies and asset/helper attribution;
+it contains no model weights, automatic scores, cleanup measurements or
+independent animator evidence. Its archive is checked against every inventory
+entry. Browser rendering and engine import of these two new candidates remain
+untested, and packaging does not confer quality or release approval.
+
+To review on Windows:
+
+1. Open `reports/kaykit-wave-developer-review-v1/` in the recovery checkout and
+   extract `kaykit-wave-developer-review.zip` with **Extract All**.
+2. Open the extracted folder and double-click **Start Review.cmd**. Keep its
+   command window open. The launcher opens `http://127.0.0.1:8771/viewer.html`.
+   Python 3 and a WebGL-capable browser are required; no model download is needed.
+3. Choose **original-wave**, press **Play**, and watch the entire clip at normal
+   speed. Use **Front**, **Side**, **Fit clip**, and the ground grid as needed.
+4. Repeat for **per-key-pelvis-wave** and **temporal-pelvis-wave**. Compare foot
+   drift or hovering, knee twists/pops, body bounce, hand-wave timing and the
+   start/end poses. Both candidates are diagnostic failures, not recommended
+   replacements for the original.
+5. Enter your own reviewer name and ratings, save each review, then click
+   **Export saved reviews**. Include clip/time and a short description for any
+   visible defect. Mark cleanup as not performed unless you actually edited the
+   downloaded asset; viewing time is not cleanup time.
+6. Keep the exported JSON. Press **Ctrl+C** in the command window when finished.
+
+No review server was started by the packaging job. The existing crawl packet
+remains available separately; this wave comparison does not replace it.
