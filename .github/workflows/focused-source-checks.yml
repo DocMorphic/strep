@@ -10,6 +10,7 @@ on:
         type: choice
         default: tests/test_native_motion_orientation.py
         options:
+          - tests/test_studio_native_transition_scene_fit.py
           - tests/test_verify_native_object_scene_engine.py
           - tests/test_native_actor_scene_job.py
           - tests/test_material_scene_surface_job.py

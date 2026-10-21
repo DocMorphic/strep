@@ -18,17 +18,39 @@ from strep import read,save,sha256
 
 @pytest.fixture(scope='module')
 def study(tmp_path_factory):
-    root=tmp_path_factory.mktemp('studio-bridge-fit');patch=pytest.MonkeyPatch()
-    for module in (studio,transitions,scenes,games,server,locks):patch.setattr(module,'ROOT',root)
-    path,recipe,_=fixture(root/'reports/authored');payload={k:copy.deepcopy(v) for k,v in recipe.items() if k not in ('schema','source')}
-    payload.update(schema=studio.SCHEMA,source=dict(folder='authored/assembly',result_sha256=recipe['source']['result_sha256']),resume_from=None);payload['iterations']=1
-    # Keep this failure-preservation fixture unreachable under its permissions.
-    # The ordinary fixture remains editable for actual solver/contact tests.
-    for actor in payload['actors'].values():
-        for track in actor['tracks']:track['maximum_change']=.000001
-    folder=studio.folder_for('fit1');studio.prepare(payload,folder);studio.run(folder);review=studio.manifest('fit1')
-    yield root,payload,folder,review
-    patch.undo()
+    root=tmp_path_factory.mktemp('studio-bridge-fit')
+    # Restore shared module paths even when setup fails before reaching yield.
+    with pytest.MonkeyPatch.context() as patch:
+        for module in (studio,transitions,scenes,games,server,locks):patch.setattr(module,'ROOT',root)
+        path,recipe,_=fixture(root/'reports/authored');payload={k:copy.deepcopy(v) for k,v in recipe.items() if k not in ('schema','source')}
+        payload.update(schema=studio.SCHEMA,source=dict(folder='authored/assembly',result_sha256=recipe['source']['result_sha256']),resume_from=None);payload['iterations']=1
+        # Keep this failure-preservation fixture unreachable under its permissions.
+        # The ordinary fixture remains editable for actual solver/contact tests.
+        for actor in payload['actors'].values():
+            for track in actor['tracks']:track['maximum_change']=.000001
+        folder=studio.folder_for('fit1');studio.prepare(payload,folder);studio.run(folder);review=studio.manifest('fit1')
+        yield root,payload,folder,review
+
+
+@pytest.mark.parametrize('stage',['fixture','prepare','run','manifest'])
+def test_failed_study_setup_restores_shared_module_roots(tmp_path,monkeypatch,stage):
+    modules=(studio,transitions,scenes,games,server,locks)
+    original={module:module.ROOT for module in modules}
+    # Also restore the test process if this regression is run against old code.
+    for module,root in original.items():monkeypatch.setattr(module,'ROOT',root)
+    def step(name,value=None):
+        def call(*args,**kwargs):
+            if name==stage:raise RuntimeError('injected setup failure: '+stage)
+            return value
+        return call
+    recipe=dict(source=dict(result_sha256='0'*64),actors={})
+    monkeypatch.setitem(study.__wrapped__.__globals__,'fixture',step('fixture',(tmp_path,recipe,None)))
+    monkeypatch.setattr(studio,'prepare',step('prepare'))
+    monkeypatch.setattr(studio,'run',step('run'))
+    monkeypatch.setattr(studio,'manifest',step('manifest',{}))
+    generator=study.__wrapped__(SimpleNamespace(mktemp=lambda _:tmp_path))
+    with pytest.raises(RuntimeError,match='injected setup failure: '+stage):next(generator)
+    assert all(module.ROOT==root for module,root in original.items())
 
 
 def test_catalog_run_and_separate_draft_preserve_clip_roles_failures_and_exact_timing(study):
