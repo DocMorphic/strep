@@ -83,3 +83,31 @@ Its `result.json` binds the exact source, permissions and pinned checkpoint.
 The metadata-only run imported no NumPy and changed no numerical worker source,
 model, animation, permission or acceptance policy. This is incomplete-prefix
 diagnostic evidence, not a complete motion or release result.
+
+### Queued reference-surface diagnostic
+
+`reports/humanoid-reference-surface-v1/` contains a prepared diagnostic of all
+18,056 vertices and 36,108 triangles using the asset's default node transforms
+and original inverse-bind matrices. This definition deliberately does not assume
+that default transforms reconstruct an anatomical neutral pose or the bind pose.
+The job will retain its complete self-surface report and exact observation
+arrays, and compare proper-crossing identities with all 214 prefix pairs and
+the 93 persistent pairs. The reference's minimum height is descriptive only;
+it is not a new floor pass/fail policy.
+
+Its metadata-only coordinator is waiting for the existing baseline coordinator
+to finish. It requires a complete 2,017-sample result, matching final checkpoint,
+geometry and observation-index hashes, and a successful resource-trace replay
+before starting one guarded numerical worker. Failed, stopped, missing or
+unknown predecessor state does not authorize a run. The wait has a six-hour
+bound; numerical execution retains the 512-MiB process-tree cap, 600-MiB free-RAM
+reserve, 15-second stable admission and 900-second execution limit. Source or
+input changes reject the queued job, and the original exclusive worker lock
+still applies. There is no automatic retry after diagnostic failure.
+
+Preparation verifies syntax and nine predecessor-decision cases without loading
+NumPy. The waiting process was observed live, but **reference geometry has not
+yet been evaluated**. These are queue/admission checks, not completed numerical
+tests or asset-quality evidence. No source asset, clip, permission, tolerance
+or running numerical implementation was changed. Inspect this study's terminal
+state and saved results before making any reference-shape claim.
