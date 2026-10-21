@@ -142,21 +142,21 @@ checkpoints produced by the new implementation. Retargeting, broad action
 coverage, scene/partner workflows, style controls and the full release matrix
 remain part of the project-wide goal.
 
-## Next recovery boundary
+## Optimizer recovery and remaining integration
 
-Full optimizer recovery must commit a pinned request and original bounds,
+The separate [optimizer recovery worker](native-mesh-optimizer-recovery-v1.md)
+now commits a pinned request and original bounds,
 current controls and decoded residuals, selected candidate, accepted geometry,
 iteration/backtrack position, and the already computed solver direction before
-expensive proposal geometry begins. A resumed attempt should finish the same
-serialized proposal rather than recompute a potentially different solver step.
-The geometry decision, probe history and next optimizer state need an atomic
-commit boundary; a crash between their writes must not accept a probe twice or
-skip an unchecked proposal. Completed contact/edit reports, exported asset
-digests, failed attempts and frame receipts must remain bound to that state.
+expensive proposal geometry begins. It resumes the same committed direction,
+retains abandoned exports and assemblies, and commits decoded decisions exactly
+once. Completed contact/edit reports, exported asset digests, failed attempts
+and frame receipts remain bound to that state.
 
-The required tests should interrupt original evaluation, proposal export,
-proposal geometry, decision publication and accepted-step publication in fresh
-processes. They must compare the complete decision sequence with uninterrupted
-execution, reject changed inputs/methods/bounds, retain abandoned writes and
-leave the original selected until a complete existing acceptance check passes.
-This is an implementation plan, not a claim that optimizer recovery exists.
+Its generated-fixture tests compare the complete decision sequence and candidate
+bytes with uninterrupted execution, reject changed evidence and verify
+fresh-process recovery after hard exits during original/proposal geometry.
+The original remains selected. The existing `fit` entry point remains a
+fresh-output API; the new recovery API is separate. Studio lifecycle and package
+recovery, full humanoid optimizer measurements and collision guidance remain
+unfinished. Neither recovery component satisfies the full release contract.
