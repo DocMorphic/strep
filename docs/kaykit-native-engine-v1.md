@@ -165,3 +165,68 @@ full-body support and proportion handling; lifting the entire animation until
 it clears the floor would not establish planted hands/feet or plausible motion.
 Recheck every candidate in the engine and retain source failures. No new motion
 generation, training, correction, human review or release approval occurred here.
+
+## Standing support candidate: clearance improves, motion rates regress
+
+The next development trial actually edits the wave clip, with a separate request
+allowing both thigh/shin/ankle rotation tracks across all 120 keys, including
+endpoints. It preserves translations, root motion, unrelated rotations, native
+times, duration and mesh/skin payloads. The original remains selected. Hard
+limits are 15 degrees per local joint, 25 mm ankle displacement, 30 mm joint
+and vertex displacement, and a 5 mm maximum lowest-point support gap. The target
+clearance is 1 mm above Y=0. These physical limits remain identical across all
+attempts; none of the failures is converted to a pass by widening them.
+
+The first attempt rejects non-rigid input. The existing explicit roundoff
+preparation changes 15 static near-unit scales within its unchanged 5e-7
+eligibility limit. Maximum vertex change is 1.568743e-8 m over the reference and
+701 sampled poses, below its unchanged 1e-5 m geometry budget. Mesh data, inverse
+binds and animation bytes remain intact in this separate prepared input.
+
+A direct ankle lift then exceeds the rotation bound. Subsequent constrained
+rotation proposals initially fail convergence/feasibility checks. The completed
+proposal uses complete affected-vertex/joint inequalities for each disjoint leg
+solve, followed by all-vertex/joint validation. Internal 0.1 mm clearance and
+displacement margins tighten the proposal targets. The source-relative pose
+objective includes previous-key regularization, but no hard temporal rate caps.
+Unmapped auxiliary-root behavior remains unresolved and unchanged.
+
+The resulting candidate passes its sampled support/edit bounds at **701 times**
+(all native keys, adjacent midpoints and uniform 120 Hz samples). An independent
+sampler replay reproduces the floor track exactly. Maximum local rotation change
+is 6.612393 degrees, ankle/joint displacement 24.109133 mm, and vertex displacement
+29.902907 mm. Foot-region minimum heights range from 1.088604 to 1.101943 mm;
+the full mesh has no sampled floor penetration.
+
+Actual Godot native-animation captures reproduce both original and candidate at
+701 times each. Original floor penetration is 8.907812 mm; candidate penetration
+is zero. Maximum complete imported-skin comparison error is 0.031961 mm in both
+captures, below the existing 0.1 mm limit; pose comparisons also pass. Ordinary
+import remains **failed**: at sample 699, the requested 3.966666666666667 s seek
+reports 3.9666666984558105 s, a 31.789 ns difference exceeding the unchanged 1 ns
+actual-clock limit. The raw capture is retained; native-authoring success does
+not approve ordinary import, GPU rendering or gameplay playback.
+
+**Do not adopt the candidate:** both original-bin rate caps and absolute per-joint
+peak comparisons fail on uniform 120 Hz observations. Largest peak increases
+are 0.057049 m/s positional speed, 15.676850 m/s² positional acceleration,
+0.336008 rad/s angular speed and 36.847076 rad/s² angular acceleration. A diagnostic
+using fixed source-first-pose near-sole vertices also worsens: left maximum
+horizontal excursion increases from 36.603 to 44.620 mm, right from 20.075 to
+30.570 mm. These are diagnostic vertex trajectories, not verified contact labels.
+Clearing the floor alone has not established planted feet or realistic motion.
+
+Evidence: `reports/kaykit-wave-support-v1/` through `-v5/` retain all proposals
+and failures; `kaykit-wave-rigid-input-v1/` retains explicit preparation;
+`kaykit-wave-support-engine-v1/` retains both completed native captures and the
+failed ordinary-import capture. The v5 `publication-check.json` verifies hashes,
+unchanged physical limits, both native comparison passes, the import-clock
+failure, and eight resource audit records. Successful proposal/replay traces
+contain 65/31 observations; the engine trace contains 46 and correctly remains
+failed overall. All use a 512-MiB process-tree cap and 600-MiB free-RAM reserve.
+
+Next: optimize support across time with explicit contact targets and hard rate
+constraints, then repeat serialized and engine checks. Keep this geometrically
+passing but temporally rejected candidate as evidence, not as a new default.
+This study does not approve self-collision, balance, continuous-time geometry,
+anatomical motion, an auxiliary-root fix, animator cleanup or release readiness.
