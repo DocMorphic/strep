@@ -1222,9 +1222,68 @@ protocol. The original failed full step remains preserved, and the original
 animation remains selected for use.
 
 The repaired candidate exposes 37 deepest-vertex identities absent from the
-existing 101-row bank. The next proposal must retain all 101 and add these 37,
-for 138 identities, rebuilding nearest points and directions at the repaired
-pose. This 138-row continuation is planned, not yet fitted or verified.
+existing 101-row bank. This motivates retaining all 101 and adding those 37,
+for 138 identities, with nearest points and directions rebuilt at the repaired
+pose. The next section records this continuation.
+
+### Retained 138-point model with a proposal edit reserve
+
+`reports/humanoid-containment-witnesses-v3` rebuilds all 138 identities at the
+verified serialization-reserve candidate. It retains all 101 earlier identities
+and their original-source query allowances. The 138-by-84 derivative has 4,182
+nonzeros, no unresponsive rows or near-surface fallback rows, and a maximum
+origin reconstruction discrepancy of 3.46e-16 m. The bank still covers 65
+distinct times; including the requested contact time gives the same 66-time
+focused screen.
+
+`reports/humanoid-containment-restoration-v3` uses 291,975 norm rows with the
+same 291,837-row hard prefix and trust 0.0125. It introduces a 0.999999 proposal
+cap on all 329 normalized native edit rows, leaving the actual serialized
+20-degree limits unchanged. This reserves room for rounding before export;
+every export still undergoes strict edit auditing. Contact and collision
+proposal margins also remain distinct from actual acceptance requirements.
+
+All four exports pass the original native, strict edit and contact limits:
+
+| Step fraction | Failed native rows | Local depth regressions | Worst depth increase |
+| --- | ---: | ---: | ---: |
+| 1 | 0 | 43 | 0.446596 mm |
+| 0.5 | 0 | 48 | 0.453722 mm |
+| 0.25 | 0 | 45 | 0.587128 mm |
+| 0.125 | 0 | 47 | 0.657539 mm |
+
+The full step is the best research iterate, with 4.902598-mm contact error and
+passing actual contact-time mesh geometry. Its smallest contact-plane gap is
+44.152547 micrometers: positive, but below the 50-micrometer proposal reserve.
+Its contact error likewise slightly exceeds the 4.9-mm proposal radius while
+remaining inside the actual 5-mm authored limit. These discrepancies demonstrate
+why an affine reserve is not an actual geometry certificate. The original
+acceptance caps remain authoritative; all proposal-margin misses are retained.
+
+The candidate preserves every previously passing focused condition and reduces
+the worst original-relative additional penetration from 0.701514 to 0.446596 mm.
+Its 43 remaining local depth regressions still prevent full-clock acceptance or
+adoption. Pre-existing support and geometric failures are not solved by this
+improvement. A subsequent model may start below a proposal reserve only with
+that origin recorded explicitly; it must retain actual native/strict/contact
+acceptance and re-query actual geometry.
+
+`reports/humanoid-containment-restoration-verification-v3` independently
+reopens all four exports and reproduces the 2,017-time native checks, strict
+edit audits, contact observations and all 264 focused geometry queries and
+their arrays. It reconstructs the original-source depth comparisons, selection,
+affine origins, lifts and steps, including the explicit reserve on all 329 edit
+proposal rows. Original native caps are compared separately against the prior
+source-bound model. Saved derivatives are bound and structurally checked, not
+independently re-differentiated. Fitting completes within the explicit 2-GiB
+protocol; verification completes within 512 MiB. This does not approve the
+complete animation or any release gate.
+
+The remaining regressions expose 27 deepest-vertex identities absent from the
+138-row bank. The planned next bank retains all 138 and adds those 27, for 165
+identities. Nearest points and directions must be rebuilt at the verified full
+step, retaining the original source's per-query allowances. No 165-row fit has
+yet been executed or verified.
 
 ### Remaining integration and evaluation
 
@@ -1257,8 +1316,8 @@ source-rounding barrier on one generated case. Both obstacle placements and the
 real humanoid now expose additional local-search limits. Joint pose and timing
 now pass the native limits on one declared seven-track candidate, whose complete
 geometry evaluation rejects 67 local containment-depth regressions. Next extend
-the focused restoration, which reduces this to 50 regressions while retaining
-native and strict edit limits: retain all 101 existing witness identities and
+the focused restoration, which reduces this to 43 regressions while retaining
+native and strict edit limits: retain all 138 existing witness identities and
 add newly exposed deepest vertices, preserve
 contact-time separation and native caps, and re-evaluate the complete clock
 after a correction clears the focused screen. Preserve the separate four-track
