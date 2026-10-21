@@ -287,3 +287,36 @@ including the warning, unknown and inconsistent-payload cases, and viewer
 syntax checks pass. Evidence is `reports/studio-rig-coverage-v1/`. These are
 software checks with an engine double, not a live-browser visual review or
 additional actual-engine evidence.
+
+## Rate localization and original root behavior
+
+The read-only follow-up in `reports/kaykit-constraint-diagnostic-v1/` samples
+the three rejected wave candidates on the same 120-Hz rate clock. All three
+absolute-rate reports and original-bin pass/fail decisions reproduce their
+previous independently replayed reports exactly. The per-key correction raises
+the right-foot peak positional acceleration from 3.788516 to 19.465366 m/s²,
+with its candidate peak at 1.866667 s. Right-upper-leg angular acceleration
+also peaks there, rising from 23.316854 to 60.163929 rad/s². This localizes a
+large temporal regression; it does not establish why the optimizer chose it or
+prove the original constraints infeasible. The constant-offset candidate has
+smaller regressions but still fails the unchanged acceptance checks. The curve
+candidate likewise remains rejected, including 1,091 sample/joint pairs above
+their source-bin angular-speed limits. A whole-clip peak can pass while a local
+source-bin limit fails, so neither comparison substitutes for the other.
+
+The same diagnostic inspects all native keys and adjacent midpoints for the
+eight original KayKit clips used in the engine study. Their weighted auxiliary
+root is essentially rotation-static in every clip and position-static in seven;
+Running_A moves it by up to 50 mm from its initial position. The hips still move
+relative to that root, including about 123.83 degrees of rotation in Lie_StandUp.
+Thus the 467 vertices influenced by this unmapped ancestor justify inspection,
+but do not establish that a fixed ancestor is a transfer bug. Automatically
+making it follow the full pelvis transform is not supported by this evidence.
+Any such deformation change needs a separate explicit policy and comparison.
+
+The diagnostic completed with 30 replayed resource observations and peak process
+tree RSS of 129,712,128 bytes under the unchanged 512-MiB cap and 600-MiB free-RAM
+reserve. It changes no animation, weights or acceptance thresholds. Next work
+is to isolate support feasibility from rate feasibility and evaluate temporally
+coupled corrections; no accepted correction or release approval follows from
+these measurements.
