@@ -115,3 +115,7 @@ the failed target set and all raw attempts. Continuous checks, self-collision,
 anatomical support, action correctness, human review and cleanup time remain
 separate requirements. The project-wide release goal remains active across all
 action families, rigs, objects, partners, editing and style controls.
+
+The [interpolation constrained study](kaykit-getup-interpolation-v1.md) now
+records that extension: both previously unresolved local windows pass sampled
+decoded geometry and actual Godot authoring checks. The full clip remains open.
