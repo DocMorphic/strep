@@ -61,8 +61,45 @@ names do not establish object/seat contact. Passing a floor screen or import
 comparison does not approve motion quality. Original clips and all failures
 remain available, and release capabilities remain unapproved.
 
-The next study transfers seven existing seed-77 SOMA development clips to this
-rig using the existing explicit profile. It retains zero authored world offset,
-no automatic floor lift and original source files, and records failed transfers.
-Transferred exports need their own engine, contact, geometry and human checks;
-this source-animation study cannot substitute for those results.
+## Generated-motion transfer baseline
+
+The follow-up transfers seven existing seed-77 SOMA development clips with the
+existing 18-role profile, zero authored world offset and no automatic floor lift.
+It performs no new inference or training. These clips are development data;
+their historical directory name does not make this a reserved release study.
+Unmapped helpers and fingers retain reference transforms, and anatomical axis
+and twist interpretation still require review.
+
+All seven transfers complete across **1,020 frames**. The exporter checks source
+SOMA forward kinematics and decodes each target frame. Maximum target-vertex
+round-trip discrepancy is 1.492138e-7 m. A separate byte/structure check verifies
+all report/source/output digests, original binary prefixes, mesh/skin/material
+definitions and original accessors. Each derivative contains one transferred
+animation; the original GLB and all 95 original clips remain separate and intact.
+
+| Transferred development action | Frames | Target floor depth (mm) |
+| --- | ---: | ---: |
+| Jump/land | 120 | 54.077449 |
+| Crawl | 120 | 327.115974 |
+| Dance | 150 | 32.728972 |
+| Wave | 120 | 8.907740 |
+| Kick | 120 | 149.179829 |
+| Get-up | 180 | 633.661003 |
+| Run/roll/stand | 210 | 1129.485888 |
+
+Every derivative exceeds the existing 5-mm floor screen. Export round-trip
+agreement does not repair these failures or establish usable animation. Source
+foot-contact predictions are retained, not promoted to verified target support.
+The native-source engine results above do not verify these new derivatives.
+Their body/support fitting, actual engine comparison, collision/transition,
+semantic and human cleanup checks remain outstanding.
+
+The first attempt records seven setup failures before transfer because this
+worktree lacked the existing Kimodo skeleton-definition path. A local directory
+junction connects it to the already acquired dependency; no library/model was
+downloaded or modified. The fresh second attempt retains the same cases and
+input hashes. Evidence is `reports/kaykit-generated-transfer-v1/` (failed setup)
+and `reports/kaykit-generated-transfer-v2/` (completed exports and publication
+check). Resource traces replay 70 and 61 observations. The CPU transfer worker
+uses the installed Torch runtime, a 2-GiB process-tree cap, 600-MiB free-RAM
+reserve and 900-second time limit. No motion or release approval follows.
