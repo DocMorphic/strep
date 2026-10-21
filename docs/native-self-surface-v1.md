@@ -203,3 +203,46 @@ The original itself remains unsuitable for claiming collision-free geometry.
 No correction search was resumed and no animation, model or release gate is
 approved. Next is to speed up the complete screen while retaining equivalence
 evidence, then run a versioned full-clock comparison with recoverable execution.
+
+## Bounded shared-boundary filter
+
+Method `strep-native-self-surface-screen-v2` retains the complete ordered spatial
+pair population. In batches of at most 2,048 pairs (512 by default), a numerical
+filter resolves nonparallel shared-vertex boundaries only when the shared point
+is within both plane bands, two-sided straddling is excluded, and numerical
+margins are sufficient. Ill-conditioned, nearly parallel and uncertain cases
+fall back to the unchanged scalar triangle predicate. Possible defects always
+use that predicate; sharing a vertex is never a blanket collision exemption.
+
+The filter uses floating-point error estimates, not exact interval arithmetic.
+It does not add a geometric clearance allowance or establish a valid solid.
+All stored failure records retain the scalar predicate's values. Pair and
+record budgets remain hard limits: exhaustion cannot produce a complete report.
+The report records filtered/scalar pair counts, batch size and enabled state.
+`accelerate=False` retains a scalar reference mode for comparisons.
+
+The method version changes explicitly; original and candidate observations
+must be regenerated together. Existing source-bound checkpoints are not resumed
+under changed producer code. No old animation score or tolerance is rebased.
+
+All 200 focused checks and 84 geometry-journal checks pass. These include
+shared-vertex proper crossings, random folded topology, near-parallel cases,
+coordinate scales/translations, bounded batches, budget exhaustion, fitting
+rejection and complete resumed/direct equivalence.
+
+On each saved 36,108-face humanoid surface, the timing order was scalar,
+filtered, filtered, scalar. Every complete report matches between modes except
+the explicit filter-work counters; stored failure records and their order are
+identical. The corresponding earlier standalone diagnostic fields also match.
+
+| Surface | Candidate pairs | Proper crossings | Scalar mean | Filtered mean | Ratio |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Original pose | 263,790 | 114 | 31.8334 s | 4.60186 s | 6.92× |
+| Edited pose | 265,627 | 275 | 32.1551 s | 4.80306 s | 6.69× |
+
+These are measured self-audit stage timings on two poses, not full animation
+generation speed or a universal performance guarantee. Raw outputs, timings,
+source bindings and resource traces remain in ignored
+`reports/self-boundary-filter-*`. The unchanged 512 MiB worker cap and 600 MiB
+free-memory reserve apply. A fresh full-clock baseline is required before any
+compatible candidate comparison; no animation or release gate is approved.

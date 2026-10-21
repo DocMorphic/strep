@@ -126,3 +126,46 @@ def test_incomplete_changed_or_unversioned_self_evidence_rejects(fault):
     elif fault=='duplicate-crossing':own['records']*=2
     else:changed['sample_indices']=[1]
     with pytest.raises(ValueError):compare_self_surfaces(original,changed)
+
+
+def assert_scalar_equivalent(vertices,faces,**kwargs):
+    scalar=audit(vertices,faces,accelerate=False,**kwargs)
+    fast=audit(vertices,faces,accelerate=True,**kwargs)
+    assert {k:v for k,v in scalar.items() if k!='boundary_filter'}=={k:v for k,v in fast.items() if k!='boundary_filter'}
+    assert fast['boundary_filter']['filtered_pairs']+fast['boundary_filter']['scalar_pairs']==fast['candidate_pairs']
+    return fast
+
+
+@pytest.mark.parametrize('batch',[1,7,512,2048])
+def test_bounded_filter_preserves_every_scalar_result_and_pair_order(batch):
+    mesh=trimesh.creation.icosphere(subdivisions=1)
+    result=assert_scalar_equivalent(mesh.vertices,mesh.faces,pair_batch_size=batch)
+    assert result['boundary_filter']['filtered_pairs']>0
+    assert result['boundary_filter']['pair_batch_size']==batch
+
+
+@pytest.mark.parametrize('scale',[1e-6,1.,1e6])
+@pytest.mark.parametrize('shift',[[0,0,0],[1e6,-1e6,1e6]])
+def test_boundary_filter_preserves_shared_crossings_and_difficult_coordinates(scale,shift):
+    # Shared-vertex proper crossing is explicitly NOT an adjacency exemption.
+    vertices=np.vstack([A,[[0,0,-1.],[0,0,1.]]])*scale+shift
+    result=assert_scalar_equivalent(vertices,[[0,1,2],[0,3,4]])
+    assert result['boundary_filter']['filtered_pairs']==0
+
+
+@pytest.mark.parametrize('angle',[0.,1e-12,1e-10,1e-8,1e-4,.1])
+def test_parallel_and_threshold_neighbors_keep_the_scalar_predicate(angle):
+    vertices=np.array([[0.,0,0],[1,0,0],[0,1,0],[0,-np.cos(angle),np.sin(angle)]])
+    assert_scalar_equivalent(vertices,[[0,1,2],[1,0,3]],tolerance_m=1e-10)
+
+
+def test_random_folded_meshes_match_the_complete_scalar_population():
+    rng=np.random.default_rng(391)
+    for _ in range(8):
+        vertices=rng.normal(size=(24,3));faces=np.array([rng.choice(24,3,replace=False) for i in range(30)])
+        assert_scalar_equivalent(vertices,faces,pair_batch_size=7)
+
+
+@pytest.mark.parametrize('kwargs',[{'accelerate':1},{'pair_batch_size':0},{'pair_batch_size':2049},{'pair_batch_size':True}])
+def test_invalid_filter_settings_fail_before_any_incomplete_screen(kwargs):
+    with pytest.raises(ValueError):audit(A,[[0,1,2]],**kwargs)
