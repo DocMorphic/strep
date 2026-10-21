@@ -44,6 +44,17 @@ approval follows from this change.
 All twelve job logs, terminal metadata, timeout annotations and source inventory
 are retained with file hashes under `reports/full-source-ci-d83f474-v1`.
 
+The later [run 39635539188](https://github.com/DocMorphic/strep/actions/runs/39635539188)
+at `2b7f77e` completes all twenty jobs successfully. Its 631-module inventory
+reports 12,926 core Python passes on Linux and 12,927 on Windows, with ten/nine
+skips respectively and 70 passing subtests on each system. Separate adapter and
+material jobs also pass; their overlapping coverage is not added to those core
+totals. Complete logs, terminal metadata and the exact-revision source inventory
+are retained and hash-verified in `reports/full-source-ci-2b7f77e-v1/`. This
+completes the previously pending full regression run for the transition-header
+early rejection change. It does not establish a performance improvement,
+coverage of later commits, motion quality or release approval.
+
 ## Focused contact and rig verification (2026-10-21)
 
 [Run 39623896274](https://github.com/DocMorphic/strep/actions/runs/39623896274)

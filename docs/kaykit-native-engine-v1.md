@@ -401,3 +401,64 @@ and anchors from the source. Evidence is `reports/support-preflight-v1/`;
 or release gate is approved. Next: propose a different, explicit anchor under
 the unchanged edit limits, retain this impossible request, and only then test
 articulated and temporal feasibility.
+
+## Anchor selection and articulated follow-up
+
+The next proposal changes only the two fixed anchor coordinates, retaining the
+30 mm mesh/joint limit, 25 mm ankle limit, 15-degree local rotation limit,
+1–5 mm support-height interval and 3 mm horizontal tolerance. Each sampled
+centroid supplies a necessary planar disk: its radius is the horizontal
+tolerance plus the remaining horizontal movement after the required vertical
+clearance is accounted for. A conic proposal maximizes the shared radial slack
+inside all 701 disks for each foot. This relaxes articulated constraints and
+does not establish reachable foot poses or a globally certified optimum.
+
+The initial harness in `reports/kaykit-wave-anchor-proposal-v1/` rejects at its
+strict solver-status assertion and is retained, with 21 resource observations.
+The second version records both `AlmostSolved` statuses and checks the proposed
+coordinates against every necessary disk and the original displacement preflight. Its anchors move by
+7.658426 mm left and 6.213337 mm right, leaving minimum necessary-disk slack of
+4.689377 mm and 12.609713 mm respectively. Fresh decoded-mesh preflight finds
+zero necessary-bound conflicts, with all source centroids and clocks unchanged.
+The proposal uses 27 resource observations and peak RSS 95,166,464 bytes.
+Evidence is `reports/kaykit-wave-anchor-proposal-v2/`. No asset or limit changes.
+
+Actual leg fitting with those anchors is still unsuccessful. In
+`reports/kaykit-wave-contact-feasibility-v2/`, 70 of 240 native-key leg solves
+remain unresolved: 61 left poses at frames 23–83 and nine right poses at frames
+104–112. Independent replay covers all 701 times and matches the floor track
+exactly. The candidate reaches 16.233378 degrees local rotation change,
+30.597925 mm joint movement and 26.440083 mm ankle movement, exceeding the
+unchanged limits. It records 1,485 violations and fails both rate gates. The
+candidate remains unselected. Proposal/replay traces contain 165/31 resource
+observations; peak proposal RSS is 139,304,960 bytes. This demonstrates why
+passing a necessary geometric relaxation is insufficient for motion approval.
+
+`reports/kaykit-wave-articulated-anchors-v1/` then couples an anchor with leg
+rotations at measured conflict and endpoint poses, while retaining the complete
+necessary-disk population. Left frames 0, 28, 107 and 119 remain unresolved; the
+local solver's "Inequality constraints incompatible" message is not a global
+infeasibility certificate. Right frames 0, 108 and 119 meet the selected-leg
+geometry checks at a different proposed anchor. This is only a three-pose
+initialization, not a full clip or whole-body floor result. All rate and release
+gates remain unapproved. The trace contains 38 observations and peak RSS
+113,614,848 bytes.
+
+An independent replay in `reports/kaykit-anchor-replay-v1/` applies the saved
+rotations as world-space pivot transforms, instead of the proposal's local-FK
+assembly. It reproduces the left failure and the right selected-pose geometry
+result and verifies that unrelated local transforms and every local translation
+stay fixed. It also tests a translation-only pelvis correction: both selected
+sole patches are wholly influenced by descendants of the mapped pelvis, so any
+common translation cancels out of their left-minus-right centroid difference.
+If each foot stays within 3 mm of any fixed anchor, that difference track can
+have diameter at most 12 mm. The source's measured diameter is 87.418328 mm,
+witnessed at 1.5333333015441895 and 3.5999999046325684 seconds. Therefore a common
+translation alone cannot meet these fixed-foot targets, even with unrestricted
+translation magnitude. This does not rule out a combined pelvis-and-leg edit,
+root rotation or a different contact intent; it is not a formal interval proof.
+
+Next work should compare a separately declared pelvis-and-leg edit under
+explicit root-track permissions, with full mesh, contact and rate validation.
+The original frozen-root requests and rejected candidates must remain intact;
+an expanded authoring policy must not be reported as passing the old policy.
