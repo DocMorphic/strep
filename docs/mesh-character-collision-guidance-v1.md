@@ -670,8 +670,70 @@ The next full-clock audit, `reports/humanoid-weight10-geometry-v1`, targets the
 best eligible weight-10 half step. It retains the original acceptance checks
 and additionally records per-time/per-direction containment increases, with
 any such increase disqualifying this research candidate. This stricter
-diagnostic has not changed production acceptance policy. Its complete geometry
-result is still pending; the original animation remains selected.
+diagnostic initially leaves production acceptance policy unchanged. The first attempt
+stops at its execution-time guard after 1,836 samples; an explicitly pinned
+continuation finishes the remaining 181 and assembles the complete report.
+Their sampled peaks are 253,632,512 and 250,503,168 bytes under the same 512 MiB
+protocol. The continuation completes in 298.656 seconds of observed execution.
+
+The half step is rejected. Proper-crossing records increase from 42,666 to
+43,615; failed conditions remain 4,282, and all 2,017 sampled poses still have
+geometry failures. The whole-clip maximum remains 10.436307 mm. There are 118
+local containment-depth increases, with the largest at 2.18125 seconds in the
+actor-to-panel query: 2.552408 mm becomes 3.462966 mm, an increase of 0.910558 mm.
+The hand still misses the original 5 mm target. This result retains the original
+animation and proves neither feasibility nor infeasibility of a different
+correction. Complete frame/source bindings, metrics and local increases are
+checked by `reports/weight10-geometry-verification-v1` before changing the
+production implementation.
+
+### Local depth acceptance for character corrections
+
+The character fitter and resumable optimizer now require a supplementary
+per-time/query depth comparison in `native_mesh_depth_regression.py`. The
+existing condition and aggregate-metric requirements remain mandatory. A
+contact improvement cannot buy an increase in a smaller local penetration
+hidden by another query's larger maximum.
+
+The comparison includes actor and prop floor-plane depths, actor and prop
+primitive-query upper depth bounds, and both containment directions for actor
+partners, actor/prop pairs and prop/prop pairs. Complete clocks, limits,
+participant topology counts and query identities must agree. It introduces
+no depth slack; unavailable comparisons fail rather than asserting that an
+unknown depth did not worsen. This is deliberately conservative, including
+for tiny floating-point changes. Primitive bounds are compared as measured
+bounds, not presented as exact physical penetration distances.
+
+Every evaluated proposal saves `local-depth-regression.json`. Decision records
+include the local pass flag, regression/unavailable counts and maximum increase.
+The resumable optimizer writes the same report immutably and pins its hash
+before committing the decision. The new helper belongs to the implementation
+snapshot, so an old interrupted optimizer cannot silently resume under changed
+acceptance code. Its original implementation and evidence remain preserved.
+
+Validation covers 61 distinct targeted cases. The first run has 60 passes and
+one new test-harness failure: the recovery helper was called without its
+checkpoint hash argument. That failure and the original test are retained.
+After correcting only that call, all 31 cases in the new test module pass;
+production implementation hashes remain identical across both runs. Coverage
+includes regressions hidden by a larger peak in each of the seven query
+families, unknown/malformed/incomplete reports, rejection in both correction
+paths, matching fresh/resumed results, stage-publication interruptions,
+modified saved records, fresh-process hard exits and interrupted exports.
+The new module is included in the source-test inventories and focused workflow;
+these local results do not claim completion of the full cross-platform suite.
+
+`reports/local-depth-guard-replay-v1` independently verifies that evidence and
+applies the new consumer to both retained humanoid reports without rebasing
+their producers. It checks 8,068 local observations per case, reproducing all
+174 weight-1 and 118 weight-10 containment increases exactly, including their
+original/candidate values. Comparing the original report with itself passes.
+Both corrected candidates still fail; no earlier decision is retroactively
+promoted and no new animation is selected.
+
+This guard improves acceptance evidence; it does not generate better motion,
+resolve the retained hand-contact failures, or certify whole-mesh, self-collision,
+continuous-time, dynamics, game-engine or human-quality requirements.
 
 ### Remaining integration and evaluation
 
