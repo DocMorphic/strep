@@ -8,6 +8,8 @@ Generate editable clips from action descriptions and timed sequences, transfer m
 
 ## Current work
 
+- [Studio worker thread configuration](docs/mesh-worker-thread-configuration-v1.md): fresh-process regressions exposed numerical libraries loading after the requested thread limit. Both mesh workers now load their backend under the job lock before applying the limit; all 72 focused checks pass. The first humanoid correction timed out after preserving its complete original audit and attempted clip. A retry retains the exact request and acceptance limits; realistic contact and floor repair remain unresolved.
+
 - [Real humanoid mesh-contact trial](docs/humanoid-mesh-contact-v1.md): a fixed-panel touch exposes simultaneous hand/panel and floor failures in an existing humanoid clip. An exact collision-query optimization passes 102 focused checks and preserves every report and observation in a nine-pose old/new comparison, running about 1.82 times faster on that workload. Full correction remains subject to the original complete-clock and motion constraints; no animation-quality approval follows from the speedup.
 
 - [Studio object-contact correction and comparison](docs/studio-mesh-character-correction-v1.md): run bounded corrections from saved object-contact scenes and compare original/candidate motion at the same time and camera angle. Exact scene bindings, explicit clip-edge choices and retained failures preserve the original intent. All 66 focused Python tests and three editor/playback suites pass; real humanoid quality, broader interaction coverage and engine validation remain unfinished.

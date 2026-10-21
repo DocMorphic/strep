@@ -101,7 +101,11 @@ def main():
         from threadpoolctl import threadpool_limits
         from action_studio_server import allowed_file
         try:
-            with worker_lock(),threadpool_limits(limits=1):execute(folder,allowed_file)
+            with worker_lock():
+                # Load numerical pools before limiting them, only in the
+                # admitted worker. Queue/status imports stay lightweight.
+                import studio_mesh_scene
+                with threadpool_limits(limits=1):execute(folder,allowed_file)
         except Exception as error:
             save(folder/'failure.json',dict(error=str(error)));raise
     else:

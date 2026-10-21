@@ -194,7 +194,11 @@ def main():
         from action_worker_lock import worker_lock
         from threadpoolctl import threadpool_limits
         try:
-            with worker_lock(), threadpool_limits(limits=1): execute(folder)
+            with worker_lock():
+                # threadpoolctl can only limit libraries already loaded. Keep
+                # this worker-only import inside admission and the job lock.
+                import native_mesh_character_fit
+                with threadpool_limits(limits=1): execute(folder)
         except Exception as error:
             save(folder / 'failure.json', dict(error=str(error))); raise
     else:

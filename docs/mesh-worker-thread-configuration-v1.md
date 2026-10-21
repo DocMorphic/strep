@@ -1,0 +1,11 @@
+# Studio mesh worker thread configuration
+
+The saved-scene and character-correction workers applied `threadpool_limits(1)` before importing their numerical backends. That controller only discovers libraries already loaded when it is constructed. In a fresh worker, later NumPy/SciPy imports therefore retained their initial BLAS settings. Tests that had already imported those libraries did not reproduce this startup path.
+
+Both workers now acquire the existing job lock, import their backend, and then apply the one-thread limit around execution. Imports used to queue work or read status remain free of NumPy, SciPy and model loading. Memory admission and the process-tree/time guards remain unchanged. There is no change to geometric tests, clip sampling, constraints or solver parameters.
+
+The regression uses fresh subprocesses with an explicit initial BLAS setting of two threads. Motion execution is replaced with inspection of the actual loaded pools, and the test requires numerical imports to occur under the worker lock. Both worker cases fail on the previous implementation because the pools still report two threads. Two separate import-blocking cases verify lightweight queue imports. The source and failing results are archived locally; the initial attempt that deferred while another worker was active is also retained.
+
+All 72 focused checks pass after the fix: the four fresh-process cases, saved-scene and character correction integration, previews, the correction backend and lightweight read-only imports. Evidence is under `reports/mesh-worker-thread-tests-*` and `reports/mesh-worker-thread-source-epoch-v1`. The real humanoid retry is tracked in `reports/humanoid-mesh-correction-v2`. Its preparation requires byte-identical request JSON and permits only the two worker implementation hashes to differ from the timed-out first job. The target, scene, source assets, complete 2,017-time clock, bounds, iteration count and 900-second execution budget remain fixed.
+
+The configuration regression demonstrates the startup defect and its correction. It does not establish how much of the earlier timeout the defect caused, promise that a complete correction will fit the time budget, or grant animation/engine/release approval. A terminal production result and completed geometry evidence are required for those subsequent decisions.
