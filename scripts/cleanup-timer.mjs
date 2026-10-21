@@ -42,14 +42,22 @@ export function validateStoredCleanup(session){
   if(Object.keys(session).sort().join()!==Object.keys(base).sort().join()||session.schema!==base.schema||
       session.quality_approved!==false||session.release_approved!==false||!['new','running','paused','finished'].includes(session.state)||
       !Array.isArray(session.segments)||session.segments.length>10000||!Array.isArray(session.interruptions)||session.interruptions.length>10000)throw Error('Invalid saved cleanup timer.');
+  const fields=(value,expected)=>{if(!value||Object.keys(value).sort().join()!==expected.slice().sort().join())throw Error('Invalid timing event fields.');};
   const checkOpen=s=>{if(!s||typeof s.page_id!=='string'||!s.page_id||s.page_id.length>120)throw Error('Invalid timing page.');clock(s.start_ms,s.started_at);};
   const ends=new Map();
-  for(const s of session.segments){checkOpen(s);clock(s.end_ms,s.ended_at);if(s.end_ms<s.start_ms||s.start_ms<(ends.get(s.page_id)||0))throw Error('Invalid active intervals.');ends.set(s.page_id,s.end_ms);}
-  for(const s of session.interruptions){checkOpen(s);clock(s.start_ms,s.detected_at);}
-  if(session.state==='running'){checkOpen(session.open);}else if(session.open!==null)throw Error('Stopped timer has an open interval.');
-  if(session.state==='finished')clock(0,session.finished_at);else if(session.finished_at!==null)throw Error('Unexpected finish timestamp.');
+  for(const s of session.segments){fields(s,['page_id','start_ms','started_at','end_ms','ended_at']);checkOpen(s);clock(s.end_ms,s.ended_at);if(s.end_ms<s.start_ms||s.start_ms<(ends.get(s.page_id)||0))throw Error('Invalid active intervals.');ends.set(s.page_id,s.end_ms);}
+  for(const s of session.interruptions){fields(s,['page_id','start_ms','started_at','detected_at']);checkOpen(s);clock(s.start_ms,s.detected_at);}
+  if(!Number.isFinite(activeCleanupSeconds(session)))throw Error('Invalid total cleanup duration.');
+  if(session.state==='running'){
+    fields(session.open,['page_id','start_ms','started_at']);checkOpen(session.open);
+    if(session.open.start_ms<(ends.get(session.open.page_id)||0))throw Error('Open interval overlaps recorded cleanup.');
+  }else if(session.open!==null)throw Error('Stopped timer has an open interval.');
+  if(session.state==='new'&&(session.segments.length||session.interruptions.length))throw Error('New timer contains earlier activity.');
+  if(session.state==='finished'){
+    clock(0,session.finished_at);if(!session.segments.length)throw Error('Finished timer has no recorded cleanup intervals.');
+  }else if(session.finished_at!==null)throw Error('Unexpected finish timestamp.');
   const a=session.output_artifact;
-  if(a!==null&&(!a||Object.keys(a).sort().join()!==['name','bytes','sha256'].sort().join()||typeof a.name!=='string'||!a.name.toLowerCase().endsWith('.glb')||
+  if(a!==null&&(!a||Object.keys(a).sort().join()!==['name','bytes','sha256'].sort().join()||typeof a.name!=='string'||a.name.length>255||/[\\/]/.test(a.name)||!a.name.toLowerCase().endsWith('.glb')||
       !Number.isInteger(a.bytes)||a.bytes<=0||a.bytes>128*1024**2||!hash.test(a.sha256)))throw Error('Invalid edited artifact fingerprint.');
   return session;
 }

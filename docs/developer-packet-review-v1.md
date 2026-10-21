@@ -12,6 +12,13 @@ Extract the complete ZIP, run `python serve.py` (or `py -3 serve.py` on Windows)
 
 ## Windows walkthrough for the crawl comparison
 
+The latest edition, including the saved-timer validation fix, is
+`C:\wassup\strep\reports\crawl-native-developer-review-timer-v1\crawl-developer-review.zip`.
+Extract it completely and double-click **Start Review.cmd**. It preserves the
+same two clips and review identity. The older launcher edition below remains
+available; both use the same startup steps. See
+[timer validation evidence](cleanup-timing-v1.md#restored-timer-validation-2026-10-21).
+
 The launcher edition is in
 `C:\wassup\strep\reports\crawl-native-developer-review-launcher-v1\crawl-developer-review.zip`.
 Right-click the ZIP, choose **Extract All**, then open the extracted folder and

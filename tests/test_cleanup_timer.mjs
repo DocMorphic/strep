@@ -36,6 +36,38 @@ test('malformed restored state cannot crash or manufacture a completed duration'
     assert.throws(()=>validateStoredCleanup({...s,...update}));
 });
 
+test('finished saved timing requires closed intervals and exact event fields',()=>{
+  const s=createCleanupSession(context,null,'synthetic');startCleanup(s,'page',100,at);finishCleanup(s,'page',1100,at);
+  for(const change of [
+    copy=>copy.segments=[],
+    copy=>copy.segments[0].unexpected=true,
+    copy=>copy.interruptions=[{page_id:'old',start_ms:0,started_at:at,detected_at:at,unexpected:true}],
+  ]) {const copy=structuredClone(s);change(copy);assert.throws(()=>cleanupTrace(copy));}
+});
+
+test('restored running interval cannot overlap closed intervals on its page',()=>{
+  const s=createCleanupSession(context,null,'synthetic');startCleanup(s,'page',100,at);pauseCleanup(s,'page',1100,at);
+  startCleanup(s,'page',1200,at);const valid=structuredClone(s);validateStoredCleanup(valid);
+  for(const change of [copy=>copy.open.start_ms=1099,copy=>copy.open.extra=true]){
+    const copy=structuredClone(s);change(copy);assert.throws(()=>validateStoredCleanup(copy));
+  }
+  const other=structuredClone(s);other.open.page_id='new-page';other.open.start_ms=0;validateStoredCleanup(other);
+});
+
+test('saved timer rejects nonfinite totals and nonportable edited artifact names',()=>{
+  const s=createCleanupSession(context,null,'synthetic');startCleanup(s,'page',0,at);finishCleanup(s,'page',1,at);
+  const overflow=structuredClone(s);overflow.segments=Array.from({length:10000},(_,i)=>({page_id:`p${i}`,start_ms:0,end_ms:Number.MAX_VALUE,started_at:at,ended_at:at}));
+  assert.throws(()=>cleanupTrace(overflow));
+  for(const name of ['../edited.glb','sub\\edited.glb','a'.repeat(256)+'.glb']){
+    const copy=structuredClone(s);copy.output_artifact={name,bytes:12,sha256:'c'.repeat(64)};assert.throws(()=>cleanupTrace(copy));
+  }
+});
+
+test('new saved sessions cannot contain earlier activity',()=>{
+  const s=createCleanupSession(context,null,'synthetic');startCleanup(s,'page',0,at);pauseCleanup(s,'page',100,at);
+  s.state='new';assert.throws(()=>validateStoredCleanup(s));
+});
+
 function timerUI(storage=new Map()){
   const element=tag=>({tag,children:[],value:'',append(...c){this.children.push(...c);},setAttribute(){},click(){}});
   const container=element('section'),measured=[];let time=0,current=context;
@@ -69,4 +101,12 @@ test('lost active interval can be exported as partial but cannot fill measured r
   const t=timerUI(storage);t.ui.bind(context);await t.buttons[0].onclick();t.clock(1000);await t.buttons[2].onclick();
   assert.equal(t.buttons[3].disabled,true);await t.buttons[3].onclick();assert.equal(t.measured.length,0);
   assert.match(t.status.textContent,/unknown duration/);t.ui.destroy();
+});
+
+test('invalid finished storage is preserved and cannot fill review time',async()=>{
+  const s=createCleanupSession(context,null,'synthetic');s.state='finished';s.finished_at=at;
+  const key='strep-cleanup-timer:'+JSON.stringify(context),raw=JSON.stringify(s);
+  const t=timerUI(new Map([[key,raw]]));t.ui.bind(context);
+  assert.equal(t.buttons[3].disabled,true);assert.equal(t.storage.get(key),raw);
+  await t.buttons[3].onclick();assert.equal(t.measured.length,0);t.ui.destroy();
 });
