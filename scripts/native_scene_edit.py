@@ -138,7 +138,7 @@ class SceneEdits:
             return world.copy()
         local = original.copy()
         for entry in self.actors[name]['tracks']:
-            node,path,clock = entry['node'],entry['path'],entry['clock']; v = values[node,path]
+            node,path = entry['node'],entry['path']; clock = np.asarray(entry['clock'],dtype=np.float64); v = values[node,path]
             if np.array_equal(v,entry['source']): continue
             if path=='rotation':
                 rotations = sampled_rotations(clock,v,times)
@@ -148,7 +148,7 @@ class SceneEdits:
                 local[:,node,:3,:3] = rotations*scales[:,None,:]
             else:
                 left = np.clip(np.searchsorted(clock,times,side='right')-1,0,len(clock)-2)
-                u = (times-clock[left].astype(float))/(clock[left+1]-clock[left]).astype(float)
+                u = (times-clock[left])/(clock[left+1]-clock[left])
                 before,after = native_endpoint_masks(clock,times)
                 u = np.where(before,0,np.where(after,1,u))
                 p = (1-u[:,None])*v[left]+u[:,None]*v[left+1]

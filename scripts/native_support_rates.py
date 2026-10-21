@@ -15,7 +15,7 @@ from contact_rate_path import ProjectedSkin
 from paired_temporal_neighbor import rotation_channels
 from native_engine_clock import audit_clock
 from elbow_swivel import descendants
-from timed_rotation_edit import sampled_rotations
+from timed_rotation_edit import sampled_rotations,native_endpoint_masks
 from sampled_motion_caps import features,measures,SampledMotionCaps
 
 
@@ -80,10 +80,9 @@ class SupportRateProblem:
             if parent>=0:self.local[:,node]=np.linalg.inv(self.raw[:,parent])@self.raw[:,node]
         self.nodes=sorted({n for r in rows for n in r['chain']});self.affected=np.zeros(len(rig.parents),bool)
         for r in rows:self.affected|=descendants(rig.parents,r['chain'][0])
-        # Match the scalar decoder's installed NumPy endpoint comparisons.
-        # Vector float64 comparisons can interpolate a time that it clamps.
-        self.endpoint_masks={n:tuple(np.fromiter((compare(float(t),clock[key]) for t in self.times),bool,len(self.times))
-            for compare,key in ((np.less_equal,0),(np.greater_equal,-1))) for n,(_,clock,_) in self.channels.items() if n in self.nodes}
+        # Use the same promoted endpoint comparisons as scalar and batch sampling.
+        self.endpoint_masks={n:native_endpoint_masks(clock,self.times)
+            for n,(_,clock,_) in self.channels.items() if n in self.nodes}
         self.columns=np.flatnonzero(self.affected[rig.joints]);self.data=[];initial=[];lower=[];upper=[];skin=BoundSkin(rig)
         for r in rows:
             first,last=r['edit_keys'];clock=r['clock'][first:last+1];worlds=np.array([reader.sample(float(t)) for t in clock])

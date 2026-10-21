@@ -1,5 +1,10 @@
 # Decoder-aligned support search and serialized repair
 
+This is a historical study of the earlier decoder. The current Float64 clock
+contract and the later replacement of its endpoint override are documented in
+[native clock precision](native-clock-precision-v1.md#batch-and-editing-consistency-follow-up).
+Its archived results retain their original implementation and interpretation.
+
 The support optimizer's batch model now matches the existing scalar decoder's
 endpoint comparisons. The [preceding joint-search study](studio-joint-support-v1.md)
 exposed a difference at its final 120 Hz sample. This fixes a demonstrated

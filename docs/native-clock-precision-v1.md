@@ -91,3 +91,46 @@ Evidence is retained in `reports/native-clock-precision-v1/` through `-v3/`,
 `reports/native-clock-publication-v1/`. Seven resource traces replay without a
 RAM-guard stop. Source files and captured engine output remain unchanged within
 each run. No engine rerun, model generation, training or human rating was used.
+
+## Batch and editing consistency follow-up
+
+Hosted checks on `89f6d29` exposed six remaining disagreements with the promoted
+scalar decoder: timed rotation sampling, scene-edit preview interpolation and
+the sparse vertical-root basis still subtracted some Float32 key intervals.
+The rotation path also retained weak scalar endpoint comparisons. A local
+seven-case reproduction fails the same six cases and passes the Float64 control.
+The failed evidence is preserved in `reports/native-clock-batch-baseline-v1`.
+
+`timed_rotation_edit` now promotes clocks and queries before endpoint comparisons
+and interval subtraction. `native_scene_edit` and `native_vertical_root` use
+the same arithmetic. `SupportRateProblem` reuses the shared promoted endpoint
+masks, removing an older override that could still snap an interior query to
+an endpoint. Its bend, swivel and foot-orientation modes retain their existing
+edit and motion limits. The scalar decoder, stored keys, source GLBs and all
+test tolerances are unchanged.
+
+The first affected-path run covers 172 cases in 14 modules: 167 pass and five
+fail. Two failures expose a missing CesiumMan fixture in the isolated test copy;
+three expose the remaining support endpoint override. Both causes and the
+original failed run remain recorded. The follow-up binds and copies the local
+licensed fixture with its license/provenance, fixes the override, and passes
+all 53 importer, support, swivel and orientation tests. Across the two final
+validation epochs, all **204 distinct test cases** have passing evidence. This
+includes every reproduced failure, real export/decode comparisons, unchanged
+clock checks, zero-edit behavior, derivatives, protected intervals, and direct
+rotation-edit consumers. Already-passing unaffected tests are retained rather
+than rerun solely to produce a single green receipt.
+
+Each test epoch uses an isolated source snapshot while the parent holds the
+shared project numerical lock. Tests can exercise their own fixture locks in
+that copy; production locking is unchanged. Original and snapshot hashes,
+test XML and resource traces remain in `reports/native-clock-batch-fixed-v1`
+and `reports/native-clock-batch-fixed-v2`. Full hosted regression on the repair
+commit is still required; targeted tests do not confer motion or release approval.
+
+All three resource traces replay across 420 observations; peak observed process
+tree memory is 148,111,360 bytes. Snapshot bindings, current runtime sources,
+unchanged scalar decoders, and unchanged test sources are independently checked
+in `reports/native-clock-batch-publication-v1`. The final follow-up test XML
+SHA-256 is
+`b94f7a23de07bb08b31921f4a68278a04395da9699db77c5bbf2caaab608c9ef`.

@@ -9,24 +9,19 @@ from paired_guarded_temporal import world_from_local
 
 
 def native_endpoint_masks(clock, times):
-    """Match Python-float sampling against the decoder's original key dtype.
-
-    NumPy can round a Python float when comparing it with a Float32 scalar.
-    A Float64 array comparison does not necessarily take that same path.
-    Preserve the scalar decoder's behavior without changing its key clock.
-    """
+    """Match the scalar decoder's Float64 endpoint comparisons."""
+    clock=np.asarray(clock,dtype=np.float64);times=np.asarray(times,dtype=np.float64)
     first, last = clock[0], clock[-1]
-    before = np.fromiter((float(t) <= first for t in times), bool, count=len(times))
-    after = np.fromiter((float(t) >= last for t in times), bool, count=len(times))
-    return before, after
+    return times<=first, times>=last
 
 
 def sampled_rotations(clock, values, times):
     """Batch the existing decoder's SLERP, including its native clock arithmetic."""
+    clock=np.asarray(clock,dtype=np.float64);times=np.asarray(times,dtype=np.float64)
     left = np.clip(np.searchsorted(clock, times, side='right')-1, 0, len(clock)-2)
-    # Preserve float32 key subtraction used by AnimationSampler.value.
-    duration = (clock[left+1]-clock[left]).astype(float)
-    t = (times-clock[left].astype(float))/duration
+    # Promote before subtraction, preserving stored keys without rounding spans.
+    duration = clock[left+1]-clock[left]
+    t = (times-clock[left])/duration
     before, after = native_endpoint_masks(clock, times)
     t = np.where(before, 0., np.where(after, 1., t))[:, None]
     a = values[left]/np.linalg.norm(values[left], axis=1)[:, None]

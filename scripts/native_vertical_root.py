@@ -35,7 +35,7 @@ def require(value,message):
 
 def basis(clock,queries):
     """Sparse LINEAR weights with the actual native sampler endpoint branches."""
-    clock=np.asarray(clock);queries=np.asarray(queries,float)
+    clock=np.asarray(clock,dtype=np.float64);queries=np.asarray(queries,float)
     require(clock.ndim==queries.ndim==1 and len(clock)>=2 and np.isfinite(clock).all() and np.all(np.diff(clock)>0)
         and np.isfinite(queries).all() and np.all(queries>=0),'Finite native clock and queries required')
     rows=[];columns=[];values=[]
