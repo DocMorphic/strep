@@ -1,7 +1,7 @@
 # Recovering the bounded character optimizer
 
-Worker implementation validated on generated rig fixtures; not yet connected
-to Studio. The original
+Worker implementation validated on generated rig fixtures and connected to
+Studio's explicit recoverable request mode. The original
 source, fixed targets, native editing bounds, floor guards and full geometry
 acceptance remain unchanged. This component adds recovery, not collision guidance
 or animation-quality approval.
@@ -94,39 +94,23 @@ partner-scene release evidence. The separate real humanoid experiment verifies
 complete geometry-audit recovery only. No new accepted full humanoid correction,
 motion-quality, engine or release result is claimed here.
 
-Further work includes Studio job lifecycle integration and measuring recovery
-overhead on full humanoid correction. Per-frame verification reads saved arrays
+Further work includes measuring and reducing recovery overhead on full humanoid
+correction. Per-frame verification reads saved arrays
 and can be expensive; completion and exactness matter before any performance
 claim. The existing containment fallback's process-local random-state limitation
 also remains. Broader actions, objects, partners, rigs, engine imports and human
 cleanup evidence stay required by the project-wide release contract.
 
-## Studio integration work
+## Studio integration
 
-The current `studio_mesh_character_job.execute` always copies a fresh source,
-calls the legacy fresh-output fitter, builds previews and writes one package.
-`launch` and `review` assume one supervisor and `guard/` record. Reusing that
-function over an interrupted folder would overwrite or collide with evidence;
-adding a Continue button alone is insufficient.
+Studio now retains the legacy fresh-output path for old requests and uses
+`studio_mesh_character_recovery_job.py` for new recoverable requests. Each
+continuation binds the exact saved request and current progress, retains prior
+attempts, and verifies source preparation before resuming. Completed optimizer
+work survives preview/package interruptions through fresh receipt-bound
+publication directories. Changed editor controls cannot alter a saved job.
 
-The integration must retain legacy queued requests and introduce an explicit
-recoverable request mode for new jobs. Continue must bind the existing request
-digest and current optimizer checkpoint, reject a live owner or another active
-worker, and create a fresh attempt directory with its own guard, supervisor
-identity, failure and replay. Changed editor controls cannot alter a saved job.
-The request's existing processing budget and memory policy remain authoritative.
-
-Source preparation needs a verified completed snapshot and exact original
-permissions before optimizer preparation. A retry must reuse those inputs,
-retaining any abandoned preparation directory. A completed optimizer must also
-survive an interruption during previews or package assembly: use a fresh
-assembly directory, verify its contents and publish a complete package receipt.
-Never expose an incomplete archive as a finished result or discard earlier
-attempts. Preserve the current portable original/candidate previews and original
-selection behavior.
-
-Route and editor tests must cover current-job exclusion, stale request or
-checkpoint rejection, immutable processing budgets, deferred and interrupted
-attempts, completed optimizer plus interrupted packaging, legacy jobs, and
-successful preview/download verification. Numerical work and checkpoint replay
-remain inside the admitted worker; status and queue imports stay lightweight.
+See [Studio recovery](studio-mesh-character-recovery-v1.md) for operation,
+validation evidence and the unfinished full-clock stress case. Numerical work
+and checkpoint replay remain inside the admitted worker; queue and status
+imports stay lightweight. Original selection and release gates are unchanged.

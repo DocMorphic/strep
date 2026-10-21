@@ -1,6 +1,7 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_studio_mesh_character_recovery.py",
     "tests/test_studio_mesh_character_budget.py",
     "tests/test_studio_mesh_worker_threads.py",
     "tests/test_triangle_query_envelope.py",

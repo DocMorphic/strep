@@ -9,12 +9,15 @@ export function correctionRequest(sceneJob,digest,mesh,correction,edges,ack,maxR
  if(edges.some(e=>!['start','end'].includes(e))||new Set(edges).size!==edges.length)throw Error('Choose distinct clip edges.');
  if(edges.length&&!ack)throw Error('Acknowledge review of changed starts, ends and transitions.');
  if(![900,1800,3600].includes(maxRuntimeSeconds))throw Error('Choose a processing time limit of 15, 30 or 60 minutes.');
- return {schema:'strep-studio-mesh-character-v1',scene_job:sceneJob,scene_result_sha256:digest,mesh_request:clone(mesh),correction:clone(correction),editable_clip_boundaries:Object.fromEntries(Object.keys(correction.actors).map(name=>[name,[...edges]])),acknowledge_changed_boundary_compatibility:edges.length>0&&ack,max_runtime_seconds:maxRuntimeSeconds};
+ return {schema:'strep-studio-mesh-character-v1',scene_job:sceneJob,scene_result_sha256:digest,mesh_request:clone(mesh),correction:clone(correction),editable_clip_boundaries:Object.fromEntries(Object.keys(correction.actors).map(name=>[name,[...edges]])),acknowledge_changed_boundary_compatibility:edges.length>0&&ack,max_runtime_seconds:maxRuntimeSeconds,recoverable:true};
 }
 export function createMeshCharacterEditor({document=globalThis.document,api,post,getScene,getBounds}){
- const el=n=>document.getElementById('meshCharacter'+n);let busy=false;
+ const el=n=>document.getElementById('meshCharacter'+n);let busy=false,continuation=null;
  const status=s=>{el('Status').textContent=s;};
- const action=fn=>async()=>{if(busy)return;busy=true;el('Build').disabled=true;try{await fn();}catch(error){status(error.message);}finally{busy=false;el('Build').disabled=false;}};
+ const resetContinuation=()=>{continuation=null;el('Continue').disabled=true;};
+ const validReport=(result,job)=>{if(el('Job').value!==job||result.id!==job||result.original_selected!==true||result.quality_approved!==false||result.release_approved!==false)throw Error('Correction selection or scope changed.');};
+ const action=fn=>async()=>{if(busy)return;busy=true;el('Build').disabled=true;el('Continue').disabled=true;try{await fn();}catch(error){resetContinuation();status(error.message);}finally{busy=false;el('Build').disabled=false;el('Continue').disabled=!continuation;}};
+ resetContinuation();el('Job').oninput=resetContinuation;
  el('Build').onclick=action(async()=>{
   const selection=()=>({scene:getScene(),bounds:getBounds(),edges:['start','end'].filter(e=>el(e==='start'?'Start':'End').checked),ack:el('Ack').checked,maxRuntimeSeconds:Number(el('TimeLimit').value)});
   const before=clone(selection());if(!id(before.scene.job))throw Error('Save the object-contact scene first.');
@@ -23,17 +26,27 @@ export function createMeshCharacterEditor({document=globalThis.document,api,post
   const match=typeof saved.preview_url==='string'&&saved.preview_url.match(new RegExp(`^/mesh-scene-viewer\\.html\\?job=${before.scene.job}&result=([a-f0-9]{64})$`));
   if(saved.id!==before.scene.job||saved.status!=='complete'||saved.original_selected!==true||saved.quality_approved!==false||!match)throw Error('Wait for a complete saved scene measurement.');
   const request=correctionRequest(before.scene.job,match[1],before.scene.request,before.bounds,before.edges,before.ack,before.maxRuntimeSeconds);
-  const result=await post('/api/mesh-character-jobs',request);if(!id(result.id))throw Error('Invalid correction job.');
+  resetContinuation();const result=await post('/api/mesh-character-jobs',request);if(!id(result.id))throw Error('Invalid correction job.');
   el('Job').value=result.id;status(`Correction queued with a ${before.maxRuntimeSeconds/60}-minute processing limit and a memory guard. Refresh to inspect progress and retained failures.`);
  });
  el('Review').onclick=action(async()=>{
   const job=el('Job').value;if(!id(job))throw Error('Choose a correction job.');
-  const result=await api(`/api/mesh-character-jobs/${job}`);if(el('Job').value!==job||result.id!==job||result.original_selected!==true||result.quality_approved!==false||result.release_approved!==false)throw Error('Correction selection or scope changed.');
+  resetContinuation();const result=await api(`/api/mesh-character-jobs/${job}`);validReport(result,job);
   const limit=result.max_runtime_seconds??900;if(![900,1800,3600].includes(limit))throw Error('Invalid saved processing time limit.');
-  el('Results').replaceChildren();if(result.status!=='complete'){status(`${result.status} (${limit/60}-minute limit): ${result.error||'waiting for the guarded correction'}`);return;}
+  el('Results').replaceChildren();if(result.status!=='complete'){
+   if(result.recoverable===true&&result.can_continue===true&&['failed','deferred'].includes(result.status)&&result.continuation){continuation={job,ticket:clone(result.continuation)};}
+   status(`${result.status} (${limit/60}-minute limit): ${result.error||'waiting for the guarded correction'}${continuation?' Continue uses the saved scene and bounds.':result.continuation_error?` ${result.continuation_error}`:''}`);return;}
   const r=result.result;if(typeof r.sampled_candidate_pass!=='boolean'||r.original_selected!==true||r.quality_approved!==false||r.release_approved!==false)throw Error('Invalid correction measurements.');
   status(`${r.accepted_steps} accepted edits from ${r.probes} attempts (${limit/60}-minute limit). ${r.sampled_candidate_pass?'Candidate passes declared sampled checks.':r.candidate?'Candidate still fails some declared checks.':'No improved candidate accepted.'} Originals remain selected. Engine and motion-quality review are still required.`);
   if(!new RegExp(`^/mesh-character-viewer\\.html\\?job=${job}&result=[a-f0-9]{64}$`).test(result.comparison_url)||result.download_url!==`/files/mesh-character-jobs/${job}/correction-package.zip`)throw Error('Unexpected correction artifact link.');
-  for(const [label,url] of [['Compare original and candidate',result.comparison_url],['Download correction and all attempts',result.download_url]]){const a=document.createElement('a');a.className='btn';a.textContent=label;a.href=url;a.target='_blank';a.rel='noopener';el('Results').append(a);}
+  for(const [label,url] of [['Compare original and candidate',result.comparison_url],['Download correction and all proposals',result.download_url]]){const a=document.createElement('a');a.className='btn';a.textContent=label;a.href=url;a.target='_blank';a.rel='noopener';el('Results').append(a);}
+ });
+ el('Continue').onclick=action(async()=>{
+  const selected=continuation;if(!selected||el('Job').value!==selected.job)throw Error('Refresh the interrupted correction first.');
+  const current=await api(`/api/mesh-character-jobs/${selected.job}`);validReport(current,selected.job);
+  if(current.can_continue!==true||current.recoverable!==true||!['failed','deferred'].includes(current.status)||key(current.continuation)!==key(selected.ticket))throw Error('Saved correction progress changed; refresh before continuing.');
+  const result=await post(`/api/mesh-character-jobs/${selected.job}/continue`,selected.ticket);
+  if(result.id!==selected.job||el('Job').value!==selected.job)throw Error('Correction selection changed.');
+  resetContinuation();status('Continuing the saved correction with its original scene, bounds and processing limit. Earlier attempts remain available. Refresh to check progress.');
  });
 }

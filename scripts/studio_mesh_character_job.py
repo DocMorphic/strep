@@ -2,6 +2,7 @@
 import argparse
 import copy
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -14,10 +15,23 @@ from strep import ROOT, read, save, sha256, offline_environment
 NAMESPACE = 'mesh-character-jobs'
 
 
+def absolute(path):
+    """Keep nested correction artifacts usable without Windows registry changes."""
+    if os.name != 'nt': return Path(path).resolve()
+    # Python 3.10 skips normalization for extended paths. Strip the prefix,
+    # normalize, then restore it before resolving existing files/junctions.
+    value = str(path)
+    if value.startswith('\\\\?\\UNC\\'): value = '\\\\' + value[8:]
+    elif value.startswith('\\\\?\\'): value = value[4:]
+    value = os.path.abspath(value)
+    if value.startswith('\\\\'): return Path('\\\\?\\UNC\\' + value[2:]).resolve()
+    return Path('\\\\?\\' + value).resolve()
+
+
 def folder_for(job):
     if not isinstance(job, str) or not re.fullmatch('[a-f0-9]{32}', job):
         raise ValueError('Choose an exact character correction job')
-    base = (ROOT / 'reports' / NAMESPACE).resolve()
+    base = absolute(ROOT / 'reports' / NAMESPACE)
     folder = (base / job).resolve()
     if folder.parent != base: raise ValueError('Correction escapes its store')
     return folder
@@ -26,8 +40,10 @@ def folder_for(job):
 def validate(payload):
     required = {'schema', 'scene_job', 'scene_result_sha256', 'mesh_request', 'correction',
                 'editable_clip_boundaries', 'acknowledge_changed_boundary_compatibility'}
-    if not isinstance(payload, dict) or not required <= set(payload) or set(payload)-required-{'max_runtime_seconds'} or payload['schema'] != 'strep-studio-mesh-character-v1':
+    if not isinstance(payload, dict) or not required <= set(payload) or set(payload)-required-{'max_runtime_seconds','recoverable'} or payload['schema'] != 'strep-studio-mesh-character-v1':
         raise ValueError('Explicit saved-scene correction required')
+    if 'recoverable' in payload and type(payload['recoverable']) is not bool:
+        raise ValueError('Explicit correction recovery choice required')
     seconds = payload.get('max_runtime_seconds', 900)
     if type(seconds) is not int or seconds not in (900, 1800, 3600):
         raise ValueError('Choose a processing time limit of 15, 30 or 60 minutes')
@@ -67,7 +83,7 @@ def prepare(payload):
 
 
 def verify_prepared(folder):
-    if folder.resolve() != folder_for(folder.name): raise ValueError('Exact queued correction required')
+    if absolute(folder) != folder_for(folder.name): raise ValueError('Exact queued correction required')
     prepared = read(folder / 'prepared.json')
     if sha256(folder / 'request.json') != prepared['request_sha256']: raise ValueError('Queued correction changed')
     current = {p.name: sha256(p) for p in (ROOT / 'scripts').glob('*.py')}
@@ -108,6 +124,11 @@ def preview_package(source, probe, output):
 
 
 def execute(folder):
+    if read(folder/'request.json').get('recoverable'):
+        from studio_mesh_character_recovery_job import active,execute as execute_recovery
+        selected=active(folder)
+        if selected is None:raise ValueError('Prepare a recoverable correction attempt first')
+        return execute_recovery(folder,selected[0].name)
     from studio_mesh_scene_preview import verified
     from native_mesh_character_fit import fit
     payload = verify_prepared(folder)
@@ -142,6 +163,9 @@ def execute(folder):
 
 
 def launch(folder):
+    if read(folder/'request.json').get('recoverable'):
+        from studio_mesh_character_recovery_job import launch as launch_recovery
+        return launch_recovery(folder)
     import psutil
     process = None
     try:
@@ -158,6 +182,9 @@ def launch(folder):
 def review(job):
     folder = folder_for(job); prepared = read(folder / 'prepared.json')
     if sha256(folder / 'request.json') != prepared['request_sha256']: raise ValueError('Saved correction request changed')
+    if read(folder/'request.json').get('recoverable'):
+        from studio_mesh_character_recovery_job import review as review_recovery
+        return review_recovery(folder)
     pipeline = read(folder / 'guard/pipeline.json') if (folder / 'guard/pipeline.json').is_file() else read(folder / 'startup.json') if (folder / 'startup.json').is_file() else dict(status='starting')
     if pipeline['status'] not in ('complete', 'failed', 'deferred') and (folder / 'supervisor.json').is_file():
         import psutil
@@ -187,13 +214,18 @@ def review(job):
 def served_file(url):
     match = re.fullmatch(r'/files/mesh-character-jobs/([a-f0-9]{32})/correction-package\.zip', url)
     if not match or review(match[1])['status'] != 'complete': return None
+    if read(folder_for(match[1])/'request.json').get('recoverable'):
+        from studio_mesh_character_recovery_job import publication
+        return publication(folder_for(match[1]))[0]/'correction-package.zip'
     return folder_for(match[1]) / 'correction-package.zip'
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__); parser.add_argument('folder', type=Path); parser.add_argument('--worker', action='store_true')
-    args = parser.parse_args(); folder = args.folder.resolve()
-    if folder != folder_for(folder.name): raise ValueError('Exact queued correction required')
+    args = parser.parse_args(); folder = absolute(args.folder)
+    if folder != absolute(folder_for(folder.name)): raise ValueError('Exact queued correction required')
+    if (folder/'request.json').is_file() and read(folder/'request.json').get('recoverable'):
+        raise ValueError('Use the saved recoverable attempt worker')
     if args.worker:
         from action_worker_lock import worker_lock
         from threadpoolctl import threadpool_limits
