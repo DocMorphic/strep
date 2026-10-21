@@ -1,6 +1,8 @@
 {
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
+    "tests/test_surface_pose_constraints.py",
+    "tests/test_surface_pose_compact.py",
     "tests/test_surface_pose_model.py",
     "tests/test_auxiliary_root_diagnostic.py",
     "tests/test_native_support_clock_precision.py",

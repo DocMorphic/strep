@@ -117,5 +117,6 @@ native-key and between-key validation, self-collision checks and actual engine
 verification. Reusing the same four contacts throughout standing would be
 incorrect. Human review and cleanup timing are still required, as are the
 broader action, rig, object/partner, style, editing and release checks. No
-animation-quality or release approval follows from this single pose. The one
-project-wide goal stays active.
+animation-quality or release approval follows from this single pose. The
+[complete sequence study](kaykit-getup-sequence-v1.md) now records the extension
+and its rejected numerical outcome. The one project-wide goal stays active.
