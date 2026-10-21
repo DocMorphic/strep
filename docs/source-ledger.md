@@ -396,3 +396,57 @@ and ray containment otherwise. This branch distinction informs the next
 investigation after signed-distance results disagree with ray and winding
 measurements on saved poses. It does not establish mesh validity or justify
 switching production semantics without new tests and baseline evaluation.
+
+## 2026-10-21: ARDY source screen for baked animation clips
+
+The primary [ARDY repository](https://github.com/nv-tlabs/ardy/tree/e706e27acc88070918308a10922b8f7174d0825e)
+was screened at code revision `e706e27acc88070918308a10922b8f7174d0825e`.
+The candidate model is `nvidia/ARDY-SOMA-RP-30FPS-KimodoRep-Horizon60`,
+revision `e6c6804fb6b55636ad927145d74959fd46882ccd`. Ten source/metadata
+files totaling 115,542 bytes and their SHA-256 receipts are retained locally
+under `reports/ardy-source-screen-2026-10-21/`. No weights were acquired,
+third-party code executed, dependency installed or inference run.
+
+The pinned [generation CLI](https://github.com/nv-tlabs/ardy/blob/e706e27acc88070918308a10922b8f7174d0825e/scripts/generate.py)
+accepts text, duration, seeds and constraints and writes NPZ motion. It can
+disable postprocessing; its default SOMA path applies correction before
+converting the 30-joint output to the 77-joint external skeleton. A comparison
+must therefore preserve raw and corrected outputs separately. This makes it a
+possible baked-clip initializer for Strep's existing offline authoring scope.
+It is not adopted as a game-time controller or a production backend.
+
+The pinned [registry](https://github.com/nv-tlabs/ardy/blob/e706e27acc88070918308a10922b8f7174d0825e/ardy/model/registry.py)
+maps `soma-kimodo` to the smooth-root candidate; the default `soma` selects a
+different model. The [constraint definitions](https://github.com/nv-tlabs/ardy/blob/e706e27acc88070918308a10922b8f7174d0825e/ardy/constraints.py)
+cover root paths, full-body and hand/foot end-effectors. These interfaces alone
+do not establish object geometry, paired-character contact, finger control,
+whole-mesh collision safety or realistic motion. No such capability is credited.
+
+The pinned [model card](https://huggingface.co/nvidia/ARDY-SOMA-RP-30FPS-KimodoRep-Horizon60/blob/e6c6804fb6b55636ad927145d74959fd46882ccd/README.md)
+describes 30 fps SOMA motion and lists Linux support. Windows execution and this
+laptop's memory/runtime fit remain untested. Some card wording names the
+non-KimodoRep variant; effective history/horizon settings must be verified from
+the exact configuration before a trial. Published upstream benchmark scores
+are not a matched comparison against Strep's measured clips.
+
+License provenance needs reconciliation before adoption: that card points to
+the [NVIDIA Open Model Agreement](https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-agreement/),
+whose current page has an April 2, 2026 release date, while the same revision's
+[LICENSE file](https://huggingface.co/nvidia/ARDY-SOMA-RP-30FPS-KimodoRep-Horizon60/blob/e6c6804fb6b55636ad927145d74959fd46882ccd/LICENSE)
+is titled NVIDIA Open Model License Agreement and references the separate
+`nvidia-open-model-license` URL. Retain both instead of silently treating the
+labels or terms as interchangeable. Code and model terms remain separate;
+neither supplies rights to proprietary raw training recordings.
+
+Decision: retain as a development comparison candidate. After the current
+baseline, qualification would first establish exact terms, Windows dependency
+compatibility and guarded memory/runtime cost. The pinned
+[loader](https://github.com/nv-tlabs/ardy/blob/e706e27acc88070918308a10922b8f7174d0825e/ardy/model/load_model.py)
+can download missing checkpoints and automatically choose a text-encoder
+service or local encoder. Offline qualification must instead bind local
+checkpoint/encoder files and demonstrate operation with external networking
+disabled. Only then compare fixed development prompts/seeds against unchanged
+Kimodo, preserving raw, corrected and retargeted results and failures. Keep
+held-out release prompts reserved and apply the existing contact, geometry,
+transition, engine-import and human-review requirements. No model switch,
+training admission, quality approval or release-gate change follows this screen.
