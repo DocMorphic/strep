@@ -266,6 +266,15 @@ adopted as a complete animation.
 
 ## Scope
 
+The subsequent [fitting-buffer comparison](contact-phase-speed-bounds-v1.md)
+repairs the 89–94 transition under the original acceptance limits. The latest
+independently engine-checked checkpoint is
+`reports/kaykit-getup-feasibility-margin-v1/state.json`: 95 poses, finalized
+through 93 and validated through 94, with the next window starting at 93.
+All 3,740 prefix samples pass; ten Godot batches contain 3,759 observations.
+The new candidate supersedes the 94-pose checkpoint only as this validated
+development prefix, not as a complete or human-approved clip.
+
 These checks cover sampled floor/contact geometry, correction bounds,
 correction step bounds, serialization and engine agreement. They do not prove
 continuous collision freedom, self-collision avoidance, anatomical plausibility,

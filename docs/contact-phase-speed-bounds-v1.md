@@ -145,3 +145,37 @@ worker-tree memory 322,490,368 bytes. The publication receipt is
 `reports/getup-feasibility-publication-v1/summary.json`. Engine validation is not
 run on the rejected candidate. Human review, the remainder of the clip and the
 broader release acceptance matrix remain unfinished.
+
+### Smaller fitting buffer, unchanged acceptance
+
+`reports/kaykit-getup-feasibility-margin-v1` starts from the retained
+feasibility-only candidate and scales the optimizer's geometric fitting buffers
+from 1 mm to 0.5 mm. This changes the internal floor/contact fitting margins,
+not the original 5-mm floor and 20-mm contact acceptance limits. Contact targets,
+phase times, pose budgets, correction-step limits, root/angle serialization
+reserves and decoded acceptance logic remain unchanged. Fitting buffers do not
+constitute a guaranteed clearance between optimization samples.
+
+The six-key solve converges in three iterations without step projection. After
+serialization, its 200 local samples pass, with maximum floor depth 4.664122 mm,
+contact error 19.500018 mm, root correction step 24.990016 mm and rotation
+correction step 4.999429 degrees. Only keys 90–94 change; keys 0–89 and all
+other keys are preserved. The resulting prefix has 95 poses: finalized through
+key 93 with key 94 as validated lookahead. All 3,740 prefix samples pass.
+Candidate SHA-256:
+`774696afae00a8b75a402e99d97329a0f64e50863678df6a4abbebb3f5f4404b`.
+
+`reports/kaykit-getup-feasibility-margin-engine-v1` independently reconstructs
+the required sample clock and checks ten Godot batches with 3,759 observations.
+All prefix pose/skin/floor/contact checks pass; maximum skin disagreement is
+0.031912 mm. Engine result SHA-256:
+`2ac0998961255fd4a97584b647bae468cef87219a3f38b3509dba85467e8a77b`.
+This is authoring-track verification, not ordinary playback, physics, GPU
+skinning, continuous collision freedom or human motion-quality approval.
+
+The 60 supporting checks pass. Attribution, margin fitting and engine validation
+replay 236 resource observations with peak worker-tree memory 321,929,216 bytes.
+`reports/getup-feasibility-margin-publication-v1/summary.json` verifies these
+bindings and that the support implementation changes only the fitting-margin
+calculation and assertions. Earlier failed candidates stay retained. The next
+continuation starts at key 93; the remaining 85 poses still need validation.
