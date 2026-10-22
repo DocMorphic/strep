@@ -676,6 +676,7 @@
     "tests/test_material_region_pose.mjs",
     "tests/test_material_patch_loader.mjs",
     "tests/test_native_contact_revision.mjs",
+    "tests/test_native_contact_timing.mjs",
     "tests/test_native_scene_game_editor.mjs",
     "tests/test_key_continuation_editor.mjs",
     "tests/test_key_continuation_viewer.mjs",

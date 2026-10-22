@@ -90,3 +90,19 @@ for(const fault of ['method','source']){
  await s.el('RevisionRestore').onclick();assert.deepEqual(s.editor.snapshot(),s.base);
 }
 console.log('Explicit contact revision staging, preview/apply, preserved bounds, provenance, stale/malformed responses, atomic partner changes and restoration passed offline.');
+{
+ const s=setup(),draft=clone(s.base);
+ draft.scene.contacts.push({...clone(draft.scene.contacts[1]),id:'later-world',interval_s:[1.5,2],target:{space:'world',points_m:[[2,2,3]]}});
+ s.editor.bind(draft);await stage(s);const before=clone(s.editor.snapshot());await s.el('RevisionPreview').onclick();
+ const text=s.el('RevisionResults').children.map(n=>n.textContent).join('\n');
+ assert.match(text,/world-hold → later-world: requires at least about 1\.980 m\/s/);
+ assert.match(text,/not actual animation speed/);assert.match(text,/not assessed here: meeting/);
+ assert.deepEqual(s.editor.snapshot(),before);assert.equal(s.el('RevisionApply').disabled,false);
+}
+{
+ const s=setup(),draft=clone(s.base);
+ draft.scene.contacts.push({...clone(draft.scene.contacts[1]),id:'overlap',target:{space:'world',points_m:[[2,2,3]]}});
+ s.editor.bind(draft);await stage(s);await s.el('RevisionPreview').onclick();
+ assert(s.el('RevisionResults').children.some(n=>n.textContent.includes('incompatible positions')));
+ assert.equal(s.el('RevisionApply').disabled,false); // Advisory; author intent is never silently rewritten.
+}

@@ -52,3 +52,54 @@ peak worker-tree memory 359,948,288 bytes. Publication checks and hashes are in
 the new tests (649 full and 198 focused Python files). The focused workflow now
 preserves an in-progress run across newer pushes, so continuous development
 does not repeatedly cancel its longer jobs. Full hosted validation remains pending.
+
+## Studio contact-revision preview
+
+The contact-revision preview now displays necessary timing requirements for
+constant world targets in the staged draft. It runs after the preview response
+has been checked against the exact original and authored contacts. It does not
+change contact intent, animation bytes, solver limits or approval state.
+
+`worldContactTiming` in `scripts/native-scene-editor.mjs` uses each contact's
+own tolerance: minimum travel is `max(0, d - e1 - e2)`. Zero tolerances are
+supported. Contacts must refer to the same actor and exact material point.
+Individual vertices preserve their corresponding target positions even when
+listed in a different order. A centroid is identified by its complete unordered
+vertex set; it is never equated to one of its constituent vertices. A one-vertex
+centroid and that individual vertex are equivalent.
+
+All comparable phase pairs are checked, including nonadjacent overlapping holds.
+The UI shows the strongest point requirement for each contact pair, with an
+explicit conflict for disjoint allowed positions at overlapping or touching
+times. This bounds output to at most 2,016 rows for the 64-contact scene limit.
+Object and partner contacts are listed as unassessed. Pairwise consistency is
+only necessary; it does not prove simultaneous multi-target feasibility,
+reachability, actual speed or motion quality. There is no arbitrary fast/slow
+classification. The display rounds numerical bounds and labels them approximate.
+
+Offline tests cover actor/mesh/primitive/vertex identity, reordered individual
+points, centroid equivalence, unequal and zero tolerances, overlap and touching,
+nonadjacent phases, strongest-point aggregation, unsupported-target coverage,
+invalid inputs, and non-mutation. Editor interaction tests check the visible
+speed/conflict messages and retained original draft. The new test file is in
+the model-free JavaScript CI inventory. Browser visual inspection has not been
+performed for this text-only addition; no preview service was started.
+
+## Warm transition retry
+
+`reports/kaykit-getup-backtrack-warm-v2` adds the prior rejected transition and
+the separately passing static endpoint to the initialization candidates. The
+rejected transition has the lowest initial aggregate violation and is selected;
+the static endpoint candidate is retained in the comparison. After three
+bounded solver passes, the decoded candidate still fails seven sampled times:
+maximum floor depth 4.182631 mm, contact error 20.283512 mm, root correction step
+25.287128 mm, and rotation correction step 5.223077 degrees. Original limits
+remain 5 mm, 20 mm, 25 mm and 5 degrees respectively. Candidate SHA-256:
+`fc5db4e2d026504349984da960e664fc5233b63496d3e22e129f904cd28c51ba`.
+
+The existing 94-pose checkpoint remains unchanged; all 3,699 prefix samples
+pass again. The failed candidate is not sent to engine acceptance. Sixty solver
+support checks pass, and resource replay validates 498 observations with peak
+worker-tree memory 356,200,448 bytes. The retry completed under the memory guard;
+its remaining failure is geometric/transition quality, not resource admission.
+This does not establish impossibility or justify changing the authored targets.

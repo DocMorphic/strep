@@ -3,6 +3,46 @@ import {createMaterialPatchLoader} from './material-patch-loader.mjs';
 const clone=value=>structuredClone(value);
 const identity=()=>[0,0,0,1];
 const key=value=>JSON.stringify(value,(_,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.keys(v).sort().map(k=>[k,v[k]])):v);
+// Necessary pairwise bounds for the same material point in a validated scene draft.
+// A centroid is one point; it must never be compared with one of its constituents.
+export function worldContactTiming(scene){
+ const fail=()=>{throw Error('Cannot inspect contact timing: invalid target, point, interval or tolerance.');};
+ const finite=n=>typeof n==='number'&&Number.isFinite(n),ids=new Set(),groups=new Map(),unassessed=[];
+ if(!Array.isArray(scene?.contacts)||scene.contacts.length>64||!finite(scene.duration_s)||scene.duration_s<0)fail();
+ for(const c of scene.contacts){
+  if(typeof c.id!=='string'||ids.has(c.id)||typeof c.actor!=='string'||!Object.hasOwn(scene.actors??{},c.actor))fail();ids.add(c.id);
+  if(!Array.isArray(c.vertices)||!c.vertices.length||c.vertices.length>256||c.vertices.some(v=>!Array.isArray(v)||v.length!==3||v.some(i=>!Number.isSafeInteger(i)||i<0))||new Set(c.vertices.map(key)).size!==c.vertices.length)fail();
+  if(!['individual','centroid'].includes(c.reduction)||!Array.isArray(c.interval_s)||c.interval_s.length!==2||!c.interval_s.every(finite))fail();
+  const [start,end]=c.interval_s,tolerance=c.limits?.position_m;
+  if(start<0||end<start||end>scene.duration_s||!finite(tolerance)||tolerance<0||tolerance>1e6||!['touch','hold'].includes(c.mode)||(c.mode==='touch')!==(start===end))fail();
+  if(!['world','object','actor'].includes(c.target?.space))fail();
+  if(c.target.space!=='world'){unassessed.push({id:c.id,space:c.target.space});continue;}
+  const points=c.target.points_m,count=c.reduction==='centroid'?1:c.vertices.length;
+  if(!Array.isArray(points)||points.length!==count||points.some(p=>!Array.isArray(p)||p.length!==3||!p.every(finite)))fail();
+  for(let i=0;i<count;i++){
+   const refs=c.reduction==='centroid'?c.vertices.map(v=>[...v]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]||a[2]-b[2]):[[...c.vertices[i]]];
+   const identity=key([c.actor,refs]),entries=groups.get(identity)??[];
+   entries.push({id:c.id,actor:c.actor,refs,start,end,tolerance,point:points[i]});groups.set(identity,entries);
+  }
+ }
+ // Keep one strongest witness per contact pair instead of thousands of UI rows.
+ const pairs=new Map();let pointComparisons=0;
+ for(const entries of groups.values()){
+  entries.sort((a,b)=>a.start-b.start||a.end-b.end||a.id.localeCompare(b.id));
+  for(let i=0;i<entries.length;i++)for(let j=i+1;j<entries.length;j++){
+   const a=entries[i],b=entries[j],gap=Math.max(0,b.start-a.end);
+   const distance=Math.hypot(...a.point.map((v,k)=>v-b.point[k]));
+   const travel=Math.max(0,distance-a.tolerance-b.tolerance),conflict=gap===0&&travel>0;
+   const speed=gap>0?travel/gap:conflict?null:0;
+   if(!finite(distance)||!finite(travel)||speed!==null&&!finite(speed))fail();
+   const witness={from:a.id,to:b.id,actor:a.actor,vertices:a.refs,gap_s:gap,minimum_travel_m:travel,minimum_average_speed_m_s:speed,simultaneous_target_conflict:conflict};
+   const id=key([a.id,b.id]),old=pairs.get(id);pointComparisons++;
+   const strongest=!old||conflict&&!old.simultaneous_target_conflict||conflict===old.simultaneous_target_conflict&&(conflict?travel>old.minimum_travel_m:speed>old.minimum_average_speed_m_s);
+   pairs.set(id,{...(strongest?witness:old),matched_points:(old?.matched_points??0)+1});
+  }
+ }
+ return {pairs:[...pairs.values()],point_comparisons:pointComparisons,unassessed,actual_motion_assessed:false,quality_approved:false};
+}
 function endpointInspection(value,contact){
  const times=[...new Set(contact.interval_s)],count=contact.reduction==='centroid'?1:contact.vertices.length;
  const positions=a=>Array.isArray(a)&&a.length===times.length&&a.every(row=>Array.isArray(row)&&row.length===count&&row.every(v=>Array.isArray(v)&&v.length===3&&v.every(n=>typeof n==='number'&&Number.isFinite(n))));
@@ -137,6 +177,7 @@ export function createNativeSceneEditor({document=globalThis.document,api,post,g
   const before=editable(),payload=revisionDraft(before,choice);revisionBusy=true;invalidateRevision();el('RevisionPreview').disabled=true;
   try{const r=checkedPreview(await post('/api/native-scene-contact-revision',payload),payload);
    if(key(before)!==key(editable())||key(choice)!==key(revisionChoice()))throw Error('The scene or staged patches changed; preview again.');
+   const timing=worldContactTiming(payload.scene);
    pendingRevision={before,payload,choice,result:r};el('RevisionApply').disabled=false;el('RevisionResults').replaceChildren();
    for(const change of r.changes){const text=document.createElement('p'),a=change.original_contact,b=change.authored_contact;
     text.textContent=`${change.id}: source ${a.vertices.length} ${a.reduction} → ${b.vertices.length} ${b.reduction}`+(b.target.space==='actor'?`; partner ${a.target.vertices.length} ${a.target.reduction} → ${b.target.vertices.length} ${b.target.reduction}`:'')+'. Timing, limits and animation bytes stay preserved. Endpoint inspection only; anatomy and motion quality need review.';el('RevisionResults').append(text);
@@ -144,6 +185,9 @@ export function createNativeSceneEditor({document=globalThis.document,api,post,g
     for(let i=0;i<old.times_s.length;i++){const sample=document.createElement('p');sample.className='small';sample.textContent=`At ${old.times_s[i]} s: original separation ${Math.max(...old.separation_m[i])*1000} mm; authored separation ${Math.max(...newer.separation_m[i])*1000} mm.`;el('RevisionResults').append(sample);}
     const details=document.createElement('details'),summary=document.createElement('summary'),coordinates=document.createElement('pre');summary.textContent='Exact original and authored vertices and endpoint positions';
     coordinates.textContent=JSON.stringify({original_contact:a,authored_contact:b,original_endpoint_positions:old,authored_endpoint_positions:newer},null,2);details.append(summary,coordinates);el('RevisionResults').append(details);}
+   const timingNote=document.createElement('p');timingNote.textContent=`Requested timing in the staged draft: ${timing.pairs.length} comparable world-contact pair(s). This checks target requirements, not actual animation speed. Passing these pairwise checks does not prove the motion can be performed.`;el('RevisionResults').append(timingNote);
+   for(const pair of timing.pairs){const note=document.createElement('p');note.className='small';note.textContent=`${pair.actor}: ${pair.from} → ${pair.to}: `+(pair.simultaneous_target_conflict?'overlapping or touching contact times require incompatible positions, even with the allowed contact errors.':pair.gap_s===0?'allowed positions overlap; these two targets alone do not require movement at their shared times.':`requires at least about ${pair.minimum_average_speed_m_s.toPrecision(4)} m/s average movement between the allowed positions (${pair.gap_s.toPrecision(4)} s gap).`);el('RevisionResults').append(note);}
+   if(timing.unassessed.length){const note=document.createElement('p');note.className='small';note.textContent=`Object and partner target timing is not assessed here: ${timing.unassessed.map(c=>c.id).join(', ')}.`;el('RevisionResults').append(note);}
    status('Review the explicit patch changes, then Apply. The original contact conditions will be retained.');
   }finally{revisionBusy=false;el('RevisionPreview').disabled=false;}
  });
