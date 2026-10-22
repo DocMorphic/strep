@@ -17,7 +17,9 @@ permissions:
 
 concurrency:
   group: contact-rig-regressions-${{ github.ref }}
-  cancel-in-progress: true
+  # Let long Windows/Linux checks finish during continuous development.
+  # New pushes may replace the queued run, but preserve the running evidence.
+  cancel-in-progress: false
 
 jobs:
   source-regressions:

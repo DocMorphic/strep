@@ -253,6 +253,17 @@ replay, with peak worker-tree memory 324,255,744 bytes. The receipt is
 reopens the approach to the new contact failure, rather than treating small
 step projection as sufficient for its larger geometry errors.
 
+## Next contact: reachability and timing diagnostics
+
+The six-key 89–94 attempt remains rejected and preserves the 94-pose checkpoint.
+Floor clearance passes, but contact and correction-step limits still fail.
+[Target timing and contact attribution](contact-phase-speed-bounds-v1.md)
+identify a 4.854650-m/s necessary toe-speed requirement without introducing a
+new acceptance threshold. A separately exported static key-94 pose passes the
+original pose budgets, providing another initializer for a subsequent bounded
+transition search. Neither the failed transition nor the static diagnostic is
+adopted as a complete animation.
+
 ## Scope
 
 These checks cover sampled floor/contact geometry, correction bounds,
