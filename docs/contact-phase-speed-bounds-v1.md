@@ -103,3 +103,45 @@ support checks pass, and resource replay validates 498 observations with peak
 worker-tree memory 356,200,448 bytes. The retry completed under the memory guard;
 its remaining failure is geometric/transition quality, not resource admission.
 This does not establish impossibility or justify changing the authored targets.
+
+### Attributing the remaining failures
+
+`reports/getup-contact-boundary-diagnostic-v2` replays all 200 local sample
+times and 600 active contact observations from the warm candidate. Four samples
+fail contact distance: three on the left toe near key 92, and the new right-toe
+contact at key 94. Both hand contacts pass. The other three failed pose samples
+are left-hand rotation-edit budget violations, reaching 45.002036 degrees
+against the original 45-degree limit. Thus “seven failed samples” must not be
+reported as seven contact misses. There are also 23 failed adjacent correction
+step rows, principally in the root and right-leg chain.
+
+A deterministic step projection keeps the incoming key fixed and changes root
+corrections by at most 0.801124 mm and rotations by at most 0.244498 degrees.
+Decoded correction steps then pass, but contact error increases to 23.974875 mm
+and 13 local samples fail. That proposal is rejected; the accepted checkpoint
+is unchanged. Small parameter changes are not evidence that contact geometry
+has been preserved. The retained projection SHA-256 is
+`14040001d8db2d8af14c05b70701f71da299ba02ab427222334471c16fafab68`.
+
+### Feasibility-only restoration
+
+`reports/kaykit-getup-feasibility-v1` changes the six-key solver objective to
+constant zero, keeping its nonlinear constraints, original acceptance limits,
+fitting reserves and fixed incoming pose. This removes the competing preference
+for the old checkpoint during this repair experiment. It is not an optimality
+or realism objective, and is not automatically selected by Studio.
+
+The exported candidate passes all 200 sampled pose/contact/floor checks: maximum
+floor depth 4.358469 mm and contact error 19.689214 mm. However, root correction
+steps reach 25.254993 mm and rotation correction steps reach 5.039332 degrees,
+so the candidate remains rejected. Subsequent bounded passes do not improve the
+retained candidate. No inference of infeasibility follows. Candidate SHA-256:
+`2c18e37e9d1a9c6f50933bef857c28b3dceca8a5aa98d5ea5ba449b61052d862`.
+
+The accepted 94-pose checkpoint remains identical and its 3,699 samples pass
+again. All 60 supporting solver/export tests pass. The attribution/projection
+and feasibility experiments have 496 replayed resource observations with peak
+worker-tree memory 322,490,368 bytes. The publication receipt is
+`reports/getup-feasibility-publication-v1/summary.json`. Engine validation is not
+run on the rejected candidate. Human review, the remainder of the clip and the
+broader release acceptance matrix remain unfinished.
