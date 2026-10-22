@@ -71,6 +71,49 @@ python scripts/developer_packet_review.py import PATH_TO_DEVELOPER_PACKET PATH_T
 
 The importer checks the role, complete response fields, packet and manifest hashes, clip hashes, duplicate or unknown clips, ratings, unavailable-context restrictions and cleanup records. It retains the original response byte-for-byte. Partial review is allowed and reports the missing clips. The independent importer rejects developer responses and developer packets, including an independent response forged with the developer packet's identity. Developer import never grants release approval or substitutes for independent animator evidence.
 
+## Complete get-up comparison
+
+The new local packet is
+`C:\wassup\strep\reports\getup-full-developer-review-v3\getup-developer-review.zip`.
+It contains the original transfer and corrected complete 180-pose get-up on the
+same KayKit rig. Labels are visible: this is developer feedback, not a blind
+independent evaluation. The prompt asks a person lying on their back to roll
+onto their side and push up to stand.
+
+1. Open that folder in File Explorer, right-click the ZIP and choose **Extract
+   All**. Open the extracted folder.
+2. Double-click **Start Review.cmd**, leave its window open, and use the browser
+   it opens. If needed, open the local address printed in that window. Do not
+   open `viewer.html` directly.
+3. Enter your reviewer name or identifier and check the developer-review box.
+   Select **original-transfer**, press **Play**, then watch **corrected-full-clip**.
+   Use **Front**, **Side**, **Restart** and **Fit clip** to compare the entire action.
+4. Look for a believable roll and push-up, hands or feet slipping, a floating
+   body, head/limb floor intersections, sudden jumps and an awkward standing
+   finish. Note the clip and playback time for each problem. Numerical contact
+   checks do not decide whether these movements look natural.
+5. Score each clip independently and click **Save this review** for each. Leave
+   cleanup **Not performed** unless you actually edited the downloaded animation.
+   Click **Export saved reviews** and return the downloaded JSON file. Close
+   the server with Ctrl+C when finished.
+
+The ZIP has 523 verified members, SHA-256
+`9a32ff14e9167fa3e487c7406de91f9479b4afb74f3b11b6571d6eca14acd443`.
+Both native GLB files retain their exact source bytes, original animation
+selection and reference node. The viewer now uses the existing native skin
+implementation with all four/eight influences, normalized together, and source
+inverse binds. Camera bounds include all posed mesh vertices instead of just
+joints. Non-native packets retain their earlier skin path. Character attribution
+is supplied with the packet instead of falsely labeling native characters as SOMA.
+
+The packet run passed 47 Python cases and four JavaScript modules, including
+actual loader/skin arithmetic, backward scrubbing, endpoints, mesh framing and
+form/export behavior. No browser rasterization or human ratings were generated.
+An earlier packet test rejected the legitimate runtime filename
+`native-source-skin.mjs`; its failure and original test bytes remain archived.
+The corrected check excludes the organizer source directory by path and permits
+only the intended packet roots. The final packet also fixes a Front-camera handler that cleared the native skin updater. An actual-handler regression verifies that Front, Side, Fit and Follow preserve it. The fresh packet run passed under the memory guard.
+
 ## Validation
 
 The focused suite has 47 passing Python tests across the existing independent validator, portable packaging and new developer mode. Synthetic fixtures exercise partial review, role/approval rejection, exact source preservation, all clips and contexts retained, archive inventory, changed/escaping clips, organizer data exclusion, immutable imports and actual-cleanup record rules. The JavaScript tests execute the role and export helper, including rejection of unknown roles and prevention of a stale identity injecting independence or approval into a developer export. No fixture is a real review record. The same 47 Python checks and both JavaScript scripts also pass in a fresh source-only copy containing no vendor checkout, downloaded character assets or models; packet-copy licenses and runtime files are explicit synthetic fixtures. A second JavaScript test executes the actual page form and export handlers with a synthetic DOM. It checks save/reload, role-specific storage and response fields, missing-context N/A, attestation rejection and reached-time-limit cleanup. It creates no renderer, server, browser or rating file.

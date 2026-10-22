@@ -37,6 +37,10 @@ def package(packet,archive):
     if '../../scripts/review-native-selection.mjs' in html:
         shutil.copyfile(ROOT/'scripts/review-native-selection.mjs',runtime/'review-native-selection.mjs')
         html=html.replace('../../scripts/review-native-selection.mjs','./runtime/review-native-selection.mjs')
+    if '../../scripts/review-native-skin.mjs' in html:
+        for name in ('review-native-skin.mjs','native-source-skin.mjs','native-grey-loader.mjs'):
+            shutil.copyfile(ROOT/'scripts'/name,runtime/name)
+            html=html.replace('../../scripts/'+name,'./runtime/'+name)
     if '../../' in html:raise ValueError('Viewer still references workspace files')
     (packet/'viewer.html').write_text(html,encoding='utf-8')
     shutil.copyfile(ROOT/'scripts/serve_review_packet.py',packet/'serve.py')
@@ -68,6 +72,8 @@ SOMA preview and skin helper: NVIDIA Kimodo / Strep modifications, Apache-2.0 (L
         if manifest.get('native_asset_bytes_preserved') is True:
             text=text.replace('Condition and seed labels are hidden.',
                 'This native-asset developer comparison is not blinded. Condition labels and original animation metadata are visible.')
+            text=text.replace('SOMA preview and skin helper: NVIDIA Kimodo / Strep modifications, Apache-2.0 (LICENSE.txt).',
+                'Native character and supplied attribution: LICENSE.txt. Viewer skin helpers retain their own included notices; the character is not identified as a SOMA asset.')
         readme.write_text(text+'\nDeveloper ratings remain separate from independent animator evidence. This packet cannot confer release approval.\n',encoding='utf-8')
     inventory={p.relative_to(packet).as_posix():sha256(p) for p in sorted(packet.rglob('*')) if p.is_file()}
     save(packet/'package-integrity.json',dict(schema=1,created_at=now(),files=inventory,

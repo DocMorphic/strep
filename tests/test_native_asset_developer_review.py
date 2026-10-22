@@ -31,11 +31,17 @@ def test_packet_preserves_actual_native_geometry_and_motion(tmp_path):
     assert not result['quality_approved'] and not result['release_approved']
     assert (packet/'LICENSE.txt').read_bytes()==license_path.read_bytes()
     assert 'not blinded' in (packet/'README.txt').read_text() and 'Condition and seed labels are hidden.' not in (packet/'README.txt').read_text()
+    assert 'SOMA preview and skin helper:' not in (packet/'README.txt').read_text()
+    assert 'licenses and credits' in (packet/'viewer.html').read_text()
+    for name in ('review-native-skin.mjs','native-source-skin.mjs','native-grey-loader.mjs'):
+        assert (packet/'runtime'/name).read_bytes()==(review.ROOT/'scripts'/name).read_bytes()
     inventory=read(packet/'package-integrity.json')['files']
     with zipfile.ZipFile(archive) as z:
         assert z.testzip() is None
         for name in inventory:assert z.read(name)==(packet/name).read_bytes()
-    assert not any('source' in n for n in inventory)
+    assert not any(n.startswith('source/') for n in inventory)
+    assert all(n.startswith(('clips/','runtime/')) or n in
+        {'manifest.json','viewer.html','LICENSE.txt','serve.py','README.txt','Start Review.cmd'} for n in inventory)
 
 
 @pytest.mark.parametrize('fault',['hash','reference','fps-bool','animation-bool','id-path','duplicate','missing-context','bad-na','external-path'])

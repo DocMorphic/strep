@@ -270,7 +270,46 @@ The [feasibility continuation](surface-pose-feasibility-v1.md) accepts all 45
 attempted windows and checkpoints at 140 poses: finalized through 138, validated
 through 139, next start 138. All 5,533 prefix samples and fourteen Godot batches
 with 5,560 observations pass. The latest engine-checked state is
-`reports/kaykit-getup-rolling-v7/state.json`; the remaining clip is unfinished.
+`reports/kaykit-getup-rolling-v7/state.json`; that checkpoint leaves the remaining clip unfinished.
+
+## Complete sampled clip (2026-10-22)
+
+The eighth continuation accepts its remaining 40/40 windows using the published
+`surface_pose_feasibility.propose` helper. All 180 poses are finalized and all
+7,129 required native-key, interval-eighth and 960 Hz samples pass. The original
+acceptance limits and frozen contact phases are unchanged. The preceding
+0.5 mm geometric fitting buffers remain optimization reserves, not new acceptance
+thresholds. The state is `reports/kaykit-getup-rolling-v8/state.json`.
+
+Across the complete sampled clip, maximum floor penetration is 4.740287 mm,
+contact error 19.867673 mm, adjacent root-correction change 24.997138 mm and
+adjacent rotation-correction change 4.999862 degrees. These last two quantities
+measure corrections relative to the source; they are not absolute motion speeds.
+The corrected GLB SHA-256 is
+`1139da952e82cc3507426f7ee1f8290cca8b636c25606c3ce50e4f3dbfacbb71`.
+
+Independent clock reconstruction and native-authoring Godot evaluation cover the
+same complete sample population in 18 batches and 7,163 observations. Pose,
+skin, floor and contact checks pass; maximum skin disagreement is 0.033728 mm.
+This does not validate ordinary glTF import, physics playback, GPU skinning,
+continuous geometry, anatomical plausibility or action quality. The original
+source and every rejected candidate remain preserved. This adapted development
+clip is not held-out release evidence.
+
+Supporting validation comprises 33 exporter/feasibility tests, 47 packet tests
+and four JavaScript viewer modules. Three complete resource traces replay with
+786 observations and a largest sampled process-tree peak of 337,010,688 bytes.
+Publication verification is under `reports/getup-full-publication-v2`. The
+packager changed after both computation workers ended; its exact historical
+input bytes were recovered from commit `77db527` and verified against their
+recorded hashes. Other recorded inputs match their respective source snapshots.
+No historical request was rewritten.
+
+The original transfer and corrected full clip are now in a separate
+[developer comparison packet](developer-packet-review-v1.md#complete-get-up-comparison).
+Human ratings and measured cleanup time remain absent. Completion here means
+the full sampled numerical/engine check, not acceptance of the animation or
+completion of the project goal.
 
 ## Scope
 

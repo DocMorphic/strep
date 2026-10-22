@@ -699,6 +699,7 @@
     "tests/test_cleanup_timer.mjs",
     "tests/test_selected_joint_guides.mjs",
     "tests/test_review_native_selection.mjs",
+    "tests/test_review_native_skin.mjs",
     "tests/test_prop_grip_editor.mjs",
     "tests/test_mesh_scene_editor.mjs",
     "tests/test_mesh_scene_playback.mjs",
