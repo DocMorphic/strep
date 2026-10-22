@@ -264,10 +264,18 @@ original pose budgets, providing another initializer for a subsequent bounded
 transition search. Neither the failed transition nor the static diagnostic is
 adopted as a complete animation.
 
+## Seventh continuation
+
+The [feasibility continuation](surface-pose-feasibility-v1.md) accepts all 45
+attempted windows and checkpoints at 140 poses: finalized through 138, validated
+through 139, next start 138. All 5,533 prefix samples and fourteen Godot batches
+with 5,560 observations pass. The latest engine-checked state is
+`reports/kaykit-getup-rolling-v7/state.json`; the remaining clip is unfinished.
+
 ## Scope
 
-The subsequent [fitting-buffer comparison](contact-phase-speed-bounds-v1.md)
-repairs the 89–94 transition under the original acceptance limits. The latest
+The preceding [fitting-buffer comparison](contact-phase-speed-bounds-v1.md)
+repairs the 89–94 transition under the original acceptance limits. Its
 independently engine-checked checkpoint is
 `reports/kaykit-getup-feasibility-margin-v1/state.json`: 95 poses, finalized
 through 93 and validated through 94, with the next window starting at 93.

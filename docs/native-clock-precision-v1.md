@@ -147,3 +147,9 @@ test XML and 79 replayed resource observations. The XML SHA-256 is
 `5e8e3e1e4c53a0e54ac0a1d29d52dffcf56b7b3cdb04fd2075939dc01f811f3b`.
 Full hosted regression remains pending; this follow-up does not establish
 motion realism or release readiness.
+
+Subsequent hosted evidence: [run 39691908425](https://github.com/DocMorphic/strep/actions/runs/39691908425)
+completed successfully with all 20 jobs passing on commit
+`f5fd48f4bf93cfca1c286aaf69eada6c71ad890f`. This closes the pending full source
+regression check for that clock-repair snapshot. It does not cover code added
+after that commit or confer motion-quality or release approval.
