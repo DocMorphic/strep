@@ -143,3 +143,11 @@ development checkout. The relocation map and primary-store verification are in
 three-rig screen remains there too. Rendered browser behavior, engine playback
 of this candidate, scene/partner contacts, dynamics and human quality review
 remain unverified. The earlier ordinary-import get-up clock failure is unchanged.
+
+The subsequent [wave engine comparison](studio-surface-wave-engine-v1.md)
+checks every required sample through actual Godot import. All pose, skin and
+floor comparisons pass; ordinary import retains one 31.789144-ns endpoint
+clock failure. Explicitly adding the existing one-frame terminal hold passes
+the original-domain clock checks and eight hold samples, with imported tracks
+unchanged. This separately acknowledged duration contract does not approve
+ordinary import, runtime advancement, contacts, transitions or human quality.

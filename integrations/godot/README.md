@@ -67,6 +67,13 @@ crossed markers on that update; they do not retroactively simulate physics at
 the event timestamp. Looping, reverse playback, crossfades and physical release
 remain unverified. `hold_terminal_frame` explicitly rejects looping clips.
 
+A later [corrected CesiumMan wave study](../../docs/studio-surface-wave-engine-v1.md)
+checks ordinary import and this explicit hold separately at 4,737 source-domain
+times. Ordinary import retains one strict endpoint clock failure; the hold
+passes those sampled clocks and eight terminal-pose samples without changing
+imported tracks. This additional evidence covers seeking on that corrected rig,
+not its runtime advancement, transitions, foot planting or perceived quality.
+
 `verification.json` records actual engine tests. Original GLBs and source motion
 are unchanged by this adapter. Asset/model licenses remain those supplied with
 the separately downloaded scene pack.
