@@ -106,3 +106,40 @@ and current/legacy Studio policy handling. The resource guard completed and
 The current CI inventories contain 656 full / 205 focused Python test files.
 Evidence is retained in `reports/surface-clip-start-tests-v1/` in the development
 checkout. This does not establish production-clip completeness or realism.
+
+## Complete saved-clip validation
+
+The unchanged saved CesiumMan wave transfer was then processed through the actual
+Studio queue, supervisor, guarded worker, saved-source resolver, publication and
+download path. Both endpoint edits were explicitly enabled. Six attempts completed
+all 118 overlapping windows and 120 native keys. The final decoded audit covers
+all 4,737 native/eighth/960-Hz samples; an independent standard-library reader
+reconstructed that exact population from the original GLB clock bytes.
+
+Starting-pose floor penetration improved from 8.321672 mm to 4.499871 mm. The
+whole candidate's maximum floor penetration is 4.821543 mm under the unchanged
+5 mm limit. Maximum root correction change per key is 0.313222 mm under 25 mm;
+maximum rotation correction change is 0.00174648 degrees under 5 degrees. These
+are correction-step bounds, not measurements of physical velocity or realism.
+No contact targets were supplied, so this does not establish foot planting.
+
+All originals, intermediate candidates and receipts remain retained. The six
+guarded attempts totaled 874.84 seconds with a peak observed process-tree RSS
+of 105,517,056 bytes. The source screen, regression run and six real attempts
+replay 1,629 distinct recorded resource observations. The final candidate SHA-256
+is `7678f1bafd355cf3f368c0d2d263e033f1a65ecb657553fa5517871f48d748f0`.
+
+The completed job `25f2a4ebaf8f4e7f84d528dc9a6d55e8` is now in the primary
+project's `reports/surface-clip-jobs/` store, available through **Refresh jobs**
+and **Inspect selected job**. Its original remains selected. The move from the
+development checkout preserved all 723 files byte-for-byte and has a separate
+relocation receipt; no historical report bytes were rewritten. Status, source
+implementation bindings, comparison metadata, both downloads and all six
+resource traces were checked again from the primary store.
+
+Pre-move validation is in `reports/surface-clip-start-publication-v1/` in the
+development checkout. The relocation map and primary-store verification are in
+`reports/studio-surface-wave-publication-v1/` in the primary checkout. The
+three-rig screen remains there too. Rendered browser behavior, engine playback
+of this candidate, scene/partner contacts, dynamics and human quality review
+remain unverified. The earlier ordinary-import get-up clock failure is unchanged.
