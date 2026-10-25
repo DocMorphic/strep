@@ -15,11 +15,20 @@ growth and added sample times. The optimizer supports at most 64 active interior
 samples; the complete declared clock still decides acceptance. Reaching that
 working-set limit does not waive failing samples.
 
-The initial key stays fixed; later keys, including the final key, are editable
-within the supplied limits. Existing transition compatibility must therefore be
-reviewed after correction. A Studio adapter must honor its clip-edge permission
-and acknowledgment controls rather than silently treating a preserved end as
-editable. This command currently has no preserve-end mode.
+The current v2 request protocol preserves the initial and final keys by default.
+The final key is checked before correction; incompatible protected-end contacts
+stop the attempt with `invalid_preserved_end`. A preserved end receives fixed
+solver bounds and is omitted from exported edits. Every candidate and resumed
+checkpoint is checked against the initial clip's exact protected channel values.
+Protecting endpoint values does not prove that velocity, acceleration or other
+transition properties remain compatible.
+
+To permit changing the ending, configuration must contain both
+`"end_policy": "edit"` and `"acknowledge_changed_end": true`. Its result explicitly
+requires transition review. The default is `"end_policy": "preserve"` with a false
+acknowledgment. Earlier v1 requests allowed end edits implicitly; they retain their
+original files and require their recorded implementation. They are not silently
+reinterpreted as v2 jobs.
 
 Every exported window is decoded and checked before it advances the accepted
 checkpoint. Rejected candidates, optimizer records and interrupted attempts stay
@@ -60,7 +69,7 @@ unresolved motion window; inspect the attempt result rather than interpreting
 process completion as an animation pass. Inputs retain the surface component's
 shared LINEAR native-clock and world Y=0 floor requirements.
 
-## Verification
+## Original v1 verification
 
 Twenty lifecycle tests pass, covering full-clip and budgeted continuation, a real
 contact solve, rejected and invalid-incoming candidates, selected non-default
@@ -98,3 +107,34 @@ This last check validates real-asset job continuation, not a fresh get-up solve
 or whole-clip processing by the new coordinator. It does not replace the earlier
 complete get-up/engine evidence or resolve its ordinary-import clock failure.
 The previously corrected source clip and the review packet remain unchanged.
+
+## Endpoint protection verification
+
+The v2 protocol adds fourteen boundary cases to the 87 clip/job/export/solver
+regressions: all 101 pass in 584.85 seconds under the existing RAM guard. Tests
+cover an actual interior contact repair with a nonzero initial ending preserved
+exactly, a protected-end conflict without an accepted checkpoint, the same
+endpoint repaired after explicit edit acknowledgment, a fully fixed two-key clip
+with an unresolved interior contact, exact decoded boundary-value rejection, and
+invalid policy requests. Existing continuation, actual process-exit and changed
+input/receipt cases also pass with the new default.
+
+A final reporting-only change makes `transition_review_required` true even when
+the endpoint poses are protected, because adjacent edits can change velocity.
+Its targeted real-solve test passes separately. Archived source hashes and AST
+comparison verify that this follow-up changed no numerical or checkpoint logic.
+Both inventories include the new boundary module (653 full and 202 focused
+Python test files).
+
+The real KayKit check in `reports/surface-clip-boundaries-getup-v1` processes the
+final window at keys 177-179 of the already corrected get-up. Only key 178 is
+exported as editable. Key 0, the incoming key 177 and the final key 179 retain
+identical decoded channel bytes. All 81 window samples pass, with zero floor
+penetration and maximum contact error 19.776323 mm under the unchanged 20-mm
+limit. This is a final-window export check on an existing candidate, not new
+generation, a full-clip rerun, an engine test or motion-quality approval.
+
+Studio integration remains the next product step. The adapter must carry the
+explicit endpoint policy and preserve the existing scene/engine gates; it must
+not translate broader object/partner or moving-target constraints into this
+static flat-floor model by dropping unsupported requirements.
