@@ -311,6 +311,45 @@ Human ratings and measured cleanup time remain absent. Completion here means
 the full sampled numerical/engine check, not acceptance of the animation or
 completion of the project goal.
 
+## Ordinary Godot import (2026-10-25)
+
+The unchanged complete corrected GLB now has a separate ordinary-import capture
+at Godot's default 30 FPS bake setting. It covers all 7,129 required sample times
+in 18 batches and 7,163 engine observations. The exact native keys, interval
+eighths and 960 Hz clock are reconstructed and checked before capture; no sample
+is dropped. This study uses the ordinary imported AnimationPlayer tracks rather
+than installing Strep's native authoring tracks.
+
+Requested-time pose, complete imported-skin, floor and frozen-contact checks all
+pass. Maximum skin disagreement is 0.033729 mm, floor depth 4.740301 mm and
+contact error 19.867630 mm. Their original limits remain 0.1 mm, 5 mm and 20 mm
+respectively. Captured contact checks use the original requested-time phase
+membership and mapped source vertices.
+
+The strict clock gate still fails one sample: global index 7,127 requests
+5.966666666666667 seconds, while Godot reports 5.9666666984558105 seconds.
+The 31.789144 ns endpoint shift exceeds the unchanged 1 ns seek limit. The
+request echo is correct; all other clocks pass. The reference mesh moves
+9.248134e-9 m between those two times, which is diagnostic attribution and does
+not waive the clock gate. This reproduces the previously documented
+[ordinary endpoint behavior](native-clock-precision-v1.md) on the completed
+get-up. `ordinary_import_verified` remains false.
+
+Evidence lives under `reports/getup-ordinary-import-v1` in the relocated
+`.local/worktrees/mesh-recovery` checkout; publication binding checks are in
+`reports/getup-ordinary-import-publication-v1`. All recorded capture/diagnostic
+hashes, the exact complete sample population, candidate bytes and unchanged
+release contract were verified. Historical input paths are resolved through the
+recorded relocation map without rewriting historical reports. The guarded run
+completed in 143.422 seconds; 153 resource observations replay, with a sampled
+process-tree peak of 320,958,464 bytes.
+
+No clip, review packet, solver, tolerance or production source changed in this
+study. There is no new ordinary-import approval, continuous collision proof,
+physics/GPU validation or human-quality evidence. A higher bake-rate run is not
+justified by this result alone: the spatial gates already pass, while the failed
+gate concerns the requested playback time.
+
 ## Scope
 
 The preceding [fitting-buffer comparison](contact-phase-speed-bounds-v1.md)
