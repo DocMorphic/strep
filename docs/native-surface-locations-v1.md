@@ -74,3 +74,7 @@ together. Preserve legitimate near-body gestures and explicitly authored
 contacts. Native and engine comparisons, dense-time validation and human review
 remain necessary before accepting any repair. This localization change alone
 does not approve a scene, change the collision gate or complete the project.
+
+The subsequent [bounded pose experiment](wave-self-repair-pose-v1.md) reduces
+the worst pose from 106 to ten proper-crossing pairs with reference-guided arm
+edits. Six pairs are new, so the proposal remains rejected as a complete repair.
