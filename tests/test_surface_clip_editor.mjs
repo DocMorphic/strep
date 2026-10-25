@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {pointContact,checkedStatus,createSurfaceClipEditor} from '../scripts/surface-clip-editor.mjs';
+import {pointContact,checkedStatus,createSurfaceClipEditor,sceneSource} from '../scripts/surface-clip-editor.mjs';
 import {validateNativePreview,selectNativePreviewClip} from '../scripts/native-preview-policy.mjs';
 const job='a'.repeat(32),attempt='b'.repeat(32),digest='c'.repeat(64);
 const binding={source_job:'source',variant:'input',glb_sha256:digest,root_node:0,duration_s:2,label:'Fixture',joints:[{node:1,name:'Leg',interpolation:'LINEAR'},{node:2,name:'Other',interpolation:'STEP'}]};
@@ -18,9 +18,11 @@ const html=await readFile(new URL('../scripts/surface-clip-editor.html',import.m
 for(const [,id] of html.matchAll(/id="([^"]+)"/g)){assert(!nodes.has(id));nodes.set(id,new Element());}
 const document={getElementById:id=>nodes.get(id),createElement:()=>new Element()},el=n=>nodes.get('surfaceClip'+n);
 for(const [n,v] of Object.entries({Horizontal:.15,Vertical:.75,Floor:5,Contact:20,RootStep:25,RotationStep:5,Windows:10,Seconds:240,X:0,Y:0,Z:0}))el(n).value=String(v);
-let context={job:{id:'source'},variant:'input'},wait=null,posted=[];
+let context={job:{id:'source'},variant:'input'},wait=null,posted=[],sceneAdds=[];
+let sourceMeta={schema:'strep-surface-clip-scene-source-v1',job,attempt,source_url:`/files/surface-clip-jobs/${job}/${attempt}/candidate.glb`,glb_sha256:digest,result_sha256:digest,request_sha256:digest,animation_index:0,duration_s:2,original_selected:true,transition_review_required:true,scene_contacts_applied:false,quality_approved:false,release_approved:false};
 const editor=createSurfaceClipEditor({document,getContext:()=>structuredClone(context),getPatch:()=>patch,
- api:async url=>url.startsWith('/api/native-support-source')?(wait||structuredClone(binding)):url==='/api/surface-clip-jobs'?{jobs:[saved]}:structuredClone(saved),
+ getSceneDraft:()=>({existing:'retained'}),addSceneSource:(m,before)=>sceneAdds.push({m,before}),
+ api:async url=>url.endsWith('/scene-source')?structuredClone(sourceMeta):url.startsWith('/api/native-support-source')?(wait||structuredClone(binding)):url==='/api/surface-clip-jobs'?{jobs:[saved]}:structuredClone(saved),
  post:async(url,payload)=>{posted.push({url,payload});return {id:job};}});
 await el('Bind').onclick();assert.equal(el('Fields').disabled,false);
 el('Joints').children[0].children[0].checked=true;
@@ -39,6 +41,12 @@ wait=null;context.variant='input';await el('Bind').onclick();el('Joints').childr
 el('EditStart').checked=true;const priorPosts=posted.length;await el('Build').onclick();assert.equal(posted.length,priorPosts);assert.match(el('Status').textContent,/Acknowledge/);
 el('StartAck').checked=true;await el('Build').onclick();assert.equal(posted.at(-1).payload.start_policy,'edit');assert.equal(posted.at(-1).payload.acknowledge_changed_start,true);
 el('EditStart').onchange();assert.equal(el('StartAck').checked,false);
+assert.deepEqual(sceneSource(sourceMeta,job,attempt),sourceMeta);
+for(const change of [m=>m.source_url=m.source_url.replace('candidate','rejected'),m=>m.glb_sha256='wrong',m=>m.scene_contacts_applied=true,m=>m.quality_approved=true,m=>m.duration_s=NaN]){const m=structuredClone(sourceMeta);change(m);assert.throws(()=>sceneSource(m,job,attempt));}
+saved.status=saved.result.status='complete_numerical_candidate';saved.can_continue=false;saved.result.whole_clip_sampled=true;saved.result.validated_through=10;
+await el('Review').onclick();const add=el('Results').children.at(-1);assert.equal(add.textContent,'Add completed candidate to scene');await add.onclick();assert.equal(sceneAdds.length,1);assert.deepEqual(sceneAdds[0].before,{existing:'retained'});
+el('Jobs').value='d'.repeat(32);await add.onclick();assert.equal(sceneAdds.length,1);el('Jobs').value=job;
+sourceMeta.quality_approved=true;await add.onclick();assert.equal(sceneAdds.length,1);sourceMeta.quality_approved=false;
 const preview={kind:'native_surface_correction',preview_url:`/files/surface-clip-jobs/${job}/${attempt}/original.glb`,preview_sha256:digest,preview_start_s:0,preview_end_s:2,animation_index:0,animation_count:1};
 validateNativePreview(preview);assert.equal(selectNativePreviewClip(preview,[{duration:2}]).duration,2);
 for(const url of [preview.preview_url+'?x=1',preview.preview_url.replace(attempt,'..'),'/files/action-jobs/x/a.glb'])assert.throws(()=>validateNativePreview({...preview,preview_url:url}));

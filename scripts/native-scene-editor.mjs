@@ -121,14 +121,21 @@ export function createNativeSceneEditor({document=globalThis.document,api,post,g
   el('Fit').checked=!!draft.object_edit;draw();
   if(draft.object_edit){const e=draft.object_edit;el('FitObject').value=e.object;el('FirstGrip').value=e.contact_ids[0];el('SecondGrip').value=e.contact_ids[1];el('EditWindow').value=e.edit_window_s.join(', ');el('Translation').value=e.maximum_translation_m*1000;el('Rotation').value=e.maximum_rotation_degrees;el('Keys').value=e.maximum_keys;}
  }
+ function addSource(m,expectedDraft){
+  if(busy||revisionBusy)throw Error('Wait for the current scene request.');ordinary();
+  if(expectedDraft!==undefined&&key(editable())!==key(expectedDraft))throw Error('Scene draft changed; add the intended character again.');
+  if(typeof m?.source_url!=='string'||!m.source_url.startsWith('/files/')||!/^[a-f0-9]{64}$/.test(m.glb_sha256)||!Number.isInteger(m.animation_index)||m.animation_index<0||!Number.isFinite(m.duration_s)||m.duration_s<=0)throw Error('Source-bound character metadata required.');
+  const name=el('ActorName').value.trim();if(!/^[A-Za-z0-9_-]{1,64}$/.test(name)||draft.scene.actors[name])throw Error('Choose a new character name.');
+  if(Object.keys(draft.scene.actors).length>=8)throw Error('At most eight actors supported.');
+  if(draft.scene.duration_s!==null&&draft.scene.duration_s!==m.duration_s)throw Error('Clips have different durations. Retime them explicitly first.');
+  const p=triplet(el('ActorPosition').value);if(draft.scene.duration_s===null){draft.scene.duration_s=m.duration_s;draft.geometry.clock.times_s=[0,m.duration_s];el('End').value=m.duration_s;el('EditWindow').value=`0, ${m.duration_s}`;}
+  draft.scene.actors[name]={glb:m.source_url,sha256:m.glb_sha256,animation_index:m.animation_index,placement:{translation_m:p,rotation_xyzw:identity()}};draw();status(`Added ${name}: ${m.label}. Author scene contacts and transitions explicitly.`);
+ }
  el('AddActor').onclick=guard(async()=>{ordinary();const context=getContext();if(!context.job)throw Error('Select a completed character clip.');const job=context.job.id,variant=context.variant,draftBefore=key(editable());
   const m=await api(`/api/native-scene-actor?job=${encodeURIComponent(job)}&variant=${encodeURIComponent(variant)}`);
   const current=getContext();if(current.job?.id!==job||current.variant!==variant)throw Error('Character selection changed; add the intended clip again.');
   if(key(editable())!==draftBefore)throw Error('Scene draft changed; add the intended character again.');ordinary();
-  const name=el('ActorName').value.trim();if(!/^[A-Za-z0-9_-]{1,64}$/.test(name)||draft.scene.actors[name])throw Error('Choose a new character name.');
-  if(draft.scene.duration_s!==null&&draft.scene.duration_s!==m.duration_s)throw Error('Clips have different durations. Retime them explicitly first.');
-  const p=triplet(el('ActorPosition').value);if(draft.scene.duration_s===null){draft.scene.duration_s=m.duration_s;draft.geometry.clock.times_s=[0,m.duration_s];el('End').value=m.duration_s;el('EditWindow').value=`0, ${m.duration_s}`;}
-  draft.scene.actors[name]={glb:m.source_url,sha256:m.glb_sha256,animation_index:m.animation_index,placement:{translation_m:p,rotation_xyzw:identity()}};draw();status(`Added ${name}: ${m.label}.`);
+  addSource(m);
  });
  el('AddObject').onclick=guard(()=>{ordinary();const name=el('ObjectName').value.trim(),shape=el('Shape').value;if(!/^[A-Za-z0-9_-]{1,64}$/.test(name)||draft.scene.objects[name])throw Error('Choose a new object name.');
   const values=triplet(el('Dimensions').value,shape==='box'?3:shape==='sphere'?1:2);if(values.some(v=>v<=0))throw Error('Object dimensions must be positive.');
@@ -215,6 +222,6 @@ export function createNativeSceneEditor({document=globalThis.document,api,post,g
  regionLoader=createMaterialPatchLoader({document,post,getDraft:editable,getContact:()=>el('RevisionContact').value,stage:stageRevisionPatch,status,download});
  regionAuthor=createMaterialRegionAuthor({document,post,getDraft:editable,getContact:()=>el('RevisionContact').value,getSide:()=>el('RegionSide').value,getPatch,status,
   saved:value=>{regionLoader.clear();el('RegionBundle').value=value.bundle;el('RegionResult').value=value.result_sha256;el('RegionPatch').value=value.patch_id;el('RegionIndices').value='';}});
- draw();return {bind,snapshot:editable,refresh};
+ draw();return {bind,snapshot:editable,refresh,addSource};
 }
 function defaultDownload(value,filename='native-scene-draft.json'){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)+'\n'],{type:'application/json'})),a=globalThis.document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);}

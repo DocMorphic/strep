@@ -151,3 +151,9 @@ clock failure. Explicitly adding the existing one-frame terminal hold passes
 the original-domain clock checks and eight hold samples, with imported tracks
 unchanged. This separately acknowledged duration contract does not approve
 ordinary import, runtime advancement, contacts, transitions or human quality.
+
+[Completed candidates can now enter scene authoring](surface-clip-scene-source-v1.md)
+through **Add completed candidate to scene**. The source is bound to its exact
+completed attempt; scene and game exports preserve the original, correction
+settings and recorded parent decisions. Partial and rejected candidates are
+excluded. Adding a candidate does not infer scene contacts or transition approval.

@@ -20,7 +20,7 @@ NAMESPACE='native-scene-jobs'
 NAME=re.compile(r'[A-Za-z0-9_-]{1,100}')
 SCRIPT_ROOT=Path(__file__).resolve().parent
 METHODS=tuple(dict.fromkeys(AUTHOR_METHODS+('studio_native_scene.py','native_contact_revision.py','native_correction_lineage.py')))
-ASSET_PREFIXES=('/files/rig-jobs/','/files/character-assets/','/files/native-correction-previews/','/files/native-support-jobs/','/files/native-scene-jobs/','/files/native-scene-fit-jobs/','/files/native-scene-transfer-jobs/','/files/native-scene-transition-jobs/','/files/native-transition-fit-jobs/')
+ASSET_PREFIXES=('/files/rig-jobs/','/files/character-assets/','/files/native-correction-previews/','/files/native-support-jobs/','/files/native-scene-jobs/','/files/native-scene-fit-jobs/','/files/native-scene-transfer-jobs/','/files/native-scene-transition-jobs/','/files/native-transition-fit-jobs/','/files/surface-clip-jobs/')
 
 
 def require(condition,message):
@@ -61,6 +61,9 @@ def validate_request(payload,resolver,*,require_objects=False):
         require(path.is_relative_to((ROOT/'reports').resolve()) and path.suffix.lower()=='.glb'
             and path.is_file(),'Existing workspace character GLB required')
         require(sha256(path)==entry['sha256'],'Selected character clip changed')
+        if url.startswith('/files/surface-clip-jobs/'):
+            from surface_clip_scene_source import selected
+            selected(entry)
         sources[name]=dict(url=url,path=str(path),sha256=entry['sha256'])
         entry['glb']=str(path)
     scene=SceneContacts(spec,ROOT)
@@ -83,6 +86,8 @@ def validate_request(payload,resolver,*,require_objects=False):
 
 def method_names(payload,*,corrections=None):
     result=METHODS if payload['scene']['objects'] else METHODS+('verify_native_actor_scene_engine.py',)
+    from surface_clip_scene_source import has_origins as has_surface,METHODS as SURFACE_METHODS
+    if has_surface(payload):result=tuple(dict.fromkeys(result+SURFACE_METHODS))
     if payload['schema']=='strep-studio-native-scene-v2':
         from native_scene_export_speed import methods as speed_export_methods
         result=tuple(dict.fromkeys(result+speed_export_methods()))
@@ -166,6 +171,8 @@ def prepare(payload,folder,resolver):
         transition_lineage=transition_snapshot(payload,folder/'transition-lineage') if has_transitions(payload) else None
         from native_transition_scene_fit_lineage import has_origins as has_bridge_edits,snapshot as bridge_snapshot
         transition_correction_lineage=bridge_snapshot(payload,folder/'transition-correction-lineage') if has_bridge_edits(payload) else None
+        from surface_clip_scene_source import has_origins as has_surface,snapshot as surface_snapshot
+        surface_lineage=surface_snapshot(payload,folder/'surface-correction-lineage') if has_surface(payload) else None
         geometry['contacts_sha256']=digest;save(folder/'geometry-policy.json',geometry)
         edit_path=None
         if edit is not None:
@@ -185,6 +192,7 @@ def prepare(payload,folder,resolver):
             files_sha256={n:sha256(folder/n) for n in names},implementation_sha256=methods,
             engine_path=str(engine),engine_sha256=sha256(engine),original_selected=True,quality_approved=False,
             training_admitted=False,release_approved=False,at=now())
+        if surface_lineage is not None:prepared['surface_correction_lineage']=surface_lineage
         if speed_path is not None:prepared['rotation_speed_requested']=True
         if 'skin_weight_export' in payload:prepared['skin_weight_export']=payload['skin_weight_export']
         save(folder/'prepared.json',prepared);frozen(folder)
@@ -199,6 +207,10 @@ def frozen(folder,*,current_methods=True):
     require(p['schema']=='strep-studio-native-scene-prepared-v1' and p['original_selected'] is True
         and all(p[k] is False for k in ('quality_approved','training_admitted','release_approved')),'Unapproved source scene required')
     draft=read(folder/'draft.json')
+    from surface_clip_scene_source import has_origins as has_surface,verify as verify_surface
+    surface_lineage=p.get('surface_correction_lineage')
+    require((surface_lineage is not None)==has_surface(draft),'Ground-contact source history selection changed')
+    if surface_lineage is not None:verify_surface(draft,folder/'surface-correction-lineage',surface_lineage)
     require(p.get('skin_weight_export')==draft.get('skin_weight_export'),'Scene weight export selection changed')
     lineage=p.get('correction_lineage')
     from native_correction_lineage import has_origins,verify
@@ -321,6 +333,10 @@ def package(folder,prepared,result):
         from native_correction_lineage import verify,package_files
         verify(read(folder/'draft.json'),folder/'correction-lineage',prepared['correction_lineage'])
         files.update(package_files(folder/'correction-lineage',prepared['correction_lineage']))
+    if prepared.get('surface_correction_lineage') is not None:
+        from surface_clip_scene_source import verify as verify_surface,package_files as surface_files
+        verify_surface(read(folder/'draft.json'),folder/'surface-correction-lineage',prepared['surface_correction_lineage'])
+        files.update(surface_files(folder/'surface-correction-lineage',prepared['surface_correction_lineage']))
     if prepared.get('transition_lineage') is not None:
         from native_transition_lineage import verify as verify_transition,package_files as transition_files
         verify_transition(read(folder/'draft.json'),folder/'transition-lineage',prepared['transition_lineage'])

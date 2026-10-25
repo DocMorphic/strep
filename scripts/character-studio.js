@@ -31,7 +31,8 @@ void (async function characterStudio(){
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneFitEditor}=await import('/native-scene-fit-editor.mjs');
   if(!nativeSceneEditor)throw Error('Scene editor is required');nativeSceneFitEditor=createNativeSceneFitEditor({api,post,getDraft:()=>nativeSceneEditor.snapshot(),setDraft:value=>nativeSceneEditor.bind(value)});},C('nativeSceneFitStatus'),'Character correction editor');
  await initializeOptionalRigEditor(async()=>{const {createSurfaceClipEditor}=await import('/surface-clip-editor.mjs');
-  createSurfaceClipEditor({api,post,getContext:()=>({job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),getPatch:()=>contactEditor.nativePatch()});},C('surfaceClipStatus'),'Ground-contact correction');
+  createSurfaceClipEditor({api,post,getContext:()=>({job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),getPatch:()=>contactEditor.nativePatch(),
+   addSceneSource:nativeSceneEditor?((value,before)=>nativeSceneEditor.addSource(value,before)):undefined,getSceneDraft:nativeSceneEditor?(()=>nativeSceneEditor.snapshot()):undefined});},C('surfaceClipStatus'),'Ground-contact correction');
  await initializeOptionalRigEditor(async()=>{const {createMeshCharacterEditor}=await import('/mesh-character-editor.mjs');
   if(!meshSceneEditor||!nativeSceneFitEditor)throw Error('Object contacts and character bounds are required');createMeshCharacterEditor({api,post,getScene:()=>meshSceneEditor.selection(),getBounds:()=>nativeSceneFitEditor.request()});},C('meshCharacterStatus'),'Object-contact correction');
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneGameEditor}=await import('/native-scene-game-editor.mjs');

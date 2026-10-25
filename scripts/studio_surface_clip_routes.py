@@ -10,6 +10,10 @@ def dispatch_get(handler):
     try:
         from studio_surface_clip_jobs import listing,review,descriptor
         if handler.path=='/api/surface-clip-jobs':return _reply(handler,200,listing())
+        source=re.fullmatch('/api/surface-clip-jobs/([a-f0-9]{32})/attempt/([a-f0-9]{32})/scene-source',handler.path)
+        if source:
+            from surface_clip_scene_source import metadata
+            return _reply(handler,200,metadata(source[1],source[2]))
         match=re.fullmatch('/api/surface-clip-jobs/([a-f0-9]{32})(?:/attempt/([a-f0-9]{32}))?',handler.path)
         if not match:raise ValueError('Choose an exact saved correction')
         return _reply(handler,200,descriptor(match[1],match[2]) if match[2] else review(match[1]))

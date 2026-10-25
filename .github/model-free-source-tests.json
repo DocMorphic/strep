@@ -656,7 +656,8 @@
     "tests/test_native_transition_result_header.py",
     "tests/test_studio_surface_clip.py",
     "tests/test_surface_clip_contact_clock.py",
-    "tests/test_surface_clip_start.py"
+    "tests/test_surface_clip_start.py",
+    "tests/test_surface_clip_scene_source.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",

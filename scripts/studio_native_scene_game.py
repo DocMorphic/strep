@@ -82,6 +82,9 @@ def source_method_names(scene,folder):
         transitions=prepared.get('transition_lineage') is not None,
         transition_corrections=prepared.get('transition_correction_lineage') is not None,
         speed_corrections=history,speed_export=prepared.get('rotation_speed_requested',False))
+    if prepared.get('surface_correction_lineage') is not None:
+        from surface_clip_scene_source import METHODS as SURFACE_METHODS
+        result=tuple(dict.fromkeys(result+SURFACE_METHODS))
     if prepared.get('skin_weight_export'):
         from native_scene_weight_export import methods
         result=tuple(dict.fromkeys(result+methods()))

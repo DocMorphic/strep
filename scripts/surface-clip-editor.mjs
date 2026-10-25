@@ -12,7 +12,11 @@ export function checkedStatus(value,job){
  if(value.result){const r=value.result;if(!['checkpointed','unresolved','complete_numerical_candidate'].includes(r.status)||r.quality_approved!==false||r.release_approved!==false||r.transition_review_required!==true||!Number.isInteger(r.total_keys)||r.total_keys<2||r.validated_through!==undefined&&(!Number.isInteger(r.validated_through)||r.validated_through<0||r.validated_through>=r.total_keys))throw Error('Invalid correction measurements.');}
  return value;
 }
-export function createSurfaceClipEditor({document=globalThis.document,api,post,getContext,getPatch}){
+export function sceneSource(value,job,attempt){
+ if(value?.schema!=='strep-surface-clip-scene-source-v1'||value.job!==job||value.attempt!==attempt||!id(job)||!id(attempt)||value.source_url!==`/files/surface-clip-jobs/${job}/${attempt}/candidate.glb`||![value.glb_sha256,value.result_sha256,value.request_sha256].every(hash)||value.animation_index!==0||!Number.isFinite(value.duration_s)||value.duration_s<=0||value.original_selected!==true||value.transition_review_required!==true||value.scene_contacts_applied!==false||value.quality_approved!==false||value.release_approved!==false)throw Error('Exact completed correction source required.');
+ return clone(value);
+}
+export function createSurfaceClipEditor({document=globalThis.document,api,post,getContext,getPatch,addSceneSource,getSceneDraft}){
  const el=n=>document.getElementById('surfaceClip'+n);let binding=null,tracks=[],contacts=[],busy=false,continuation=null,serial=0;
  const status=t=>{el('Status').textContent=t;},reset=()=>{continuation=null;el('Continue').disabled=true;};
  const numeric=n=>{const s=String(el(n).value).trim(),v=Number(s);if(!s||!Number.isFinite(v))throw Error('Enter a finite '+n+' value.');return v;};
@@ -43,6 +47,11 @@ export function createSurfaceClipEditor({document=globalThis.document,api,post,g
   if(value.can_continue)continuation={job,ticket:clone(value.ticket)};el('Results').replaceChildren();
   const r=value.result,reasons={attempt_budget:'Progress saved; continue to process more keys',invalid_preserved_end:'The protected ending fails the requested checks. Revise targets or allow ending edits in a new job',invalid_incoming_pose:'The protected starting pose fails the requested checks. Allow starting edits in a new job or choose another clip',unresolved_window:'The next segment could not meet your limits. Inspect the candidate or revise the request'};status(`${value.status}${r?.validated_through!==undefined?` · checked ${r.validated_through+1}/${r.total_keys} keys`:''}: ${value.error||reasons[r?.reason]||'Saved correction state'}. Originals remain selected; scene, engine, transition and motion-quality review are still required.`);
   for(const d of [...value.downloads,...(value.preview_url?[{label:'Compare saved clips',url:value.preview_url}]:[])]){const a=document.createElement('a');a.className='btn';a.href=d.url;a.textContent=d.label;a.target='_blank';a.rel='noopener';el('Results').append(a);}
+  if(r?.status==='complete_numerical_candidate'&&r.whole_clip_sampled===true&&r.validated_through===r.total_keys-1&&addSceneSource&&getSceneDraft&&value.preview_url){
+   const attempt=new URL(value.preview_url,'http://localhost').searchParams.get('attempt'),button=document.createElement('button');button.type='button';button.className='btn';button.textContent='Add completed candidate to scene';
+   button.onclick=guard(async()=>{if(el('Jobs').value!==job)throw Error('Correction selection changed; inspect it again.');const before=getSceneDraft(),m=sceneSource(await api(`/api/surface-clip-jobs/${job}/attempt/${attempt}/scene-source`),job,attempt);
+    if(el('Jobs').value!==job)throw Error('Correction selection changed; inspect it again.');addSceneSource(m,before);status('Candidate added using the scene editor’s actor name and placement. Original clip and cleanup history will be retained in scene exports. Author scene contacts and transitions separately.');});el('Results').append(button);
+  }
  });
  el('Continue').onclick=guard(async()=>{const saved=continuation;if(!saved||el('Jobs').value!==saved.job)throw Error('Inspect the saved job first.');const current=checkedStatus(await api(`/api/surface-clip-jobs/${saved.job}`),saved.job);if(el('Jobs').value!==saved.job||continuation!==saved||!current.can_continue||key(current.ticket)!==key(saved.ticket))throw Error('Saved progress changed; inspect it again.');const value=await post(`/api/surface-clip-jobs/${saved.job}/continue`,saved.ticket);if(value.id!==saved.job)throw Error('Unexpected continued job.');reset();status('Continuing with the saved clip, contacts, limits and endpoint policy.');});
  reset();return {request,refresh};

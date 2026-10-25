@@ -80,3 +80,10 @@ el('WeightExport').checked=true;await el('WeightExport').onchange();await el('Bu
 review={status:'complete',sampled_conditions_pass:false,source_contacts_pass:true,samples:120,skin_weight_export:'godot-u16-original-fidelity-v1',original_reference_fidelity_pass:false,downloads:[]};
 await el('Review').onclick();assert.match(el('Results').children[0].textContent,/Original mesh fidelity: fail/);
 console.log('Native scene draft, patch, source selection, bounds and saved-result workflows passed offline.');
+editor.bind(emptyDraft());el('ActorName').value='Cleanup';el('ActorPosition').value='1, 0, 2';
+const beforeSource=editor.snapshot(),corrected={...metadata,source_url:`/files/surface-clip-jobs/${'a'.repeat(32)}/${'b'.repeat(32)}/candidate.glb`};
+editor.addSource(corrected,beforeSource);assert.equal(editor.snapshot().scene.actors.Cleanup.glb,corrected.source_url);assert.deepEqual(editor.snapshot().scene.actors.Cleanup.placement.translation_m,[1,0,2]);
+el('ActorName').value='Second';assert.throws(()=>editor.addSource(corrected,beforeSource),/draft changed/);
+assert.throws(()=>editor.addSource({...corrected,duration_s:3},editor.snapshot()),/different durations/);
+assert.throws(()=>editor.addSource({...corrected,glb_sha256:'wrong'},editor.snapshot()),/metadata/);
+assert.deepEqual(Object.keys(editor.snapshot().scene.actors),['Cleanup']);
