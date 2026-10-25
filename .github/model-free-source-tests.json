@@ -90,6 +90,7 @@
     "tests/test_convex_partner_surface.py",
     "tests/test_native_key_control_taper.py",
     "tests/test_native_self_separation_cuts.py",
+    "tests/test_native_surface_locations.py",
     "tests/test_native_self_surface.py",
     "tests/test_native_containment_crosscheck.py",
     "tests/test_native_meeting_orientation.py",

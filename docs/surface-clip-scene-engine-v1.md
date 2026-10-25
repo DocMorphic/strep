@@ -57,6 +57,11 @@ repair against the immutable original. Keep the failed geometry result until
 that work supplies evidence. Later correction/transition ancestry transport
 also needs validation beyond the direct scene/game-package path.
 
+The subsequent [location diagnostic](native-surface-locations-v1.md) preserves
+all pairs and identifies the arm/head and shoulder/torso regions. Proper
+crossings are absent in the original default-node reference pose but present
+in the sampled animation; duplicate vertex attributes do not exempt them.
+
 This study uses the separately exported/reloaded native Animation resource and
 authoring seeks. It adds no ordinary-import or forward-playback acceptance,
 live browser test, GPU rendering, physics, loop/transition, partner/object
