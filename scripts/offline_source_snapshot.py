@@ -34,12 +34,30 @@ def capture_project(root,directories=PROJECT_DIRECTORIES):
     return dict(schema='strep-offline-project-source-v1',directories=list(directories),files_sha256=files)
 
 
-def copy_project(root,destination,snapshot):
-    root,destination=Path(root).resolve(),Path(destination).resolve()
-    if destination.is_relative_to(root) or root.is_relative_to(destination):
+def validate_destination(root, destination, directories=PROJECT_DIRECTORIES):
+    """Permit isolated local installs without copying a source subtree into itself."""
+    root=Path(root).resolve();requested=Path(destination).absolute();destination=requested.resolve()
+    if requested.is_relative_to(root) and not destination.is_relative_to(root):
+        raise ValueError('Local installation path escapes the project')
+    if root.is_relative_to(destination):
         raise ValueError('Use a separate installation directory')
+    if destination.is_relative_to(root):
+        local=root/'.local/installations'
+        if destination==local or not destination.is_relative_to(local):
+            raise ValueError('Use a separate installation under .local/installations/<name>')
+    for directory in directories:
+        source=contained(root,directory)
+        if destination.is_relative_to(source) or source.is_relative_to(destination):
+            raise ValueError('Installation must be separate from every copied source directory')
+    return destination
+
+
+def copy_project(root,destination,snapshot):
+    root=Path(root).resolve()
+    destination=validate_destination(root,destination,snapshot['directories'])
     for relative,digest in snapshot['files_sha256'].items():
         source,target=contained(root,relative),contained(destination,relative)
+        if source.is_relative_to(destination):raise ValueError('Source file overlaps installation output')
         if target.exists():raise ValueError('Preserve existing project copy: '+relative)
         target.parent.mkdir(parents=True,exist_ok=True)
         shutil.copyfile(source,target)

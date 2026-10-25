@@ -4,7 +4,7 @@ This experiment copies the existing licensed local installation to a separate fo
 
 ## Build and launch
 
-From the development project, run `.venv\Scripts\python.exe scripts\build_offline_install.py "C:\path\to\new installation"`. The destination must not exist and must be outside the development folder. The current builder requires Windows, the acquired pinned models, the clean pinned Kimodo checkout, the installed Python dependencies and the acquired Godot engine. It requires at least 40 GiB free space for the copy and subsequent encoder cache.
+From the development project, run `.venv\Scripts\python.exe scripts\build_offline_install.py ".local\installations\Personal install"`. The destination must not exist. Keep local test installations under `.local/installations/<name>` inside Strep; these files are ignored by Git. The builder also retains support for explicitly chosen external destinations. The current builder requires Windows, the acquired pinned models, the clean pinned Kimodo checkout, the installed Python dependencies and the acquired Godot engine. It requires at least 40 GiB free space for the copy and subsequent encoder cache.
 
 The result includes `Strep.cmd`, standalone Python 3.10, the installed dependency versions, locally exported Kimodo source, four pinned model snapshots, character/viewer assets, engine integration scripts and Godot. `Strep.cmd` starts the Studio; `Strep.cmd --port 8770` selects a different loopback port. `Strep.cmd verify` hashes every inventoried file, and `Strep.cmd probe` checks runtime paths, source identity and CUDA. A compatible NVIDIA GPU and its Windows driver remain host requirements.
 
@@ -22,7 +22,9 @@ The workflow checker imports the bundled licensed CesiumMan, transfers the new m
 
 The scene viewer now discovers available scene collections through a local endpoint. It accepts an empty workspace and excludes engine-test manifests that contain cases rather than scenes. Existing development reports remain available in the original installation.
 
-## Current evidence
+## Historical installation evidence
+
+The paths below record the original September experiment. They are provenance, not instructions to create new sibling folders. New local builds use the layout above; this path change does not claim a new full installation or inference run.
 
 The separate installation is `C:\wassup\Strep Offline Test`, served on port 8770. The original Studio remains on 8768. Build, probe, source checks, CUDA tensor check, external-package canary, Python network-guard checks, empty-workspace UI and all 34,655 revision-2 inventory hashes passed. The initial failed probe and original `site.py` are preserved. Final revision 3 contains four explicitly verified UI file updates on top of the complete revision-2 verification; before/after hashes and manifests are retained.
 

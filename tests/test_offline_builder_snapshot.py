@@ -60,3 +60,28 @@ def test_copied_source_change_during_final_inventory_prevents_completion(environ
     with pytest.raises(RuntimeError,match='during inventory'):builder.build(destination)
     assert read(destination/'build-status.json')['status']!='complete'
     assert not (destination/'installation.json').exists()
+
+
+def test_builder_completes_under_local_installations_without_recursive_copy(environment):
+    root,_,_=environment;destination=root/'.local/installations/Personal install'
+    builder.build(destination)
+    assert read(destination/'build-status.json')['status']=='complete'
+    source=read(destination/'project-source.json');install=read(destination/'installation.json')
+    assert all(not name.startswith('.local/') for name in source['files_sha256'])
+    assert not (destination/'.local').exists()
+    for relative,digest in source['files_sha256'].items():
+        assert sha256(destination/relative)==sha256(root/relative)==digest
+        assert install['files_sha256'][relative]==digest
+    with pytest.raises(ValueError,match='existing'):builder.build(destination)
+
+
+def test_low_storage_creates_no_local_installation_directories(environment,monkeypatch):
+    root,_,_=environment;destination=root/'.local/installations/Personal install'
+    observed=[]
+    def space(path):
+        observed.append(path);assert path.exists()
+        return SimpleNamespace(free=39*1024**3)
+    monkeypatch.setattr(builder.shutil,'disk_usage',space)
+    with pytest.raises(RuntimeError,match='40 GiB'):builder.build(destination)
+    assert observed==[root]
+    assert not (root/'.local').exists()

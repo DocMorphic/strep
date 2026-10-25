@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import sys
 from strep import ROOT, read, save, sha256, source_check, model_directory, now
-from offline_source_snapshot import eligible_files,capture_project,copy_project,verify_project
+from offline_source_snapshot import eligible_files,capture_project,copy_project,verify_project,validate_destination
 
 
 def copy_tree(source, destination):
@@ -21,14 +21,16 @@ def copy_tree(source, destination):
 
 
 def build(destination):
-    destination = destination.resolve()
-    if destination.exists() or destination.is_relative_to(ROOT) or ROOT.is_relative_to(destination):
-        raise ValueError('Choose a new installation folder outside the development project')
+    destination = validate_destination(ROOT,destination)
+    if destination.exists():
+        raise ValueError('Choose a new installation folder; preserve existing copies')
     commit = source_check()
     # 23 GiB copied files plus regenerated encoder matrices and working outputs.
-    if shutil.disk_usage(destination.parent).free < 40 * 1024**3:
+    storage_parent = destination.parent
+    while not storage_parent.exists():storage_parent = storage_parent.parent
+    if shutil.disk_usage(storage_parent).free < 40 * 1024**3:
         raise RuntimeError('At least 40 GiB free space required')
-    destination.mkdir()
+    destination.mkdir(parents=True)
     save(destination / 'build-status.json', {'status': 'building', 'started_at': now()})
     print('Capturing and copying Strep project source', flush=True)
     project_snapshot = capture_project(ROOT)

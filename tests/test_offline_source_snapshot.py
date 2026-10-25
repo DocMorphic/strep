@@ -47,3 +47,35 @@ def test_unsafe_inventory_path_and_overlapping_destination_rejected(source):
     with pytest.raises(ValueError,match='separate'):snapshot.copy_project(root,root/'nested',record)
     record['files_sha256']['../outside']='0'*64
     with pytest.raises(ValueError,match='Unsafe'):snapshot.copy_project(root,dest,record)
+
+
+@pytest.mark.parametrize('relative',['.local/installations/Personal copy','.local/installations/group/Second'])
+def test_local_install_copy_excludes_itself_and_other_local_content(source,relative):
+    root,_=source;dest=root/relative
+    retained=root/'.local/archive/retained.txt';retained.parent.mkdir(parents=True);retained.write_text('keep')
+    record=snapshot.capture_project(root);snapshot.copy_project(root,dest,record)
+    assert snapshot.verify_project(root,dest,record)==5
+    assert snapshot.capture_project(root)==record
+    assert not (dest/'.local').exists() and retained.read_text()=='keep'
+
+
+@pytest.mark.parametrize('relative',['.','.local/installations','scripts/copy','.local/reviews/copy','assets/copy','.local/installations/../../scripts/copy'])
+def test_local_destination_must_be_isolated(source,relative):
+    root,_=source
+    with pytest.raises(ValueError):snapshot.validate_destination(root,root/relative)
+
+
+def test_custom_capture_cannot_include_installation_subtree(source):
+    root,_=source;dest=root/'.local/installations/copy'
+    (root/'.local').mkdir()
+    record=snapshot.capture_project(root,('scripts','.local'))
+    with pytest.raises(ValueError,match='separate'):snapshot.copy_project(root,dest,record)
+    assert not dest.exists()
+
+
+def test_inventory_cannot_read_from_output_tree(source):
+    root,_=source;dest=root/'.local/installations/copy';dest.mkdir(parents=True)
+    data=dest/'already.txt';data.write_text('retained')
+    record=snapshot.capture_project(root);record['files_sha256']['.local/installations/copy/already.txt']=snapshot.sha256(data)
+    with pytest.raises(ValueError,match='overlaps'):snapshot.copy_project(root,dest,record)
+    assert data.read_text()=='retained'

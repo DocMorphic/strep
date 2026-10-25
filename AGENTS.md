@@ -16,8 +16,8 @@ The repository is a development source snapshot, not a fully bundled offline ins
 
 Keep all Strep work inside this project folder. Do not create sibling test installs,
 review copies, snapshots or worktrees in `C:\wassup`. Use `.local/worktrees/` for
-additional checkouts, `.local/reviews/` for extracted review packets, and
-`.local/archive/` for retained local snapshots. Generated studies stay in `reports/`.
+additional checkouts, `.local/reviews/` for extracted review packets,
+`.local/installations/` for personal offline installs, and `.local/archive/` for retained local snapshots. Generated studies stay in `reports/`.
 `.local/` is ignored and must not be staged or published.
 
 When moving a Git worktree, use Git's worktree move operation and verify its
