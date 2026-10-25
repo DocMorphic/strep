@@ -16,9 +16,11 @@ not generate a new action or establish motion realism.
    select exactly one mesh vertex in Mesh contacts, enter its target XYZ in clip
    coordinates and its closed time interval, then add it. Each selected point is
    bound to a mesh node, primitive and vertex. A multi-vertex selection is rejected.
-4. The starting pose stays fixed and must already pass. The ending pose is also
-   fixed by default. Allowing it to change requires the explicit acknowledgment.
-   Preserved poses still require transition/velocity review after adjacent edits.
+4. Starting and ending poses are fixed by default and must already pass. Each
+   endpoint has its own edit option and transition-review acknowledgment. Enable
+   starting edits when the rough clip already begins below the floor. Only the
+   first window can edit the starting pose; later windows preserve accepted
+   motion. Preserved poses still require velocity review after adjacent edits.
 5. Choose an attempt budget and submit. **Refresh jobs**, select the saved job,
    then **Inspect selected job**. A checkpointed or resource-interrupted attempt
    can continue from its verified saved inputs and constraints. Changing the
@@ -75,3 +77,32 @@ the combined binding/replay verifier is in
 
 The existing get-up review remains separate. Its ordinary-import endpoint clock
 failure and missing human quality/cleanup evidence are not waived by this work.
+
+## Starting-pose repair
+
+The v3 core protocol and v2 Studio request add explicit starting-pose permission.
+Before its opening window passes, a job has no accepted prefix or persisted
+checkpoint. Failed openings retain their candidate and decoded rejection report.
+After acceptance, continuation verifies the normal receipt chain and freshly
+audits the entire accepted prefix. Old core protocols require their recorded
+implementation. Old Studio requests remain readable but cannot launch under the
+new protocol; submit a new request with both boundary policies explicit.
+
+The need was measured on all 21 saved neutral-height transfers: seven actions
+(jump-land, crawl, dance, wave, kick, get-up and run-roll-stand) on CesiumMan and
+the female/male superhero rigs. Every clip passed the shared-clock/layout check,
+but 19 failed at least one protected endpoint and 18 failed at the start under
+the unchanged 5 mm floor limit. Only the two superhero run-roll-stand clips had
+both endpoints within that limit. These are endpoint measurements, not action
+correctness or whole-clip acceptance. The screen and raw inputs remain bound in
+`reports/studio-surface-source-screen-v1/` in the primary checkout.
+
+The starting-pose implementation passes 115 Python regressions in 730.16 seconds,
+including all earlier clip/job/boundary tests, actual starting-contact repairs,
+two-key and both-endpoint edits, full-versus-resumed equivalence, rejected
+openings without a checkpoint, interruption after the first atomic checkpoint,
+and current/legacy Studio policy handling. The resource guard completed and
+735 recorded observations replay. Editor and comparison Node checks also pass.
+The current CI inventories contain 656 full / 205 focused Python test files.
+Evidence is retained in `reports/surface-clip-start-tests-v1/` in the development
+checkout. This does not establish production-clip completeness or realism.

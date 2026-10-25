@@ -690,7 +690,7 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
 <p>Correct floor penetration and static surface-point targets on the selected character clip. This works in the clip’s coordinates with the ground at Y = 0. Use the scene tools for objects, partners and moving targets.</p>
 <button id="surfaceClipBind" class="btn" type="button">Use selected character clip</button><p id="surfaceClipBinding">No clip selected.</p>
 <fieldset id="surfaceClipFields" disabled><legend>Editable motion</legend>
-<p>Choose up to 20 joints and their maximum rotation changes. The root can move within the limits below. The initial pose must already pass; it stays fixed.</p><div id="surfaceClipJoints"></div>
+<p>Choose up to 20 joints and their maximum rotation changes. The root can move within the limits below. Protected endpoint poses must already pass the requested checks.</p><div id="surfaceClipJoints"></div>
 <div class="rig-form-grid">
 <label>Horizontal root change (m)<input id="surfaceClipHorizontal" type="number" value="0.15" min="0.00001" step="0.01"></label>
 <label>Upward root change (m)<input id="surfaceClipVertical" type="number" value="0.75" min="0.00001" step="0.01"></label>
@@ -701,6 +701,8 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
 <p>Optional contacts: pick one vertex in Mesh contacts, enter its fixed target in clip coordinates, then add the time interval. Leave the list empty for floor-only cleanup.</p>
 <div class="rig-form-grid"><label>Target X (m)<input id="surfaceClipX" type="number" value="0" step="0.01"></label><label>Target Y (m)<input id="surfaceClipY" type="number" value="0" step="0.01"></label><label>Target Z (m)<input id="surfaceClipZ" type="number" value="0" step="0.01"></label><label>Start (seconds)<input id="surfaceClipStart" type="number" value="0" min="0" step="any"></label><label>End (seconds)<input id="surfaceClipEnd" type="number" value="0" min="0" step="any"></label></div>
 <button id="surfaceClipAdd" class="btn" type="button">Add picked point target</button><div id="surfaceClipContacts"></div>
+<label><input id="surfaceClipEditStart" type="checkbox"> Allow the starting pose to change</label>
+<label><input id="surfaceClipStartAck" type="checkbox"> I will review the changed starting pose and its incoming transition</label>
 <label><input id="surfaceClipEditEnd" type="checkbox"> Allow the ending pose to change</label>
 <label><input id="surfaceClipAck" type="checkbox"> I will review the changed ending and its transitions</label>
 <p>Endpoint poses are preserved by default. Timing, velocity, scene collisions and engine import still need review after any correction.</p>

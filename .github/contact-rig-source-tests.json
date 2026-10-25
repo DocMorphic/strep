@@ -204,7 +204,8 @@
     "tests/test_native_pose_reference.py",
     "tests/test_native_transition_result_header.py",
     "tests/test_studio_surface_clip.py",
-    "tests/test_surface_clip_contact_clock.py"
+    "tests/test_surface_clip_contact_clock.py",
+    "tests/test_surface_clip_start.py"
   ],
   "node_tests": [
     "tests/test_native_scene_fit_editor.mjs",

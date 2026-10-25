@@ -143,10 +143,12 @@ class SurfaceClip:
             failed_samples=sum(not r['numerical_pose_pass'] for r in rows),maximum_floor_depth_m=max(r['floor_depth_m'] for r in rows),maximum_contact_error_m=max(r['contact_error_m'] for r in rows),
             clip_sha256=sha256(path),quality_approved=False,release_approved=False)
 
-    def build_window(self,frames,seed,*,preserve_last=False):
+    def build_window(self,frames,seed,*,preserve_last=False,preserve_first=True):
         self.frames(frames,window=True)
         if type(preserve_last) is not bool or preserve_last and frames[-1]!=len(self.keys)-1:
             raise ValueError('Explicit preservation applies only to the final native key')
+        if type(preserve_first) is not bool or not preserve_first and frames[0]!=0:
+            raise ValueError('Only the initial window can edit its incoming key')
         seed=np.asarray(seed,float)
         if seed.shape!=(len(frames),self.width) or not np.isfinite(seed).all():
             raise ValueError('Complete finite window seed required')
@@ -163,9 +165,9 @@ class SurfaceClip:
             assert p.floor==s['floor_depth_m'] and p.contact==s['contact_error_m']
             if key_budget:p.bounds[1]=(root_reserve,p.vertical)
             return p
-        fixed={0,len(frames)-1} if preserve_last else {0}
+        fixed=({0} if preserve_first else set())|({len(frames)-1} if preserve_last else set())
         keys=[problem(m,float(self.keys[f]),reserve=0. if i in fixed else 1.,key_budget=i not in fixed) for i,(m,f) in enumerate(zip(models,frames))]
-        keys[0].bounds=[(float(v),float(v)) for v in seed[0]]
+        if preserve_first:keys[0].bounds=[(float(v),float(v)) for v in seed[0]]
         if preserve_last:keys[-1].bounds=[(float(v),float(v)) for v in seed[-1]]
         native=CoupledPoseWindow(keys,root_step_m=self.settings['root_step_m']-self.request['fit_step_reserve_m'],rotation_step_degrees=self.settings['rotation_step_degrees']-np.rad2deg(self.request['fit_step_reserve_radians']))
         checks={};samples={};clock=self.clock(frames)
@@ -175,7 +177,7 @@ class SurfaceClip:
                 if not a<t<b:continue
                 fraction=float((t-a)/(b-a));model=SurfacePoseModel(self.rig,self.reader.sample(float(t)),self.root,self.nodes);model.skin=models[0].skin
                 mapper=InterpolatedPoseMap(models[i],models[i+1],model,fraction)
-                reserve=(fraction if i==0 else 1.)*(1-fraction if preserve_last and i==len(frames)-2 else 1.)
+                reserve=(fraction if preserve_first and i==0 else 1.)*(1-fraction if preserve_last and i==len(frames)-2 else 1.)
                 checks[float(t)]=(i,mapper,problem(model,float(t),reserve=reserve))
             for fraction in self.request['initial_fractions']:
                 t=float(np.linspace(a,b,9)[int(fraction*8)]);samples[t]=checks[t]

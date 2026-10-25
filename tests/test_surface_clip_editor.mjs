@@ -35,6 +35,10 @@ await el('Review').onclick();assert.equal(el('Continue').disabled,false);assert.
 await el('Continue').onclick();assert.equal(posted.at(-1).url,`/api/surface-clip-jobs/${job}/continue`);assert.deepEqual(posted.at(-1).payload,saved.ticket);
 await el('Review').onclick();saved.ticket.state_sha256='d'.repeat(64);await el('Continue').onclick();assert.equal(posted.length,3);assert.match(el('Status').textContent,/progress changed/);
 let resolve;wait=new Promise(r=>resolve=r);const pending=el('Bind').onclick();context.variant='transfer';resolve(binding);await pending;assert.match(el('Status').textContent,/selection changed/);assert.equal(el('Fields').disabled,true);
+wait=null;context.variant='input';await el('Bind').onclick();el('Joints').children[0].children[0].checked=true;
+el('EditStart').checked=true;const priorPosts=posted.length;await el('Build').onclick();assert.equal(posted.length,priorPosts);assert.match(el('Status').textContent,/Acknowledge/);
+el('StartAck').checked=true;await el('Build').onclick();assert.equal(posted.at(-1).payload.start_policy,'edit');assert.equal(posted.at(-1).payload.acknowledge_changed_start,true);
+el('EditStart').onchange();assert.equal(el('StartAck').checked,false);
 const preview={kind:'native_surface_correction',preview_url:`/files/surface-clip-jobs/${job}/${attempt}/original.glb`,preview_sha256:digest,preview_start_s:0,preview_end_s:2,animation_index:0,animation_count:1};
 validateNativePreview(preview);assert.equal(selectNativePreviewClip(preview,[{duration:2}]).duration,2);
 for(const url of [preview.preview_url+'?x=1',preview.preview_url.replace(attempt,'..'),'/files/action-jobs/x/a.glb'])assert.throws(()=>validateNativePreview({...preview,preview_url:url}));

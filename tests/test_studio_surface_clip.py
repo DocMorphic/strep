@@ -15,10 +15,10 @@ from strep import read,save,sha256
 
 
 def payload():
-    return dict(schema='strep-studio-surface-clip-v1',source_job='fixture',variant='input',source_sha256='a'*64,
+    return dict(schema='strep-studio-surface-clip-v2',source_job='fixture',variant='input',source_sha256='a'*64,
         root=0,rotations=[1,2,3],angles_degrees=[45.,45.,45.],contacts=[],
         limits=dict(root_horizontal_m=.15,root_vertical_m=.75,floor_depth_m=.005,contact_error_m=.02,root_step_m=.025,rotation_step_degrees=5.),
-        end_policy='preserve',acknowledge_changed_end=False,maximum_windows=1,soft_seconds=120)
+        end_policy='preserve',acknowledge_changed_end=False,start_policy='preserve',acknowledge_changed_start=False,maximum_windows=1,soft_seconds=120)
 
 
 @pytest.fixture
@@ -30,7 +30,7 @@ def store(tmp_path,monkeypatch):
     return short
 
 
-@pytest.mark.parametrize('fault',['unknown','root','duplicate','angle','nan','contact_ref','contact_time','end_ack','windows','seconds','hash','job'])
+@pytest.mark.parametrize('fault',['unknown','root','duplicate','angle','nan','contact_ref','contact_time','end_ack','start_ack','windows','seconds','hash','job'])
 def test_invalid_requests_do_not_create_jobs(store,fault):
     p=payload()
     if fault=='unknown':p['extra']=1
@@ -43,6 +43,7 @@ def test_invalid_requests_do_not_create_jobs(store,fault):
         if fault=='contact_ref':p['contacts'][0]['vertex'][0]=False
         else:p['contacts'][0]['end_time_s']=-1
     elif fault=='end_ack':p['end_policy']='edit'
+    elif fault=='start_ack':p['start_policy']='edit'
     elif fault=='windows':p['maximum_windows']=21
     elif fault=='seconds':p['soft_seconds']=121
     elif fault=='hash':p['source_sha256']='x'
@@ -61,6 +62,16 @@ def test_request_binding_stale_ticket_and_implementation(store,monkeypatch):
     assert jobs.review(folder.name)['status']=='ready'
     p=read(folder/'request.json');p['root']=1;save(folder/'request.json',p)
     with pytest.raises(ValueError,match='request changed'):jobs.review(folder.name)
+
+
+def test_legacy_studio_jobs_remain_readable_but_cannot_launch_under_new_policy(store):
+    p=payload();p['schema']='strep-studio-surface-clip-v1';del p['start_policy'];del p['acknowledge_changed_start']
+    jobs.validate(p)
+    with pytest.raises(ValueError,match='boundary policy'):jobs.prepare(p)
+    folder=jobs.folder_for('e'*32);folder.mkdir(parents=True)
+    save(folder/'request.json',p);save(folder/'prepared.json',dict(request_sha256=sha256(folder/'request.json'),methods=jobs.methods()))
+    assert jobs.review(folder.name)['start_policy']=='preserve'
+    with pytest.raises(ValueError,match='boundary policy'):jobs.launch(folder)
 
 
 def publish_fixture(folder):
@@ -158,10 +169,12 @@ def test_real_adapter_snapshots_exact_mesh_and_runs_core(store,monkeypatch):
     monkeypatch.setattr(studio_native_support,'source',lambda *_:(None,None,None,{'root_node':0},path))
     p=payload();p['source_sha256']=sha256(path);p['contacts']=[dict(vertex=[6,0,0],target_m=[-.22,.19,-.02],start_time_s=.010123,end_time_s=.010125)]
     p['limits']['contact_error_m']=1.
+    p['start_policy']='edit';p['acknowledge_changed_start']=True
     folder=jobs.prepare(p);attempt=folder/'attempts'/('c'*32);attempt.mkdir(parents=True)
     jobs.execute(folder,attempt)
     core=jobs.core_folder(folder);bound=surface_clip_job.request_for(core)
     assert bound['clip']['contacts'][0]['vertex']==0 and bound['clip']['contacts'][0]['start_time_s']==.010123
+    assert bound['start_policy']=='edit' and bound['acknowledge_changed_start'] is True
     result=read(attempt/'result.json');assert result['summary']['status']=='checkpointed'
     assert result['summary']['validated_through']>0 and 'candidate' in result['files']
     first=result['summary']['validated_through']

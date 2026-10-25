@@ -33,16 +33,18 @@ def solver_options(value):
     return dict(value)
 
 
-def boundary_policy(end_policy, acknowledge_changed_end):
-    require(type(end_policy) is str and end_policy in ('preserve', 'edit'), 'Choose preserve or edit for the ending pose')
+def boundary_policy(end_policy, acknowledge_changed_end, *, boundary='ending'):
+    require(type(end_policy) is str and end_policy in ('preserve', 'edit'), f'Choose preserve or edit for the {boundary} pose')
     require(type(acknowledge_changed_end) is bool and acknowledge_changed_end == (end_policy == 'edit'),
-            'Editing the ending pose requires explicit transition-review acknowledgment')
+            f'Editing the {boundary} pose requires explicit transition-review acknowledgment')
 
 
-def prepare(folder, source, initial, *, clip, solver, end_policy='preserve', acknowledge_changed_end=False):
+def prepare(folder, source, initial, *, clip, solver, end_policy='preserve', acknowledge_changed_end=False,
+            start_policy='preserve', acknowledge_changed_start=False):
     """Copy inputs once; no source-file or candidate mutation after preparation."""
     folder = Path(folder).resolve()
     boundary_policy(end_policy, acknowledge_changed_end)
+    boundary_policy(start_policy, acknowledge_changed_start, boundary='starting')
     require(isinstance(clip, dict), 'Explicit clip configuration required')
     solver = solver_options(solver)
     json.dumps(clip, allow_nan=False)
@@ -54,8 +56,9 @@ def prepare(folder, source, initial, *, clip, solver, end_policy='preserve', ack
     for path, name, digest in zip((source, initial), ('source.glb', 'initial.glb'), hashes):
         shutil.copyfile(path, folder/name)
         require(sha256(path) == sha256(folder/name) == digest, 'Input changed during preparation')
-    save(folder/'request.json', dict(schema='strep-surface-clip-job-v2', clip=clip,
+    save(folder/'request.json', dict(schema='strep-surface-clip-job-v3', clip=clip,
          end_policy=end_policy, acknowledge_changed_end=acknowledge_changed_end,
+         start_policy=start_policy, acknowledge_changed_start=acknowledge_changed_start,
          solver=solver, inputs=dict(zip(('source.glb', 'initial.glb'), hashes)),
          methods=methods, runtime=versions, quality_approved=False, release_approved=False))
     save(folder/'prepared.json', dict(request_sha256=sha256(folder/'request.json')))
@@ -67,8 +70,9 @@ def request_for(folder):
     request = read(folder/'request.json')
     require(sha256(folder/'request.json') == read(folder/'prepared.json')['request_sha256'],
             'Prepared correction request changed')
-    require(request['schema'] == 'strep-surface-clip-job-v2', 'Use the recorded implementation for older correction protocols')
+    require(request['schema'] == 'strep-surface-clip-job-v3', 'Use the recorded implementation for older correction protocols')
     boundary_policy(request['end_policy'], request['acknowledge_changed_end'])
+    boundary_policy(request['start_policy'], request['acknowledge_changed_start'], boundary='starting')
     require(request['methods'] == {p.name: sha256(p) for p in sorted(Path(__file__).parent.glob('*.py'))},
             'Correction implementation changed; preserve this job and prepare a new one')
     require(request['runtime'] == runtime(), 'Correction runtime changed')
@@ -86,11 +90,12 @@ def artifact(folder, name):
     return path
 
 
-def editable_frames(frames, key_count, end_policy):
-    return [f for f in frames[1:] if end_policy == 'edit' or f != key_count-1]
+def editable_frames(frames, key_count, end_policy, start_policy='preserve'):
+    editable=frames if start_policy=='edit' and frames[0]==0 else frames[1:]
+    return [f for f in editable if end_policy == 'edit' or f != key_count-1]
 
 
-def preserved_boundaries(context, initial, candidate, end_policy):
+def preserved_boundaries(context, initial, candidate, end_policy, start_policy='preserve'):
     from rig_asset import RigAsset
     from native_support_clock import NativeSupportSampler
     readers = []
@@ -99,7 +104,7 @@ def preserved_boundaries(context, initial, candidate, end_policy):
         readers.append(NativeSupportSampler(rig.document, rig.binary, context.animation_index))
     before, after = readers
     require(len(before.channels) == len(after.channels), 'Boundary channel population changed')
-    indices = [0, -1] if end_policy == 'preserve' else [0]
+    indices = ([0] if start_policy=='preserve' else [])+([-1] if end_policy=='preserve' else [])
     for a, b in zip(before.channels, after.channels):
         require(a[:2] == b[:2] and a[2].tobytes() == b[2].tobytes()
                 and a[3][indices].tobytes() == b[3][indices].tobytes(), 'Protected boundary key values changed')
@@ -110,17 +115,19 @@ def _resume(folder, context, request, attempt):
     if not (folder/'state.json').exists():
         initial = context.audit(folder/'initial.glb', [0])
         save(attempt/'incoming-audit.json', initial)
-        if not initial['passed']: return None
+        edit_start=request['start_policy']=='edit'
+        if not initial['passed'] and not edit_start: return None
         state = dict(request_sha256=sha256(folder/'request.json'), current_clip='initial.glb',
-                     clip_sha256=request['inputs']['initial.glb'], finalized_through=0,
-                     validated_through=0, next_start=0, accepted=[], quality_approved=False,
+                     clip_sha256=request['inputs']['initial.glb'], finalized_through=-1 if edit_start else 0,
+                     validated_through=-1 if edit_start else 0, next_start=0, accepted=[], quality_approved=False,
                      release_approved=False)
-        save(folder/'state.json', state)
+        if not edit_start:save(folder/'state.json', state)
         return state
     state = read(folder/'state.json')
     require(state['request_sha256'] == sha256(folder/'request.json'), 'Checkpoint request mismatch')
     require(isinstance(state['accepted'], list) and len(state['accepted']) <= len(context.keys)-1,
             'Bounded checkpoint chain required')
+    require(request['start_policy']=='preserve' or bool(state['accepted']), 'Editable start needs an accepted opening window')
     expected_clip, expected_hash, finalized, validated, next_start = 'initial.glb', request['inputs']['initial.glb'], 0, 0, 0
     for receipt in state['accepted']:
         record_path = artifact(folder, receipt['path'])
@@ -137,8 +144,8 @@ def _resume(folder, context, request, attempt):
         require(audit['passed'] is True and audit['frames'] == frames
                 and audit['clip_sha256'] == record['artifacts']['candidate.glb']
                 and export['unchanged_key_values_verified'] is True
-                and export['preserved_through'] == next_start
-                and export['edited_keys'] == editable_frames(frames, len(context.keys), request['end_policy']), 'Invalid decoded acceptance evidence')
+                and export['preserved_through'] == (-1 if next_start==0 and request['start_policy']=='edit' else next_start)
+                and export['edited_keys'] == editable_frames(frames, len(context.keys), request['end_policy'],request['start_policy']), 'Invalid decoded acceptance evidence')
         expected_clip = (record_path.parent/'candidate.glb').relative_to(folder).as_posix()
         expected_hash = record['artifacts']['candidate.glb']
         validated = frames[-1]
@@ -146,14 +153,14 @@ def _resume(folder, context, request, attempt):
         next_start = None if finalized == len(context.keys)-1 else frames[1]
     require((state['current_clip'], state['clip_sha256'], state['finalized_through'], state['validated_through'], state['next_start'])
             == (expected_clip, expected_hash, finalized, validated, next_start), 'Checkpoint position differs from accepted chain')
-    preserved_boundaries(context, folder/'initial.glb', artifact(folder, expected_clip), request['end_policy'])
+    preserved_boundaries(context, folder/'initial.glb', artifact(folder, expected_clip), request['end_policy'],request['start_policy'])
     replay = context.audit(artifact(folder, expected_clip), list(range(validated+1)))
     save(attempt/'resume-audit.json', replay)
     require(replay['passed'], 'Accepted prefix no longer passes decoded checks')
     return state
 
 
-def _window(context, current_path, frames, folder, solver, *, end_policy):
+def _window(context, current_path, frames, folder, solver, *, end_policy, start_policy='preserve'):
     import numpy as np
     from rig_asset import RigAsset
     from surface_pose_feasibility import propose
@@ -163,7 +170,8 @@ def _window(context, current_path, frames, folder, solver, *, end_policy):
     current = RigAsset.load(current_path)
     seed = context.controls(current, frames)
     native, checks, samples, clock = context.build_window(frames, seed,
-        preserve_last=end_policy == 'preserve' and frames[-1] == len(context.keys)-1)
+        preserve_last=end_policy == 'preserve' and frames[-1] == len(context.keys)-1,
+        preserve_first=start_policy!='edit' or frames[0]!=0)
     bounds = np.asarray(native.bounds).reshape(len(frames), context.width, 2)
     fixed = (bounds[:, :, 0] == bounds[:, :, 1]).reshape(-1)
     original_rows, original_steps, original_pass = context.dense_check(native, checks, clock, frames, seed.reshape(-1))
@@ -219,15 +227,16 @@ def _window(context, current_path, frames, folder, solver, *, end_policy):
                  sample_times=sorted(samples), history=history))
             if passed: break
     controls = native.unpack(best)
-    editable = editable_frames(frames, len(context.keys), end_policy)
+    editable = editable_frames(frames, len(context.keys), end_policy,start_policy)
+    prefix=-1 if frames[0]==0 and start_policy=='edit' else frames[0]
     if editable:
         export = replace_keys(context.rig, current, root=context.root, rotations=context.nodes,
-             edits={f: controls[i] for i, f in enumerate(frames) if f in editable}, preserve_through=frames[0],
+             edits={f: controls[i] for i, f in enumerate(frames) if f in editable}, preserve_through=prefix,
              output=folder/'candidate.glb', animation_index=context.animation_index)
     else:
         shutil.copyfile(current_path, folder/'candidate.glb')
         require(sha256(current_path) == sha256(folder/'candidate.glb'), 'Unedited clip copy changed')
-        export = dict(edited_keys=[], preserved_through=frames[0], unchanged_key_values_verified=True,
+        export = dict(edited_keys=[], preserved_through=prefix, unchanged_key_values_verified=True,
                       roundtrip_max_vertex_error_m=0., sha256=sha256(folder/'candidate.glb'), quality_approved=False, release_approved=False)
     save(folder/'export.json', export)
     audit = context.audit(folder/'candidate.glb', frames)
@@ -266,8 +275,8 @@ def _attempt(folder, *, maximum_windows, soft_seconds):
             start = state['next_start']; frames = list(range(start, min(start+3, len(context.keys))))
             step = attempt/f'window-{start:06d}'; step.mkdir()
             current_path = artifact(folder, state['current_clip'])
-            audit = _window(context, current_path, frames, step, request['solver'], end_policy=request['end_policy'])
-            preserved_boundaries(context, folder/'initial.glb', step/'candidate.glb', request['end_policy'])
+            audit = _window(context, current_path, frames, step, request['solver'], end_policy=request['end_policy'],start_policy=request['start_policy'])
+            preserved_boundaries(context, folder/'initial.glb', step/'candidate.glb', request['end_policy'],request['start_policy'])
             attempted += 1
             record = dict(frames=frames, passed=audit['passed'], previous_clip_sha256=state['clip_sha256'],
                  request_sha256=sha256(folder/'request.json'), artifacts={name: sha256(step/name)
@@ -282,14 +291,17 @@ def _attempt(folder, *, maximum_windows, soft_seconds):
                          validated_through=end, next_start=None if final == len(context.keys)-1 else frames[1])
             state['accepted'].append(dict(path=(step/'result.json').relative_to(folder).as_posix(), sha256=sha256(step/'result.json')))
             save(folder/'state.json', state)
-        final_audit = context.audit(artifact(folder, state['current_clip']), list(range(state['validated_through']+1)))
-        save(attempt/'prefix-audit.json', final_audit)
-        require(final_audit['passed'], 'Final decoded prefix check failed')
+        if state['validated_through']<0:
+            state=None  # An unresolved opening is a retained proposal, never an accepted prefix.
+        else:
+            final_audit = context.audit(artifact(folder, state['current_clip']), list(range(state['validated_through']+1)))
+            save(attempt/'prefix-audit.json', final_audit)
+            require(final_audit['passed'], 'Final decoded prefix check failed')
     require(request_for(folder) == request, 'Request changed during correction')
     complete = state is not None and state['next_start'] is None
     result = dict(status='complete_numerical_candidate' if complete else 'checkpointed' if reason == 'attempt_budget' else 'unresolved',
                   reason=reason, state=state, attempted_windows=attempted, whole_clip_sampled=complete,
-                  end_policy=request['end_policy'], transition_review_required=True,
+                  end_policy=request['end_policy'], start_policy=request['start_policy'],transition_review_required=True,
                   engine_verified=False, scene_verified=False, quality_approved=False, release_approved=False)
     save(attempt/'result.json', result)
     save(folder/'latest-attempt.json', dict(path=attempt.relative_to(folder).as_posix(), result_sha256=sha256(attempt/'result.json')))

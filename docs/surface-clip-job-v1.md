@@ -7,7 +7,7 @@ Python/numerical-library versions. Subsequent edits to the external source file
 do not silently change a prepared job. Changed copied inputs, implementation or
 runtime require a new job; the old artifacts remain available.
 
-The incoming key must pass its decoded check before it can be frozen. The worker
+A protected incoming key must pass its decoded check before it can be frozen. The worker
 then advances overlapping three-key windows (two for a two-key clip), tries the
 current, held and extrapolated correction seeds, and solves with the existing
 feasibility helper. Explicit budgets limit epochs, iterations, working-floor
@@ -15,7 +15,7 @@ growth and added sample times. The optimizer supports at most 64 active interior
 samples; the complete declared clock still decides acceptance. Reaching that
 working-set limit does not waive failing samples.
 
-The current v2 request protocol preserves the initial and final keys by default.
+The current v3 request protocol preserves the initial and final keys by default.
 The final key is checked before correction; incompatible protected-end contacts
 stop the attempt with `invalid_preserved_end`. A preserved end receives fixed
 solver bounds and is omitted from exported edits. Every candidate and resumed
@@ -28,7 +28,13 @@ To permit changing the ending, configuration must contain both
 requires transition review. The default is `"end_policy": "preserve"` with a false
 acknowledgment. Earlier v1 requests allowed end edits implicitly; they retain their
 original files and require their recorded implementation. They are not silently
-reinterpreted as v2 jobs.
+reinterpreted as newer jobs.
+
+To repair the starting pose, supply both `"start_policy": "edit"` and
+`"acknowledge_changed_start": true`. Only the first window may unfreeze its
+incoming key. Until that opening passes, no accepted checkpoint is written.
+Later windows preserve the repaired prefix. The v1/v2 core protocols retain
+their original behavior and require their recorded implementations.
 
 Every exported window is decoded and checked before it advances the accepted
 checkpoint. Rejected candidates, optimizer records and interrupted attempts stay
@@ -61,7 +67,8 @@ Repeating `run` continues the same prepared job. Each run has its own resource
 trace and each worker attempt retains its result. `complete_numerical_candidate`
 is the narrow floor/contact/correction-bound result; it does not approve scene
 collisions, engine playback, physical plausibility or human motion quality.
-The CLI does not start a preview server. Studio integration remains pending.
+The CLI does not start a preview server. Studio exposes the same workflow in
+[Ground-contact cleanup](studio-surface-clip-v1.md).
 
 The process exit code is 0 for a completed guarded worker, 2 for deferred
 admission and 1 for a failed worker/guard. A completed worker can still report an

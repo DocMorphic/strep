@@ -5,12 +5,12 @@ joint-role names and animation-zero assumption from window preparation and
 decoded validation. Callers supply a decoded rig, the selected animation,
 editable skin-node IDs and angular limits, explicit material-vertex contact
 phases, acceptance limits, fitting reserves and a bounded sampling policy.
-This is a component for the general authoring workflow; Studio does not yet
-invoke it automatically.
+Studio invokes this component through the explicit
+[Ground-contact cleanup](studio-surface-clip-v1.md) workflow.
 
 The context validates the original geometry, untouched animation channels and
 shared native LINEAR clock using the same layout validator as the key exporter.
-It supports consecutive windows of two to eight keys, freezes the incoming key,
+It supports consecutive windows of two to eight keys, freezes the incoming key by default,
 and evaluates every native key, interval eighth and declared dense-grid time.
 An oversized clock is rejected before allocation, rather than subsampled.
 Contact phases use explicit static world positions and closed time intervals;
@@ -51,12 +51,12 @@ This component does not run a rolling coordinator, select contacts from a text
 prompt, support moving targets, check triangle/self/partner collisions, verify
 physics or approve motion quality. Source pinning, resource admission and
 checkpoint publication remain job-wrapper responsibilities. The broader Studio
-scene checker must remain part of acceptance when this workflow is integrated.
+scene checker remains a separate part of acceptance.
 No model weights, training data or character payloads are included here.
 
-## Next integration boundary
+## Job and Studio integration contract
 
-The rolling job must bind the source, initial candidate, selected animation,
+The [rolling job](surface-clip-job-v1.md) binds the source, initial candidate, selected animation,
 contact phases and implementation hashes to an immutable request. It must
 validate the incoming pose before freezing it, save every rejected candidate,
 and advance a checkpoint only after decoding and auditing the exported window.
@@ -64,7 +64,7 @@ Continuation must verify the preserved prefix and source bindings; a stopped
 job must retain its last accepted clip. A complete final audit is required even
 when every individual window passed.
 
-Studio can then expose that job through its existing resource-guarded request,
+Studio exposes that job through its existing resource-guarded request,
 status and continuation lifecycle. Its full scene collision and engine checks
 remain separate from the flat-floor surface solver. A numerical candidate must
 remain explicitly unreviewed until the requested human and cleanup evidence

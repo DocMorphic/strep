@@ -32,7 +32,9 @@ def local(folder, name):
 def validate(p):
     fields = {'schema','source_job','variant','source_sha256','root','rotations','angles_degrees','contacts','limits',
               'end_policy','acknowledge_changed_end','maximum_windows','soft_seconds'}
-    require(isinstance(p,dict) and set(p)==fields and p['schema']=='strep-studio-surface-clip-v1', 'Explicit ground-contact request required')
+    require(isinstance(p,dict),'Explicit ground-contact request required')
+    if p.get('schema')=='strep-studio-surface-clip-v2':fields|={'start_policy','acknowledge_changed_start'}
+    require(set(p)==fields and p['schema'] in ('strep-studio-surface-clip-v1','strep-studio-surface-clip-v2'), 'Explicit ground-contact request required')
     require(type(p['source_job']) is str and re.fullmatch('[A-Za-z0-9_-]{1,100}',p['source_job'])
             and p['variant'] in ('input','transfer','corrected','native_review'), 'Choose a saved character clip')
     require(type(p['source_sha256']) is str and re.fullmatch('[a-f0-9]{64}',p['source_sha256']), 'Exact selected clip required')
@@ -52,6 +54,7 @@ def validate(p):
         require(isinstance(c['target_m'],list) and len(c['target_m'])==3 and all(number(v) and abs(v)<=1e6 for v in c['target_m']), 'Three finite target coordinates required')
         require(number(c['start_time_s']) and number(c['end_time_s']) and 0<=c['start_time_s']<=c['end_time_s']<=3600, 'Ordered contact times required')
     boundary_policy(p['end_policy'],p['acknowledge_changed_end'])
+    boundary_policy(p.get('start_policy','preserve'),p.get('acknowledge_changed_start',False),boundary='starting')
     require(type(p['maximum_windows']) is int and 1<=p['maximum_windows']<=20 and type(p['soft_seconds']) is int
             and p['soft_seconds'] in (120,240,600), 'Choose a bounded correction attempt')
     require(len(json.dumps(p,allow_nan=False).encode())<=1024**2, 'Request exceeds 1 MiB')
@@ -62,7 +65,8 @@ def methods(): return {p.name:sha256(p) for p in sorted(Path(__file__).parent.gl
 
 
 def prepare(payload):
-    validate(payload); folder=folder_for(uuid.uuid4().hex);folder.mkdir(parents=True)
+    validate(payload);require(payload['schema']=='strep-studio-surface-clip-v2','Submit the current explicit boundary policy')
+    folder=folder_for(uuid.uuid4().hex);folder.mkdir(parents=True)
     save(folder/'request.json',payload)
     save(folder/'prepared.json',dict(request_sha256=sha256(folder/'request.json'),methods=methods()))
     return folder
@@ -72,8 +76,11 @@ def request_for(folder, *, execution=False):
     require(folder.resolve()==folder_for(folder.name), 'Exact saved ground-contact job required')
     receipt=read(folder/'prepared.json')
     require(sha256(folder/'request.json')==receipt['request_sha256'], 'Saved request changed')
-    if execution:require(methods()==receipt['methods'],'Implementation changed; submit a fresh ground-contact job')
-    return validate(read(folder/'request.json'))
+    p=validate(read(folder/'request.json'))
+    if execution:
+        require(p['schema']=='strep-studio-surface-clip-v2','Submit the current explicit boundary policy')
+        require(methods()==receipt['methods'],'Implementation changed; submit a fresh ground-contact job')
+    return p
 
 
 @contextmanager
@@ -133,7 +140,7 @@ def review(identifier):
     state_path=core/'state.json' if core else None
     state_hash=sha256(state_path) if state_path and state_path.exists() else None
     value=dict(schema='strep-studio-surface-clip-status-v1',id=identifier,status='ready',can_continue=True,
-               end_policy=p['end_policy'],quality_approved=False,release_approved=False,original_selected=True,
+               end_policy=p['end_policy'],start_policy=p.get('start_policy','preserve'),quality_approved=False,release_approved=False,original_selected=True,
                ticket=dict(request_sha256=sha256(folder/'request.json'),state_sha256=state_hash,attempt=None),downloads=[])
     if not active:return value
     attempt=local(folder,active['path']);require(attempt.parent==folder/'attempts','Invalid attempt path')
@@ -212,13 +219,15 @@ def execute(folder, attempt):
             sampling=dict(dense_hz=960,initial_fractions=[.25,.5,.75],maximum_samples=100000))
         core=folder/'cores'/uuid.uuid4().hex
         core_jobs.prepare(core,path,path,clip=clip,solver=dict(epochs=4,iterations_per_epoch=60,floor_batch_size=32,maximum_new_samples_per_epoch=8),
-            end_policy=p['end_policy'],acknowledge_changed_end=p['acknowledge_changed_end'])
+            end_policy=p['end_policy'],acknowledge_changed_end=p['acknowledge_changed_end'],
+            start_policy=p['start_policy'],acknowledge_changed_start=p['acknowledge_changed_start'])
         require(sha256(core/'source.glb')==p['source_sha256'],'Source changed during snapshot')
         save(folder/'core.json',dict(path=core.relative_to(folder).as_posix(),request_sha256=sha256(core/'request.json'),studio_request_sha256=sha256(folder/'request.json')))
     core=core_folder(folder)
     bound=core_jobs.request_for(core)
     require(bound['inputs']=={'source.glb':p['source_sha256'],'initial.glb':p['source_sha256']}
-            and bound['end_policy']==p['end_policy'] and bound['clip']['limits']==p['limits'],'Core source or policy differs from the selected request')
+            and bound['end_policy']==p['end_policy'] and bound['start_policy']==p['start_policy']
+            and bound['clip']['limits']==p['limits'],'Core source or policy differs from the selected request')
     result=core_jobs._attempt(core,maximum_windows=p['maximum_windows'],soft_seconds=p['soft_seconds'])
     rig=RigAsset.load(core/'source.glb');reader=NativeSupportSampler(rig.document,rig.binary,0)
     files={}
