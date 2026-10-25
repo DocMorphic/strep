@@ -73,6 +73,12 @@ The importer checks the role, complete response fields, packet and manifest hash
 
 ## Complete get-up comparison
 
+On the development laptop, the verified packet is already extracted at
+`C:\wassup\strep\.local\reviews\getup`. Paste that path into File Explorer and
+double-click **Start Review.cmd**, then follow the review steps below starting
+at step 3. Keep the launcher's window open until finished. This local preparation
+does not start a server and is not included in a GitHub clone.
+
 The new local packet is
 `C:\wassup\strep\reports\getup-full-developer-review-v3\getup-developer-review.zip`.
 It contains the original transfer and corrected complete 180-pose get-up on the

@@ -60,3 +60,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.log
+
+# Local worktrees, offline test installs and preserved cleanup evidence.
+/.local/

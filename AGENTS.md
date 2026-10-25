@@ -11,3 +11,18 @@ Before staging, inspect the diff and excluded files. Never commit tokens, creden
 Run checks appropriate to the changed behavior, document meaningful outcomes, and avoid rerunning completed expensive studies just to make a commit. Keep raw results immutable. Do not modify source imported by a running study worker; finish or otherwise account for that worker first.
 
 The repository is a development source snapshot, not a fully bundled offline installer. Acquisition/setup limitations must stay explicit. Third-party models, code and assets retain their own terms; public visibility does not change those terms.
+
+## Local folder layout
+
+Keep all Strep work inside this project folder. Do not create sibling test installs,
+review copies, snapshots or worktrees in `C:\wassup`. Use `.local/worktrees/` for
+additional checkouts, `.local/reviews/` for extracted review packets, and
+`.local/archive/` for retained local snapshots. Generated studies stay in `reports/`.
+`.local/` is ignored and must not be staged or published.
+
+When moving a Git worktree, use Git's worktree move operation and verify its
+registration and clean state afterward. Preserve historical report bytes and
+record old-to-new absolute path mappings; do not silently rewrite hashed evidence.
+Before deleting duplicate data, verify the retained file's content and save a
+mapping from each removed copy to its retained counterpart. Keep unique model,
+source, review and study evidence.
