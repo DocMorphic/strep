@@ -78,7 +78,10 @@ rows during fitting. The original five-degree residual, 25-degree total and
 51–60 are the only editable channels/keys. The earlier failed proposal is an
 initial search point, not a newly approved source or reset of edit allowances.
 
-The experiment has started; its outcome and independent exported replay are
-pending. No accepted repair, engine result, naturalness rating or release
-approval follows from the completed helper qualification. The full project goal
-continues to require diverse actions, rigs, objects, partners and human review.
+The first experiment and independent replay now complete. The sampled speed
+failure is removed, but five of 46 geometry times still fail, with six target
+proper crossings and 65 newly introduced pair observations across the window.
+See [coupled region and curve results](wave-region-curve-v1.md). No accepted
+repair, engine result, naturalness rating or release approval follows. The full
+project goal continues to require diverse actions, rigs, objects, partners and
+human review.
