@@ -77,8 +77,9 @@ object/partner interaction, dynamic balance, transitions, renderer/GPU skinning,
 physics, runtime advancement, arbitrary holds or rigs, or perceived quality.
 The original remains selected in Studio. No quality or release gate is changed.
 
-Next validate actual forward playback and completion under the explicitly
-adapted duration, then connection poses and transitions. Preserve the ordinary
-import failure, and broaden correction studies across the existing action/rig
-screen with explicit contact targets instead of inferring foot planting from
-a floor-only pass.
+The subsequent [forward-playback study](studio-surface-wave-playback-v1.md)
+passes five uninterrupted update schedules, completion and restart under the
+explicitly adapted duration. Connection poses and transitions remain separate.
+Preserve the ordinary import failure, and broaden correction studies across
+the existing action/rig screen with explicit contact targets instead of
+inferring foot planting from a floor-only pass.

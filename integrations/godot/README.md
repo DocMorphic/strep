@@ -74,6 +74,12 @@ passes those sampled clocks and eight terminal-pose samples without changing
 imported tracks. This additional evidence covers seeking on that corrected rig,
 not its runtime advancement, transitions, foot planting or perceived quality.
 
+The [forward-playback follow-up](../../docs/studio-surface-wave-playback-v1.md)
+also passes five update schedules, natural completion and restart on that
+corrected wave. It checks 5,250 source-time observations and 15 terminal poses
+through actual `advance` calls on one player. Looping, transitions, contacts,
+gameplay physics and visual quality remain outside that result.
+
 `verification.json` records actual engine tests. Original GLBs and source motion
 are unchanged by this adapter. Asset/model licenses remain those supplied with
 the separately downloaded scene pack.
