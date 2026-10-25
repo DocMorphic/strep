@@ -15,12 +15,10 @@ from surface_pose_model import SurfacePoseModel
 from strep import sha256
 
 
-def replace_keys(source,current,*,root,rotations,edits,preserve_through,output,animation_index=0):
-    output=Path(output)
-    if output.exists():raise FileExistsError(output)
-    if (type(animation_index) is not int or animation_index<0 or not isinstance(edits,dict) or not edits
-            or any(type(f) is not int for f in edits) or type(preserve_through) is not int):
-        raise ValueError('Explicit selected animation, native key edits and prefix index required')
+def validate_layout(source,current,*,root,rotations,animation_index=0):
+    """Validate source identity and the shared native LINEAR correction layout."""
+    if type(animation_index) is not int or animation_index<0:
+        raise ValueError('Explicit selected animation required')
     if current.binary[:len(source.binary)]!=source.binary:
         raise ValueError('Current asset must preserve the original binary prefix')
     for table in ('accessors','bufferViews'):
@@ -34,10 +32,7 @@ def replace_keys(source,current,*,root,rotations,edits,preserve_through,output,a
         raise ValueError('Original asset geometry, scene and node definitions must remain unchanged')
     if len(source.document['animations'])!=len(current.document['animations']) or any(a!=b for i,(a,b) in enumerate(zip(source.document['animations'],current.document['animations'])) if i!=animation_index):
         raise ValueError('Unselected animations must remain unchanged')
-    clock=before.channels[0][2];frames=sorted(edits);width=3+3*len(rotations)
-    if (not -1<=preserve_through<len(clock) or frames[0]<=preserve_through or frames[0]<0 or frames[-1]>=len(clock)
-            or any(np.asarray(edits[f]).shape!=(width,) or not np.isfinite(edits[f]).all() for f in frames)):
-        raise ValueError('Complete finite edits strictly after the preserved native prefix required')
+    clock=before.channels[0][2]
     if len(before.channels)!=len(previous.channels):raise ValueError('Unchanged channel population required')
     editable={(n,'rotation') for n in rotations}|{(root,'translation')};seen=set()
     for a,b in zip(before.channels,previous.channels):
@@ -48,12 +43,27 @@ def replace_keys(source,current,*,root,rotations,edits,preserve_through,output,a
             if a[:2] in seen:raise ValueError('Distinct editable channels required')
             seen.add(a[:2])
     if seen!=editable:raise ValueError('Every declared rotation and root translation needs an existing channel')
+    return before,previous,clock
+
+
+def replace_keys(source,current,*,root,rotations,edits,preserve_through,output,animation_index=0):
+    output=Path(output)
+    if output.exists():raise FileExistsError(output)
+    if (type(animation_index) is not int or animation_index<0 or not isinstance(edits,dict) or not edits
+            or any(type(f) is not int for f in edits) or type(preserve_through) is not int):
+        raise ValueError('Explicit selected animation, native key edits and prefix index required')
+    before,previous,clock=validate_layout(source,current,root=root,rotations=rotations,animation_index=animation_index)
+    frames=sorted(edits);width=3+3*len(rotations)
+    if (not -1<=preserve_through<len(clock) or frames[0]<=preserve_through or frames[0]<0 or frames[-1]>=len(clock)
+            or any(np.asarray(edits[f]).shape!=(width,) or not np.isfinite(edits[f]).all() for f in frames)):
+        raise ValueError('Complete finite edits strictly after the preserved native prefix required')
     models=[]
     for frame in frames:
         model=SurfacePoseModel(source,before.sample(float(clock[frame])),root,rotations)
         if models:model.skin=models[0].skin
         models.append(model)
     poses=[m.evaluate(np.asarray(edits[f],float),derivatives=False) for m,f in zip(models,frames)]
+    editable={(n,'rotation') for n in rotations}|{(root,'translation')}
     document=copy.deepcopy(source.document);binary=bytearray(source.binary);animation=document['animations'][animation_index]
     for channel,old in zip(animation['channels'],previous.channels):
         node,path=old[:2]

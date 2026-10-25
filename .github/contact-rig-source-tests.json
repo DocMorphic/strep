@@ -2,6 +2,7 @@
   "schema": "strep-model-free-source-tests-v1",
   "python_tests": [
     "tests/test_surface_pose_feasibility.py",
+    "tests/test_surface_clip.py",
     "tests/test_contact_phase_speed_bounds.py",
     "tests/test_surface_step_projection.py",
     "tests/test_surface_pose_long_window.py",
