@@ -522,3 +522,35 @@ at all original keys and adjacent midpoints, with a separate numerical replay.
 Four of the eight clips still fail the declared floor screen. This new evidence
 is limited to the observed source animations and engine version; it does not
 approve generated motion, object/partner interaction or rig generalization.
+
+## Shape-aware retargeting follow-up — checked 2026-10-25
+
+These primary sources inform the observed arm/head and shoulder crossings;
+their reported metrics are not equivalent to Strep's complete triangle-pair
+records and are not evidence that our character or clips pass.
+
+- [R2ET, CVPR 2023](https://arxiv.org/abs/2303.08658) separates skeleton/semantic
+  and shape-related residual changes, then balances them. This is precedent
+  for treating preservation of the action and geometric correction together.
+- [MeshRet, NeurIPS 2024, author manuscript v2](https://arxiv.org/html/2410.20986v2)
+  models contact and non-contact relationships through semantic surface sensors.
+  Its limitations explicitly include poor results on severely intersecting
+  source motion and noisy/complex meshes. It is not demonstrated as a repair
+  solution for our already-intersecting wave.
+- [STaR, ICCV 2025, author manuscript v2](https://arxiv.org/html/2504.06504v2)
+  combines spatial geometry and sequence-level consistency. Its limb loss uses
+  nearest surface points/normals, excludes some regions such as upper arms
+  because of linear-blend-skinning artifacts, and its limitations leave missing
+  contact unresolved. We will not silently copy those exclusions into Strep's
+  full-surface acceptance gate.
+- The [official STaR repository](https://github.com/XiaohangYang829/STaR)
+  contains train/test/inference files, while its README still describes the
+  full release and the skeleton-to-mesh path as unfinished. This inspection
+  does not establish runnable pretrained inference on this laptop.
+
+Our inference from these sources and the local experiments: geometry-only
+per-pose edits need action/contact and temporal constraints, and a learned
+retargeter should not be assumed to repair noisy input. Continue measured
+deterministic corrections and compare a learned method only with a reproducible
+checkpoint/runtime and separately verified model/data terms. No third-party
+training data, weights or code were imported by this literature check.
