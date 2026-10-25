@@ -15,6 +15,12 @@ growth and added sample times. The optimizer supports at most 64 active interior
 samples; the complete declared clock still decides acceptance. Reaching that
 working-set limit does not waive failing samples.
 
+The initial key stays fixed; later keys, including the final key, are editable
+within the supplied limits. Existing transition compatibility must therefore be
+reviewed after correction. A Studio adapter must honor its clip-edge permission
+and acknowledgment controls rather than silently treating a preserved end as
+editable. This command currently has no preserve-end mode.
+
 Every exported window is decoded and checked before it advances the accepted
 checkpoint. Rejected candidates, optimizer records and interrupted attempts stay
 in separate attempt directories. Only the last accepted clip is selected by the
