@@ -202,13 +202,17 @@
     "tests/test_surface_separation_planes.py",
     "tests/test_native_pose_plane_vertices.py",
     "tests/test_native_pose_reference.py",
-    "tests/test_native_transition_result_header.py"
+    "tests/test_native_transition_result_header.py",
+    "tests/test_studio_surface_clip.py",
+    "tests/test_surface_clip_contact_clock.py"
   ],
   "node_tests": [
     "tests/test_native_scene_fit_editor.mjs",
     "tests/test_native_scene_editor.mjs",
     "tests/test_native_scene_game_editor.mjs",
     "tests/test_key_continuation_editor.mjs",
-    "tests/test_key_continuation_viewer.mjs"
+    "tests/test_key_continuation_viewer.mjs",
+    "tests/test_surface_clip_editor.mjs",
+    "tests/test_surface_clip_viewer.mjs"
   ]
 }

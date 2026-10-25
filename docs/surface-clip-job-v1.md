@@ -134,7 +134,4 @@ penetration and maximum contact error 19.776323 mm under the unchanged 20-mm
 limit. This is a final-window export check on an existing candidate, not new
 generation, a full-clip rerun, an engine test or motion-quality approval.
 
-Studio integration remains the next product step. The adapter must carry the
-explicit endpoint policy and preserve the existing scene/engine gates; it must
-not translate broader object/partner or moving-target constraints into this
-static flat-floor model by dropping unsupported requirements.
+Studio now mounts this workflow through [Ground-contact cleanup](studio-surface-clip-v1.md). The adapter carries explicit endpoint policy and saved constraints, exposes verified candidate/original downloads, and preserves separate scene/engine review requirements. Static flat-floor correction does not establish object, partner or moving-target support.

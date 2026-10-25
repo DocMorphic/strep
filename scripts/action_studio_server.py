@@ -29,6 +29,10 @@ CORRECTION_STUDIES = ['contact-authoring-v2', 'support-contact-v1', 'body-contac
 
 def allowed_file(url_path):
     path=unquote(urlsplit(url_path).path)
+    if path in ('/surface-clip-editor.mjs','/surface-clip-viewer.html','/surface-clip-viewer.mjs'):return ROOT/'scripts'/path[1:]
+    if path.startswith('/files/surface-clip-jobs/'):
+        from studio_surface_clip_jobs import served_file
+        return served_file(path)
     if path in ('/mesh-character-editor.mjs','/mesh-character-viewer.html','/mesh-character-viewer.mjs'):return ROOT/'scripts'/path[1:]
     if path.startswith('/files/mesh-character-jobs/'):
         from studio_mesh_character_job import served_file
@@ -178,6 +182,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.headers.get('Host') not in self.server.allowed_hosts:return self.respond(403,{'error':'Loopback host required'})
+        from studio_surface_clip_routes import dispatch_get as dispatch_surface_get
+        if dispatch_surface_get(self):return
         from studio_prop_routes import dispatch_get
         if dispatch_get(self):return
         from studio_mesh_scene_routes import dispatch_get as dispatch_mesh_get
@@ -493,6 +499,8 @@ class Handler(BaseHTTPRequestHandler):
         except (BrokenPipeError,ConnectionResetError):pass
 
     def do_POST(self):
+        from studio_surface_clip_routes import dispatch_post as dispatch_surface_post
+        if dispatch_surface_post(self):return
         from studio_prop_routes import dispatch_post
         if dispatch_post(self):return
         from studio_mesh_scene_routes import dispatch_post as dispatch_mesh_post

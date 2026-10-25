@@ -72,6 +72,8 @@ class SurfaceClip:
             if any(p['vertex']==phase['vertex'] and max(p['start_time_s'],phase['start_time_s'])<=min(p['end_time_s'],phase['end_time_s']) for p in contacts[:index]):
                 raise ValueError('Overlapping phases for the same material vertex are ambiguous')
         self.phases=copy.deepcopy(contacts);self.angles=np.asarray(angles_degrees,float).copy()
+        if bound+2*len(self.phases)>sampling['maximum_samples']:
+            raise ValueError('Complete contact-boundary population exceeds its declared budget')
         self.width=model.size;self.vertex_count=model.skin.count
         self.settings={**copy.deepcopy(limits),**{k:fitting[k] for k in ('floor_reserve_m','contact_reserve_m')}}
         self.request={**copy.deepcopy(sampling),**{'fit_'+k:fitting[k] for k in ('root_reserve_m','angle_reserve_radians','step_reserve_m','step_reserve_radians')},'fit_geometry_reserve_scale':1.}
@@ -97,6 +99,8 @@ class SurfaceClip:
     def clock(self,frames):
         self.frames(frames)
         groups=[self.keys[frames]]
+        groups.append(np.asarray([p[k] for p in self.phases for k in ('start_time_s','end_time_s')
+                                  if self.keys[frames[0]]<=p[k]<=self.keys[frames[-1]]],float))
         for a,b in zip(self.keys[frames][:-1],self.keys[frames][1:]):
             groups.extend([np.linspace(a,b,9),np.arange(np.ceil(a*self.request['dense_hz']),np.floor(b*self.request['dense_hz'])+1)/self.request['dense_hz']])
         return np.unique(np.concatenate(groups))

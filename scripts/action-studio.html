@@ -686,6 +686,29 @@ button.cc-module{padding:0;text-align:left;transition:background .16s,scale .16s
 <button id="meshCharacterReview" type="button" class="btn">Refresh correction</button>
 <button id="meshCharacterContinue" type="button" class="btn" disabled>Continue interrupted correction</button>
 <p id="meshCharacterStatus" role="status" aria-live="polite">Original clips remain selected. Every attempt is retained for review.</p><div id="meshCharacterResults"></div></details>
+<details id="surfaceClipPanel"><summary>Ground-contact cleanup</summary>
+<p>Correct floor penetration and static surface-point targets on the selected character clip. This works in the clip’s coordinates with the ground at Y = 0. Use the scene tools for objects, partners and moving targets.</p>
+<button id="surfaceClipBind" class="btn" type="button">Use selected character clip</button><p id="surfaceClipBinding">No clip selected.</p>
+<fieldset id="surfaceClipFields" disabled><legend>Editable motion</legend>
+<p>Choose up to 20 joints and their maximum rotation changes. The root can move within the limits below. The initial pose must already pass; it stays fixed.</p><div id="surfaceClipJoints"></div>
+<div class="rig-form-grid">
+<label>Horizontal root change (m)<input id="surfaceClipHorizontal" type="number" value="0.15" min="0.00001" step="0.01"></label>
+<label>Upward root change (m)<input id="surfaceClipVertical" type="number" value="0.75" min="0.00001" step="0.01"></label>
+<label>Allowed floor depth (mm)<input id="surfaceClipFloor" type="number" value="5" min="0.001" step="0.1"></label>
+<label>Allowed target error (mm)<input id="surfaceClipContact" type="number" value="20" min="0.001" step="0.1"></label>
+<label>Root correction change per key (mm)<input id="surfaceClipRootStep" type="number" value="25" min="0.001" step="1"></label>
+<label>Rotation correction change per key (degrees)<input id="surfaceClipRotationStep" type="number" value="5" min="0.001" max="180" step="0.1"></label></div>
+<p>Optional contacts: pick one vertex in Mesh contacts, enter its fixed target in clip coordinates, then add the time interval. Leave the list empty for floor-only cleanup.</p>
+<div class="rig-form-grid"><label>Target X (m)<input id="surfaceClipX" type="number" value="0" step="0.01"></label><label>Target Y (m)<input id="surfaceClipY" type="number" value="0" step="0.01"></label><label>Target Z (m)<input id="surfaceClipZ" type="number" value="0" step="0.01"></label><label>Start (seconds)<input id="surfaceClipStart" type="number" value="0" min="0" step="any"></label><label>End (seconds)<input id="surfaceClipEnd" type="number" value="0" min="0" step="any"></label></div>
+<button id="surfaceClipAdd" class="btn" type="button">Add picked point target</button><div id="surfaceClipContacts"></div>
+<label><input id="surfaceClipEditEnd" type="checkbox"> Allow the ending pose to change</label>
+<label><input id="surfaceClipAck" type="checkbox"> I will review the changed ending and its transitions</label>
+<p>Endpoint poses are preserved by default. Timing, velocity, scene collisions and engine import still need review after any correction.</p>
+<label>Work per attempt <select id="surfaceClipWindows"><option value="5">5 windows</option><option value="10" selected>10 windows</option><option value="20">20 windows</option></select></label>
+<label>Time per attempt <select id="surfaceClipSeconds"><option value="120">2 minutes</option><option value="240" selected>4 minutes</option><option value="600">10 minutes</option></select></label>
+<button id="surfaceClipBuild" class="btn primary" type="button">Correct selected clip</button></fieldset>
+<label>Saved correction <select id="surfaceClipJobs"></select></label><button id="surfaceClipRefresh" class="btn" type="button">Refresh jobs</button><button id="surfaceClipReview" class="btn" type="button">Inspect selected job</button><button id="surfaceClipContinue" class="btn" type="button" disabled>Continue saved correction</button>
+<p id="surfaceClipStatus" role="status" aria-live="polite">Original clips remain selected. Attempts and failed candidates are retained.</p><div id="surfaceClipResults"></div></details>
 
    <details id="keyContinuationPanel" class="rig-panel">
  <summary>Continue verified correction</summary>
@@ -1981,6 +2004,8 @@ void (async function characterStudio(){
  await initializeOptionalRigEditor(async()=>{const {createKeyContinuationEditor}=await import('/key-continuation-editor.mjs');createKeyContinuationEditor({api,post});},C('keyContinuationStatus'),'Saved correction continuation');
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneFitEditor}=await import('/native-scene-fit-editor.mjs');
   if(!nativeSceneEditor)throw Error('Scene editor is required');nativeSceneFitEditor=createNativeSceneFitEditor({api,post,getDraft:()=>nativeSceneEditor.snapshot(),setDraft:value=>nativeSceneEditor.bind(value)});},C('nativeSceneFitStatus'),'Character correction editor');
+ await initializeOptionalRigEditor(async()=>{const {createSurfaceClipEditor}=await import('/surface-clip-editor.mjs');
+  createSurfaceClipEditor({api,post,getContext:()=>({job:jobs.find(j=>j.id===C('rigResult').value),variant:C('rigVariant').value}),getPatch:()=>contactEditor.nativePatch()});},C('surfaceClipStatus'),'Ground-contact correction');
  await initializeOptionalRigEditor(async()=>{const {createMeshCharacterEditor}=await import('/mesh-character-editor.mjs');
   if(!meshSceneEditor||!nativeSceneFitEditor)throw Error('Object contacts and character bounds are required');createMeshCharacterEditor({api,post,getScene:()=>meshSceneEditor.selection(),getBounds:()=>nativeSceneFitEditor.request()});},C('meshCharacterStatus'),'Object-contact correction');
  await initializeOptionalRigEditor(async()=>{const {createNativeSceneGameEditor}=await import('/native-scene-game-editor.mjs');

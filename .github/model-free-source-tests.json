@@ -653,7 +653,9 @@
     "tests/test_native_mesh_character_journal.py",
     "tests/test_native_mesh_character_recovery.py",
     "tests/test_studio_mesh_character.py",
-    "tests/test_native_transition_result_header.py"
+    "tests/test_native_transition_result_header.py",
+    "tests/test_studio_surface_clip.py",
+    "tests/test_surface_clip_contact_clock.py"
   ],
   "node_tests": [
     "tests/test_rig_contact_playback_editor.mjs",
@@ -706,6 +708,8 @@
     "tests/test_prop_grip_editor.mjs",
     "tests/test_mesh_scene_editor.mjs",
     "tests/test_mesh_scene_playback.mjs",
-    "tests/test_mesh_character_editor.mjs"
+    "tests/test_mesh_character_editor.mjs",
+    "tests/test_surface_clip_editor.mjs",
+    "tests/test_surface_clip_viewer.mjs"
   ]
 }
