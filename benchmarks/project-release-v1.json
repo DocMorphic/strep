@@ -362,7 +362,10 @@
         "docs/contact-joint-restart-v1.md",
         "docs/prompt-edit-floor-regions-v2.md",
         "reports/prompt-edit-floor-regions-v2/result.json",
-        "reports/central-hand-physical-v1/prompt-edit-floor-diagnosis-resource-v2.json"
+        "reports/central-hand-physical-v1/prompt-edit-floor-diagnosis-resource-v2.json",
+        "docs/wave-self-repair-pose-v1.md",
+        "docs/wave-shoulder-temporal-v1.md",
+        "docs/wave-temporal-arm-v1.md"
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
@@ -1839,7 +1842,10 @@
         "reports/support-fallback-population-audit-v1/snapshot-v1.json",
         "reports/dynamics-retention-recheck-v1/completion.json",
         "docs/release-rig-reservations-v1.md",
-        "reports/release-rig-reservations-v1/verification.json"
+        "reports/release-rig-reservations-v1/verification.json",
+        "docs/wave-self-repair-pose-v1.md",
+        "docs/wave-shoulder-temporal-v1.md",
+        "docs/wave-temporal-arm-v1.md"
       ],
       "remaining": [
         "Per-joint angular constraints clear all8edited-joint peak comparisons on one inspected rig03clip; tails, angular acceleration, geometry tradeoffs and held-out transfer need validation."
@@ -3129,7 +3135,10 @@
         "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v8.json",
         "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v9.json",
         "reports/central-hand-physical-v1/engine-hold-clearance-fit-resource-v10.json",
-        "reports/central-hand-physical-v1/engine-hold-export-check-resource-v10.json"
+        "reports/central-hand-physical-v1/engine-hold-export-check-resource-v10.json",
+        "docs/wave-self-repair-pose-v1.md",
+        "docs/wave-shoulder-temporal-v1.md",
+        "docs/wave-temporal-arm-v1.md"
       ]
     }
   ],
