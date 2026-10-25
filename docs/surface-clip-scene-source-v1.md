@@ -70,3 +70,9 @@ transition, loop, contact solution or quality approval. In particular, the
 [wave connection-pose screen](studio-surface-wave-playback-v1.md) still has an
 approximately 109 mm direct-repeat gap and failing original destination floors.
 The existing edited endpoints continue to require transition review.
+
+The subsequent [actual scene build](surface-clip-scene-engine-v1.md) verifies
+this path in headless Godot with the real corrected wave and preserved history.
+Its 17-pose integration screen passes pose, skin and floor checks but fails
+self-surface geometry conditions. The original clip also carries those flags;
+the comparison and remaining export difference are retained explicitly.
