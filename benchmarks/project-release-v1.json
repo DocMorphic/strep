@@ -366,7 +366,8 @@
         "docs/wave-self-repair-pose-v1.md",
         "docs/wave-shoulder-temporal-v1.md",
         "docs/wave-temporal-arm-v1.md",
-        "docs/wave-native-key-repair-v1.md"
+        "docs/wave-native-key-repair-v1.md",
+        "docs/wave-hand-head-plane-v1.md"
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
@@ -1847,7 +1848,8 @@
         "docs/wave-self-repair-pose-v1.md",
         "docs/wave-shoulder-temporal-v1.md",
         "docs/wave-temporal-arm-v1.md",
-        "docs/wave-native-key-repair-v1.md"
+        "docs/wave-native-key-repair-v1.md",
+        "docs/wave-hand-head-plane-v1.md"
       ],
       "remaining": [
         "Per-joint angular constraints clear all8edited-joint peak comparisons on one inspected rig03clip; tails, angular acceleration, geometry tradeoffs and held-out transfer need validation."
@@ -3141,7 +3143,8 @@
         "docs/wave-self-repair-pose-v1.md",
         "docs/wave-shoulder-temporal-v1.md",
         "docs/wave-temporal-arm-v1.md",
-        "docs/wave-native-key-repair-v1.md"
+        "docs/wave-native-key-repair-v1.md",
+        "docs/wave-hand-head-plane-v1.md"
       ]
     }
   ],

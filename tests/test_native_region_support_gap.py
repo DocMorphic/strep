@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'scripts'))
-from native_region_support_gap import MAXIMUM_VERTICES, region_support_gap
+from native_region_support_gap import MAXIMUM_VERTICES, region_support_gap, pair_hinge_objective
 from native_support_gap import triangle_support_gaps
 
 
@@ -111,3 +111,69 @@ def test_invalid_geometry_rejects(kind):
 @pytest.mark.parametrize('temperature',[0.,-1.,True,float('nan'),float('inf'),1e-10,.1001,'0.01'])
 def test_invalid_temperature_rejects(temperature):
     with pytest.raises(ValueError):region_support_gap(*fixture(),temperature_m=temperature)
+
+
+@pytest.mark.parametrize('block',[1,3,64,1024])
+def test_blocked_pair_objective_matches_expanded_moving_region_chain(block):
+    rng=np.random.default_rng(20261025)
+    a=rng.normal(size=(7,3))*.02;b=rng.normal(size=(13,3))*.02;n=np.array([.6,0,.8])
+    ja=rng.normal(size=(len(a),3,5));jb=rng.normal(size=(len(b),3,5))
+    actual=pair_hinge_objective(a,b,n,clearance_m=.003,scale_m=.01,block_rows=block)
+    gaps=np.array([n@(v-u) for u in a for v in b]);bad=np.minimum((gaps-.003)/.01,0.)
+    full_jac=np.array([n@(dv-du) for du in ja for dv in jb])/.01
+    expected_loss=bad@bad;expected_gradient=2*bad@full_jac
+    chain=np.einsum('vi,vij->j',actual['left_gradient'],ja)+np.einsum('vi,vij->j',actual['right_gradient'],jb)
+    assert actual['loss']==pytest.approx(expected_loss,rel=2e-14,abs=1e-12)
+    np.testing.assert_allclose(chain,expected_gradient,rtol=2e-13,atol=2e-10)
+    assert actual['report']['pair_rows']==91 and actual['report']['all_pairs_retained']
+    assert not actual['report']['quality_approved']
+    for column in range(5):
+        h=1e-7
+        plus=pair_hinge_objective(a+h*ja[:,:,column],b+h*jb[:,:,column],n,clearance_m=.003)['loss']
+        minus=pair_hinge_objective(a-h*ja[:,:,column],b-h*jb[:,:,column],n,clearance_m=.003)['loss']
+        assert (plus-minus)/(2*h)==pytest.approx(chain[column],rel=2e-8,abs=2e-6)
+
+
+def test_pair_objective_keeps_last_pair_and_shared_point_deficit():
+    a=np.zeros((129,3));b=np.ones((131,3));a[-1,0]=2.;n=np.array([1.,0,0])
+    result=pair_hinge_objective(a,b,n,clearance_m=0.,scale_m=1.)
+    assert result['loss']==131. and result['projected_gap_m']==-1.
+    assert result['report']['pair_rows']==129*131
+    np.testing.assert_array_equal(result['left_gradient'][:-1],0.)
+    shared=pair_hinge_objective(a[:1],a[:1],n,clearance_m=.003)
+    assert shared['loss']==pytest.approx(.09)
+    assert np.any(shared['left_gradient']) and np.any(shared['right_gradient'])
+
+
+def test_pair_objective_zero_loss_and_joint_translation_cancel():
+    a,b,n=fixture();clean=pair_hinge_objective(a,b,n)
+    assert clean['loss']==0. and not np.any(clean['left_gradient']) and not np.any(clean['right_gradient'])
+    b-=1.;result=pair_hinge_objective(a,b,n);reverse=pair_hinge_objective(b,a,-n,block_rows=1)
+    assert result['loss']==pytest.approx(reverse['loss'])
+    np.testing.assert_allclose(result['left_gradient'],reverse['right_gradient'])
+    np.testing.assert_allclose(result['left_gradient'].sum(axis=0)+result['right_gradient'].sum(axis=0),0.,atol=1e-10)
+    copies=[x.copy() for x in (a,b,n)];pair_hinge_objective(a,b,n)
+    for value,copy in zip((a,b,n),copies):np.testing.assert_array_equal(value,copy)
+
+
+@pytest.mark.parametrize('kwargs',[
+    {'clearance_m':True},{'clearance_m':-.1},{'clearance_m':float('nan')},
+    {'scale_m':0.},{'scale_m':float('inf')},{'scale_m':1e-9},
+    {'block_rows':0},{'block_rows':True},{'block_rows':1025},
+    {'maximum_pairs':0},{'maximum_pairs':11},{'maximum_pairs':2_000_001},
+    {'maximum_working_bytes':1},{'maximum_working_bytes':True},{'maximum_working_bytes':64*1024**2+1},
+])
+def test_pair_objective_rejects_incomplete_or_unbounded_requests(kwargs):
+    with pytest.raises(ValueError):pair_hinge_objective(*fixture(),**kwargs)
+
+
+@pytest.mark.parametrize('fault',['empty','shape','nan','normal','bool','huge'])
+def test_pair_objective_rejects_invalid_point_populations(fault):
+    a,b,n=fixture()
+    if fault=='empty':a=a[:0]
+    elif fault=='shape':b=b.ravel()
+    elif fault=='nan':a[0,0]=np.nan
+    elif fault=='normal':n*=2.
+    elif fault=='bool':a=a.astype(bool)
+    else:a[0,0]=1e6+1
+    with pytest.raises(ValueError):pair_hinge_objective(a,b,n)
