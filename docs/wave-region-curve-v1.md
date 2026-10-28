@@ -92,3 +92,7 @@ Reports remain under the ignored development checkout: `wave-region-curve-v1`,
 Other clip failures, action/resting-pose preservation, engine checks, developer
 and animator review, and broader action/rig/object/partner evaluation remain
 part of the full project goal. No release capability is completed here.
+
+The follow-up is now complete: [expanded wrist search](wave-region-curve-v2.md)
+clears the target frame but retains three failing geometry times. Independent
+replay confirms the remaining failures; no clip is accepted.

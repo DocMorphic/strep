@@ -370,7 +370,8 @@
         "docs/wave-native-key-repair-v1.md",
         "docs/wave-hand-head-plane-v1.md",
         "docs/native-correction-curve-v1.md",
-        "docs/wave-region-curve-v1.md"
+        "docs/wave-region-curve-v1.md",
+        "docs/wave-region-curve-v2.md"
       ],
       "remaining": [
         "Reliable source-aware semantic editing: boundary-guided section replacement exists, but all five pilot takes fail guide/floor quality screens; periodic editing, variable timing and trained relative-text editing remain open",
@@ -1854,7 +1855,8 @@
         "docs/wave-native-key-repair-v1.md",
         "docs/wave-hand-head-plane-v1.md",
         "docs/native-correction-curve-v1.md",
-        "docs/wave-region-curve-v1.md"
+        "docs/wave-region-curve-v1.md",
+        "docs/wave-region-curve-v2.md"
       ],
       "remaining": [
         "Per-joint angular constraints clear all8edited-joint peak comparisons on one inspected rig03clip; tails, angular acceleration, geometry tradeoffs and held-out transfer need validation."
@@ -3151,7 +3153,8 @@
         "docs/wave-native-key-repair-v1.md",
         "docs/wave-hand-head-plane-v1.md",
         "docs/native-correction-curve-v1.md",
-        "docs/wave-region-curve-v1.md"
+        "docs/wave-region-curve-v1.md",
+        "docs/wave-region-curve-v2.md"
       ]
     }
   ],
