@@ -72,6 +72,19 @@ It checks directional derivatives before fitting and retains the same edit,
 speed, floor and resource limits. Complete exported mesh audits still decide
 whether collisions remain; a failed finite search does not prove infeasibility.
 
+The constraint implementation passes three directional derivative probes across
+all temporal floor/separation rows: maximum scaled discrepancy 1.833e-8 against
+a 1e-5 check limit. The warm start has six deficient separation rows and a
+minimum smooth gap of -9.094478 mm. This stronger guidance is distinct from
+the three times with measured mesh crossings.
+
+Two guarded attempts stop when available system memory falls below the existing
+600 MiB floor, including one retry with 30 seconds of stable admission. Both
+resource traces replay (74 and 80 observations). Initial optimizer checkpoints
+remain local. Neither attempt produces a completed fit or supports an
+infeasibility claim. Resume in a fresh report folder when memory is available;
+preserve these interrupted attempts and repeat independent exported checks.
+
 Full-clip validation, action/style preservation, engine checks, human review
 and broader action/rig/object/partner evaluation remain outstanding. No release
 capability is approved by this study.
